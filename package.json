@@ -11,7 +11,7 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
     "prebuild": "npm --prefix frontend install",
-    "build": "npm --prefix frontend run build",
+    "build": "npm --prefix frontend run build && node -e \"const fs = require('fs'); fs.cpSync('frontend/dist/client', 'dist', {recursive: true, force: true});\"",
     "start": "npm --prefix backend start",
     "install:all": "npm --prefix frontend install && npm --prefix backend install"
   },
