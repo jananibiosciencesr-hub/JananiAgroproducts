@@ -1,13 +1,21 @@
 {
   "name": "janani-agro-workspace",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
     "dev": "npm run dev:all",
     "dev:all": "npx --yes concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
+    "prebuild": "npm --prefix frontend install",
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix backend start",
     "install:all": "npm --prefix frontend install && npm --prefix backend install"
+  },
+  "dependencies": {
+    "vite": "^8.1.5"
   }
 }
