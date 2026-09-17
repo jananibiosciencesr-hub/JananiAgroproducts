@@ -289,6 +289,27 @@ export async function initDatabase() {
 
     console.log(`✅ [MySQL Init] All 11 tables verified/created successfully.`);
 
+    // Auto-migrate any missing columns for future client requirements
+    const schemasToCheck = {
+      users: { avatar: "VARCHAR(500)", preferences: "JSON" },
+      products: { cost_price: "DECIMAL(10,2)", gallery: "JSON", features: "JSON", nutrition_facts: "JSON", tags: "JSON", hsn_code: "VARCHAR(50)", tax_rate: "DECIMAL(5,2) DEFAULT 0.00" },
+      orders: { billing_address: "JSON", tax_amount: "DECIMAL(10,2) DEFAULT 0.00", delivery_slot: "VARCHAR(100)", customer_notes: "TEXT" }
+    };
+    for (const [table, cols] of Object.entries(schemasToCheck)) {
+      try {
+        const [existing] = await connection.query(`SHOW COLUMNS FROM \`${table}\``);
+        const existingNames = existing.map(c => c.Field.toLowerCase());
+        for (const [colName, colDef] of Object.entries(cols)) {
+          if (!existingNames.includes(colName.toLowerCase())) {
+            await connection.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${colName}\` ${colDef}`);
+            console.log(`✨ [Auto-Migration] Added missing column ${table}.${colName}`);
+          }
+        }
+      } catch (e) {
+        console.warn(`[Auto-Migration] Notice on ${table}:`, e.message);
+      }
+    }
+
     // ==========================================
     // SEEDING DEFAULT JANANI AGRO DATA IF EMPTY
     // ==========================================
