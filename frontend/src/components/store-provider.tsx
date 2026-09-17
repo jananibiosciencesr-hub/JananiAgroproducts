@@ -46,8 +46,30 @@ const DEFAULT_DEMO_USER: AuthUser = {
 };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Record<number, number>>({ 1: 1, 3: 1 });
-  const [wishlist, setWishlist] = useState<number[]>([6, 10, 12]);
+  const [cart, setCart] = useState<Record<number, number>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("janani_cart");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse stored cart", e);
+      }
+    }
+    return { 1: 1, 3: 1 };
+  });
+
+  const [wishlist, setWishlist] = useState<number[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("janani_wishlist");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse stored wishlist", e);
+      }
+    }
+    return [6, 10, 12];
+  });
+
   const [user, setUser] = useState<AuthUser | null>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -71,6 +93,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [user]);
+
+  // Sync cart to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("janani_cart", JSON.stringify(cart));
+    }
+  }, [cart]);
+
+  // Sync wishlist to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("janani_wishlist", JSON.stringify(wishlist));
+    }
+  }, [wishlist]);
 
   const loginUser = (newUser: AuthUser, token?: string) => {
     setUser(newUser);
