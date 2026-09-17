@@ -1,14 +1,87 @@
-import { products, categories } from "../data/mockData.js";
+import { products as mockProducts, categories as mockCategories } from "../data/mockData.js";
+import { query, isDbConnected } from "../config/db.js";
+
+// Helper to map DB row to product object
+function formatProduct(row) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    category: row.category_name,
+    price: Number(row.price),
+    oldPrice: row.old_price ? Number(row.old_price) : null,
+    unit: row.unit,
+    stock: row.stock,
+    rating: Number(row.rating),
+    reviews: row.reviews_count,
+    badge: row.badge,
+    image: row.image,
+    description: row.description,
+    origin: row.origin,
+    certification: row.certification,
+    active: Boolean(row.active),
+    status: row.status,
+    sku: row.sku
+  };
+}
 
 // @desc    Get all products with search, category & price filters
 // @route   GET /api/products
-export const getProducts = (req, res) => {
+export const getProducts = async (req, res) => {
   try {
     const { category, search, minPrice, maxPrice, sort, limit, page } = req.query;
 
-    let filtered = [...products];
+    if (isDbConnected()) {
+      try {
+        let sql = "SELECT * FROM products WHERE active = 1";
+        const params = [];
 
-    // Category filter
+        if (category && category !== "All") {
+          sql += " AND (LOWER(category_name) = LOWER(?) OR LOWER(category_name) LIKE ?)";
+          params.push(category, `%${category}%`);
+        }
+        if (search) {
+          sql += " AND (LOWER(name) LIKE ? OR LOWER(category_name) LIKE ? OR LOWER(description) LIKE ?)";
+          params.push(`%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`);
+        }
+        if (minPrice) {
+          sql += " AND price >= ?";
+          params.push(Number(minPrice));
+        }
+        if (maxPrice) {
+          sql += " AND price <= ?";
+          params.push(Number(maxPrice));
+        }
+
+        if (sort === "low") {
+          sql += " ORDER BY price ASC";
+        } else if (sort === "high") {
+          sql += " ORDER BY price DESC";
+        } else if (sort === "rating") {
+          sql += " ORDER BY rating DESC";
+        } else {
+          sql += " ORDER BY id ASC";
+        }
+
+        const rows = await query(sql, params);
+        if (Array.isArray(rows) && rows.length > 0) {
+          const formatted = rows.map(formatProduct);
+          return res.status(200).json({
+            success: true,
+            total: formatted.length,
+            count: formatted.length,
+            products: formatted,
+            source: "mysql"
+          });
+        }
+      } catch (dbErr) {
+        console.warn("⚠️ [Products] DB query error, falling back to mock catalog:", dbErr.message);
+      }
+    }
+
+    // Fallback to local catalog
+    let filtered = [...mockProducts];
+
     if (category && category !== "All") {
       filtered = filtered.filter(
         (p) =>
@@ -17,7 +90,6 @@ export const getProducts = (req, res) => {
       );
     }
 
-    // Search query filter
     if (search) {
       const q = search.toLowerCase();
       filtered = filtered.filter(
@@ -28,29 +100,14 @@ export const getProducts = (req, res) => {
       );
     }
 
-    // Price range filter
-    if (minPrice) {
-      filtered = filtered.filter((p) => p.price >= Number(minPrice));
-    }
-    if (maxPrice) {
-      filtered = filtered.filter((p) => p.price <= Number(maxPrice));
-    }
+    if (minPrice) filtered = filtered.filter((p) => p.price >= Number(minPrice));
+    if (maxPrice) filtered = filtered.filter((p) => p.price <= Number(maxPrice));
 
-    // Sorting
-    if (sort === "low") {
-      filtered.sort((a, b) => a.price - b.price);
-    } else if (sort === "high") {
-      filtered.sort((a, b) => b.price - a.price);
-    } else if (sort === "rating") {
-      filtered.sort((a, b) => b.rating - a.rating);
-    } else {
-      // featured / id
-      filtered.sort((a, b) => a.id - b.id);
-    }
+    if (sort === "low") filtered.sort((a, b) => a.price - b.price);
+    else if (sort === "high") filtered.sort((a, b) => b.price - a.price);
+    else if (sort === "rating") filtered.sort((a, b) => b.rating - a.rating);
+    else filtered.sort((a, b) => a.id - b.id);
 
-    const total = filtered.length;
-
-    // Optional pagination
     const pageNum = Number(page) || 1;
     const limitNum = Number(limit) || 50;
     const startIndex = (pageNum - 1) * limitNum;
@@ -58,10 +115,11 @@ export const getProducts = (req, res) => {
 
     return res.status(200).json({
       success: true,
-      total,
+      total: filtered.length,
       count: paginated.length,
       page: pageNum,
       products: paginated,
+      source: "mock"
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -70,11 +128,35 @@ export const getProducts = (req, res) => {
 
 // @desc    Get single product by ID or slug
 // @route   GET /api/products/:idOrSlug
-export const getProductByIdOrSlug = (req, res) => {
+export const getProductByIdOrSlug = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
 
-    const product = products.find(
+    if (isDbConnected()) {
+      try {
+        const rows = await query(
+          "SELECT * FROM products WHERE id = ? OR slug = ? LIMIT 1",
+          [idOrSlug, idOrSlug]
+        );
+        if (rows && rows.length > 0) {
+          const product = formatProduct(rows[0]);
+          const relatedRows = await query(
+            "SELECT * FROM products WHERE category_name = ? AND id != ? LIMIT 4",
+            [rows[0].category_name, rows[0].id]
+          );
+          return res.status(200).json({
+            success: true,
+            product,
+            related: (relatedRows || []).map(formatProduct),
+            source: "mysql"
+          });
+        }
+      } catch (dbErr) {
+        console.warn("⚠️ [Product] DB query error:", dbErr.message);
+      }
+    }
+
+    const product = mockProducts.find(
       (p) => String(p.id) === idOrSlug || p.slug === idOrSlug
     );
 
@@ -85,8 +167,7 @@ export const getProductByIdOrSlug = (req, res) => {
       });
     }
 
-    // Find related products in same category
-    const related = products
+    const related = mockProducts
       .filter((p) => p.category === product.category && p.id !== product.id)
       .slice(0, 4);
 
@@ -94,6 +175,7 @@ export const getProductByIdOrSlug = (req, res) => {
       success: true,
       product,
       related,
+      source: "mock"
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -101,18 +183,35 @@ export const getProductByIdOrSlug = (req, res) => {
 };
 
 // @desc    Get all product categories
-// @route   GET /api/categories
-export const getCategories = (req, res) => {
+// @route   GET /api/products/categories
+export const getCategories = async (req, res) => {
   try {
-    const categoriesWithCount = categories.map((cat) => ({
+    if (isDbConnected()) {
+      try {
+        const rows = await query("SELECT * FROM categories WHERE active = 1 AND deleted_at IS NULL ORDER BY display_order ASC");
+        if (Array.isArray(rows) && rows.length > 0) {
+          return res.status(200).json({
+            success: true,
+            count: rows.length,
+            categories: rows,
+            source: "mysql"
+          });
+        }
+      } catch (dbErr) {
+        console.warn("⚠️ [Categories] DB error:", dbErr.message);
+      }
+    }
+
+    const categoriesWithCount = mockCategories.map((cat) => ({
       ...cat,
-      count: products.filter((p) => p.category.toLowerCase() === cat.name.toLowerCase()).length,
+      count: mockProducts.filter((p) => p.category.toLowerCase() === cat.name.toLowerCase()).length,
     }));
 
     return res.status(200).json({
       success: true,
       count: categoriesWithCount.length,
       categories: categoriesWithCount,
+      source: "mock"
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -124,7 +223,7 @@ export const getCategories = (req, res) => {
 export const getCategoryBySlug = (req, res) => {
   try {
     const { slug } = req.params;
-    const category = categories.find((c) => c.slug === slug);
+    const category = mockCategories.find((c) => c.slug === slug);
 
     if (!category) {
       return res.status(404).json({
@@ -133,7 +232,7 @@ export const getCategoryBySlug = (req, res) => {
       });
     }
 
-    const categoryProducts = products.filter(
+    const categoryProducts = mockProducts.filter(
       (p) =>
         p.category.toLowerCase() === category.name.toLowerCase() ||
         p.category.toLowerCase().includes(category.name.toLowerCase())
