@@ -4384,6 +4384,31 @@ export async function loginWithEmail(payload: { email: string; password: string;
 }
 
 export async function sendAuthOtp(payload: { phone?: string; email?: string; purpose?: string }): Promise<OtpSendResponse> {
+  const isBrowser = typeof window !== "undefined";
+  const isLocalhost = isBrowser && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  // In production (live Hostinger), prioritize Hostinger PHP API
+  if (!isLocalhost) {
+    try {
+      const phpRes = await fetch("/api.php?action=send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (phpRes.ok) {
+        const text = await phpRes.text();
+        try {
+          const phpData = JSON.parse(text);
+          if (phpData && typeof phpData === "object") return phpData;
+        } catch (jsonErr) {
+          console.error("api.php response was not JSON:", text);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to reach /api.php?action=send-otp:", e);
+    }
+  }
+
   // 1. Try Node.js Express API
   const res = await fetchJson<OtpSendResponse>("/auth/send-otp", {
     method: "POST",
@@ -4391,7 +4416,7 @@ export async function sendAuthOtp(payload: { phone?: string; email?: string; pur
   });
   if (res?.success) return res;
 
-  // 2. Try Hostinger PHP API
+  // 2. Try Hostinger PHP API fallback
   try {
     const phpRes = await fetch("/api.php?action=send-otp", {
       method: "POST",
@@ -4413,6 +4438,31 @@ export async function sendAuthOtp(payload: { phone?: string; email?: string; pur
 }
 
 export async function verifyAuthOtp(payload: { phone?: string; email?: string; otp: string }): Promise<AuthResponse> {
+  const isBrowser = typeof window !== "undefined";
+  const isLocalhost = isBrowser && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  // In production (live Hostinger), prioritize Hostinger PHP API
+  if (!isLocalhost) {
+    try {
+      const phpRes = await fetch("/api.php?action=verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (phpRes.ok) {
+        const text = await phpRes.text();
+        try {
+          const phpData = JSON.parse(text);
+          if (phpData && phpData.user) return phpData;
+        } catch (jsonErr) {
+          console.error("api.php verify response was not JSON:", text);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to reach /api.php?action=verify-otp:", e);
+    }
+  }
+
   // 1. Try Node.js Express API
   const res = await fetchJson<AuthResponse>("/auth/verify-otp", {
     method: "POST",

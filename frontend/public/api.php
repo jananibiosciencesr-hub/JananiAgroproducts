@@ -80,43 +80,14 @@ function getJsonBody() {
 }
 
 /**
- * Send real 6-digit OTP email through Gmail SMTP via direct SSL socket
+ * Send real 6-digit OTP email through multi-tier delivery:
+ * Tier 1: Direct Gmail SMTP via SSL on Port 465 with SSL context
+ * Tier 2: Direct Gmail SMTP via TLS on Port 587 with STARTTLS
+ * Tier 3: Native Hostinger mail() function fallback
  */
 function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
-    $host = 'ssl://smtp.gmail.com';
-    $port = 465;
-    $socket = @fsockopen($host, $port, $errno, $errstr, 12);
-    if (!$socket) {
-        error_log("SMTP connection failed: $errstr ($errno)");
-        return false;
-    }
-
-    fgets($socket, 512);
-    fputs($socket, "EHLO jananiagroproducts.com\r\n");
-    while ($line = fgets($socket, 512)) {
-        if (substr($line, 3, 1) === ' ') break;
-    }
-
-    fputs($socket, "AUTH LOGIN\r\n");
-    fgets($socket, 512);
-    fputs($socket, base64_encode($smtpUser) . "\r\n");
-    fgets($socket, 512);
-    fputs($socket, base64_encode($smtpPass) . "\r\n");
-    $authRes = fgets($socket, 512);
-    if (substr($authRes, 0, 3) !== '235') {
-        error_log("SMTP Auth failed: " . $authRes);
-        fclose($socket);
-        return false;
-    }
-
-    fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
-    fgets($socket, 512);
-    fputs($socket, "RCPT TO: <{$toEmail}>\r\n");
-    fgets($socket, 512);
-    fputs($socket, "DATA\r\n");
-    fgets($socket, 512);
-
     $subject = "=?UTF-8?B?" . base64_encode("🔐 {$otpCode} is your Janani Agro Login Verification Code") . "?=";
+    $rawSubject = "🔐 {$otpCode} is your Janani Agro Login Verification Code";
     $body = "
     <!DOCTYPE html>
     <html>
@@ -130,7 +101,7 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
         <div style='padding: 25px;'>
           <h3 style='color: #2d3748; margin-top: 0;'>Secure Login Verification</h3>
           <p style='color: #4a5568; font-size: 14px; line-height: 1.5;'>
-            You have requested an authentication code for your <strong>Janani Agro Products</strong> account.
+            You have requested an authentication code for your <strong>Janani Agro Products</strong> administrator account.
           </p>
           <div style='background: #f0fdf4; border: 2px dashed #16a34a; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;'>
             <div style='font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #15803d; margin-bottom: 6px;'>Your Verification Code</div>
@@ -138,28 +109,139 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
             <div style='font-size: 12px; color: #64748b; margin-top: 6px;'>Valid for 5 minutes only</div>
           </div>
           <p style='font-size: 12px; color: #854d0e; background: #fef9c3; padding: 10px; border-radius: 6px; margin: 0;'>
-            <strong>Notice:</strong> If you did not request this OTP, please ignore this email. Never share your OTP with anyone.
+            <strong>Security Alert:</strong> If you did not request this OTP, please ignore this email. Never share your OTP with anyone.
           </p>
         </div>
         <div style='background: #f8fafc; padding: 15px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;'>
-          &copy; " . date('Y') . " Janani Agro Products &bull; Lodhika GIDC, Gujarat
+          &copy; " . date('Y') . " Janani Agro Products &bull; Lodhika GIDC, Gujarat &bull; Super Admin Console
         </div>
       </div>
     </body>
     </html>";
 
-    $headers  = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-    $headers .= "To: <{$toEmail}>\r\n";
-    $headers .= "Subject: {$subject}\r\n";
+    $cleanSmtpPass = str_replace(' ', '', $smtpPass);
 
-    fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
-    $dataRes = fgets($socket, 512);
-    fputs($socket, "QUIT\r\n");
-    fclose($socket);
+    // --- TIER 1: SSL Direct (Port 465) ---
+    $sslContext = stream_context_create([
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true
+        ]
+    ]);
 
-    return substr($dataRes, 0, 3) === '250';
+    $socket = @stream_socket_client('ssl://smtp.gmail.com:465', $errno, $errstr, 8, STREAM_CLIENT_CONNECT, $sslContext);
+    if ($socket) {
+        stream_set_timeout($socket, 8);
+        fgets($socket, 512);
+        fputs($socket, "EHLO jananiagroproducts.com\r\n");
+        while ($line = fgets($socket, 512)) {
+            if (substr($line, 3, 1) === ' ') break;
+        }
+
+        fputs($socket, "AUTH LOGIN\r\n");
+        fgets($socket, 512);
+        fputs($socket, base64_encode($smtpUser) . "\r\n");
+        fgets($socket, 512);
+        fputs($socket, base64_encode($cleanSmtpPass) . "\r\n");
+        $authRes = fgets($socket, 512);
+
+        if (substr($authRes, 0, 3) === '235') {
+            fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
+            fgets($socket, 512);
+            fputs($socket, "RCPT TO: <{$toEmail}>\r\n");
+            fgets($socket, 512);
+            fputs($socket, "DATA\r\n");
+            fgets($socket, 512);
+
+            $headers  = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+            $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+            $headers .= "To: <{$toEmail}>\r\n";
+            $headers .= "Subject: {$subject}\r\n";
+
+            fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
+            $dataRes = fgets($socket, 512);
+            fputs($socket, "QUIT\r\n");
+            fclose($socket);
+
+            if (substr($dataRes, 0, 3) === '250') {
+                return ['success' => true, 'method' => 'gmail_smtp_ssl_465'];
+            }
+        } else {
+            fclose($socket);
+        }
+    }
+
+    // --- TIER 2: TLS with STARTTLS (Port 587) ---
+    $socket587 = @stream_socket_client('tcp://smtp.gmail.com:587', $errno, $errstr, 8, STREAM_CLIENT_CONNECT);
+    if ($socket587) {
+        stream_set_timeout($socket587, 8);
+        fgets($socket587, 512);
+        fputs($socket587, "EHLO jananiagroproducts.com\r\n");
+        while ($line = fgets($socket587, 512)) {
+            if (substr($line, 3, 1) === ' ') break;
+        }
+
+        fputs($socket587, "STARTTLS\r\n");
+        $startTlsRes = fgets($socket587, 512);
+        if (substr($startTlsRes, 0, 3) === '220') {
+            stream_socket_enable_crypto($socket587, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            fputs($socket587, "EHLO jananiagroproducts.com\r\n");
+            while ($line = fgets($socket587, 512)) {
+                if (substr($line, 3, 1) === ' ') break;
+            }
+
+            fputs($socket587, "AUTH LOGIN\r\n");
+            fgets($socket587, 512);
+            fputs($socket587, base64_encode($smtpUser) . "\r\n");
+            fgets($socket587, 512);
+            fputs($socket587, base64_encode($cleanSmtpPass) . "\r\n");
+            $authRes = fgets($socket587, 512);
+
+            if (substr($authRes, 0, 3) === '235') {
+                fputs($socket587, "MAIL FROM: <{$smtpUser}>\r\n");
+                fgets($socket587, 512);
+                fputs($socket587, "RCPT TO: <{$toEmail}>\r\n");
+                fgets($socket587, 512);
+                fputs($socket587, "DATA\r\n");
+                fgets($socket587, 512);
+
+                $headers  = "MIME-Version: 1.0\r\n";
+                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+                $headers .= "To: <{$toEmail}>\r\n";
+                $headers .= "Subject: {$subject}\r\n";
+
+                fputs($socket587, $headers . "\r\n" . $body . "\r\n.\r\n");
+                $dataRes = fgets($socket587, 512);
+                fputs($socket587, "QUIT\r\n");
+                fclose($socket587);
+
+                if (substr($dataRes, 0, 3) === '250') {
+                    return ['success' => true, 'method' => 'gmail_smtp_tls_587'];
+                }
+            } else {
+                fclose($socket587);
+            }
+        } else {
+            fclose($socket587);
+        }
+    }
+
+    // --- TIER 3: Native Hostinger mail() Function Fallback ---
+    $mailHeaders  = "MIME-Version: 1.0\r\n";
+    $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $mailHeaders .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+    $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
+    $mailHeaders .= "X-Mailer: PHP/" . phpversion();
+
+    $mailSent = @mail($toEmail, $rawSubject, $body, $mailHeaders);
+    if ($mailSent) {
+        return ['success' => true, 'method' => 'hostinger_native_mail'];
+    }
+
+    return ['success' => false, 'error' => "All delivery channels failed. Check SMTP credentials or host outbound port restrictions."];
 }
 
 try {

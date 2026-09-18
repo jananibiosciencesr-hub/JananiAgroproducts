@@ -12,6 +12,10 @@ Options -Indexes
   RewriteEngine On
   RewriteBase /
 
+  # Allow direct access to PHP API endpoints
+  RewriteRule ^api\.php$ - [L]
+  RewriteRule ^db_init\.php$ - [L]
+
   # 1. Allow existing files and directories to be served directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
