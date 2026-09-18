@@ -25,17 +25,30 @@ interface AdminNavbarProps {
   onOpenMobileSidebar: () => void;
   onOpenSearchModal: () => void;
   onNavigateTab: (tab: AdminTab) => void;
+  onLogout?: () => void;
+  adminUser?: any;
 }
 
 export function AdminNavbar({
   onOpenMobileSidebar,
   onOpenSearchModal,
   onNavigateTab,
+  onLogout,
+  adminUser
 }: AdminNavbarProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // Dynamic user details
+  const currentAdmin = adminUser || (() => {
+    try {
+      const stored = localStorage.getItem("janani_auth_user");
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return { name: "Janani Admin", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
+  })();
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
@@ -254,19 +267,19 @@ export function AdminNavbar({
             className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/80 p-1.5 pr-3 hover:bg-accent transition-all shadow-sm"
           >
             <div className="size-8 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white font-bold text-xs flex items-center justify-center shadow">
-              DS
+              {(currentAdmin.name || "Admin").substring(0, 2).toUpperCase()}
             </div>
             <div className="hidden sm:flex flex-col text-left">
-              <span className="text-xs font-bold text-foreground leading-tight">Doddi Sai Rama</span>
-              <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">Super Admin</span>
+              <span className="text-xs font-bold text-foreground leading-tight">{currentAdmin.name || "Janani Admin"}</span>
+              <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">{currentAdmin.role || "Super Admin"}</span>
             </div>
           </button>
 
           {profileOpen && (
             <div className="absolute right-0 mt-3 w-64 rounded-3xl border border-border bg-card p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95">
               <div className="p-3 border-b border-border">
-                <p className="text-xs font-bold text-foreground">Doddi Sai Rama</p>
-                <p className="text-[11px] text-muted-foreground">admin@jananiagro.com</p>
+                <p className="text-xs font-bold text-foreground">{currentAdmin.name || "Janani Admin"}</p>
+                <p className="text-[11px] text-muted-foreground">{currentAdmin.email || "jananibiosciences.r@gmail.com"}</p>
                 <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
                   <Sparkles className="size-3" /> Full Root Access
                 </div>
@@ -302,12 +315,22 @@ export function AdminNavbar({
               </div>
 
               <div className="pt-2 border-t border-border">
-                <Link
-                  to="/login"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    if (onLogout) {
+                      onLogout();
+                    } else {
+                      localStorage.removeItem("janani_admin_session");
+                      localStorage.removeItem("janani_auth_token");
+                      window.location.reload();
+                    }
+                  }}
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-500/10 transition-colors"
                 >
                   Logout Session
-                </Link>
+                </button>
               </div>
             </div>
           )}

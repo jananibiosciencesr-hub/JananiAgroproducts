@@ -52,6 +52,8 @@ interface AdminSidebarProps {
   setCollapsed: (collapsed: boolean) => void;
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
+  onLogout?: () => void;
+  adminUser?: any;
   badgeCounts?: {
     orders?: number;
     inventory?: number;
@@ -94,8 +96,17 @@ export function AdminSidebar({
   setCollapsed,
   mobileOpen,
   setMobileOpen,
+  onLogout,
+  adminUser,
   badgeCounts = { orders: 9, inventory: 4, returns: 3, reviews: 1 },
 }: AdminSidebarProps) {
+  const currentAdmin = adminUser || (() => {
+    try {
+      const stored = localStorage.getItem("janani_auth_user");
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return { name: "Janani Admin", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
+  })();
   return (
     <>
       {/* Mobile Backdrop */}
@@ -212,25 +223,34 @@ export function AdminSidebar({
         <div className="p-3 border-t border-border/80 bg-background/50">
           <div className={`flex items-center gap-3 rounded-2xl p-2 bg-card border border-border/60 ${collapsed ? "justify-center" : ""}`}>
             <div className="relative size-10 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shadow-md shrink-0">
-              DS
+              {(currentAdmin.name || "Admin").substring(0, 2).toUpperCase()}
               <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-emerald-400 ring-2 ring-card" />
             </div>
 
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-foreground truncate">Doddi Sai Rama</p>
-                <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 truncate">Super Admin</p>
+                <p className="text-xs font-bold text-foreground truncate">{currentAdmin.name || "Janani Admin"}</p>
+                <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 truncate">{currentAdmin.role || "Super Admin"}</p>
               </div>
             )}
 
             {!collapsed && (
-              <Link
-                to="/login"
+              <button
+                type="button"
+                onClick={() => {
+                  if (onLogout) {
+                    onLogout();
+                  } else {
+                    localStorage.removeItem("janani_admin_session");
+                    localStorage.removeItem("janani_auth_token");
+                    window.location.reload();
+                  }
+                }}
                 className="size-8 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
-                title="Logout"
+                title="Logout Admin Session"
               >
                 <LogOut className="size-4" />
-              </Link>
+              </button>
             )}
           </div>
         </div>

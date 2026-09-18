@@ -743,15 +743,25 @@ export function AuthenticationPage() {
                         <p className="text-[11px] text-muted-foreground font-mono truncate">jananibiosciences.r@gmail.com</p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRequestEmailOtp("jananibiosciences.r@gmail.com")}
-                      disabled={loading}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
-                    >
-                      <Sparkles className="size-3.5 text-amber-300" />
-                      <span>{loading ? "Sending..." : "Send Real OTP"}</span>
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href="/admin"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-600/40 bg-background/90 hover:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 px-3 py-2 text-xs font-semibold transition shadow-xs"
+                        title="Go directly to restricted /admin portal"
+                      >
+                        <ShieldCheck className="size-3.5 text-emerald-600" />
+                        <span>/admin Portal</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleRequestEmailOtp("jananibiosciences.r@gmail.com")}
+                        disabled={loading}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
+                      >
+                        <Sparkles className="size-3.5 text-amber-300" />
+                        <span>{loading ? "Sending..." : "Send Real OTP"}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Switch between Phone OTP, Email OTP, and Password */}
