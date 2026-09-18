@@ -58,7 +58,7 @@ export function AuthenticationPage() {
 
   // Auth Modes & Form State
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("phone");
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone" | "email_otp">("phone");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -190,7 +190,12 @@ export function AuthenticationPage() {
       const res = await loginWithEmail({ email, password, rememberMe });
       if (res?.success && res.user) {
         loginUser(res.user, res.token);
-        navigate({ to: "/dashboard" });
+        if (res.user.role === "Super Admin" || res.user.role === "admin") {
+          toast.success("Welcome Super Admin! Redirecting to Command Center...");
+          navigate({ to: "/admin" });
+        } else {
+          navigate({ to: "/dashboard" });
+        }
       } else {
         toast.error(res?.message || "Login failed. Please check your credentials.");
       }
@@ -201,7 +206,7 @@ export function AuthenticationPage() {
     }
   };
 
-  // 2. Handle Send OTP (for Phone login or Signup verification)
+  // 2. Handle Send OTP (Phone)
   const handleRequestOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const target = phone.replace(/\D/g, "");
@@ -220,7 +225,38 @@ export function AuthenticationPage() {
         setResendTimer(res.resendCooldownSeconds || 60);
         setCanResend(false);
         setOtpValues(["", "", "", "", "", ""]);
-        toast.success(`Verification code sent to +91 ${target}. (Use 123456 for demo)`);
+        toast.success(res.message || `Verification code sent to +91 ${target}.`);
+        setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
+      } else {
+        toast.error(res?.message || "Failed to dispatch OTP.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2b. Handle Send OTP to Email (Real Gmail OTP)
+  const handleRequestEmailOtp = async (targetEmail?: string, e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const emailToSend = (targetEmail || email).trim().toLowerCase();
+    if (!emailToSend || !emailToSend.includes("@")) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await sendAuthOtp({ email: emailToSend, purpose: "login" });
+      if (res?.success) {
+        setOtpTarget(emailToSend);
+        setOtpPurpose("login");
+        setIsOtpStep(true);
+        setResendTimer(res.resendCooldownSeconds || 60);
+        setCanResend(false);
+        setOtpValues(["", "", "", "", "", ""]);
+        toast.success(res.message || `Real 6-digit OTP sent to ${emailToSend}. Please check your Gmail!`);
         setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
       } else {
         toast.error(res?.message || "Failed to dispatch OTP.");
@@ -243,12 +279,21 @@ export function AuthenticationPage() {
 
     setLoading(true);
     try {
-      const res = await verifyAuthOtp({ phone: otpTarget, otp: fullOtp });
+      const isEmail = otpTarget.includes("@");
+      const res = await verifyAuthOtp({
+        phone: isEmail ? undefined : otpTarget,
+        email: isEmail ? otpTarget : undefined,
+        otp: fullOtp
+      });
       if (res?.success && res.user) {
         loginUser(res.user, res.token);
-        if (res.isNewUser) {
+        if (res.user.role === "Super Admin" || res.user.role === "admin") {
+          toast.success("Welcome Super Admin! Redirecting to Command Center...");
+          navigate({ to: "/admin" });
+        } else if (res.isNewUser) {
           setIsOnboardingOpen(true);
         } else {
+          toast.success(`Welcome back, ${res.user.name}!`);
           navigate({ to: "/dashboard" });
         }
       } else {
@@ -595,14 +640,26 @@ export function AuthenticationPage() {
               {isOtpStep ? (
                 <form onSubmit={handleVerifyOtp} className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
                   <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-950 flex items-start gap-3">
-                    <Smartphone className="size-5 text-emerald-600 shrink-0 mt-0.5" />
+                    {otpTarget.includes("@") ? (
+                      <Mail className="size-5 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <Smartphone className="size-5 text-emerald-600 shrink-0 mt-0.5" />
+                    )}
                     <div>
                       <p className="font-semibold text-emerald-800">
-                        Enter the 6-digit OTP sent to +91 {otpTarget}
+                        {otpTarget.includes("@")
+                          ? `Enter the 6-digit OTP sent to ${otpTarget}`
+                          : `Enter the 6-digit OTP sent to +91 ${otpTarget}`}
                       </p>
-                      <p className="text-[11px] text-emerald-700/80 mt-0.5">
-                        For rapid review, use demo verification code: <strong className="font-mono text-emerald-900 bg-emerald-200/60 px-1.5 py-0.5 rounded">123456</strong>
-                      </p>
+                      {otpTarget.toLowerCase() === "jananibiosciences.r@gmail.com" ? (
+                        <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-emerald-700 text-white px-2.5 py-0.5 text-[10px] font-bold shadow-sm">
+                          🛡️ Super Admin Root Access
+                        </span>
+                      ) : (
+                        <p className="text-[11px] text-emerald-700/80 mt-0.5">
+                          Check your inbox or SMS. Code is valid for 5 minutes.
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -635,7 +692,7 @@ export function AuthenticationPage() {
                       onClick={() => { setIsOtpStep(false); setOtpValues(["", "", "", "", "", ""]); }}
                       className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground font-medium"
                     >
-                      <ArrowLeft className="size-3.5" /> Change Phone Number
+                      <ArrowLeft className="size-3.5" /> Change {otpTarget.includes("@") ? "Email" : "Phone"}
                     </button>
 
                     <div className="flex items-center gap-2">
@@ -647,22 +704,10 @@ export function AuthenticationPage() {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => handleRequestOtp()}
+                            onClick={() => otpTarget.includes("@") ? handleRequestEmailOtp(otpTarget) : handleRequestOtp()}
                             className="font-semibold text-brand-leaf hover:underline text-xs"
                           >
-                            Resend via SMS
-                          </button>
-                          <span className="text-muted-foreground">•</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              toast.success(`OTP sent to WhatsApp: +91 ${otpTarget}`);
-                              setResendTimer(60);
-                              setCanResend(false);
-                            }}
-                            className="font-semibold text-emerald-600 hover:underline text-xs"
-                          >
-                            WhatsApp
+                            Resend Code
                           </button>
                         </div>
                       )}
@@ -681,32 +726,68 @@ export function AuthenticationPage() {
                 </form>
               ) : authMode === "login" ? (
                 /* ========================================================= */
-                /* VIEW 2: SIGN IN (Phone OTP or Email & Password)           */
+                /* VIEW 2: SIGN IN (Phone OTP, Email OTP, or Password)       */
                 /* ========================================================= */
                 <div>
-                  {/* Switch between Phone OTP and Email */}
-                  <div className="mb-5 grid grid-cols-2 rounded-xl bg-secondary/80 p-1 border border-border/50">
+                  {/* ADMIN GMAIL QUICK ACCESS CARD */}
+                  <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-transparent p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="size-9 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shadow shrink-0">
+                        🛡️
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-foreground">Admin Fast Login via Gmail</span>
+                          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-bold text-emerald-800 dark:text-emerald-300">Root Access</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground font-mono truncate">jananibiosciences.r@gmail.com</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRequestEmailOtp("jananibiosciences.r@gmail.com")}
+                      disabled={loading}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      <Sparkles className="size-3.5 text-amber-300" />
+                      <span>{loading ? "Sending..." : "Send Real OTP"}</span>
+                    </button>
+                  </div>
+
+                  {/* Switch between Phone OTP, Email OTP, and Password */}
+                  <div className="mb-5 grid grid-cols-3 rounded-xl bg-secondary/80 p-1 border border-border/50">
                     <button
                       type="button"
                       onClick={() => setLoginMethod("phone")}
-                      className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition ${
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition ${
                         loginMethod === "phone"
                           ? "bg-card text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      <Phone className="size-3.5" /> Phone OTP
+                      <Phone className="size-3.5" /> Mobile OTP
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginMethod("email_otp")}
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition ${
+                        loginMethod === "email_otp"
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Mail className="size-3.5" /> Email OTP
                     </button>
                     <button
                       type="button"
                       onClick={() => setLoginMethod("email")}
-                      className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition ${
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition ${
                         loginMethod === "email"
                           ? "bg-card text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      <Mail className="size-3.5" /> Email & Password
+                      <Lock className="size-3.5" /> Password
                     </button>
                   </div>
 
@@ -755,6 +836,40 @@ export function AuthenticationPage() {
                         {loading ? "Sending OTP..." : "Get OTP on Mobile"} <ArrowRight className="size-4 ml-1.5" />
                       </Button>
                     </form>
+                  ) : loginMethod === "email_otp" ? (
+                    /* Email / Gmail OTP Login Form */
+                    <form onSubmit={(e) => handleRequestEmailOtp(undefined, e)} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                          <span>Email Address *</span>
+                          <span className="text-[10px] text-emerald-600 font-semibold">Real Gmail OTP Delivery</span>
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
+                          <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="e.g. jananibiosciences.r@gmail.com"
+                            className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-4 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          A real 6-digit verification code will be sent to your Gmail inbox.
+                        </p>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        size="lg"
+                        variant="gold"
+                        className="w-full rounded-2xl font-bold text-sm shadow-md mt-2"
+                        disabled={loading}
+                      >
+                        {loading ? "Sending Real OTP..." : "Get OTP on Email"} <ArrowRight className="size-4 ml-1.5" />
+                      </Button>
+                    </form>
                   ) : (
                     /* Email & Password Login Form */
                     <form onSubmit={handleEmailLogin} className="space-y-4">
@@ -767,7 +882,7 @@ export function AuthenticationPage() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="e.g. neha.patel@example.com"
+                            placeholder="e.g. jananibiosciences.r@gmail.com"
                             className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-4 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                           />
                         </div>

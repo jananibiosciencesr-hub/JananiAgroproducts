@@ -19,10 +19,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-$db_host = 'localhost';
-$db_name = 'u409810820_Jananiagro';
-$db_user = 'u409810820_Jananiagropro';
-$db_pass = 'Jananiagro@123';
+// ---------------------------------------------------------
+// ENVIRONMENT CONFIGURATION (.env reader with safe fallbacks)
+// ---------------------------------------------------------
+$envFile = __DIR__ . '/.env';
+if (!file_exists($envFile)) {
+    $envFile = dirname(__DIR__) . '/.env';
+}
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim($value, " \t\n\r\0\x0B\"'");
+            putenv("{$name}={$value}");
+            $_ENV[$name] = $value;
+        }
+    }
+}
+
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_name = getenv('DB_NAME') ?: 'u409810820_Jananiagro';
+$db_user = getenv('DB_USER') ?: 'u409810820_Jananiagropro';
+$db_pass = getenv('DB_PASSWORD') ?: 'Jananiagro@123';
 
 $response = [
     'success' => false,
@@ -439,9 +460,18 @@ if ($setCount == 0) {
     $response['seeds_inserted'][] = 'settings';
 }
 
-// 5. Users
+// 5. Users & Root Super Admin
+$rootAdminEmail = getenv('ADMIN_EMAIL') ?: 'jananibiosciences.r@gmail.com';
+try {
+    $adminStmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `referral_code`) 
+        VALUES ('ADMIN-ROOT', 'Janani Admin (Root)', ?, '+91 98480 22338', 'Super Admin', 10000.00, 5000, 'Platinum Root Access', 'Active', 'JANANIROOT') 
+        ON DUPLICATE KEY UPDATE `role` = 'Super Admin', `status` = 'Active', `tier` = 'Platinum Root Access'");
+    $adminStmt->execute([$rootAdminEmail]);
+    $response['seeds_inserted'][] = 'root_admin (' . $rootAdminEmail . ')';
+} catch (PDOException $e) {}
+
 $userCount = $pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
-if ($userCount == 0) {
+if ($userCount <= 1) {
     $users = [
         ['STAFF-001', 'Rajesh Varma', 'admin@jananiagro.com', '+91 98480 22338', 'Super Admin', 250.00, 500, 'Platinum', 'Active', 'JANANI8492'],
         ['CUST-001', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223', 'Customer', 420.00, 850, 'Gold', 'Active', 'JANANI3821'],
