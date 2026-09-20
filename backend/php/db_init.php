@@ -40,16 +40,17 @@ if (file_exists($envFile)) {
     }
 }
 
-$raw_host = getenv('DB_HOST') ?: 'localhost';
-$raw_db   = getenv('DB_NAME') ?: 'u409810820_Jananiagro';
-$raw_user = getenv('DB_USER') ?: 'u409810820_Jananiagropro';
-$raw_pass = getenv('DB_PASSWORD') ?: 'Jananiagro@123';
+$raw_host = strtolower(trim(getenv('DB_HOST') ?: 'localhost'));
+$raw_db   = trim(getenv('DB_NAME') ?: 'u409810820_Jananiagro');
+$raw_user = trim(getenv('DB_USER') ?: 'u409810820_Jananiagropro');
+$raw_pass = trim(getenv('DB_PASSWORD') ?: 'Jananiagro@123');
 
-// Support both lowercase, uppercase, and exact casing from Hostinger hPanel
-$hosts  = array_values(array_unique([$raw_host, strtolower($raw_host), 'localhost', '127.0.0.1']));
-$dbs    = array_values(array_unique([$raw_db, 'u409810820_Jananiagro', strtolower($raw_db), strtoupper($raw_db)]));
-$users  = array_values(array_unique([$raw_user, 'u409810820_Jananiagropro', strtolower($raw_user), strtoupper($raw_user)]));
-$passes = array_values(array_unique([$raw_pass, 'Jananiagro@123', 'JANANIAGRO@123', 'jananiagro@123']));
+// On Hostinger Linux/CageFS, MySQL MUST connect via unix domain socket (lowercase 'localhost').
+// Never use 127.0.0.1 or uppercase HOST which attempts TCP connect and throws 'Operation not permitted'.
+$hosts  = ['localhost'];
+$dbs    = array_values(array_unique([$raw_db, 'u409810820_Jananiagro', 'u409810820_jananiagro', strtolower($raw_db)]));
+$users  = array_values(array_unique([$raw_user, 'u409810820_Jananiagropro', 'u409810820_jananiagropro', strtolower($raw_user)]));
+$passes = array_values(array_unique([$raw_pass, 'Jananiagro@123', 'JANANIAGRO@123']));
 
 $pdo = null;
 $connectedDb = $raw_db;
