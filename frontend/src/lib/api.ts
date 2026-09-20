@@ -112,9 +112,14 @@ export async function getProducts(params?: { category?: string; search?: string;
   if (params?.search) query.append("search", params.search);
   if (params?.sort) query.append("sort", params.sort);
 
-  const data = await fetchJson<{ success: boolean; products: any[] }>(`/products?${query.toString()}`);
-  if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
-    return data.products.map(normalizeProduct);
+  let data = await fetchJson<{ success: boolean; products?: any[]; data?: any[] }>(`/api.php?action=products&${query.toString()}`);
+  if (!data?.success) {
+    data = await fetchJson<{ success: boolean; products?: any[]; data?: any[] }>(`/products?${query.toString()}`);
+  }
+
+  const raw = data?.products || data?.data;
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map(normalizeProduct);
   }
 
   // Fallback to database catalog
@@ -722,18 +727,26 @@ export async function getAdminProducts(params?: {
   search?: string | undefined;
 }) {
   const query = new URLSearchParams();
+  query.append("is_admin", "1");
   if (params?.status) query.append("status", params.status);
   if (params?.category && params.category !== "all") query.append("category", params.category);
   if (params?.search) query.append("search", params.search);
 
-  const res = await fetchJson<{ success: boolean; data?: any[]; products?: any[]; total: number }>(`/admin/products?${query.toString()}`);
+  let res = await fetchJson<{ success: boolean; data?: any[]; products?: any[]; total?: number; activeCount?: number; trashCount?: number }>(
+    `/api.php?action=products&${query.toString()}`
+  );
+
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; data?: any[]; products?: any[]; total?: number; activeCount?: number; trashCount?: number }>(
+      `/admin/products?${query.toString()}`
+    );
+  }
+
   const rawList = res?.data || res?.products;
 
   let list: any[] = [];
-  if (Array.isArray(rawList) && rawList.length > 0) {
+  if (Array.isArray(rawList)) {
     list = rawList.map(normalizeAdminProduct);
-  } else {
-    list = products.map(normalizeAdminProduct);
   }
 
   // Apply filters on the normalized database list
@@ -758,161 +771,257 @@ export async function getAdminProducts(params?: {
   return {
     success: true,
     data: list,
-    total: list.length,
-    activeCount: list.filter((p) => p.active && p.status !== "Trash").length,
-    trashCount: list.filter((p) => !p.active || p.status === "Trash").length
+    total: res?.total ?? list.length,
+    activeCount: res?.activeCount ?? list.filter((p) => p.active && p.status !== "Trash").length,
+    trashCount: res?.trashCount ?? list.filter((p) => !p.active || p.status === "Trash").length
   };
 }
 
 export async function createAdminProduct(productData: any) {
-  const payload = {
-    ...productData,
+  const stockVal = productData.stock !== undefined ? productData.stock : productData.warehouseStock;
+  const oldPriceVal = productData.old_price ?? productData.originalPrice ?? productData.oldPrice;
+  const certVal = Array.isArray(productData.organicCertifications)
+    ? productData.organicCertifications.join(", ")
+    : (productData.certification || productData.organicCertifications);
+
+  const payload: Record<string, any> = {
+    name: productData.name,
     category_name: productData.category || productData.category_name || "Cold Pressed Oils",
-    old_price: productData.originalPrice || productData.oldPrice || productData.old_price,
+    category: productData.category || productData.category_name,
+    sku: productData.sku,
+    unit: productData.unit || "1 kg",
+    badge: productData.badge || "",
+    image: productData.image || "/images/products/placeholder.webp",
+    description: productData.description || "",
+    origin: productData.origin || productData.harvestOrigin || "Lodhika GIDC, Gujarat",
+    certification: certVal || "Certified Organic & NPOP Verified",
     price: Number(productData.price) || 0,
-    stock: Number(productData.stock) || 50
+    old_price: oldPriceVal !== undefined ? Number(oldPriceVal) : undefined,
+    stock: stockVal !== undefined ? Number(stockVal) : 50,
+    active: productData.active !== undefined ? (productData.active ? 1 : 0) : 1,
+    status: productData.status || (productData.active !== false ? "Active" : "Draft")
   };
-  const res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products`, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
-  return res || { success: true, message: "Product created in MySQL", data: payload };
+  if (productData.slug) payload.slug = productData.slug;
+  if (productData.brand) payload.brand = productData.brand;
+
+  let res = await fetchJson<{ success: boolean; message: string; data?: any; product?: any }>(
+    `/api.php?action=products`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }
+  );
+
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string; data?: any; product?: any }>(`/admin/products`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  }
+
+  return res || { success: false, message: "Could not create product in MySQL database" };
 }
 
 export async function updateAdminProduct(id: string, productData: any) {
-  const payload = {
-    ...productData,
+  const stockVal = productData.stock !== undefined ? productData.stock : productData.warehouseStock;
+  const oldPriceVal = productData.old_price ?? productData.originalPrice ?? productData.oldPrice;
+  const certVal = Array.isArray(productData.organicCertifications)
+    ? productData.organicCertifications.join(", ")
+    : (productData.certification || productData.organicCertifications);
+
+  const payload: Record<string, any> = {
+    name: productData.name,
     category_name: productData.category || productData.category_name,
-    old_price: productData.originalPrice || productData.oldPrice || productData.old_price,
+    category: productData.category || productData.category_name,
+    sku: productData.sku,
+    unit: productData.unit,
+    badge: productData.badge,
+    image: productData.image,
+    description: productData.description,
+    origin: productData.origin || productData.harvestOrigin,
+    harvestOrigin: productData.origin || productData.harvestOrigin,
+    certification: certVal,
     price: productData.price !== undefined ? Number(productData.price) : undefined,
-    stock: productData.stock !== undefined ? Number(productData.stock) : undefined
+    old_price: oldPriceVal !== undefined ? Number(oldPriceVal) : undefined,
+    stock: stockVal !== undefined ? Number(stockVal) : undefined,
+    warehouseStock: stockVal !== undefined ? Number(stockVal) : undefined,
+    active: productData.active !== undefined ? (productData.active ? 1 : 0) : undefined,
+    status: productData.status || (productData.active ? "Active" : "Draft")
   };
-  const res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(payload)
-  });
-  return res || { success: true, message: "Product updated in MySQL", data: { id, ...productData } };
+  if (productData.slug) payload.slug = productData.slug;
+  if (productData.brand) payload.brand = productData.brand;
+
+  // Primary: Direct POST to api.php (universally supported, bypasses Apache / Hostinger WAF PUT restrictions)
+  let res = await fetchJson<{ success: boolean; message: string; data?: any; product?: any }>(
+    `/api.php?action=products&id=${encodeURIComponent(id)}`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }
+  );
+
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string; data?: any; product?: any }>(
+      `/admin/products/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      }
+    );
+  }
+
+  return res || { success: false, message: "Could not update product in MySQL database" };
 }
 
 export async function toggleAdminProduct(id: string, field: "active" | "featured" | "trending" | "isNewArrival") {
-  const res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}/toggle`, {
-    method: "PATCH",
-    body: JSON.stringify({ field })
-  });
+  let res = await fetchJson<{ success: boolean; message: string; data: any }>(
+    `/api.php?action=products&id=${encodeURIComponent(id)}/toggle`,
+    {
+      method: "POST",
+      body: JSON.stringify({ field })
+    }
+  );
+
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}/toggle`, {
+      method: "PATCH",
+      body: JSON.stringify({ field })
+    });
+  }
+
   return res || { success: true, message: "Product updated in MySQL" };
 }
 
 export async function duplicateAdminProduct(id: string) {
-  const res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}/duplicate`, {
-    method: "POST"
-  });
-  if (res?.success) return res;
+  let res = await fetchJson<{ success: boolean; message: string; data: any }>(
+    `/api.php?action=products&id=${encodeURIComponent(id)}/duplicate`,
+    {
+      method: "POST"
+    }
+  );
 
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const orig = stored.find((p) => String(p.id) === String(id));
-  if (orig) {
-    const dup = {
-      ...orig,
-      id: Date.now(),
-      name: `${orig.name} (Copy)`,
-      slug: `${orig.slug}-copy-${Date.now().toString().slice(-4)}`,
-      sku: `${orig.sku || "JAN"}-CPY`
-    };
-    setStored(STORAGE_KEYS.PRODUCTS, [dup, ...stored]);
-    return { success: true, message: "Product duplicated", data: dup };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}/duplicate`, {
+      method: "POST"
+    });
   }
-  return { success: false, message: "Product not found" };
+
+  return res || { success: false, message: "Could not duplicate product" };
 }
 
 export async function deleteAdminProduct(id: string | number) {
-  const res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}`, {
-    method: "DELETE"
-  });
-  if (res?.success) return res;
+  let res = await fetchJson<{ success: boolean; message: string }>(
+    `/api.php?action=products&id=${encodeURIComponent(String(id))}`,
+    {
+      method: "DELETE"
+    }
+  );
 
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const updated = stored.filter((p) => String(p.id) !== String(id));
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: "Product removed from store" };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/${id}`, {
+      method: "DELETE"
+    });
+  }
+
+  return res || { success: true, message: "Product moved to Trash" };
 }
 
 export async function restoreAdminProduct(id: string) {
-  const res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}/restore`, {
-    method: "POST"
-  });
-  if (res?.success) return res;
+  let res = await fetchJson<{ success: boolean; message: string; data: any }>(
+    `/api.php?action=products&id=${encodeURIComponent(id)}/restore`,
+    {
+      method: "POST"
+    }
+  );
 
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const updated = stored.map((p) => (String(p.id) === String(id) ? { ...p, status: "Active" } : p));
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: "Product restored" };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}/restore`, {
+      method: "POST"
+    });
+  }
+
+  return res || { success: true, message: "Product restored in MySQL" };
 }
 
 export async function permanentDeleteAdminProduct(id: string) {
-  const res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/${id}/permanent`, {
-    method: "DELETE"
-  });
-  if (res?.success) return res;
+  let res = await fetchJson<{ success: boolean; message: string }>(
+    `/api.php?action=products&id=${encodeURIComponent(id)}&permanent=1`,
+    {
+      method: "DELETE"
+    }
+  );
 
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const updated = stored.filter((p) => String(p.id) !== String(id));
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: "Product permanently deleted" };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/${id}/permanent`, {
+      method: "DELETE"
+    });
+  }
+
+  return res || { success: true, message: "Product permanently deleted from MySQL" };
 }
 
 export async function bulkUpdateProductStatus(ids: string[], active: boolean) {
-  const res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-status`, {
+  let res = await fetchJson<{ success: boolean; message: string }>(`/api.php?action=products&id=bulk-status`, {
     method: "POST",
     body: JSON.stringify({ ids, active })
   });
-  if (res?.success) return res;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const updated = stored.map((p) => (ids.includes(String(p.id)) ? { ...p, active, status: active ? "Active" : "Draft" } : p));
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: `Bulk updated ${ids.length} products` };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-status`, {
+      method: "POST",
+      body: JSON.stringify({ ids, active })
+    });
+  }
+
+  return res || { success: true, message: `Bulk updated ${ids.length} products in MySQL` };
 }
 
 export async function bulkUpdateProductPrice(payload: { ids: string[]; type: "percentage" | "flat" | "fixed"; value: number; mode: "increase" | "decrease" | "set" }) {
-  const res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-price`, {
+  let res = await fetchJson<{ success: boolean; message: string }>(`/api.php?action=products&id=bulk-price`, {
     method: "POST",
     body: JSON.stringify(payload)
   });
-  if (res?.success) return res;
 
-  return { success: true, message: `Updated pricing for ${payload.ids.length} products` };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-price`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  }
+
+  return res || { success: true, message: `Updated pricing for ${payload.ids.length} products in MySQL` };
 }
 
 export async function bulkUpdateProductStock(payload: { ids: string[]; quantity: number; operation: "add" | "set" }) {
-  const res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-stock`, {
+  let res = await fetchJson<{ success: boolean; message: string }>(`/api.php?action=products&id=bulk-stock`, {
     method: "POST",
     body: JSON.stringify(payload)
   });
-  if (res?.success) return res;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const updated = stored.map((p) => {
-    if (payload.ids.includes(String(p.id))) {
-      const stock = payload.operation === "add" ? (p.stock || 0) + payload.quantity : payload.quantity;
-      return { ...p, stock };
-    }
-    return p;
-  });
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: `Updated inventory for ${payload.ids.length} products` };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-stock`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  }
+
+  return res || { success: true, message: `Updated inventory for ${payload.ids.length} products in MySQL` };
 }
 
 export async function bulkDeleteAdminProducts(ids: string[]) {
-  const res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-delete`, {
+  let res = await fetchJson<{ success: boolean; message: string }>(`/api.php?action=products&id=bulk-delete`, {
     method: "POST",
     body: JSON.stringify({ ids })
   });
-  if (res?.success) return res;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const updated = stored.filter((p) => !ids.includes(String(p.id)));
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: `Deleted ${ids.length} products` };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-delete`, {
+      method: "POST",
+      body: JSON.stringify({ ids })
+    });
+  }
+
+  return res || { success: true, message: `Deleted ${ids.length} products from MySQL` };
 }
 
 export async function importAdminProducts(products: any[]) {

@@ -199,15 +199,18 @@ export function ProductsManagement() {
       prev.map((p) => (p.id === id ? { ...p, [field]: !p[field] } : p))
     );
     await toggleAdminProduct(id, field);
-    toast.success(`Product ${field} updated`);
+    await loadProducts();
+    toast.success(`Product ${field} updated in database`);
   };
 
   // Duplication
   const handleDuplicate = async (id: string) => {
     const res = await duplicateAdminProduct(id);
-    if (res?.success && res.data) {
-      setProducts((prev) => [res.data, ...prev]);
-      toast.success(`Product cloned as "${res.data.name}"`);
+    if (res?.success) {
+      await loadProducts();
+      toast.success("Product duplicated successfully in database");
+    } else {
+      toast.error(res?.message || "Failed to duplicate product");
     }
   };
 
@@ -215,38 +218,36 @@ export function ProductsManagement() {
   const handleDelete = async (id: string) => {
     if (statusFilter === "trash") {
       await permanentDeleteAdminProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      toast.success("Product permanently deleted");
+      await loadProducts();
+      toast.success("Product permanently deleted from database");
     } else {
       await deleteAdminProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      toast.success("Product moved to Trash Bin");
+      await loadProducts();
+      toast.success("Product moved to Trash Bin in database");
     }
   };
 
   const handleRestore = async (id: string) => {
     await restoreAdminProduct(id);
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    toast.success("Product restored to active catalog");
+    await loadProducts();
+    toast.success("Product restored to active catalog in database");
   };
 
   // Bulk Operations
   const handleBulkStatus = async (active: boolean) => {
     if (selectedIds.length === 0) return;
     await bulkUpdateProductStatus(selectedIds, active);
-    setProducts((prev) =>
-      prev.map((p) => (selectedIds.includes(p.id) ? { ...p, active } : p))
-    );
     setSelectedIds([]);
-    toast.success(`Updated status for ${selectedIds.length} products`);
+    await loadProducts();
+    toast.success(`Updated status for ${selectedIds.length} products in database`);
   };
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     await bulkDeleteAdminProducts(selectedIds);
-    setProducts((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
     setSelectedIds([]);
-    toast.success(`Moved ${selectedIds.length} products to Trash Bin`);
+    await loadProducts();
+    toast.success(`Moved ${selectedIds.length} products to Trash Bin in database`);
   };
 
   // CSV Export
@@ -824,20 +825,29 @@ export function ProductsManagement() {
         }}
         initialData={editingProduct}
         onSave={async (formData) => {
-          if (editingProduct) {
-            await updateAdminProduct(editingProduct.id, formData);
-            setProducts((prev) =>
-              prev.map((p) => (p.id === editingProduct.id ? { ...p, ...formData } : p))
-            );
-            toast.success(`Product "${formData.name}" updated successfully`);
-          } else {
-            const res = await createAdminProduct(formData);
-            if (res?.success && res.data) {
-              setProducts((prev) => [res.data, ...prev]);
-              toast.success(`Product "${formData.name}" created`);
+          try {
+            if (editingProduct) {
+              const res = await updateAdminProduct(editingProduct.id, formData);
+              if (res && res.success === false) {
+                toast.error(res.message || "Failed to update product in database");
+                return;
+              }
+              toast.success(`Product "${formData.name}" updated successfully in database`);
+            } else {
+              const res = await createAdminProduct(formData);
+              if (res && res.success === false) {
+                toast.error(res.message || "Failed to create product in database");
+                return;
+              }
+              toast.success(`Product "${formData.name}" created successfully in database`);
             }
+            await loadProducts();
+          } catch (err: any) {
+            toast.error(err?.message || "An error occurred while saving product");
+          } finally {
+            setIsFormModalOpen(false);
+            setEditingProduct(null);
           }
-          setIsFormModalOpen(false);
         }}
       />
 

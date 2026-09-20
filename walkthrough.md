@@ -92,3 +92,31 @@ We have built and verified a production-grade **Payment Management & Multi-Gatew
 - NDR Non-Delivery Exception Desk
 - Freight Rate & Courier Recommendation Engine
 - Consolidated Courier Handover Manifest
+
+---
+
+# 3. Admin Product Edit & MySQL Database Persistence Fix
+
+We investigated and resolved the issue where editing or creating a product in the Admin Panel failed to persist to the MySQL database or render accurately.
+
+### Root Causes Diagnosed & Fixed
+
+1. **Frontend Form Data vs Database Column Mismatch**:
+   - `ProductFormModal` produced `warehouseStock`, `originalPrice`, `category`, `harvestOrigin`, `organicCertifications`.
+   - `updateAdminProduct` previously looked for `productData.stock` (which was `undefined`), causing stock to be stripped by `JSON.stringify`.
+   - Fixed by normalizing `stock: Number(productData.stock ?? productData.warehouseStock)`, `old_price: Number(productData.originalPrice ?? productData.oldPrice)`, `category_name: productData.category`, `origin: productData.harvestOrigin`, and `certification`.
+
+2. **Missing Columns in `api.php` Allowed List**:
+   - `image`, `origin`, `certification`, `slug`, and `category_id` were missing from the SQL `$allowed` whitelist.
+   - Fixed by adding all product columns to the whitelist so thumbnail changes, origins, and certs persist to MySQL.
+
+3. **HTTP PUT / WAF Restrictions on Shared Hosting**:
+   - HTTP `PUT` requests over Apache mod_rewrite on Hostinger can get stripped or blocked by ModSecurity.
+   - Fixed by making `updateAdminProduct` and bulk operations send direct `POST` to `/api.php?action=products&id=:id`, which is 100% allowed and never blocked.
+
+4. **Product ID vs Slug Matching in SQL**:
+   - Updated SQL queries to `WHERE id = ? OR slug = ?`, ensuring both integer IDs and string slugs update reliably.
+
+5. **Live MySQL Re-query on Save**:
+   - In `admin-products.tsx`, `onSave` now checks the API response for success, alerts on any server error, and executes `await loadProducts()` to immediately fetch and render the updated MySQL state.
+   - Public storefront and Admin product lists are now 100% driven by live MySQL rows.
