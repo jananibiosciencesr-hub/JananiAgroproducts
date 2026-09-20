@@ -695,20 +695,29 @@ export function CategoriesManagement() {
         initialData={editingCategory}
         allCategories={categories}
         onSave={async (formData) => {
-          if (editingCategory) {
-            await updateAdminCategory(editingCategory.id, formData);
-            setCategories((prev) =>
-              prev.map((c) => (c.id === editingCategory.id ? { ...c, ...formData } : c))
-            );
-            toast.success(`Category "${formData.name}" updated successfully`);
-          } else {
-            const res = await createAdminCategory(formData);
-            if (res?.success && res.data) {
-              setCategories((prev) => [...prev, res.data]);
-              toast.success(`Category "${formData.name}" created`);
+          try {
+            if (editingCategory) {
+              const res = await updateAdminCategory(editingCategory.id, formData);
+              if (res?.success === false) {
+                toast.error(res?.message || `Failed to update category "${formData.name}"`);
+                return;
+              }
+              toast.success(res?.message || `Category "${formData.name}" updated successfully`);
+            } else {
+              const res = await createAdminCategory(formData);
+              if (res?.success === false) {
+                toast.error(res?.message || `Failed to create category "${formData.name}"`);
+                return;
+              }
+              toast.success(res?.message || `Category "${formData.name}" created successfully`);
             }
+            await loadCategories();
+            setIsFormModalOpen(false);
+            setEditingCategory(null);
+          } catch (err: any) {
+            console.error("Save category error:", err);
+            toast.error(err?.message || "Failed to save category to database");
           }
-          setIsFormModalOpen(false);
         }}
       />
 

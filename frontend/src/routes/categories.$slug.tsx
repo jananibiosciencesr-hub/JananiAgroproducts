@@ -97,7 +97,7 @@ function CategoryDetailPage() {
       if (sort === "discount") return b.discount - a.discount;
       return a.id - b.id;
     });
-  }, [category, query, sort, inStockOnly]);
+  }, [category, query, sort, inStockOnly, allProds]);
 
   return (
     <>

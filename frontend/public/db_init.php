@@ -332,6 +332,22 @@ $schema = [
             'status' => "VARCHAR(50) DEFAULT 'Subscribed'",
             'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
         ]
+    ],
+
+    'pickup_locations' => [
+        'columns' => [
+            'id' => 'VARCHAR(64) PRIMARY KEY',
+            'name' => 'VARCHAR(255) NOT NULL',
+            'address' => 'TEXT NOT NULL',
+            'city' => 'VARCHAR(100) NOT NULL',
+            'state' => 'VARCHAR(100) NOT NULL',
+            'pincode' => 'VARCHAR(20) NOT NULL',
+            'phone' => 'VARCHAR(50) NOT NULL',
+            'email' => 'VARCHAR(255) DEFAULT NULL',
+            'is_default' => 'TINYINT(1) DEFAULT 0',
+            'active' => 'TINYINT(1) DEFAULT 1',
+            'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+        ]
     ]
 ];
 
