@@ -28,6 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // ---------------------------------------------------------
 $envFile = __DIR__ . '/.env';
 if (!file_exists($envFile)) {
+    $envFile = __DIR__ . '/backend/.env';
+}
+if (!file_exists($envFile)) {
     $envFile = dirname(__DIR__) . '/.env';
 }
 if (file_exists($envFile)) {
