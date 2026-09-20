@@ -413,8 +413,16 @@ try {
                 $stmt->execute($params);
                 $products = $stmt->fetchAll();
 
-                echo json_encode(['success' => true, 'count' => count($products), 'products' => $products]);
-            } elseif ($method === 'POST') {
+                echo json_encode([
+                    'success' => true,
+                    'count' => count($products),
+                    'total' => count($products),
+                    'activeCount' => count($products),
+                    'trashCount' => 0,
+                    'products' => $products,
+                    'data' => $products
+                ]);
+            } elseif ($method === 'POST' && !isset($_GET['id'])) {
                 $body = getJsonBody();
                 $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
@@ -431,35 +439,96 @@ try {
                     $body['sku'] ?? 'JAP-' . rand(100, 999)
                 ]);
                 echo json_encode(['success' => true, 'message' => 'Product added successfully']);
+            } elseif ($method === 'PUT' || $method === 'PATCH' || ($method === 'POST' && isset($_GET['id']))) {
+                $body = getJsonBody();
+                $rawId = $_GET['id'] ?? ($body['id'] ?? null);
+                if ($rawId) {
+                    $parts = explode('/', trim($rawId, '/'));
+                    $id = $parts[0];
+                    $sub = $parts[1] ?? '';
+
+                    if ($sub === 'toggle' || (isset($body['field']) && $method === 'PATCH')) {
+                        $field = $body['field'] ?? 'active';
+                        $allowedFields = ['active', 'featured', 'trending', 'isNewArrival'];
+                        if (in_array($field, $allowedFields)) {
+                            $stmt = $pdo->prepare("UPDATE `products` SET `{$field}` = NOT `{$field}` WHERE `id` = ?");
+                            $stmt->execute([$id]);
+                            echo json_encode(['success' => true, 'message' => "Field {$field} toggled in MySQL"]);
+                            exit;
+                        }
+                    }
+
+                    if ($sub === 'duplicate') {
+                        $stmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ?");
+                        $stmt->execute([$id]);
+                        $prod = $stmt->fetch();
+                        if ($prod) {
+                            $newSlug = $prod['slug'] . '-copy-' . rand(100, 999);
+                            $newName = $prod['name'] . ' (Copy)';
+                            $newSku = ($prod['sku'] ?? 'JAP') . '-CPY';
+                            $ins = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                            $ins->execute([$newSlug, $newName, $prod['category_name'], $prod['price'], $prod['old_price'], $prod['unit'], $prod['stock'], $prod['badge'], $prod['image'], $prod['description'], $newSku]);
+                            echo json_encode(['success' => true, 'message' => 'Product duplicated in MySQL']);
+                            exit;
+                        }
+                    }
+
+                    $fields = [];
+                    $vals = [];
+                    $allowed = ['name', 'price', 'old_price', 'stock', 'unit', 'badge', 'category_name', 'description', 'active', 'status', 'sku'];
+                    foreach ($allowed as $f) {
+                        if (isset($body[$f])) {
+                            $fields[] = "`{$f}` = ?";
+                            $vals[] = $body[$f];
+                        }
+                    }
+                    if (!empty($fields)) {
+                        $vals[] = $id;
+                        $stmt = $pdo->prepare("UPDATE `products` SET " . implode(', ', $fields) . " WHERE `id` = ?");
+                        $stmt->execute($vals);
+                        echo json_encode(['success' => true, 'message' => 'Product updated in MySQL', 'data' => ['id' => $id, ...$body]]);
+                        exit;
+                    }
+                }
+                echo json_encode(['success' => false, 'message' => 'Product ID required for update']);
+            } elseif ($method === 'DELETE') {
+                $id = $_GET['id'] ?? null;
+                if ($id) {
+                    $stmt = $pdo->prepare("DELETE FROM `products` WHERE `id` = ?");
+                    $stmt->execute([$id]);
+                    echo json_encode(['success' => true, 'message' => 'Product deleted from MySQL']);
+                    exit;
+                }
+                echo json_encode(['success' => false, 'message' => 'Product ID required for deletion']);
             }
             break;
 
         case 'categories':
             $stmt = $pdo->query("SELECT * FROM `categories` WHERE `active` = 1 ORDER BY `display_order` ASC");
             $categories = $stmt->fetchAll();
-            echo json_encode(['success' => true, 'categories' => $categories]);
+            echo json_encode(['success' => true, 'count' => count($categories), 'categories' => $categories, 'data' => $categories]);
             break;
 
         case 'coupons':
             $stmt = $pdo->query("SELECT * FROM `coupons` WHERE `active` = 1");
             $coupons = $stmt->fetchAll();
-            echo json_encode(['success' => true, 'coupons' => $coupons]);
+            echo json_encode(['success' => true, 'count' => count($coupons), 'coupons' => $coupons, 'data' => $coupons]);
             break;
 
         case 'orders':
             if ($method === 'GET') {
-                $orderNumber = $_GET['number'] ?? null;
+                $orderNumber = $_GET['number'] ?? ($_GET['id'] ?? null);
                 if ($orderNumber) {
                     $stmt = $pdo->prepare("SELECT * FROM `orders` WHERE `number` = :num OR `id` = :num LIMIT 1");
                     $stmt->execute([':num' => $orderNumber]);
                     $order = $stmt->fetch();
-                    echo json_encode(['success' => true, 'order' => $order ?: null]);
+                    echo json_encode(['success' => true, 'order' => $order ?: null, 'data' => $order ?: null]);
                     exit;
                 }
                 $stmt = $pdo->query("SELECT * FROM `orders` ORDER BY `created_at` DESC LIMIT 100");
                 $orders = $stmt->fetchAll();
-                echo json_encode(['success' => true, 'orders' => $orders]);
-            } elseif ($method === 'POST') {
+                echo json_encode(['success' => true, 'count' => count($orders), 'total' => count($orders), 'orders' => $orders, 'data' => $orders]);
+            } elseif ($method === 'POST' && !isset($_GET['id'])) {
                 $body = getJsonBody();
                 $orderId = 'JAP-' . rand(100000, 999999);
                 $stmt = $pdo->prepare("INSERT INTO `orders` (`id`, `number`, `order_date`, `customer_name`, `customer_email`, `customer_phone`, `shipping_address`, `items`, `subtotal`, `discount`, `delivery_fee`, `total`, `payment_method`, `payment_status`, `order_status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -481,14 +550,79 @@ try {
                     'Processing'
                 ]);
                 echo json_encode(['success' => true, 'orderId' => $orderId, 'message' => 'Order placed successfully']);
+            } elseif ($method === 'PATCH' || $method === 'PUT' || ($method === 'POST' && isset($_GET['id']))) {
+                $body = getJsonBody();
+                $rawId = $_GET['id'] ?? ($body['id'] ?? null);
+                if ($rawId) {
+                    $parts = explode('/', trim($rawId, '/'));
+                    $id = $parts[0];
+                    $sub = $parts[1] ?? '';
+
+                    $fields = [];
+                    $vals = [];
+                    $allowed = ['order_status', 'payment_status', 'tracking_id', 'courier', 'awb', 'warehouse'];
+                    foreach ($allowed as $f) {
+                        if (isset($body[$f])) {
+                            $fields[] = "`{$f}` = ?";
+                            $vals[] = $body[$f];
+                        }
+                    }
+                    if (isset($body['status']) && !isset($body['order_status'])) {
+                        $fields[] = "`order_status` = ?";
+                        $vals[] = $body['status'];
+                    }
+                    if (!empty($fields)) {
+                        $stmt = $pdo->prepare("UPDATE `orders` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `number` = ?");
+                        $stmt->execute([...$vals, $id, $id]);
+                        echo json_encode(['success' => true, 'message' => 'Order status updated in MySQL']);
+                        exit;
+                    }
+                }
+                echo json_encode(['success' => false, 'message' => 'Order ID required for update']);
             }
             break;
 
+        case 'users':
+        case 'customers':
+            $stmt = $pdo->query("SELECT * FROM `users` ORDER BY `created_at` DESC LIMIT 100");
+            $users = $stmt->fetchAll();
+            echo json_encode(['success' => true, 'count' => count($users), 'total' => count($users), 'users' => $users, 'data' => $users]);
+            break;
+
+        case 'stats':
+            $totalSales = (float)$pdo->query("SELECT COALESCE(SUM(total), 0) FROM `orders` WHERE payment_status = 'Paid' OR payment_status = 'Completed'")->fetchColumn();
+            $orderCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders`")->fetchColumn();
+            $productCount = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE active = 1")->fetchColumn();
+            $customerCount = (int)$pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'todayOrders' => $orderCount,
+                    'todayRevenue' => $totalSales,
+                    'monthlyRevenue' => $totalSales * 1.5,
+                    'pendingOrders' => (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE order_status = 'Processing' OR order_status = 'Pending'")->fetchColumn(),
+                    'deliveredOrders' => (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE order_status = 'Delivered'")->fetchColumn(),
+                    'activeUsers' => max(1, $customerCount),
+                    'outOfStockProducts' => (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE stock <= 0")->fetchColumn(),
+                    'lowStockProducts' => (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE stock > 0 AND stock <= 10")->fetchColumn()
+                ]
+            ]);
+            break;
+
         case 'settings':
+            if ($method === 'POST') {
+                $body = getJsonBody();
+                foreach ($body as $key => $val) {
+                    $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                    $stmt->execute([$key, is_string($val) ? $val : json_encode($val)]);
+                }
+                echo json_encode(['success' => true, 'message' => 'Settings saved successfully']);
+                exit;
+            }
             $stmt = $pdo->query("SELECT `setting_key`, `setting_value` FROM `settings`");
             $settings = [];
             while ($row = $stmt->fetch()) {
-                $settings[$row['setting_key']] = json_decode($row['setting_value'], true);
+                $settings[$row['setting_key']] = json_decode($row['setting_value'], true) ?: $row['setting_value'];
             }
             echo json_encode(['success' => true, 'settings' => $settings]);
             break;
@@ -517,6 +651,7 @@ try {
                 $stmt->execute([$body['email'] ?? '', $body['source'] ?? 'website']);
                 echo json_encode(['success' => true, 'message' => 'Subscribed successfully']);
             }
+            break;
         case 'db_info':
             $dbRow = $pdo->query("SELECT DATABASE() as db_name, USER() as user_name, @@hostname as host_name")->fetch();
             $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
