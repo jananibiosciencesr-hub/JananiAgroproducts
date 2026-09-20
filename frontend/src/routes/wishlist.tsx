@@ -43,7 +43,8 @@ export const Route = createFileRoute("/wishlist")({
 type SortOption = "recent" | "price_asc" | "price_desc" | "discount" | "in_stock";
 
 export function WishlistPage() {
-  const { wishlist, toggleWishlist, addToCart, clearWishlist, moveToCart } = useStore();
+  const { wishlist, toggleWishlist, addToCart, clearWishlist, moveToCart, products: storeProducts } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   const [sort, setSort] = useState<SortOption>("recent");
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -57,9 +58,9 @@ export function WishlistPage() {
   // Fetch product objects corresponding to wishlist IDs
   const rawSavedProducts = useMemo(() => {
     return wishlist
-      .map((id) => products.find((p) => p.id === id))
+      .map((id) => allProducts.find((p) => p.id === id))
       .filter((p): p is Product => Boolean(p));
-  }, [wishlist]);
+  }, [wishlist, allProducts]);
 
   // Filter & Sort
   const savedProducts = useMemo(() => {

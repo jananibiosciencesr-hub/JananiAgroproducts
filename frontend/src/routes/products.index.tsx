@@ -20,6 +20,7 @@ import {
   Check
 } from "lucide-react";
 import { products, categories, type Product } from "@/lib/catalog";
+import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 import { PageHero } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,9 @@ type SortOption =
   | "discount";
 
 function ProductsPage() {
+  const { products: storeProducts } = useStore();
+  const activeProductList = storeProducts && storeProducts.length > 0 ? storeProducts : products;
+
   // Filter State
   const [filters, setFilters] = useState<ShopFilterState>(initialFilterState);
   const [sort, setSort] = useState<SortOption>("featured");
@@ -79,7 +83,7 @@ function ProductsPage() {
 
   // Filter and Sort Engine
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    return activeProductList.filter((p) => {
       // 1. Search filter
       if (
         filters.searchQuery &&

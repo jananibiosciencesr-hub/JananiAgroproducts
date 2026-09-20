@@ -40,7 +40,8 @@ export const Route = createFileRoute("/cart")({
 
 export function CartPage() {
   const navigate = useNavigate();
-  const { cart, updateQuantity, removeFromCart, addToCart, subtotal, cartCount } = useStore();
+  const { cart, updateQuantity, removeFromCart, addToCart, subtotal, cartCount, products: storeProducts } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   // Coupon State
   const [couponCode, setCouponCode] = useState("");
@@ -62,7 +63,7 @@ export function CartPage() {
         // ignore
       }
     }
-    return [4, 8]; // Pre-seed 2 items (Kashmiri Chilli, Toor Dal) for demonstration
+    return [4, 8]; // Pre-seed 2 items for demonstration
   });
 
   useEffect(() => {
@@ -74,20 +75,20 @@ export function CartPage() {
   const cartItems = useMemo(() => {
     return Object.entries(cart)
       .map(([idStr, qty]) => {
-        const product = products.find((p) => p.id === Number(idStr));
+        const product = allProducts.find((p) => p.id === Number(idStr));
         return { product, qty };
       })
       .filter(
         (item): item is { product: NonNullable<typeof item.product>; qty: number } =>
           item.product !== undefined
       );
-  }, [cart]);
+  }, [cart, allProducts]);
 
   const savedForLaterProducts = useMemo(() => {
     return savedForLater
-      .map((id) => products.find((p) => p.id === id))
+      .map((id) => allProducts.find((p) => p.id === id))
       .filter((p): p is Product => Boolean(p));
-  }, [savedForLater]);
+  }, [savedForLater, allProducts]);
 
   // Shipping Calculation
   const freeShippingThreshold = 799;

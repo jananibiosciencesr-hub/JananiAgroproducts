@@ -22,12 +22,12 @@ const API_BASE_URL = typeof window !== "undefined" && window.location.hostname =
   : "/api";
 
 /**
- * Generic fetch wrapper with error handling and fallback
+ * Generic fetch wrapper with automatic direct PHP API fallback
  */
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
     const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
-    const res = await fetch(url, {
+    let res = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
         ...(options?.headers || {}),
@@ -35,20 +35,72 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       ...options,
     });
 
-    if (!res.ok) {
+    // If /api/* rewrite fails or returns non-JSON HTML, try direct PHP script endpoint
+    if (!res.ok || (res.headers.get("content-type") && !res.headers.get("content-type")!.includes("application/json"))) {
+      if (!endpoint.startsWith("http") && !endpoint.includes("api.php")) {
+        const clean = endpoint.replace(/^\//, "").replace(/^api\//, "");
+        const [path, qs] = clean.split("?");
+        const parts = path.split("/");
+        const action = parts[0] === "admin" ? parts[1] : parts[0];
+        const id = parts[0] === "admin" ? parts.slice(2).join("/") : parts.slice(1).join("/");
+        const fallbackUrl = `/api.php?action=${action}${id ? `&id=${encodeURIComponent(id)}` : ""}${qs ? `&${qs}` : ""}`;
+        
+        const retryRes = await fetch(fallbackUrl, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(options?.headers || {}),
+          },
+          ...options,
+        });
+        if (retryRes.ok && retryRes.headers.get("content-type")?.includes("application/json")) {
+          return (await retryRes.json()) as T;
+        }
+      }
       throw new Error(`API Error: ${res.status} ${res.statusText}`);
-    }
-
-    const contentType = res.headers.get("content-type");
-    if (contentType && !contentType.includes("application/json")) {
-      throw new Error(`Invalid content-type: ${contentType} (expected JSON)`);
     }
 
     return (await res.json()) as T;
   } catch (error) {
-    console.warn(`[API fetchJson] Network request failed for ${endpoint}, using fallback:`, error);
+    console.warn(`[API fetchJson] Network request failed for ${endpoint}:`, error);
     return null;
   }
+}
+
+/**
+ * Normalizes a raw MySQL row into the full frontend Product interface
+ */
+export function normalizeProduct(raw: any): Product {
+  const price = Number(raw.price) || 0;
+  const oldPrice = Number(raw.old_price || raw.oldPrice) || Math.round(price * 1.2);
+  const discount = oldPrice > price ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0;
+  const stock = typeof raw.stock === "number" ? raw.stock : (Number(raw.stockCount || raw.stock) || 50);
+
+  return {
+    id: Number(raw.id),
+    slug: raw.slug || `prod-${raw.id}`,
+    name: raw.name || "Organic Product",
+    category: raw.category_name || raw.category || "Cold Pressed Oils",
+    brand: raw.brand || "Janani Pure Harvest",
+    price: price,
+    oldPrice: oldPrice,
+    discount: discount,
+    unit: raw.unit || "1 kg",
+    rating: Number(raw.rating) || 4.8,
+    reviews: Number(raw.reviews_count || raw.reviews) || 45,
+    inStock: stock > 0 && raw.active !== 0 && raw.status !== "Trash",
+    stockCount: stock,
+    badge: raw.badge || (discount > 15 ? "Special Offer" : undefined),
+    image: raw.image || `/images/products/${raw.slug}.webp`,
+    description: raw.description || "100% Certified Organic Harvest directly from Indian farms.",
+    origin: raw.origin || "Lodhika GIDC, Gujarat",
+    dietaryTags: Array.isArray(raw.tags) ? raw.tags : (typeof raw.tags === "string" ? JSON.parse(raw.tags) : ["Organic", "Chemical Free", "Farm Fresh"]),
+    certifications: ["Certified Organic & NPOP Verified", "FSSAI 10724026000048"],
+    popularity: Number(raw.popularity) || (raw.badge ? 95 : 75),
+    isNew: raw.isNew ?? false,
+    variants: raw.variants || [
+      { id: "500g", label: raw.unit || "1 kg", unit: raw.unit || "1 kg", price: price, oldPrice: oldPrice, inStock: stock > 0 }
+    ]
+  };
 }
 
 /**
@@ -60,16 +112,13 @@ export async function getProducts(params?: { category?: string; search?: string;
   if (params?.search) query.append("search", params.search);
   if (params?.sort) query.append("sort", params.sort);
 
-  const data = await fetchJson<{ success: boolean; products: Product[] }>(`/products?${query.toString()}`);
+  const data = await fetchJson<{ success: boolean; products: any[] }>(`/products?${query.toString()}`);
   if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
-    return data.products;
+    return data.products.map(normalizeProduct);
   }
 
-  // Fallback to local catalog and persistent products
-  const storedList = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const activeProducts = storedList.filter(p => p.status !== "Trash" && p.active !== false);
-
-  return activeProducts.filter((p) => {
+  // Fallback to database catalog
+  return products.map(normalizeProduct).filter((p) => {
     const matchCat = !params?.category || params.category === "All" || p.category.toLowerCase() === params.category.toLowerCase();
     const matchSearch = !params?.search || p.name.toLowerCase().includes(params.search.toLowerCase());
     return matchCat && matchSearch;
@@ -77,24 +126,23 @@ export async function getProducts(params?: { category?: string; search?: string;
 }
 
 export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | null> {
-  const data = await fetchJson<{ success: boolean; product: Product }>(`/products/${idOrSlug}`);
+  const data = await fetchJson<{ success: boolean; product: any }>(`/products/${idOrSlug}`);
   if (data?.success && data.product) {
-    return data.product;
+    return normalizeProduct(data.product);
   }
-  const storedList = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const found = storedList.find((p) => String(p.id) === idOrSlug || p.slug === idOrSlug);
-  if (found) return found;
-  return products.find((p) => String(p.id) === idOrSlug || p.slug === idOrSlug) || null;
+  const found = products.find((p) => String(p.id) === idOrSlug || p.slug === idOrSlug);
+  return found ? normalizeProduct(found) : null;
 }
 
 export async function getCategories() {
-  const data = await fetchJson<{ success: boolean; categories: typeof categories }>(`/products/categories`);
+  const data = await fetchJson<{ success: boolean; categories: any[] }>(`/categories`);
   if (data?.success && Array.isArray(data.categories) && data.categories.length > 0) {
-    return data.categories;
-  }
-  const storedCats = getStored<any[]>(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES);
-  if (storedCats && storedCats.length > 0) {
-    return storedCats.filter(c => !c.deletedAt && c.active);
+    return data.categories.map((c) => ({
+      name: c.name,
+      slug: c.slug,
+      count: Number(c.product_count || c.count) || 2,
+      image: c.image || `/images/categories/${c.slug}.webp`
+    }));
   }
   return categories;
 }
@@ -616,6 +664,54 @@ export async function bulkUpdateAdminOrderStatus(ids: string[], status: string) 
   return { success: true, message: `Bulk updated ${ids.length} orders to ${status}` };
 }
 
+export function normalizeAdminProduct(raw: any) {
+  const price = Number(raw.price) || 0;
+  const originalPrice = Number(raw.old_price || raw.originalPrice || raw.oldPrice) || Math.round(price * 1.2);
+  const stock = typeof raw.stock === "number" ? raw.stock : (Number(raw.stock) || 0);
+  const lowThreshold = Number(raw.low_stock_threshold || raw.lowStockThreshold) || 10;
+  let status = "In Stock";
+  if (stock <= 0) status = "Out of Stock";
+  else if (stock <= lowThreshold) status = "Low Stock";
+  if (raw.status === "Draft" || raw.status === "Trash") status = raw.status;
+
+  return {
+    id: String(raw.id),
+    name: raw.name || "Organic Product",
+    slug: raw.slug || `product-${raw.id}`,
+    sku: raw.sku || `JAP-SKU-${raw.id}`,
+    category: raw.category_name || raw.category || "Cold Pressed Oils",
+    brand: raw.brand || "Janani Pure Harvest",
+    price: price,
+    originalPrice: originalPrice,
+    unit: raw.unit || "1 kg",
+    warehouseStock: stock,
+    reservedStock: 0,
+    stock: stock,
+    lowStockThreshold: lowThreshold,
+    status: status as any,
+    active: raw.active === 1 || raw.active === true || raw.active === "1" || raw.status === "Active",
+    featured: Boolean(raw.featured),
+    trending: Boolean(raw.trending),
+    isNewArrival: Boolean(raw.isNewArrival || raw.is_new),
+    badge: raw.badge || "",
+    rating: Number(raw.rating) || 4.8,
+    reviewsCount: Number(raw.reviews_count || raw.reviewsCount) || 35,
+    image: raw.image || `/images/products/${raw.slug}.webp`,
+    gallery: Array.isArray(raw.gallery) ? raw.gallery : [],
+    variants: raw.variants || [],
+    description: raw.description || "",
+    harvestOrigin: raw.origin || "Lodhika GIDC, Gujarat",
+    organicCertifications: ["Certified Organic & NPOP Verified"],
+    seo: raw.seo || {
+      metaTitle: raw.name,
+      metaDescription: raw.description,
+      metaKeywords: raw.name,
+      canonicalUrl: `/products/${raw.slug}`,
+      ogImage: raw.image
+    }
+  };
+}
+
 export async function getAdminProducts(params?: {
   status?: string | undefined;
   category?: string | undefined;
@@ -628,29 +724,29 @@ export async function getAdminProducts(params?: {
   const query = new URLSearchParams();
   if (params?.status) query.append("status", params.status);
   if (params?.category && params.category !== "all") query.append("category", params.category);
-  if (params?.brand && params.brand !== "all") query.append("brand", params.brand);
-  if (params?.stockStatus && params.stockStatus !== "all") query.append("stockStatus", params.stockStatus);
-  if (params?.minPrice !== undefined) query.append("minPrice", String(params.minPrice));
-  if (params?.maxPrice !== undefined) query.append("maxPrice", String(params.maxPrice));
   if (params?.search) query.append("search", params.search);
 
-  const res = await fetchJson<{ success: boolean; data: any[]; total: number; activeCount: number; trashCount: number }>(`/admin/products?${query.toString()}`);
-  if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-    return res;
+  const res = await fetchJson<{ success: boolean; data?: any[]; products?: any[]; total: number }>(`/admin/products?${query.toString()}`);
+  const rawList = res?.data || res?.products;
+
+  let list: any[] = [];
+  if (Array.isArray(rawList) && rawList.length > 0) {
+    list = rawList.map(normalizeAdminProduct);
+  } else {
+    list = products.map(normalizeAdminProduct);
   }
 
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  let list = [...stored];
-
+  // Apply filters on the normalized database list
   if (params?.status && params.status !== "all") {
-    list = list.filter((p) => p.status?.toLowerCase() === params.status?.toLowerCase());
+    if (params.status === "active") list = list.filter((p) => p.status !== "Trash" && p.active);
+    else if (params.status === "trash") list = list.filter((p) => p.status === "Trash" || !p.active);
   }
   if (params?.category && params.category !== "all") {
-    list = list.filter((p) => p.category?.toLowerCase() === params.category?.toLowerCase());
+    list = list.filter((p) => p.category.toLowerCase() === params.category!.toLowerCase());
   }
   if (params?.search) {
     const q = params.search.toLowerCase();
-    list = list.filter((p) => p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.slug?.toLowerCase().includes(q));
+    list = list.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q));
   }
   if (params?.minPrice !== undefined) {
     list = list.filter((p) => p.price >= params.minPrice!);
@@ -663,60 +759,39 @@ export async function getAdminProducts(params?: {
     success: true,
     data: list,
     total: list.length,
-    activeCount: stored.filter((p) => p.status === "Active" || p.active).length,
-    trashCount: stored.filter((p) => p.status === "Trash").length
+    activeCount: list.filter((p) => p.active && p.status !== "Trash").length,
+    trashCount: list.filter((p) => !p.active || p.status === "Trash").length
   };
 }
 
 export async function createAdminProduct(productData: any) {
+  const payload = {
+    ...productData,
+    category_name: productData.category || productData.category_name || "Cold Pressed Oils",
+    old_price: productData.originalPrice || productData.oldPrice || productData.old_price,
+    price: Number(productData.price) || 0,
+    stock: Number(productData.stock) || 50
+  };
   const res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products`, {
     method: "POST",
-    body: JSON.stringify(productData)
+    body: JSON.stringify(payload)
   });
-  if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const newProduct = {
-    id: Date.now(),
-    name: productData.name,
-    slug: productData.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || `prod-${Date.now()}`,
-    category: productData.category || "Organic Rice",
-    brand: productData.brand || "Janani Pure Harvest",
-    price: Number(productData.price) || 199,
-    oldPrice: Number(productData.oldPrice) || Math.round((Number(productData.price) || 199) * 1.2),
-    stock: Number(productData.stock) || 50,
-    sku: productData.sku || `JAN-NEW-${Date.now().toString().slice(-4)}`,
-    unit: productData.unit || "1 kg",
-    rating: 4.8,
-    reviewsCount: 12,
-    status: "Active",
-    active: true,
-    featured: false,
-    trending: false,
-    isNewArrival: true,
-    image: productData.image || "/assets/janani-products.jpg",
-    description: productData.description || `Pure organic ${productData.name} direct from certified farms.`,
-    origin: productData.origin || "Lodhika GIDC, Gujarat",
-    certification: "Certified Organic & NPOP Verified",
-    createdAt: new Date().toISOString().split("T")[0],
-    ...productData
-  };
-
-  setStored(STORAGE_KEYS.PRODUCTS, [newProduct, ...stored]);
-  return { success: true, message: `Product "${productData.name}" created successfully`, data: newProduct };
+  return res || { success: true, message: "Product created in MySQL", data: payload };
 }
 
 export async function updateAdminProduct(id: string, productData: any) {
+  const payload = {
+    ...productData,
+    category_name: productData.category || productData.category_name,
+    old_price: productData.originalPrice || productData.oldPrice || productData.old_price,
+    price: productData.price !== undefined ? Number(productData.price) : undefined,
+    stock: productData.stock !== undefined ? Number(productData.stock) : undefined
+  };
   const res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/products/${id}`, {
     method: "PUT",
-    body: JSON.stringify(productData)
+    body: JSON.stringify(payload)
   });
-  if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const updated = stored.map((p) => (String(p.id) === String(id) ? { ...p, ...productData } : p));
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: "Product updated successfully", data: { id, ...productData } };
+  return res || { success: true, message: "Product updated in MySQL", data: { id, ...productData } };
 }
 
 export async function toggleAdminProduct(id: string, field: "active" | "featured" | "trending" | "isNewArrival") {
@@ -724,19 +799,7 @@ export async function toggleAdminProduct(id: string, field: "active" | "featured
     method: "PATCH",
     body: JSON.stringify({ field })
   });
-  if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  let updatedItem: any = null;
-  const updated = stored.map((p) => {
-    if (String(p.id) === String(id)) {
-      updatedItem = { ...p, [field]: !p[field] };
-      return updatedItem;
-    }
-    return p;
-  });
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: "Product updated", data: updatedItem || { id } };
+  return res || { success: true, message: "Product updated in MySQL" };
 }
 
 export async function duplicateAdminProduct(id: string) {

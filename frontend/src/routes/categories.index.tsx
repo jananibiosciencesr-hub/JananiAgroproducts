@@ -3,6 +3,7 @@ import { ArrowRight, ChevronRight, Package, Sparkles } from "lucide-react";
 import { PageHero } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
 import { categories, products } from "@/lib/catalog";
+import { useStore } from "@/components/store-provider";
 
 export const Route = createFileRoute("/categories/")({
   head: () => ({
@@ -16,6 +17,10 @@ export const Route = createFileRoute("/categories/")({
 });
 
 function CategoriesIndexPage() {
+  const { categories: storeCats, products: storeProds } = useStore();
+  const allCats = storeCats && storeCats.length > 0 ? storeCats : categories;
+  const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
+
   return (
     <>
       <PageHero
@@ -26,8 +31,8 @@ function CategoriesIndexPage() {
 
       <div className="mx-auto max-w-7xl px-6 py-14">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {categories.map((cat) => {
-            const count = products.filter((p) => p.category === cat.name).length;
+          {allCats.map((cat) => {
+            const count = allProds.filter((p) => p.category.toLowerCase() === cat.name.toLowerCase()).length;
             return (
               <div
                 key={cat.slug}

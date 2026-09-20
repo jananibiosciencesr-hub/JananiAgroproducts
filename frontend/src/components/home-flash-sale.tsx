@@ -38,7 +38,8 @@ export function HomeFlashSale({
   bannerTitle = "Festive Harvest Flash Sale",
   bannerSubtitle = "Limited small-batch cold-pressed oils & A2 Vedic Ghee directly from today's morning press.",
 }: FlashSaleProps) {
-  const { addToCart, wishlist, toggleWishlist } = useStore();
+  const { addToCart, wishlist, toggleWishlist, products: storeProducts } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   // 12-Hour Live Countdown Timer
   const [timeLeft, setTimeLeft] = useState<{
@@ -64,11 +65,14 @@ export function HomeFlashSale({
     return () => clearInterval(timer);
   }, []);
 
-  const fallbackProduct = products[0]!;
-  const p1 = products[5] ?? fallbackProduct;
-  const p2 = products[6] ?? fallbackProduct;
-  const p3 = products[9] ?? fallbackProduct;
-  const p4 = products[18] ?? fallbackProduct;
+  if (!allProducts || allProducts.length === 0) {
+    return null;
+  }
+
+  const p1 = allProducts[0]!;
+  const p2 = allProducts[1] || p1;
+  const p3 = allProducts[2] || p1;
+  const p4 = allProducts[3] || p1;
 
   // Flash Sale Items (Curated Deals)
   const flashDeals: FlashDealItem[] = [

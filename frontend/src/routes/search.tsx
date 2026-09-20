@@ -22,6 +22,7 @@ import {
   MapPin
 } from "lucide-react";
 import { categories, products, type Product } from "@/lib/catalog";
+import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { VoiceSearchModal } from "@/components/search/voice-search-modal";
@@ -64,6 +65,17 @@ const aiHealthSuggestions = [
   { label: "High Protein", query: "Organic Green Gram", badge: "Unpolished Pulse" },
 ];
 
+const dietaryBadges = [
+  "Gluten Free",
+  "Diabetic Friendly",
+  "High Fiber",
+  "High Protein",
+  "Low GI",
+  "Cold Pressed",
+  "Zero Chemical",
+  "Single Origin",
+];
+
 const allBrands = [
   "Janani Pure Harvest",
   "Janani Vedic Reserve",
@@ -83,6 +95,10 @@ const dietaryTagOptions = [
 
 function SearchPage() {
   const searchParams = useSearch({ from: "/search" });
+  const { products: storeProducts, categories: storeCategories } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
+  const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
+
   const [query, setQuery] = useState(searchParams.q || "");
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -164,7 +180,7 @@ function SearchPage() {
 
   // Filter Engine
   const filteredProducts = useMemo(() => {
-    return products
+    return allProducts
       .filter((p) => {
         // Text search across name, category, description, brand, dietary tags, and origin
         if (query.trim()) {

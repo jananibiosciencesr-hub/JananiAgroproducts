@@ -73,7 +73,9 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const navigate = useNavigate();
-  const { user, wishlist, toggleWishlist, addToCart } = useStore();
+  const { user, wishlist, toggleWishlist, addToCart, products: storeProducts, categories: storeCategories } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
+  const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
 
   // CMS State
   const [cmsData, setCmsData] = useState<HomepageCmsData | null>(null);
@@ -140,13 +142,18 @@ function HomePage() {
     },
     {
       id: "slide-3",
-      eyebrow: "Direct From Grower Collectives",
-      title: "Heritage Millets & High-Fiber Grains.",
-      subtitle: "Unpolished Ragi, Foxtail, Kodo, and Little Millets. High in plant protein and dietary fiber for wholesome everyday health.",
-      primaryCtaLabel: "Shop Native Millets",
-      primaryCtaUrl: "/categories/organic-millets",
-      secondaryCtaLabel: "Become a Dealer",
-      secondaryCtaUrl: "/become-distributor",
+      eyebrow: "Cold Churned A2 Vedic Excellence",
+      title: "Authentic Gir Cow Bilona Ghee",
+      highlightText: "Gir Cow Bilona Ghee",
+      subtitle: "Crafted strictly through curd-churning method using Vedic brass vessels. Rich in natural aroma and golden granules.",
+      primaryCtaLabel: "Order A2 Vedic Ghee",
+      primaryCtaUrl: "/products/a2-desi-ghee",
+      ctaPrimaryText: "Order A2 Vedic Ghee",
+      ctaPrimaryLink: "/products/a2-desi-ghee",
+      secondaryCtaLabel: "Lab Certificates",
+      secondaryCtaUrl: "/about",
+      ctaSecondaryText: "Lab Certificates",
+      ctaSecondaryLink: "/about",
       desktopImageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&q=80&w=1920",
       badgeText: "Direct Farm Traceable",
       slideOrder: 3,
@@ -172,7 +179,7 @@ function HomePage() {
   };
 
   // Trending Products Filtering
-  const filteredTrendingProducts = products.filter((p) => {
+  const filteredTrendingProducts = allProducts.filter((p) => {
     const cat = p.category.toLowerCase();
     if (trendingTab === "oils") return cat.includes("oil");
     if (trendingTab === "ghee") return cat.includes("ghee") || cat.includes("dairy");
@@ -182,7 +189,7 @@ function HomePage() {
 
   // Recommended Products: prioritize customer onboarding preferences if logged in
   const userPreferences = user?.preferences?.dietary || [];
-  const recommendedProducts = products.filter((p) => {
+  const recommendedProducts = allProducts.filter((p) => {
     const cat = p.category.toLowerCase();
     if (userPreferences.length > 0) {
       if (userPreferences.includes("Cold-Pressed Oils") && cat.includes("oil")) return true;

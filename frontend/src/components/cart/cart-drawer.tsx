@@ -23,11 +23,12 @@ interface CartDrawerProps {
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const navigate = useNavigate();
-  const { cart, updateQuantity, removeFromCart, subtotal, cartCount } = useStore();
+  const { cart, updateQuantity, removeFromCart, subtotal, cartCount, products: storeProducts } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   const cartItems = Object.entries(cart)
     .map(([idStr, qty]) => {
-      const product = products.find((p) => p.id === Number(idStr));
+      const product = allProducts.find((p) => p.id === Number(idStr));
       return { product, qty };
     })
     .filter(

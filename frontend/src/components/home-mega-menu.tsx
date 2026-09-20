@@ -15,6 +15,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { categories, products } from "@/lib/catalog";
+import { useStore } from "@/components/store-provider";
 
 interface MegaMenuProps {
   isOpen: boolean;
@@ -22,6 +23,10 @@ interface MegaMenuProps {
 }
 
 export function HomeMegaMenu({ isOpen, onClose }: MegaMenuProps) {
+  const { products: storeProducts, categories: storeCategories } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
+  const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
+
   if (!isOpen) return null;
 
   // Category Icon Mapping
@@ -66,7 +71,7 @@ export function HomeMegaMenu({ isOpen, onClose }: MegaMenuProps) {
             onClick={onClose}
             className="flex items-center gap-1.5 text-xs font-bold text-brand-leaf hover:underline"
           >
-            Explore Complete Harvest Catalog ({products.length}+ Items)
+            Explore Complete Harvest Catalog ({allProducts.length}+ Items)
             <ArrowRight className="size-3.5" />
           </Link>
         </div>
@@ -74,9 +79,9 @@ export function HomeMegaMenu({ isOpen, onClose }: MegaMenuProps) {
         {/* Mega Menu Multi-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Column 1-3: Categories with Sub-Links */}
-          {categories.slice(0, 3).map((cat) => {
+          {allCategories.slice(0, 3).map((cat) => {
             const Icon = getCategoryIcon(cat.slug);
-            const catProducts = products.filter(
+            const catProducts = allProducts.filter(
               (p) => p.category.toLowerCase().includes(cat.name.toLowerCase()) || p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))
             );
 

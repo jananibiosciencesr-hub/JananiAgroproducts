@@ -64,7 +64,9 @@ export function CheckoutPage() {
     user,
     clearCart,
     deductWalletBalance,
+    products: storeProducts,
   } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   const [step, setStep] = useState<"checkout" | "success">("checkout");
   const [orderId, setOrderId] = useState("");
@@ -96,14 +98,14 @@ export function CheckoutPage() {
   const cartItems = useMemo(() => {
     return Object.entries(cart)
       .map(([idStr, qty]) => {
-        const product = products.find((p) => p.id === Number(idStr));
+        const product = allProducts.find((p) => p.id === Number(idStr));
         return { product, qty };
       })
       .filter(
         (item): item is { product: NonNullable<typeof item.product>; qty: number } =>
           item.product !== undefined
       );
-  }, [cart]);
+  }, [cart, allProducts]);
 
   // Financial Calculations
   const standardShippingFee = subtotal >= 799 || subtotal === 0 ? 0 : 60;

@@ -63,34 +63,41 @@ export const Route = createFileRoute("/products/$slug")({
 function ProductPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
-  const fallbackProduct = products[0]!;
-  const product = products.find((p) => p.slug === slug) ?? fallbackProduct;
-
-  const { addToCart, toggleWishlist, wishlist } = useStore();
-  const isWishlisted = wishlist.includes(product.id);
+  const { addToCart, toggleWishlist, wishlist, products: storeProducts } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
+  const product = allProducts.find((p) => p.slug === slug || String(p.id) === slug) ?? allProducts[0];
 
   // Selected Variant State
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
-    product.variants && product.variants.length > 0
-      ? product.variants[0]!
-      : {
-          id: "std",
-          label: product.unit,
-          unit: product.unit,
-          price: product.price,
-          oldPrice: product.oldPrice,
-          inStock: product.inStock,
-        }
-  );
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
   // Sync selected variant when product changes
   useEffect(() => {
-    if (product.variants && product.variants.length > 0) {
+    if (product?.variants && product.variants.length > 0) {
       setSelectedVariant(product.variants[0]!);
+    } else if (product) {
+      setSelectedVariant({
+        id: "std",
+        label: product.unit,
+        unit: product.unit,
+        price: product.price,
+        oldPrice: product.oldPrice,
+        inStock: product.inStock,
+      });
     }
     setQty(1);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [product.slug]);
+  }, [product?.slug]);
+
+  if (!product || !selectedVariant) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-28 text-center">
+        <div className="inline-block size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <p className="mt-4 text-sm font-semibold text-muted-foreground">Loading harvest product...</p>
+      </div>
+    );
+  }
+
+  const isWishlisted = wishlist.includes(product.id);
 
   const [qty, setQty] = useState(1);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);

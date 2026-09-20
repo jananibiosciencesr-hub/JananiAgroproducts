@@ -15,6 +15,7 @@ import {
   Boxes
 } from "lucide-react";
 import { categories, products, type Product } from "@/lib/catalog";
+import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 import { PageHero } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
@@ -39,28 +40,39 @@ export const Route = createFileRoute("/categories/$slug")({
 
 function CategoryDetailPage() {
   const { slug } = Route.useParams();
-  const fallbackCategory = categories[0]!;
-  const category = categories.find((c) => c.slug === slug) ?? fallbackCategory;
+  const { categories: storeCats, products: storeProds } = useStore();
+  const allCats = storeCats && storeCats.length > 0 ? storeCats : categories;
+  const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
+  const category = allCats.find((c) => c.slug === slug) ?? allCats[0];
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
   const [list, setList] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
+  if (!category) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-28 text-center">
+        <div className="inline-block size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <p className="mt-4 text-sm font-semibold text-muted-foreground">Loading category harvests...</p>
+      </div>
+    );
+  }
+
   // Products matching this category
   const categoryProducts = useMemo(() => {
-    let items = products.filter(
+    let items = allProds.filter(
       (p) => p.category.toLowerCase() === category.name.toLowerCase()
     );
     if (items.length === 0) {
-      items = products.filter(
+      items = allProds.filter(
         (p) =>
           p.category.toLowerCase().includes(category.name.toLowerCase()) ||
           category.name.toLowerCase().includes(p.category.toLowerCase())
       );
     }
     if (items.length === 0) {
-      items = products.slice(0, 6);
+      items = allProds.slice(0, 6);
     }
 
     // Search inside category

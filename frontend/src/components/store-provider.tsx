@@ -1,9 +1,12 @@
 import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
-import { products } from "@/lib/catalog";
-import { type AuthUser, type UserPreferences, saveOnboardingPreferences } from "@/lib/api";
+import { products as initialProducts, categories as initialCategories, type Product } from "@/lib/catalog";
+import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories } from "@/lib/api";
 
 type StoreContextValue = {
+  products: Product[];
+  categories: any[];
+  refreshProducts: () => Promise<void>;
   cart: Record<number, number>;
   wishlist: number[];
   cartCount: number;
@@ -82,6 +85,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return DEFAULT_DEMO_USER;
   });
 
+  const [liveProducts, setLiveProducts] = useState<Product[]>(initialProducts);
+  const [liveCategories, setLiveCategories] = useState<any[]>(initialCategories);
+
+  const refreshProducts = async () => {
+    try {
+      const [fetchedProds, fetchedCats] = await Promise.all([
+        getProducts(),
+        getCategories()
+      ]);
+      if (fetchedProds && fetchedProds.length > 0) {
+        setLiveProducts(fetchedProds);
+      }
+      if (fetchedCats && fetchedCats.length > 0) {
+        setLiveCategories(fetchedCats);
+      }
+    } catch (e) {
+      console.warn("[StoreProvider] Background product sync:", e);
+    }
+  };
+
+  useEffect(() => {
+    refreshProducts();
+  }, []);
+
   // Sync user changes to localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -145,14 +172,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const logoutUser = () => {
     setUser(null);
     if (typeof window !== "undefined") {
-      localStorage.removeItem("janani_user");
       localStorage.removeItem("janani_token");
+      localStorage.removeItem("janani_user");
     }
     toast.info("You have been signed out.");
   };
 
   const updateUserProfile = (updates: Partial<AuthUser>) => {
-    setUser((prev) => (prev ? { ...prev, ...updates } : null));
+    setUser((current) => (current ? { ...current, ...updates } : null));
+    toast.success("Profile details saved successfully.");
   };
 
   const updatePreferences = async (preferences: UserPreferences) => {
@@ -173,10 +201,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const value = useMemo(() => ({
+    products: liveProducts,
+    categories: liveCategories,
+    refreshProducts,
     cart,
     wishlist,
     cartCount: Object.values(cart).reduce((sum, qty) => sum + qty, 0),
-    subtotal: Object.entries(cart).reduce((sum, [id, qty]) => sum + (products.find((p) => p.id === Number(id))?.price ?? 0) * qty, 0),
+    subtotal: Object.entries(cart).reduce((sum, [id, qty]) => sum + (liveProducts.find((p) => p.id === Number(id))?.price ?? 0) * qty, 0),
     user,
     isAuthenticated: !!user,
     addToCart: (id: number, quantity = 1) => {
@@ -208,7 +239,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     logoutUser,
     updateUserProfile,
     updatePreferences
-  }), [cart, wishlist, user]);
+  }), [cart, wishlist, user, liveProducts, liveCategories]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
