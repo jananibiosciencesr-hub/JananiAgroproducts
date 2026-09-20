@@ -1,0 +1,36 @@
+# ----------------------------------------------------------------------
+# Janani Agro Products - Hostinger Shared/Business Web Hosting Config
+# ----------------------------------------------------------------------
+
+AddDefaultCharset UTF-8
+DirectoryIndex index.html index.php
+
+# Prevent Directory Browsing
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Allow direct execution of PHP scripts
+  RewriteRule ^api\.php$ - [L]
+  RewriteRule ^db_init\.php$ - [L]
+
+  # 2. Allow existing physical files and directories (assets, images, favicon, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 3. SPA Route Fallback: Rewrite all page routes (/about, /cart, /admin, /products, etc.) to index.html
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Security: block access to sensitive files
+<FilesMatch "(^\.env|\.git|package\.json|tsconfig\.json)">
+  Require all denied
+</FilesMatch>
+
+# Compression for High Performance
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
