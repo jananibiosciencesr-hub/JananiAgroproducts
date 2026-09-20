@@ -18,17 +18,16 @@ Janani Agro/
 │   ├── package.json              # Frontend dependencies and build scripts
 │   ├── tsconfig.json             # TypeScript configuration
 │   └── vite.config.ts            # Vite config with backend API proxy
-├── backend/                      # Complete Express REST API Server
-│   ├── src/
-│   │   ├── controllers/          # Product, Order, Inquiry, Contact controllers
-│   │   ├── routes/               # API route definitions (/api/products, /api/orders, etc.)
-│   │   ├── middleware/           # Error handler and logger middlewares
-│   │   ├── data/                 # In-memory database & models
-│   │   └── server.js             # Express application entry point
-│   ├── package.json              # Backend dependencies (Express, CORS, Dotenv, Morgan)
-│   └── .env                      # Server port & environment configuration
-├── package.json                  # Unified root workspace scripts
-├── .gitignore                    # Global ignore rules
+├── backend/                      # Complete Express & PHP REST API Server
+│   ├── src/                      # Express application, controllers, routes, config
+│   ├── database.sql              # Complete MySQL database schema & seed data
+│   ├── php/                      # PHP API & setup scripts (api.php, db_init.php)
+│   ├── scripts/                  # Helper & test scripts (test_payments.js)
+│   ├── package.json              # Backend dependencies (Express, MySQL2, CORS, Dotenv)
+│   └── .env                      # Server port, database & SMTP configuration
+├── package.json                  # Unified root workspace scripts (dev, build, start)
+├── tsconfig.json                 # Monorepo TypeScript IDE configuration
+├── .gitignore                    # Global ignore rules (dist/, node_modules/, etc.)
 └── README.md                     # Documentation
 ```
 
