@@ -44,32 +44,56 @@ if (file_exists($envFile)) {
     }
 }
 
-$db_host = getenv('DB_HOST') ?: 'localhost';
-$db_name = getenv('DB_NAME') ?: 'u409810820_Jananiagro';
-$db_user = getenv('DB_USER') ?: 'u409810820_Jananiagropro';
-$db_pass = getenv('DB_PASSWORD') ?: 'Jananiagro@123';
+$raw_host = getenv('DB_HOST') ?: 'localhost';
+$raw_db   = getenv('DB_NAME') ?: 'u409810820_Jananiagro';
+$raw_user = getenv('DB_USER') ?: 'u409810820_Jananiagropro';
+$raw_pass = getenv('DB_PASSWORD') ?: 'Jananiagro@123';
+
+// Support both lowercase, uppercase, and exact casing from Hostinger hPanel
+$hosts  = array_values(array_unique([$raw_host, strtolower($raw_host), 'localhost', '127.0.0.1']));
+$dbs    = array_values(array_unique([$raw_db, 'u409810820_Jananiagro', strtolower($raw_db), strtoupper($raw_db)]));
+$users  = array_values(array_unique([$raw_user, 'u409810820_Jananiagropro', strtolower($raw_user), strtoupper($raw_user)]));
+$passes = array_values(array_unique([$raw_pass, 'Jananiagro@123', 'JANANIAGRO@123', 'jananiagro@123']));
+
+$pdo = null;
+$connectedDb = $raw_db;
+$lastError = null;
+
+foreach ($hosts as $h) {
+    foreach ($dbs as $db) {
+        foreach ($users as $u) {
+            foreach ($passes as $p) {
+                try {
+                    $pdo = new PDO("mysql:host={$h};dbname={$db};charset=utf8mb4", $u, $p, [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_EMULATE_PREPARES => false
+                    ]);
+                    $connectedDb = $db;
+                    break 4;
+                } catch (PDOException $e) {
+                    $lastError = $e;
+                }
+            }
+        }
+    }
+}
+
+if (!$pdo) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Database connection failed: ' . ($lastError ? $lastError->getMessage() : 'Unknown error')
+    ]);
+    exit;
+}
 
 // Gmail SMTP Credentials for Real OTP Dispatch
 $smtp_host = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
 $smtp_port = getenv('SMTP_PORT') ?: 465;
-$smtp_user = getenv('SMTP_USER') ?: 'jananibiosciences.r@gmail.com';
-$smtp_pass = getenv('SMTP_PASS') ?: 'gvwxapfllucnayzt';
-$admin_email = getenv('ADMIN_EMAIL') ?: 'jananibiosciences.r@gmail.com';
-
-try {
-    $pdo = new PDO("mysql:host={$db_host};dbname={$db_name};charset=utf8mb4", $db_user, $db_pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false
-    ]);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Database connection failed: ' . $e->getMessage()
-    ]);
-    exit;
-}
+$smtp_user = strtolower(trim(getenv('SMTP_USER') ?: 'jananibiosciences.r@gmail.com'));
+$smtp_pass = strtolower(str_replace(' ', '', getenv('SMTP_PASS') ?: 'gvwxapfllucnayzt'));
+$admin_email = strtolower(trim(getenv('ADMIN_EMAIL') ?: 'jananibiosciences.r@gmail.com'));
 
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];

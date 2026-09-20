@@ -40,36 +40,60 @@ if (file_exists($envFile)) {
     }
 }
 
-$db_host = getenv('DB_HOST') ?: 'localhost';
-$db_name = getenv('DB_NAME') ?: 'u409810820_Jananiagro';
-$db_user = getenv('DB_USER') ?: 'u409810820_Jananiagropro';
-$db_pass = getenv('DB_PASSWORD') ?: 'Jananiagro@123';
+$raw_host = getenv('DB_HOST') ?: 'localhost';
+$raw_db   = getenv('DB_NAME') ?: 'u409810820_Jananiagro';
+$raw_user = getenv('DB_USER') ?: 'u409810820_Jananiagropro';
+$raw_pass = getenv('DB_PASSWORD') ?: 'Jananiagro@123';
+
+// Support both lowercase, uppercase, and exact casing from Hostinger hPanel
+$hosts  = array_values(array_unique([$raw_host, strtolower($raw_host), 'localhost', '127.0.0.1']));
+$dbs    = array_values(array_unique([$raw_db, 'u409810820_Jananiagro', strtolower($raw_db), strtoupper($raw_db)]));
+$users  = array_values(array_unique([$raw_user, 'u409810820_Jananiagropro', strtolower($raw_user), strtoupper($raw_user)]));
+$passes = array_values(array_unique([$raw_pass, 'Jananiagro@123', 'JANANIAGRO@123', 'jananiagro@123']));
+
+$pdo = null;
+$connectedDb = $raw_db;
+$lastError = null;
+
+foreach ($hosts as $h) {
+    foreach ($dbs as $db) {
+        foreach ($users as $u) {
+            foreach ($passes as $p) {
+                try {
+                    $pdo = new PDO("mysql:host={$h};dbname={$db};charset=utf8mb4", $u, $p, [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_EMULATE_PREPARES => false
+                    ]);
+                    $connectedDb = $db;
+                    break 4;
+                } catch (PDOException $e) {
+                    $lastError = $e;
+                }
+            }
+        }
+    }
+}
+
+if (!$pdo) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Database connection failed: ' . ($lastError ? $lastError->getMessage() : 'Unknown error'),
+        'hint' => 'Please verify database name and credentials in Hostinger hPanel.'
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit;
+}
 
 $response = [
     'success' => false,
-    'database' => $db_name,
+    'database' => $connectedDb,
     'tables_created' => [],
     'columns_verified' => 0,
     'columns_added' => [],
     'seeds_inserted' => [],
     'errors' => []
 ];
-
-try {
-    $pdo = new PDO("mysql:host={$db_host};dbname={$db_name};charset=utf8mb4", $db_user, $db_pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false
-    ]);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Database connection failed: ' . $e->getMessage(),
-        'hint' => 'Please verify database name and credentials in Hostinger hPanel.'
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    exit;
-}
 
 // ---------------------------------------------------------
 // SCHEMA DEFINITIONS (Tables & Column Definitions)
