@@ -17,10 +17,10 @@ Options -Indexes
   RewriteRule ^db_init\.php$ - [L]
 
   # 2. Route all /api/admin/* requests directly to api.php REST endpoints
-  RewriteRule ^api/admin/([a-zA-Z0-9_-]+)(?:/(.*))?$ api.php?action=$1&id=$2 [QSA,L]
+  RewriteRule ^api/admin/([a-zA-Z0-9_-]+)(?:/(.*))?$ /api.php?action=$1&id=$2 [QSA,L]
 
   # 3. Route all /api/* requests directly to api.php REST endpoints
-  RewriteRule ^api/([a-zA-Z0-9_-]+)(?:/(.*))?$ api.php?action=$1&id=$2 [QSA,L]
+  RewriteRule ^api/([a-zA-Z0-9_-]+)(?:/(.*))?$ /api.php?action=$1&id=$2 [QSA,L]
 
   # 3. Allow existing physical files and directories (assets, images, favicon, etc.)
   RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -28,6 +28,7 @@ Options -Indexes
   RewriteRule ^ - [L]
 
   # 4. SPA Route Fallback: Rewrite all page routes (/about, /cart, /admin, /products, etc.) to index.html
+  RewriteCond %{REQUEST_URI} !^/api
   RewriteRule ^ index.html [L]
 </IfModule>
 
