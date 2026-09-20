@@ -393,9 +393,15 @@ try {
                 $status = strtolower(trim($_GET['status'] ?? ''));
                 $isAdmin = isset($_GET['is_admin']) || (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/admin') !== false);
 
-                if ($slug || $id) {
-                    $stmt = $pdo->prepare("SELECT * FROM `products` WHERE `slug` = :slug OR `id` = :id LIMIT 1");
-                    $stmt->execute([':slug' => $slug ?: $id, ':id' => $id ?: $slug]);
+                if (!empty($slug) || !empty($id)) {
+                    $target = !empty($slug) ? $slug : $id;
+                    if (is_numeric($target)) {
+                        $stmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
+                        $stmt->execute([(int)$target]);
+                    } else {
+                        $stmt = $pdo->prepare("SELECT * FROM `products` WHERE `slug` = ? LIMIT 1");
+                        $stmt->execute([$target]);
+                    }
                     $prod = $stmt->fetch();
                     echo json_encode(['success' => true, 'product' => $prod ?: null, 'data' => $prod ?: null]);
                     exit;
@@ -451,60 +457,61 @@ try {
                     'data' => $products
                 ]);
                 exit;
-            } elseif ($method === 'POST' && (!isset($_GET['id']) || empty($_GET['id']))) {
-                $body = getJsonBody();
-                
-                // Field Normalization for Admin Form Data
-                $categoryName = $body['category_name'] ?? ($body['category'] ?? 'Cold Pressed Oils');
-                $price = isset($body['price']) ? (float)$body['price'] : 0.0;
-                $oldPrice = isset($body['old_price']) ? (float)$body['old_price'] : (isset($body['originalPrice']) ? (float)$body['originalPrice'] : (isset($body['oldPrice']) ? (float)$body['oldPrice'] : null));
-                $stock = isset($body['stock']) ? (int)$body['stock'] : (isset($body['warehouseStock']) ? (int)$body['warehouseStock'] : 50);
-                $origin = $body['origin'] ?? ($body['harvestOrigin'] ?? 'Lodhika GIDC, Gujarat');
-                $cert = $body['certification'] ?? (isset($body['organicCertifications']) && is_array($body['organicCertifications']) ? implode(', ', $body['organicCertifications']) : 'Certified Organic & NPOP Verified');
-                $active = isset($body['active']) ? (($body['active'] === true || $body['active'] === 1 || $body['active'] === '1' || $body['active'] === 'true') ? 1 : 0) : 1;
-                $status = $body['status'] ?? ($active ? 'Active' : 'Draft');
-                $name = $body['name'] ?? 'New Organic Product';
-                $slug = !empty($body['slug']) ? $body['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
-                $unit = $body['unit'] ?? '1 kg';
-                $badge = $body['badge'] ?? null;
-                $image = $body['image'] ?? '/images/products/placeholder.webp';
-                $description = $body['description'] ?? '';
-                $sku = $body['sku'] ?? ('JAP-' . rand(1000, 9999));
-
-                $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([
-                    $slug,
-                    $name,
-                    $categoryName,
-                    $price,
-                    $oldPrice,
-                    $unit,
-                    $stock,
-                    $badge,
-                    $image,
-                    $description,
-                    $origin,
-                    $cert,
-                    $active,
-                    $status,
-                    $sku
-                ]);
-                $newId = $pdo->lastInsertId();
-                $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
-                $fetchStmt->execute([$newId]);
-                $created = $fetchStmt->fetch();
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Product added successfully to MySQL',
-                    'data' => $created,
-                    'product' => $created
-                ]);
-                exit;
-            } elseif ($method === 'PUT' || $method === 'PATCH' || ($method === 'POST' && isset($_GET['id']) && !empty($_GET['id']))) {
+            } elseif ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
                 $body = getJsonBody();
                 $rawId = $_GET['id'] ?? ($body['id'] ?? null);
-                if ($rawId) {
+
+                // If no ID is provided, this is a CREATE (INSERT) operation:
+                if (empty($rawId)) {
+                    // Field Normalization for Admin Form Data
+                    $categoryName = $body['category_name'] ?? ($body['category'] ?? 'Cold Pressed Oils');
+                    $price = isset($body['price']) ? (float)$body['price'] : 0.0;
+                    $oldPrice = isset($body['old_price']) ? (float)$body['old_price'] : (isset($body['originalPrice']) ? (float)$body['originalPrice'] : (isset($body['oldPrice']) ? (float)$body['oldPrice'] : null));
+                    $stock = isset($body['stock']) ? (int)$body['stock'] : (isset($body['warehouseStock']) ? (int)$body['warehouseStock'] : 50);
+                    $origin = $body['origin'] ?? ($body['harvestOrigin'] ?? 'Lodhika GIDC, Gujarat');
+                    $cert = $body['certification'] ?? (isset($body['organicCertifications']) && is_array($body['organicCertifications']) ? implode(', ', $body['organicCertifications']) : 'Certified Organic & NPOP Verified');
+                    $active = isset($body['active']) ? (($body['active'] === true || $body['active'] === 1 || $body['active'] === '1' || $body['active'] === 'true') ? 1 : 0) : 1;
+                    $status = $body['status'] ?? ($active ? 'Active' : 'Draft');
+                    $name = $body['name'] ?? 'New Organic Product';
+                    $slug = !empty($body['slug']) ? $body['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
+                    $unit = $body['unit'] ?? '1 kg';
+                    $badge = $body['badge'] ?? null;
+                    $image = $body['image'] ?? '/images/products/placeholder.webp';
+                    $description = $body['description'] ?? '';
+                    $sku = $body['sku'] ?? ('JAP-' . rand(1000, 9999));
+
+                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $slug,
+                        $name,
+                        $categoryName,
+                        $price,
+                        $oldPrice,
+                        $unit,
+                        $stock,
+                        $badge,
+                        $image,
+                        $description,
+                        $origin,
+                        $cert,
+                        $active,
+                        $status,
+                        $sku
+                    ]);
+                    $newId = $pdo->lastInsertId();
+                    $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
+                    $fetchStmt->execute([$newId]);
+                    $created = $fetchStmt->fetch();
+
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Product added successfully to MySQL',
+                        'data' => $created,
+                        'product' => $created
+                    ]);
+                    exit;
+                } else {
+                    // UPDATE existing product or bulk operation
                     $parts = explode('/', trim($rawId, '/'));
                     $id = $parts[0];
                     $sub = $parts[1] ?? '';
@@ -515,9 +522,13 @@ try {
                         $active = !empty($body['active']) ? 1 : 0;
                         $status = $active ? 'Active' : 'Draft';
                         if (!empty($ids) && is_array($ids)) {
-                            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = ?, `status` = ? WHERE `id` IN ({$placeholders}) OR `slug` IN ({$placeholders})");
-                            $stmt->execute(array_merge([$active, $status], $ids, $ids));
+                            foreach ($ids as $singleId) {
+                                if (is_numeric($singleId)) {
+                                    $pdo->prepare("UPDATE `products` SET `active` = ?, `status` = ? WHERE `id` = ?")->execute([$active, $status, (int)$singleId]);
+                                } else {
+                                    $pdo->prepare("UPDATE `products` SET `active` = ?, `status` = ? WHERE `slug` = ?")->execute([$active, $status, $singleId]);
+                                }
+                            }
                         }
                         echo json_encode(['success' => true, 'message' => "Bulk updated " . count($ids) . " products in MySQL"]);
                         exit;
@@ -530,8 +541,8 @@ try {
                         $mode = $body['mode'] ?? 'increase';
                         if (!empty($ids) && is_array($ids)) {
                             foreach ($ids as $singleId) {
-                                $stmt = $pdo->prepare("SELECT `price`, `old_price` FROM `products` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                                $stmt->execute([$singleId, $singleId]);
+                                $stmt = $pdo->prepare(is_numeric($singleId) ? "SELECT `price`, `old_price` FROM `products` WHERE `id` = ? LIMIT 1" : "SELECT `price`, `old_price` FROM `products` WHERE `slug` = ? LIMIT 1");
+                                $stmt->execute([is_numeric($singleId) ? (int)$singleId : $singleId]);
                                 $row = $stmt->fetch();
                                 if ($row) {
                                     $cur = (float)$row['price'];
@@ -544,8 +555,8 @@ try {
                                         $delta = $cur * ($val / 100.0);
                                         $newP = $mode === 'decrease' ? max(1, $cur - $delta) : ($cur + $delta);
                                     }
-                                    $up = $pdo->prepare("UPDATE `products` SET `price` = ?, `old_price` = ? WHERE `id` = ? OR `slug` = ?");
-                                    $up->execute([round($newP, 2), $cur, $singleId, $singleId]);
+                                    $up = $pdo->prepare(is_numeric($singleId) ? "UPDATE `products` SET `price` = ?, `old_price` = ? WHERE `id` = ?" : "UPDATE `products` SET `price` = ?, `old_price` = ? WHERE `slug` = ?");
+                                    $up->execute([round($newP, 2), $cur, is_numeric($singleId) ? (int)$singleId : $singleId]);
                                 }
                             }
                         }
@@ -560,11 +571,11 @@ try {
                         if (!empty($ids) && is_array($ids)) {
                             foreach ($ids as $singleId) {
                                 if ($operation === 'set') {
-                                    $up = $pdo->prepare("UPDATE `products` SET `stock` = ? WHERE `id` = ? OR `slug` = ?");
-                                    $up->execute([$quantity, $singleId, $singleId]);
+                                    $up = $pdo->prepare(is_numeric($singleId) ? "UPDATE `products` SET `stock` = ? WHERE `id` = ?" : "UPDATE `products` SET `stock` = ? WHERE `slug` = ?");
+                                    $up->execute([$quantity, is_numeric($singleId) ? (int)$singleId : $singleId]);
                                 } else {
-                                    $up = $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ? OR `slug` = ?");
-                                    $up->execute([$quantity, $singleId, $singleId]);
+                                    $up = $pdo->prepare(is_numeric($singleId) ? "UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ?" : "UPDATE `products` SET `stock` = `stock` + ? WHERE `slug` = ?");
+                                    $up->execute([$quantity, is_numeric($singleId) ? (int)$singleId : $singleId]);
                                 }
                             }
                         }
@@ -575,23 +586,54 @@ try {
                     if ($id === 'bulk-delete') {
                         $ids = $body['ids'] ?? [];
                         if (!empty($ids) && is_array($ids)) {
-                            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `id` IN ({$placeholders}) OR `slug` IN ({$placeholders})");
-                            $stmt->execute(array_merge($ids, $ids));
+                            foreach ($ids as $singleId) {
+                                if (is_numeric($singleId)) {
+                                    $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `id` = ?")->execute([(int)$singleId]);
+                                } else {
+                                    $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `slug` = ?")->execute([$singleId]);
+                                }
+                            }
                         }
                         echo json_encode(['success' => true, 'message' => "Moved " . count($ids) . " products to Trash in MySQL"]);
                         exit;
                     }
 
-                    // 1. Field toggle handler (active, featured, trending, isNewArrival)
+                    if ($id === 'bulk-import') {
+                        $importList = $body['products'] ?? [];
+                        $imported = 0;
+                        if (is_array($importList)) {
+                            foreach ($importList as $p) {
+                                $pName = $p['name'] ?? 'Imported Product';
+                                $pSlug = !empty($p['slug']) ? $p['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $pName), '-'));
+                                $pPrice = (float)($p['price'] ?? 0);
+                                $pOldPrice = isset($p['old_price']) ? (float)$p['old_price'] : (isset($p['originalPrice']) ? (float)$p['originalPrice'] : null);
+                                $pCategory = $p['category_name'] ?? ($p['category'] ?? 'Cold Pressed Oils');
+                                $pStock = (int)($p['stock'] ?? ($p['warehouseStock'] ?? 50));
+                                $pUnit = $p['unit'] ?? '1 kg';
+                                $pSku = $p['sku'] ?? ('JAP-' . rand(1000, 9999));
+                                $pStmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `active`, `status`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'Active', ?) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `price` = VALUES(`price`), `stock` = VALUES(`stock`)");
+                                $pStmt->execute([$pSlug, $pName, $pCategory, $pPrice, $pOldPrice, $pUnit, $pStock, $pSku]);
+                                $imported++;
+                            }
+                        }
+                        echo json_encode(['success' => true, 'message' => "Successfully imported {$imported} products into MySQL"]);
+                        exit;
+                    }
+
+                    // Field toggle handler (active, featured, trending, isNewArrival)
                     if ($sub === 'toggle' || (isset($body['field']) && $method === 'PATCH')) {
                         $field = $body['field'] ?? 'active';
                         if ($field === 'active') {
-                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = NOT `active`, `status` = CASE WHEN `active` = 1 THEN 'Active' ELSE 'Draft' END WHERE `id` = ? OR `slug` = ?");
-                            $stmt->execute([$id, $id]);
+                            if (is_numeric($id)) {
+                                $stmt = $pdo->prepare("UPDATE `products` SET `active` = NOT `active`, `status` = CASE WHEN `active` = 1 THEN 'Active' ELSE 'Draft' END WHERE `id` = ?");
+                                $stmt->execute([(int)$id]);
+                            } else {
+                                $stmt = $pdo->prepare("UPDATE `products` SET `active` = NOT `active`, `status` = CASE WHEN `active` = 1 THEN 'Active' ELSE 'Draft' END WHERE `slug` = ?");
+                                $stmt->execute([$id]);
+                            }
                         }
-                        $stmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                        $stmt->execute([$id, $id]);
+                        $stmt = $pdo->prepare(is_numeric($id) ? "SELECT * FROM `products` WHERE `id` = ? LIMIT 1" : "SELECT * FROM `products` WHERE `slug` = ? LIMIT 1");
+                        $stmt->execute([is_numeric($id) ? (int)$id : $id]);
                         $toggled = $stmt->fetch();
                         echo json_encode([
                             'success' => true,
@@ -602,10 +644,10 @@ try {
                         exit;
                     }
 
-                    // 2. Duplicate product
+                    // Duplicate product
                     if ($sub === 'duplicate') {
-                        $stmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                        $stmt->execute([$id, $id]);
+                        $stmt = $pdo->prepare(is_numeric($id) ? "SELECT * FROM `products` WHERE `id` = ? LIMIT 1" : "SELECT * FROM `products` WHERE `slug` = ? LIMIT 1");
+                        $stmt->execute([is_numeric($id) ? (int)$id : $id]);
                         $prod = $stmt->fetch();
                         if ($prod) {
                             $newSlug = $prod['slug'] . '-copy-' . rand(100, 999);
@@ -638,18 +680,23 @@ try {
                         }
                     }
 
-                    // 3. Restore product from trash
+                    // Restore product from trash
                     if ($sub === 'restore') {
-                        $stmt = $pdo->prepare("UPDATE `products` SET `active` = 1, `status` = 'Active' WHERE `id` = ? OR `slug` = ?");
-                        $stmt->execute([$id, $id]);
-                        $stmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                        $stmt->execute([$id, $id]);
+                        if (is_numeric($id)) {
+                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 1, `status` = 'Active' WHERE `id` = ?");
+                            $stmt->execute([(int)$id]);
+                        } else {
+                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 1, `status` = 'Active' WHERE `slug` = ?");
+                            $stmt->execute([$id]);
+                        }
+                        $stmt = $pdo->prepare(is_numeric($id) ? "SELECT * FROM `products` WHERE `id` = ? LIMIT 1" : "SELECT * FROM `products` WHERE `slug` = ? LIMIT 1");
+                        $stmt->execute([is_numeric($id) ? (int)$id : $id]);
                         $restored = $stmt->fetch();
                         echo json_encode(['success' => true, 'message' => 'Product restored in MySQL', 'data' => $restored, 'product' => $restored]);
                         exit;
                     }
 
-                    // 4. Map frontend variations to MySQL column names
+                    // Map frontend variations to MySQL column names
                     if (isset($body['category']) && !isset($body['category_name'])) {
                         $body['category_name'] = $body['category'];
                     }
@@ -700,42 +747,109 @@ try {
                     }
 
                     if (!empty($fields)) {
-                        $vals[] = $id;
-                        $vals[] = $id;
-                        $stmt = $pdo->prepare("UPDATE `products` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `slug` = ?");
-                        $stmt->execute($vals);
+                        // Find existing product in database by numeric id, slug, or sku
+                        $existing = null;
+                        if (is_numeric($id)) {
+                            $fStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
+                            $fStmt->execute([(int)$id]);
+                            $existing = $fStmt->fetch();
+                        }
+                        if (!$existing) {
+                            $fStmt = $pdo->prepare("SELECT * FROM `products` WHERE `slug` = ? LIMIT 1");
+                            $fStmt->execute([$id]);
+                            $existing = $fStmt->fetch();
+                        }
+                        if (!$existing && !empty($body['slug'])) {
+                            $fStmt = $pdo->prepare("SELECT * FROM `products` WHERE `slug` = ? LIMIT 1");
+                            $fStmt->execute([$body['slug']]);
+                            $existing = $fStmt->fetch();
+                        }
+                        if (!$existing && !empty($body['sku'])) {
+                            $fStmt = $pdo->prepare("SELECT * FROM `products` WHERE `sku` = ? LIMIT 1");
+                            $fStmt->execute([$body['sku']]);
+                            $existing = $fStmt->fetch();
+                        }
 
-                        // Fetch the actual updated product row from MySQL
-                        $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                        $fetchStmt->execute([$id, $id]);
-                        $updated = $fetchStmt->fetch();
+                        if ($existing) {
+                            $targetDbId = (int)$existing['id'];
+                            $vals[] = $targetDbId;
+                            $upStmt = $pdo->prepare("UPDATE `products` SET " . implode(', ', $fields) . " WHERE `id` = ?");
+                            $upStmt->execute($vals);
 
-                        echo json_encode([
-                            'success' => true,
-                            'message' => 'Product updated successfully in MySQL',
-                            'data' => $updated,
-                            'product' => $updated
-                        ]);
-                        exit;
+                            $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
+                            $fetchStmt->execute([$targetDbId]);
+                            $updated = $fetchStmt->fetch();
+
+                            echo json_encode([
+                                'success' => true,
+                                'message' => 'Product updated successfully in MySQL',
+                                'data' => $updated,
+                                'product' => $updated
+                            ]);
+                            exit;
+                        } else {
+                            // If product row didn't exist in MySQL, insert it so changes are never lost!
+                            $categoryName = $body['category_name'] ?? 'Cold Pressed Oils';
+                            $price = (float)($body['price'] ?? 0.0);
+                            $oldPrice = isset($body['old_price']) ? (float)$body['old_price'] : null;
+                            $stock = (int)($body['stock'] ?? 50);
+                            $origin = $body['origin'] ?? 'Lodhika GIDC, Gujarat';
+                            $cert = $body['certification'] ?? 'Certified Organic & NPOP Verified';
+                            $active = isset($body['active']) ? (int)$body['active'] : 1;
+                            $status = $body['status'] ?? ($active ? 'Active' : 'Draft');
+                            $name = $body['name'] ?? 'Organic Product';
+                            $slug = !empty($body['slug']) ? $body['slug'] : (!is_numeric($id) ? $id : 'product-' . time());
+                            $unit = $body['unit'] ?? '1 kg';
+                            $badge = $body['badge'] ?? null;
+                            $image = $body['image'] ?? '/images/products/placeholder.webp';
+                            $description = $body['description'] ?? '';
+                            $sku = $body['sku'] ?? ('JAP-' . rand(1000, 9999));
+
+                            $insStmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                            $insStmt->execute([
+                                $slug, $name, $categoryName, $price, $oldPrice, $unit,
+                                $stock, $badge, $image, $description, $origin, $cert,
+                                $active, $status, $sku
+                            ]);
+                            $newInsertId = (int)$pdo->lastInsertId();
+                            $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
+                            $fetchStmt->execute([$newInsertId]);
+                            $created = $fetchStmt->fetch();
+
+                            echo json_encode([
+                                'success' => true,
+                                'message' => 'Product saved successfully to MySQL',
+                                'data' => $created,
+                                'product' => $created
+                            ]);
+                            exit;
+                        }
                     } else {
                         echo json_encode(['success' => false, 'message' => 'No valid product fields provided for update']);
                         exit;
                     }
                 }
-                echo json_encode(['success' => false, 'message' => 'Product ID required for update']);
-                exit;
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
                 $permanent = isset($_GET['permanent']) && $_GET['permanent'] == 1;
                 if ($id) {
                     if ($permanent) {
-                        $stmt = $pdo->prepare("DELETE FROM `products` WHERE `id` = ? OR `slug` = ?");
-                        $stmt->execute([$id, $id]);
+                        if (is_numeric($id)) {
+                            $stmt = $pdo->prepare("DELETE FROM `products` WHERE `id` = ?");
+                            $stmt->execute([(int)$id]);
+                        } else {
+                            $stmt = $pdo->prepare("DELETE FROM `products` WHERE `slug` = ?");
+                            $stmt->execute([$id]);
+                        }
                         echo json_encode(['success' => true, 'message' => 'Product permanently deleted from MySQL']);
                     } else {
-                        // Soft delete / Move to trash
-                        $stmt = $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `id` = ? OR `slug` = ?");
-                        $stmt->execute([$id, $id]);
+                        if (is_numeric($id)) {
+                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `id` = ?");
+                            $stmt->execute([(int)$id]);
+                        } else {
+                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `slug` = ?");
+                            $stmt->execute([$id]);
+                        }
                         echo json_encode(['success' => true, 'message' => 'Product moved to Trash in MySQL']);
                     }
                     exit;

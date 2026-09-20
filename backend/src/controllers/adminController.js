@@ -1787,7 +1787,7 @@ export const createAdminProduct = (req, res) => {
 
 export const updateAdminProduct = (req, res) => {
   const { id } = req.params;
-  const index = adminProducts.findIndex(p => p.id === id);
+  const index = adminProducts.findIndex(p => p.id === id || String(p.id) === String(id) || p.slug === id);
   if (index === -1) return res.status(404).json({ success: false, message: "Product not found" });
 
   const current = adminProducts[index];

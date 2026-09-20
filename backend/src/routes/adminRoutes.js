@@ -218,6 +218,7 @@ router.post('/orders/bulk-status', bulkUpdateOrderStatus);
 // Products Catalog
 router.get('/products', getAdminProducts);
 router.post('/products', createAdminProduct);
+router.post('/products/:id', updateAdminProduct);
 router.put('/products/:id', updateAdminProduct);
 router.patch('/products/:id/toggle', toggleAdminProduct);
 router.post('/products/:id/duplicate', duplicateAdminProduct);

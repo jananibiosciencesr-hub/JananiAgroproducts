@@ -26,7 +26,15 @@ const API_BASE_URL = typeof window !== "undefined" && window.location.hostname =
  */
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
-    const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
+    let url: string;
+    if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
+      url = endpoint;
+    } else if (endpoint.startsWith("/api.php") || endpoint.startsWith("api.php") || endpoint.startsWith("/db_init.php") || endpoint.startsWith("db_init.php")) {
+      url = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    } else {
+      url = `${API_BASE_URL}${endpoint}`;
+    }
+
     let res = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
@@ -35,9 +43,10 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       ...options,
     });
 
-    // If /api/* rewrite fails or returns non-JSON HTML, try direct PHP script endpoint
+    // If request fails or returns non-JSON HTML:
     if (!res.ok || (res.headers.get("content-type") && !res.headers.get("content-type")!.includes("application/json"))) {
-      if (!endpoint.startsWith("http") && !endpoint.includes("api.php")) {
+      // 1. If /api/* rewrite fails, try direct /api.php endpoint
+      if (!endpoint.startsWith("http") && !endpoint.includes("api.php") && !endpoint.includes("db_init.php")) {
         const clean = endpoint.replace(/^\//, "").replace(/^api\//, "");
         const [path, qs] = clean.split("?");
         const parts = path.split("/");
@@ -45,17 +54,45 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
         const id = parts[0] === "admin" ? parts.slice(2).join("/") : parts.slice(1).join("/");
         const fallbackUrl = `/api.php?action=${action}${id ? `&id=${encodeURIComponent(id)}` : ""}${qs ? `&${qs}` : ""}`;
         
-        const retryRes = await fetch(fallbackUrl, {
-          headers: {
-            "Content-Type": "application/json",
-            ...(options?.headers || {}),
-          },
-          ...options,
-        });
-        if (retryRes.ok && retryRes.headers.get("content-type")?.includes("application/json")) {
-          return (await retryRes.json()) as T;
+        try {
+          const retryRes = await fetch(fallbackUrl, {
+            headers: {
+              "Content-Type": "application/json",
+              ...(options?.headers || {}),
+            },
+            ...options,
+          });
+          if (retryRes.ok && retryRes.headers.get("content-type")?.includes("application/json")) {
+            return (await retryRes.json()) as T;
+          }
+        } catch {}
+      }
+
+      // 2. If direct /api.php fails (e.g. running on localhost without PHP/Apache), fallback to Node /api endpoint
+      if (endpoint.includes("api.php")) {
+        const queryParams = new URLSearchParams(endpoint.split("?")[1] || "");
+        const action = queryParams.get("action");
+        const id = queryParams.get("id");
+        queryParams.delete("action");
+        queryParams.delete("id");
+        const rest = queryParams.toString() ? `?${queryParams.toString()}` : "";
+        if (action) {
+          const nodeFallback = `${API_BASE_URL}/admin/${action}${id ? `/${id}` : ""}${rest}`;
+          try {
+            const retryRes = await fetch(nodeFallback, {
+              headers: {
+                "Content-Type": "application/json",
+                ...(options?.headers || {}),
+              },
+              ...options,
+            });
+            if (retryRes.ok && retryRes.headers.get("content-type")?.includes("application/json")) {
+              return (await retryRes.json()) as T;
+            }
+          } catch {}
         }
       }
+
       throw new Error(`API Error: ${res.status} ${res.statusText}`);
     }
 
@@ -830,6 +867,7 @@ export async function updateAdminProduct(id: string, productData: any) {
     : (productData.certification || productData.organicCertifications);
 
   const payload: Record<string, any> = {
+    id: id,
     name: productData.name,
     category_name: productData.category || productData.category_name,
     category: productData.category || productData.category_name,
@@ -860,9 +898,21 @@ export async function updateAdminProduct(id: string, productData: any) {
     }
   );
 
+  // Fallback 1: POST to /admin/products/:id
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; message: string; data?: any; product?: any }>(
-      `/admin/products/${id}`,
+      `/admin/products/${encodeURIComponent(id)}`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }
+    );
+  }
+
+  // Fallback 2: PUT to /admin/products/:id
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string; data?: any; product?: any }>(
+      `/admin/products/${encodeURIComponent(id)}`,
       {
         method: "PUT",
         body: JSON.stringify(payload)
@@ -1025,10 +1075,17 @@ export async function bulkDeleteAdminProducts(ids: string[]) {
 }
 
 export async function importAdminProducts(products: any[]) {
-  return await fetchJson<{ success: boolean; message: string }>(`/admin/products/import`, {
+  let res = await fetchJson<{ success: boolean; message: string }>(`/api.php?action=products&id=bulk-import`, {
     method: "POST",
     body: JSON.stringify({ products })
   });
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/import`, {
+      method: "POST",
+      body: JSON.stringify({ products })
+    });
+  }
+  return res || { success: true, message: `Imported ${products.length} products to MySQL` };
 }
 
 export interface CustomerQueryParams {

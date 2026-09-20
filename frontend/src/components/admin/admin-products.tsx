@@ -828,15 +828,15 @@ export function ProductsManagement() {
           try {
             if (editingProduct) {
               const res = await updateAdminProduct(editingProduct.id, formData);
-              if (res && res.success === false) {
-                toast.error(res.message || "Failed to update product in database");
+              if (!res || res.success === false) {
+                toast.error(res?.message || "Failed to update product in database");
                 return;
               }
               toast.success(`Product "${formData.name}" updated successfully in database`);
             } else {
               const res = await createAdminProduct(formData);
-              if (res && res.success === false) {
-                toast.error(res.message || "Failed to create product in database");
+              if (!res || res.success === false) {
+                toast.error(res?.message || "Failed to create product in database");
                 return;
               }
               toast.success(`Product "${formData.name}" created successfully in database`);
