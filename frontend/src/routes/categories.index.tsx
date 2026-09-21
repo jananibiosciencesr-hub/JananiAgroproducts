@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronRight, Package, Sparkles } from "lucide-react";
 import { PageHero } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
-import { categories, products } from "@/lib/catalog";
+import { categories, products, getCategoryImage, pantryImage } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 
 export const Route = createFileRoute("/categories/")({
@@ -33,6 +33,7 @@ function CategoriesIndexPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {allCats.map((cat) => {
             const count = allProds.filter((p) => p.category.toLowerCase() === cat.name.toLowerCase()).length;
+            const catImg = getCategoryImage(cat.slug || cat.name, cat.image);
             return (
               <div
                 key={cat.slug}
@@ -40,8 +41,11 @@ function CategoriesIndexPage() {
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                   <img
-                    src={cat.image}
+                    src={catImg}
                     alt={cat.name}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = pantryImage;
+                    }}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import type { Product, ProductVariant } from "@/lib/catalog";
+import { type Product, type ProductVariant, getProductImage, pantryImage } from "@/lib/catalog";
 import { toast } from "sonner";
 
 interface ProductQuickViewModalProps {
@@ -108,8 +108,11 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
             {/* Main Image */}
             <div className="my-6 relative aspect-square overflow-hidden rounded-3xl bg-secondary/80 flex items-center justify-center">
               <img
-                src={product.image}
+                src={getProductImage(product.name || product.category, product.image)}
                 alt={product.name}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = pantryImage;
+                }}
                 className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
               />
               {discountPercent > 0 && (

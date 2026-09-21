@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import { products } from "@/lib/catalog";
+import { products, getProductImage, pantryImage } from "@/lib/catalog";
 import { toast } from "sonner";
 
 interface CartDrawerProps {
@@ -103,8 +103,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-border bg-card shadow-xs hover:border-primary/30 transition"
               >
                 <img
-                  src={product.image}
+                  src={getProductImage(product.name || product.category, product.image)}
                   alt={product.name}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = pantryImage;
+                  }}
                   className="size-16 rounded-xl object-cover border border-border shrink-0"
                 />
 

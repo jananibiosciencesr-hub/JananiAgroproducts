@@ -16,7 +16,7 @@ import {
   SlidersHorizontal,
   ExternalLink
 } from "lucide-react";
-import { products, categories, type Product } from "@/lib/catalog";
+import { products, categories, type Product, getProductImage, pantryImage } from "@/lib/catalog";
 import { VoiceSearchModal } from "@/components/search/voice-search-modal";
 import { Button } from "@/components/ui/button";
 
@@ -278,8 +278,11 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                         >
                           <div className="flex items-center gap-3">
                             <img
-                              src={p.image}
+                              src={getProductImage(p.name || p.category, p.image)}
                               alt={p.name}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = pantryImage;
+                              }}
                               className="size-11 rounded-xl object-cover border border-border"
                             />
                             <div>

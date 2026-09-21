@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, type Product } from "@/lib/catalog";
+import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
@@ -242,8 +242,11 @@ export function WishlistPage() {
                   {/* Image Container */}
                   <div className="relative aspect-square overflow-hidden bg-secondary">
                     <img
-                      src={product.image}
+                      src={getProductImage(product.name || product.category, product.image)}
                       alt={product.name}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = pantryImage;
+                      }}
                       className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                     />
 

@@ -45,6 +45,8 @@ import {
   services,
   storyImage,
   testimonials,
+  getCategoryImage,
+  getProductImage,
   type Product
 } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
@@ -461,6 +463,7 @@ function HomePage() {
           <div className="mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
             {allCategories.slice(0, 6).map((cat) => {
               const count = allProducts.filter((p) => p.category.toLowerCase().includes(cat.name.toLowerCase()) || p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))).length || 4;
+              const catImg = getCategoryImage(cat.slug || cat.name, cat.image);
               return (
                 <Link
                   key={cat.slug}
@@ -470,9 +473,12 @@ function HomePage() {
                 >
                   <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-secondary/40">
                     <img
-                      src={cat.image}
+                      src={catImg}
                       alt={cat.name}
                       loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = pantryImage;
+                      }}
                       className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300" />

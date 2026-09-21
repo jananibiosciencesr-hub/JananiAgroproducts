@@ -3,7 +3,7 @@ import { Heart, ShoppingBag, Star, Eye, MapPin, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import type { Product } from "@/lib/catalog";
+import { type Product, getProductImage, pantryImage } from "@/lib/catalog";
 import { toast } from "sonner";
 
 interface ProductCardProps {
@@ -56,9 +56,12 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
         }`}
       >
         <img
-          src={product.image}
+          src={getProductImage(product.name || product.category, product.image)}
           alt={product.name}
           loading="lazy"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = pantryImage;
+          }}
           width={700}
           height={700}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, type Product } from "@/lib/catalog";
+import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
@@ -235,8 +235,11 @@ export function CartPage() {
                 >
                   <div className="flex items-center gap-4">
                     <img
-                      src={product.image}
+                      src={getProductImage(product.name || product.category, product.image)}
                       alt={product.name}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = pantryImage;
+                      }}
                       className="size-20 sm:size-24 shrink-0 rounded-2xl object-cover border border-border"
                     />
                     <div>
@@ -387,8 +390,11 @@ export function CartPage() {
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <img
-                          src={prod.image}
+                          src={getProductImage(prod.name || prod.category, prod.image)}
                           alt={prod.name}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = pantryImage;
+                          }}
                           className="size-14 rounded-xl object-cover border border-border shrink-0"
                         />
                         <div className="min-w-0">

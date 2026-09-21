@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products } from "@/lib/catalog";
+import { products, getProductImage, pantryImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { createOrder, sendAuthOtp, verifyAuthOtp, signupCustomer } from "@/lib/api";
 
@@ -793,8 +793,11 @@ export function CheckoutPage() {
               {cartItems.map(({ product, qty }) => (
                 <div key={product.id} className="flex items-center gap-2.5 pt-2 text-xs">
                   <img
-                    src={product.image}
+                    src={getProductImage(product.name || product.category, product.image)}
                     alt={product.name}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = pantryImage;
+                    }}
                     className="size-10 rounded-lg object-cover border border-border shrink-0"
                   />
                   <div className="flex-1 min-w-0">

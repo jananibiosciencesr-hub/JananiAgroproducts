@@ -1,4 +1,4 @@
-import { products, categories, orders, type Product } from "./catalog";
+import { products, categories, orders, type Product, getCategoryImage, getProductImage } from "./catalog";
 import {
   STORAGE_KEYS,
   getStored,
@@ -127,7 +127,7 @@ export function normalizeProduct(raw: any): Product {
     inStock: stock > 0 && raw.active !== 0 && raw.status !== "Trash",
     stockCount: stock,
     badge: raw.badge || (discount > 15 ? "Special Offer" : undefined),
-    image: raw.image || `/images/products/${raw.slug}.webp`,
+    image: getProductImage(raw.name || raw.category_name || raw.category, raw.image),
     description: raw.description || "100% Certified Organic Harvest directly from Indian farms.",
     origin: raw.origin || "Lodhika GIDC, Gujarat",
     dietaryTags: Array.isArray(raw.tags) ? raw.tags : (typeof raw.tags === "string" ? JSON.parse(raw.tags) : ["Organic", "Chemical Free", "Farm Fresh"]),
@@ -187,7 +187,7 @@ export async function getCategories() {
       name: c.name,
       slug: c.slug,
       count: Number(c.product_count || c.count) || 0,
-      image: c.image || `/images/categories/${c.slug}.webp`
+      image: getCategoryImage(c.slug || c.name, c.image)
     }));
   }
   return categories;

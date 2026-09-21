@@ -11,7 +11,7 @@ import {
   Volume2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { heroImage, pantryImage, productsImage, storyImage, type Product } from "@/lib/catalog";
+import { heroImage, pantryImage, productsImage, storyImage, getProductImage, type Product } from "@/lib/catalog";
 
 interface PdpGalleryProps {
   product: Product;
@@ -20,7 +20,7 @@ interface PdpGalleryProps {
 export function PdpGallery({ product }: PdpGalleryProps) {
   // Gallery images array
   const galleryImages = [
-    { id: "main", src: product.image, alt: `${product.name} - Front Package View`, label: "Main Pack" },
+    { id: "main", src: getProductImage(product.name || product.category, product.image), alt: `${product.name} - Front Package View`, label: "Main Pack" },
     { id: "pantry", src: pantryImage, alt: `${product.name} - Pantry Lifestyle Texture`, label: "Pantry Texture" },
     { id: "story", src: storyImage, alt: `${product.name} - Farm Origin Harvest`, label: "Farm Harvest" },
     { id: "products", src: productsImage, alt: `${product.name} - Pure Harvest Batch`, label: "Batch Close-up" },
@@ -94,6 +94,9 @@ export function PdpGallery({ product }: PdpGalleryProps) {
           <img
             src={activeImage.src}
             alt={activeImage.alt}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = pantryImage;
+            }}
             className={`h-full w-full object-cover transition-transform duration-200 ${
               isZooming ? "scale-150" : "scale-100"
             }`}
