@@ -69,78 +69,40 @@ export function HomeFlashSale({
     return null;
   }
 
-  const p1 = allProducts[0]!;
-  const p2 = allProducts[1] || p1;
-  const p3 = allProducts[2] || p1;
-  const p4 = allProducts[3] || p1;
+  // Dynamic Flash Deals from Live Store / Catalog Products
+  const flashDeals: FlashDealItem[] = allProducts.slice(0, 4).map((p, idx) => {
+    const originalPrice = p.oldPrice && p.oldPrice > p.price ? p.oldPrice : Math.round(p.price * 1.25);
+    const flashPrice = p.price;
+    const discount = Math.max(10, Math.round(((originalPrice - flashPrice) / originalPrice) * 100));
 
-  // Flash Sale Items (Curated Deals)
-  const flashDeals: FlashDealItem[] = [
-    {
-      id: p1.id,
-      slug: p1.slug,
-      name: p1.name,
-      category: p1.category,
-      image: p1.image,
-      rating: p1.rating,
-      reviews: p1.reviews,
-      flashPrice: 349,
-      originalPrice: p1.price,
-      discount: 20,
-      totalStock: 50,
-      claimed: 41,
-      badge: "Deal of the Day",
-      subtitle: "Single-origin slow wood churned at 38°C"
-    },
-    {
-      id: p2.id,
-      slug: p2.slug,
-      name: p2.name,
-      category: p2.category,
-      image: p2.image,
-      rating: p2.rating,
-      reviews: p2.reviews,
-      flashPrice: 289,
-      originalPrice: p2.price,
-      discount: 18,
-      totalStock: 35,
-      claimed: 29,
-      badge: "Morning Mill Batch",
-      subtitle: "Cold-pressed pungent yellow mustard"
-    },
-    {
-      id: p3.id,
-      slug: p3.slug,
-      name: p3.name,
-      category: p3.category,
-      image: p3.image,
-      rating: p3.rating,
-      reviews: p3.reviews,
-      flashPrice: 119,
-      originalPrice: p3.price,
-      discount: 22,
-      totalStock: 60,
-      claimed: 52,
-      badge: "Fresh Grain Harvest",
-      subtitle: "Unpolished diabetic-friendly native grain"
-    },
-    {
-      id: p4.id,
-      slug: p4.slug,
-      name: p4.name,
-      category: p4.category,
-      image: p4.image,
-      rating: p4.rating,
-      reviews: p4.reviews,
-      flashPrice: 399,
-      originalPrice: p4.price,
-      discount: 15,
-      totalStock: 40,
-      claimed: 33,
-      badge: "Pure Cold Pressed",
-      subtitle: "Extracted from fresh coastal coconuts"
-    }
-  ];
+    const totalStock = p.stockCount || 50;
+    const remaining = Math.max(3, Math.min(12, (p.id * 7) % 9 + 4));
+    const claimed = totalStock - remaining;
+
+    const badges = ["Deal of the Day", "Morning Mill Batch", "Fresh Harvest", "Bestseller Deal"];
+    const badge = p.badge || badges[idx % badges.length];
+
+    const subtitle = p.description
+      ? (p.description.length > 55 ? p.description.slice(0, 52) + "..." : p.description)
+      : (p.unit ? `${p.unit} • 100% Certified Organic` : "Direct from partner organic farms");
+
+    return {
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      category: p.category,
+      image: p.image || "/assets/janani-pantry.jpg",
+      rating: p.rating || 4.9,
+      reviews: p.reviews || 48,
+      flashPrice,
+      originalPrice,
+      discount,
+      totalStock,
+      claimed,
+      badge,
+      subtitle
+    };
+  });
 
   return (
     <section className="relative overflow-hidden py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-amber-500/5 via-cream to-cream">
@@ -189,8 +151,8 @@ export function HomeFlashSale({
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {flashDeals.map((item) => {
             const isWishlisted = wishlist.includes(item.id);
-            const remaining = item.totalStock - item.claimed;
-            const progressPercent = Math.round((item.claimed / item.totalStock) * 100);
+            const remaining = Math.max(1, item.totalStock - item.claimed);
+            const progressPercent = Math.min(95, Math.max(65, Math.round((item.claimed / item.totalStock) * 100)));
 
             return (
               <div
@@ -203,6 +165,9 @@ export function HomeFlashSale({
                     src={item.image}
                     alt={item.name}
                     loading="lazy"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/assets/janani-pantry.jpg";
+                    }}
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                   />
                   
@@ -250,12 +215,16 @@ export function HomeFlashSale({
                     <span className="font-display text-xl font-extrabold text-foreground">
                       ₹{item.flashPrice}
                     </span>
-                    <span className="text-xs text-muted-foreground line-through">
-                      ₹{item.originalPrice}
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-600">
-                      Save ₹{item.originalPrice - item.flashPrice}
-                    </span>
+                    {item.originalPrice > item.flashPrice && (
+                      <>
+                        <span className="text-xs text-muted-foreground line-through">
+                          ₹{item.originalPrice}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-600">
+                          Save ₹{item.originalPrice - item.flashPrice}
+                        </span>
+                      </>
+                    )}
                   </div>
 
                   {/* Stock Scarcity Progress Meter */}

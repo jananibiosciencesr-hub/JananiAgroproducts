@@ -459,8 +459,8 @@ function HomePage() {
           />
 
           <div className="mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
-            {categories.slice(0, 6).map((cat) => {
-              const count = products.filter((p) => p.category.toLowerCase().includes(cat.name.toLowerCase()) || p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))).length || 4;
+            {allCategories.slice(0, 6).map((cat) => {
+              const count = allProducts.filter((p) => p.category.toLowerCase().includes(cat.name.toLowerCase()) || p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))).length || 4;
               return (
                 <Link
                   key={cat.slug}
@@ -545,7 +545,7 @@ function HomePage() {
           <div className="mt-12 text-center">
             <Button asChild variant="outline" size="lg" className="rounded-2xl font-bold text-xs">
               <Link to="/products">
-                View All {products.length} Products <ArrowRight className="size-4 ml-1.5" />
+                View All {allProducts.length} Products <ArrowRight className="size-4 ml-1.5" />
               </Link>
             </Button>
           </div>
@@ -605,7 +605,7 @@ function HomePage() {
           />
 
           <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.slice(8, 12).map((product) => (
+            {allProducts.slice(8, 12).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
