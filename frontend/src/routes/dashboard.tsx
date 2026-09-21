@@ -100,8 +100,8 @@ function DashboardPage() {
   };
 
   const userName = user?.name || "Valued Patron";
-  const userEmail = user?.email || "customer@jananiagro.com";
-  const userPhone = user?.phone || "+91 98480 22338";
+  const userEmail = user?.email || "";
+  const userPhone = user?.phone || "";
   const initials = userName
     .split(" ")
     .filter(Boolean)
@@ -109,6 +109,32 @@ function DashboardPage() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6 animate-in fade-in duration-300">
+        <div className="size-20 mx-auto rounded-3xl bg-brand-leaf/10 text-brand-leaf grid place-items-center shadow-inner">
+          <Package className="size-10" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+            Sign In to View Your Orders & Account
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+            Sign in with your Email OTP to manage your orders, live tracking status, GST tax invoices, and saved delivery addresses.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
+            <Link to="/login">Sign In / Register with OTP</Link>
+          </Button>
+          <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
+            <Link to="/products">Explore Harvest Products</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">

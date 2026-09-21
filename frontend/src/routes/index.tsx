@@ -667,7 +667,7 @@ function HomePage() {
             <div className="rounded-2xl border border-border bg-secondary/80 px-4 py-2.5 text-center sm:text-left">
               <span className="text-[10px] uppercase font-bold text-muted-foreground block">Your Invite Code</span>
               <span className="font-mono text-lg font-bold text-foreground">
-                {user?.referralCode || "NEHA250"}
+                {user?.referralCode || "JANANI100"}
               </span>
             </div>
             <Button

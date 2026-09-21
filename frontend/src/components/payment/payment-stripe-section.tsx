@@ -28,11 +28,11 @@ export function PaymentStripeSection({
   onPaymentFailure,
   simulateFailure,
 }: PaymentStripeSectionProps) {
-  const [cardNumber, setCardNumber] = useState("4242 •••• •••• 4242");
-  const [cardholderName, setCardholderName] = useState(customerName || "Neha Patel");
-  const [expiry, setExpiry] = useState("11/29");
-  const [cvc, setCvc] = useState("314");
-  const [postalCode, setPostalCode] = useState("380054");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardholderName, setCardholderName] = useState(customerName || "");
+  const [expiry, setExpiry] = useState("");
+  const [cvc, setCvc] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Format card number with spaces

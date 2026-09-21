@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { User, Mail, Phone, Calendar, Heart, ShieldCheck, Check, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -21,18 +21,33 @@ export function EditProfileTab() {
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
-    gender: "female",
-    dob: "1995-01-01",
-    bio: "Passionate about traditional wood-pressed oils and single-origin farm-fresh harvests.",
+    gender: (user as any)?.gender || "",
+    dob: (user as any)?.dob || "",
+    bio: (user as any)?.bio || "",
   });
 
   const [selectedDietary, setSelectedDietary] = useState<string[]>(
     user?.preferences?.dietary || [
       "Wood-Pressed Cold Oils",
       "A2 Gir Cow Bilona Ghee",
-      "Organic Heirloom Millets",
     ]
   );
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        gender: (user as any).gender || "",
+        dob: (user as any).dob || "",
+        bio: (user as any).bio || "",
+      });
+      if (user.preferences?.dietary) {
+        setSelectedDietary(user.preferences.dietary);
+      }
+    }
+  }, [user]);
 
   const [saving, setSaving] = useState(false);
 

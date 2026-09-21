@@ -429,7 +429,7 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                 <span className="text-foreground">Full Name *</span>
                 <input
                   required
-                  placeholder="e.g. Neha Patel"
+                  placeholder="e.g. Rahul Sharma"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground"

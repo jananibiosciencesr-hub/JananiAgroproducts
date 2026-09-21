@@ -83,7 +83,7 @@ export const faqs: [string, string][] = [
 ];
 
 export const testimonials: [string, string, string][] = [
-  ["Neha Patel", "Ahmedabad", "The rice has a delicate aroma and cooks beautifully. The packaging feels as thoughtful as the product."],
+  ["Nandini Patel", "Ahmedabad", "The rice has a delicate aroma and cooks beautifully. The packaging feels as thoughtful as the product."],
   ["Rohan Mehta", "Mumbai", "Janani has become our trusted source for oils and everyday dals. Quality is remarkably consistent."],
   ["Asha Menon", "Bengaluru", "Fresh, clean and honestly labelled. The turmeric colour and fragrance are exceptional."],
   ["Devang Shah", "Rajkot", "Their wholesale team is responsive and dispatches arrive exactly as committed."],
@@ -93,8 +93,4 @@ export const testimonials: [string, string, string][] = [
   ["Kunal Rao", "Hyderabad", "A rare brand that gets traceability, taste and presentation equally right."],
 ];
 
-export const orders = [
-  { number: "JAP-260811", date: "08 Sep 2026", total: 1246, status: "Shipped", items: 4 },
-  { number: "JAP-260724", date: "24 Aug 2026", total: 879, status: "Delivered", items: 3 },
-  { number: "JAP-260619", date: "19 Jul 2026", total: 1548, status: "Delivered", items: 6 },
-];
+export const orders: any[] = [];

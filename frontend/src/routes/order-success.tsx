@@ -398,7 +398,7 @@ export function OrderSuccessPage() {
       <ReferEarnModal
         isOpen={isReferEarnModalOpen}
         onClose={() => setIsReferEarnModalOpen(false)}
-        referralCode="NEHA250"
+        referralCode={user?.referralCode || "JANANI100"}
       />
 
       <CouponRewardModal

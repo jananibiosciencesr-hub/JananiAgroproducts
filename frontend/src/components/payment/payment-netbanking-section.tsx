@@ -46,7 +46,7 @@ export function PaymentNetbankingSection({
 }: PaymentNetbankingSectionProps) {
   const [selectedBank, setSelectedBank] = useState("HDFC Bank");
   const [isSimulatingBankAuth, setIsSimulatingBankAuth] = useState(false);
-  const [bankUsername, setBankUsername] = useState("patel_neha");
+  const [bankUsername, setBankUsername] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleStartBankAuth = () => {

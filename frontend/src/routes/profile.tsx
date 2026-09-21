@@ -43,6 +43,33 @@ export function ProfilePage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const { user } = useStore();
 
+  // If user is not signed in, prompt clean Sign In
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6 animate-in fade-in duration-300">
+        <div className="size-20 mx-auto rounded-3xl bg-brand-leaf/10 text-brand-leaf grid place-items-center shadow-inner">
+          <User className="size-10" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+            Sign In to Access Your Profile
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+            Please sign in with your Email OTP to manage your personal details, saved delivery addresses, and farm wallet.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
+            <Link to="/login">Sign In / Register with OTP</Link>
+          </Button>
+          <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
+            <Link to="/">Explore Storefront</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 pb-24 lg:pb-16 space-y-8 animate-in fade-in duration-300">
       {/* Breadcrumb Navigation */}

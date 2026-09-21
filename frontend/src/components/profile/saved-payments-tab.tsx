@@ -14,42 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { SavedCard, SavedUpi } from "./types";
+import { useStore } from "@/components/store-provider";
 
-const INITIAL_CARDS: SavedCard[] = [
-  {
-    id: "card-1",
-    cardNumber: "•••• •••• •••• 4242",
-    cardholderName: "NEHA PATEL",
-    expiry: "09/28",
-    brand: "visa",
-    isDefault: true,
-  },
-  {
-    id: "card-2",
-    cardNumber: "•••• •••• •••• 8819",
-    cardholderName: "NEHA PATEL",
-    expiry: "12/29",
-    brand: "mastercard",
-    isDefault: false,
-  },
-];
-
-const INITIAL_UPIS: SavedUpi[] = [
-  {
-    id: "upi-1",
-    upiId: "neha.patel@okhdfcbank",
-    provider: "Google Pay",
-    isDefault: true,
-  },
-  {
-    id: "upi-2",
-    upiId: "9311416225@paytm",
-    provider: "Paytm UPI",
-    isDefault: false,
-  },
-];
+const INITIAL_CARDS: SavedCard[] = [];
+const INITIAL_UPIS: SavedUpi[] = [];
 
 export function SavedPaymentsTab() {
+  const { user } = useStore();
   const [cards, setCards] = useState<SavedCard[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -81,7 +52,7 @@ export function SavedPaymentsTab() {
   // New Card Form
   const [cardForm, setCardForm] = useState({
     number: "",
-    name: "NEHA PATEL",
+    name: user?.name || "",
     expiry: "",
     cvv: "",
     brand: "visa" as SavedCard["brand"],
@@ -215,64 +186,70 @@ export function SavedPaymentsTab() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {cards.map((card) => (
-            <div
-              key={card.id}
-              className={`rounded-2xl border p-5 space-y-4 relative transition ${
-                card.isDefault
-                  ? "border-brand-leaf bg-brand-leaf/5 shadow-xs"
-                  : "border-border bg-secondary/40 hover:bg-secondary/70"
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf font-mono">
-                  {card.brand.toUpperCase()}
-                </span>
-                <div className="flex items-center gap-1">
-                  {card.isDefault && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-brand-leaf/15 text-brand-leaf px-2.5 py-0.5 text-[10px] font-bold">
-                      <CheckCircle2 className="size-3" /> Default Card
-                    </span>
-                  )}
+        {cards.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card/60 p-6 text-center text-xs text-muted-foreground">
+            No saved cards yet. Click <strong>+ Add New Card</strong> above to save your card for 1-click checkout.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {cards.map((card) => (
+              <div
+                key={card.id}
+                className={`rounded-2xl border p-5 space-y-4 relative transition ${
+                  card.isDefault
+                    ? "border-brand-leaf bg-brand-leaf/5 shadow-xs"
+                    : "border-border bg-secondary/40 hover:bg-secondary/70"
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf font-mono">
+                    {card.brand.toUpperCase()}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {card.isDefault && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-leaf/15 text-brand-leaf px-2.5 py-0.5 text-[10px] font-bold">
+                        <CheckCircle2 className="size-3" /> Default Card
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCard(card.id)}
+                      className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-destructive transition ml-1"
+                      title="Remove card"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="font-mono text-base font-bold text-foreground tracking-widest">
+                  {card.cardNumber}
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/60">
+                  <div>
+                    <span className="text-[10px] uppercase block">Cardholder</span>
+                    <strong className="text-foreground font-medium">{card.cardholderName}</strong>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase block">Expires</span>
+                    <strong className="text-foreground font-mono">{card.expiry}</strong>
+                  </div>
+                </div>
+
+                {!card.isDefault && (
                   <button
                     type="button"
-                    onClick={() => handleDeleteCard(card.id)}
-                    className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-destructive transition ml-1"
-                    title="Remove card"
+                    onClick={() => handleSetDefaultCard(card.id)}
+                    className="text-xs font-bold text-brand-leaf hover:underline block pt-1"
                   >
-                    <Trash2 className="size-3.5" />
+                    Set as Default Card
                   </button>
-                </div>
+                )}
               </div>
-
-              <div className="font-mono text-base font-bold text-foreground tracking-widest">
-                {card.cardNumber}
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/60">
-                <div>
-                  <span className="text-[10px] uppercase block">Cardholder</span>
-                  <strong className="text-foreground font-medium">{card.cardholderName}</strong>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] uppercase block">Expires</span>
-                  <strong className="text-foreground font-mono">{card.expiry}</strong>
-                </div>
-              </div>
-
-              {!card.isDefault && (
-                <button
-                  type="button"
-                  onClick={() => handleSetDefaultCard(card.id)}
-                  className="text-xs font-bold text-brand-leaf hover:underline block pt-1"
-                >
-                  Set as Default Card
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 2. Saved UPI Section */}
@@ -299,54 +276,60 @@ export function SavedPaymentsTab() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {upis.map((upi) => (
-            <div
-              key={upi.id}
-              className={`rounded-2xl border p-4 flex items-center justify-between gap-3 transition ${
-                upi.isDefault
-                  ? "border-brand-gold bg-brand-gold/5 shadow-xs"
-                  : "border-border bg-secondary/40 hover:bg-secondary/70"
-              }`}
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider bg-brand-gold/15 px-2 py-0.5 rounded-md">
-                    {upi.provider}
-                  </span>
-                  {upi.isDefault && (
-                    <span className="text-[10px] font-bold text-brand-leaf bg-brand-leaf/15 px-2 py-0.5 rounded-full">
-                      Primary
+        {upis.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card/60 p-6 text-center text-xs text-muted-foreground">
+            No saved UPI handles yet. Click <strong>+ Add UPI ID</strong> above to link Google Pay, PhonePe, or Paytm.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {upis.map((upi) => (
+              <div
+                key={upi.id}
+                className={`rounded-2xl border p-4 flex items-center justify-between gap-3 transition ${
+                  upi.isDefault
+                    ? "border-brand-gold bg-brand-gold/5 shadow-xs"
+                    : "border-border bg-secondary/40 hover:bg-secondary/70"
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider bg-brand-gold/15 px-2 py-0.5 rounded-md">
+                      {upi.provider}
                     </span>
-                  )}
+                    {upi.isDefault && (
+                      <span className="text-[10px] font-bold text-brand-leaf bg-brand-leaf/15 px-2 py-0.5 rounded-full">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-mono text-xs sm:text-sm font-bold text-foreground">
+                    {upi.upiId}
+                  </p>
                 </div>
-                <p className="font-mono text-xs sm:text-sm font-bold text-foreground">
-                  {upi.upiId}
-                </p>
-              </div>
 
-              <div className="flex items-center gap-2">
-                {!upi.isDefault && (
+                <div className="flex items-center gap-2">
+                  {!upi.isDefault && (
+                    <button
+                      type="button"
+                      onClick={() => handleSetDefaultUpi(upi.id)}
+                      className="text-xs font-bold text-brand-leaf hover:underline"
+                    >
+                      Set Primary
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => handleSetDefaultUpi(upi.id)}
-                    className="text-xs font-bold text-brand-leaf hover:underline"
+                    onClick={() => handleDeleteUpi(upi.id)}
+                    className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive transition"
+                    title="Remove UPI"
                   >
-                    Set Primary
+                    <Trash2 className="size-3.5" />
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleDeleteUpi(upi.id)}
-                  className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive transition"
-                  title="Remove UPI"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Add Card Modal */}

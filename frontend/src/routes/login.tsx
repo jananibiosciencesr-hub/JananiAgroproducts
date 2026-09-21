@@ -1413,7 +1413,7 @@ export function AuthenticationPage() {
                     required
                     value={forgotIdentifier}
                     onChange={(e) => setForgotIdentifier(e.target.value)}
-                    placeholder="93114 16225 or neha.patel@example.com"
+                    placeholder="e.g. 98450 12345 or your.name@domain.com"
                     className="h-11 w-full rounded-2xl border border-input bg-background px-3.5 text-xs sm:text-sm outline-none focus:border-primary"
                   />
                 </div>
@@ -1426,7 +1426,7 @@ export function AuthenticationPage() {
             {forgotStep === "verify_otp" && (
               <form onSubmit={handleForgotResetPassword} className="space-y-4">
                 <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800">
-                  Verification code dispatched. Use demo code: <strong>123456</strong>
+                  A 6-digit verification code has been dispatched to your email address.
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">6-Digit Verification Code *</label>
@@ -1436,7 +1436,7 @@ export function AuthenticationPage() {
                     maxLength={6}
                     value={forgotOtp}
                     onChange={(e) => setForgotOtp(e.target.value)}
-                    placeholder="Enter 123456"
+                    placeholder="• • • • • •"
                     className="h-11 w-full rounded-2xl border border-input bg-background text-center font-mono text-base tracking-widest outline-none focus:border-primary"
                   />
                 </div>

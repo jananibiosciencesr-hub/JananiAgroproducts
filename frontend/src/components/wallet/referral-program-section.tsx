@@ -22,89 +22,27 @@ import { useStore } from "@/components/store-provider";
 import { type ReferralAnalytics } from "./types";
 
 const INITIAL_REFERRAL_DATA: ReferralAnalytics = {
-  referralCode: "NEHA250",
-  referralUrl: "https://jananiagro.com/invite/NEHA250",
-  totalEarnings: 1250,
-  completedInvites: 5,
-  pendingInvites: 2,
+  referralCode: "JANANI100",
+  referralUrl: "https://jananiagro.com/invite/JANANI100",
+  totalEarnings: 0,
+  completedInvites: 0,
+  pendingInvites: 0,
   currentMilestone: {
     tierName: "Vedic Community Champion",
     targetCount: 10,
-    currentCount: 5,
+    currentCount: 0,
     bonusAmount: 1000,
-    progressPercent: 50,
+    progressPercent: 0,
   },
-  friends: [
-    {
-      id: "ref-1",
-      name: "Rohan Sharma",
-      phoneOrEmail: "rohan.sharma@gmail.com",
-      date: "08 Sep 2026",
-      status: "rewarded",
-      rewardAmount: 250,
-      orderValue: 1820,
-    },
-    {
-      id: "ref-2",
-      name: "Priya Deshmukh",
-      phoneOrEmail: "+91 98450 *****",
-      date: "02 Sep 2026",
-      status: "rewarded",
-      rewardAmount: 250,
-      orderValue: 1200,
-    },
-    {
-      id: "ref-3",
-      name: "Amit Verma",
-      phoneOrEmail: "amit.v@outlook.com",
-      date: "24 Aug 2026",
-      status: "rewarded",
-      rewardAmount: 250,
-      orderValue: 2450,
-    },
-    {
-      id: "ref-4",
-      name: "Sunita Rao",
-      phoneOrEmail: "+91 97412 *****",
-      date: "15 Aug 2026",
-      status: "rewarded",
-      rewardAmount: 250,
-      orderValue: 890,
-    },
-    {
-      id: "ref-5",
-      name: "Vikram Joshi",
-      phoneOrEmail: "vikram.j@techcorp.io",
-      date: "01 Aug 2026",
-      status: "rewarded",
-      rewardAmount: 250,
-      orderValue: 3100,
-    },
-    {
-      id: "ref-6",
-      name: "Deepa K",
-      phoneOrEmail: "+91 99001 *****",
-      date: "10 Sep 2026",
-      status: "pending_first_order",
-      rewardAmount: 250,
-    },
-    {
-      id: "ref-7",
-      name: "Karthik N",
-      phoneOrEmail: "karthik.n@gmail.com",
-      date: "11 Sep 2026",
-      status: "pending_first_order",
-      rewardAmount: 250,
-    },
-  ],
+  friends: [],
 };
 
 export function ReferralProgramSection() {
   const { user } = useStore();
   const [data] = useState<ReferralAnalytics>(() => ({
     ...INITIAL_REFERRAL_DATA,
-    referralCode: user?.referralCode || "NEHA250",
-    referralUrl: `https://jananiagro.com/invite/${user?.referralCode || "NEHA250"}`,
+    referralCode: user?.referralCode || "JANANI100",
+    referralUrl: `https://jananiagro.com/invite/${user?.referralCode || "JANANI100"}`,
   }));
 
   const [copiedCode, setCopiedCode] = useState(false);

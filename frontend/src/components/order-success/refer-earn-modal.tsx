@@ -12,7 +12,7 @@ interface ReferEarnModalProps {
 export function ReferEarnModal({
   isOpen,
   onClose,
-  referralCode = "NEHA250",
+  referralCode = "JANANI100",
 }: ReferEarnModalProps) {
   const [copied, setCopied] = useState(false);
   if (!isOpen) return null;
