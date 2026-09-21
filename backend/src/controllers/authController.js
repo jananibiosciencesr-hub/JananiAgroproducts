@@ -6,63 +6,8 @@ import pool from "../config/db.js";
  * JANANI AGRO PRODUCTS - Premium Organic E-Commerce Platform
  */
 
-// In-Memory Customer & Auth Stores (Prepopulated with Demo Accounts)
-let customersDatabase = [
-  {
-    id: "cust-101",
-    name: "Neha Patel",
-    email: "neha.patel@example.com",
-    phone: "9311416225",
-    passwordHash: "demo1234", // In production this would be bcrypt hash
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
-    role: "customer",
-    walletBalance: 250,
-    referralCode: "NEHA250",
-    referredBy: null,
-    isVerified: true,
-    memberSince: "2024-03-15",
-    tier: "Gold Harvest Member",
-    preferences: {
-      dietary: ["Cold-Pressed Oils", "Organic Millets", "Wood-Pressed Ghee"],
-      pinCode: "560001",
-      notifications: { email: true, sms: true, whatsapp: true }
-    },
-    addresses: [
-      {
-        id: "addr-1",
-        tag: "Home",
-        name: "Neha Patel",
-        phone: "9311416225",
-        street: "Flat 402, Green Glen Residency, Outer Ring Road",
-        city: "Bengaluru",
-        state: "Karnataka",
-        pinCode: "560001",
-        isDefault: true
-      }
-    ]
-  },
-  {
-    id: "cust-102",
-    name: "Vikram Malhotra",
-    email: "vikram.malhotra@example.com",
-    phone: "9876543210",
-    passwordHash: "demo1234",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
-    role: "customer",
-    walletBalance: 150,
-    referralCode: "VIKRAM150",
-    referredBy: "NEHA250",
-    isVerified: true,
-    memberSince: "2024-04-10",
-    tier: "Silver Member",
-    preferences: {
-      dietary: ["Cold-Pressed Oils", "Organic Spices"],
-      pinCode: "110001",
-      notifications: { email: true, sms: true, whatsapp: false }
-    },
-    addresses: []
-  }
-];
+// Customer Auth Store
+let customersDatabase = [];
 
 // Active OTP Store: { phoneOrEmail: { code, purpose, expiresAt, attempts } }
 const activeOtpStore = new Map();

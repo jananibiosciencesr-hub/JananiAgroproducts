@@ -59,7 +59,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("janani_user");
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (
+            parsed?.email?.toLowerCase().includes("neha.patel") ||
+            parsed?.email?.toLowerCase().includes("example.com") ||
+            parsed?.name?.toLowerCase().includes("neha patel") ||
+            parsed?.id === "cust-101"
+          ) {
+            localStorage.removeItem("janani_user");
+            localStorage.removeItem("janani_token");
+            return null;
+          }
+          return parsed;
+        }
       } catch (e) {
         console.error("Failed to parse stored user", e);
       }
@@ -89,6 +102,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refreshProducts();
+
+    // Auto-purge any stale legacy demo data from customer's browser localStorage
+    if (typeof window !== "undefined") {
+      try {
+        const legacyKeys = ["janani_saved_addresses", "janani_customer_orders", "janani_latest_order", "janani_pending_checkout"];
+        legacyKeys.forEach((key) => {
+          const item = localStorage.getItem(key);
+          if (item && (item.toLowerCase().includes("neha") || item.toLowerCase().includes("example.com") || item.includes("9311416225"))) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (e) {}
+    }
   }, []);
 
   // Sync user changes to localStorage

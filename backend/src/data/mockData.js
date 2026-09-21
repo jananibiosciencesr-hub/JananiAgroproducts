@@ -55,66 +55,7 @@ export const categories = [
   description: `Pure, unadulterated ${name.toLowerCase()} cultivated through traditional agro-ecological farming methods.`,
 }));
 
-export let orders = [
-  {
-    id: 1,
-    number: "JAP-260811",
-    date: "08 Sep 2026",
-    total: 1246,
-    status: "Shipped",
-    itemsCount: 4,
-    items: [
-      { productId: 1, name: "Organic Basmati Rice", price: 249, quantity: 2 },
-      { productId: 3, name: "Lakadong Turmeric Powder", price: 189, quantity: 2 },
-      { productId: 6, name: "Wood-Pressed Groundnut Oil", price: 399, quantity: 1 },
-    ],
-    customer: {
-      name: "Neha Patel",
-      phone: "9311416225",
-      email: "neha.patel@example.com",
-      address: "A-304, Green Acres, SG Highway, Ahmedabad, Gujarat – 380054",
-    },
-    courier: "Delhivery Air Express",
-    awb: "DEL-8492048194",
-    expected: "12 Sep 2026",
-    timeline: [
-      { status: "Order Confirmed & Payment Verified", time: "08 Sep 2026, 10:30 AM", done: true },
-      { status: "Batch Quality Tested & Nitrogen Packed", time: "09 Sep 2026, 03:15 PM", done: true },
-      { status: "Dispatched from Lodhika GIDC Facility", time: "10 Sep 2026, 09:00 AM", done: true },
-      { status: "Arrived at Regional Sort Center", time: "11 Sep 2026, 06:45 AM", done: true },
-      { status: "Out for Delivery", time: "Expected 12 Sep 2026", done: false },
-      { status: "Delivered to Customer", time: "Pending", done: false },
-    ],
-  },
-  {
-    id: 2,
-    number: "JAP-260724",
-    date: "24 Aug 2026",
-    total: 879,
-    status: "Delivered",
-    itemsCount: 3,
-    items: [
-      { productId: 2, name: "Premium Wheat Flour", price: 119, quantity: 2 },
-      { productId: 7, name: "Cold-Pressed Mustard Oil", price: 329, quantity: 1 },
-      { productId: 9, name: "Unpolished Toor Dal", price: 199, quantity: 1 },
-    ],
-    customer: {
-      name: "Neha Patel",
-      phone: "9311416225",
-      email: "neha.patel@example.com",
-      address: "A-304, Green Acres, SG Highway, Ahmedabad, Gujarat – 380054",
-    },
-    courier: "BlueDart Express",
-    awb: "BLU-5930284912",
-    expected: "27 Aug 2026",
-    timeline: [
-      { status: "Order Confirmed", time: "24 Aug 2026", done: true },
-      { status: "Quality Tested & Packed", time: "25 Aug 2026", done: true },
-      { status: "Dispatched", time: "25 Aug 2026", done: true },
-      { status: "Delivered", time: "27 Aug 2026", done: true },
-    ],
-  },
-];
+export let orders = [];
 
 export let inquiries = [];
 export let dealerApplications = [];
