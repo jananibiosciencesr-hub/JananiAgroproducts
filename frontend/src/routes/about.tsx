@@ -30,7 +30,7 @@ function AboutPage() {
             <Link to="/products">Explore Our Harvest</Link>
           </Button>
           <Button asChild variant="glass" size="lg">
-            <Link to="/become-distributor">Partner With Us</Link>
+            <Link to="/services">Our Services</Link>
           </Button>
         </div>
       </PageHero>
@@ -180,7 +180,7 @@ function AboutPage() {
                 <Link to="/contact">Contact Our Team</Link>
               </Button>
               <Button asChild variant="glass">
-                <Link to="/become-distributor">Dealer Enquiry</Link>
+                <Link to="/services">Explore Services</Link>
               </Button>
             </div>
           </div>

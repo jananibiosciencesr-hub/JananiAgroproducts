@@ -18,12 +18,12 @@ export function EditProfileTab() {
   const { user, updateUserProfile } = useStore();
 
   const [formData, setFormData] = useState({
-    name: user?.name || "Neha Patel",
-    email: user?.email || "neha.patel@example.com",
-    phone: user?.phone || "+91 93114 16225",
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
     gender: "female",
-    dob: "1994-06-18",
-    bio: "Passionate about traditional Saurashtra stoneground flours and single-origin wood-pressed cooking oils.",
+    dob: "1995-01-01",
+    bio: "Passionate about traditional wood-pressed oils and single-origin farm-fresh harvests.",
   });
 
   const [selectedDietary, setSelectedDietary] = useState<string[]>(

@@ -1,16 +1,34 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { ArrowRight, CheckCircle2, Heart, LogOut, MapPin, Package, RefreshCw, ShieldCheck, ShoppingBag, Truck, User } from "lucide-react";
-import { orders, products } from "@/lib/catalog";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Heart,
+  LogOut,
+  MapPin,
+  Package,
+  RefreshCw,
+  ShieldCheck,
+  ShoppingBag,
+  Truck,
+  User,
+  FileText,
+  Clock,
+  ChevronRight,
+  AlertCircle
+} from "lucide-react";
 import { useStore } from "@/components/store-provider";
 import { Button } from "@/components/ui/button";
+import { loadCustomerOrders } from "@/components/orders/orders-seed";
+import { CustomerOrder } from "@/components/orders/types";
+import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "My Account & Orders — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Customer portal to manage orders, tracking, and addresses." },
+      { name: "description", content: "Customer portal to manage orders, real-time tracking, GST invoices, and saved delivery addresses." },
     ],
   }),
   component: DashboardPage,
@@ -18,54 +36,128 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { wishlist, addToCart } = useStore();
+  const { wishlist, addToCart, user, logoutUser, updateUserProfile } = useStore();
   const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
 
+  // Real-time dynamic customer orders list
+  const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>(() => loadCustomerOrders());
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<CustomerOrder | null>(null);
+
+  // Saved addresses state
+  const [savedAddresses, setSavedAddresses] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("janani_saved_addresses");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  // Profile Form State
+  const [profileName, setProfileName] = useState(user?.name || "");
+  const [profilePhone, setProfilePhone] = useState(user?.phone || "");
+  const [profileEmail, setProfileEmail] = useState(user?.email || "");
+
+  // Refresh orders when component mounts or updates
+  useEffect(() => {
+    setCustomerOrders(loadCustomerOrders());
+    if (user) {
+      setProfileName(user.name || "");
+      setProfilePhone(user.phone || "");
+      setProfileEmail(user.email || "");
+    }
+  }, [user]);
+
   const handleLogout = () => {
-    toast.info("Logged out successfully");
+    logoutUser();
+    toast.info("Signed out successfully.");
     navigate({ to: "/" });
   };
 
-  const handleReorder = (orderNum: string) => {
-    addToCart(1, 2);
-    addToCart(3, 1);
-    toast.success(`Items from order ${orderNum} added to your cart!`);
-    navigate({ to: "/cart" });
+  const handleReorder = (order: CustomerOrder) => {
+    if (order.items && order.items.length > 0) {
+      order.items.forEach((item) => {
+        addToCart(item.productId, item.quantity);
+      });
+      toast.success(`Items from order ${order.number} added to your basket!`);
+      navigate({ to: "/cart" });
+    } else {
+      addToCart(1, 1);
+      toast.success(`Order ${order.number} items added to your basket!`);
+      navigate({ to: "/cart" });
+    }
   };
 
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateUserProfile({
+      name: profileName.trim(),
+      phone: profilePhone.trim(),
+      email: profileEmail.trim(),
+    });
+    toast.success("Profile updated successfully!");
+  };
+
+  const userName = user?.name || "Valued Patron";
+  const userEmail = user?.email || "customer@jananiagro.com";
+  const userPhone = user?.phone || "+91 98480 22338";
+  const initials = userName
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
       {/* Profile Header Card */}
-      <div className="rounded-[2.5rem] bg-forest p-8 text-primary-foreground sm:p-12 shadow-luxe flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-5">
-          <span className="grid size-16 place-items-center rounded-full bg-brand-gold text-forest font-display text-2xl font-bold">
-            NP
+      <div className="rounded-[2.5rem] bg-forest p-6 sm:p-10 text-primary-foreground shadow-luxe flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4 sm:gap-5">
+          <span className="grid size-16 sm:size-18 place-items-center rounded-full bg-brand-gold text-forest font-display text-2xl font-bold shadow-md shrink-0">
+            {initials || "JP"}
           </span>
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-gold">Janani Member</span>
-            <h1 className="font-display text-2xl sm:text-3xl font-semibold">Neha Patel</h1>
-            <p className="text-xs text-primary-foreground/70 mt-0.5">neha.patel@example.com · +91 93114 16225</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-gold bg-brand-gold/15 px-2.5 py-0.5 rounded-full">
+                {user?.tier || "Janani Member"}
+              </span>
+              {user && (
+                <span className="text-[10px] text-emerald-300 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="size-3" /> Verified Account
+                </span>
+              )}
+            </div>
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold mt-1">{userName}</h1>
+            <p className="text-xs text-primary-foreground/75 mt-0.5">{userEmail} {userPhone ? `· ${userPhone}` : ""}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button asChild variant="gold" size="sm">
+          <Button asChild variant="gold" size="sm" className="rounded-full px-5 font-bold shadow-sm">
             <Link to="/products">Shop Harvest</Link>
           </Button>
-          <Button onClick={handleLogout} variant="glass" size="sm" className="gap-1.5">
-            <LogOut className="size-4" /> Sign Out
-          </Button>
+          {user ? (
+            <Button onClick={handleLogout} variant="glass" size="sm" className="gap-1.5 rounded-full">
+              <LogOut className="size-4" /> Sign Out
+            </Button>
+          ) : (
+            <Button asChild variant="glass" size="sm" className="rounded-full">
+              <Link to="/login">Sign In / Register</Link>
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Main Content Layout */}
-      <div className="mt-10 grid gap-8 lg:grid-cols-[240px_1fr]">
+      <div className="mt-8 sm:mt-10 grid gap-8 lg:grid-cols-[260px_1fr]">
         {/* Navigation Tabs */}
         <aside className="space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft h-fit">
           {[
-            { id: "orders", label: "My Orders", icon: Package, count: orders.length },
-            { id: "addresses", label: "Saved Addresses", icon: MapPin, count: 2 },
-            { id: "profile", label: "Account Details", icon: User },
+            { id: "orders", label: "My Orders & Shipments", icon: Package, count: customerOrders.length },
+            { id: "addresses", label: "Saved Addresses", icon: MapPin, count: savedAddresses.length },
+            { id: "profile", label: "Personal Information", icon: User },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -93,13 +185,13 @@ function DashboardPage() {
 
           <div className="border-t border-border pt-3 mt-3 space-y-1">
             <Link
-              to="/profile"
+              to="/orders"
               className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-xs font-semibold text-foreground hover:bg-secondary transition"
             >
               <span className="flex items-center gap-2.5">
-                <User className="size-4 text-brand-leaf" /> Profile & Settings
+                <Truck className="size-4 text-brand-leaf" /> Orders Hub & Tracking
               </span>
-              <span className="text-[10px] text-brand-leaf font-bold">Hub</span>
+              <ChevronRight className="size-3.5 text-muted-foreground" />
             </Link>
             <Link
               to="/wishlist"
@@ -120,147 +212,285 @@ function DashboardPage() {
           {/* 1. Orders Tab */}
           {activeTab === "orders" && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-foreground">Past Orders & Dispatches</h2>
-                  <span className="text-xs text-muted-foreground">Showing {orders.length} recent orders</span>
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <Package className="size-5 text-brand-leaf" />
+                    My Harvest Orders & Shipments
+                  </h2>
+                  <span className="text-xs text-muted-foreground">
+                    {customerOrders.length > 0
+                      ? `Showing ${customerOrders.length} placed orders in real-time`
+                      : "No active or past orders found"}
+                  </span>
                 </div>
-                <Button asChild variant="gold" size="sm" className="rounded-full text-xs font-bold gap-1.5 shadow-sm self-start sm:self-auto">
-                  <Link to="/orders">
-                    <Package className="size-3.5" /> Full Orders Hub & Tracking
-                  </Link>
-                </Button>
+                {customerOrders.length > 0 && (
+                  <Button asChild variant="gold" size="sm" className="rounded-full text-xs font-bold gap-1.5 shadow-sm self-start sm:self-auto">
+                    <Link to="/orders">
+                      <Truck className="size-3.5" /> Full Orders Hub & Tracking
+                    </Link>
+                  </Button>
+                )}
               </div>
 
-              <div className="space-y-4">
-                {orders.map((o) => (
-                  <div
-                    key={o.number}
-                    className="rounded-3xl border border-border bg-card p-6 shadow-soft transition hover:shadow-md"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
-                      <div>
+              {customerOrders.length === 0 ? (
+                /* Clean Empty State */
+                <div className="rounded-3xl border border-dashed border-border bg-card/60 p-10 text-center space-y-4">
+                  <div className="size-16 mx-auto rounded-full bg-brand-leaf/10 text-brand-leaf grid place-items-center">
+                    <ShoppingBag className="size-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-bold text-foreground">No Harvest Orders Yet</h3>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
+                      Explore our single-origin cold-pressed oils, aged basmati rice, and certified organic pantry staples.
+                    </p>
+                  </div>
+                  <Button asChild variant="gold" size="sm" className="rounded-full px-6 font-bold shadow-md">
+                    <Link to="/products">
+                      Browse Organic Staples <ArrowRight className="size-3.5 ml-1.5" />
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                /* Orders List */
+                <div className="space-y-5">
+                  {customerOrders.map((o) => (
+                    <div
+                      key={o.number}
+                      className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-soft transition hover:shadow-md space-y-4"
+                    >
+                      {/* Order Header */}
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <strong className="font-mono text-base font-bold text-foreground">{o.number}</strong>
+                            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                              o.status === "Delivered"
+                                ? "bg-brand-leaf/15 text-brand-leaf"
+                                : o.status === "Cancelled"
+                                ? "bg-destructive/15 text-destructive"
+                                : "bg-brand-gold/20 text-brand-gold"
+                            }`}>
+                              ● {o.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Placed on <strong className="text-foreground">{o.date}</strong> · {o.items?.length || 1} distinct products · Paid via {o.paymentMethod}
+                          </p>
+                        </div>
+
                         <div className="flex items-center gap-3">
-                          <strong className="font-mono text-base text-foreground">{o.number}</strong>
-                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                            o.status === "Delivered" ? "bg-brand-leaf/15 text-brand-leaf" : "bg-brand-gold/20 text-brand-gold"
-                          }`}>
-                            {o.status}
+                          <div className="text-right">
+                            <span className="text-[11px] text-muted-foreground block">Total Amount</span>
+                            <strong className="text-lg font-bold text-foreground">₹{o.total}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Items Preview */}
+                      {o.items && o.items.length > 0 && (
+                        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 bg-secondary/40 p-3.5 rounded-2xl border border-border/70">
+                          {o.items.map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-3">
+                              {item.image && (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="size-12 rounded-xl object-cover border border-border shrink-0 bg-white"
+                                />
+                              )}
+                              <div className="min-w-0 flex-1 text-xs">
+                                <p className="font-semibold text-foreground truncate">{item.name}</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Qty: {item.quantity} × ₹{item.price}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Delivery Address & Status Info */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-muted-foreground pt-1">
+                        <div className="flex items-start sm:items-center gap-2">
+                          <MapPin className="size-4 text-brand-leaf shrink-0 mt-0.5 sm:mt-0" />
+                          <span>
+                            Deliver to: <strong className="text-foreground">{o.address?.fullName || userName}</strong> ({o.address?.city || "Ahmedabad"}, {o.address?.pincode || "380054"})
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground">Placed on {o.date} · {o.items} items</p>
+                        <div className="flex items-center gap-2 text-xs">
+                          <Truck className="size-4 text-brand-leaf shrink-0" />
+                          <span>{o.courier || "Delhivery Air Express"}</span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <strong className="text-base font-bold text-foreground">₹{o.total}</strong>
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedInvoiceOrder(o)}
+                          className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                        >
+                          <FileText className="size-3.5 text-brand-leaf" /> View GST Invoice
+                        </Button>
+
+                        <div className="flex items-center gap-2.5">
+                          <Button asChild variant="outline" size="sm" className="h-8 text-xs rounded-xl">
+                            <Link to="/track-order">
+                              Track Shipment <ArrowRight className="size-3 ml-1" />
+                            </Link>
+                          </Button>
+                          <Button onClick={() => handleReorder(o)} variant="gold" size="sm" className="h-8 text-xs gap-1.5 rounded-xl font-bold">
+                            <RefreshCw className="size-3" /> Reorder
+                          </Button>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Truck className="size-4 text-brand-leaf" />
-                        <span>Dispatched via Delhivery Express (Gujarat Hub)</span>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <Button asChild variant="outline" size="sm" className="h-9 text-xs">
-                          <Link to="/track-order">
-                            Track Shipment <ArrowRight className="size-3.5 ml-1" />
-                          </Link>
-                        </Button>
-                        <Button onClick={() => handleReorder(o.number)} variant="gold" size="sm" className="h-9 text-xs gap-1.5">
-                          <RefreshCw className="size-3.5" /> Reorder
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {/* 2. Addresses Tab */}
           {activeTab === "addresses" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-foreground">Saved Delivery Addresses</h2>
-                <Button size="sm" variant="outline" onClick={() => toast.success("New address form opened")}>
-                  + Add New Address
+              <div className="flex items-center justify-between border-b border-border pb-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">Saved Delivery Addresses</h2>
+                  <span className="text-xs text-muted-foreground">Manage doorstep addresses for fast 1-click checkout</span>
+                </div>
+                <Button size="sm" variant="gold" asChild className="rounded-full text-xs font-bold">
+                  <Link to="/checkout">+ Add / Manage at Checkout</Link>
                 </Button>
               </div>
 
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="rounded-3xl border-2 border-primary/40 bg-card p-6 shadow-soft relative">
-                  <span className="absolute right-4 top-4 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
-                    Default
-                  </span>
-                  <p className="font-semibold text-sm">Home (Ahmedabad)</p>
-                  <p className="mt-2 text-xs text-muted-foreground leading-6">
-                    Neha Patel<br />
-                    A-304, Green Acres Apartments, Near SG Highway<br />
-                    Ahmedabad, Gujarat – 380054<br />
-                    Phone: +91 93114 16225
+              {savedAddresses.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-border bg-card/60 p-8 text-center space-y-3">
+                  <MapPin className="size-10 text-muted-foreground mx-auto" />
+                  <p className="text-sm font-semibold text-foreground">No saved addresses yet</p>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    Addresses added during registration or checkout with GPS auto-fill will appear here automatically.
                   </p>
-                  <div className="mt-4 flex gap-3 pt-3 border-t border-border">
-                    <button className="text-xs font-semibold text-primary hover:underline">Edit</button>
-                  </div>
                 </div>
-
-                <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-                  <p className="font-semibold text-sm">Office (Rajkot)</p>
-                  <p className="mt-2 text-xs text-muted-foreground leading-6">
-                    Patel Agro Trading Co.<br />
-                    Plot 12, Sub Plots No.2/1/B, Lodhika GIDC<br />
-                    Rajkot, Gujarat – 360024<br />
-                    Phone: +91 96258 54967
-                  </p>
-                  <div className="mt-4 flex gap-3 pt-3 border-t border-border">
-                    <button className="text-xs font-semibold text-primary hover:underline">Edit</button>
-                    <button className="text-xs font-semibold text-muted-foreground hover:underline">Set Default</button>
-                  </div>
+              ) : (
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {savedAddresses.map((addr: any, idx: number) => (
+                    <div
+                      key={addr.id || idx}
+                      className={`rounded-3xl border p-6 shadow-soft relative bg-card ${
+                        addr.isDefault ? "border-brand-leaf/50 ring-1 ring-brand-leaf/20" : "border-border"
+                      }`}
+                    >
+                      {addr.isDefault && (
+                        <span className="absolute right-4 top-4 rounded-full bg-brand-leaf/10 px-2.5 py-0.5 text-[10px] font-bold text-brand-leaf">
+                          Default
+                        </span>
+                      )}
+                      <p className="font-semibold text-sm capitalize flex items-center gap-1.5">
+                        <MapPin className="size-4 text-brand-leaf" /> {addr.type || "Home"} Address
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground leading-6">
+                        <strong className="text-foreground">{addr.fullName || addr.name || userName}</strong><br />
+                        {[addr.houseFlat, addr.street, addr.landmark].filter(Boolean).join(", ") || addr.streetAddress || "Registered Address"}<br />
+                        {addr.city}, {addr.state} – {addr.pincode}<br />
+                        Phone: <span className="text-foreground font-mono">{addr.phone || userPhone}</span>
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {/* 3. Profile Tab */}
           {activeTab === "profile" && (
-            <div className="rounded-3xl border border-border bg-card p-8 shadow-soft space-y-6">
-              <h2 className="text-xl font-semibold text-foreground border-b border-border pb-4">
-                Personal Information
-              </h2>
+            <form onSubmit={handleSaveProfile} className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-soft space-y-6">
+              <div className="border-b border-border pb-4">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Personal Information & Profile
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Update your contact details for SMS delivery alerts and invoice receipts.
+                </p>
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-2 text-xs">
-                <label className="grid gap-1.5 font-semibold">
+                <label className="grid gap-1.5 font-semibold text-foreground">
                   <span>Full Name</span>
                   <input
-                    defaultValue="Neha Patel"
-                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                    type="text"
+                    required
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    placeholder="e.g. Rahul Sharma"
+                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-brand-leaf text-foreground"
                   />
                 </label>
-                <label className="grid gap-1.5 font-semibold">
+                <label className="grid gap-1.5 font-semibold text-foreground">
                   <span>Mobile Number</span>
                   <input
-                    defaultValue="+91 93114 16225"
-                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                    type="tel"
+                    value={profilePhone}
+                    onChange={(e) => setProfilePhone(e.target.value)}
+                    placeholder="+91 98480 22338"
+                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-brand-leaf text-foreground"
                   />
                 </label>
-                <label className="grid gap-1.5 font-semibold sm:col-span-2">
+                <label className="grid gap-1.5 font-semibold text-foreground sm:col-span-2">
                   <span>Email Address</span>
                   <input
-                    defaultValue="neha.patel@example.com"
-                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                    type="email"
+                    required
+                    value={profileEmail}
+                    onChange={(e) => setProfileEmail(e.target.value)}
+                    placeholder="youremail@gmail.com"
+                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-brand-leaf text-foreground"
                   />
                 </label>
               </div>
 
-              <Button onClick={() => toast.success("Profile changes saved successfully!")} size="sm" variant="gold">
-                Save Profile Changes
-              </Button>
-            </div>
+              <div className="flex items-center gap-3 pt-2">
+                <Button type="submit" size="sm" variant="gold" className="rounded-2xl px-6 font-bold">
+                  Save Profile Changes
+                </Button>
+              </div>
+            </form>
           )}
         </div>
       </div>
+
+      {/* Invoice Modal Preview */}
+      {selectedInvoiceOrder && (
+        <OrderInvoiceModal
+          isOpen={!!selectedInvoiceOrder}
+          onClose={() => setSelectedInvoiceOrder(null)}
+          order={{
+            orderNumber: selectedInvoiceOrder.number,
+            transactionId: selectedInvoiceOrder.transactionId,
+            date: selectedInvoiceOrder.date,
+            paymentMethod: selectedInvoiceOrder.paymentMethod,
+            customerName: selectedInvoiceOrder.address.fullName,
+            customerPhone: selectedInvoiceOrder.address.phone,
+            customerAddress: `${selectedInvoiceOrder.address.streetAddress}, ${selectedInvoiceOrder.address.city}, ${selectedInvoiceOrder.address.state} - ${selectedInvoiceOrder.address.pincode}`,
+            items: selectedInvoiceOrder.items.map((it) => ({
+              product: {
+                id: it.productId,
+                name: it.name,
+                price: it.price,
+              },
+              qty: it.quantity,
+            })),
+            subtotal: selectedInvoiceOrder.subtotal,
+            discount: selectedInvoiceOrder.discount,
+            deliveryFee: selectedInvoiceOrder.deliveryFee,
+            finalTotal: selectedInvoiceOrder.total,
+          }}
+        />
+      )}
     </div>
   );
 }
+

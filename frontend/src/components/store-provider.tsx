@@ -30,24 +30,6 @@ type StoreContextValue = {
 
 const StoreContext = createContext<StoreContextValue | null>(null);
 
-const DEFAULT_DEMO_USER: AuthUser = {
-  id: "cust-101",
-  name: "Neha Patel",
-  email: "neha.patel@example.com",
-  phone: "9311416225",
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
-  role: "customer",
-  walletBalance: 250,
-  referralCode: "NEHA250",
-  isVerified: true,
-  tier: "Gold Harvest Member",
-  preferences: {
-    dietary: ["Cold-Pressed Oils", "Organic Millets", "Wood-Pressed Ghee"],
-    pinCode: "560001",
-    notifications: { email: true, sms: true, whatsapp: true }
-  }
-};
-
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Record<number, number>>(() => {
     if (typeof window !== "undefined") {
@@ -58,7 +40,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.error("Failed to parse stored cart", e);
       }
     }
-    return { 1: 1, 3: 1 };
+    return {};
   });
 
   const [wishlist, setWishlist] = useState<number[]>(() => {
@@ -70,7 +52,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.error("Failed to parse stored wishlist", e);
       }
     }
-    return [6, 10, 12];
+    return [];
   });
 
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -82,7 +64,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.error("Failed to parse stored user", e);
       }
     }
-    return DEFAULT_DEMO_USER;
+    return null;
   });
 
   const [liveProducts, setLiveProducts] = useState<Product[]>(initialProducts);

@@ -20,8 +20,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products } from "@/lib/catalog";
+import { products, pantryImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
+import { createOrder } from "@/lib/api";
 
 import { PaymentUpiSection } from "@/components/payment/payment-upi-section";
 import { PaymentRazorpayModal } from "@/components/payment/payment-razorpay-modal";
@@ -90,8 +91,9 @@ export function PaymentPage() {
   // Effective Order Values
   const effectiveAmount = checkoutData?.finalTotal || (subtotal > 0 ? subtotal : 420);
   const effectiveOrderNumber = checkoutData?.orderNumber || transactionDetails.orderNumber;
-  const customerName = checkoutData?.address?.fullName || user?.name || "Neha Patel";
-  const customerPhone = checkoutData?.address?.phone || user?.phone || "9311416225";
+  const customerName = checkoutData?.customerName || checkoutData?.address?.fullName || user?.name || "Valued Patron";
+  const customerPhone = checkoutData?.customerPhone || checkoutData?.address?.phone || user?.phone || "+91 98480 22338";
+  const customerEmail = checkoutData?.customerEmail || user?.email || "patron@jananiagro.com";
   const deliveryDate = checkoutData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
   const city = checkoutData?.address?.city || "Ahmedabad";
 
@@ -109,13 +111,25 @@ export function PaymentPage() {
   }, [cart, checkoutData]);
 
   // Handle Payment Success
-  const handlePaymentSuccess = (details: { method: string; transactionId: string }) => {
+  const handlePaymentSuccess = async (details: { method: string; transactionId: string }) => {
     setTransactionDetails((prev) => ({
       ...prev,
       transactionId: details.transactionId,
       method: details.method,
       amount: effectiveAmount,
     }));
+
+    const nowFormatted = new Date().toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const streetAddr = checkoutData?.address
+      ? [checkoutData.address.houseFlat, checkoutData.address.street, checkoutData.address.landmark].filter(Boolean).join(", ") || checkoutData.address.streetAddress || "Registered Delivery Address"
+      : "Registered Delivery Address";
 
     const confirmedOrder = {
       orderNumber: effectiveOrderNumber,
@@ -125,33 +139,131 @@ export function PaymentPage() {
       deliveryDate,
       customerName,
       customerPhone,
+      customerEmail,
       customerAddress: checkoutData?.address
-        ? `${checkoutData.address.streetAddress}, ${checkoutData.address.city}, ${checkoutData.address.state} - ${checkoutData.address.pincode}`
-        : "Flat 402, Green Acre Heights, Bodakdev, Ahmedabad, Gujarat - 380054",
+        ? `${streetAddr}, ${checkoutData.address.city}, ${checkoutData.address.state} - ${checkoutData.address.pincode}`
+        : "Registered Delivery Address, Ahmedabad, Gujarat - 380054",
       items: cartItems.map((item: any) => ({
         product: {
           id: item.product.id,
           name: item.product.name,
           price: item.product.price,
+          image: item.product.image || pantryImage,
         },
-        qty: item.qty,
+        qty: item.qty || 1,
       })),
       subtotal: checkoutData?.subtotal || subtotal,
-      discount: checkoutData?.discount || 0,
-      deliveryFee: checkoutData?.deliveryFee || 0,
+      discount: checkoutData?.couponDiscount || checkoutData?.discount || 0,
+      deliveryFee: checkoutData?.shippingFee || 0,
       finalTotal: effectiveAmount,
       slot: checkoutData?.slot || { dateStr: deliveryDate },
       address: checkoutData?.address || {
         fullName: customerName,
         phone: customerPhone,
+        streetAddress: streetAddr,
         city,
+        state: "Gujarat",
+        pincode: "380054",
       },
     };
 
+    // Full customer order object for Dashboard & Orders Hub
+    const newCustomerOrder = {
+      id: `ord-${Date.now()}`,
+      number: effectiveOrderNumber,
+      date: nowFormatted,
+      isoDate: new Date().toISOString().split("T")[0]!,
+      status: "Processing" as const,
+      courier: "Delhivery Air Express & Janani Direct",
+      awb: `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+      expectedDelivery: deliveryDate,
+      subtotal: checkoutData?.subtotal || subtotal,
+      discount: checkoutData?.couponDiscount || checkoutData?.discount || 0,
+      deliveryFee: checkoutData?.shippingFee || 0,
+      total: effectiveAmount,
+      paymentMethod: details.method,
+      transactionId: details.transactionId,
+      address: {
+        fullName: customerName,
+        phone: customerPhone,
+        streetAddress: streetAddr,
+        city: checkoutData?.address?.city || city,
+        state: checkoutData?.address?.state || "Gujarat",
+        pincode: checkoutData?.address?.pincode || "380054",
+      },
+      items: cartItems.map((item: any) => ({
+        productId: item.product.id,
+        name: item.product.name,
+        variant: "Standard Pack",
+        quantity: item.qty || 1,
+        price: item.product.price,
+        image: item.product.image || pantryImage,
+      })),
+      timeline: [
+        {
+          title: "Order Placed & Payment Verified",
+          time: nowFormatted,
+          location: "Regional Processing Hub",
+          done: true,
+          current: true,
+        },
+        {
+          title: "Quality Tested & Nitrogen Sealed",
+          time: "Within 4 hours",
+          location: "Rajkot Lodhika Processing Facility",
+          done: false,
+        },
+        {
+          title: "Dispatched via Express Courier",
+          time: "Scheduled Tomorrow",
+          location: "Central Transit Gateway",
+          done: false,
+        },
+        {
+          title: "Out for Doorstep Delivery",
+          time: deliveryDate,
+          location: "Local Delivery Hub",
+          done: false,
+        },
+      ],
+    };
+
+    // 1. Save latest order & customer orders in localStorage
     try {
       localStorage.setItem("janani_latest_order", JSON.stringify(confirmedOrder));
+
+      const existingOrdersRaw = localStorage.getItem("janani_customer_orders");
+      const existingOrders = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : [];
+      const updatedOrders = [newCustomerOrder, ...existingOrders.filter((o: any) => o.number !== effectiveOrderNumber)];
+      localStorage.setItem("janani_customer_orders", JSON.stringify(updatedOrders));
     } catch (e) {
       console.error("Failed to save order to localStorage", e);
+    }
+
+    // 2. Persist order to backend database
+    try {
+      await createOrder({
+        items: cartItems.map((i: any) => ({
+          productId: i.product.id,
+          name: i.product.name,
+          price: i.product.price,
+          quantity: i.qty || 1,
+        })),
+        customer: {
+          firstName: customerName.split(" ")[0] || "Valued",
+          lastName: customerName.split(" ").slice(1).join(" ") || "Patron",
+          phone: customerPhone,
+          email: customerEmail,
+          address: streetAddr,
+          city: checkoutData?.address?.city || city,
+          state: checkoutData?.address?.state || "Gujarat",
+          pincode: checkoutData?.address?.pincode || "380054",
+        },
+        paymentMethod: details.method,
+        couponCode: checkoutData?.coupon?.code,
+      });
+    } catch (apiErr) {
+      console.warn("Backend order creation sync note:", apiErr);
     }
 
     clearCart();
@@ -160,7 +272,7 @@ export function PaymentPage() {
     }
     localStorage.removeItem("janani_pending_checkout");
 
-    toast.success(`Payment verified via ${details.method}!`);
+    toast.success(`Payment verified via ${details.method}! Order ${effectiveOrderNumber} placed.`);
     navigate({ to: "/order-success" });
   };
 

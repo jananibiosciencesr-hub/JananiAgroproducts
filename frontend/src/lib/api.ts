@@ -5909,6 +5909,14 @@ export interface AuthUser {
   referralCode: string;
   isVerified: boolean;
   tier?: string;
+  address?: string;
+  houseFlat?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  latitude?: number;
+  longitude?: number;
   preferences?: UserPreferences;
 }
 
@@ -6094,15 +6102,24 @@ export async function signupCustomer(payload: {
   name: string;
   email: string;
   phone: string;
-  password: string;
+  password?: string;
   referralCode?: string;
-  agreeTerms: boolean;
+  agreeTerms?: boolean;
+  houseFlat?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  latitude?: number;
+  longitude?: number;
 }): Promise<AuthResponse> {
   const res = await fetchJson<AuthResponse>("/auth/signup", {
     method: "POST",
     body: JSON.stringify(payload)
   });
   if (res?.success && res.user) return res;
+
+  const fullAddr = [payload.houseFlat, payload.street, payload.city, payload.state, payload.pincode].filter(Boolean).join(", ");
 
   const user: AuthUser = {
     id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
@@ -6113,7 +6130,19 @@ export async function signupCustomer(payload: {
     walletBalance: payload.referralCode ? 100 : 50,
     referralCode: "JANANI" + Math.floor(1000 + Math.random() * 9000),
     isVerified: true,
-    tier: "Silver"
+    tier: "Silver",
+    address: fullAddr || undefined,
+    houseFlat: payload.houseFlat,
+    street: payload.street,
+    city: payload.city,
+    state: payload.state,
+    pincode: payload.pincode,
+    latitude: payload.latitude,
+    longitude: payload.longitude,
+    preferences: {
+      dietary: ["Cold-Pressed Oils", "Organic Millets"],
+      pinCode: payload.pincode || "560001"
+    }
   };
   const authData: AuthResponse = {
     success: true,
@@ -6125,6 +6154,27 @@ export async function signupCustomer(payload: {
   if (typeof window !== "undefined") {
     localStorage.setItem("janani_auth_token", authData.token);
     localStorage.setItem("janani_auth_user", JSON.stringify(user));
+    localStorage.setItem("janani_user", JSON.stringify(user));
+
+    // Save newly entered address to user's saved addresses list
+    if (payload.street || payload.houseFlat || payload.city || payload.pincode) {
+      const existingAddresses = JSON.parse(localStorage.getItem("janani_saved_addresses") || "[]");
+      const newSavedAddr = {
+        id: "addr-" + Date.now(),
+        name: payload.name,
+        fullName: payload.name,
+        phone: payload.phone,
+        houseFlat: payload.houseFlat || "",
+        street: payload.street || "",
+        landmark: "",
+        city: payload.city || "Ahmedabad",
+        state: payload.state || "Gujarat",
+        pincode: payload.pincode || "380054",
+        isDefault: true,
+        type: "home"
+      };
+      localStorage.setItem("janani_saved_addresses", JSON.stringify([newSavedAddr, ...existingAddresses.filter((a: any) => a.id !== newSavedAddr.id)]));
+    }
 
     // Also register in customer database
     const customers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);

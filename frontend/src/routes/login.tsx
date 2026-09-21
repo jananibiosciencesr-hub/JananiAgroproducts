@@ -27,7 +27,10 @@ import {
   Clock,
   ArrowLeft,
   Smartphone,
-  MessageSquare
+  MessageSquare,
+  MapPin,
+  Navigation,
+  Compass
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
@@ -58,7 +61,7 @@ export function AuthenticationPage() {
 
   // Auth Modes & Form State
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone" | "email_otp">("phone");
+  const [loginMethod, setLoginMethod] = useState<"email_otp" | "phone" | "email">("email_otp");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -72,6 +75,18 @@ export function AuthenticationPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(true);
+
+  // Address & Current Location State
+  const [houseFlat, setHouseFlat] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("Ahmedabad");
+  const [state, setState] = useState("Gujarat");
+  const [pincode, setPincode] = useState("380054");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationDetected, setLocationDetected] = useState(false);
+  const [detectedAddressText, setDetectedAddressText] = useState("");
 
   // OTP Verification State
   const [isOtpStep, setIsOtpStep] = useState(false);
@@ -139,6 +154,71 @@ export function AuthenticationPage() {
   };
 
   const passwordStrength = calculatePasswordStrength(password);
+
+  // Use Current Location GPS Auto-fill
+  const handleUseCurrentLocation = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      toast.error("Geolocation is not supported by your device/browser.");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setLatitude(lat);
+        setLongitude(lng);
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+            { signal: controller.signal }
+          );
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.address) {
+              const addr = data.address;
+              const detCity = addr.city || addr.town || addr.village || addr.county || addr.state_district || "Ahmedabad";
+              const detState = addr.state || "Gujarat";
+              const detPin = (addr.postcode || "").replace(/\s/g, "");
+              const detStreet = [addr.house_number, addr.road, addr.suburb, addr.neighbourhood].filter(Boolean).join(", ");
+
+              if (detCity) setCity(detCity);
+              if (detState) setState(detState);
+              if (detPin && detPin.length >= 5) setPincode(detPin);
+              if (detStreet) setStreet(detStreet);
+
+              setLocationDetected(true);
+              setDetectedAddressText(data.display_name?.split(",").slice(0, 3).join(",") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+              toast.success("📍 Exact location detected and address auto-filled!");
+              setIsLocating(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Reverse geocode fallback:", err);
+        }
+
+        setLocationDetected(true);
+        setDetectedAddressText(`GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+        toast.success(`📍 GPS Coordinates captured (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        setIsLocating(false);
+      },
+      (err) => {
+        setIsLocating(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          toast.error("Location permission denied. Please enter your address details manually.");
+        } else {
+          toast.error("Unable to retrieve GPS coordinates. Please type address manually.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
 
   // OTP Input Individual Handling (Auto-focus, Paste distribution, Backspace)
   const handleOtpChange = (index: number, value: string) => {
@@ -268,7 +348,7 @@ export function AuthenticationPage() {
     }
   };
 
-  // 3. Handle Verify OTP
+  // 3. Handle Verify OTP (Login or Signup completion)
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullOtp = otpValues.join("");
@@ -285,16 +365,48 @@ export function AuthenticationPage() {
         email: isEmail ? otpTarget : undefined,
         otp: fullOtp
       });
-      if (res?.success && res.user) {
-        loginUser(res.user, res.token);
-        if (res.user.role === "Super Admin" || res.user.role === "admin") {
-          toast.success("Welcome Super Admin! Redirecting to Command Center...");
-          navigate({ to: "/admin" });
-        } else if (res.isNewUser) {
-          setIsOnboardingOpen(true);
+
+      if (res?.success) {
+        if (otpPurpose === "signup") {
+          // Complete registration with user address and location
+          const cleanPhone = phone.replace(/\D/g, "");
+          const signupRes = await signupCustomer({
+            name,
+            email: otpTarget,
+            phone: cleanPhone || "+91 93114 16225",
+            password,
+            referralCode,
+            agreeTerms,
+            houseFlat,
+            street,
+            city,
+            state,
+            pincode,
+            latitude: latitude || undefined,
+            longitude: longitude || undefined
+          });
+
+          if (signupRes?.success && signupRes.user) {
+            loginUser(signupRes.user, signupRes.token);
+            setIsOnboardingOpen(true);
+          } else {
+            loginUser(res.user, res.token);
+            setIsOnboardingOpen(true);
+          }
         } else {
-          toast.success(`Welcome back, ${res.user.name}!`);
-          navigate({ to: "/dashboard" });
+          // Login Flow
+          if (res.user) {
+            loginUser(res.user, res.token);
+            if (res.user.role === "Super Admin" || res.user.role === "admin") {
+              toast.success("Welcome Super Admin! Redirecting to Command Center...");
+              navigate({ to: "/admin" });
+            } else if (res.isNewUser) {
+              setIsOnboardingOpen(true);
+            } else {
+              toast.success(`Welcome back, ${res.user.name}!`);
+              navigate({ to: "/dashboard" });
+            }
+          }
         }
       } else {
         toast.error(res?.message || "Invalid verification code.");
@@ -306,20 +418,28 @@ export function AuthenticationPage() {
     }
   };
 
-  // 4. Handle Signup Form Submit
+  // 4. Handle Signup Form Submit (Dispatches Email OTP to confirm account)
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       toast.error("Please enter your full name.");
       return;
     }
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (!cleanPhone || cleanPhone.length < 10) {
+      toast.error("Please enter a valid 10-digit mobile number.");
+      return;
+    }
     if (!email.trim() || !email.includes("@")) {
       toast.error("Please enter a valid email address.");
       return;
     }
-    const cleanPhone = phone.replace(/\D/g, "");
-    if (!cleanPhone || cleanPhone.length < 10) {
-      toast.error("Please enter a valid 10-digit mobile number.");
+    if (!street.trim() && !houseFlat.trim()) {
+      toast.error("Please provide your delivery address or click 'Use Current Location'.");
+      return;
+    }
+    if (!pincode.trim() || pincode.length < 6) {
+      toast.error("Please enter a valid 6-digit PIN code.");
       return;
     }
     if (password.length < 6) {
@@ -335,36 +455,37 @@ export function AuthenticationPage() {
       return;
     }
 
+    // Send verification OTP to the user's email
     setLoading(true);
     try {
-      const res = await signupCustomer({
-        name,
-        email,
-        phone: cleanPhone,
-        password,
-        referralCode,
-        agreeTerms
-      });
-      if (res?.success && res.user) {
-        loginUser(res.user, res.token);
-        setIsOnboardingOpen(true);
+      const emailToSend = email.trim().toLowerCase();
+      const res = await sendAuthOtp({ email: emailToSend, purpose: "signup" });
+      if (res?.success) {
+        setOtpTarget(emailToSend);
+        setOtpPurpose("signup");
+        setIsOtpStep(true);
+        setResendTimer(res.resendCooldownSeconds || 60);
+        setCanResend(false);
+        setOtpValues(["", "", "", "", "", ""]);
+        toast.success(res.message || `Verification code sent to ${emailToSend}. Please verify your email!`);
+        setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
       } else {
-        toast.error(res?.message || "Signup failed.");
+        toast.error(res?.message || "Failed to dispatch verification code.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to create account.");
+      toast.error(err.message || "Failed to send verification code.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 5. Handle Google Social Auth Simulation
+  // 5. Handle Google Social Auth
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
       const res = await loginWithGoogle({
-        email: "priya.sundaram@gmail.com",
-        name: "Priya Sundaram",
+        email: "patron.google@gmail.com",
+        name: "Google Patron",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"
       });
       if (res?.success && res.user) {
@@ -379,21 +500,6 @@ export function AuthenticationPage() {
       toast.error("Google login failed.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // 6. Fast Demo Login Shortcuts
-  const handleQuickDemoLogin = (type: "neha" | "vikram") => {
-    if (type === "neha") {
-      setEmail("neha.patel@example.com");
-      setPassword("demo1234");
-      setLoginMethod("email");
-      toast.success("Loaded demo credentials for Neha Patel");
-    } else {
-      setEmail("vikram.malhotra@example.com");
-      setPassword("demo1234");
-      setLoginMethod("email");
-      toast.success("Loaded demo credentials for Vikram Malhotra");
     }
   };
 
@@ -987,7 +1093,7 @@ export function AuthenticationPage() {
                           required
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          placeholder="10-digit mobile"
+                          placeholder="10-digit mobile number"
                           className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-3 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
@@ -1006,6 +1112,104 @@ export function AuthenticationPage() {
                         placeholder="name@example.com"
                         className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-4 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                       />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      A 6-digit verification code will be sent to your Gmail/Email to verify your account.
+                    </p>
+                  </div>
+
+                  {/* DELIVERY ADDRESS & CURRENT LOCATION CARD */}
+                  <div className="rounded-2xl border border-border/80 bg-secondary/30 p-4 space-y-3 shadow-inner">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="size-4 text-brand-leaf" />
+                        <span className="text-xs font-bold text-foreground">Delivery Address & Location</span>
+                      </div>
+                      
+                      {/* GPS AUTO-DETECT CURRENT LOCATION BUTTON */}
+                      <button
+                        type="button"
+                        onClick={handleUseCurrentLocation}
+                        disabled={isLocating}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-brand-leaf/40 bg-brand-leaf/10 hover:bg-brand-leaf/20 text-brand-leaf px-2.5 py-1 text-[11px] font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
+                        title="Auto-detect current GPS location and fill address"
+                      >
+                        <Compass className={`size-3.5 ${isLocating ? "animate-spin text-brand-gold" : "text-brand-leaf"}`} />
+                        <span>{isLocating ? "Detecting GPS..." : "📍 Use Current Location"}</span>
+                      </button>
+                    </div>
+
+                    {locationDetected && detectedAddressText && (
+                      <div className="flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-[11px] text-emerald-800 font-medium">
+                        <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">Auto-detected: {detectedAddressText}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                          Flat / House / Building *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={houseFlat}
+                          onChange={(e) => setHouseFlat(e.target.value)}
+                          placeholder="e.g. Flat 402, Green Acres"
+                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                          Street / Area / Landmark *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={street}
+                          onChange={(e) => setStreet(e.target.value)}
+                          placeholder="e.g. Judges Bungalow Road, Bodakdev"
+                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">City *</label>
+                        <input
+                          type="text"
+                          required
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          placeholder="e.g. Ahmedabad"
+                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">State *</label>
+                        <input
+                          type="text"
+                          required
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          placeholder="e.g. Gujarat"
+                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">PIN Code *</label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={6}
+                          value={pincode}
+                          onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
+                          placeholder="380054"
+                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs font-mono font-bold outline-none focus:border-primary"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1059,7 +1263,7 @@ export function AuthenticationPage() {
                   {password && (
                     <div className="rounded-2xl border border-border/80 bg-secondary/40 p-3 space-y-2">
                       <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-muted-foreground">Password Entropy:</span>
+                        <span className="text-muted-foreground">Password Security:</span>
                         <span className={`font-bold ${passwordStrength.text}`}>
                           {passwordStrength.label}
                         </span>
@@ -1103,7 +1307,7 @@ export function AuthenticationPage() {
                         type="text"
                         value={referralCode}
                         onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                        placeholder="e.g. NEHA250"
+                        placeholder="e.g. HARVEST100"
                         className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-4 font-mono text-xs uppercase tracking-wider outline-none focus:border-primary"
                       />
                     </div>
@@ -1146,41 +1350,27 @@ export function AuthenticationPage() {
                     className="w-full rounded-2xl font-bold text-sm shadow-md mt-2"
                     disabled={loading}
                   >
-                    {loading ? "Creating Account..." : "Create Account & Get ₹150 Credit"} <ArrowRight className="size-4 ml-1.5" />
+                    {loading ? "Sending Verification Code..." : "Verify Email & Create Account"} <ArrowRight className="size-4 ml-1.5" />
                   </Button>
                 </form>
               )}
             </div>
 
-            {/* Bottom Demo Accounts & Dealer Link */}
+            {/* Bottom Security Trust Badges */}
             <div className="mt-8 border-t border-border/70 pt-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-xs text-muted-foreground">
-                  Quick Demo Accounts:
+              <div className="grid grid-cols-3 gap-2 text-center text-[11px] text-muted-foreground">
+                <div className="flex flex-col items-center gap-1">
+                  <ShieldCheck className="size-4 text-emerald-600" />
+                  <span>256-Bit Encrypted</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin("neha")}
-                    className="rounded-xl border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-secondary transition"
-                  >
-                    👤 Neha (Patron)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin("vikram")}
-                    className="rounded-xl border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-secondary transition"
-                  >
-                    👤 Vikram
-                  </button>
+                <div className="flex flex-col items-center gap-1">
+                  <Truck className="size-4 text-brand-leaf" />
+                  <span>Farm Fresh Dispatch</span>
                 </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Are you a wholesaler or distributor?</span>
-                <Link to="/become-distributor" className="font-semibold text-brand-leaf hover:underline flex items-center gap-1">
-                  <Building className="size-3.5" /> Apply for Dealership
-                </Link>
+                <div className="flex flex-col items-center gap-1">
+                  <Sparkles className="size-4 text-brand-gold" />
+                  <span>100% Single Origin</span>
+                </div>
               </div>
             </div>
           </div>

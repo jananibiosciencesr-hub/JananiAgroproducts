@@ -82,13 +82,13 @@ function CategoriesIndexPage() {
         {/* Banner */}
         <div className="mt-16 rounded-[2.5rem] bg-secondary/80 p-8 sm:p-12 text-center border border-border">
           <Sparkles className="mx-auto size-8 text-brand-gold" />
-          <h2 className="mt-4 text-2xl sm:text-3xl font-semibold">Looking for custom institutional or bulk packing?</h2>
+          <h2 className="mt-4 text-2xl sm:text-3xl font-semibold">Looking for custom pantry or bulk organic orders?</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-7 text-muted-foreground">
-            We provide wholesale supply, private label packaging, and dealer distributorship for all product categories.
+            We provide direct farm-to-table organic produce, bulk orders, and custom packaging across India.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild variant="gold">
-              <Link to="/become-distributor">Dealer Application</Link>
+              <Link to="/products">Shop All Products</Link>
             </Button>
             <Button asChild variant="outline">
               <Link to="/services">Explore Services <ArrowRight className="size-4 ml-1" /></Link>

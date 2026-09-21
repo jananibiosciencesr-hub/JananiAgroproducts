@@ -149,19 +149,15 @@ function Shell({ children }: { children: React.ReactNode }) {
                   {user.name ? user.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("") : "U"}
                 </div>
                 <div className="text-left leading-tight">
-                  <span className="block text-xs font-semibold text-foreground truncate max-w-[90px]">{user.name.split(" ")[0]}</span>
+                  <span className="block text-xs font-semibold text-foreground truncate max-w-[90px]">{user.name ? user.name.split(" ")[0] : "Patron"}</span>
                   <span className="block text-[10px] font-medium text-emerald-600">₹{user.walletBalance || 0} Wallet</span>
                 </div>
               </Link>
             ) : (
-              <Button asChild variant="outline" className="ml-2 hidden lg:inline-flex rounded-xl font-semibold text-xs h-9">
-                <Link to="/login">Sign In</Link>
+              <Button asChild variant="gold" className="ml-2 hidden lg:inline-flex rounded-xl font-semibold text-xs h-9">
+                <Link to="/login">Sign In / Register</Link>
               </Button>
             )}
-
-            <Button asChild variant="gold" className="hidden lg:inline-flex rounded-xl font-semibold text-xs h-9">
-              <Link to="/become-distributor">Become a Dealer</Link>
-            </Button>
 
             <Button
               variant="ghost"

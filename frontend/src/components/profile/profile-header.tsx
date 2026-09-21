@@ -59,11 +59,11 @@ export function ProfileHeader() {
     navigate({ to: "/login" });
   };
 
-  const name = user?.name || "Neha Patel";
-  const email = user?.email || "neha.patel@example.com";
-  const phone = user?.phone || "+91 93114 16225";
-  const tier = user?.tier || "Gold Harvest Member";
-  const walletBalance = user?.walletBalance ?? 250;
+  const name = user?.name || "Janani Patron";
+  const email = user?.email || "customer@jananiagro.com";
+  const phone = user?.phone || "";
+  const tier = user?.tier || "Harvest Member";
+  const walletBalance = user?.walletBalance ?? 0;
   const avatar = user?.avatar;
 
   const initials = name

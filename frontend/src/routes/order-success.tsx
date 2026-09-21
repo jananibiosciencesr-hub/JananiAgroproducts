@@ -90,11 +90,11 @@ export function OrderSuccessPage() {
   }, []);
 
   const deliveryDate = orderData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
-  const customerName = orderData?.address?.fullName || user?.name || "Neha Patel";
-  const customerPhone = orderData?.address?.phone || user?.phone || "+91 93114 16225";
-  const customerAddress = orderData?.address
-    ? `${orderData.address.streetAddress}, ${orderData.address.city}, ${orderData.address.state} - ${orderData.address.pincode}`
-    : "Flat 402, Green Acre Heights, Bodakdev, Ahmedabad, Gujarat - 380054";
+  const customerName = orderData?.customerName || orderData?.address?.fullName || user?.name || "Valued Patron";
+  const customerPhone = orderData?.customerPhone || orderData?.address?.phone || user?.phone || "+91 98480 22338";
+  const customerAddress = orderData?.customerAddress || (orderData?.address
+    ? `${orderData.address.streetAddress || orderData.address.street}, ${orderData.address.city}, ${orderData.address.state} - ${orderData.address.pincode}`
+    : "Registered Delivery Address, Gujarat");
 
   const recipientCity = orderData?.address?.city || "Ahmedabad";
   const paymentMethod = orderData?.paymentMethod || "UPI (Google Pay)";

@@ -10,52 +10,18 @@ import {
   Sprout,
   X,
   ShieldCheck,
-  Check
+  Check,
+  Compass
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { SavedAddress } from "./types";
-
-const INITIAL_ADDRESSES: SavedAddress[] = [
-  {
-    id: "addr-1",
-    name: "Neha Patel",
-    phone: "+91 93114 16225",
-    street: "Flat 402, Green Acre Heights, Bodakdev",
-    landmark: "Near Judges Bungalow Road",
-    city: "Ahmedabad",
-    state: "Gujarat",
-    pincode: "380054",
-    isDefault: true,
-    type: "home",
-  },
-  {
-    id: "addr-2",
-    name: "Neha Patel (Studio Office)",
-    phone: "+91 93114 16225",
-    street: "Unit 304, Signature Business Park, Prahlad Nagar",
-    landmark: "Opposite Corporate Road Garden",
-    city: "Ahmedabad",
-    state: "Gujarat",
-    pincode: "380015",
-    isDefault: false,
-    type: "work",
-  },
-  {
-    id: "addr-3",
-    name: "Ramesh Patel (Family Estate)",
-    phone: "+91 98250 19482",
-    street: "Farmhouse #12, Kalawad Road Orchards",
-    landmark: "Behind Lodhika GIDC Phase II",
-    city: "Rajkot",
-    state: "Gujarat",
-    pincode: "360005",
-    isDefault: false,
-    type: "farm",
-  },
-];
+import { useStore } from "@/components/store-provider";
 
 export function AddressManagerTab() {
+  const { user } = useStore();
+  const [isLocating, setIsLocating] = useState(false);
+
   const [addresses, setAddresses] = useState<SavedAddress[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -65,7 +31,7 @@ export function AddressManagerTab() {
         console.error("Failed to load saved addresses", e);
       }
     }
-    return INITIAL_ADDRESSES;
+    return [];
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,8 +39,8 @@ export function AddressManagerTab() {
 
   // Form State
   const [formData, setFormData] = useState<Omit<SavedAddress, "id">>({
-    name: "",
-    phone: "",
+    name: user?.name || "",
+    phone: user?.phone || "",
     street: "",
     landmark: "",
     city: "Ahmedabad",
@@ -91,11 +57,67 @@ export function AddressManagerTab() {
     }
   };
 
+  const handleUseCurrentLocation = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+            { signal: controller.signal }
+          );
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.address) {
+              const addr = data.address;
+              const detCity = addr.city || addr.town || addr.village || addr.county || "Ahmedabad";
+              const detState = addr.state || "Gujarat";
+              const detPin = (addr.postcode || "").replace(/\s/g, "");
+              const detStreet = [addr.house_number, addr.road, addr.suburb, addr.neighbourhood].filter(Boolean).join(", ");
+
+              setFormData((prev) => ({
+                ...prev,
+                street: detStreet || prev.street,
+                city: detCity || prev.city,
+                state: detState || prev.state,
+                pincode: detPin || prev.pincode,
+              }));
+              toast.success("📍 Address details auto-filled from your GPS location!");
+              setIsLocating(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Reverse geocode error:", err);
+        }
+
+        toast.success(`📍 GPS location captured (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        setIsLocating(false);
+      },
+      (err) => {
+        setIsLocating(false);
+        toast.error("Unable to get GPS location. Please enter address manually.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
   const handleOpenAdd = () => {
     setEditingAddress(null);
     setFormData({
-      name: "Neha Patel",
-      phone: "+91 93114 16225",
+      name: user?.name || "",
+      phone: user?.phone || "",
       street: "",
       landmark: "",
       city: "Ahmedabad",
@@ -300,13 +322,25 @@ export function AddressManagerTab() {
               <X className="size-5" />
             </button>
 
-            <div className="border-b border-border pb-3">
-              <h3 className="font-display text-xl font-bold text-foreground">
-                {editingAddress ? "Edit Delivery Address" : "Add New Delivery Address"}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Ensure accurate pin code for express Saurashtra farm dispatch.
-              </p>
+            <div className="border-b border-border pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="font-display text-xl font-bold text-foreground">
+                  {editingAddress ? "Edit Delivery Address" : "Add New Delivery Address"}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Ensure accurate pin code for express Saurashtra farm dispatch.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                disabled={isLocating}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-leaf/40 bg-brand-leaf/10 hover:bg-brand-leaf/20 text-brand-leaf px-2.5 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
+                title="Auto-detect current GPS location and fill address"
+              >
+                <Compass className={`size-3.5 ${isLocating ? "animate-spin text-brand-gold" : "text-brand-leaf"}`} />
+                <span>{isLocating ? "Detecting..." : "📍 Use Current Location"}</span>
+              </button>
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-4">

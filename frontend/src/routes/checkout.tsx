@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { products } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
-import { createOrder } from "@/lib/api";
+import { createOrder, sendAuthOtp, verifyAuthOtp, signupCustomer } from "@/lib/api";
 
 import { AddressManager, type ShippingAddress } from "@/components/checkout/address-manager";
 import {
@@ -62,6 +62,8 @@ export function CheckoutPage() {
     subtotal,
     cartCount,
     user,
+    loginUser,
+    logoutUser,
     clearCart,
     deductWalletBalance,
     products: storeProducts,
@@ -72,6 +74,17 @@ export function CheckoutPage() {
   const [orderId, setOrderId] = useState("");
   const [placedOrderSummary, setPlacedOrderSummary] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Email OTP Checkout Auth State
+  const [checkoutEmail, setCheckoutEmail] = useState("");
+  const [checkoutName, setCheckoutName] = useState("");
+  const [checkoutPhone, setCheckoutPhone] = useState("");
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [resendTimer, setResendTimer] = useState(60);
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // 1. Address Selection State
   const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(null);
@@ -93,6 +106,107 @@ export function CheckoutPage() {
 
   // 7. Payment Method State
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "cod">("upi");
+
+  // Timer countdown for OTP resend
+  useEffect(() => {
+    if (isOtpSent && resendTimer > 0) {
+      const interval = setInterval(() => setResendTimer((prev) => prev - 1), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isOtpSent, resendTimer]);
+
+  // Handle Send Realtime OTP to Email
+  const handleSendCheckoutOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const emailToUse = checkoutEmail.trim().toLowerCase();
+    if (!emailToUse || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToUse)) {
+      toast.error("Please enter a valid email address to receive your OTP.");
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const res = await sendAuthOtp({ email: emailToUse, purpose: "checkout" });
+      if (res.success) {
+        setIsOtpSent(true);
+        setResendTimer(60);
+        setOtpCode(["", "", "", "", "", ""]);
+        toast.success(`6-Digit OTP sent to ${emailToUse} via Gmail. Please check your inbox!`);
+        setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
+      } else {
+        toast.error(res.message || "Failed to dispatch OTP. Please try again.");
+      }
+    } catch (err) {
+      toast.error("Network error while sending OTP. Please retry.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  // Handle OTP digit inputs
+  const handleOtpDigitChange = (index: number, val: string) => {
+    const cleaned = val.replace(/\D/g, "");
+    if (!cleaned) {
+      const next = [...otpCode];
+      next[index] = "";
+      setOtpCode(next);
+      return;
+    }
+
+    if (cleaned.length > 1) {
+      const next = [...otpCode];
+      cleaned.slice(0, 6).split("").forEach((char, i) => {
+        if (i < 6) next[i] = char;
+      });
+      setOtpCode(next);
+      const nextFocus = Math.min(cleaned.length, 5);
+      otpInputRefs.current[nextFocus]?.focus();
+      return;
+    }
+
+    const next = [...otpCode];
+    next[index] = cleaned[0] || "";
+    setOtpCode(next);
+    if (index < 5 && cleaned[0]) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otpCode[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Handle Verify OTP and auto-login
+  const handleVerifyCheckoutOtp = async () => {
+    const code = otpCode.join("");
+    if (code.length !== 6) {
+      toast.error("Please enter the complete 6-digit OTP sent to your email.");
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      const res = await verifyAuthOtp({ email: checkoutEmail.trim().toLowerCase(), otp: code });
+      if (res.success && res.user) {
+        // If customer provided a custom name/phone during checkout auth, merge it
+        const updatedUser = {
+          ...res.user,
+          name: checkoutName.trim() || res.user.name || "Valued Patron",
+          phone: checkoutPhone.trim() || res.user.phone || "+91 98480 22338",
+        };
+        loginUser(updatedUser);
+        toast.success(`Welcome ${updatedUser.name}! Signed in successfully. Your cart items are preserved.`);
+      } else {
+        toast.error(res.message || "Invalid or expired OTP. Please check and try again.");
+      }
+    } catch (err) {
+      toast.error("Error verifying OTP. Please retry.");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
 
   // Cart items list
   const cartItems = useMemo(() => {
@@ -159,6 +273,9 @@ export function CheckoutPage() {
 
     const pendingCheckout = {
       orderNumber: `JAP-${Math.floor(100000 + Math.random() * 900000)}`,
+      customerName: selectedAddress.fullName || user?.name || checkoutName || "Valued Patron",
+      customerEmail: user?.email || checkoutEmail || "patron@jananiagro.com",
+      customerPhone: selectedAddress.phone || user?.phone || checkoutPhone || "+91 98480 22338",
       address: selectedAddress,
       slot: selectedSlot,
       items: cartItems,
@@ -315,6 +432,187 @@ export function CheckoutPage() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_420px] items-start">
         {/* Left Column: Sequential Checkout Steps */}
         <div className="space-y-8">
+          {/* USER AUTH & REALTIME EMAIL OTP SECTION */}
+          {!user ? (
+            <section className="rounded-3xl border-2 border-brand-gold/40 bg-gradient-to-br from-brand-gold/10 via-card to-background p-5 sm:p-7 shadow-soft space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/70 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="grid size-8 place-items-center rounded-2xl bg-brand-gold text-forest text-sm font-bold shadow-sm">
+                    🔐
+                  </span>
+                  <div>
+                    <h2 className="font-display text-lg font-bold text-foreground">
+                      Customer Sign In / Quick OTP Verification
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Enter your email to receive a real-time OTP via Gmail. Basket items are 100% saved.
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold text-brand-gold bg-brand-gold/15 px-2.5 py-1 rounded-full self-start sm:self-auto">
+                  ⚡ Fast Login
+                </span>
+              </div>
+
+              {!isOtpSent ? (
+                <form onSubmit={handleSendCheckoutOtp} className="space-y-4 pt-1">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <label className="text-xs font-semibold text-foreground mb-1 block">
+                        Full Name (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Rahul Sharma"
+                        value={checkoutName}
+                        onChange={(e) => setCheckoutName(e.target.value)}
+                        className="w-full h-11 px-3.5 rounded-2xl border border-input bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-foreground mb-1 block">
+                        Mobile Number
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="+91 98480 22338"
+                        value={checkoutPhone}
+                        onChange={(e) => setCheckoutPhone(e.target.value)}
+                        className="w-full h-11 px-3.5 rounded-2xl border border-input bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-foreground mb-1 block">
+                        Email Address <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="youremail@gmail.com"
+                        value={checkoutEmail}
+                        onChange={(e) => setCheckoutEmail(e.target.value)}
+                        className="w-full h-11 px-3.5 rounded-2xl border border-brand-gold/50 bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <p className="text-[11px] text-muted-foreground">
+                      💡 A 6-digit verification code will be sent to your Gmail inbox instantly.
+                    </p>
+                    <Button
+                      type="submit"
+                      disabled={isSendingOtp}
+                      variant="gold"
+                      size="sm"
+                      className="rounded-2xl px-5 font-bold text-xs h-10 shadow-sm"
+                    >
+                      {isSendingOtp ? "Sending Code..." : "Send Realtime OTP to Email ✉️"}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4 pt-1 animate-in fade-in">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-secondary/80 p-3.5 rounded-2xl border border-border text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Verification code sent to: </span>
+                      <strong className="text-foreground font-semibold">{checkoutEmail}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsOtpSent(false)}
+                      className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto text-xs"
+                    >
+                      Change Email
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-2 block text-center sm:text-left">
+                      Enter 6-Digit Email OTP Code:
+                    </label>
+                    <div className="flex justify-center sm:justify-start gap-2 sm:gap-3">
+                      {otpCode.map((digit, index) => (
+                        <input
+                          key={index}
+                          ref={(el) => { otpInputRefs.current[index] = el; }}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          value={digit}
+                          onChange={(e) => handleOtpDigitChange(index, e.target.value)}
+                          onKeyDown={(e) => handleOtpDigitKeyDown(index, e)}
+                          className="size-11 sm:size-12 text-center text-lg font-bold font-mono rounded-xl border border-border bg-card focus:border-brand-leaf focus:ring-2 focus:ring-brand-leaf/20 outline-none text-foreground transition-all"
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div className="text-xs text-muted-foreground">
+                      {resendTimer > 0 ? (
+                        <span>Resend code in <strong className="text-foreground font-mono">{resendTimer}s</strong></span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSendCheckoutOtp()}
+                          className="text-brand-leaf font-bold hover:underline"
+                        >
+                          🔄 Resend OTP Code
+                        </button>
+                      )}
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleVerifyCheckoutOtp}
+                      disabled={isVerifyingOtp || otpCode.join("").length !== 6}
+                      variant="gold"
+                      size="sm"
+                      className="rounded-2xl px-6 font-bold text-xs h-10 shadow-sm"
+                    >
+                      {isVerifyingOtp ? "Verifying..." : "Verify OTP & Continue ✨"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </section>
+          ) : (
+            <section className="rounded-3xl border border-brand-leaf/40 bg-brand-leaf/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 place-items-center rounded-2xl bg-brand-leaf text-white font-bold text-base shrink-0">
+                  ✓
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <strong className="text-sm font-bold text-foreground">
+                      {user.name || "Valued Patron"}
+                    </strong>
+                    <span className="text-[10px] font-bold uppercase bg-brand-leaf/20 text-brand-leaf px-2 py-0.5 rounded-full">
+                      Logged In
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {user.email} {user.phone ? `· ${user.phone}` : ""}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    logoutUser();
+                    toast.info("Signed out from checkout. You can switch accounts.");
+                  }}
+                  className="text-xs font-semibold text-muted-foreground hover:text-foreground transition underline"
+                >
+                  Switch / Sign Out
+                </button>
+              </div>
+            </section>
+          )}
+
           {/* STEP 1: Delivery Address (CRUD) */}
           <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">

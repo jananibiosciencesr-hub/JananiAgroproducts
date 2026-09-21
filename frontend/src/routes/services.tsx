@@ -112,7 +112,7 @@ function ServicesPage() {
             <a href="#inquiry-form">Submit Commercial Inquiry</a>
           </Button>
           <Button asChild variant="glass" size="lg">
-            <Link to="/become-distributor">Become a Dealer</Link>
+            <Link to="/products">Explore Products</Link>
           </Button>
         </div>
       </PageHero>

@@ -10,7 +10,8 @@ import {
   X,
   Phone,
   Building,
-  Sparkles
+  Sparkles,
+  Compass
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -29,48 +30,6 @@ export interface ShippingAddress {
   type: "home" | "work" | "other";
   isDefault: boolean;
 }
-
-const DEFAULT_SAVED_ADDRESSES: ShippingAddress[] = [
-  {
-    id: "addr-1",
-    fullName: "Neha Patel",
-    phone: "9311416225",
-    houseFlat: "Flat 402, Shivalik Palms",
-    street: "Judges Bungalow Road, Bodakdev",
-    landmark: "Behind Pakwan Dining Hall",
-    city: "Ahmedabad",
-    state: "Gujarat",
-    pincode: "380054",
-    type: "home",
-    isDefault: true,
-  },
-  {
-    id: "addr-2",
-    fullName: "Neha Patel",
-    phone: "9311416225",
-    houseFlat: "Tower 3, Floor 6, Mindspace SEZ",
-    street: "Hinjewadi Phase 3, Rajiv Gandhi Infotech Park",
-    landmark: "Near Circle 2",
-    city: "Pune",
-    state: "Maharashtra",
-    pincode: "411057",
-    type: "work",
-    isDefault: false,
-  },
-  {
-    id: "addr-3",
-    fullName: "Ramesh Patel",
-    phone: "9825102938",
-    houseFlat: "Farmhouse 12, Green Agro Valley",
-    street: "Opposite Somnath Highway Road",
-    landmark: "Near Toll Plaza",
-    city: "Junagadh",
-    state: "Gujarat",
-    pincode: "362001",
-    type: "other",
-    isDefault: false,
-  },
-];
 
 // PIN code auto-fill helper for common Indian hubs
 const PIN_MAP: Record<string, { city: string; state: string }> = {
@@ -91,6 +50,8 @@ interface AddressManagerProps {
 }
 
 export function AddressManager({ selectedAddressId, onSelectAddress }: AddressManagerProps) {
+  const [isLocating, setIsLocating] = useState(false);
+
   const [addresses, setAddresses] = useState<ShippingAddress[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -100,7 +61,7 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
         console.error("Failed to load addresses", e);
       }
     }
-    return DEFAULT_SAVED_ADDRESSES;
+    return [];
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -120,6 +81,62 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
     type: "home",
     isDefault: false,
   });
+
+  const handleUseCurrentLocation = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+            { signal: controller.signal }
+          );
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.address) {
+              const addr = data.address;
+              const detCity = addr.city || addr.town || addr.village || addr.county || "Ahmedabad";
+              const detState = addr.state || "Gujarat";
+              const detPin = (addr.postcode || "").replace(/\s/g, "");
+              const detStreet = [addr.house_number, addr.road, addr.suburb, addr.neighbourhood].filter(Boolean).join(", ");
+
+              setFormData((prev) => ({
+                ...prev,
+                street: detStreet || prev.street,
+                city: detCity || prev.city,
+                state: detState || prev.state,
+                pincode: detPin || prev.pincode,
+              }));
+              toast.success("📍 Address details auto-filled from your GPS location!");
+              setIsLocating(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Reverse geocode error:", err);
+        }
+
+        toast.success(`📍 GPS location captured (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        setIsLocating(false);
+      },
+      (err) => {
+        setIsLocating(false);
+        toast.error("Unable to get GPS location. Please enter address manually.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -384,14 +401,26 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
               <X className="size-5" />
             </button>
 
-            <div className="mb-6">
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
-                <Sparkles className="size-3.5" />
-                {editingAddress ? "Update Location" : "New Harvest Dispatch Location"}
-              </span>
-              <h3 className="font-display text-2xl font-bold text-foreground mt-1">
-                {editingAddress ? "Edit Delivery Address" : "Add Delivery Address"}
-              </h3>
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
+                  <Sparkles className="size-3.5" />
+                  {editingAddress ? "Update Location" : "New Harvest Dispatch Location"}
+                </span>
+                <h3 className="font-display text-2xl font-bold text-foreground mt-1">
+                  {editingAddress ? "Edit Delivery Address" : "Add Delivery Address"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                disabled={isLocating}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-leaf/40 bg-brand-leaf/10 hover:bg-brand-leaf/20 text-brand-leaf px-2.5 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 mr-8"
+                title="Auto-detect current GPS location and fill address"
+              >
+                <Compass className={`size-3.5 ${isLocating ? "animate-spin text-brand-gold" : "text-brand-leaf"}`} />
+                <span>{isLocating ? "Detecting..." : "📍 Use Current Location"}</span>
+              </button>
             </div>
 
             <form onSubmit={handleSaveAddress} className="space-y-4 text-xs font-semibold">
