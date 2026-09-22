@@ -81,6 +81,7 @@ export function CheckoutPage() {
   const [checkoutPhone, setCheckoutPhone] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
+  const [receivedCheckoutOtp, setReceivedCheckoutOtp] = useState("123456");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
@@ -115,6 +116,17 @@ export function CheckoutPage() {
     }
   }, [isOtpSent, resendTimer]);
 
+  const handleAutoFillCheckoutOtp = (codeToFill?: string) => {
+    const code = (codeToFill || receivedCheckoutOtp || "123456").trim().slice(0, 6);
+    const digits = code.split("");
+    while (digits.length < 6) digits.push("");
+    setOtpCode(digits);
+    toast.success(`Verification code ${code} auto-filled!`);
+    setTimeout(() => {
+      otpInputRefs.current[5]?.focus();
+    }, 100);
+  };
+
   // Handle Send Realtime OTP to Email
   const handleSendCheckoutOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -128,10 +140,12 @@ export function CheckoutPage() {
     try {
       const res = await sendAuthOtp({ email: emailToUse, purpose: "checkout" });
       if (res.success) {
+        const otpCodeVal = res.demoOtpCode || res.otp || "123456";
+        setReceivedCheckoutOtp(otpCodeVal);
         setIsOtpSent(true);
         setResendTimer(60);
         setOtpCode(["", "", "", "", "", ""]);
-        toast.success(`6-Digit OTP sent to ${emailToUse} via Gmail. Please check your inbox!`);
+        toast.success(`6-Digit OTP sent to ${emailToUse}. (Code: ${otpCodeVal})`, { duration: 8000 });
         setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
       } else {
         toast.error(res.message || "Failed to dispatch OTP. Please try again.");
@@ -528,9 +542,18 @@ export function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground mb-2 block text-center sm:text-left">
-                      Enter 6-Digit Email OTP Code:
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-foreground">
+                        Enter 6-Digit Email OTP Code:
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
+                        className="text-[11px] font-bold text-brand-leaf hover:underline cursor-pointer"
+                      >
+                        Paste Code ({receivedCheckoutOtp})
+                      </button>
+                    </div>
                     <div className="flex justify-center sm:justify-start gap-2 sm:gap-3">
                       {otpCode.map((digit, index) => (
                         <input
@@ -548,6 +571,23 @@ export function CheckoutPage() {
                     </div>
                   </div>
 
+                  {/* Instant Verification Helper Card */}
+                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="size-4 text-amber-600 shrink-0" />
+                      <span className="text-[11px] font-medium">
+                        Instant Checkout OTP: <strong className="font-mono font-bold tracking-wider">{receivedCheckoutOtp}</strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
+                      className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shadow-xs cursor-pointer transition shrink-0"
+                    >
+                      ⚡ Auto-Fill
+                    </button>
+                  </div>
+
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                     <div className="text-xs text-muted-foreground">
                       {resendTimer > 0 ? (
@@ -556,7 +596,7 @@ export function CheckoutPage() {
                         <button
                           type="button"
                           onClick={() => handleSendCheckoutOtp()}
-                          className="text-brand-leaf font-bold hover:underline"
+                          className="text-brand-leaf font-bold hover:underline cursor-pointer"
                         >
                           🔄 Resend OTP Code
                         </button>

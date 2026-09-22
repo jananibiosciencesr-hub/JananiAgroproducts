@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Home
 } from "lucide-react";
+import { useStore } from "@/components/store-provider";
 import { Button } from "@/components/ui/button";
 import { loadCustomerOrders } from "@/components/orders/orders-seed";
 import { CustomerOrder } from "@/components/orders/types";
@@ -42,36 +43,40 @@ export const Route = createFileRoute("/track-order")({
 });
 
 export function LiveTrackingPage() {
-  const [orderQuery, setOrderQuery] = useState("JAP-260811");
+  const { user } = useStore();
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Load known orders from orders-seed / customer orders
   const allOrders = loadCustomerOrders();
+  const initialSelectedOrder = allOrders.find((o) => ["Shipped", "Processing", "Placed", "Out for Delivery"].includes(o.status)) || allOrders[0];
+
+  const [orderQuery, setOrderQuery] = useState(initialSelectedOrder?.number || "JAP-260811");
 
   // Active tracking order model
   const [activeTracking, setActiveTracking] = useState<any>(() => {
-    const found = allOrders.find((o) => o.number === "JAP-260811" || o.status === "Shipped");
+    const found = initialSelectedOrder;
     return {
       number: found?.number || "JAP-260811",
-      date: found?.date || "08 Sep 2026",
+      date: found?.date || "Today",
       status: found?.status || "Out for Delivery",
       courier: found?.courier || "Delhivery Air Express",
       awb: found?.awb && found.awb !== "N/A" ? found.awb : "DEL-8492048194",
       destination: found?.address ? `${found.address.city}, ${found.address.state}` : "Bodakdev, Ahmedabad, Gujarat",
+      recipientPhone: found?.address?.phone || user?.phone || "+91 98480 22338",
       expected: found?.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
       riderName: "Ramesh Kumar",
       riderPhone: "+91 98765 43210",
       vehicleNumber: "GJ-03-BW-4821",
       otp: "5824",
-      progressPercent: 82,
-      currentCheckpoint: "In Transit: NH-47 Transit Corridor near Sanand Hub",
+      progressPercent: found?.status === "Delivered" ? 100 : found?.status === "Cancelled" ? 0 : 82,
+      currentCheckpoint: found?.status === "Delivered" ? "Delivered at Doorstep" : "In Transit: NH-47 Transit Corridor near Sanand Hub",
       timeline: found?.timeline || [
-        { title: "Order Verified & Organic Batch Selected", time: "08 Sep 2026, 10:30 AM", location: "Saurashtra Farm Hub", done: true },
-        { title: "Quality Lab Inspected & Nitrogen Packed", time: "09 Sep 2026, 03:15 PM", location: "Rajkot Facility", done: true },
-        { title: "Handed over to Delhivery Air Express", time: "10 Sep 2026, 09:00 AM", location: "Lodhika Gateway", done: true },
-        { title: "Arrived at Regional Sort Center", time: "11 Sep 2026, 06:45 AM", location: "Ahmedabad Central Hub", done: true, current: true },
-        { title: "Out for Doorstep Delivery", time: "Expected Today, 11:30 AM", location: "Bodakdev Delivery Branch", done: false },
+        { title: "Order Verified & Organic Batch Selected", time: "Today, 10:30 AM", location: "Saurashtra Farm Hub", done: true },
+        { title: "Quality Lab Inspected & Nitrogen Packed", time: "Today, 03:15 PM", location: "Rajkot Facility", done: true },
+        { title: "Handed over to Delhivery Air Express", time: "Tomorrow, 09:00 AM", location: "Lodhika Gateway", done: true },
+        { title: "Arrived at Regional Sort Center", time: "Expected 06:45 AM", location: "Ahmedabad Central Hub", done: true, current: true },
+        { title: "Out for Doorstep Delivery", time: "Expected 11:30 AM", location: "Bodakdev Delivery Branch", done: false },
         { title: "Delivered to Customer", time: "Pending Doorstep Handover", location: "Customer Residence", done: false },
       ],
     };
@@ -96,6 +101,7 @@ export function LiveTrackingPage() {
           courier: match.courier,
           awb: match.awb && match.awb !== "N/A" ? match.awb : "DEL-8492048194",
           destination: `${match.address.city}, ${match.address.state}`,
+          recipientPhone: match.address?.phone || user?.phone || "+91 98480 22338",
           expected: match.expectedDelivery,
           riderName: "Ramesh Kumar",
           riderPhone: "+91 98765 43210",
@@ -130,6 +136,7 @@ export function LiveTrackingPage() {
         courier: match.courier,
         awb: match.awb && match.awb !== "N/A" ? match.awb : "DEL-8492048194",
         destination: `${match.address.city}, ${match.address.state}`,
+        recipientPhone: match.address?.phone || user?.phone || "+91 98480 22338",
         expected: match.expectedDelivery,
         riderName: "Ramesh Kumar",
         riderPhone: "+91 98765 43210",
@@ -349,7 +356,7 @@ export function LiveTrackingPage() {
             {/* Feature 5: Delivery OTP Card */}
             <DeliveryOtpCard
               initialOtp={activeTracking.otp}
-              recipientPhone="+91 93114 16225"
+              recipientPhone={activeTracking.recipientPhone || user?.phone || "+91 98480 22338"}
             />
 
             {/* Feature 2, 3, 4: Live Courier Partner & AWB Card */}

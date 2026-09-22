@@ -58,7 +58,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("janani_user");
+        const stored = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
         if (stored) {
           const parsed = JSON.parse(stored);
           if (
@@ -68,7 +68,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             parsed?.id === "cust-101"
           ) {
             localStorage.removeItem("janani_user");
+            localStorage.removeItem("janani_auth_user");
             localStorage.removeItem("janani_token");
+            localStorage.removeItem("janani_auth_token");
             return null;
           }
           return parsed;
@@ -122,9 +124,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       if (user) {
         localStorage.setItem("janani_user", JSON.stringify(user));
+        localStorage.setItem("janani_auth_user", JSON.stringify(user));
       } else {
         localStorage.removeItem("janani_user");
+        localStorage.removeItem("janani_auth_user");
         localStorage.removeItem("janani_token");
+        localStorage.removeItem("janani_auth_token");
       }
     }
   }, [user]);
@@ -171,8 +176,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const loginUser = (newUser: AuthUser, token?: string) => {
     setUser(newUser);
-    if (token && typeof window !== "undefined") {
-      localStorage.setItem("janani_token", token);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("janani_user", JSON.stringify(newUser));
+      localStorage.setItem("janani_auth_user", JSON.stringify(newUser));
+      if (token) {
+        localStorage.setItem("janani_token", token);
+        localStorage.setItem("janani_auth_token", token);
+      }
     }
     toast.success(`Welcome back, ${newUser.name}!`);
   };
@@ -181,7 +191,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setUser(null);
     if (typeof window !== "undefined") {
       localStorage.removeItem("janani_token");
+      localStorage.removeItem("janani_auth_token");
       localStorage.removeItem("janani_user");
+      localStorage.removeItem("janani_auth_user");
     }
     toast.info("You have been signed out.");
   };

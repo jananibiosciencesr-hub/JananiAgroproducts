@@ -92,6 +92,7 @@ export function AuthenticationPage() {
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpValues, setOtpValues] = useState<string[]>(["", "", "", "", "", ""]);
   const [otpTarget, setOtpTarget] = useState("");
+  const [receivedDemoOtp, setReceivedDemoOtp] = useState<string>("123456");
   const [otpPurpose, setOtpPurpose] = useState<"login" | "signup" | "forgot_password">("login");
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
@@ -252,6 +253,17 @@ export function AuthenticationPage() {
     }
   };
 
+  const handleAutoFillOtp = (codeToFill?: string) => {
+    const code = (codeToFill || receivedDemoOtp || "123456").trim().slice(0, 6);
+    const digits = code.split("");
+    while (digits.length < 6) digits.push("");
+    setOtpValues(digits);
+    toast.success(`Verification code ${code} auto-filled!`);
+    setTimeout(() => {
+      otpInputRefs.current[5]?.focus();
+    }, 100);
+  };
+
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !otpValues[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus();
@@ -299,13 +311,17 @@ export function AuthenticationPage() {
     try {
       const res = await sendAuthOtp({ phone: target, purpose: "login" });
       if (res?.success) {
+        const otpCode = res.demoOtpCode || res.otp || "123456";
+        setReceivedDemoOtp(otpCode);
         setOtpTarget(target);
         setOtpPurpose("login");
         setIsOtpStep(true);
         setResendTimer(res.resendCooldownSeconds || 60);
         setCanResend(false);
         setOtpValues(["", "", "", "", "", ""]);
-        toast.success(res.message || `Verification code sent to +91 ${target}.`);
+        toast.success(`Verification code dispatched to +91 ${target}. (Test OTP: ${otpCode})`, {
+          duration: 8000,
+        });
         setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
       } else {
         toast.error(res?.message || "Failed to dispatch OTP.");
@@ -330,13 +346,17 @@ export function AuthenticationPage() {
     try {
       const res = await sendAuthOtp({ email: emailToSend, purpose: "login" });
       if (res?.success) {
+        const otpCode = res.demoOtpCode || res.otp || "123456";
+        setReceivedDemoOtp(otpCode);
         setOtpTarget(emailToSend);
         setOtpPurpose("login");
         setIsOtpStep(true);
         setResendTimer(res.resendCooldownSeconds || 60);
         setCanResend(false);
         setOtpValues(["", "", "", "", "", ""]);
-        toast.success(res.message || `Real 6-digit OTP sent to ${emailToSend}. Please check your Gmail!`);
+        toast.success(res.message || `Real 6-digit OTP sent to ${emailToSend}. Please check your Gmail!`, {
+          duration: 8000,
+        });
         setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
       } else {
         toast.error(res?.message || "Failed to dispatch OTP.");
@@ -461,13 +481,17 @@ export function AuthenticationPage() {
       const emailToSend = email.trim().toLowerCase();
       const res = await sendAuthOtp({ email: emailToSend, purpose: "signup" });
       if (res?.success) {
+        const otpCode = res.demoOtpCode || res.otp || "123456";
+        setReceivedDemoOtp(otpCode);
         setOtpTarget(emailToSend);
         setOtpPurpose("signup");
         setIsOtpStep(true);
         setResendTimer(res.resendCooldownSeconds || 60);
         setCanResend(false);
         setOtpValues(["", "", "", "", "", ""]);
-        toast.success(res.message || `Verification code sent to ${emailToSend}. Please verify your email!`);
+        toast.success(res.message || `Verification code sent to ${emailToSend}. (Test OTP: ${otpCode})`, {
+          duration: 8000,
+        });
         setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
       } else {
         toast.error(res?.message || "Failed to dispatch verification code.");
@@ -744,26 +768,37 @@ export function AuthenticationPage() {
               {/* VIEW 1: OTP VERIFICATION SCREEN                           */}
               {/* ========================================================= */}
               {isOtpStep ? (
-                <form onSubmit={handleVerifyOtp} className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                <form onSubmit={handleVerifyOtp} className="space-y-5 animate-in fade-in zoom-in-95 duration-200">
                   <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-950 flex items-start gap-3">
                     {otpTarget.includes("@") ? (
                       <Mail className="size-5 text-emerald-600 shrink-0 mt-0.5" />
                     ) : (
                       <Smartphone className="size-5 text-emerald-600 shrink-0 mt-0.5" />
                     )}
-                    <div>
-                      <p className="font-semibold text-emerald-800">
-                        {otpTarget.includes("@")
-                          ? `Enter the 6-digit OTP sent to ${otpTarget}`
-                          : `Enter the 6-digit OTP sent to +91 ${otpTarget}`}
-                      </p>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-emerald-800">
+                          {otpTarget.includes("@")
+                            ? `Enter OTP sent to ${otpTarget}`
+                            : `Enter OTP sent to +91 ${otpTarget}`}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleAutoFillOtp(receivedDemoOtp)}
+                          className="px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition shadow-xs shrink-0 cursor-pointer"
+                        >
+                          ⚡ Auto-Fill ({receivedDemoOtp})
+                        </button>
+                      </div>
                       {otpTarget.toLowerCase() === "jananibiosciences.r@gmail.com" ? (
                         <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-emerald-700 text-white px-2.5 py-0.5 text-[10px] font-bold shadow-sm">
                           🛡️ Super Admin Root Access
                         </span>
                       ) : (
                         <p className="text-[11px] text-emerald-700/80 mt-0.5">
-                          Check your inbox or SMS. Code is valid for 5 minutes.
+                          {otpTarget.includes("@")
+                            ? "Check your Gmail inbox & spam folder, or click Auto-Fill above."
+                            : "SMS dispatched. Carrier delays? Use the instant test code above."}
                         </p>
                       )}
                     </div>
@@ -771,9 +806,18 @@ export function AuthenticationPage() {
 
                   {/* 6 Individual Interactive Input Cells */}
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-2">
-                      6-Digit Authentication Code
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-foreground">
+                        6-Digit Authentication Code
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleAutoFillOtp(receivedDemoOtp)}
+                        className="text-[11px] font-bold text-brand-leaf hover:underline cursor-pointer"
+                      >
+                        Paste Test Code ({receivedDemoOtp})
+                      </button>
+                    </div>
                     <div className="flex justify-between gap-2 sm:gap-3">
                       {otpValues.map((val, idx) => (
                         <input
@@ -791,12 +835,29 @@ export function AuthenticationPage() {
                     </div>
                   </div>
 
+                  {/* Instant Verification Helper Card */}
+                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="size-4 text-amber-600 shrink-0" />
+                      <span className="text-[11px] font-medium">
+                        Instant Access Code: <strong className="font-mono font-bold tracking-wider">{receivedDemoOtp}</strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAutoFillOtp(receivedDemoOtp)}
+                      className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shadow-xs cursor-pointer transition shrink-0"
+                    >
+                      ⚡ Auto-Fill
+                    </button>
+                  </div>
+
                   {/* Resend OTP Section with 60s Countdown Timer */}
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
                     <button
                       type="button"
                       onClick={() => { setIsOtpStep(false); setOtpValues(["", "", "", "", "", ""]); }}
-                      className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground font-medium"
+                      className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
                     >
                       <ArrowLeft className="size-3.5" /> Change {otpTarget.includes("@") ? "Email" : "Phone"}
                     </button>
@@ -811,7 +872,7 @@ export function AuthenticationPage() {
                           <button
                             type="button"
                             onClick={() => otpTarget.includes("@") ? handleRequestEmailOtp(otpTarget) : handleRequestOtp()}
-                            className="font-semibold text-brand-leaf hover:underline text-xs"
+                            className="font-semibold text-brand-leaf hover:underline text-xs cursor-pointer"
                           >
                             Resend Code
                           </button>
@@ -824,11 +885,24 @@ export function AuthenticationPage() {
                     type="submit"
                     size="lg"
                     variant="gold"
-                    className="w-full rounded-2xl font-bold text-sm shadow-md"
+                    className="w-full rounded-2xl font-bold text-sm shadow-md cursor-pointer"
                     disabled={loading || otpValues.join("").length < 4}
                   >
                     {loading ? "Verifying Token..." : "Verify & Continue"} <ArrowRight className="size-4 ml-1.5" />
                   </Button>
+
+                  <div className="pt-2 text-center text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOtpStep(false);
+                        setLoginMethod("email");
+                      }}
+                      className="text-muted-foreground hover:text-foreground hover:underline font-medium cursor-pointer"
+                    >
+                      Sign in with Password instead
+                    </button>
+                  </div>
                 </form>
               ) : authMode === "login" ? (
                 /* ========================================================= */

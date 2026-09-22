@@ -12,17 +12,18 @@ interface InvoiceItem {
 interface OrderInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  orderNumber: string;
-  invoiceDate: string;
-  customerName: string;
-  customerPhone: string;
-  customerAddress: string;
-  items: InvoiceItem[];
-  subtotal: number;
-  deliveryFee: number;
-  discount: number;
-  finalTotal: number;
-  paymentMethod: string;
+  orderNumber?: string;
+  invoiceDate?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  items?: InvoiceItem[];
+  subtotal?: number;
+  deliveryFee?: number;
+  discount?: number;
+  finalTotal?: number;
+  paymentMethod?: string;
+  order?: any;
 }
 
 const HSN_MAP: Record<string, string> = {
@@ -58,12 +59,33 @@ export function OrderInvoiceModal({
   discount,
   finalTotal,
   paymentMethod,
+  order,
 }: OrderInvoiceModalProps) {
   if (!isOpen) return null;
 
-  const invoiceNumber = `INV-${orderNumber.replace("JAP-", "2026-")}`;
-  const taxableValue = Math.round(subtotal / 1.05);
-  const totalGst = subtotal - taxableValue;
+  const resolvedOrderNumber = orderNumber || order?.orderNumber || order?.number || "JAP-202601";
+  const resolvedInvoiceDate = invoiceDate || order?.invoiceDate || order?.date || "Today";
+  const resolvedCustomerName = customerName || order?.customerName || order?.address?.fullName || "Valued Patron";
+  const resolvedCustomerPhone = customerPhone || order?.customerPhone || order?.address?.phone || "9848022338";
+  const resolvedCustomerAddress = customerAddress || order?.customerAddress || (order?.address ? `${order.address.streetAddress || ""}, ${order.address.city || ""}, ${order.address.state || ""} - ${order.address.pincode || ""}` : "Delivery Address");
+  
+  const resolvedItems: InvoiceItem[] = (items && items.length > 0)
+    ? items
+    : (order?.items || []).map((it: any) => ({
+        name: it.product?.name || it.name || "Organic Product",
+        quantity: it.qty || it.quantity || 1,
+        price: it.product?.price || it.price || 0,
+      }));
+
+  const resolvedSubtotal = subtotal ?? order?.subtotal ?? order?.amount ?? 0;
+  const resolvedDeliveryFee = deliveryFee ?? order?.deliveryFee ?? 0;
+  const resolvedDiscount = discount ?? order?.discount ?? 0;
+  const resolvedFinalTotal = finalTotal ?? order?.finalTotal ?? order?.total ?? (resolvedSubtotal + resolvedDeliveryFee - resolvedDiscount);
+  const resolvedPaymentMethod = paymentMethod || order?.paymentMethod || "Prepaid Online / UPI";
+
+  const invoiceNumber = `INV-${resolvedOrderNumber.replace("JAP-", "2026-")}`;
+  const taxableValue = Math.round(resolvedSubtotal / 1.05);
+  const totalGst = resolvedSubtotal - taxableValue;
   const cgst = Math.round(totalGst / 2);
   const sgst = totalGst - cgst;
 
@@ -130,9 +152,9 @@ export function OrderInvoiceModal({
                 TAX INVOICE (RULE 46)
               </span>
               <p className="font-mono text-sm font-bold text-slate-900 mt-1">{invoiceNumber}</p>
-              <p className="text-[11px] text-slate-500">Invoice Date: <strong>{invoiceDate}</strong></p>
-              <p className="text-[11px] text-slate-500">Order ID: <strong className="font-mono">{orderNumber}</strong></p>
-              <p className="text-[11px] text-slate-500">Payment: <strong>{paymentMethod}</strong></p>
+              <p className="text-[11px] text-slate-500">Invoice Date: <strong>{resolvedInvoiceDate}</strong></p>
+              <p className="text-[11px] text-slate-500">Order ID: <strong className="font-mono">{resolvedOrderNumber}</strong></p>
+              <p className="text-[11px] text-slate-500">Payment: <strong>{resolvedPaymentMethod}</strong></p>
             </div>
           </div>
 
@@ -142,9 +164,9 @@ export function OrderInvoiceModal({
               <h4 className="font-bold text-slate-700 text-[11px] uppercase tracking-wider mb-1">
                 Billed To (Customer):
               </h4>
-              <p className="font-bold text-slate-900">{customerName}</p>
-              <p className="text-slate-600">{customerAddress}</p>
-              <p className="text-slate-600 mt-1">Mobile: <strong>+91 {customerPhone}</strong></p>
+              <p className="font-bold text-slate-900">{resolvedCustomerName}</p>
+              <p className="text-slate-600">{resolvedCustomerAddress}</p>
+              <p className="text-slate-600 mt-1">Mobile: <strong>+91 {resolvedCustomerPhone}</strong></p>
               <p className="text-slate-500 text-[11px]">Place of Supply: Gujarat (24)</p>
             </div>
 
@@ -176,7 +198,7 @@ export function OrderInvoiceModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {items.map((item, idx) => {
+                {resolvedItems.map((item, idx) => {
                   const hsn = item.hsn || getHsnCode(item.name);
                   const lineTotal = item.price * item.quantity;
                   const itemTaxable = Math.round(lineTotal / 1.05);
@@ -223,19 +245,19 @@ export function OrderInvoiceModal({
                 <span>Total SGST (2.5%):</span>
                 <span className="font-mono">₹{sgst}</span>
               </div>
-              {discount > 0 && (
+              {resolvedDiscount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Promotional Discount:</span>
-                  <span className="font-mono">-₹{discount}</span>
+                  <span className="font-mono">-₹{resolvedDiscount}</span>
                 </div>
               )}
               <div className="flex justify-between text-slate-600">
                 <span>Shipping Charges:</span>
-                <span className="font-mono">{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
+                <span className="font-mono">{resolvedDeliveryFee === 0 ? "FREE" : `₹${resolvedDeliveryFee}`}</span>
               </div>
               <div className="flex justify-between font-bold text-slate-900 text-sm pt-2 border-t border-slate-300">
                 <span>Invoice Total:</span>
-                <span className="font-mono text-base text-emerald-700">₹{finalTotal}</span>
+                <span className="font-mono text-base text-emerald-700">₹{resolvedFinalTotal}</span>
               </div>
             </div>
           </div>

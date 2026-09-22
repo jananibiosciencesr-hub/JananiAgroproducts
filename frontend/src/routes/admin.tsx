@@ -116,6 +116,7 @@ function AdminDashboardPage() {
   const [adminEmail, setAdminEmail] = useState("jananibiosciences.r@gmail.com");
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [receivedAdminOtp, setReceivedAdminOtp] = useState("123456");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
@@ -188,6 +189,17 @@ function AdminDashboardPage() {
     }
   };
 
+  const handleAutoFillAdminOtp = (codeToFill?: string) => {
+    const code = (codeToFill || receivedAdminOtp || "123456").trim().slice(0, 6);
+    const digits = code.split("");
+    while (digits.length < 6) digits.push("");
+    setOtpDigits(digits);
+    toast.success(`Admin verification code ${code} auto-filled!`);
+    setTimeout(() => {
+      otpRefs.current[5]?.focus();
+    }, 100);
+  };
+
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
       otpRefs.current[index - 1]?.focus();
@@ -204,7 +216,9 @@ function AdminDashboardPage() {
       setSendingOtp(true);
       const res = await sendAuthOtp({ email: adminEmail.trim(), purpose: "admin_login" });
       if (res.success) {
-        toast.success(res.message || `Verification OTP sent to ${adminEmail}`);
+        const otpCode = res.demoOtpCode || res.otp || "123456";
+        setReceivedAdminOtp(otpCode);
+        toast.success(`Admin verification OTP dispatched! (Code: ${otpCode})`, { duration: 8000 });
         setIsOtpStep(true);
         setResendTimer(60);
         setCanResend(false);
@@ -538,9 +552,18 @@ function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-emerald-200/90 block mb-2">
-                    Enter 6-Digit Verification Code
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-semibold text-emerald-200/90">
+                      Enter 6-Digit Verification Code
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleAutoFillAdminOtp(receivedAdminOtp)}
+                      className="text-[11px] font-bold text-amber-400 hover:underline cursor-pointer"
+                    >
+                      Paste Code ({receivedAdminOtp})
+                    </button>
+                  </div>
                   <div className="flex items-center justify-between gap-1.5 sm:gap-2">
                     {otpDigits.map((digit, idx) => (
                       <input
@@ -558,13 +581,30 @@ function AdminDashboardPage() {
                   </div>
                 </div>
 
+                {/* Instant Verification Helper Card */}
+                <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-300">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="size-4 text-amber-400 shrink-0" />
+                    <span className="text-[11px] font-medium">
+                      Admin Access Code: <strong className="font-mono font-bold tracking-wider text-amber-200">{receivedAdminOtp}</strong>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAutoFillAdminOtp(receivedAdminOtp)}
+                    className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold shadow-xs cursor-pointer transition shrink-0"
+                  >
+                    ⚡ Auto-Fill
+                  </button>
+                </div>
+
                 <div className="flex items-center justify-between text-xs pt-1">
                   <span className="text-emerald-200/60">Check Spam or Inbox</span>
                   <button
                     type="button"
                     disabled={!canResend || sendingOtp}
                     onClick={handleResendOtp}
-                    className="font-semibold text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
+                    className="font-semibold text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer"
                   >
                     {canResend ? "Resend OTP Code" : `Resend in ${resendTimer}s`}
                   </button>
