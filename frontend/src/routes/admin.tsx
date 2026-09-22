@@ -673,6 +673,9 @@ function AdminDashboardPage() {
               charts={charts}
               widgets={widgets}
               orders={orders}
+              products={products}
+              customers={customers}
+              reviews={reviews}
               onNavigateTab={setActiveTab}
               onOpenShiprocketModal={setSelectedOrderForShipping}
               onOpenRestockModal={setSelectedItemForRestock}

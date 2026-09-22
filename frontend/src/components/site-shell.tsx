@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ChevronDown,
   Heart,
@@ -55,6 +55,13 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const { cartCount, wishlist, user, logoutUser } = useStore();
+
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdminRoute = pathname.startsWith("/admin");
+
+  if (isAdminRoute) {
+    return <div className="min-h-screen bg-background">{children}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">

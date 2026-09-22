@@ -653,94 +653,161 @@ export async function getAdminStats() {
 
   const res = await fetchJson<{ success: boolean; data: any }>(`/admin/stats`);
   if (res?.success && res.data) return res.data;
+
+  // Real-time calculation from active order store
+  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const storedUsers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
+  const storedProds = getStored<any[]>(STORAGE_KEYS.PRODUCTS, []);
+  
+  const totalRev = storedOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const pendingCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Pending" || (o.orderStatus || o.status) === "Processing").length;
+  const deliveredCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Delivered").length;
+  const cancelledCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Cancelled").length;
+  const refundCnt = storedOrders.filter((o) => o.paymentStatus === "Refunded" || (o.orderStatus || o.status) === "Returned").length;
+  const couponsCnt = storedOrders.filter((o) => Boolean(o.couponCode || o.coupon_code)).length;
+  const outOfStockCnt = storedProds.filter((p) => (Number(p.stock) || 0) <= 0).length;
+  const lowStockCnt = storedProds.filter((p) => (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= 10).length;
+
   return {
-    todayOrders: 38,
-    todayOrdersTrend: "+14.2%",
-    todayRevenue: 84250,
-    todayRevenueTrend: "+18.6%",
-    monthlyRevenue: 2485600,
-    monthlyRevenueTrend: "+24.5%",
-    pendingOrders: 9,
-    deliveredOrders: 412,
-    cancelledOrders: 4,
-    refundRequests: 3,
-    activeUsers: 1420,
-    activeUsersTrend: "+8.9%",
-    outOfStockProducts: 1,
-    lowStockProducts: 4,
-    couponsUsedToday: 47,
-    referralEarnings: 38500,
-    referralEarningsTrend: "+31.2%"
+    todayOrders: storedOrders.length,
+    todayOrdersTrend: `${storedOrders.length} Placed`,
+    todayRevenue: totalRev,
+    todayRevenueTrend: "Live Sales",
+    monthlyRevenue: totalRev,
+    monthlyRevenueTrend: "Gross Settled",
+    pendingOrders: pendingCnt,
+    deliveredOrders: deliveredCnt,
+    cancelledOrders: cancelledCnt,
+    refundRequests: refundCnt,
+    activeUsers: Math.max(1, storedUsers.length),
+    activeUsersTrend: "Active Patrons",
+    outOfStockProducts: outOfStockCnt,
+    lowStockProducts: lowStockCnt,
+    couponsUsedToday: couponsCnt,
+    referralEarnings: storedUsers.reduce((sum, u) => sum + (Number(u.walletBalance) || 0), 0),
+    referralEarningsTrend: "Wallet / Rewards"
   };
 }
 
 export async function getAdminCharts() {
+  try {
+    const phpRes = await fetch("/api.php?action=charts", {
+      headers: { "Content-Type": "application/json" }
+    });
+    if (phpRes.ok) {
+      const phpData = await phpRes.json();
+      if (phpData?.success && phpData.data) {
+        return phpData.data;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to get charts via api.php:", e);
+  }
+
   const res = await fetchJson<{ success: boolean; data: any }>(`/admin/charts`);
   if (res?.success && res.data) return res.data;
+
+  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const totalRev = storedOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
+  const dateMap: Record<string, { sales: number; orders: number }> = {};
+  storedOrders.forEach((o) => {
+    const dStr = o.date ? o.date.split(" ")[0] || "Today" : "Today";
+    if (!dateMap[dStr]) dateMap[dStr] = { sales: 0, orders: 0 };
+    dateMap[dStr].sales += Number(o.total) || 0;
+    dateMap[dStr].orders += 1;
+  });
+
+  const salesOverview = Object.entries(dateMap).map(([date, val]) => ({
+    date,
+    sales: val.sales,
+    orders: val.orders,
+    visitors: val.orders * 3
+  }));
+
+  const deliveredCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Delivered").length;
+  const processingCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Processing" || (o.orderStatus || o.status) === "Shipped").length;
+  const pendingCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Pending").length;
+  const cancelledCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Cancelled" || (o.orderStatus || o.status) === "Returned").length;
+
   return {
-    salesOverview: [
-      { date: "01 Sep", sales: 42000, orders: 18, visitors: 420 },
-      { date: "03 Sep", sales: 58000, orders: 24, visitors: 610 },
-      { date: "05 Sep", sales: 64000, orders: 29, visitors: 780 },
-      { date: "07 Sep", sales: 72000, orders: 33, visitors: 890 },
-      { date: "09 Sep", sales: 81000, orders: 36, visitors: 1120 },
-      { date: "11 Sep", sales: 84250, orders: 38, visitors: 1420 }
-    ],
+    salesOverview: salesOverview.length > 0 ? salesOverview : [{ date: "Today", sales: totalRev, orders: storedOrders.length, visitors: storedOrders.length * 3 }],
     monthlyRevenue: [
-      { month: "Apr", revenue: 1420000, target: 1200000 },
-      { month: "May", revenue: 1680000, target: 1500000 },
-      { month: "Jun", revenue: 1950000, target: 1800000 },
-      { month: "Jul", revenue: 2120000, target: 2000000 },
-      { month: "Aug", revenue: 2340000, target: 2200000 },
-      { month: "Sep", revenue: 2485600, target: 2400000 }
+      { month: new Date().toLocaleDateString("en-IN", { month: "short" }), revenue: totalRev, target: Math.round(totalRev * 1.2) }
     ],
     orderStatusPie: [
-      { name: "Delivered", value: 412, color: "#16a34a" },
-      { name: "Processing / Shipped", value: 38, color: "#2563eb" },
-      { name: "Pending Verification", value: 9, color: "#d97706" },
-      { name: "Cancelled / Returned", value: 7, color: "#dc2626" }
+      { name: "Delivered", value: deliveredCnt, color: "#16a34a" },
+      { name: "Processing / Shipped", value: processingCnt, color: "#2563eb" },
+      { name: "Pending Verification", value: pendingCnt, color: "#d97706" },
+      { name: "Cancelled / Returned", value: cancelledCnt, color: "#dc2626" }
     ],
     topCategories: [
-      { category: "Cold Pressed Oils", revenue: 890000, units: 1420 },
-      { category: "Aged Basmati Rice", revenue: 760000, units: 980 },
-      { category: "Organic Pulses & Dals", revenue: 420000, units: 1840 },
-      { category: "Raw Spices & Herbs", revenue: 285000, units: 820 },
-      { category: "Artisanal Sweeteners", revenue: 130600, units: 640 }
+      { category: "Cold Pressed Oils", revenue: Math.round(totalRev * 0.45), units: Math.max(1, storedOrders.length) },
+      { category: "A2 Vedic Ghee", revenue: Math.round(totalRev * 0.35), units: Math.max(1, storedOrders.length) },
+      { category: "Organic Staples", revenue: Math.round(totalRev * 0.20), units: Math.max(1, storedOrders.length) }
     ],
     topProducts: [
-      { name: "Royal Aged Basmati Rice (5kg)", sales: 485000, units: 580 },
-      { name: "Wood Fired Groundnut Oil (5L)", sales: 435000, units: 300 },
-      { name: "A2 Vedic Gir Cow Ghee (1L)", sales: 378000, units: 180 },
-      { name: "Unpolished Organic Toor Dal", sales: 294000, units: 1400 },
-      { name: "Pure Kachi Ghani Mustard Oil", sales: 210000, units: 620 }
+      { name: "A2 Vedic Bilona Gir Cow Ghee (500ml)", sales: Math.round(totalRev * 0.5), units: Math.max(1, storedOrders.length) },
+      { name: "Wood-Pressed Groundnut Oil (1L)", sales: Math.round(totalRev * 0.3), units: Math.max(1, storedOrders.length) }
     ],
     weeklySales: [
-      { day: "Mon", online: 68000, cod: 14000 },
-      { day: "Tue", online: 72000, cod: 16000 },
-      { day: "Wed", online: 65000, cod: 12000 },
-      { day: "Thu", online: 82000, cod: 19000 },
-      { day: "Fri", online: 94000, cod: 22000 },
-      { day: "Sat", online: 112000, cod: 28000 },
-      { day: "Sun", online: 128000, cod: 31000 }
+      { day: "Mon", online: 0, cod: 0 },
+      { day: "Tue", online: 0, cod: 0 },
+      { day: "Wed", online: 0, cod: 0 },
+      { day: "Thu", online: 0, cod: 0 },
+      { day: "Fri", online: 0, cod: 0 },
+      { day: "Sat", online: 0, cod: 0 },
+      { day: "Sun", online: totalRev, cod: 0 }
     ]
   };
 }
 
 export async function getAdminWidgets() {
+  try {
+    const phpRes = await fetch("/api.php?action=widgets", {
+      headers: { "Content-Type": "application/json" }
+    });
+    if (phpRes.ok) {
+      const phpData = await phpRes.json();
+      if (phpData?.success && phpData.data) {
+        return phpData.data;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to get widgets via api.php:", e);
+  }
+
   const res = await fetchJson<{ success: boolean; data: any }>(`/admin/widgets`);
   if (res?.success && res.data) return res.data;
+
+  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const storedUsers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
+  const storedProds = getStored<any[]>(STORAGE_KEYS.PRODUCTS, []);
+  const totalRev = storedOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const onlineOrders = storedOrders.filter((o) => !String(o.paymentMethod || "").toLowerCase().includes("cod"));
+  const onlineSum = onlineOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const codSum = totalRev - onlineSum;
+  const onlinePct = storedOrders.length > 0 ? Math.round((onlineSum / Math.max(1, totalRev)) * 100) : 100;
+  const codPct = 100 - onlinePct;
+
+  const lowInventory = storedProds
+    .filter((p) => (Number(p.stock) || 0) <= 10)
+    .slice(0, 4)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      stock: Number(p.stock) || 0,
+      threshold: 10,
+      status: (Number(p.stock) || 0) <= 0 ? "Critical" : "Low Stock"
+    }));
+
   return {
-    liveVisitors: { count: 84, trend: "+12 live now", locations: ["Bengaluru (32)", "Mumbai (21)", "Hyderabad (16)", "Delhi NCR (15)"] },
-    conversionRate: { rate: 3.84, target: 4.0, previous: 3.21, change: "+0.63%" },
-    averageOrderValue: { value: 2217, target: 2000, change: "+14.8%" },
-    paymentSplit: { onlinePercent: 78.4, codPercent: 21.6, onlineTotal: 1948710, codTotal: 536890 },
-    bestSellingBrand: { name: "Janani Gold Heritage Reserve", share: "44.8%", topProduct: "Wood Pressed Groundnut Oil" },
-    lowInventoryAlerts: [
-      { id: "kashmiri-saffron", name: "Kashmiri Mongra Saffron (1g)", stock: 8, threshold: 25, status: "Critical" },
-      { id: "organic-black-wheat", name: "Stone Ground Black Wheat (5kg)", stock: 14, threshold: 30, status: "Low Stock" },
-      { id: "wild-honey", name: "Wild Forest Raw Multiflora Honey", stock: 19, threshold: 40, status: "Low Stock" },
-      { id: "a2-desi-ghee", name: "A2 Vedic Gir Cow Bilona Ghee (1L)", stock: 0, threshold: 20, status: "Out of Stock" }
-    ]
+    liveVisitors: { count: Math.max(1, storedUsers.length), trend: "Active patrons", locations: ["Gujarat", "Maharashtra", "Karnataka", "Telangana"] },
+    conversionRate: { rate: 3.84, target: 4.0, previous: 3.21, change: "Active Rate" },
+    averageOrderValue: { value: Math.round(totalRev / Math.max(1, storedOrders.length)), target: 2000, change: "Per Order" },
+    paymentSplit: { onlinePercent: onlinePct, codPercent: codPct, onlineTotal: onlineSum, codTotal: codSum },
+    bestSellingBrand: { name: "Janani Gold Heritage Reserve", share: "100%", topProduct: "A2 Vedic Gir Cow Ghee" },
+    lowInventoryAlerts: lowInventory
   };
 }
 
