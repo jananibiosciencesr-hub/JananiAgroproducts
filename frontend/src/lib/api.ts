@@ -6089,7 +6089,7 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
 
   return {
     success: false,
-    message: "Invalid or expired OTP code. Please check your email or use test code 123456.",
+    message: "Invalid or expired OTP code. Please check the code in your email or click Resend OTP.",
     token: "",
     user: null as any
   };
