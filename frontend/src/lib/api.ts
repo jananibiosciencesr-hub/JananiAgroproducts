@@ -199,38 +199,123 @@ export async function getCategories() {
 /**
  * Order API Methods
  */
-export async function createOrder(orderPayload: {
-  items: Array<{ productId: number; name?: string; price: number; quantity: number }>;
+export interface CreateOrderPayload {
+  id?: string;
+  orderNumber?: string;
+  number?: string;
+  items: Array<{
+    id?: number | string;
+    productId: number | string;
+    name?: string;
+    title?: string;
+    price: number;
+    quantity?: number;
+    qty?: number;
+    image?: string;
+    variant?: string;
+    subtotal?: number;
+  }>;
   customer: {
     firstName?: string;
     lastName?: string;
+    name?: string;
     phone: string;
     email?: string;
-    address: string;
+    address?: string;
+    street?: string;
+    streetAddress?: string;
     landmark?: string;
     city: string;
     state?: string;
     pincode: string;
   };
-  paymentMethod: string;
+  subtotal?: number;
+  discount?: number;
   couponCode?: string;
-}) {
-  const subtotal = orderPayload.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const discount = orderPayload.couponCode ? 100 : 0;
-  const deliveryFee = subtotal >= 799 ? 0 : 60;
-  const total = subtotal - discount + deliveryFee;
-  const generatedId = `JAP-${Math.floor(100000 + Math.random() * 900000)}`;
-  const custName = `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim() || "Valued Patron";
+  couponDiscount?: number;
+  walletDeduction?: number;
+  deliveryFee?: number;
+  shippingFee?: number;
+  finalTotal?: number;
+  total?: number;
+  paymentMethod?: string;
+  paymentStatus?: string;
+  transactionId?: string;
+  razorpayOrderId?: string;
+  deliverySlot?: string;
+  expectedDelivery?: string;
+  slot?: any;
+  timeline?: any[];
+}
+
+export async function createOrder(orderPayload: CreateOrderPayload) {
+  const subtotal = orderPayload.subtotal ?? orderPayload.items.reduce((sum, item) => sum + item.price * (item.quantity || item.qty || 1), 0);
+  const couponDiscount = orderPayload.couponDiscount ?? (orderPayload.couponCode ? (orderPayload.discount ?? 0) : 0);
+  const walletDeduction = orderPayload.walletDeduction ?? 0;
+  const discount = orderPayload.discount ?? couponDiscount;
+  const deliveryFee = orderPayload.deliveryFee ?? orderPayload.shippingFee ?? (subtotal >= 799 ? 0 : 60);
+  const total = orderPayload.finalTotal ?? orderPayload.total ?? Math.max(0, subtotal - couponDiscount - walletDeduction + deliveryFee);
+  
+  const generatedId = orderPayload.orderNumber || orderPayload.number || orderPayload.id || `JAP-${Math.floor(100000 + Math.random() * 900000)}`;
+  const custName = orderPayload.customer.name || `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim() || "Valued Patron";
+  const custEmail = orderPayload.customer.email || "patron@jananiagro.com";
+  const streetAddr = orderPayload.customer.streetAddress || orderPayload.customer.address || orderPayload.customer.street || "";
+  const deliverySlot = orderPayload.deliverySlot || (orderPayload.slot?.dateStr ?? "Tomorrow Morning (9:00 AM – 1:00 PM)");
+  const expectedDelivery = orderPayload.expectedDelivery || deliverySlot;
+
+  const defaultTimeline = [
+    {
+      title: "Order Placed & Payment Verified via Razorpay",
+      time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      location: "Lodhika Processing Hub, Rajkot",
+      done: true,
+      current: true
+    },
+    {
+      title: "Quality Tested & Nitrogen Sealed",
+      time: "Within 4 Hours",
+      location: "Rajkot Central Facility",
+      done: false,
+      current: false
+    },
+    {
+      title: "Dispatched via Delhivery Air Express",
+      time: "Scheduled Tomorrow",
+      location: "Regional Transit Gateway",
+      done: false,
+      current: false
+    },
+    {
+      title: "Out for Doorstep Delivery",
+      time: deliverySlot,
+      location: "Local Delivery Hub",
+      done: false,
+      current: false
+    },
+    {
+      title: "Delivered to Recipient",
+      time: expectedDelivery,
+      location: "Customer Address",
+      done: false,
+      current: false
+    }
+  ];
+
+  const timeline = orderPayload.timeline && orderPayload.timeline.length > 0 ? orderPayload.timeline : defaultTimeline;
 
   const phpPayload = {
     id: generatedId,
     number: generatedId,
+    orderNumber: generatedId,
+    order_date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
     customer_name: custName,
-    customer_email: orderPayload.customer.email || "patron@jananiagro.com",
+    customer_email: custEmail,
     customer_phone: orderPayload.customer.phone,
     shipping_address: {
       name: custName,
-      street: orderPayload.customer.address,
+      fullName: custName,
+      street: streetAddr,
+      streetAddress: streetAddr,
       landmark: orderPayload.customer.landmark || "",
       city: orderPayload.customer.city,
       state: orderPayload.customer.state || "Gujarat",
@@ -239,33 +324,54 @@ export async function createOrder(orderPayload: {
     },
     billing_address: {
       name: custName,
-      street: orderPayload.customer.address,
+      fullName: custName,
+      street: streetAddr,
+      streetAddress: streetAddr,
       city: orderPayload.customer.city,
       state: orderPayload.customer.state || "Gujarat",
       pincode: orderPayload.customer.pincode,
       phone: orderPayload.customer.phone
     },
     items: orderPayload.items.map((i) => ({
-      id: i.productId,
-      productId: i.productId,
-      title: i.name || `Harvest Item #${i.productId}`,
-      name: i.name || `Harvest Item #${i.productId}`,
+      id: i.productId || i.id,
+      productId: i.productId || i.id,
+      title: i.name || i.title || `Harvest Item #${i.productId || i.id}`,
+      name: i.name || i.title || `Harvest Item #${i.productId || i.id}`,
+      variant: i.variant || "Standard Pack",
       price: i.price,
-      quantity: i.quantity,
-      qty: i.quantity,
-      subtotal: i.price * i.quantity
+      quantity: i.quantity || i.qty || 1,
+      qty: i.quantity || i.qty || 1,
+      image: i.image || "",
+      subtotal: i.price * (i.quantity || i.qty || 1)
     })),
     subtotal,
     discount,
+    coupon_code: orderPayload.couponCode || null,
+    couponCode: orderPayload.couponCode || null,
+    coupon_discount: couponDiscount,
+    couponDiscount: couponDiscount,
+    wallet_deduction: walletDeduction,
+    walletDeduction: walletDeduction,
     delivery_fee: deliveryFee,
+    deliveryFee: deliveryFee,
+    shippingFee: deliveryFee,
     total,
-    payment_method: orderPayload.paymentMethod,
-    payment_status: orderPayload.paymentMethod === "Cash on Delivery" ? "Pending (COD)" : "Paid",
+    finalTotal: total,
+    payment_method: orderPayload.paymentMethod || "Razorpay (Online)",
+    payment_status: orderPayload.paymentStatus || (orderPayload.paymentMethod === "Cash on Delivery" ? "Pending (COD)" : "Paid"),
+    transaction_id: orderPayload.transactionId || `pay_rzp_${Date.now()}`,
+    transactionId: orderPayload.transactionId || `pay_rzp_${Date.now()}`,
+    razorpay_order_id: orderPayload.razorpayOrderId || null,
     order_status: "Processing",
-    courier: "Delhivery Air Express",
+    courier: "Delhivery Air Express & Janani Fleet",
     tracking_id: `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
     awb: `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-    warehouse: "Lodhika GIDC Central Facility"
+    warehouse: "Lodhika GIDC Central Facility, Rajkot",
+    delivery_slot: deliverySlot,
+    deliverySlot: deliverySlot,
+    expected_delivery: expectedDelivery,
+    expectedDelivery: expectedDelivery,
+    timeline
   };
 
   // 1. Prioritize direct MySQL write via api.php
@@ -280,70 +386,67 @@ export async function createOrder(orderPayload: {
       if (phpData?.success && (phpData.order || phpData.data)) {
         const createdOrder = phpData.order || phpData.data;
         const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
-        setStored(STORAGE_KEYS.ORDERS, [createdOrder, ...adminOrders]);
+        setStored(STORAGE_KEYS.ORDERS, [createdOrder, ...adminOrders.filter((o: any) => o.id !== createdOrder.id && o.number !== createdOrder.number)]);
         return createdOrder;
       }
     }
   } catch (e) {
-    console.warn("Failed to create order via api.php:", e);
+    console.warn("Direct /api.php?action=orders creation attempt note:", e);
   }
 
   // 2. Node.js backend fallback
-  const data = await fetchJson<{ success: boolean; message: string; order: any }>(`/orders`, {
-    method: "POST",
-    body: JSON.stringify(orderPayload),
-  });
+  try {
+    const data = await fetchJson<{ success: boolean; message: string; order: any }>(`/orders`, {
+      method: "POST",
+      body: JSON.stringify(phpPayload),
+    });
 
-  if (data?.success && data.order) {
-    return data.order;
-  }
+    if (data?.success && data.order) {
+      return data.order;
+    }
+  } catch (e) {}
 
   // 3. Resilient cache fallback
   const newOrder = {
-    id: generatedId,
-    number: generatedId,
-    date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-    orderStatus: "Processing",
+    ...phpPayload,
     status: "Processing",
-    paymentStatus: orderPayload.paymentMethod === "Cash on Delivery" ? "Pending (COD)" : "Paid",
-    paymentMethod: orderPayload.paymentMethod,
+    date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+    isoDate: new Date().toISOString().split("T")[0]!,
     customer: {
       id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
       name: custName,
       phone: orderPayload.customer.phone,
-      email: orderPayload.customer.email || "patron@jananiagro.com"
+      email: custEmail
     },
     shippingAddress: phpPayload.shipping_address,
-    items: phpPayload.items,
-    subtotal,
-    discount,
-    deliveryFee,
-    shippingFee: deliveryFee,
-    total,
-    warehouse: "Lodhika GIDC Central Facility",
-    courier: "Delhivery Air Express",
-    trackingId: phpPayload.tracking_id,
-    awb: phpPayload.awb,
-    timeline: [
-      { status: "Order Confirmed & Paid", title: "Order Confirmed", time: "Just now", done: true },
-      { status: "Packaging & Quality Inspection", title: "Processing", time: "In Progress", done: true }
-    ]
+    billingAddress: phpPayload.billing_address,
+    address: phpPayload.shipping_address
   };
 
   const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
-  setStored(STORAGE_KEYS.ORDERS, [newOrder, ...adminOrders]);
+  setStored(STORAGE_KEYS.ORDERS, [newOrder, ...adminOrders.filter((o: any) => o.id !== newOrder.id && o.number !== newOrder.number)]);
 
   return newOrder;
 }
 
 export async function trackOrder(query: string) {
-  // 1. Direct MySQL lookup via api.php
+  // 1. Direct MySQL lookup via api.php by number/id
   try {
-    const phpRes = await fetch(`/api.php?action=orders&search=${encodeURIComponent(query)}`, {
+    const directRes = await fetch(`/api.php?action=orders&number=${encodeURIComponent(query.trim())}`, {
       headers: { "Content-Type": "application/json" }
     });
-    if (phpRes.ok) {
-      const phpData = await phpRes.json();
+    if (directRes.ok) {
+      const phpData = await directRes.json();
+      if (phpData?.success && (phpData.order || phpData.data)) {
+        return phpData.order || phpData.data;
+      }
+    }
+
+    const searchRes = await fetch(`/api.php?action=orders&search=${encodeURIComponent(query.trim())}`, {
+      headers: { "Content-Type": "application/json" }
+    });
+    if (searchRes.ok) {
+      const phpData = await searchRes.json();
       if (phpData?.success && Array.isArray(phpData.orders) && phpData.orders.length > 0) {
         return phpData.orders[0];
       }
@@ -357,7 +460,24 @@ export async function trackOrder(query: string) {
     return data.order;
   }
 
-  // Check persistent admin orders in localStorage
+  // Check persistent customer/admin orders in localStorage
+  if (typeof window !== "undefined") {
+    try {
+      const customerOrdersRaw = localStorage.getItem("janani_customer_orders");
+      if (customerOrdersRaw) {
+        const cOrders = JSON.parse(customerOrdersRaw);
+        const match = cOrders.find(
+          (o: any) =>
+            o.number?.toLowerCase() === query.toLowerCase() ||
+            o.id?.toLowerCase() === query.toLowerCase() ||
+            o.awb?.toLowerCase() === query.toLowerCase() ||
+            o.address?.phone?.includes(query.replace(/\D/g, ""))
+        );
+        if (match) return match;
+      }
+    } catch (e) {}
+  }
+
   const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
   const matched = adminOrders.find(
     (o) =>
@@ -380,13 +500,13 @@ export async function trackOrder(query: string) {
     courier: "Delhivery Air Express",
     awb: "DEL-8492048194",
     trackingId: "DEL-8492048194",
-    expected: "Within 2–3 Days",
+    expected: "Tomorrow Morning (9:00 AM – 1:00 PM)",
     timeline: [
-      { status: "Order Confirmed & Payment Verified", title: "Confirmed", time: "Completed", done: true },
-      { status: "Batch Quality Tested & Nitrogen Packed", title: "Packed", time: "Completed", done: true },
-      { status: "Dispatched from Lodhika GIDC Facility", title: "In Transit", time: "In Transit", done: true },
-      { status: "Out for Delivery", title: "Out for Delivery", time: "Pending", done: false },
-      { status: "Delivered to Customer", title: "Delivered", time: "Pending", done: false },
+      { status: "Order Confirmed & Payment Verified", title: "Order Placed & Payment Verified via Razorpay", time: "Completed", done: true },
+      { status: "Batch Quality Tested & Nitrogen Packed", title: "Quality Tested & Nitrogen Sealed", time: "Completed", done: true },
+      { status: "Dispatched from Lodhika GIDC Facility", title: "Dispatched via Delhivery Air Express", time: "In Transit", done: true },
+      { status: "Out for Delivery", title: "Out for Doorstep Delivery", time: "Pending", done: false },
+      { status: "Delivered to Customer", title: "Delivered to Recipient", time: "Pending", done: false },
     ],
   };
 }

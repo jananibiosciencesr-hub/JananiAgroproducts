@@ -1455,19 +1455,37 @@ function OrderDetailDrawer({
                     <div className="flex justify-between text-muted-foreground">
                       <span>Shipping & Handling</span>
                       <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                        {order.shippingFee && order.shippingFee > 0 ? `₹${order.shippingFee}` : "FREE"}
+                        {((order.shippingFee ?? order.deliveryFee ?? 0) > 0) ? `₹${order.shippingFee || order.deliveryFee}` : "FREE"}
                       </span>
                     </div>
-                    {order.discount && order.discount > 0 && (
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Coupon Discount</span>
-                        <span className="font-medium text-rose-600">-₹{order.discount.toFixed(2)}</span>
+                    {(order.couponCode || (order.couponDiscount && order.couponDiscount > 0) || (order.discount && order.discount > 0)) && (
+                      <div className="flex justify-between text-emerald-600 font-medium">
+                        <span>🏷️ Coupon ({order.couponCode || "Applied"})</span>
+                        <span>-₹{(order.couponDiscount || order.discount || 0).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {(order.walletDeduction && order.walletDeduction > 0) && (
+                      <div className="flex justify-between text-amber-600 font-medium">
+                        <span>🪙 Farm Wallet Deduction</span>
+                        <span>-₹{(order.walletDeduction).toFixed(2)}</span>
                       </div>
                     )}
                     <div className="border-t border-border pt-2 flex justify-between text-sm font-bold text-foreground">
                       <span>Total Amount Paid</span>
                       <span className="text-primary text-base">₹{order.total?.toLocaleString("en-IN")}</span>
                     </div>
+                    {order.transactionId && (
+                      <div className="flex justify-between text-[11px] text-muted-foreground pt-1">
+                        <span>Razorpay Txn ID:</span>
+                        <span className="font-mono text-foreground font-semibold">{order.transactionId}</span>
+                      </div>
+                    )}
+                    {order.deliverySlot && (
+                      <div className="flex justify-between text-[11px] text-muted-foreground">
+                        <span>Preferred Slot:</span>
+                        <span className="text-foreground font-medium">{order.deliverySlot}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

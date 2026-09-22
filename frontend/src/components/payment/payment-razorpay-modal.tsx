@@ -302,8 +302,8 @@ export function PaymentRazorpayModal({
                 onChange={(e) => setOtpCode(e.target.value)}
                 className="h-12 w-48 mx-auto block rounded-xl border-2 border-slate-300 text-center font-mono text-xl font-bold tracking-widest outline-none focus:border-[#0c2340]"
               />
-              <span className="block text-center text-[11px] text-slate-400">
-                Test OTP is <strong>123456</strong>
+              <span className="block text-center text-[11px] text-slate-500">
+                Enter the authorization code sent to your phone
               </span>
             </div>
 

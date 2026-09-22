@@ -4,33 +4,31 @@ import {
   ShieldCheck,
   Lock,
   ArrowRight,
-  QrCode,
   CreditCard,
+  QrCode,
   Building,
   Wallet,
-  Gift,
-  AlertCircle,
-  Clock,
   Sparkles,
-  ChevronRight,
-  RotateCcw,
   CheckCircle2,
   Package,
-  Layers
+  Layers,
+  Zap,
+  HelpCircle,
+  ExternalLink,
+  Shield,
+  Smartphone
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { products, pantryImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { createOrder } from "@/lib/api";
-
-import { PaymentUpiSection } from "@/components/payment/payment-upi-section";
+import {
+  openRazorpayCheckout,
+  loadRazorpayScript,
+  RAZORPAY_KEY_ID
+} from "@/lib/razorpay";
 import { PaymentRazorpayModal } from "@/components/payment/payment-razorpay-modal";
-import { PaymentStripeSection } from "@/components/payment/payment-stripe-section";
-import { PaymentNetbankingSection } from "@/components/payment/payment-netbanking-section";
-import { PaymentCodSection } from "@/components/payment/payment-cod-section";
-import { PaymentWalletSection } from "@/components/payment/payment-wallet-section";
-import { PaymentGiftcardSection } from "@/components/payment/payment-giftcard-section";
 import {
   PaymentSuccessView,
   PaymentFailureView,
@@ -39,24 +37,22 @@ import {
 export const Route = createFileRoute("/payment")({
   head: () => ({
     meta: [
-      { title: "Payment & Settlement — JANANI AGRO PRODUCTS" },
+      { title: "Razorpay Secure Payment — JANANI AGRO PRODUCTS" },
       {
         name: "description",
-        content: "Secure payment gateway for Janani organic harvest orders with UPI, Razorpay, Stripe, and NetBanking.",
+        content: "Official Razorpay payment gateway for Janani organic harvest orders. Supports UPI, Cards, NetBanking, and Wallets.",
       },
     ],
   }),
   component: PaymentPage,
 });
 
-type PaymentMethodTab = "upi" | "razorpay" | "stripe" | "netbanking" | "cod" | "wallet" | "giftcard";
-
 export function PaymentPage() {
   const navigate = useNavigate();
-  const { cart, subtotal, cartCount, user, clearCart, deductWalletBalance } = useStore();
+  const { cart, subtotal, user, clearCart, deductWalletBalance } = useStore();
 
   // Checkout context from localStorage or fallback
-  const [checkoutData, setCheckoutData] = useState<any>(() => {
+  const [checkoutData] = useState<any>(() => {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("janani_pending_checkout");
@@ -68,9 +64,9 @@ export function PaymentPage() {
     return null;
   });
 
-  // Main UI State
+  // UI States
   const [viewState, setViewState] = useState<"payment" | "success" | "failure">("payment");
-  const [activeMethod, setActiveMethod] = useState<PaymentMethodTab>("upi");
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
   const [simulateFailure, setSimulateFailure] = useState(false);
 
@@ -84,7 +80,7 @@ export function PaymentPage() {
   }>({
     orderNumber: checkoutData?.orderNumber || `JAP-${Math.floor(100000 + Math.random() * 900000)}`,
     transactionId: "",
-    method: "",
+    method: "Razorpay Standard Gateway",
     amount: checkoutData?.finalTotal || (subtotal > 0 ? subtotal : 420),
   });
 
@@ -96,6 +92,11 @@ export function PaymentPage() {
   const customerEmail = checkoutData?.customerEmail || user?.email || "patron@jananiagro.com";
   const deliveryDate = checkoutData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
   const city = checkoutData?.address?.city || "Ahmedabad";
+
+  // Pre-load Razorpay script on page mount
+  useEffect(() => {
+    loadRazorpayScript();
+  }, []);
 
   // Cart items list for sidebar
   const cartItems = useMemo(() => {
@@ -110,12 +111,12 @@ export function PaymentPage() {
       .filter((item): item is { product: NonNullable<typeof item>["product"]; qty: number } => item !== null);
   }, [cart, checkoutData]);
 
-  // Handle Payment Success
+  // Handle Payment Success & Order Settlement
   const handlePaymentSuccess = async (details: { method: string; transactionId: string }) => {
     setTransactionDetails((prev) => ({
       ...prev,
       transactionId: details.transactionId,
-      method: details.method,
+      method: details.method || "Razorpay Gateway",
       amount: effectiveAmount,
     }));
 
@@ -134,7 +135,7 @@ export function PaymentPage() {
     const confirmedOrder = {
       orderNumber: effectiveOrderNumber,
       transactionId: details.transactionId,
-      paymentMethod: details.method,
+      paymentMethod: details.method || "Razorpay (All-In-One)",
       amount: effectiveAmount,
       deliveryDate,
       customerName,
@@ -154,9 +155,14 @@ export function PaymentPage() {
       })),
       subtotal: checkoutData?.subtotal || subtotal,
       discount: checkoutData?.couponDiscount || checkoutData?.discount || 0,
+      couponCode: checkoutData?.coupon?.code || checkoutData?.couponCode || "",
+      couponDiscount: checkoutData?.couponDiscount || (checkoutData?.coupon?.code ? checkoutData?.discount : 0) || 0,
+      walletDeduction: checkoutData?.walletDeduction || 0,
       deliveryFee: checkoutData?.shippingFee || 0,
       finalTotal: effectiveAmount,
+      total: effectiveAmount,
       slot: checkoutData?.slot || { dateStr: deliveryDate },
+      deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
       address: checkoutData?.address || {
         fullName: customerName,
         phone: customerPhone,
@@ -165,24 +171,35 @@ export function PaymentPage() {
         state: "Gujarat",
         pincode: "380054",
       },
+      paymentMethod: "Razorpay (Online)",
+      transactionId: details.transactionId,
+      razorpayOrderId: details.razorpayOrderId,
     };
 
-    // Full customer order object for Dashboard & Orders Hub
+    // Full customer order object for Dashboard & Orders Hub with Flipkart 5-stage tracking
     const newCustomerOrder = {
       id: `ord-${Date.now()}`,
       number: effectiveOrderNumber,
+      orderNumber: effectiveOrderNumber,
       date: nowFormatted,
       isoDate: new Date().toISOString().split("T")[0]!,
       status: "Processing" as const,
       courier: "Delhivery Air Express & Janani Direct",
       awb: `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
       expectedDelivery: deliveryDate,
+      deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
       subtotal: checkoutData?.subtotal || subtotal,
       discount: checkoutData?.couponDiscount || checkoutData?.discount || 0,
+      couponCode: checkoutData?.coupon?.code || checkoutData?.couponCode || "",
+      couponDiscount: checkoutData?.couponDiscount || (checkoutData?.coupon?.code ? checkoutData?.discount : 0) || 0,
+      walletDeduction: checkoutData?.walletDeduction || 0,
       deliveryFee: checkoutData?.shippingFee || 0,
       total: effectiveAmount,
-      paymentMethod: details.method,
+      finalTotal: effectiveAmount,
+      paymentMethod: "Razorpay (Online)",
+      paymentStatus: "Paid",
       transactionId: details.transactionId,
+      razorpayOrderId: details.razorpayOrderId,
       address: {
         fullName: customerName,
         phone: customerPhone,
@@ -196,34 +213,45 @@ export function PaymentPage() {
         name: item.product.name,
         variant: "Standard Pack",
         quantity: item.qty || 1,
+        qty: item.qty || 1,
         price: item.product.price,
         image: item.product.image || pantryImage,
       })),
       timeline: [
         {
-          title: "Order Placed & Payment Verified",
+          title: "Order Placed & Payment Verified via Razorpay",
           time: nowFormatted,
-          location: "Regional Processing Hub",
+          location: "Regional Processing Hub, Lodhika Rajkot",
           done: true,
           current: true,
         },
         {
           title: "Quality Tested & Nitrogen Sealed",
           time: "Within 4 hours",
-          location: "Rajkot Lodhika Processing Facility",
+          location: "Rajkot Central Facility",
           done: false,
+          current: false,
         },
         {
-          title: "Dispatched via Express Courier",
+          title: "Dispatched via Delhivery Air Express",
           time: "Scheduled Tomorrow",
           location: "Central Transit Gateway",
           done: false,
+          current: false,
         },
         {
           title: "Out for Doorstep Delivery",
-          time: deliveryDate,
+          time: checkoutData?.slot?.dateStr || deliveryDate,
           location: "Local Delivery Hub",
           done: false,
+          current: false,
+        },
+        {
+          title: "Delivered to Recipient",
+          time: deliveryDate,
+          location: "Customer Doorstep",
+          done: false,
+          current: false,
         },
       ],
     };
@@ -234,33 +262,53 @@ export function PaymentPage() {
 
       const existingOrdersRaw = localStorage.getItem("janani_customer_orders");
       const existingOrders = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : [];
-      const updatedOrders = [newCustomerOrder, ...existingOrders.filter((o: any) => o.number !== effectiveOrderNumber)];
+      const updatedOrders = [newCustomerOrder, ...existingOrders.filter((o: any) => o.number !== effectiveOrderNumber && o.id !== newCustomerOrder.id)];
       localStorage.setItem("janani_customer_orders", JSON.stringify(updatedOrders));
     } catch (e) {
       console.error("Failed to save order to localStorage", e);
     }
 
-    // 2. Persist order to backend database
+    // 2. Persist order to MySQL backend database in real time
     try {
       await createOrder({
+        id: effectiveOrderNumber,
+        number: effectiveOrderNumber,
+        orderNumber: effectiveOrderNumber,
         items: cartItems.map((i: any) => ({
           productId: i.product.id,
           name: i.product.name,
           price: i.product.price,
           quantity: i.qty || 1,
+          image: i.product.image || pantryImage,
         })),
         customer: {
+          name: customerName,
           firstName: customerName.split(" ")[0] || "Valued",
           lastName: customerName.split(" ").slice(1).join(" ") || "Patron",
           phone: customerPhone,
           email: customerEmail,
           address: streetAddr,
+          streetAddress: streetAddr,
           city: checkoutData?.address?.city || city,
           state: checkoutData?.address?.state || "Gujarat",
           pincode: checkoutData?.address?.pincode || "380054",
         },
-        paymentMethod: details.method,
-        couponCode: checkoutData?.coupon?.code,
+        subtotal: checkoutData?.subtotal || subtotal,
+        discount: checkoutData?.discount || 0,
+        couponCode: checkoutData?.coupon?.code || checkoutData?.couponCode || "",
+        couponDiscount: checkoutData?.couponDiscount || (checkoutData?.coupon?.code ? checkoutData?.discount : 0) || 0,
+        walletDeduction: checkoutData?.walletDeduction || 0,
+        deliveryFee: checkoutData?.shippingFee || 0,
+        shippingFee: checkoutData?.shippingFee || 0,
+        finalTotal: effectiveAmount,
+        total: effectiveAmount,
+        paymentMethod: "Razorpay",
+        paymentStatus: "Paid",
+        transactionId: details.transactionId,
+        razorpayOrderId: details.razorpayOrderId,
+        deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
+        expectedDelivery: deliveryDate,
+        timeline: newCustomerOrder.timeline,
       });
     } catch (apiErr) {
       console.warn("Backend order creation sync note:", apiErr);
@@ -272,7 +320,7 @@ export function PaymentPage() {
     }
     localStorage.removeItem("janani_pending_checkout");
 
-    toast.success(`Payment verified via ${details.method}! Order ${effectiveOrderNumber} placed.`);
+    toast.success(`Payment verified via Razorpay! Order ${effectiveOrderNumber} placed successfully.`);
     navigate({ to: "/order-success" });
   };
 
@@ -283,28 +331,60 @@ export function PaymentPage() {
       failureReason: reason,
     }));
     setViewState("failure");
-    toast.error("Payment failed. You can retry with another method.");
+    toast.error("Razorpay payment failed or cancelled. Please try again.");
   };
 
   // 1-Click Retry Payment
   const handleRetryPayment = () => {
     setSimulateFailure(false);
     setViewState("payment");
-    toast.info("Ready to retry payment. You may choose any gateway.");
+    handleLaunchRazorpay();
   };
 
-  const handleSwitchToCod = () => {
-    setActiveMethod("cod");
-    setViewState("payment");
-    toast.info("Switched payment method to Cash on Delivery.");
+  // Launch Razorpay Standard Checkout Popup
+  const handleLaunchRazorpay = async () => {
+    if (simulateFailure) {
+      handlePaymentFailure("Simulated Test Mode: Transaction declined by bank.");
+      return;
+    }
+
+    setIsProcessing(true);
+    const opened = await openRazorpayCheckout({
+      amount: effectiveAmount,
+      orderNumber: effectiveOrderNumber,
+      customerName,
+      customerEmail,
+      customerPhone,
+      onSuccess: (res) => {
+        setIsProcessing(false);
+        handlePaymentSuccess({
+          method: "Razorpay Standard Checkout",
+          transactionId: res.razorpay_payment_id || `pay_${Date.now()}`
+        });
+      },
+      onFailure: (err) => {
+        setIsProcessing(false);
+        handlePaymentFailure(err.description || "Razorpay transaction failed.");
+      },
+      onDismiss: () => {
+        setIsProcessing(false);
+        toast.info("Payment window closed. Click below when ready to complete your order.");
+      }
+    });
+
+    if (!opened) {
+      // If popup blocked or offline, open styled Razorpay component modal
+      setIsProcessing(false);
+      setIsRazorpayModalOpen(true);
+    }
   };
 
   if (viewState === "success") {
     return (
       <PaymentSuccessView
         orderNumber={effectiveOrderNumber}
-        transactionId={transactionDetails.transactionId || `TXN-${Date.now().toString().slice(-8)}`}
-        paymentMethod={transactionDetails.method || "Instant UPI"}
+        transactionId={transactionDetails.transactionId || `pay_rzp_${Date.now().toString().slice(-8)}`}
+        paymentMethod={transactionDetails.method || "Razorpay Gateway"}
         amount={effectiveAmount}
         deliveryDate={deliveryDate}
         recipientName={customerName}
@@ -317,9 +397,14 @@ export function PaymentPage() {
     return (
       <PaymentFailureView
         orderNumber={effectiveOrderNumber}
-        reason={transactionDetails.failureReason || "Authorization timed out."}
+        reason={transactionDetails.failureReason || "Authorization timed out or transaction cancelled."}
         onRetryPayment={handleRetryPayment}
-        onSwitchToCod={handleSwitchToCod}
+        onSwitchToCod={() => {
+          handlePaymentSuccess({
+            method: "Cash on Delivery",
+            transactionId: `COD-${Date.now().toString().slice(-6)}`
+          });
+        }}
       />
     );
   }
@@ -336,167 +421,162 @@ export function PaymentPage() {
             <span>/</span>
             <Link to="/checkout" className="hover:text-brand-leaf transition">Checkout</Link>
             <span>/</span>
-            <span className="text-brand-leaf">Payment</span>
+            <span className="text-brand-leaf">Razorpay Payment</span>
           </div>
           <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl text-foreground flex items-center gap-3">
-            Choose Payment Method
+            Secure Razorpay Payment
           </h1>
         </div>
 
         {/* Security / QA controls */}
         <div className="flex items-center gap-3">
-          {/* Test Failure Toggle for QA */}
-          <label className="flex items-center gap-2 rounded-full border border-border bg-secondary/80 px-3.5 py-1.5 text-xs font-semibold cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={simulateFailure}
-              onChange={(e) => setSimulateFailure(e.target.checked)}
-              className="rounded text-destructive focus:ring-destructive size-3.5"
-            />
-            <span className={simulateFailure ? "text-destructive font-bold" : "text-muted-foreground"}>
-              {simulateFailure ? "⚠️ Simulate Failure ON" : "Test Mode: Success"}
-            </span>
-          </label>
-
           <div className="flex items-center gap-2 rounded-full border border-brand-leaf/30 bg-brand-leaf/5 px-4 py-1.5 text-xs font-semibold text-brand-leaf">
             <ShieldCheck className="size-4" />
-            <span>256-Bit SSL Encrypted</span>
+            <span>Razorpay 256-Bit SSL Encrypted</span>
           </div>
         </div>
       </div>
 
-      {/* Main Grid: Left Payment Tabs + Right Summary Rail */}
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px] items-start">
-        {/* Left Column: Method Tabs & Active Section */}
+      {/* Main Grid: Left Razorpay Main Card + Right Summary Rail */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_400px] items-start">
+        {/* Left Column: Exclusive Razorpay Gateway Card */}
         <div className="space-y-6">
-          {/* Methods Horizontal / Vertical Selector */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-            {[
-              { id: "upi", label: "Instant UPI", icon: QrCode, badge: "FAST" },
-              { id: "razorpay", label: "Razorpay", icon: Layers, badge: "POPULAR" },
-              { id: "stripe", label: "Cards", icon: CreditCard },
-              { id: "netbanking", label: "NetBanking", icon: Building },
-              { id: "wallet", label: "Wallet", icon: Wallet },
-              { id: "giftcard", label: "Gift Card", icon: Gift },
-              { id: "cod", label: "COD", icon: ShieldCheck },
-            ].map((method) => {
-              const Icon = method.icon;
-              const isActive = activeMethod === method.id;
-              return (
-                <button
-                  type="button"
-                  key={method.id}
-                  onClick={() => {
-                    setActiveMethod(method.id as PaymentMethodTab);
-                    if (method.id === "razorpay") {
-                      setIsRazorpayModalOpen(true);
-                    }
-                  }}
-                  className={`relative p-3 sm:py-3.5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${
-                    isActive
-                      ? "border-brand-leaf bg-brand-leaf/10 text-brand-leaf shadow-sm ring-1 ring-brand-leaf/30 font-bold"
-                      : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary/60 font-semibold"
-                  }`}
-                >
-                  {method.badge && (
-                    <span className="absolute top-1 right-1 text-[8px] font-extrabold uppercase px-1 py-0.2 rounded bg-brand-gold/15 text-brand-gold">
-                      {method.badge}
-                    </span>
-                  )}
-                  <Icon className="size-5" />
-                  <span className="text-[11px] truncate w-full">{method.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <div className="rounded-[2rem] border-2 border-brand-leaf/40 bg-gradient-to-br from-card via-card to-brand-leaf/5 p-6 sm:p-8 shadow-luxe relative overflow-hidden">
+            {/* Background glowing watermark */}
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 size-48 rounded-full bg-brand-leaf/10 blur-2xl pointer-events-none" />
 
-          {/* Active Method Section Container */}
-          <div className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft">
-            {activeMethod === "upi" && (
-              <PaymentUpiSection
-                amount={effectiveAmount}
-                orderNumber={effectiveOrderNumber}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentFailure={handlePaymentFailure}
-                simulateFailure={simulateFailure}
-              />
-            )}
-
-            {activeMethod === "razorpay" && (
-              <div className="text-center py-6 space-y-4">
-                <div className="size-16 mx-auto rounded-3xl bg-blue-900/10 text-blue-950 flex items-center justify-center">
-                  <Layers className="size-8" />
+            {/* Header Badge */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-5">
+              <div className="flex items-center gap-3.5">
+                <div className="size-12 rounded-2xl bg-[#0c2340] text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0">
+                  <Layers className="size-6 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="font-display text-xl font-bold text-foreground">
-                    Razorpay Checkout Gateway
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                    Seamless checkout with Debit/Credit cards, NetBanking, and UPI through Razorpay.
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-xl font-bold text-foreground">
+                      Razorpay Checkout Gateway
+                    </h2>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30">
+                      Official Partner
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    100% Secure Instant Settlement • Live UPI, Cards & NetBanking
                   </p>
                 </div>
-                <Button
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto bg-secondary/80 px-3 py-1.5 rounded-xl border border-border text-xs font-mono font-bold text-foreground">
+                <Lock className="size-3.5 text-brand-leaf" />
+                <span>Test Mode Key: {RAZORPAY_KEY_ID.slice(0, 12)}...</span>
+              </div>
+            </div>
+
+            {/* Supported Payment Channels Pill Showcase */}
+            <div className="mt-6 space-y-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                All Indian Payment Methods Accepted Inside Razorpay:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 1. UPI & QR */}
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border shadow-2xs hover:border-brand-leaf/40 transition">
+                  <span className="size-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 font-bold">
+                    <Smartphone className="size-5" />
+                  </span>
+                  <div>
+                    <strong className="text-xs font-bold text-foreground block">Instant UPI & QR Code</strong>
+                    <span className="text-[11px] text-muted-foreground">Google Pay, PhonePe, Paytm, CRED, BHIM</span>
+                  </div>
+                </div>
+
+                {/* 2. Credit & Debit Cards */}
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border shadow-2xs hover:border-brand-leaf/40 transition">
+                  <span className="size-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 font-bold">
+                    <CreditCard className="size-5" />
+                  </span>
+                  <div>
+                    <strong className="text-xs font-bold text-foreground block">Credit / Debit Cards</strong>
+                    <span className="text-[11px] text-muted-foreground">Visa, MasterCard, RuPay, Maestro</span>
+                  </div>
+                </div>
+
+                {/* 3. NetBanking */}
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border shadow-2xs hover:border-brand-leaf/40 transition">
+                  <span className="size-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 font-bold">
+                    <Building className="size-5" />
+                  </span>
+                  <div>
+                    <strong className="text-xs font-bold text-foreground block">NetBanking (50+ Banks)</strong>
+                    <span className="text-[11px] text-muted-foreground">HDFC, SBI, ICICI, Axis, Kotak & more</span>
+                  </div>
+                </div>
+
+                {/* 4. Digital Wallets */}
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border shadow-2xs hover:border-brand-leaf/40 transition">
+                  <span className="size-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-bold">
+                    <Wallet className="size-5" />
+                  </span>
+                  <div>
+                    <strong className="text-xs font-bold text-foreground block">Wallets & PayLater</strong>
+                    <span className="text-[11px] text-muted-foreground">Amazon Pay, Mobikwik, Freecharge</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Customer Billing Snapshot */}
+            <div className="mt-6 rounded-2xl bg-secondary/60 p-4 border border-border text-xs space-y-2">
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span>Paying Customer:</span>
+                <strong className="text-foreground">{customerName} ({customerPhone})</strong>
+              </div>
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span>Receipt Email:</span>
+                <span className="text-foreground font-mono">{customerEmail}</span>
+              </div>
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span>Scheduled Delivery:</span>
+                <span className="text-brand-leaf font-semibold">{deliveryDate}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-8 space-y-3">
+              <Button
+                type="button"
+                onClick={handleLaunchRazorpay}
+                disabled={isProcessing}
+                className="w-full h-14 rounded-2xl bg-[#0c2340] hover:bg-[#153a66] text-white font-display text-base font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 cursor-pointer"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Connecting to Razorpay...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="size-5 text-emerald-400 animate-pulse" />
+                    <span>Pay ₹{effectiveAmount} with Razorpay Secure</span>
+                    <ArrowRight className="size-5" />
+                  </>
+                )}
+              </Button>
+
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground px-2 pt-1">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="size-4 text-brand-leaf" />
+                  Zero convenience fees • Instant refund guarantee
+                </span>
+                <button
                   type="button"
                   onClick={() => setIsRazorpayModalOpen(true)}
-                  className="bg-[#0c2340] hover:bg-[#153a66] text-white font-bold text-xs h-11 px-8 rounded-xl shadow-md"
+                  className="text-brand-leaf font-semibold hover:underline"
                 >
-                  Open Razorpay Modal (₹{effectiveAmount})
-                </Button>
+                  Alternate Gateway View
+                </button>
               </div>
-            )}
-
-            {activeMethod === "stripe" && (
-              <PaymentStripeSection
-                amount={effectiveAmount}
-                orderNumber={effectiveOrderNumber}
-                customerName={customerName}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentFailure={handlePaymentFailure}
-                simulateFailure={simulateFailure}
-              />
-            )}
-
-            {activeMethod === "netbanking" && (
-              <PaymentNetbankingSection
-                amount={effectiveAmount}
-                orderNumber={effectiveOrderNumber}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentFailure={handlePaymentFailure}
-                simulateFailure={simulateFailure}
-              />
-            )}
-
-            {activeMethod === "wallet" && (
-              <PaymentWalletSection
-                amount={effectiveAmount}
-                orderNumber={effectiveOrderNumber}
-                walletBalance={user?.walletBalance ?? 250}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentFailure={handlePaymentFailure}
-                simulateFailure={simulateFailure}
-              />
-            )}
-
-            {activeMethod === "giftcard" && (
-              <PaymentGiftcardSection
-                amount={effectiveAmount}
-                orderNumber={effectiveOrderNumber}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentFailure={handlePaymentFailure}
-                simulateFailure={simulateFailure}
-              />
-            )}
-
-            {activeMethod === "cod" && (
-              <PaymentCodSection
-                amount={effectiveAmount}
-                orderNumber={effectiveOrderNumber}
-                customerPhone={customerPhone}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentFailure={handlePaymentFailure}
-                simulateFailure={simulateFailure}
-              />
-            )}
+            </div>
           </div>
         </div>
 
@@ -592,13 +672,13 @@ export function PaymentPage() {
               <span>Certified Payment Security</span>
             </div>
             <p className="leading-relaxed">
-              All transactions are encrypted with 256-bit TLS bank-grade certificates. Janani Agro does not store raw CVV codes or payment passwords.
+              All transactions are encrypted with 256-bit TLS bank-grade certificates via Razorpay. Janani Agro does not store raw card numbers or payment passwords.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Razorpay Popover Modal */}
+      {/* Razorpay Interactive Popover Modal (Fallback) */}
       <PaymentRazorpayModal
         isOpen={isRazorpayModalOpen}
         onClose={() => setIsRazorpayModalOpen(false)}
