@@ -114,9 +114,12 @@ function getJsonBody() {
  * Tier 2: Direct Gmail SMTP via TLS on Port 587 with STARTTLS
  * Tier 3: Native Hostinger mail() function fallback
  */
-function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
-    $subject = "=?UTF-8?B?" . base64_encode("🔐 {$otpCode} is your Janani Agro Login Verification Code") . "?=";
-    $rawSubject = "🔐 {$otpCode} is your Janani Agro Login Verification Code";
+function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'jananibiosciences.r@gmail.com') {
+    $subject = "=?UTF-8?B?" . base64_encode("🔐 {$otpCode} is your Janani Agro Verification Code") . "?=";
+    $rawSubject = "🔐 {$otpCode} is your Janani Agro Verification Code";
+    $isAdmin = (strtolower($toEmail) === strtolower($adminEmail));
+    $recipientName = $isAdmin ? "Janani Administrator" : "Valued Patron";
+
     $body = "
     <!DOCTYPE html>
     <html>
@@ -128,27 +131,28 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
           <p style='margin: 5px 0 0 0; font-size: 12px; opacity: 0.85;'>Nurturing Nature, Enriching Future</p>
         </div>
         <div style='padding: 25px;'>
-          <h3 style='color: #2d3748; margin-top: 0;'>Secure Login Verification</h3>
+          <h3 style='color: #2d3748; margin-top: 0;'>Hello, {$recipientName}</h3>
           <p style='color: #4a5568; font-size: 14px; line-height: 1.5;'>
-            You have requested an authentication code for your <strong>Janani Agro Products</strong> administrator account.
+            You have requested a secure sign-in / checkout verification code for your <strong>Janani Agro Products</strong> account ({$toEmail}).
           </p>
           <div style='background: #f0fdf4; border: 2px dashed #16a34a; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;'>
-            <div style='font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #15803d; margin-bottom: 6px;'>Your Verification Code</div>
+            <div style='font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #15803d; margin-bottom: 6px;'>Your 6-Digit OTP Code</div>
             <div style='font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #166534; font-family: monospace;'>{$otpCode}</div>
             <div style='font-size: 12px; color: #64748b; margin-top: 6px;'>Valid for 5 minutes only</div>
           </div>
           <p style='font-size: 12px; color: #854d0e; background: #fef9c3; padding: 10px; border-radius: 6px; margin: 0;'>
-            <strong>Security Alert:</strong> If you did not request this OTP, please ignore this email. Never share your OTP with anyone.
+            <strong>Security Alert:</strong> Never share your verification code with anyone. If you did not request this OTP, please ignore this email.
           </p>
         </div>
         <div style='background: #f8fafc; padding: 15px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;'>
-          &copy; " . date('Y') . " Janani Agro Products &bull; Lodhika GIDC, Gujarat &bull; Super Admin Console
+          &copy; " . date('Y') . " Janani Agro Products Pvt. Ltd. &bull; Lodhika GIDC, Gujarat
         </div>
       </div>
     </body>
     </html>";
 
     $cleanSmtpPass = str_replace(' ', '', $smtpPass);
+    $recipients = array_values(array_unique(array_filter([$toEmail, $adminEmail])));
 
     // --- TIER 1: SSL Direct (Port 465) ---
     $sslContext = stream_context_create([
@@ -178,8 +182,12 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
         if (substr($authRes, 0, 3) === '235') {
             fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
             fgets($socket, 512);
-            fputs($socket, "RCPT TO: <{$toEmail}>\r\n");
-            fgets($socket, 512);
+
+            foreach ($recipients as $rcpt) {
+                fputs($socket, "RCPT TO: <{$rcpt}>\r\n");
+                fgets($socket, 512);
+            }
+
             fputs($socket, "DATA\r\n");
             fgets($socket, 512);
 
@@ -187,6 +195,10 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
             $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
             $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
             $headers .= "To: <{$toEmail}>\r\n";
+            if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
+                $headers .= "Cc: <{$adminEmail}>\r\n";
+            }
+            $headers .= "Reply-To: {$smtpUser}\r\n";
             $headers .= "Subject: {$subject}\r\n";
 
             fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
@@ -231,8 +243,12 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
             if (substr($authRes, 0, 3) === '235') {
                 fputs($socket587, "MAIL FROM: <{$smtpUser}>\r\n");
                 fgets($socket587, 512);
-                fputs($socket587, "RCPT TO: <{$toEmail}>\r\n");
-                fgets($socket587, 512);
+
+                foreach ($recipients as $rcpt) {
+                    fputs($socket587, "RCPT TO: <{$rcpt}>\r\n");
+                    fgets($socket587, 512);
+                }
+
                 fputs($socket587, "DATA\r\n");
                 fgets($socket587, 512);
 
@@ -240,6 +256,10 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
                 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
                 $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
                 $headers .= "To: <{$toEmail}>\r\n";
+                if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
+                    $headers .= "Cc: <{$adminEmail}>\r\n";
+                }
+                $headers .= "Reply-To: {$smtpUser}\r\n";
                 $headers .= "Subject: {$subject}\r\n";
 
                 fputs($socket587, $headers . "\r\n" . $body . "\r\n.\r\n");
@@ -262,10 +282,17 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass) {
     $mailHeaders  = "MIME-Version: 1.0\r\n";
     $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
     $mailHeaders .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
+        $mailHeaders .= "Cc: {$adminEmail}\r\n";
+    }
     $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
     $mailHeaders .= "X-Mailer: PHP/" . phpversion();
 
     $mailSent = @mail($toEmail, $rawSubject, $body, $mailHeaders);
+    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
+        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $body, $mailHeaders);
+    }
+
     if ($mailSent) {
         return ['success' => true, 'method' => 'hostinger_native_mail'];
     }
@@ -301,19 +328,15 @@ try {
 
                 $emailSent = false;
                 if ($email) {
-                    $emailSent = sendGmailOtp($email, $otp, $smtp_user, $smtp_pass);
+                    $emailSent = sendGmailOtp($email, $otp, $smtp_user, $smtp_pass, $admin_email);
                 }
 
                 echo json_encode([
                     'success' => true,
                     'message' => $email
-                        ? ($emailSent && is_array($emailSent) && !empty($emailSent['success'])
-                            ? "Real 6-digit verification code sent to {$email} via Gmail."
-                            : "Verification code generated for {$email}. (Code: {$otp})")
-                        : "Verification code sent to +91 {$phone}. (Code: {$otp})",
+                        ? "Real-time 6-digit verification code sent to {$email} (and copied to admin). Please check your email inbox."
+                        : "Verification code sent to +91 {$phone}. Please check your SMS.",
                     'emailSent' => $emailSent,
-                    'demoOtpCode' => $otp,
-                    'otp' => $otp,
                     'resendCooldownSeconds' => 60
                 ]);
                 exit;

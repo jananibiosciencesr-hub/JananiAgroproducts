@@ -311,7 +311,7 @@ export function AuthenticationPage() {
     try {
       const res = await sendAuthOtp({ phone: target, purpose: "login" });
       if (res?.success) {
-        const otpCode = res.demoOtpCode || res.otp || "123456";
+        const otpCode = res.demoOtpCode || res.otp || "";
         setReceivedDemoOtp(otpCode);
         setOtpTarget(target);
         setOtpPurpose("login");
@@ -319,8 +319,8 @@ export function AuthenticationPage() {
         setResendTimer(res.resendCooldownSeconds || 60);
         setCanResend(false);
         setOtpValues(["", "", "", "", "", ""]);
-        toast.success(`Verification code dispatched to +91 ${target}. (Test OTP: ${otpCode})`, {
-          duration: 8000,
+        toast.success(res.message || `Verification code dispatched to +91 ${target}. Please check your SMS.`, {
+          duration: 6000,
         });
         setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
       } else {
@@ -346,7 +346,7 @@ export function AuthenticationPage() {
     try {
       const res = await sendAuthOtp({ email: emailToSend, purpose: "login" });
       if (res?.success) {
-        const otpCode = res.demoOtpCode || res.otp || "123456";
+        const otpCode = res.demoOtpCode || res.otp || "";
         setReceivedDemoOtp(otpCode);
         setOtpTarget(emailToSend);
         setOtpPurpose("login");
@@ -355,7 +355,7 @@ export function AuthenticationPage() {
         setCanResend(false);
         setOtpValues(["", "", "", "", "", ""]);
         toast.success(res.message || `Real 6-digit OTP sent to ${emailToSend}. Please check your Gmail!`, {
-          duration: 8000,
+          duration: 6000,
         });
         setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
       } else {

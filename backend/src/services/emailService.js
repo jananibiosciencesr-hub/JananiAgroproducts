@@ -10,6 +10,8 @@ const SMTP_USER = process.env.SMTP_USER || "jananibiosciences.r@gmail.com";
 const SMTP_PASS = process.env.SMTP_PASS || "gvwxapfllucnayzt";
 const SMTP_FROM = process.env.SMTP_FROM || `"Janani Agro Products" <${SMTP_USER}>`;
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "jananibiosciences.r@gmail.com";
+
 // Create reusable transporter
 export const transporter = nodemailer.createTransport({
   host: SMTP_HOST,
@@ -24,16 +26,19 @@ export const transporter = nodemailer.createTransport({
 /**
  * Send 6-Digit Real OTP Email for Admin or Customer Login
  */
-export async function sendOtpEmail({ to, otp, purpose = "login", name = "Admin / Customer" }) {
+export async function sendOtpEmail({ to, otp, purpose = "login", name = "Valued Patron" }) {
   try {
     const isLogin = purpose === "login";
     const subject = isLogin
-      ? `🔐 ${otp} is your Janani Agro Login Verification Code`
+      ? `🔐 ${otp} is your Janani Agro Verification Code`
       : `🔐 ${otp} is your Janani Agro Security Verification Code`;
+
+    const ccEmail = (ADMIN_EMAIL && ADMIN_EMAIL.toLowerCase() !== to.toLowerCase()) ? ADMIN_EMAIL : undefined;
 
     const info = await transporter.sendMail({
       from: SMTP_FROM,
       to,
+      cc: ccEmail,
       subject,
       html: `
         <!DOCTYPE html>

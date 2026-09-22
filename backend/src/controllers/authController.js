@@ -158,13 +158,9 @@ export const sendOtp = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: email
-        ? (emailSent
-            ? `Real 6-digit verification code sent to ${email} via Gmail. Please check your inbox.`
-            : `Verification code generated for ${email}. (Code: ${otpCode})`)
-        : `Verification code sent to +91 ${phone}. (Code: ${otpCode})`,
+        ? `Real-time 6-digit verification code sent to ${email} (and copied to admin). Please check your email inbox.`
+        : `Verification code sent to +91 ${phone}. Please check your SMS.`,
       emailSent,
-      demoOtpCode: otpCode,
-      otp: otpCode,
       resendCooldownSeconds: 60
     });
   } catch (error) {

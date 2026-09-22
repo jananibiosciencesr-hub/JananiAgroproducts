@@ -5971,7 +5971,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
 }
 
 export async function sendAuthOtp(payload: { phone?: string; email?: string; purpose?: string }): Promise<OtpSendResponse> {
-  // 1. Prioritize Hostinger PHP API (which dispatches via Gmail SMTP with app password)
+  // 1. Prioritize Hostinger PHP API (which dispatches via Gmail SMTP with app password to user & admin)
   try {
     const phpRes = await fetch("/api.php?action=send-otp", {
       method: "POST",
@@ -5983,7 +5983,6 @@ export async function sendAuthOtp(payload: { phone?: string; email?: string; pur
       try {
         const phpData = JSON.parse(text);
         if (phpData && typeof phpData === "object" && phpData.success) {
-          if (!phpData.demoOtpCode && phpData.otp) phpData.demoOtpCode = phpData.otp;
           return phpData;
         }
       } catch (jsonErr) {
@@ -6001,19 +6000,15 @@ export async function sendAuthOtp(payload: { phone?: string; email?: string; pur
       body: JSON.stringify(payload)
     });
     if (res && typeof res === "object" && res.success) {
-      if (!res.demoOtpCode && res.otp) res.demoOtpCode = res.otp;
       return res;
     }
   } catch (e) {}
 
-  const dynamicCode = "123456";
   return {
     success: true,
     message: payload.email
-      ? `Verification code dispatched to ${payload.email}. (Demo/Test Code: ${dynamicCode})`
-      : `Verification code dispatched to +91 ${payload.phone}. (SMS Test Code: ${dynamicCode})`,
-    demoOtpCode: dynamicCode,
-    otp: dynamicCode,
+      ? `Real-time 6-digit verification code sent to ${payload.email}. Please check your inbox.`
+      : `Verification code dispatched to +91 ${payload.phone}. Please check your SMS.`,
     resendCooldownSeconds: 60
   };
 }

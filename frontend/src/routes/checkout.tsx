@@ -140,12 +140,12 @@ export function CheckoutPage() {
     try {
       const res = await sendAuthOtp({ email: emailToUse, purpose: "checkout" });
       if (res.success) {
-        const otpCodeVal = res.demoOtpCode || res.otp || "123456";
+        const otpCodeVal = res.demoOtpCode || res.otp || "";
         setReceivedCheckoutOtp(otpCodeVal);
         setIsOtpSent(true);
         setResendTimer(60);
         setOtpCode(["", "", "", "", "", ""]);
-        toast.success(`6-Digit OTP sent to ${emailToUse}. (Code: ${otpCodeVal})`, { duration: 8000 });
+        toast.success(res.message || `Real-time 6-digit OTP sent to ${emailToUse}. Please check your Gmail inbox!`, { duration: 6000 });
         setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
       } else {
         toast.error(res.message || "Failed to dispatch OTP. Please try again.");
@@ -546,13 +546,9 @@ export function CheckoutPage() {
                       <label className="text-xs font-semibold text-foreground">
                         Enter 6-Digit Email OTP Code:
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
-                        className="text-[11px] font-bold text-brand-leaf hover:underline cursor-pointer"
-                      >
-                        Paste Code ({receivedCheckoutOtp})
-                      </button>
+                      <span className="text-[11px] text-muted-foreground">
+                        Sent to {checkoutEmail}
+                      </span>
                     </div>
                     <div className="flex justify-center sm:justify-start gap-2 sm:gap-3">
                       {otpCode.map((digit, index) => (
@@ -571,21 +567,12 @@ export function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Instant Verification Helper Card */}
-                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="size-4 text-amber-600 shrink-0" />
-                      <span className="text-[11px] font-medium">
-                        Instant Checkout OTP: <strong className="font-mono font-bold tracking-wider">{receivedCheckoutOtp}</strong>
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
-                      className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shadow-xs cursor-pointer transition shrink-0"
-                    >
-                      ⚡ Auto-Fill
-                    </button>
+                  {/* Realtime Email Security Info */}
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-secondary/70 border border-border text-xs text-muted-foreground">
+                    <ShieldCheck className="size-4 text-brand-leaf shrink-0" />
+                    <span>
+                      Please check your inbox or Spam folder for the 6-digit verification code sent from <strong className="text-foreground">jananibiosciences.r@gmail.com</strong>.
+                    </span>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">

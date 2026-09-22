@@ -216,9 +216,9 @@ function AdminDashboardPage() {
       setSendingOtp(true);
       const res = await sendAuthOtp({ email: adminEmail.trim(), purpose: "admin_login" });
       if (res.success) {
-        const otpCode = res.demoOtpCode || res.otp || "123456";
+        const otpCode = res.demoOtpCode || res.otp || "";
         setReceivedAdminOtp(otpCode);
-        toast.success(`Admin verification OTP dispatched! (Code: ${otpCode})`, { duration: 8000 });
+        toast.success(res.message || `Admin verification code dispatched to ${adminEmail.trim()}. Please check your Gmail inbox!`, { duration: 6000 });
         setIsOtpStep(true);
         setResendTimer(60);
         setCanResend(false);
@@ -556,13 +556,9 @@ function AdminDashboardPage() {
                     <label className="text-xs font-semibold text-emerald-200/90">
                       Enter 6-Digit Verification Code
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => handleAutoFillAdminOtp(receivedAdminOtp)}
-                      className="text-[11px] font-bold text-amber-400 hover:underline cursor-pointer"
-                    >
-                      Paste Code ({receivedAdminOtp})
-                    </button>
+                    <span className="text-[11px] text-emerald-400/80">
+                      Sent to {adminEmail}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between gap-1.5 sm:gap-2">
                     {otpDigits.map((digit, idx) => (
@@ -581,21 +577,12 @@ function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Instant Verification Helper Card */}
-                <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-300">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="size-4 text-amber-400 shrink-0" />
-                    <span className="text-[11px] font-medium">
-                      Admin Access Code: <strong className="font-mono font-bold tracking-wider text-amber-200">{receivedAdminOtp}</strong>
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleAutoFillAdminOtp(receivedAdminOtp)}
-                    className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold shadow-xs cursor-pointer transition shrink-0"
-                  >
-                    ⚡ Auto-Fill
-                  </button>
+                {/* Secure Security Info */}
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-xs text-emerald-200/80">
+                  <ShieldCheck className="size-4 text-amber-400 shrink-0" />
+                  <span>
+                    A secure 6-digit authentication token has been dispatched to <strong className="text-white">{adminEmail}</strong>. Please check your Gmail.
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1">
