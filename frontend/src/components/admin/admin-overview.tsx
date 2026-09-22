@@ -44,6 +44,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { type AdminTab } from "./admin-sidebar";
+import { getOrderCustomer } from "./admin-orders";
 
 interface AdminOverviewProps {
   stats: any;
@@ -71,15 +72,18 @@ export function AdminOverview({
 
   const exportOrdersCSV = () => {
     const headers = ["Order ID", "Customer Name", "Phone", "Total (INR)", "Payment Method", "Order Status", "Date"];
-    const rows = orders.map(o => [
-      o.id,
-      `"${o.customer?.name || ''}"`,
-      `"${o.customer?.phone || ''}"`,
-      o.total,
-      `"${o.paymentMethod || ''}"`,
-      `"${o.orderStatus || ''}"`,
-      `"${o.date || ''}"`
-    ]);
+    const rows = orders.map(o => {
+      const cust = getOrderCustomer(o);
+      return [
+        o.id,
+        `"${cust.name}"`,
+        `"${cust.phone}"`,
+        o.total,
+        `"${o.paymentMethod || ''}"`,
+        `"${o.orderStatus || ''}"`,
+        `"${o.date || ''}"`
+      ];
+    });
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -527,8 +531,15 @@ export function AdminOverview({
                       <p className="text-[10px] font-normal text-muted-foreground mt-0.5">{o.date}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-bold text-foreground block">{o.customer?.name}</span>
-                      <span className="text-[10px] text-muted-foreground">{o.customer?.city}</span>
+                      {(() => {
+                        const cust = getOrderCustomer(o);
+                        return (
+                          <>
+                            <span className="font-bold text-foreground block">{cust.name}</span>
+                            <span className="text-[10px] text-muted-foreground">{cust.phone} • {cust.city}</span>
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-muted-foreground">{o.items?.length || 1} organic products</span>
