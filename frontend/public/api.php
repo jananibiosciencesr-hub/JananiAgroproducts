@@ -541,9 +541,126 @@ try {
                 ]);
                 exit;
             }
-            break;
+function ensureCategoriesTableSchema($pdo) {
+    static $schemaChecked = false;
+    if ($schemaChecked) return;
+    $schemaChecked = true;
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `categories` (
+            `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+            `name` VARCHAR(255) NOT NULL,
+            `slug` VARCHAR(255) NOT NULL UNIQUE,
+            `level` INT DEFAULT 1,
+            `parent_id` VARCHAR(64) DEFAULT NULL,
+            `parent_name` VARCHAR(255) DEFAULT NULL,
+            `image` MEDIUMTEXT DEFAULT NULL,
+            `banner_image` MEDIUMTEXT DEFAULT NULL,
+            `icon` VARCHAR(50) DEFAULT '🌾',
+            `product_count` INT DEFAULT 0,
+            `active` TINYINT(1) DEFAULT 1,
+            `featured` TINYINT(1) DEFAULT 0,
+            `trending` TINYINT(1) DEFAULT 0,
+            `display_order` INT DEFAULT 0,
+            `description` MEDIUMTEXT DEFAULT NULL,
+            `meta_title` VARCHAR(255) DEFAULT NULL,
+            `meta_description` TEXT DEFAULT NULL,
+            `meta_keywords` TEXT DEFAULT NULL,
+            `canonical_url` VARCHAR(500) DEFAULT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            `deleted_at` TIMESTAMP NULL DEFAULT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $existingCols = [];
+        $colStmt = $pdo->query("SHOW COLUMNS FROM `categories`");
+        while ($col = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+            $existingCols[strtolower($col['Field'])] = strtolower($col['Type']);
+        }
+
+        // Alter image and description to MEDIUMTEXT so long image URLs / data URLs never fail
+        if (isset($existingCols['image']) && strpos($existingCols['image'], 'varchar') !== false) {
+            $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `image` MEDIUMTEXT NULL");
+        }
+        if (isset($existingCols['description']) && strpos($existingCols['description'], 'varchar') !== false) {
+            $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `description` MEDIUMTEXT NULL");
+        }
+
+        $needed = [
+            'banner_image' => 'MEDIUMTEXT NULL',
+            'icon' => "VARCHAR(50) DEFAULT '🌾'",
+            'parent_id' => 'VARCHAR(64) NULL',
+            'parent_name' => 'VARCHAR(255) NULL',
+            'level' => 'INT DEFAULT 1',
+            'product_count' => 'INT DEFAULT 0',
+            'active' => 'TINYINT(1) DEFAULT 1',
+            'featured' => 'TINYINT(1) DEFAULT 0',
+            'trending' => 'TINYINT(1) DEFAULT 0',
+            'display_order' => 'INT DEFAULT 0',
+            'meta_title' => 'VARCHAR(255) NULL',
+            'meta_description' => 'TEXT NULL',
+            'meta_keywords' => 'TEXT NULL',
+            'canonical_url' => 'VARCHAR(500) NULL',
+            'deleted_at' => 'TIMESTAMP NULL DEFAULT NULL'
+        ];
+
+        foreach ($needed as $colName => $colDef) {
+            if (!isset($existingCols[strtolower($colName)])) {
+                $pdo->exec("ALTER TABLE `categories` ADD COLUMN `{$colName}` {$colDef}");
+            }
+        }
+    } catch (Exception $e) {}
+}
+
+function ensureJananiCatalogSynced($pdo) {
+    static $synced = false;
+    if ($synced) return;
+    $synced = true;
+    try {
+        $checkOld = $pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices')")->fetchColumn();
+        $checkNew = $pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` = 'biological-crop-protection'")->fetchColumn();
+        if ($checkOld > 0 || $checkNew == 0) {
+            // Auto-clean legacy demo grocery categories
+            $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
+            
+            $categories = [
+                ['cat-crop-protection', 'Biological Crop Protection', 'biological-crop-protection', 1, null, null, '/products/balavan.jpg', 4, 1, 1, 1, 1, 'Beneficial Trichoderma viride, Bacillus subtilis, Pseudomonas fluorescens, and cold-pressed Azadirachtin botanical formulations for disease management, pest control, root protection, and pathogen suppression.'],
+                ['cat-plant-nutrients', 'Organic Plant Nutrients', 'organic-plant-nutrients', 1, null, null, '/products/annada.jpg', 2, 1, 1, 1, 2, 'Cold-hydrolysed marine fish amino acids and seaweed-based organic biostimulants rich in organic nitrogen, polypeptides, and trace minerals for robust vegetative growth, flowering, and fruit development.'],
+                ['cat-soil-conditioners', 'Soil Conditioners & Biostimulants', 'soil-conditioners-biostimulants', 1, null, null, '/products/bhumi-shakti.jpg', 2, 1, 1, 1, 3, 'Potassium humate, concentrated fulvic extracts, and beneficial potassium-mobilizing bacteria (KMB) to improve soil aggregation, CEC, microbial flora, and nutrient bio-availability.']
+            ];
+            $stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `image`=VALUES(`image`), `product_count`=VALUES(`product_count`), `active`=1, `description`=VALUES(`description`)");
+            foreach ($categories as $cat) { $stmtCat->execute($cat); }
+
+            $validProductSlugs = [
+                'balavan-bacillus-subtilis-5l',
+                'suraksha-pseudomonas-fluorescens-5l',
+                'harit-trichoderma-viride-liquid-biofungal-formulation-1l',
+                'neem-oil-1000-ppm-azadirachtin-1l',
+                'annada-fish-amino-acid-5l',
+                'pushkal-flowering-fruit-set-biostimulant-1l',
+                'bhumi-shakti-humic-fulvic-biostimulant-5l',
+                'dharani-kmb-potassium-mobilizing-biofertilizer-5l'
+            ];
+            $inProds = "'" . implode("','", $validProductSlugs) . "'";
+            $pdo->exec("DELETE FROM `products` WHERE `slug` NOT IN ({$inProds})");
+
+            $products = [
+                ['balavan-bacillus-subtilis-5l', 'BALAVAN - Bacillus Subtilis (5L)', 'Biological Crop Protection', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Flagship Bio-Shield', '/products/balavan.jpg', 'Beneficial Bacillus subtilis liquid biological formulation for blight control, fungal disease suppression, and systemic acquired resistance across all commercial crops.', 'JAP-SKU-BALAVAN'],
+                ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA - Pseudomonas Fluorescens (5L)', 'Biological Crop Protection', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'High-potency Pseudomonas fluorescens liquid bio-fungal formulation for soil-borne pathogen control, root wilt prevention, and rhizosphere colonization.', 'JAP-SKU-SURAKSHA'],
+                ['harit-trichoderma-viride-liquid-biofungal-formulation-1l', 'HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)', 'Biological Crop Protection', 950.00, 1100.00, '1 L', 120, 5.0, 39, 'Bio-Fungal Shield', '/products/harit.jpg', 'Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off, root rot, collar rot, and rhizosphere diseases.', 'JAP-SKU-HARIT'],
+                ['neem-oil-1000-ppm-azadirachtin-1l', 'NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)', 'Biological Crop Protection', 599.00, 699.00, '1 L', 140, 4.9, 44, 'Botanical IPM', '/products/neem-oil.jpg', 'Cold-pressed neem-oil-based botanical formulation containing standardized Azadirachtin 1000 PPM for organic management of aphids, whiteflies, thrips, caterpillars, and mites.', 'JAP-SKU-NEEM1000'],
+                ['annada-fish-amino-acid-5l', 'ANNADA - Fish Amino Acid (5L)', 'Organic Plant Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'Naturally derived cold-hydrolysed Fish Amino Acid formulation rich in natural L-amino acids and peptides for vigorous vegetative growth, chlorophyll synthesis, and stress tolerance.', 'JAP-SKU-ANNADA'],
+                ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL - Flowering & Fruit Set Biostimulant (1L)', 'Organic Plant Nutrients', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering & Fruit Set', '/products/pushkal.jpg', 'Concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, Fulvic Acid, Boron, and Zinc to support flower initiation, prevent flower drop, and boost fruit set.', 'JAP-SKU-PUSHKAL'],
+                ['bhumi-shakti-humic-fulvic-biostimulant-5l', 'BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)', 'Soil Conditioners & Biostimulants', 3900.00, 4400.00, '5 L', 120, 4.9, 58, 'Soil Rejuvenator', '/products/bhumi-shakti.jpg', 'High-purity potassium humate and fulvic acid complex for improving soil structure, cation exchange capacity, microbial life, and root nutrient absorption.', 'JAP-SKU-BHUMISHAKTI'],
+                ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)', 'Soil Conditioners & Biostimulants', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'Liquid biofertilizer containing beneficial Potassium Mobilizing Bacteria (Frateuria aurantia) to solubilize and unlock fixed soil potassium into plant-available form.', 'JAP-SKU-DHARANI']
+            ];
+            $stmtProd = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active') ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `category_name`=VALUES(`category_name`), `price`=VALUES(`price`), `old_price`=VALUES(`old_price`), `unit`=VALUES(`unit`), `image`=VALUES(`image`), `description`=VALUES(`description`), `badge`=VALUES(`badge`), `active`=1, `status`='Active'");
+            foreach ($products as $prod) { $stmtProd->execute($prod); }
+        }
+    } catch (Exception $e) {}
+}
 
         case 'products':
+            ensureJananiCatalogSynced($pdo);
             if ($method === 'GET') {
                 $category = $_GET['category'] ?? null;
                 $search = $_GET['search'] ?? null;
@@ -1019,6 +1136,8 @@ try {
             break;
 
         case 'categories':
+            ensureCategoriesTableSchema($pdo);
+            ensureJananiCatalogSynced($pdo);
             if ($method === 'GET') {
                 $status = strtolower(trim($_GET['status'] ?? ''));
                 $level = $_GET['level'] ?? null;
@@ -1145,36 +1264,87 @@ try {
 
                 // CREATE category if no ID provided:
                 if (empty($rawId)) {
-                    $name = $body['name'] ?? 'New Category';
-                    $slug = !empty($body['slug']) ? $body['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
-                    $catId = !empty($body['id']) ? $body['id'] : ('cat-' . ($slug ?: time()));
-                    $levelVal = isset($body['level']) ? ($body['level'] === 'sub' ? 2 : ($body['level'] === 'child' ? 3 : 1)) : 1;
-                    $parentId = !empty($body['parentId']) ? $body['parentId'] : (!empty($body['parent_id']) ? $body['parent_id'] : null);
-                    $parentName = !empty($body['parentName']) ? $body['parentName'] : (!empty($body['parent_name']) ? $body['parent_name'] : null);
-                    $image = $body['image'] ?? '/images/categories/placeholder.webp';
-                    $active = isset($body['active']) ? (($body['active'] === true || $body['active'] === 1 || $body['active'] === '1' || $body['active'] === 'true') ? 1 : 0) : 1;
-                    $featured = !empty($body['featured']) ? 1 : 0;
-                    $trending = !empty($body['trending']) ? 1 : 0;
-                    $displayOrder = isset($body['orderIndex']) ? (int)$body['orderIndex'] : (isset($body['display_order']) ? (int)$body['display_order'] : (isset($body['order']) ? (int)$body['order'] : 0));
-                    $description = $body['description'] ?? '';
+                    try {
+                        ensureCategoriesTableSchema($pdo);
+                        $name = trim($body['name'] ?? 'New Category');
+                        $slug = !empty($body['slug']) ? trim($body['slug']) : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
+                        if (empty($slug)) $slug = 'cat-' . time();
+                        $catId = !empty($body['id']) ? trim($body['id']) : ('cat-' . $slug);
+                        $levelVal = isset($body['level']) ? ($body['level'] === 'sub' ? 2 : ($body['level'] === 'child' ? 3 : 1)) : 1;
+                        $parentId = !empty($body['parentId']) ? $body['parentId'] : (!empty($body['parent_id']) ? $body['parent_id'] : null);
+                        $parentName = !empty($body['parentName']) ? $body['parentName'] : (!empty($body['parent_name']) ? $body['parent_name'] : null);
+                        $image = $body['image'] ?? '/images/categories/placeholder.webp';
+                        $bannerImage = $body['bannerImage'] ?? ($body['banner_image'] ?? $image);
+                        $icon = $body['icon'] ?? '🌾';
+                        $active = isset($body['active']) ? (($body['active'] === true || $body['active'] === 1 || $body['active'] === '1' || $body['active'] === 'true') ? 1 : 0) : 1;
+                        $featured = !empty($body['featured']) ? 1 : 0;
+                        $trending = !empty($body['trending']) ? 1 : 0;
+                        $displayOrder = isset($body['orderIndex']) ? (int)$body['orderIndex'] : (isset($body['display_order']) ? (int)$body['display_order'] : (isset($body['order']) ? (int)$body['order'] : 0));
+                        $description = $body['description'] ?? '';
 
-                    $stmt = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `image` = VALUES(`image`), `active` = VALUES(`active`), `description` = VALUES(`description`)");
-                    $stmt->execute([
-                        $catId, $name, $slug, $levelVal, $parentId, $parentName, $image,
-                        $active, $featured, $trending, $displayOrder, $description
-                    ]);
+                        $seo = $body['seo'] ?? [];
+                        $metaTitle = $seo['metaTitle'] ?? ($body['meta_title'] ?? "{$name} | Janani Agro Products");
+                        $metaDesc = $seo['metaDescription'] ?? ($body['meta_description'] ?? $description);
+                        $metaKeywords = $seo['metaKeywords'] ?? ($body['meta_keywords'] ?? '');
+                        $canonicalUrl = $seo['canonicalUrl'] ?? ($body['canonical_url'] ?? "https://jananiagroproducts.com/categories/{$slug}");
 
-                    $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                    $fetchStmt->execute([$catId, $slug]);
-                    $created = $fetchStmt->fetch();
+                        $stmt = $pdo->prepare("INSERT INTO `categories` (
+                            `id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`,
+                            `product_count`, `active`, `featured`, `trending`, `display_order`, `description`,
+                            `meta_title`, `meta_description`, `meta_keywords`, `canonical_url`
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE 
+                            `name` = VALUES(`name`), 
+                            `image` = VALUES(`image`), 
+                            `banner_image` = VALUES(`banner_image`), 
+                            `icon` = VALUES(`icon`), 
+                            `active` = VALUES(`active`), 
+                            `featured` = VALUES(`featured`), 
+                            `trending` = VALUES(`trending`), 
+                            `display_order` = VALUES(`display_order`), 
+                            `description` = VALUES(`description`),
+                            `meta_title` = VALUES(`meta_title`),
+                            `meta_description` = VALUES(`meta_description`),
+                            `meta_keywords` = VALUES(`meta_keywords`),
+                            `canonical_url` = VALUES(`canonical_url`),
+                            `deleted_at` = NULL");
 
-                    echo json_encode([
-                        'success' => true,
-                        'message' => 'Category created successfully in MySQL',
-                        'data' => $created,
-                        'category' => $created
-                    ]);
-                    exit;
+                        $stmt->execute([
+                            $catId, $name, $slug, $levelVal, $parentId, $parentName, $image, $bannerImage, $icon,
+                            $active, $featured, $trending, $displayOrder, $description,
+                            $metaTitle, $metaDesc, $metaKeywords, $canonicalUrl
+                        ]);
+
+                        $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                        $fetchStmt->execute([$catId, $slug]);
+                        $created = $fetchStmt->fetch();
+
+                        if ($created) {
+                            $created['parentId'] = $created['parent_id'];
+                            $created['parentName'] = $created['parent_name'];
+                            $created['bannerImage'] = $created['banner_image'];
+                            $created['productCount'] = (int)($created['product_count'] ?? 0);
+                            $created['orderIndex'] = (int)($created['display_order'] ?? 0);
+                            $created['active'] = (bool)$created['active'];
+                            $created['featured'] = (bool)$created['featured'];
+                            $created['trending'] = (bool)$created['trending'];
+                        }
+
+                        echo json_encode([
+                            'success' => true,
+                            'message' => 'Category created successfully in MySQL database',
+                            'data' => $created,
+                            'category' => $created
+                        ]);
+                        exit;
+                    } catch (Exception $e) {
+                        echo json_encode([
+                            'success' => false,
+                            'message' => 'MySQL Category Creation Error: ' . $e->getMessage(),
+                            'error' => $e->getMessage()
+                        ]);
+                        exit;
+                    }
                 } else {
                     $parts = explode('/', trim($rawId, '/'));
                     $id = $parts[0];
@@ -1286,83 +1456,113 @@ try {
                         $body['trending'] = ($body['trending'] === true || $body['trending'] === 1 || $body['trending'] === '1') ? 1 : 0;
                     }
 
-                    $fields = [];
-                    $vals = [];
-                    $allowed = ['name', 'slug', 'level', 'parent_id', 'parent_name', 'image', 'active', 'featured', 'trending', 'display_order', 'description'];
+                    ensureCategoriesTableSchema($pdo);
+                    try {
+                        $fields = [];
+                        $vals = [];
+                        $allowed = ['name', 'slug', 'level', 'parent_id', 'parent_name', 'image', 'banner_image', 'icon', 'active', 'featured', 'trending', 'display_order', 'description', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url'];
 
-                    foreach ($allowed as $f) {
-                        if (array_key_exists($f, $body)) {
-                            $fields[] = "`{$f}` = ?";
-                            $vals[] = $body[$f];
+                        foreach ($allowed as $f) {
+                            if (array_key_exists($f, $body)) {
+                                $fields[] = "`{$f}` = ?";
+                                $vals[] = $body[$f];
+                            }
                         }
-                    }
 
-                    // Locate existing category in database
-                    $existingCat = null;
-                    $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? LIMIT 1");
-                    $fStmt->execute([$id]);
-                    $existingCat = $fStmt->fetch();
-                    if (!$existingCat) {
-                        $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `slug` = ? LIMIT 1");
+                        if (isset($body['bannerImage']) && !isset($body['banner_image'])) {
+                            $fields[] = "`banner_image` = ?";
+                            $vals[] = $body['bannerImage'];
+                        }
+                        if (isset($body['seo']['metaTitle']) && !isset($body['meta_title'])) {
+                            $fields[] = "`meta_title` = ?";
+                            $vals[] = $body['seo']['metaTitle'];
+                        }
+                        if (isset($body['seo']['metaDescription']) && !isset($body['meta_description'])) {
+                            $fields[] = "`meta_description` = ?";
+                            $vals[] = $body['seo']['metaDescription'];
+                        }
+                        if (isset($body['seo']['metaKeywords']) && !isset($body['meta_keywords'])) {
+                            $fields[] = "`meta_keywords` = ?";
+                            $vals[] = $body['seo']['metaKeywords'];
+                        }
+                        if (isset($body['seo']['canonicalUrl']) && !isset($body['canonical_url'])) {
+                            $fields[] = "`canonical_url` = ?";
+                            $vals[] = $body['seo']['canonicalUrl'];
+                        }
+
+                        // Locate existing category in database
+                        $existingCat = null;
+                        $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? LIMIT 1");
                         $fStmt->execute([$id]);
                         $existingCat = $fStmt->fetch();
-                    }
-                    if (!$existingCat && !empty($body['slug'])) {
-                        $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `slug` = ? LIMIT 1");
-                        $fStmt->execute([$body['slug']]);
-                        $existingCat = $fStmt->fetch();
-                    }
+                        if (!$existingCat) {
+                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `slug` = ? LIMIT 1");
+                            $fStmt->execute([$id]);
+                            $existingCat = $fStmt->fetch();
+                        }
+                        if (!$existingCat && !empty($body['slug'])) {
+                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `slug` = ? LIMIT 1");
+                            $fStmt->execute([$body['slug']]);
+                            $existingCat = $fStmt->fetch();
+                        }
 
-                    if ($existingCat && !empty($fields)) {
-                        $targetId = $existingCat['id'];
-                        $vals[] = $targetId;
-                        $upStmt = $pdo->prepare("UPDATE `categories` SET " . implode(', ', $fields) . " WHERE `id` = ?");
-                        $upStmt->execute($vals);
+                        if ($existingCat && !empty($fields)) {
+                            $targetId = $existingCat['id'];
+                            $vals[] = $targetId;
+                            $upStmt = $pdo->prepare("UPDATE `categories` SET " . implode(', ', $fields) . " WHERE `id` = ?");
+                            $upStmt->execute($vals);
 
-                        $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? LIMIT 1");
-                        $fetchStmt->execute([$targetId]);
-                        $updated = $fetchStmt->fetch();
+                            $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? LIMIT 1");
+                            $fetchStmt->execute([$targetId]);
+                            $updated = $fetchStmt->fetch();
 
+                            echo json_encode([
+                                'success' => true,
+                                'message' => 'Category updated successfully in MySQL',
+                                'data' => $updated,
+                                'category' => $updated
+                            ]);
+                            exit;
+                        } elseif (!$existingCat) {
+                            $cName = $body['name'] ?? 'New Category';
+                            $cSlug = !empty($body['slug']) ? $body['slug'] : (!empty($id) ? $id : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $cName), '-')));
+                            $cId = !empty($id) ? $id : ('cat-' . $cSlug);
+                            $cLevel = isset($body['level']) ? (int)$body['level'] : 1;
+                            $cParentId = $body['parent_id'] ?? null;
+                            $cParentName = $body['parent_name'] ?? null;
+                            $cImage = $body['image'] ?? '/images/categories/placeholder.webp';
+                            $cBanner = $body['bannerImage'] ?? ($body['banner_image'] ?? $cImage);
+                            $cIcon = $body['icon'] ?? '🌾';
+                            $cActive = isset($body['active']) ? (int)$body['active'] : 1;
+                            $cFeatured = isset($body['featured']) ? (int)$body['featured'] : 0;
+                            $cTrending = isset($body['trending']) ? (int)$body['trending'] : 0;
+                            $cOrder = isset($body['display_order']) ? (int)$body['display_order'] : 0;
+                            $cDesc = $body['description'] ?? '';
+
+                            $insStmt = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)");
+                            $insStmt->execute([
+                                $cId, $cName, $cSlug, $cLevel, $cParentId, $cParentName, $cImage, $cBanner, $cIcon,
+                                $cActive, $cFeatured, $cTrending, $cOrder, $cDesc
+                            ]);
+
+                            $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                            $fetchStmt->execute([$cId, $cSlug]);
+                            $created = $fetchStmt->fetch();
+
+                            echo json_encode([
+                                'success' => true,
+                                'message' => 'Category saved successfully in MySQL',
+                                'data' => $created,
+                                'category' => $created
+                            ]);
+                            exit;
+                        }
+                    } catch (Exception $e) {
                         echo json_encode([
-                            'success' => true,
-                            'message' => 'Category updated successfully in MySQL',
-                            'data' => $updated,
-                            'category' => $updated
+                            'success' => false,
+                            'message' => 'MySQL Category Update Error: ' . $e->getMessage(),
+                            'error' => $e->getMessage()
                         ]);
-                        exit;
-                    } elseif (!$existingCat) {
-                        $cName = $body['name'] ?? 'New Category';
-                        $cSlug = !empty($body['slug']) ? $body['slug'] : (!empty($id) ? $id : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $cName), '-')));
-                        $cId = !empty($id) ? $id : ('cat-' . $cSlug);
-                        $cLevel = isset($body['level']) ? (int)$body['level'] : 1;
-                        $cParentId = $body['parent_id'] ?? null;
-                        $cParentName = $body['parent_name'] ?? null;
-                        $cImage = $body['image'] ?? '/images/categories/placeholder.webp';
-                        $cActive = isset($body['active']) ? (int)$body['active'] : 1;
-                        $cFeatured = isset($body['featured']) ? (int)$body['featured'] : 0;
-                        $cTrending = isset($body['trending']) ? (int)$body['trending'] : 0;
-                        $cOrder = isset($body['display_order']) ? (int)$body['display_order'] : 0;
-                        $cDesc = $body['description'] ?? '';
-
-                        $insStmt = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)");
-                        $insStmt->execute([
-                            $cId, $cName, $cSlug, $cLevel, $cParentId, $cParentName, $cImage,
-                            $cActive, $cFeatured, $cTrending, $cOrder, $cDesc
-                        ]);
-
-                        $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                        $fetchStmt->execute([$cId, $cSlug]);
-                        $created = $fetchStmt->fetch();
-
-                        echo json_encode([
-                            'success' => true,
-                            'message' => 'Category saved successfully in MySQL',
-                            'data' => $created,
-                            'category' => $created
-                        ]);
-                        exit;
-                    } else {
-                        echo json_encode(['success' => false, 'message' => 'No valid fields provided for update']);
                         exit;
                     }
                 }

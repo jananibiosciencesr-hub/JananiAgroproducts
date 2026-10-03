@@ -43,8 +43,18 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       ...options,
     });
 
+    const isJson = res.headers.get("content-type")?.includes("application/json");
+    if (isJson) {
+      try {
+        const data = await res.json();
+        return data as T;
+      } catch (err) {
+        console.error("JSON parse error:", err);
+      }
+    }
+
     // If request fails or returns non-JSON HTML:
-    if (!res.ok || (res.headers.get("content-type") && !res.headers.get("content-type")!.includes("application/json"))) {
+    if (!res.ok || !isJson) {
       // 1. If /api/* rewrite fails, try direct /api.php endpoint
       if (!endpoint.startsWith("http") && !endpoint.includes("api.php") && !endpoint.includes("db_init.php")) {
         const clean = endpoint.replace(/^\//, "").replace(/^api\//, "");
@@ -2158,22 +2168,25 @@ export async function createAdminCategory(payload: any) {
   const levelNum = payload.level === "sub" ? 2 : (payload.level === "child" ? 3 : 1);
   const reqBody = {
     name: payload.name,
-    slug: payload.slug || payload.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    slug: payload.slug || payload.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
     level: levelNum,
     parentId: payload.parentId || null,
     parent_id: payload.parentId || null,
     parentName: payload.parentName || null,
     parent_name: payload.parentName || null,
-    image: payload.image || "/images/categories/oils.webp",
+    image: payload.image || "/images/categories/placeholder.webp",
+    bannerImage: payload.bannerImage || payload.image || "",
+    banner_image: payload.bannerImage || payload.image || "",
     active: payload.active !== undefined ? (payload.active ? 1 : 0) : 1,
     featured: payload.featured ? 1 : 0,
     trending: payload.trending ? 1 : 0,
     display_order: Number(payload.orderIndex ?? payload.display_order ?? payload.order ?? 0),
     description: payload.description || "",
-    icon: payload.icon || "🌾"
+    icon: payload.icon || "🌾",
+    seo: payload.seo || {}
   };
 
-  let res = await fetchJson<{ success: boolean; message: string; data?: any; category?: any }>(
+  const res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
     `/api.php?action=categories`,
     {
       method: "POST",
@@ -2181,19 +2194,13 @@ export async function createAdminCategory(payload: any) {
     }
   );
 
-  if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data?: any; category?: any }>(`/admin/categories`, {
-      method: "POST",
-      body: JSON.stringify(reqBody)
-    });
-  }
-
   if (res?.success && (res.data || res.category)) {
     const cat = normalizeAdminCategory(res.data || res.category);
     return { success: true, message: res.message || "Category created successfully", data: cat };
   }
 
-  return res || { success: false, message: "Could not create category in MySQL database" };
+  const errorMsg = res?.message || res?.error || "Could not create category in MySQL database";
+  return { success: false, message: errorMsg, error: errorMsg };
 }
 
 export async function updateAdminCategory(id: string, payload: any) {
@@ -2203,8 +2210,11 @@ export async function updateAdminCategory(id: string, payload: any) {
     name: payload.name,
     slug: payload.slug,
     image: payload.image,
+    bannerImage: payload.bannerImage || payload.image || "",
+    banner_image: payload.bannerImage || payload.image || "",
     description: payload.description,
-    icon: payload.icon
+    icon: payload.icon || "🌾",
+    seo: payload.seo || {}
   };
   if (levelNum !== undefined) reqBody.level = levelNum;
   if (payload.parentId !== undefined) {
@@ -2219,24 +2229,13 @@ export async function updateAdminCategory(id: string, payload: any) {
     reqBody.orderIndex = reqBody.display_order;
   }
 
-  // Primary: direct POST to api.php with category ID
-  let res = await fetchJson<{ success: boolean; message: string; data?: any; category?: any }>(
+  const res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
     `/api.php?action=categories&id=${encodeURIComponent(id)}`,
     {
       method: "POST",
       body: JSON.stringify(reqBody)
     }
   );
-
-  if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data?: any; category?: any }>(
-      `/admin/categories/${encodeURIComponent(id)}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(reqBody)
-      }
-    );
-  }
 
   if (res?.success && (res.data || res.category)) {
     return {
@@ -2246,7 +2245,8 @@ export async function updateAdminCategory(id: string, payload: any) {
     };
   }
 
-  return res || { success: false, message: "Could not update category in MySQL database" };
+  const errorMsg = res?.message || res?.error || "Could not update category in MySQL database";
+  return { success: false, message: errorMsg, error: errorMsg };
 }
 
 export async function toggleAdminCategory(id: string, field: "active" | "featured" | "trending") {
