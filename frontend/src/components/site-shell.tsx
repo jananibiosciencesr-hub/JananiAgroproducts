@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ChevronDown,
@@ -59,6 +59,12 @@ function Shell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdminRoute = pathname.startsWith("/admin");
 
+  // Automatically close mega menu and mobile menu whenever route changes
+  useEffect(() => {
+    setIsMegaMenuOpen(false);
+    setMenu(false);
+  }, [pathname]);
+
   if (isAdminRoute) {
     return <div className="min-h-screen bg-background">{children}</div>;
   }
@@ -92,10 +98,17 @@ function Shell({ children }: { children: React.ReactNode }) {
                 <div
                   key={to}
                   className="relative py-2"
-                  onMouseEnter={() => isCategoryOrProducts && setIsMegaMenuOpen(true)}
+                  onMouseEnter={() => {
+                    if (isCategoryOrProducts) {
+                      setIsMegaMenuOpen(true);
+                    } else {
+                      setIsMegaMenuOpen(false);
+                    }
+                  }}
                 >
                   <Link
                     to={to}
+                    onClick={() => setIsMegaMenuOpen(false)}
                     activeOptions={{ exact: to === "/" }}
                     activeProps={{ className: "text-primary font-bold" }}
                     className="group relative flex items-center gap-1 text-xs font-semibold text-foreground/75 transition hover:text-primary"

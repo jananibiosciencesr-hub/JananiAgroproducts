@@ -19,6 +19,28 @@ export function HomeMegaMenu({ isOpen, onClose }: MegaMenuProps) {
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
   const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    const handleScroll = () => {
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   // Authentic Agricultural Category Configs
@@ -104,10 +126,16 @@ export function HomeMegaMenu({ isOpen, onClose }: MegaMenuProps) {
   ];
 
   return (
-    <div
-      onMouseLeave={onClose}
-      className="absolute left-0 right-0 top-full z-50 border-b border-border bg-[#fdfdfb] p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(15,35,22,0.22)] transition-all duration-300 animate-in fade-in slide-in-from-top-2"
-    >
+    <>
+      {/* Click-outside backdrop */}
+      <div
+        className="fixed inset-0 top-20 z-40 bg-black/15 backdrop-blur-[1px] transition-opacity"
+        onClick={onClose}
+      />
+      <div
+        onMouseLeave={onClose}
+        className="absolute left-0 right-0 top-full z-50 border-b border-border bg-[#fdfdfb] p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(15,35,22,0.22)] transition-all duration-300 animate-in fade-in slide-in-from-top-2"
+      >
       <div className="mx-auto max-w-7xl space-y-5">
 
         {/* Mega Menu 3-Column Grid */}
@@ -193,5 +221,6 @@ export function HomeMegaMenu({ isOpen, onClose }: MegaMenuProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }
