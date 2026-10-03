@@ -18,7 +18,9 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CropsRouteImport } from './routes/crops'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DiseasesRouteImport } from './routes/diseases'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OrderSuccessRouteImport } from './routes/order-success'
@@ -38,6 +40,8 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as CategoriesIndexRouteImport } from './routes/categories.index'
 import { Route as CategoriesSlugRouteImport } from './routes/categories.$slug'
+import { Route as CropsSlugRouteImport } from './routes/crops.$slug'
+import { Route as DiseasesSlugRouteImport } from './routes/diseases.$slug'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 
@@ -86,9 +90,19 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CropsRoute = CropsRouteImport.update({
+  id: '/crops',
+  path: '/crops',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiseasesRoute = DiseasesRouteImport.update({
+  id: '/diseases',
+  path: '/diseases',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -186,6 +200,16 @@ const CategoriesSlugRoute = CategoriesSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => CategoriesRoute,
 } as any)
+const CropsSlugRoute = CropsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CropsRoute,
+} as any)
+const DiseasesSlugRoute = DiseasesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => DiseasesRoute,
+} as any)
 const ProductsIndexRoute = ProductsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -207,7 +231,9 @@ export interface FileRoutesByFullPath {
   '/categories': typeof CategoriesRouteWithChildren
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/crops': typeof CropsRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/diseases': typeof DiseasesRouteWithChildren
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/order-success': typeof OrderSuccessRoute
@@ -225,6 +251,8 @@ export interface FileRoutesByFullPath {
   '/wishlist': typeof WishlistRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categories/$slug': typeof CategoriesSlugRoute
+  '/crops/$slug': typeof CropsSlugRoute
+  '/diseases/$slug': typeof DiseasesSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/categories/': typeof CategoriesIndexRoute
@@ -238,7 +266,9 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/crops': typeof CropsRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/diseases': typeof DiseasesRouteWithChildren
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/order-success': typeof OrderSuccessRoute
@@ -255,6 +285,8 @@ export interface FileRoutesByTo {
   '/wishlist': typeof WishlistRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categories/$slug': typeof CategoriesSlugRoute
+  '/crops/$slug': typeof CropsSlugRoute
+  '/diseases/$slug': typeof DiseasesSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/blog': typeof BlogIndexRoute
   '/categories': typeof CategoriesIndexRoute
@@ -271,7 +303,9 @@ export interface FileRoutesById {
   '/categories': typeof CategoriesRouteWithChildren
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/crops': typeof CropsRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/diseases': typeof DiseasesRouteWithChildren
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/order-success': typeof OrderSuccessRoute
@@ -289,6 +323,8 @@ export interface FileRoutesById {
   '/wishlist': typeof WishlistRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categories/$slug': typeof CategoriesSlugRoute
+  '/crops/$slug': typeof CropsSlugRoute
+  '/diseases/$slug': typeof DiseasesSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/categories/': typeof CategoriesIndexRoute
@@ -306,7 +342,9 @@ export interface FileRouteTypes {
     | '/categories'
     | '/checkout'
     | '/contact'
+    | '/crops'
     | '/dashboard'
+    | '/diseases'
     | '/faq'
     | '/login'
     | '/order-success'
@@ -324,6 +362,8 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/blog/$slug'
     | '/categories/$slug'
+    | '/crops/$slug'
+    | '/diseases/$slug'
     | '/products/$slug'
     | '/blog/'
     | '/categories/'
@@ -337,7 +377,9 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/crops'
     | '/dashboard'
+    | '/diseases'
     | '/faq'
     | '/login'
     | '/order-success'
@@ -354,6 +396,8 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/blog/$slug'
     | '/categories/$slug'
+    | '/crops/$slug'
+    | '/diseases/$slug'
     | '/products/$slug'
     | '/blog'
     | '/categories'
@@ -369,7 +413,9 @@ export interface FileRouteTypes {
     | '/categories'
     | '/checkout'
     | '/contact'
+    | '/crops'
     | '/dashboard'
+    | '/diseases'
     | '/faq'
     | '/login'
     | '/order-success'
@@ -387,6 +433,8 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/blog/$slug'
     | '/categories/$slug'
+    | '/crops/$slug'
+    | '/diseases/$slug'
     | '/products/$slug'
     | '/blog/'
     | '/categories/'
@@ -403,7 +451,9 @@ export interface RootRouteChildren {
   CategoriesRoute: typeof CategoriesRouteWithChildren
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
+  CropsRoute: typeof CropsRouteWithChildren
   DashboardRoute: typeof DashboardRoute
+  DiseasesRoute: typeof DiseasesRouteWithChildren
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   OrderSuccessRoute: typeof OrderSuccessRoute
@@ -486,11 +536,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crops': {
+      id: '/crops'
+      path: '/crops'
+      fullPath: '/crops'
+      preLoaderRoute: typeof CropsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diseases': {
+      id: '/diseases'
+      path: '/diseases'
+      fullPath: '/diseases'
+      preLoaderRoute: typeof DiseasesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -626,6 +690,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoriesSlugRouteImport
       parentRoute: typeof CategoriesRoute
     }
+    '/crops/$slug': {
+      id: '/crops/$slug'
+      path: '/$slug'
+      fullPath: '/crops/$slug'
+      preLoaderRoute: typeof CropsSlugRouteImport
+      parentRoute: typeof CropsRoute
+    }
+    '/diseases/$slug': {
+      id: '/diseases/$slug'
+      path: '/$slug'
+      fullPath: '/diseases/$slug'
+      preLoaderRoute: typeof DiseasesSlugRouteImport
+      parentRoute: typeof DiseasesRoute
+    }
     '/products/': {
       id: '/products/'
       path: '/'
@@ -669,6 +747,28 @@ const CategoriesRouteWithChildren = CategoriesRoute._addFileChildren(
   CategoriesRouteChildren,
 )
 
+interface CropsRouteChildren {
+  CropsSlugRoute: typeof CropsSlugRoute
+}
+
+const CropsRouteChildren: CropsRouteChildren = {
+  CropsSlugRoute: CropsSlugRoute,
+}
+
+const CropsRouteWithChildren = CropsRoute._addFileChildren(CropsRouteChildren)
+
+interface DiseasesRouteChildren {
+  DiseasesSlugRoute: typeof DiseasesSlugRoute
+}
+
+const DiseasesRouteChildren: DiseasesRouteChildren = {
+  DiseasesSlugRoute: DiseasesSlugRoute,
+}
+
+const DiseasesRouteWithChildren = DiseasesRoute._addFileChildren(
+  DiseasesRouteChildren,
+)
+
 interface ProductsRouteChildren {
   ProductsSlugRoute: typeof ProductsSlugRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
@@ -693,7 +793,9 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriesRoute: CategoriesRouteWithChildren,
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
+  CropsRoute: CropsRouteWithChildren,
   DashboardRoute: DashboardRoute,
+  DiseasesRoute: DiseasesRouteWithChildren,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   OrderSuccessRoute: OrderSuccessRoute,

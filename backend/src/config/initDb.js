@@ -27,7 +27,8 @@ export async function initDatabase() {
         port: DB_PORT,
         user: DB_USER,
         password: DB_PASSWORD,
-        charset: "utf8mb4"
+        charset: "utf8mb4",
+        connectTimeout: 3000
       });
       console.log(`🔌 [MySQL Init] Connected to MySQL host ${DB_HOST}:${DB_PORT}`);
 
@@ -51,7 +52,8 @@ export async function initDatabase() {
       user: DB_USER,
       password: DB_PASSWORD,
       database: DB_NAME,
-      charset: "utf8mb4"
+      charset: "utf8mb4",
+      connectTimeout: 3000
     });
     results.connected = true;
     console.log(`🎯 [MySQL Init] Successfully connected to \`${DB_NAME}\`! Creating tables...`);
@@ -319,6 +321,9 @@ export async function initDatabase() {
     if (catRows[0].count === 0) {
       console.log(`🌱 [MySQL Seed] Seeding categories...`);
       const categoriesSeed = [
+        ["cat-nutrients", "Organic Plant Nutrients", "organic-plant-nutrients", 1, null, null, "/products/annada.jpg", 1, 1, 1, 1],
+        ["cat-cropprot", "Biological Crop Protection", "biological-crop-protection", 1, null, null, "/products/balavan.jpg", 2, 1, 1, 1],
+        ["cat-soil", "Soil Conditioners & Biostimulants", "soil-conditioners-biostimulants", 1, null, null, "/products/bhumi-shakti.jpg", 1, 1, 1, 1],
         ["cat-oils", "Cold Pressed Oils", "cold-pressed-oils", 1, null, null, "/images/categories/oils.webp", 4, 1, 1, 1],
         ["cat-rice", "Organic Rice", "organic-rice", 1, null, null, "/images/categories/rice.webp", 3, 1, 1, 0],
         ["cat-pulses", "Pulses & Dals", "pulses", 1, null, null, "/images/categories/pulses.webp", 3, 1, 1, 0],
@@ -336,14 +341,22 @@ export async function initDatabase() {
           [id, name, slug, level, parentId, parentName, img, count, active, featured, trending]
         );
       }
-      results.seedsInserted.push("categories (10)");
+      results.seedsInserted.push("categories (12)");
     }
 
     // Seed Products if empty
     const [prodRows] = await connection.query(`SELECT COUNT(*) as count FROM products`);
     if (prodRows[0].count === 0) {
-      console.log(`🌱 [MySQL Seed] Seeding 24 organic products...`);
+      console.log(`🌱 [MySQL Seed] Seeding 26 organic products...`);
       const productsSeed = [
+        ["annada-fish-amino-acid-5l", "ANNADA - Fish Amino Acid (5L)", "Organic Plant Nutrients", 3600, 3999, "5 L", 150, 5.0, 64, "Flagship Nutrient", "/products/annada.jpg", "Naturally derived Fish Amino Acid formulation prepared from fish-based raw materials through controlled processing.", "JAP-SKU-ANNADA"],
+        ["balavan-bacillus-subtilis-5l", "BALAVAN - Bacillus Subtilis (5L)", "Biological Crop Protection", 5600, 6200, "5 L", 100, 5.0, 52, "Biological Defense", "/products/balavan.jpg", "Bacillus subtilis liquid biological formulation for blight control, crop protection and disease suppression.", "JAP-SKU-BALAVAN"],
+        ["bhumi-shakti-humic-fulvic-biostimulant-5l", "BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)", "Soil Conditioners & Biostimulants", 3900, 4400, "5 L", 120, 4.9, 58, "Soil Rejuvenator", "/products/bhumi-shakti.jpg", "Humic and fulvic based soil conditioner biostimulant for soil fertility, root development and organic carbon.", "JAP-SKU-BHUMISHAKTI"],
+        ["suraksha-pseudomonas-fluorescens-5l", "SURAKSHA - Pseudomonas Fluorescens (5L)", "Biological Crop Protection", 4900, 5500, "5 L", 110, 4.9, 63, "Root Defender", "/products/suraksha.jpg", "Pseudomonas fluorescens liquid biofungal formulation for soil-borne disease control, rhizosphere protection and plant resistance.", "JAP-SKU-SURAKSHA"],
+        ["dharani-kmb-potassium-mobilizing-biofertilizer-5l", "DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)", "Soil Conditioners & Biostimulants", 5300, 5800, "5 L", 100, 5.0, 48, "Potassium Mobilizer", "/products/dharani.jpg", "Microbial biofertilizer containing beneficial Potassium Mobilizing Bacteria (KMB) to unlock fixed soil potassium and support root vigour.", "JAP-SKU-DHARANI"],
+        ["pushkal-flowering-fruit-set-biostimulant-1l", "PUSHKAL - Flowering & Fruit Set Biostimulant (1L)", "Organic Plant Nutrients", 999, 1199, "1 L", 150, 5.0, 42, "Flowering & Fruit Set", "/products/pushkal.jpg", "Concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, Fulvic Acid, Boron and Zinc to support flower initiation and fruit set.", "JAP-SKU-PUSHKAL"],
+        ["harit-trichoderma-viride-liquid-biofungal-formulation-1l", "HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)", "Biological Crop Protection", 950, 1100, "1 L", 120, 5.0, 39, "Bio-Fungal Shield", "/products/harit.jpg", "Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off, root rot, collar rot and rhizosphere diseases.", "JAP-SKU-HARIT"],
+        ["neem-oil-1000-ppm-azadirachtin-1l", "NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)", "Biological Crop Protection", 599, 699, "1 L", 140, 4.9, 44, "Botanical IPM", "/products/neem-oil.jpg", "Neem-oil-based botanical formulation containing standardized Azadirachtin 1000 PPM for organic management of aphids, whiteflies, thrips, caterpillars and mites.", "JAP-SKU-NEEM1000"],
         ["wood-pressed-groundnut-oil", "Wood Pressed Groundnut Oil", "Cold Pressed Oils", 399, 480, "1 L", 85, 4.9, 86, "Bestseller", "/images/products/wood-pressed-groundnut-oil.webp", "Slow wood-pressed from Saurashtra native groundnuts. 100% natural, chemical-free.", "JAP-SKU-001"],
         ["cold-pressed-mustard-oil", "Cold Pressed Mustard Oil", "Cold Pressed Oils", 329, 395, "1 L", 60, 4.8, 54, "Pure Kachi Ghani", "/images/products/cold-pressed-mustard-oil.webp", "Traditional Kachi Ghani extracted from whole yellow and brown mustard seeds.", "JAP-SKU-002"],
         ["virgin-coconut-oil", "Cold Pressed Virgin Coconut Oil", "Cold Pressed Oils", 449, 540, "500 ml", 45, 4.9, 42, "Pure Aroma", "/images/products/virgin-coconut-oil.webp", "Cold extracted from freshly grated coconut milk. Raw, unrefined, and aromatic.", "JAP-SKU-003"],

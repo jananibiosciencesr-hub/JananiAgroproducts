@@ -265,10 +265,10 @@ function CategoryDetailPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-2xl font-bold font-display text-foreground">
-                Explore More Harvest Categories
+                Explore Other Bio-Input Categories
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Discover other organic pantry staples from our farm network.
+                Discover biological crop protection, soil biostimulants, and organic plant nutrients.
               </p>
             </div>
             <Button asChild variant="ghost" className="text-xs font-bold text-primary">
@@ -278,28 +278,29 @@ function CategoryDetailPage() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 max-w-xl mx-auto gap-4">
             {categories
               .filter((c) => c.slug !== category.slug)
-              .slice(0, 6)
               .map((c) => (
                 <Link
                   key={c.slug}
                   to="/categories/$slug"
                   params={{ slug: c.slug }}
-                  className="group flex flex-col items-center text-center p-4 rounded-2xl border border-border bg-card shadow-soft hover:shadow-md hover:-translate-y-1 transition duration-300"
+                  className="group flex items-center gap-4 p-4 rounded-2xl border border-border bg-card shadow-soft hover:shadow-md hover:-translate-y-1 transition duration-300"
                 >
                   <img
                     src={c.image}
                     alt={c.name}
-                    className="size-16 rounded-full object-cover mb-3 group-hover:scale-105 transition duration-500"
+                    className="size-16 rounded-xl object-cover group-hover:scale-105 transition duration-500 shrink-0"
                   />
-                  <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                    {c.name}
-                  </h4>
-                  <span className="text-[10px] text-muted-foreground mt-0.5 font-mono">
-                    {c.count} items
-                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                      {c.name}
+                    </h4>
+                    <span className="text-[11px] text-brand-leaf font-semibold mt-0.5 block">
+                      {c.count} formulations
+                    </span>
+                  </div>
                 </Link>
               ))}
           </div>

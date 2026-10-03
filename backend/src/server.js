@@ -9,6 +9,7 @@ import inquiryRoutes from "./routes/inquiryRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import { getCategories, getCategoryBySlug } from "./controllers/productController.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 import { initDatabase } from "./config/initDb.js";
@@ -100,6 +101,8 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.get("/api/categories", getCategories);
+app.get("/api/categories/:slug", getCategoryBySlug);
 app.use("/api/orders", orderRoutes);
 app.use("/api/inquiries", inquiryRoutes);
 app.use("/api/contact", contactRoutes);

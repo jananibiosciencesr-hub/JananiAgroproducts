@@ -21,18 +21,26 @@ function CategoriesIndexPage() {
   const allCats = storeCats && storeCats.length > 0 ? storeCats : categories;
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
 
+  const agroCats = allCats.filter((c) =>
+    ["biological-crop-protection", "organic-plant-nutrients", "soil-conditioners-biostimulants"].includes(c.slug?.toLowerCase()) ||
+    c.name?.toLowerCase().includes("biological") ||
+    c.name?.toLowerCase().includes("nutrient") ||
+    c.name?.toLowerCase().includes("soil")
+  );
+  const displayCats = agroCats.length > 0 ? agroCats.slice(0, 3) : categories.slice(0, 3);
+
   return (
     <>
       <PageHero
-        eyebrow="Curated Harvests"
+        eyebrow="Agricultural Bio-Inputs"
         title="Explore by Category"
-        copy="Browse our carefully cultivated range of certified organic grains, cold-pressed oils, single-origin spices, native seeds, and nutrient-dense pulses."
+        copy="Browse our scientifically formulated range of certified organic biological crop protection, plant nutrients, and soil conditioners."
       />
 
       <div className="mx-auto max-w-7xl px-6 py-14">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {allCats.map((cat) => {
-            const count = allProds.filter((p) => p.category.toLowerCase() === cat.name.toLowerCase()).length;
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+          {displayCats.map((cat) => {
+            const count = allProds.filter((p) => p.category.toLowerCase() === cat.name.toLowerCase() || p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))).length;
             const catImg = getCategoryImage(cat.slug || cat.name, cat.image);
             return (
               <div
@@ -44,14 +52,14 @@ function CategoriesIndexPage() {
                     src={catImg}
                     alt={cat.name}
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = pantryImage;
+                      (e.currentTarget as HTMLImageElement).src = "/products/balavan.jpg";
                     }}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-forest/80 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground backdrop-blur-sm">
                     <Package className="size-3" />
-                    {count > 0 ? `${count} items` : `${cat.count} items`}
+                    {count > 0 ? `${count} items` : `${cat.count || 2} items`}
                   </span>
                 </div>
 
@@ -61,7 +69,7 @@ function CategoriesIndexPage() {
                       {cat.name}
                     </h3>
                     <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                      Pesticide-free, farm-fresh produce with natural aroma and authentic purity.
+                      {cat.description || "Certified organic bio-input formulated for sustainable agriculture and peak crop yields."}
                     </p>
                   </div>
 
@@ -86,9 +94,9 @@ function CategoriesIndexPage() {
         {/* Banner */}
         <div className="mt-16 rounded-[2.5rem] bg-secondary/80 p-8 sm:p-12 text-center border border-border">
           <Sparkles className="mx-auto size-8 text-brand-gold" />
-          <h2 className="mt-4 text-2xl sm:text-3xl font-semibold">Looking for custom pantry or bulk organic orders?</h2>
+          <h2 className="mt-4 text-2xl sm:text-3xl font-semibold">Looking for bulk agricultural or dealer orders?</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-7 text-muted-foreground">
-            We provide direct farm-to-table organic produce, bulk orders, and custom packaging across India.
+            We provide direct manufacturer supplies of certified bio-inputs, liquid formulations, and microbial cultures across India.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild variant="gold">

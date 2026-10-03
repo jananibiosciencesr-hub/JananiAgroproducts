@@ -69,15 +69,18 @@ function Shell({ children }: { children: React.ReactNode }) {
       <div className="bg-forest px-4 py-2 text-center text-[11px] font-medium text-primary-foreground sm:text-xs flex items-center justify-center gap-2 flex-wrap">
         <span className="flex items-center gap-1 text-brand-gold font-bold">
           <Sparkles className="size-3.5 fill-current" />
-          FESTIVE HARVEST:
+          KHARIF & RABI BIO-CARE:
         </span>
-        <span>Flat 20% OFF on Wood-Pressed Oils & Vedic Ghee with code <strong>HARVEST20</strong></span>
+        <span>Flat ₹250 OFF on Certified Biological Crop Protection & Bio-Nutrients with code <strong>ORGANIC250</strong></span>
         <span className="hidden sm:inline text-brand-gold/60">•</span>
-        <span className="hidden sm:inline">Complimentary delivery on orders above ₹799</span>
+        <span className="hidden sm:inline">Complimentary direct farm delivery on orders above ₹999</span>
       </div>
 
       {/* Sticky Main Header */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-cream/90 backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-40 border-b border-border/60 bg-cream/95 backdrop-blur-xl"
+        onMouseLeave={() => setIsMegaMenuOpen(false)}
+      >
         <div className="mx-auto grid h-20 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
           <Brand />
           

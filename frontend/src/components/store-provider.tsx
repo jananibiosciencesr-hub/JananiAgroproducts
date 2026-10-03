@@ -115,6 +115,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem(key);
           }
         });
+
+        // Ensure fresh catalog loads with all flagship agro products
+        const storedProducts = localStorage.getItem("janani_admin_products");
+        if (storedProducts && (!storedProducts.includes("ANNADA") || !storedProducts.includes("BALAVAN") || !storedProducts.includes("BHUMI") || !storedProducts.includes("SURAKSHA") || !storedProducts.includes("DHARANI") || !storedProducts.includes("PUSHKAL") || !storedProducts.includes("HARIT") || !storedProducts.includes("NEEM"))) {
+          localStorage.removeItem("janani_admin_products");
+          localStorage.removeItem("janani_admin_categories");
+        }
+
+        const storedCategories = localStorage.getItem("janani_admin_categories");
+        if (storedCategories && (!storedCategories.includes("Biological Crop Protection") || storedCategories.includes("CAT-SUB-1") || storedCategories.includes("/images/cat-"))) {
+          localStorage.removeItem("janani_admin_categories");
+        }
       } catch (e) {}
     }
   }, []);

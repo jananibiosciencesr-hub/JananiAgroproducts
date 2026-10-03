@@ -19,11 +19,35 @@ interface PdpGalleryProps {
 
 export function PdpGallery({ product }: PdpGalleryProps) {
   // Gallery images array
+  const mainImageSrc = getProductImage(product.name || product.category, product.image);
   const galleryImages = [
-    { id: "main", src: getProductImage(product.name || product.category, product.image), alt: `${product.name} - Front Package View`, label: "Main Pack" },
-    { id: "pantry", src: pantryImage, alt: `${product.name} - Pantry Lifestyle Texture`, label: "Pantry Texture" },
-    { id: "story", src: storyImage, alt: `${product.name} - Farm Origin Harvest`, label: "Farm Harvest" },
-    { id: "products", src: productsImage, alt: `${product.name} - Pure Harvest Batch`, label: "Batch Close-up" },
+    { id: "main", src: mainImageSrc, alt: `${product.name} - Front Package View`, label: "Main Pack" },
+    ...(product.slug.includes("annada") || product.image.includes("annada")
+      ? [{ id: "label", src: "/products/annada-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+      : []),
+    ...(product.slug.includes("balavan") || product.image.includes("balavan")
+      ? [{ id: "label", src: "/products/balavan-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+      : []),
+    ...(product.slug.includes("bhumi") || product.image.includes("bhumi")
+      ? [{ id: "label", src: "/products/bhumi-shakti-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+      : []),
+    ...(product.slug.includes("suraksha") || product.image.includes("suraksha")
+      ? [{ id: "label", src: "/products/suraksha-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+      : []),
+    ...(product.slug.includes("dharani") || product.slug.includes("dhanya") || product.slug.includes("kmb") || product.image.includes("dharani") || product.image.includes("dhanya")
+      ? [{ id: "label", src: "/products/dharani-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+      : []),
+    ...(product.slug.includes("pushkal") || product.image.includes("pushkal")
+      ? [{ id: "label", src: "/products/pushkal-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+      : []),
+    ...(product.slug.includes("harit") || product.image.includes("harit")
+      ? [{ id: "label", src: "/products/harit-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+      : []),
+    ...(product.slug.includes("neem") || product.image.includes("neem")
+      ? [{ id: "label", src: "/products/neem-oil-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+      : []),
+    { id: "pantry", src: pantryImage, alt: `${product.name} - Application & Storage`, label: "Storage & Care" },
+    { id: "story", src: storyImage, alt: `${product.name} - Farm Origin Harvest`, label: "Farm Provenance" },
   ];
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);

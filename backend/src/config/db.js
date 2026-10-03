@@ -10,6 +10,7 @@ const DB_CONFIG = {
   password: process.env.DB_PASSWORD || "Jananiagro@123",
   database: process.env.DB_NAME || "u409810820_Jananiagro",
   waitForConnections: true,
+  connectTimeout: 3000,
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,

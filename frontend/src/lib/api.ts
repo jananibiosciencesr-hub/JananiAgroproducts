@@ -136,7 +136,14 @@ export function normalizeProduct(raw: any): Product {
     isNew: raw.isNew ?? false,
     variants: raw.variants || [
       { id: "500g", label: raw.unit || "1 kg", unit: raw.unit || "1 kg", price: price, oldPrice: oldPrice, inStock: stock > 0 }
-    ]
+    ],
+    specifications: raw.specifications,
+    recommendedCrops: raw.recommendedCrops,
+    dosage: raw.dosage,
+    methodOfApplication: raw.methodOfApplication,
+    compatibility: raw.compatibility,
+    storageNotice: raw.storageNotice,
+    netContent: raw.netContent
   };
 }
 
@@ -177,9 +184,12 @@ export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | 
 }
 
 export async function getCategories() {
-  let data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/api.php?action=categories`);
+  let data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/products/categories`);
   if (!data?.success) {
     data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/categories`);
+  }
+  if (!data?.success) {
+    data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/api.php?action=categories`);
   }
   const rawList = data?.categories || data?.data;
   if (data?.success && Array.isArray(rawList) && rawList.length > 0) {

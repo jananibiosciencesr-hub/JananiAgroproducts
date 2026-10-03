@@ -7,40 +7,64 @@ export { heroImage, productsImage, storyImage, pantryImage };
 
 // Smart Category Image Resolver with verified organic photography
 export function getCategoryImage(nameOrSlug: string = "", customImage?: string): string {
-  if (customImage && (customImage.startsWith("http://") || customImage.startsWith("https://") || customImage.startsWith("data:") || customImage.startsWith("/assets/"))) {
+  if (customImage && (customImage.startsWith("http://") || customImage.startsWith("https://") || customImage.startsWith("data:") || customImage.startsWith("/products/") || customImage.startsWith("/images/categories/"))) {
     return customImage;
   }
   const s = (nameOrSlug || "").toLowerCase();
+  if (s.includes("harit") || s.includes("trichoderma") || s.includes("viride")) {
+    return "/products/harit.jpg";
+  }
+  if (s.includes("neem") || s.includes("azadirachtin") || s.includes("neem-oil")) {
+    return "/products/neem-oil.jpg";
+  }
+  if (s.includes("suraksha") || s.includes("pseudomonas") || s.includes("biofungal")) {
+    return "/products/suraksha.jpg";
+  }
+  if (s.includes("bhumi") || s.includes("shakti") || s.includes("humic") || s.includes("fulvic") || s.includes("soil-conditioner") || s.includes("biostimulant") || s.includes("soil")) {
+    return "/products/bhumi-shakti.jpg";
+  }
+  if (s.includes("balavan") || s.includes("bacillus") || s.includes("crop-protection") || s.includes("fungicide") || s.includes("protection") || s.includes("biological")) {
+    return "/products/balavan.jpg";
+  }
+  if (s.includes("pushkal") || s.includes("flowering") || s.includes("fruit-set")) {
+    return "/products/pushkal.jpg";
+  }
+  if (s.includes("dhanya") || s.includes("dharani") || s.includes("kmb") || s.includes("potassium")) {
+    return "/products/dharani.jpg";
+  }
+  if (s.includes("nutrient") || s.includes("amino") || s.includes("fertilizer") || s.includes("bio") || s.includes("annada") || s.includes("plant nutrients")) {
+    return "/products/annada.jpg";
+  }
   if (s.includes("oil") || s.includes("mustard") || s.includes("groundnut") || s.includes("sesame") || s.includes("coconut")) {
-    return pantryImage;
+    return "/products/category-oils.jpg";
   }
   if (s.includes("rice") || s.includes("basmati") || s.includes("sonamasuri") || s.includes("paddy")) {
-    return productsImage;
+    return "/products/category-rice.jpg";
   }
   if (s.includes("pulse") || s.includes("dal") || s.includes("toor") || s.includes("gram") || s.includes("moong") || s.includes("urad")) {
-    return storyImage;
+    return "/products/category-pulses.jpg";
   }
   if (s.includes("spice") || s.includes("turmeric") || s.includes("chilli") || s.includes("pepper") || s.includes("cumin") || s.includes("masala")) {
-    return productsImage;
-  }
-  if (s.includes("wheat") || s.includes("flour") || s.includes("grain") || s.includes("atta") || s.includes("besan") || s.includes("khapli")) {
-    return heroImage;
-  }
-  if (s.includes("millet") || s.includes("ragi") || s.includes("jowar") || s.includes("foxtail") || s.includes("bajra") || s.includes("kodo")) {
-    return pantryImage;
+    return "/products/category-spices.jpg";
   }
   if (s.includes("ghee") || s.includes("bilona") || s.includes("dairy") || s.includes("cow")) {
-    return pantryImage;
+    return "/products/category-ghee.jpg";
+  }
+  if (s.includes("wheat") || s.includes("flour") || s.includes("grain") || s.includes("atta") || s.includes("besan") || s.includes("khapli")) {
+    return "/products/category-rice.jpg";
+  }
+  if (s.includes("millet") || s.includes("ragi") || s.includes("jowar") || s.includes("foxtail") || s.includes("bajra") || s.includes("kodo")) {
+    return "/products/category-pulses.jpg";
   }
   if (s.includes("seed") || s.includes("fruit") || s.includes("dry") || s.includes("honey") || s.includes("jaggery") || s.includes("sweet")) {
-    return storyImage;
+    return "/products/category-spices.jpg";
   }
-  return pantryImage;
+  return "/products/category-oils.jpg";
 }
 
 // Smart Product Image Resolver
 export function getProductImage(nameOrCategory: string = "", customImage?: string): string {
-  if (customImage && (customImage.startsWith("http://") || customImage.startsWith("https://") || customImage.startsWith("data:") || customImage.startsWith("/assets/"))) {
+  if (customImage && (customImage.startsWith("http://") || customImage.startsWith("https://") || customImage.startsWith("data:") || customImage.startsWith("/assets/") || customImage.startsWith("/") || customImage.startsWith("./"))) {
     return customImage;
   }
   return getCategoryImage(nameOrCategory, customImage);
@@ -78,235 +102,370 @@ export type Product = {
   popularity: number;
   isNew: boolean;
   variants: ProductVariant[];
+  specifications?: Record<string, string>;
+  recommendedCrops?: string;
+  dosage?: string;
+  methodOfApplication?: string;
+  compatibility?: string;
+  storageNotice?: string;
+  netContent?: string;
+  targetDiseases?: string;
 };
 
 export const slugs = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 export const categories: { id: number; name: string; slug: string; count: number; image: string; description?: string }[] = [
-  { id: 1, name: "Cold Pressed Oils", slug: "cold-pressed-oils", count: 8, image: pantryImage, description: "Single-origin wood-pressed oils extracted at low temperatures without chemical refinement." },
-  { id: 2, name: "Organic Rice", slug: "organic-rice", count: 6, image: productsImage, description: "Aromatic aged Basmati, indigenous Sonamasuri, and unpolished brown rice." },
-  { id: 3, name: "Pulses & Dals", slug: "pulses-dals", count: 9, image: storyImage, description: "Naturally sun-dried unpolished dals with intact nutrient seed coats." },
-  { id: 4, name: "Raw Spices", slug: "raw-spices", count: 12, image: productsImage, description: "Single-origin high curcumin Lakadong turmeric and stone-ground spices." },
-  { id: 5, name: "Wheat & Grains", slug: "wheat-grains", count: 7, image: heroImage, description: "Ancient Khapli emmer wheat, stone-ground flour, and native whole grains." },
-  { id: 6, name: "Ancient Millets", slug: "ancient-millets", count: 6, image: pantryImage, description: "Low GI, mineral-rich Foxtail, Ragi, Pearl, and Kodo millets." },
-  { id: 7, name: "Vedic Ghee", slug: "vedic-ghee", count: 4, image: pantryImage, description: "Traditional Bilona churned A2 Gir cow ghee crafted from cultured curd." },
-  { id: 8, name: "Seeds & Dry Fruits", slug: "seeds-dry-fruits", count: 8, image: storyImage, description: "Raw organic chia, flax, sesame seeds, and chemical-free jaggery." },
+  { id: 1, name: "Biological Crop Protection", slug: "biological-crop-protection", count: 4, image: "/products/balavan.jpg", description: "Beneficial Trichoderma viride, Bacillus subtilis, Pseudomonas fluorescens, and cold-pressed Azadirachtin botanical formulations for disease management, pest control, root protection, and pathogen suppression." },
+  { id: 2, name: "Organic Plant Nutrients", slug: "organic-plant-nutrients", count: 2, image: "/products/annada.jpg", description: "Naturally derived fish amino acids, seaweed biostimulants, and organic crop nutrition for healthy vegetative and reproductive growth." },
+  { id: 3, name: "Soil Conditioners & Biostimulants", slug: "soil-conditioners-biostimulants", count: 2, image: "/products/bhumi-shakti.jpg", description: "Humic & fulvic organic acid formulations and potassium mobilizing biofertilizers designed to enrich soil fertility, unlock nutrient uptake, and develop healthy root zones." }
 ];
 
 export const products: Product[] = [
   {
     id: 1,
-    slug: "wood-pressed-groundnut-oil-1l",
-    name: "Wood-Pressed Groundnut Oil (1L)",
-    category: "Cold Pressed Oils",
-    brand: "Janani Pure Harvest",
-    price: 399,
-    oldPrice: 480,
-    discount: 17,
-    unit: "1 L",
-    rating: 4.9,
-    reviews: 86,
+    slug: "annada-fish-amino-acid-5l",
+    name: "ANNADA - Fish Amino Acid (5L)",
+    category: "Organic Plant Nutrients",
+    brand: "Janani Agro Products",
+    price: 3600,
+    oldPrice: 3999,
+    discount: 10,
+    unit: "5 L",
+    rating: 5.0,
+    reviews: 64,
     inStock: true,
-    stockCount: 50,
-    badge: "Bestseller",
-    image: pantryImage,
-    description: "Cold-pressed in traditional Vagai wood expellers below 38°C to retain raw aroma, tocopherols, and heart-healthy phytosterols.",
-    origin: "Lodhika GIDC, Gujarat",
-    dietaryTags: ["Cold-Pressed", "Heart Healthy", "Unrefined"],
-    certifications: ["Certified Organic & NPOP Verified", "FSSAI 10724026000048"],
-    popularity: 98,
-    isNew: false,
+    stockCount: 150,
+    badge: "Flagship Nutrient",
+    image: "/products/annada.jpg",
+    description: "ANNADA is a naturally derived Fish Amino Acid formulation prepared from fish-based raw materials through controlled processing. It contains naturally occurring amino acids, peptides and organic nutrients that support plant growth and development. ANNADA helps supplement crop nutrition and supports healthy vegetative growth, plant vigour and overall crop performance.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Fish Amino Acid", "100% Organic", "Bio-Stimulant", "Plant Vigour", "Natural Nutrition"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "Gujarat State Reg. 24"],
+    popularity: 100,
+    isNew: true,
     variants: [
-      { id: "1l", label: "1 Litre Glass Bottle", unit: "1 L", price: 399, oldPrice: 480, inStock: true },
-      { id: "5l", label: "5 Litre Tin Can", unit: "5 L", price: 1850, oldPrice: 2250, inStock: true }
-    ]
+      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 3600, oldPrice: 3999, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 850, oldPrice: 950, inStock: true }
+    ],
+    specifications: {
+      "Fish Amino Acid": "40.0% w/v (Min.)",
+      "Amino Nitrogen": "12.0% w/v (Min.)",
+      "Total Nitrogen": "4.0% w/v (Min.)",
+      "Organic Matter": "15.0% w/v (Min.)",
+      "Formulation": "Liquid",
+      "Colour": "Brown to Dark Brown",
+      "pH": "4.0 - 6.0",
+      "Expiry Date": "3 years from date of Mfg.",
+      "MRP": "Rs. 3600/- (Inclusive of all taxes)"
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, flowers and horticultural crops.",
+    dosage: "Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml – 1 litre per acre | Soil Application: 1–2 litres per acre diluted appropriately.",
+    methodOfApplication: "Apply through foliar spray, drip/fertigation or soil application according to crop requirement. For best results, use during active vegetative growth and important crop development stages.",
+    compatibility: "Generally compatible with organic inputs and many agricultural biostimulants. Conduct a compatibility test before mixing with other products. Avoid mixing with highly alkaline or strongly reactive products.",
+    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY."
   },
   {
     id: 2,
-    slug: "a2-vedic-bilona-gir-cow-ghee-500ml",
-    name: "A2 Vedic Bilona Gir Cow Ghee (500ml)",
-    category: "Vedic Ghee",
-    brand: "Janani Pure Harvest",
-    price: 1450,
-    oldPrice: 1750,
-    discount: 17,
-    unit: "500 ml",
+    slug: "balavan-bacillus-subtilis-5l",
+    name: "BALAVAN - Bacillus Subtilis (5L)",
+    category: "Biological Crop Protection",
+    brand: "Janani Agro Products",
+    price: 5600,
+    oldPrice: 6200,
+    discount: 10,
+    unit: "5 L",
     rating: 5.0,
-    reviews: 142,
+    reviews: 52,
     inStock: true,
-    stockCount: 35,
-    badge: "Vedic Churned",
-    image: pantryImage,
-    description: "Authentic A2 Gir cow ghee hand-churned using bilona wooden churners from cultured whole curd, slow cooked over low firewood heat.",
-    origin: "Saurashtra Gir Sanctuary Belt, Gujarat",
-    dietaryTags: ["A2 Protein", "Grass-Fed", "Bilona Method", "Immunity Booster"],
-    certifications: ["NPOP Certified Organic", "A2 DNA Tested"],
+    stockCount: 100,
+    badge: "Biological Defense",
+    image: "/products/balavan.jpg",
+    description: "BALAVAN contains beneficial Bacillus subtilis, a naturally occurring bacterium used in agricultural and horticultural production. It supports biological management of blight-related diseases by colonizing plant surfaces and the rhizosphere and helping reduce disease pressure as part of an integrated crop-protection program. BALAVAN supports the plant's natural defence response, helps improve crop resilience during environmental and biological stress, and promotes healthy plant growth and recovery.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Bacillus Subtilis", "Bio-Fungicide", "Blight Control", "Soil-Borne Disease Control", "Residue Free"],
+    certifications: ["For Agriculture Use Only", "Biological Formulation", "State: 24-Gujarat"],
     popularity: 99,
     isNew: true,
     variants: [
-      { id: "500ml", label: "500 ml Glass Jar", unit: "500 ml", price: 1450, oldPrice: 1750, inStock: true },
-      { id: "1000ml", label: "1 Litre Glass Jar", unit: "1 L", price: 2799, oldPrice: 3300, inStock: true }
-    ]
+      { id: "5l", label: "5 Litre Jerry Can", unit: "5 L", price: 5600, oldPrice: 6200, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1350, oldPrice: 1500, inStock: true }
+    ],
+    specifications: {
+      "Bacillus subtilis": "Minimum 5 × 10⁷ CFU/ml",
+      "Base": "Liquid",
+      "Contamination Level": "Nil at 10⁵ dilution",
+      "pH": "6.5 – 7.5",
+      "Net Content": "5 Ltr.",
+      "MRP": "Rs. 5600/- (Inclusive of all taxes)",
+      "Expiry Date": "18 Months from date of Mfg."
+    },
+    recommendedCrops: "Suitable for all Agricultural, Horticultural, Vegetable, Fruit, Plantation, Spice, Flower and Ornamental Crops.",
+    dosage: "Seed Treatment: 10 ml/kg seed | Seedling Root Dip: 5–10 ml/L water (20–30 mins) | Soil Application: 1–2 L/Acre with 50–100 kg FYM/compost | Drip Irrigation: 1–2 L/Acre | Foliar Spray: 2–3 ml/L water.",
+    targetDiseases: "Damping-off, Root Rot, Collar Rot, Wilt, Leaf Spot, Early Blight, Anthracnose, Fruit Rot, Powdery Mildew, Bacterial disease suppression.",
+    methodOfApplication: "Apply as seed treatment, seedling root dip, soil application, drip irrigation, or uniform foliar spray according to crop stage.",
+    compatibility: "Compatible with most biofertilizers, organic manures, and biostimulants. Avoid mixing with chemical fungicides or bactericides during application.",
+    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
   },
   {
     id: 3,
-    slug: "cold-pressed-mustard-oil-1l",
-    name: "Cold-Pressed Mustard Oil (1L)",
-    category: "Cold Pressed Oils",
-    brand: "Janani Pure Harvest",
-    price: 329,
-    oldPrice: 389,
-    discount: 15,
-    unit: "1 L",
-    rating: 4.8,
-    reviews: 54,
-    inStock: true,
-    stockCount: 42,
-    badge: "Pungent & Pure",
-    image: pantryImage,
-    description: "Traditional cold-pressed yellow mustard oil with high allyl isothiocyanate content for authentic Indian tempering and natural pungency.",
-    origin: "Rajasthan Heritage Farm Belt",
-    dietaryTags: ["Cold-Pressed", "Zero Chemical", "Natural Antioxidants"],
-    certifications: ["Certified Organic & NPOP Verified"],
-    popularity: 92,
-    isNew: false,
-    variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 329, oldPrice: 389, inStock: true }
-    ]
-  },
-  {
-    id: 4,
-    slug: "royal-aged-organic-basmati-rice-1kg",
-    name: "Royal Aged Organic Basmati Rice (1kg)",
-    category: "Organic Rice",
-    brand: "Janani Pure Harvest",
-    price: 249,
-    oldPrice: 299,
-    discount: 17,
-    unit: "1 kg",
-    rating: 4.9,
-    reviews: 112,
-    inStock: true,
-    stockCount: 65,
-    badge: "2-Year Aged",
-    image: productsImage,
-    description: "Naturally aged long-grain Basmati paddy grown in mineral-rich Himalayan foothills. Extra-long fluffiness and fragrant aroma upon cooking.",
-    origin: "Dehradun Foothills, Uttarakhand",
-    dietaryTags: ["Pesticide Free", "Long Grain", "Naturally Aged"],
-    certifications: ["Certified Organic & NPOP Verified"],
-    popularity: 96,
-    isNew: false,
-    variants: [
-      { id: "1kg", label: "1 kg Cotton Bag", unit: "1 kg", price: 249, oldPrice: 299, inStock: true },
-      { id: "5kg", label: "5 kg Jute Sack", unit: "5 kg", price: 1180, oldPrice: 1420, inStock: true }
-    ]
-  },
-  {
-    id: 5,
-    slug: "lakadong-turmeric-powder-200g",
-    name: "Lakadong Turmeric Powder (200g)",
-    category: "Raw Spices",
-    brand: "Janani Pure Harvest",
-    price: 189,
-    oldPrice: 230,
-    discount: 18,
-    unit: "200 g",
-    rating: 4.9,
-    reviews: 73,
-    inStock: true,
-    stockCount: 80,
-    badge: "7.5%+ Curcumin",
-    image: productsImage,
-    description: "World renowned Meghalaya Lakadong turmeric powder with exceptional 7.5%+ natural curcumin content and deep golden saffron hue.",
-    origin: "Jaintia Hills, Meghalaya",
-    dietaryTags: ["High Curcumin", "Stone Ground", "Zero Lead Chromate"],
-    certifications: ["Certified Organic", "Heavy Metal Tested"],
-    popularity: 94,
-    isNew: false,
-    variants: [
-      { id: "200g", label: "200 g Pouch", unit: "200 g", price: 189, oldPrice: 230, inStock: true },
-      { id: "500g", label: "500 g Jar", unit: "500 g", price: 440, oldPrice: 520, inStock: true }
-    ]
-  },
-  {
-    id: 6,
-    slug: "unpolished-toor-dal-500g",
-    name: "Unpolished Toor Dal (500g)",
-    category: "Pulses & Dals",
-    brand: "Janani Pure Harvest",
-    price: 199,
-    oldPrice: 240,
-    discount: 17,
-    unit: "500 g",
-    rating: 4.8,
-    reviews: 61,
-    inStock: true,
-    stockCount: 55,
-    badge: "100% Unpolished",
-    image: storyImage,
-    description: "Native pigeon peas cultivated under dryland natural farming. Unpolished and unprocessed without oil or water polishing agents.",
-    origin: "Latur, Maharashtra",
-    dietaryTags: ["High Protein", "Unpolished", "Easy to Digest"],
-    certifications: ["Certified Organic & NPOP Verified"],
-    popularity: 91,
-    isNew: false,
-    variants: [
-      { id: "500g", label: "500 g Pouch", unit: "500 g", price: 199, oldPrice: 240, inStock: true },
-      { id: "1kg", label: "1 kg Pouch", unit: "1 kg", price: 380, oldPrice: 460, inStock: true }
-    ]
-  },
-  {
-    id: 7,
-    slug: "khapli-emmer-wheat-flour-1kg",
-    name: "Ancient Khapli Emmer Wheat Flour (1kg)",
-    category: "Wheat & Grains",
-    brand: "Janani Pure Harvest",
-    price: 189,
-    oldPrice: 225,
-    discount: 16,
-    unit: "1 kg",
+    slug: "bhumi-shakti-humic-fulvic-biostimulant-5l",
+    name: "BHUMI SHAKTI - Humic & Fulvic Soil Conditioner Biostimulant (5L)",
+    category: "Soil Conditioners & Biostimulants",
+    brand: "Janani Agro Products",
+    price: 3900,
+    oldPrice: 4400,
+    discount: 11,
+    unit: "5 L",
     rating: 4.9,
     reviews: 58,
     inStock: true,
-    stockCount: 45,
-    badge: "Diabetic Friendly",
-    image: heroImage,
-    description: "Low-gluten heirloom Emmer (Khapli) wheat stoneground slowly at cold RPM to preserve natural dietary fiber, magnesium, and low glycemic index.",
-    origin: "Bijapur, Karnataka",
-    dietaryTags: ["Ancient Grain", "Low GI", "Stoneground"],
-    certifications: ["Certified Organic"],
-    popularity: 93,
-    isNew: false,
+    stockCount: 120,
+    badge: "Soil Rejuvenator",
+    image: "/products/bhumi-shakti.jpg",
+    description: "BHUMI SHAKTI is a humic and fulvic based formulation designed to support soil health, improve nutrient availability and promote efficient nutrient utilization by plants. Its organic carbon-rich components help support favourable soil conditions and contribute to better root-zone development, plant vigour and overall crop performance. Enriches the soil, strengthens the crop, and unlocks maximum nutrient potential.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Humic Acid 12%", "Fulvic Acid 5%", "Soil Conditioner", "Organic Carbon 8%", "Biostimulant"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 98,
+    isNew: true,
     variants: [
-      { id: "1kg", label: "1 kg Cloth Bag", unit: "1 kg", price: 189, oldPrice: 225, inStock: true },
-      { id: "5kg", label: "5 kg Sack", unit: "5 kg", price: 899, oldPrice: 1050, inStock: true }
-    ]
+      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 3900, oldPrice: 4400, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 950, oldPrice: 1100, inStock: true }
+    ],
+    specifications: {
+      "Humic Acid": "12.00%",
+      "Fulvic Acid": "5.00%",
+      "Total Organic Carbon": "8.00%",
+      "Potassium (K₂O)": "3.00%",
+      "Amino Acids": "5.00%",
+      "Organic Matter": "20.00%",
+      "Net Content": "5 Ltr.",
+      "MRP": "Rs. 3900/- (Inclusive of all taxes)",
+      "Expiry Date": "3 years from date of Mfg."
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, flowers, plantation crops and horticultural crops.",
+    dosage: "Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre. Dose may be adjusted according to formulation strength, crop and stage of application.",
+    methodOfApplication: "Apply through foliar spray, drip/fertigation or soil application according to crop requirement. For best results, apply during active crop growth and important nutrient-demand stages.",
+    compatibility: "Compatible with many organic fertilizers, biofertilizers and biostimulants. Conduct a compatibility test before tank mixing with other agricultural inputs.",
+    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
+  },
+  {
+    id: 4,
+    slug: "suraksha-pseudomonas-fluorescens-5l",
+    name: "SURAKSHA - Pseudomonas Fluorescens Biofungal Formulation (5L)",
+    category: "Biological Crop Protection",
+    brand: "Janani Agro Products",
+    price: 4900,
+    oldPrice: 5500,
+    discount: 11,
+    unit: "5 L",
+    rating: 4.9,
+    reviews: 63,
+    inStock: true,
+    stockCount: 110,
+    badge: "Root Defender",
+    image: "/products/suraksha.jpg",
+    description: "SURAKSHA contains beneficial Pseudomonas fluorescens, a naturally occurring beneficial bacterium used in agricultural and horticultural production. It supports biological management of soil-borne disease-causing organisms in the rhizosphere and helps maintain a healthy root-zone environment. SURAKSHA also supports the plant's natural defence mechanisms and helps improve its resistance power against stress and disease pressure. Controls soil-borne diseases, boosts plant resistance, and strengthens crops.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Pseudomonas Fluorescens", "Biofungal Formulation", "Root Zone Protection", "Residue Free", "Disease Control"],
+    certifications: ["For Agriculture Use Only", "Microbial Bio-Fungicide", "State: 24-Gujarat"],
+    popularity: 99,
+    isNew: true,
+    variants: [
+      { id: "5l", label: "5 Litre Jerry Can", unit: "5 L", price: 4900, oldPrice: 5500, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1150, oldPrice: 1300, inStock: true }
+    ],
+    specifications: {
+      "Technical Composition": "Pseudomonas fluorescens",
+      "Potency": "Minimum 5 × 10⁹ CFU/ml",
+      "Formulation": "Liquid Biofungal Formulation",
+      "Carrier / Base": "Suitable Microbial Carrier",
+      "Contamination Level": "Nil at 10⁸ dilution",
+      "pH": "6.5 – 7.5",
+      "Net Content": "5 Ltr.",
+      "MRP": "Rs. 4900/- (Inclusive of all taxes)",
+      "Expiry Date": "18 Months from date of Mfg."
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants and horticultural crops.",
+    dosage: "Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed | Nursery Application: 2–5 ml per litre of water or as recommended.",
+    targetDiseases: "Soil-borne disease-causing organisms, Root Rot, Wilt, Damping-off, Collar Rot, Seedling Blight, Rhizosphere fungal pathogens.",
+    methodOfApplication: "Apply through seed treatment, nursery application, soil application or drip/fertigation as appropriate for the crop. For best results, apply under suitable soil-moisture conditions as part of an integrated crop-protection program.",
+    compatibility: "Compatible with many organic inputs and biological products. Avoid direct mixing with strong chemical bactericides, disinfectants or other products that may adversely affect Pseudomonas fluorescens viability.",
+    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
+  },
+  {
+    id: 5,
+    slug: "dharani-kmb-potassium-mobilizing-biofertilizer-5l",
+    name: "DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)",
+    category: "Soil Conditioners & Biostimulants",
+    brand: "Janani Agro Products",
+    price: 5300,
+    oldPrice: 5800,
+    discount: 9,
+    unit: "5 L",
+    rating: 5.0,
+    reviews: 48,
+    inStock: true,
+    stockCount: 100,
+    badge: "Potassium Mobilizer",
+    image: "/products/dharani.jpg",
+    description: "DHARANI KMB is a high-grade microbial biofertilizer containing beneficial Potassium Mobilizing Bacteria (KMB). It helps mobilize fixed and unavailable forms of potassium present in the soil and makes potassium readily accessible to crops. Regular application supports efficient nutrient utilization, healthy and vigorous root development, plant vigour, balanced crop nutrition, and superior yield quality.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Potassium Mobilizer", "KMB Biofertilizer", "Liquid Inoculant", "Nutrient Availability", "100% Organic"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 99,
+    isNew: true,
+    variants: [
+      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 5300, oldPrice: 5800, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1250, oldPrice: 1400, inStock: true }
+    ],
+    specifications: {
+      "Potassium Mobilizing Bacteria (KMB)": "Minimum 5 × 10⁷ CFU/ml",
+      "Formulation": "Liquid",
+      "Carrier / Base": "Suitable Microbial Carrier",
+      "Contamination Level": "Nil at 10⁻⁵ dilution",
+      "pH": "6.5 – 7.5",
+      "Net Content": "5 Litre (5 Ltr.)",
+      "MRP": "Rs. 5300/- (Inclusive of all taxes)",
+      "Expiry Date": "18 Months from date of Mfg."
+    },
+    recommendedCrops: "Suitable for Paddy, Wheat, Maize, Millets, Pulses, Oilseeds, Cotton, Sugarcane, Vegetables, Fruits, Plantation Crops and Horticultural Crops.",
+    dosage: "Soil Application: 500 ml – 1 Litre per acre | Drip / Fertigation: 500 ml – 1 Litre per acre | Seed Treatment: Use as recommended by agricultural experts.",
+    methodOfApplication: "Apply through soil application, drip/fertigation or seed treatment according to crop requirement and recommended agricultural practices. For best results, apply during active crop growth and root development stages.",
+    compatibility: "Compatible with most biofertilizers and organic inputs. Avoid direct mixing with strong chemical disinfectants or products that may adversely affect beneficial microorganisms.",
+    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
+  },
+  {
+    id: 6,
+    slug: "pushkal-flowering-fruit-set-biostimulant-1l",
+    name: "PUSHKAL - Flowering & Fruit Set Biostimulant (1L)",
+    category: "Organic Plant Nutrients",
+    brand: "Janani Agro Products",
+    price: 999,
+    oldPrice: 1199,
+    discount: 17,
+    unit: "1 L",
+    rating: 5.0,
+    reviews: 42,
+    inStock: true,
+    stockCount: 150,
+    badge: "Flowering & Fruit Set",
+    image: "/products/pushkal.jpg",
+    description: "PUSHKAL is a concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, 5% Fulvic Acid, Boron, Zinc and Potassium to support important reproductive stages of crop development. It provides balanced plant-supporting nutrition designed to maximize flower initiation, prevent flower drop, enhance fruit set, and ensure uniform fruit sizing.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Amino Acids 10%", "Seaweed Extract 10%", "Fulvic Acid 5%", "Flowering Stimulant", "Fruit Set"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 99,
+    isNew: true,
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 999, oldPrice: 1199, inStock: true },
+      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 550, oldPrice: 650, inStock: true },
+      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 4400, oldPrice: 5200, inStock: true }
+    ],
+    specifications: {
+      "Free Amino Acids": "10.00%",
+      "Seaweed Extract": "10.00%",
+      "Fulvic Acid": "5.00%",
+      "Potassium (K₂O)": "3.00%",
+      "Boron (B)": "0.50%",
+      "Zinc (Zn)": "1.00%",
+      "Total Organic Carbon": "5.00%",
+      "Total Organic Matter": "15.00%",
+      "Net Content": "1 Ltr. (1 Litre)",
+      "MRP": "Rs. 999/- (Inclusive of all taxes)",
+      "Expiry Date": "3 years from date of Mfg."
+    },
+    recommendedCrops: "Fruit Crops (Mango, Pomegranate, Grapes, Citrus, Guava, Papaya, Banana, Apple), Vegetables (Tomato, Chilli, Brinjal, Okra, Cucumber, Gourds, Beans), Field Crops (Cotton, Pulses, Oilseeds, Maize, Paddy), Flowers (Rose, Marigold, Jasmine, Chrysanthemum).",
+    dosage: "Foliar Spray: Vegetative: 1.5–2 ml/L | Pre-flowering: 2–3 ml/L | Flowering: 2–3 ml/L | Fruit set / early development: 2–3 ml/L | Drip / Fertigation: 500 ml–1 Litre per acre.",
+    methodOfApplication: "Apply as foliar spray or drip/fertigation during reproductive stages (flower initiation, active blooming, fruit set). Repeat 10–15 days after first application where required.",
+    compatibility: "Compatible with most fertilizers, micronutrients, biostimulants, and biological inputs. Conduct a jar test before tank mixing. Avoid mixing directly with strongly acidic or alkaline products.",
+    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
+  },
+  {
+    id: 7,
+    slug: "harit-trichoderma-viride-liquid-biofungal-formulation-1l",
+    name: "HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)",
+    category: "Biological Crop Protection",
+    brand: "Janani Agro Products",
+    price: 950,
+    oldPrice: 1100,
+    discount: 14,
+    unit: "1 L",
+    rating: 5.0,
+    reviews: 49,
+    inStock: true,
+    stockCount: 120,
+    badge: "Bio-Fungal Shield",
+    image: "/products/harit.jpg",
+    description: "HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases. It supports healthy root development, crop establishment and plant vigour as part of an integrated crop-management program. HARIT is suitable for integration with organic inputs, biofertilizers and sustainable crop-management practices.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Trichoderma Viride", "Biofungal Formulation", "Wilt Protection", "Root Rot Control", "Rhizosphere Health"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 99,
+    isNew: true,
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 950, oldPrice: 1100, inStock: true },
+      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 520, oldPrice: 600, inStock: true },
+      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 4200, oldPrice: 4800, inStock: true }
+    ],
+    specifications: {
+      "Trichoderma viride": "Minimum 5 × 10⁸ CFU/ml",
+      "Formulation": "Liquid",
+      "Carrier / Base": "Suitable Microbial Carrier",
+      "Contamination Level": "Nil at 10⁶ dilution",
+      "pH": "6.5 – 7.5",
+      "Net Content": "1 Litre (1 Ltr.)",
+      "MRP": "Rs. 1100/- (Inclusive of all taxes)",
+      "Expiry Date": "18 Months from date of Mfg."
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants and horticultural crops.",
+    dosage: "Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed | Nursery Application: 2–5 ml per litre of water or as recommended | Root-Dip Treatment: 5–10 ml per litre of water; dip seedling roots before transplanting. Dose may be adjusted according to formulation strength, crop stage and disease pressure.",
+    targetDiseases: "Wilt, Damping-off, Root rot, Collar rot, Seedling rot, Rhizoctonia-related root-zone problems, Fusarium-related soil-borne disease pressure, Pythium-related damping-off and root problems, and other harmful soil-borne fungal pathogens.",
+    methodOfApplication: "Apply as seed treatment, nursery seedling root-dip, soil application, or drip/fertigation according to crop stage. Best used preventively as part of an integrated crop-protection program.",
+    compatibility: "Compatible with many organic inputs and biological products. Avoid direct mixing with strong chemical fungicides, disinfectants, bactericidal products or other products that may adversely affect Trichoderma viride viability. If chemical fungicides are required, maintain a suitable interval between applications as recommended by an agricultural expert or product label. Conduct a small compatibility test before tank mixing with any other product.",
+    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet. Empty packages/containers should be destroyed after use."
   },
   {
     id: 8,
-    slug: "unpolished-foxtail-millet-500g",
-    name: "Unpolished Foxtail Millet (500g)",
-    category: "Ancient Millets",
-    brand: "Janani Pure Harvest",
-    price: 149,
-    oldPrice: 180,
-    discount: 17,
-    unit: "500 g",
-    rating: 4.8,
-    reviews: 49,
+    slug: "neem-oil-1000-ppm-azadirachtin-1l",
+    name: "NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)",
+    category: "Biological Crop Protection",
+    brand: "Janani Agro Products",
+    price: 599,
+    oldPrice: 699,
+    discount: 14,
+    unit: "1 L",
+    rating: 4.9,
+    reviews: 44,
     inStock: true,
-    stockCount: 60,
-    badge: "Nutrient Rich",
-    image: pantryImage,
-    description: "Gluten-free native foxtail millets dehusked without polishing. Abundant in dietary fiber, iron, and slow-burning complex carbs.",
-    origin: "Anantapur Rainfed Collectives, Andhra Pradesh",
-    dietaryTags: ["Gluten Free", "High Fiber", "Immunity"],
-    certifications: ["Certified Organic & NPOP Verified"],
-    popularity: 90,
-    isNew: false,
+    stockCount: 140,
+    badge: "Botanical IPM",
+    image: "/products/neem-oil.jpg",
+    description: "NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized azadirachtin (0.10% w/w minimum / 1000 ppm). It is intended for use as part of an Integrated Pest Management (IPM) programme for management of susceptible insect pests. Azadirachtin exhibits botanical pest-management activity through effects including antifeedant, repellent and insect-growth-regulating properties against susceptible insect pests.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Neem Oil", "Azadirachtin 1000 PPM", "Insect Control", "Mite Control", "Fungal Suppression", "Plant Protection"],
+    certifications: ["For Agriculture Use Only", "Botanical Formulation", "State: 24-Gujarat"],
+    popularity: 99,
+    isNew: true,
     variants: [
-      { id: "500g", label: "500 g Pack", unit: "500 g", price: 149, oldPrice: 180, inStock: true }
-    ]
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 599, oldPrice: 699, inStock: true },
+      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 349, oldPrice: 399, inStock: true },
+      { id: "5l", label: "5 Litre Jerry Can", unit: "5 L", price: 2650, oldPrice: 3100, inStock: true }
+    ],
+    specifications: {
+      "Active Ingredient": "Azadirachtin - 0.10% w/w minimum (1000 ppm)",
+      "Technical Source": "Azadirachta indica (Neem)",
+      "Formulation": "Botanical Emulsifiable Formulation",
+      "Net Content": "1 Litre (1 Ltr.)",
+      "MRP": "Rs. 699/- (Inclusive of all taxes)",
+      "Expiry Date": "2 Years from date of Mfg."
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, cotton, pulses, cereals, tea, spices, floriculture and greenhouse horticultural crops.",
+    dosage: "Suggested dosage: 1–3 ml per litre of water. Ensure uniform coverage of foliage.",
+    targetDiseases: "Aphids, Whiteflies, Thrips, Jassids, Mealybugs, Caterpillars, Leaf Miners, Mites, and other susceptible insect pests.",
+    methodOfApplication: "Foliar spray: 1–3 ml per litre of water. Spray during early morning or evening. Avoid spraying during intense sunlight or extreme temperatures. Ensure uniform coverage of foliage. Do not exceed the recommended dose. Conduct a small-area compatibility/phytotoxicity test where crop sensitivity is unknown. Avoid mixing with incompatible products. Shake well before use.",
+    compatibility: "Compatibility with other pesticides, fertilizers, adjuvants or biological products should be established before tank mixing.",
+    storageNotice: "Keep in cool, dry place away from heat & open flame. Store in a cool, dry place away from direct sunlight. WARNING: Do not use near water sources. Keep out of reach of children. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet. Empty packages/containers should be destroyed after use."
   }
 ];
 

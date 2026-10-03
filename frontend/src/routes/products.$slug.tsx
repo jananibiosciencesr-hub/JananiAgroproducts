@@ -24,7 +24,13 @@ import {
   MessageCircle,
   Facebook,
   Twitter,
-  X
+  X,
+  FlaskConical,
+  Droplets,
+  Sprout,
+  CheckCircle2,
+  FileText,
+  AlertCircle
 } from "lucide-react";
 import { products, categories, type Product, type ProductVariant } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
@@ -131,7 +137,143 @@ function ProductPage() {
   };
 
   // Product-specific FAQs
-  const productFaqs = [
+  const productFaqs = product.slug.includes("bhumi") ? [
+    {
+      q: `What is BHUMI SHAKTI and how does it improve soil health?`,
+      a: `BHUMI SHAKTI is a premium humic and fulvic based soil conditioner biostimulant containing 12% Humic Acid, 5% Fulvic Acid, 8% Total Organic Carbon, 3% Potassium, 5% Amino Acids, and 20% Organic Matter. It enriches soil fertility, unlocks bound nutrients, boosts organic carbon, and promotes vigorous root-zone development.`,
+    },
+    {
+      q: `What are the primary benefits for crops?`,
+      a: `BHUMI SHAKTI helps improve nutrient-use efficiency, maintains optimal soil moisture and nutrient retention in the rhizosphere, supports flowering and fruit development, and strengthens crop resilience against environmental stress.`,
+    },
+    {
+      q: `What is the recommended application dosage?`,
+      a: `Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre. Apply during active vegetative growth and key nutrient-demand stages.`,
+    },
+    {
+      q: `What is the shelf life and compatibility of BHUMI SHAKTI?`,
+      a: `Shelf life is 3 years from date of Mfg. It is compatible with many organic fertilizers, biofertilizers, and biostimulants. Store in a cool, dry place away from direct sunlight. FOR AGRICULTURE USE ONLY.`,
+    },
+  ] : product.slug.includes("suraksha") ? [
+    {
+      q: `What is SURAKSHA and how does it protect the root zone?`,
+      a: `SURAKSHA contains beneficial Pseudomonas fluorescens (Minimum 5 × 10⁹ CFU/ml), a naturally occurring beneficial bacterium that colonizes plant surfaces and the rhizosphere to biologically suppress soil-borne disease-causing fungal and bacterial organisms.`,
+    },
+    {
+      q: `What crop diseases does SURAKSHA help control?`,
+      a: `SURAKSHA controls soil-borne disease-causing organisms including Root Rot, Wilt, Collar Rot, Damping-off, Seedling Blight, and rhizosphere pathogen complexes across agricultural and horticultural crops.`,
+    },
+    {
+      q: `What is the recommended dosage and application method?`,
+      a: `Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed | Nursery Application: 2–5 ml per litre of water. Apply under suitable soil moisture conditions.`,
+    },
+    {
+      q: `What is the compatibility and shelf life?`,
+      a: `Shelf life is 18 months from date of Mfg. Compatible with many organic inputs and biologicals. Avoid direct mixing with strong chemical bactericides or disinfectants. FOR AGRICULTURE USE ONLY.`,
+    },
+  ] : product.slug.includes("balavan") ? [
+    {
+      q: `What is BALAVAN and how does it protect crops?`,
+      a: `BALAVAN contains beneficial Bacillus subtilis, a naturally occurring bacterium that supports biological management of blight-related diseases by colonizing plant surfaces and the rhizosphere. It suppresses harmful pathogens, produces natural antimicrobial compounds, and improves resistance against biotic and abiotic stress.`,
+    },
+    {
+      q: `What diseases does BALAVAN control?`,
+      a: `BALAVAN protects against Damping-off, Root Rot, Collar Rot, Wilt, Leaf Spot, Early Blight, Anthracnose, Fruit Rot, Powdery Mildew, and provides broad bacterial disease suppression.`,
+    },
+    {
+      q: `What is the recommended application dosage?`,
+      a: `Seed Treatment: 10 ml/kg of seed | Seedling Root Dip: 5–10 ml/L of water (20–30 mins) | Soil Application: 1–2 Litres/Acre with 50–100 kg FYM/compost | Drip Irrigation: 1–2 Litres/Acre | Foliar Spray: 2–3 ml/L of water.`,
+    },
+    {
+      q: `What is the compatibility and shelf life?`,
+      a: `Compatible with most biofertilizers, organic manures, and biostimulants. Avoid mixing with chemical fungicides or bactericides during application. Shelf life is 18 months from date of Mfg. Store in a cool, dry place. FOR AGRICULTURE USE ONLY.`,
+    },
+  ] : (product.slug.includes("dhanya") || product.slug.includes("kmb") || product.slug.includes("dharani")) ? [
+    {
+      q: `What is DHANYA KMB and how does it mobilize potassium for crops?`,
+      a: `DHANYA (DHARANI KMB) is a liquid microbial biofertilizer containing beneficial Potassium Mobilizing Bacteria (KMB) with a potency of Minimum 5 × 10⁷ CFU/ml. It helps mobilize fixed and unavailable potassium present in the soil and makes potassium more accessible to crops. Regular application supports efficient nutrient utilization, healthy and vigorous root development, plant vigour, and overall crop performance.`,
+    },
+    {
+      q: `What is the recommended application dosage?`,
+      a: `Soil Application: 500 ml – 1 Litre per acre | Drip / Fertigation: 500 ml – 1 Litre per acre | Seed Treatment: Use as recommended by agricultural experts. Apply through soil application, drip/fertigation, or seed treatment according to crop requirement and recommended agricultural practices.`,
+    },
+    {
+      q: `Which crops can DHANYA KMB be applied to?`,
+      a: `DHANYA KMB is suitable for Paddy, Wheat, Maize, Millets, Pulses, Oilseeds, Cotton, Sugarcane, Vegetables, Fruits, Plantation Crops, and Horticultural Crops.`,
+    },
+    {
+      q: `What is the compatibility, shelf life, and storage?`,
+      a: `Compatible with most biofertilizers and organic inputs. Avoid direct mixing with strong chemical disinfectants or products that may adversely affect beneficial microorganisms. Shelf life is 18 Months from date of Mfg. Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY.`,
+    },
+  ] : (product.slug.includes("pushkal") || product.slug.includes("flowering") || product.slug.includes("fruit-set")) ? [
+    {
+      q: `What is PUSHKAL and how does it support flowering and fruit set?`,
+      a: `PUSHKAL is a concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, 5% Fulvic Acid, 3% Potassium (K₂O), 0.5% Boron, 1% Zinc, and 5% Total Organic Carbon. It provides vital reproductive nutrition to stimulate flower bud initiation, enhance pollen viability, prevent flower and fruit abortion, and ensure uniform fruit set.`,
+    },
+    {
+      q: `What are the recommended dosages across crop growth stages?`,
+      a: `Foliar Spray: Vegetative Stage: 1.5–2 ml/Litre water | Pre-Flowering: 2–3 ml/Litre water | Flowering Stage: 2–3 ml/Litre water | Fruit Set / Early Fruit Development: 2–3 ml/Litre water | Drip / Fertigation: 500 ml–1 Litre per acre. Repeat application 10–15 days after first application where required.`,
+    },
+    {
+      q: `Which crops benefit most from PUSHKAL?`,
+      a: `Recommended for Fruit crops (Mango, Pomegranate, Grapes, Citrus, Guava, Papaya, Banana, Apple), Vegetables (Tomato, Chilli, Brinjal, Okra, Cucumber, Gourds, Beans), Field crops (Cotton, Pulses, Oilseeds, Maize, Paddy), and Commercial Flowers (Rose, Marigold, Jasmine, Chrysanthemum).`,
+    },
+    {
+      q: `What is the shelf life, compatibility, and storage?`,
+      a: `PUSHKAL has an extended shelf life of 3 years from date of Mfg. It can be incorporated into an integrated crop nutrition program. Before mixing with fertilizers, micronutrients, pesticides, fungicides or biologicals, conduct a small-scale jar compatibility test. Avoid mixing directly with strongly acidic or alkaline products. Store in a cool, dry place away from direct sunlight. FOR AGRICULTURE USE ONLY.`,
+    },
+  ] : product.slug.includes("annada") ? [
+    {
+      q: `What is ANNADA Fish Amino Acid and how does it benefit plants?`,
+      a: `ANNADA is a naturally derived Fish Amino Acid formulation prepared from fish-based raw materials through controlled processing. It contains naturally occurring amino acids, peptides and organic nutrients that support plant growth and development, promoting healthy vegetative growth, plant vigour, and overall crop performance.`,
+    },
+    {
+      q: `What is the recommended dosage for foliar spray and drip irrigation?`,
+      a: `Foliar Spray: 2–3 ml per litre of water. Drip / Fertigation: 500 ml – 1 litre per acre. Soil Application: 1–2 litres per acre diluted appropriately. Dose may be adjusted according to crop, formulation strength, and stage of crop growth.`,
+    },
+    {
+      q: `Which crops can ANNADA be applied to?`,
+      a: `ANNADA is suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, flowers, and horticultural crops.`,
+    },
+    {
+      q: `What is the compatibility and shelf life?`,
+      a: `ANNADA is generally compatible with organic inputs and many agricultural biostimulants. Conduct a compatibility test before mixing. Avoid mixing with highly alkaline or strongly reactive products. Shelf life is 3 years from date of Mfg. Store in a cool, dry place away from direct sunlight. FOR AGRICULTURE USE ONLY.`,
+    },
+  ] : product.slug.includes("harit") ? [
+    {
+      q: `What is HARIT and how does it protect crops from fungal pathogens?`,
+      a: `HARIT contains beneficial Trichoderma viride (Minimum 5 × 10⁸ CFU/ml), a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere, outcompetes harmful pathogens, and actively suppresses soil-borne fungal diseases including wilt, damping-off, root rot, collar rot, Rhizoctonia, Fusarium, and Pythium.`,
+    },
+    {
+      q: `What are the recommended dosages for soil, drip, and seed treatment?`,
+      a: `Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed | Nursery Application: 2–5 ml per litre of water | Root-Dip Treatment: 5–10 ml per litre of water (dip seedling roots before transplanting). Dose may be adjusted according to crop stage and disease pressure.`,
+    },
+    {
+      q: `Which crops can HARIT be safely applied to?`,
+      a: `HARIT is suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants, and horticultural crops. It supports root development, crop establishment, and plant vigour as part of an integrated crop-management program.`,
+    },
+    {
+      q: `What is the compatibility, shelf life, and storage?`,
+      a: `HARIT is compatible with many organic inputs and biological products. Avoid direct mixing with strong chemical fungicides, disinfectants, or bactericides that may harm Trichoderma viride viability. Shelf life is 18 Months from date of Mfg. Store in a cool, dry place away from direct sunlight. FOR AGRICULTURE USE ONLY.`,
+    },
+  ] : (product.slug.includes("neem") || product.slug.includes("azadirachtin")) ? [
+    {
+      q: `What is NEEM OIL 1000 PPM and how does it manage insect pests?`,
+      a: `NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized Azadirachtin (0.10% w/w minimum / 1000 ppm) sourced from Azadirachta indica. It exhibits botanical pest-management activity through antifeedant, repellent, oviposition deterrence, and insect-growth-regulating properties against susceptible insect pests.`,
+    },
+    {
+      q: `Which target insect pests does NEEM OIL 1000 PPM control?`,
+      a: `It effectively controls chewing and sucking insect pests including Aphids, Whiteflies, Thrips, Jassids, Mealybugs, Caterpillars, Leaf Miners, and Mites, while simultaneously helping in fungal suppression and overall plant health.`,
+    },
+    {
+      q: `What is the recommended application dosage and timing?`,
+      a: `Suggested dosage: 1–3 ml per litre of water. Spray during early morning or evening hours to avoid intense direct sunlight and extreme temperatures. Ensure uniform coverage of all leaf surfaces and foliage. Shake well before use.`,
+    },
+    {
+      q: `What precautions and storage guidelines should be followed?`,
+      a: `Keep in a cool, dry place away from heat and open flame. Do not use near open water sources. Keep out of reach of children. Conduct a small-area compatibility/phytotoxicity test where crop sensitivity is unknown. Shelf life is 2 Years from date of Mfg. FOR AGRICULTURE USE ONLY.`,
+    },
+  ] : [
     {
       q: `What is the shelf life and ideal storage for this ${product.name}?`,
       a: `Our ${product.name} has a recommended shelf life of 9 to 12 months from the date of cold-pressing/harvesting. Store in an airtight container in a cool, dry place away from direct sunlight. No chemical preservatives or anti-caking agents are added.`,
@@ -146,7 +288,7 @@ function ProductPage() {
     },
     {
       q: `Can I order institutional bulk quantities or dealership distribution?`,
-      a: `Yes, we supply 15kg/25kg bulk bags and 15L industrial tins for Ayurvedic pharmacies, organic kitchens, and supermarkets. Please visit our 'Become a Distributor' page or contact wholesale@jananiagro.com.`,
+      a: `Yes, we supply bulk containers and industrial quantities for farmers, FPOs, and distributors. Please visit our 'Become a Distributor' page or contact wholesale@jananiagro.com.`,
     },
   ];
 
@@ -422,6 +564,108 @@ function ProductPage() {
             <PdpDeliveryChecker productName={product.name} />
           </div>
         </div>
+
+        {/* Agricultural Specifications, Crops & Dosage Guide (Shown when specifications are present) */}
+        {product.specifications && (
+          <section className="mt-16 border-t border-border pt-12 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
+                  <FlaskConical className="size-4 text-brand-leaf" /> Certified Laboratory Analysis & Label Specifications
+                </span>
+                <h3 className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-1">
+                  Product Specifications & Crop Guidelines
+                </h3>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-700">
+                <CheckCircle2 className="size-3.5" /> Lab Batch Verified
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Product Specifications Table */}
+              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-border">
+                  <FileText className="size-4 text-primary" />
+                  <h4 className="font-display font-bold text-base text-foreground">
+                    Composition & Chemical Particulars
+                  </h4>
+                </div>
+                <div className="divide-y divide-border/60">
+                  {Object.entries(product.specifications).map(([key, val]) => (
+                    <div key={key} className="py-2.5 flex items-center justify-between text-xs sm:text-sm">
+                      <span className="font-medium text-muted-foreground">{key}</span>
+                      <span className="font-mono font-bold text-foreground">{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recommended Crops & Dosage */}
+              <div className="space-y-6">
+                {product.recommendedCrops && (
+                  <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-2.5">
+                    <div className="flex items-center gap-2 pb-2 border-b border-border">
+                      <Sprout className="size-4 text-brand-leaf" />
+                      <h4 className="font-display font-bold text-base text-foreground">
+                        Recommended Crops
+                      </h4>
+                    </div>
+                    <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                      {product.recommendedCrops}
+                    </p>
+                  </div>
+                )}
+
+                {product.dosage && (
+                  <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-2.5">
+                    <div className="flex items-center gap-2 pb-2 border-b border-border">
+                      <Droplets className="size-4 text-blue-500" />
+                      <h4 className="font-display font-bold text-base text-foreground">
+                        Recommended Dosage & Application
+                      </h4>
+                    </div>
+                    <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                      {product.dosage}
+                    </p>
+                    {product.methodOfApplication && (
+                      <p className="text-xs text-muted-foreground/90 pt-2 border-t border-border/60">
+                        <strong>Method:</strong> {product.methodOfApplication}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {product.targetDiseases && (
+                  <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-2.5">
+                    <div className="flex items-center gap-2 pb-2 border-b border-border">
+                      <ShieldCheck className="size-4 text-emerald-600" />
+                      <h4 className="font-display font-bold text-base text-foreground">
+                        Target Crop Diseases & Biological Protection
+                      </h4>
+                    </div>
+                    <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                      {product.targetDiseases}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Agriculture Caution & Storage Alert */}
+            {product.storageNotice && (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-900 flex items-start gap-3">
+                <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-bold text-amber-950 uppercase tracking-wider text-[11px] mb-0.5">
+                    Storage & Agricultural Usage Guidelines
+                  </strong>
+                  {product.storageNotice} {product.compatibility && <span className="block mt-1"><strong>Compatibility:</strong> {product.compatibility}</span>}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Product FAQs Accordion */}
         <section className="mt-20 border-t border-border pt-12 space-y-6">
