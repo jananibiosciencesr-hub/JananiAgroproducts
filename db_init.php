@@ -397,63 +397,79 @@ foreach ($schema as $tableName => $tableMeta) {
 // AUTO-SEEDING JANANI AGRO DATA (If Tables are Empty)
 // ---------------------------------------------------------
 
-// 1. Categories
-$catCount = $pdo->query("SELECT COUNT(*) FROM `categories`")->fetchColumn();
-if ($catCount == 0) {
-    $categories = [
-        ['cat-oils', 'Cold Pressed Oils', 'cold-pressed-oils', 1, null, null, '/images/categories/oils.webp', 4, 1, 1, 1, 1],
-        ['cat-rice', 'Organic Rice', 'organic-rice', 1, null, null, '/images/categories/rice.webp', 3, 1, 1, 0, 2],
-        ['cat-pulses', 'Pulses & Dals', 'pulses', 1, null, null, '/images/categories/pulses.webp', 3, 1, 1, 0, 3],
-        ['cat-spices', 'Raw Spices', 'spices', 1, null, null, '/images/categories/spices.webp', 4, 1, 1, 1, 4],
-        ['cat-wheat', 'Wheat & Grains', 'wheat', 1, null, null, '/images/categories/wheat.webp', 2, 1, 0, 0, 5],
-        ['cat-millets', 'Ancient Millets', 'millets', 1, null, null, '/images/categories/millets.webp', 2, 1, 0, 1, 6],
-        ['cat-seeds', 'Seeds & Superfoods', 'seeds', 1, null, null, '/images/categories/seeds.webp', 3, 1, 0, 0, 7],
-        ['cat-flours', 'Stoneground Flours', 'flours', 1, null, null, '/images/categories/flours.webp', 2, 1, 0, 0, 8],
-        ['cat-dryfruits', 'Dry Fruits & Sweeteners', 'dry-fruits', 1, null, null, '/images/categories/dryfruits.webp', 2, 1, 0, 0, 9],
-        ['cat-fertilizers', 'Organic Fertilizers', 'organic-fertilizers', 1, null, null, '/images/categories/fertilizers.webp', 1, 1, 0, 0, 10]
-    ];
-    $stmt = $pdo->prepare("INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    foreach ($categories as $cat) {
-        $stmt->execute($cat);
-    }
-    $response['seeds_inserted'][] = 'categories (10)';
-}
+// 1. Categories - Janani Agro Certified Biologicals
+$legacyCatSlugs = ['cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee'];
+$inCat = "'" . implode("','", $legacyCatSlugs) . "'";
+try {
+    $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ({$inCat}) OR `id` LIKE 'cat-sub-%'");
+} catch (Exception $e) {}
 
-// 2. Products (24 Organic SKUs)
-$prodCount = $pdo->query("SELECT COUNT(*) FROM `products`")->fetchColumn();
-if ($prodCount == 0) {
-    $products = [
-        ['wood-pressed-groundnut-oil', 'Wood Pressed Groundnut Oil', 'Cold Pressed Oils', 399.00, 480.00, '1 L', 85, 4.9, 86, 'Bestseller', '/images/products/wood-pressed-groundnut-oil.webp', 'Slow wood-pressed from Saurashtra native groundnuts. 100% natural, chemical-free.', 'JAP-SKU-001'],
-        ['cold-pressed-mustard-oil', 'Cold Pressed Mustard Oil', 'Cold Pressed Oils', 329.00, 395.00, '1 L', 60, 4.8, 54, 'Pure Kachi Ghani', '/images/products/cold-pressed-mustard-oil.webp', 'Traditional Kachi Ghani extracted from whole yellow and brown mustard seeds.', 'JAP-SKU-002'],
-        ['virgin-coconut-oil', 'Cold Pressed Virgin Coconut Oil', 'Cold Pressed Oils', 449.00, 540.00, '500 ml', 45, 4.9, 42, 'Pure Aroma', '/images/products/virgin-coconut-oil.webp', 'Cold extracted from freshly grated coconut milk. Raw, unrefined, and aromatic.', 'JAP-SKU-003'],
-        ['organic-basmati-rice', 'Royal Aged Organic Basmati Rice', 'Organic Rice', 249.00, 299.00, '1 kg', 120, 4.9, 112, 'Heritage Reserve', '/images/products/organic-basmati-rice.webp', 'Aged 2 years for elongated grain fluffiness and authentic aroma.', 'JAP-SKU-004'],
-        ['brown-rice', 'Traditional Brown Basmati Rice', 'Organic Rice', 219.00, 260.00, '1 kg', 75, 4.7, 38, null, '/images/products/brown-rice.webp', 'Unpolished nutrient-rich brown rice rich in dietary fibre.', 'JAP-SKU-005'],
-        ['unpolished-toor-dal', 'Unpolished Organic Toor Dal', 'Pulses & Dals', 199.00, 240.00, '1 kg', 90, 4.8, 64, 'High Protein', '/images/products/unpolished-toor-dal.webp', 'Zero water polish, enzyme-rich farm fresh toor dal that cooks easily.', 'JAP-SKU-006'],
-        ['organic-green-gram', 'Organic Whole Moong (Green Gram)', 'Pulses & Dals', 179.00, 215.00, '500 g', 65, 4.8, 41, null, '/images/products/organic-green-gram.webp', 'High-sprouting native whole green moong for nutritious daily meals.', 'JAP-SKU-007'],
-        ['split-bengal-gram', 'Organic Chana Dal (Bengal Gram)', 'Pulses & Dals', 149.00, 180.00, '500 g', 70, 4.7, 29, null, '/images/products/split-bengal-gram.webp', 'Stone-milled pesticide-free split Bengal gram dal.', 'JAP-SKU-008'],
-        ['lakadong-turmeric-powder', 'Lakadong High-Curcumin Turmeric Powder', 'Raw Spices', 189.00, 230.00, '200 g', 80, 5.0, 95, '7.8% Curcumin', '/images/products/lakadong-turmeric-powder.webp', 'Organically harvested Meghalaya Lakadong turmeric with superior medicinal potency.', 'JAP-SKU-009'],
-        ['kashmiri-red-chilli-powder', 'Kashmiri Mild Red Chilli Powder', 'Raw Spices', 169.00, 205.00, '200 g', 60, 4.8, 48, 'Vibrant Colour', '/images/products/kashmiri-red-chilli-powder.webp', 'Stemless sun-dried Kashmiri chillies delivering vivid crimson shade and mild heat.', 'JAP-SKU-010'],
-        ['whole-coriander-powder', 'Stone Ground Coriander Powder', 'Raw Spices', 139.00, 170.00, '200 g', 55, 4.7, 33, null, '/images/products/whole-coriander-powder.webp', 'Freshly powdered whole aromatic Dhana seeds.', 'JAP-SKU-011'],
-        ['cumin-seeds', 'Whole Native Cumin Seeds (Jeera)', 'Raw Spices', 219.00, 265.00, '200 g', 70, 4.9, 52, 'Rich Essential Oils', '/images/products/cumin-seeds.webp', 'Sun-cured Gujarat cumin seeds packed with aroma.', 'JAP-SKU-012'],
-        ['khapli-wheat', 'Ancient Emmer (Khapli) Wheat', 'Wheat & Grains', 189.00, 230.00, '1 kg', 50, 4.9, 61, 'Diabetic Friendly', '/images/products/khapli-wheat.webp', 'Low GI indigenous grain celebrated for sustained energy.', 'JAP-SKU-013'],
-        ['premium-wheat-flour', 'Chakki Fresh Sharbati Atta', 'Wheat & Grains', 119.00, 145.00, '1 kg', 150, 4.8, 88, null, '/images/products/premium-wheat-flour.webp', '100% whole grain wheat flour ground at low temperature.', 'JAP-SKU-014'],
-        ['foxtail-millet', 'Organic Foxtail Millet (Kangni)', 'Ancient Millets', 149.00, 180.00, '500 g', 65, 4.8, 44, 'Superfood', '/images/products/foxtail-millet.webp', 'Gluten-free traditional grain rich in iron and phosphorus.', 'JAP-SKU-015'],
-        ['pearl-millet', 'Native Desi Bajra (Pearl Millet)', 'Ancient Millets', 109.00, 135.00, '500 g', 80, 4.7, 31, null, '/images/products/pearl-millet.webp', 'Wholesome winter millet grown in dry Saurashtra soils.', 'JAP-SKU-016'],
-        ['organic-sesame-seeds', 'Natural White Sesame Seeds (Til)', 'Seeds & Superfoods', 159.00, 195.00, '250 g', 55, 4.8, 36, 'Calcium Rich', '/images/products/organic-sesame-seeds.webp', 'Sun-dried whole unhulled white sesame seeds.', 'JAP-SKU-017'],
-        ['flax-seeds', 'Roasted Golden Flax Seeds (Alsi)', 'Seeds & Superfoods', 169.00, 205.00, '250 g', 70, 4.9, 47, 'Omega-3', '/images/products/flax-seeds.webp', 'Nutrient-dense superfood for cardiovascular wellness.', 'JAP-SKU-018'],
-        ['stoneground-besan', 'Fine Stoneground Gram Flour (Besan)', 'Stoneground Flours', 139.00, 170.00, '500 g', 85, 4.8, 59, null, '/images/products/stoneground-besan.webp', 'Silky smooth aromatic chana dal flour for pakoras and laddoos.', 'JAP-SKU-019'],
-        ['natural-jaggery-powder', 'Unrefined Desi Jaggery Powder (Gud)', 'Dry Fruits & Sweeteners', 129.00, 160.00, '500 g', 95, 4.9, 73, 'Chemical Free', '/images/products/natural-jaggery-powder.webp', 'Naturally crystallised sugarcane juice without chemical bleaching.', 'JAP-SKU-020'],
-        ['almonds-premium', 'Giri Mamra Almonds', 'Dry Fruits & Sweeteners', 599.00, 720.00, '500 g', 40, 5.0, 51, 'High Oil Content', '/images/products/almonds-premium.webp', 'Hand-selected unpasteurized Mamra almonds from verified orchards.', 'JAP-SKU-021'],
-        ['vermicompost-plus', 'Bio-Enriched Vermicompost Fertilizer', 'Organic Fertilizers', 299.00, 360.00, '5 kg', 100, 4.9, 67, '100% Organic', '/images/products/vermicompost-plus.webp', 'Earthworm enriched organic manure for lush terrace and farm crops.', 'JAP-SKU-022'],
-        ['native-vegetable-seeds', 'Indigenous Heritage Kitchen Garden Seed Kit', 'Seeds & Superfoods', 199.00, 250.00, '12 packs', 60, 4.9, 43, 'Non-Hybrid', '/images/products/native-vegetable-seeds.webp', '12 non-GMO heirloom open-pollinated vegetable varieties.', 'JAP-SKU-023'],
-        ['black-pepper-whole', 'Malabar Bold Black Peppercorns', 'Raw Spices', 299.00, 365.00, '150 g', 50, 4.9, 39, 'Grade TGSEB', '/images/products/black-pepper-whole.webp', 'Large-berried Tellicherry black pepper with punchy heat.', 'JAP-SKU-024']
-    ];
-    $stmt = $pdo->prepare("INSERT IGNORE INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    foreach ($products as $prod) {
-        $stmt->execute($prod);
-    }
-    $response['seeds_inserted'][] = 'products (24)';
+$categories = [
+    ['cat-crop-protection', 'Biological Crop Protection', 'biological-crop-protection', 1, null, null, '/products/balavan.jpg', 4, 1, 1, 1, 1, 'Beneficial Trichoderma viride, Bacillus subtilis, Pseudomonas fluorescens, and cold-pressed Azadirachtin botanical formulations for disease management, pest control, root protection, and pathogen suppression.'],
+    ['cat-plant-nutrients', 'Organic Plant Nutrients', 'organic-plant-nutrients', 1, null, null, '/products/annada.jpg', 2, 1, 1, 1, 2, 'Cold-hydrolysed marine fish amino acids and seaweed-based organic biostimulants rich in organic nitrogen, polypeptides, and trace minerals for robust vegetative growth, flowering, and fruit development.'],
+    ['cat-soil-conditioners', 'Soil Conditioners & Biostimulants', 'soil-conditioners-biostimulants', 1, null, null, '/products/bhumi-shakti.jpg', 2, 1, 1, 1, 3, 'Potassium humate, concentrated fulvic extracts, and beneficial potassium-mobilizing bacteria (KMB) to improve soil aggregation, CEC, microbial flora, and nutrient bio-availability.']
+];
+
+$stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON DUPLICATE KEY UPDATE 
+    `name` = VALUES(`name`), 
+    `image` = VALUES(`image`), 
+    `product_count` = VALUES(`product_count`), 
+    `active` = 1, 
+    `description` = VALUES(`description`)");
+
+foreach ($categories as $cat) {
+    $stmtCat->execute($cat);
 }
+$response['seeds_inserted'][] = 'categories (3)';
+
+// 2. Products - Janani Agro Flagship Formulations (8 Genuine Products)
+$validProductSlugs = [
+    'balavan-bacillus-subtilis-5l',
+    'suraksha-pseudomonas-fluorescens-5l',
+    'harit-trichoderma-viride-liquid-biofungal-formulation-1l',
+    'neem-oil-1000-ppm-azadirachtin-1l',
+    'annada-fish-amino-acid-5l',
+    'pushkal-flowering-fruit-set-biostimulant-1l',
+    'bhumi-shakti-humic-fulvic-biostimulant-5l',
+    'dharani-kmb-potassium-mobilizing-biofertilizer-5l'
+];
+$inProds = "'" . implode("','", $validProductSlugs) . "'";
+try {
+    // Remove all old legacy demo grocery products
+    $pdo->exec("DELETE FROM `products` WHERE `slug` NOT IN ({$inProds})");
+} catch (Exception $e) {}
+
+$products = [
+    ['balavan-bacillus-subtilis-5l', 'BALAVAN - Bacillus Subtilis (5L)', 'Biological Crop Protection', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Flagship Bio-Shield', '/products/balavan.jpg', 'Beneficial Bacillus subtilis liquid biological formulation for blight control, fungal disease suppression, and systemic acquired resistance across all commercial crops.', 'JAP-SKU-BALAVAN'],
+    ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA - Pseudomonas Fluorescens (5L)', 'Biological Crop Protection', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'High-potency Pseudomonas fluorescens liquid bio-fungal formulation for soil-borne pathogen control, root wilt prevention, and rhizosphere colonization.', 'JAP-SKU-SURAKSHA'],
+    ['harit-trichoderma-viride-liquid-biofungal-formulation-1l', 'HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)', 'Biological Crop Protection', 950.00, 1100.00, '1 L', 120, 5.0, 39, 'Bio-Fungal Shield', '/products/harit.jpg', 'Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off, root rot, collar rot, and rhizosphere diseases.', 'JAP-SKU-HARIT'],
+    ['neem-oil-1000-ppm-azadirachtin-1l', 'NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)', 'Biological Crop Protection', 599.00, 699.00, '1 L', 140, 4.9, 44, 'Botanical IPM', '/products/neem-oil.jpg', 'Cold-pressed neem-oil-based botanical formulation containing standardized Azadirachtin 1000 PPM for organic management of aphids, whiteflies, thrips, caterpillars, and mites.', 'JAP-SKU-NEEM1000'],
+    ['annada-fish-amino-acid-5l', 'ANNADA - Fish Amino Acid (5L)', 'Organic Plant Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'Naturally derived cold-hydrolysed Fish Amino Acid formulation rich in natural L-amino acids and peptides for vigorous vegetative growth, chlorophyll synthesis, and stress tolerance.', 'JAP-SKU-ANNADA'],
+    ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL - Flowering & Fruit Set Biostimulant (1L)', 'Organic Plant Nutrients', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering & Fruit Set', '/products/pushkal.jpg', 'Concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, Fulvic Acid, Boron, and Zinc to support flower initiation, prevent flower drop, and boost fruit set.', 'JAP-SKU-PUSHKAL'],
+    ['bhumi-shakti-humic-fulvic-biostimulant-5l', 'BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)', 'Soil Conditioners & Biostimulants', 3900.00, 4400.00, '5 L', 120, 4.9, 58, 'Soil Rejuvenator', '/products/bhumi-shakti.jpg', 'High-purity potassium humate and fulvic acid complex for improving soil structure, cation exchange capacity, microbial life, and root nutrient absorption.', 'JAP-SKU-BHUMISHAKTI'],
+    ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)', 'Soil Conditioners & Biostimulants', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'Liquid biofertilizer containing beneficial Potassium Mobilizing Bacteria (Frateuria aurantia) to solubilize and unlock fixed soil potassium into plant-available form.', 'JAP-SKU-DHARANI']
+];
+
+$stmtProd = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active')
+ON DUPLICATE KEY UPDATE 
+    `name` = VALUES(`name`), 
+    `category_name` = VALUES(`category_name`), 
+    `price` = VALUES(`price`), 
+    `old_price` = VALUES(`old_price`), 
+    `unit` = VALUES(`unit`), 
+    `image` = VALUES(`image`), 
+    `description` = VALUES(`description`), 
+    `badge` = VALUES(`badge`), 
+    `active` = 1, 
+    `status` = 'Active'");
+
+foreach ($products as $prod) {
+    $stmtProd->execute($prod);
+}
+$response['seeds_inserted'][] = 'products (8)';
 
 // 3. Coupons
 $coupCount = $pdo->query("SELECT COUNT(*) FROM `coupons`")->fetchColumn();

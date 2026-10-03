@@ -541,9 +541,56 @@ try {
                 ]);
                 exit;
             }
-            break;
+function ensureJananiCatalogSynced($pdo) {
+    static $synced = false;
+    if ($synced) return;
+    $synced = true;
+    try {
+        $checkOld = $pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices')")->fetchColumn();
+        $checkNew = $pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` = 'biological-crop-protection'")->fetchColumn();
+        if ($checkOld > 0 || $checkNew == 0) {
+            // Auto-clean legacy demo grocery categories
+            $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
+            
+            $categories = [
+                ['cat-crop-protection', 'Biological Crop Protection', 'biological-crop-protection', 1, null, null, '/products/balavan.jpg', 4, 1, 1, 1, 1, 'Beneficial Trichoderma viride, Bacillus subtilis, Pseudomonas fluorescens, and cold-pressed Azadirachtin botanical formulations for disease management, pest control, root protection, and pathogen suppression.'],
+                ['cat-plant-nutrients', 'Organic Plant Nutrients', 'organic-plant-nutrients', 1, null, null, '/products/annada.jpg', 2, 1, 1, 1, 2, 'Cold-hydrolysed marine fish amino acids and seaweed-based organic biostimulants rich in organic nitrogen, polypeptides, and trace minerals for robust vegetative growth, flowering, and fruit development.'],
+                ['cat-soil-conditioners', 'Soil Conditioners & Biostimulants', 'soil-conditioners-biostimulants', 1, null, null, '/products/bhumi-shakti.jpg', 2, 1, 1, 1, 3, 'Potassium humate, concentrated fulvic extracts, and beneficial potassium-mobilizing bacteria (KMB) to improve soil aggregation, CEC, microbial flora, and nutrient bio-availability.']
+            ];
+            $stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `image`=VALUES(`image`), `product_count`=VALUES(`product_count`), `active`=1, `description`=VALUES(`description`)");
+            foreach ($categories as $cat) { $stmtCat->execute($cat); }
+
+            $validProductSlugs = [
+                'balavan-bacillus-subtilis-5l',
+                'suraksha-pseudomonas-fluorescens-5l',
+                'harit-trichoderma-viride-liquid-biofungal-formulation-1l',
+                'neem-oil-1000-ppm-azadirachtin-1l',
+                'annada-fish-amino-acid-5l',
+                'pushkal-flowering-fruit-set-biostimulant-1l',
+                'bhumi-shakti-humic-fulvic-biostimulant-5l',
+                'dharani-kmb-potassium-mobilizing-biofertilizer-5l'
+            ];
+            $inProds = "'" . implode("','", $validProductSlugs) . "'";
+            $pdo->exec("DELETE FROM `products` WHERE `slug` NOT IN ({$inProds})");
+
+            $products = [
+                ['balavan-bacillus-subtilis-5l', 'BALAVAN - Bacillus Subtilis (5L)', 'Biological Crop Protection', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Flagship Bio-Shield', '/products/balavan.jpg', 'Beneficial Bacillus subtilis liquid biological formulation for blight control, fungal disease suppression, and systemic acquired resistance across all commercial crops.', 'JAP-SKU-BALAVAN'],
+                ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA - Pseudomonas Fluorescens (5L)', 'Biological Crop Protection', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'High-potency Pseudomonas fluorescens liquid bio-fungal formulation for soil-borne pathogen control, root wilt prevention, and rhizosphere colonization.', 'JAP-SKU-SURAKSHA'],
+                ['harit-trichoderma-viride-liquid-biofungal-formulation-1l', 'HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)', 'Biological Crop Protection', 950.00, 1100.00, '1 L', 120, 5.0, 39, 'Bio-Fungal Shield', '/products/harit.jpg', 'Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off, root rot, collar rot, and rhizosphere diseases.', 'JAP-SKU-HARIT'],
+                ['neem-oil-1000-ppm-azadirachtin-1l', 'NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)', 'Biological Crop Protection', 599.00, 699.00, '1 L', 140, 4.9, 44, 'Botanical IPM', '/products/neem-oil.jpg', 'Cold-pressed neem-oil-based botanical formulation containing standardized Azadirachtin 1000 PPM for organic management of aphids, whiteflies, thrips, caterpillars, and mites.', 'JAP-SKU-NEEM1000'],
+                ['annada-fish-amino-acid-5l', 'ANNADA - Fish Amino Acid (5L)', 'Organic Plant Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'Naturally derived cold-hydrolysed Fish Amino Acid formulation rich in natural L-amino acids and peptides for vigorous vegetative growth, chlorophyll synthesis, and stress tolerance.', 'JAP-SKU-ANNADA'],
+                ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL - Flowering & Fruit Set Biostimulant (1L)', 'Organic Plant Nutrients', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering & Fruit Set', '/products/pushkal.jpg', 'Concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, Fulvic Acid, Boron, and Zinc to support flower initiation, prevent flower drop, and boost fruit set.', 'JAP-SKU-PUSHKAL'],
+                ['bhumi-shakti-humic-fulvic-biostimulant-5l', 'BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)', 'Soil Conditioners & Biostimulants', 3900.00, 4400.00, '5 L', 120, 4.9, 58, 'Soil Rejuvenator', '/products/bhumi-shakti.jpg', 'High-purity potassium humate and fulvic acid complex for improving soil structure, cation exchange capacity, microbial life, and root nutrient absorption.', 'JAP-SKU-BHUMISHAKTI'],
+                ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)', 'Soil Conditioners & Biostimulants', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'Liquid biofertilizer containing beneficial Potassium Mobilizing Bacteria (Frateuria aurantia) to solubilize and unlock fixed soil potassium into plant-available form.', 'JAP-SKU-DHARANI']
+            ];
+            $stmtProd = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active') ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `category_name`=VALUES(`category_name`), `price`=VALUES(`price`), `old_price`=VALUES(`old_price`), `unit`=VALUES(`unit`), `image`=VALUES(`image`), `description`=VALUES(`description`), `badge`=VALUES(`badge`), `active`=1, `status`='Active'");
+            foreach ($products as $prod) { $stmtProd->execute($prod); }
+        }
+    } catch (Exception $e) {}
+}
 
         case 'products':
+            ensureJananiCatalogSynced($pdo);
             if ($method === 'GET') {
                 $category = $_GET['category'] ?? null;
                 $search = $_GET['search'] ?? null;
@@ -1019,6 +1066,7 @@ try {
             break;
 
         case 'categories':
+            ensureJananiCatalogSynced($pdo);
             if ($method === 'GET') {
                 $status = strtolower(trim($_GET['status'] ?? ''));
                 $level = $_GET['level'] ?? null;
