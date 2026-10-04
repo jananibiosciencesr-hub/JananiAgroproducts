@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { X, Gift, Copy, Check, Share2, Sparkles, MessageCircle, Heart } from "lucide-react";
+import { X, Gift, Copy, Check, Share2, Sparkles, Heart } from "lucide-react";
+import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -96,7 +97,7 @@ export function ReferEarnModal({
             onClick={handleWhatsAppShare}
             className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs h-11 rounded-2xl shadow-sm gap-2"
           >
-            <MessageCircle className="size-4" /> Share on WhatsApp
+            <WhatsAppIcon className="size-4" /> Share on WhatsApp
           </Button>
 
           <Button

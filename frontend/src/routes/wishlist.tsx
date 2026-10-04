@@ -225,9 +225,9 @@ export function WishlistPage() {
         </div>
       )}
 
-      {/* Wishlist Items Grid */}
+      {/* Wishlist Items Grid: 2 columns on mobile, 3/4 on desktop */}
       {savedProducts.length > 0 ? (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-6 sm:mt-8 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-6">
           {savedProducts.map((product) => {
             const hasPriceDrop = product.id % 2 === 0; // Simulate price drop on item 6, 10, etc.
             const isAlertActive = priceAlertActive[product.id];
@@ -236,28 +236,34 @@ export function WishlistPage() {
             return (
               <div
                 key={product.id}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft transition hover:-translate-y-1 hover:shadow-luxe"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-none border border-gray-200 bg-white shadow-xs hover:shadow-md transition duration-300"
               >
                 <div>
                   {/* Image Container */}
-                  <div className="relative aspect-square overflow-hidden bg-secondary">
-                    <img
-                      src={getProductImage(product.name || product.category, product.image)}
-                      alt={product.name}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = pantryImage;
-                      }}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                    />
+                  <div className="relative aspect-square overflow-hidden bg-white p-2.5 flex items-center justify-center rounded-none">
+                    <Link
+                      to="/products/$slug"
+                      params={{ slug: product.slug }}
+                      className="w-full h-full flex items-center justify-center"
+                    >
+                      <img
+                        src={getProductImage(product.name || product.category, product.image)}
+                        alt={product.name}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = pantryImage;
+                        }}
+                        className="max-h-full max-w-full object-contain transition duration-500 group-hover:scale-105"
+                      />
+                    </Link>
 
-                    {/* Top Badges */}
-                    <div className="absolute left-3 top-3 flex flex-col gap-1 items-start">
-                      <span className="rounded-full bg-cream/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary shadow-xs">
-                        {product.badge ?? "100% Organic"}
+                    {/* Top Badges - Sharp corners */}
+                    <div className="absolute left-2 top-2 z-10 flex flex-col gap-1 items-start">
+                      <span className="rounded-none bg-[#E53E3E] text-white px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
+                        SAVE {product.discount}%
                       </span>
                       {hasPriceDrop && (
-                        <span className="rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-[10px] font-bold shadow-xs flex items-center gap-1">
-                          <TrendingDown className="size-3" /> Price Dropped ₹{Math.round(product.price * 0.1)}
+                        <span className="rounded-none bg-[#075B32] text-white px-2 py-0.5 text-[9px] font-bold shadow-xs flex items-center gap-1">
+                          <TrendingDown className="size-2.5" /> Price Drop
                         </span>
                       )}
                     </div>
@@ -268,17 +274,25 @@ export function WishlistPage() {
                         toggleWishlist(product.id);
                         toast.info(`Removed ${product.name} from wishlist`);
                       }}
-                      className="absolute right-3 top-3 size-8 rounded-full bg-background/80 text-muted-foreground backdrop-blur-md flex items-center justify-center hover:bg-destructive hover:text-white transition shadow-sm"
+                      className="absolute right-2 top-2 z-10 size-7 sm:size-8 rounded-full bg-white/95 text-gray-700 backdrop-blur-md flex items-center justify-center hover:bg-red-500 hover:text-white transition shadow-xs"
                       title="Remove from wishlist"
                       aria-label="Remove item"
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-3.5 sm:size-4" />
                     </button>
+
+                    {/* Bottom-Center Pill - 🔥 BESTSELLER */}
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap pointer-events-none">
+                      <span className="inline-flex items-center gap-1 bg-[#064A29]/95 text-white text-[8px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-xs uppercase tracking-wider backdrop-blur-xs">
+                        <span>🔥</span>
+                        <span>{product.badge || "BESTSELLER"}</span>
+                      </span>
+                    </div>
 
                     {/* Out of Stock Overlay */}
                     {!product.inStock && (
-                      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-4 text-center">
-                        <span className="rounded-full bg-background/90 px-3 py-1 text-xs font-bold text-destructive">
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 text-center z-20">
+                        <span className="rounded-none bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase tracking-wider">
                           Out of Stock
                         </span>
                       </div>
@@ -286,93 +300,86 @@ export function WishlistPage() {
                   </div>
 
                   {/* Card Content */}
-                  <div className="p-5 space-y-2">
+                  <div className="p-2.5 sm:p-3 space-y-1 border-t border-gray-100">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-brand-leaf truncate">
+                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#0B6B35] truncate">
                         {product.category}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {product.brand.split(" ")[1]}
+                      <span className="text-[9px] text-gray-400 hidden xs:inline">
+                        {product.unit}
                       </span>
                     </div>
 
                     <Link
                       to="/products/$slug"
                       params={{ slug: product.slug }}
-                      className="block font-display font-bold text-lg text-foreground hover:text-primary transition line-clamp-1"
+                      className="block font-bold text-xs sm:text-sm text-[#075B32] hover:text-[#064A29] transition line-clamp-1 leading-snug"
                     >
                       {product.name}
                     </Link>
 
-                    {/* Pricing */}
-                    <div className="flex items-baseline gap-2 pt-1">
-                      <strong className="text-xl font-bold font-mono text-foreground">
-                        ₹{product.price}
+                    {/* Pricing: Rs. XXX  Rs. YYY */}
+                    <div className="flex items-baseline gap-1.5 pt-0.5 flex-wrap">
+                      <strong className="text-xs sm:text-base font-bold font-mono text-gray-900">
+                        Rs. {product.price}
                       </strong>
-                      <span className="text-xs text-muted-foreground line-through font-mono">
-                        ₹{product.oldPrice}
-                      </span>
-                      <span className="text-xs font-semibold text-emerald-600">
-                        {product.discount}% OFF
+                      <span className="text-[10px] sm:text-xs text-gray-400 line-through font-mono">
+                        Rs. {product.oldPrice}
                       </span>
                     </div>
-                    <span className="block text-[11px] text-muted-foreground">
-                      Pack Size: {product.unit}
-                    </span>
 
                     {/* Alerts Toolbar */}
-                    <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
+                    <div className="pt-1.5 border-t border-gray-100 flex items-center justify-between text-xs">
                       {/* Price Drop Alert Trigger */}
                       <button
                         onClick={() => handleTogglePriceAlert(product.id, product.name)}
-                        className={`inline-flex items-center gap-1 text-[11px] font-medium transition ${
+                        className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium transition ${
                           isAlertActive
-                            ? "text-brand-leaf font-bold"
-                            : "text-muted-foreground hover:text-foreground"
+                            ? "text-[#075B32] font-bold"
+                            : "text-gray-400 hover:text-gray-700"
                         }`}
                         title="Get notified when price drops"
                       >
                         {isAlertActive ? (
-                          <BellRing className="size-3 text-brand-leaf animate-pulse" />
+                          <BellRing className="size-2.5 text-[#075B32] animate-pulse" />
                         ) : (
-                          <Bell className="size-3" />
+                          <Bell className="size-2.5" />
                         )}
-                        {isAlertActive ? "Price Alert On" : "Track Price"}
+                        <span className="truncate">{isAlertActive ? "Alert On" : "Track"}</span>
                       </button>
 
                       {/* Stock Status Badge */}
                       {product.inStock ? (
-                        <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                        <span className="text-[9px] font-bold text-emerald-600 flex items-center gap-1">
                           <span className="size-1.5 rounded-full bg-emerald-500" /> In Stock
                         </span>
                       ) : (
-                        <span className="text-[11px] font-bold text-destructive">
-                          Batch Awaiting
+                        <span className="text-[9px] font-bold text-red-600">
+                          Awaiting
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Card Bottom CTA Actions */}
-                <div className="p-5 pt-0">
+                {/* Card Bottom CTA Actions - Full width rounded-none */}
+                <div className="p-2.5 sm:p-3 pt-0">
                   {product.inStock ? (
-                    <Button
+                    <button
                       onClick={() => moveToCart(product.id, 1)}
-                      className="w-full h-11 rounded-2xl text-xs font-bold gap-2 shadow-xs hover:shadow-md transition"
+                      className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
                     >
-                      <ShoppingBag className="size-4" /> Move to Basket
-                    </Button>
+                      <ShoppingBag className="size-3.5 sm:size-4" /> Move to Cart
+                    </button>
                   ) : (
-                    <Button
-                      variant="outline"
+                    <button
                       onClick={() => handleStockNotification(product.id, product.name)}
                       disabled={isNotified}
-                      className="w-full h-11 rounded-2xl text-xs font-bold gap-2 border-dashed"
+                      className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5"
                     >
-                      <Bell className="size-4 text-brand-gold" />
-                      {isNotified ? "Alert Subscribed ✓" : "Notify When In Stock"}
-                    </Button>
+                      <Bell className="size-3.5 sm:size-4 text-[#E7A91A]" />
+                      <span>{isNotified ? "Subscribed ✓" : "Notify Me"}</span>
+                    </button>
                   )}
                 </div>
               </div>
@@ -418,7 +425,7 @@ export function WishlistPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
           {recommendedStaples.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}

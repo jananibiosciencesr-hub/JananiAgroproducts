@@ -61,12 +61,12 @@ export function ShopByDisease() {
   };
 
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-      <div className="mx-auto max-w-7xl rounded-3xl bg-[#f0f9f4] border border-emerald-100/80 p-6 sm:p-8 lg:p-10 shadow-sm relative">
+    <section className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-white">
+      <div className="mx-auto max-w-7xl rounded-3xl bg-white border border-[#0B6B35]/20 p-6 sm:p-8 lg:p-10 shadow-xs relative">
         {/* Header row: Title, Subtitle, and View All link */}
         <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h2 className="text-xl sm:text-2xl md:text-[1.65rem] font-black text-slate-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl md:text-[1.65rem] font-black text-[#075B32] tracking-tight">
               Shop By Disease & Pest
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-0.5 font-medium">
@@ -81,7 +81,7 @@ export function ShopByDisease() {
                 type="button"
                 onClick={() => scroll("left")}
                 aria-label="Scroll left"
-                className="size-8 rounded-full border border-emerald-200/80 bg-white text-emerald-800 shadow-sm flex items-center justify-center transition hover:bg-emerald-50 hover:scale-105 active:scale-95"
+                className="size-8 rounded-full border border-[#0B6B35]/25 bg-white text-[#075B32] shadow-xs flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] hover:scale-105 active:scale-95"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -89,7 +89,7 @@ export function ShopByDisease() {
                 type="button"
                 onClick={() => scroll("right")}
                 aria-label="Scroll right"
-                className="size-8 rounded-full border border-emerald-200/80 bg-white text-emerald-800 shadow-sm flex items-center justify-center transition hover:bg-emerald-50 hover:scale-105 active:scale-95"
+                className="size-8 rounded-full border border-[#0B6B35]/25 bg-white text-[#075B32] shadow-xs flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] hover:scale-105 active:scale-95"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -97,7 +97,7 @@ export function ShopByDisease() {
 
             <Link
               to="/products"
-              className="text-emerald-700 hover:text-emerald-800 font-bold text-sm sm:text-base flex items-center gap-1 transition-colors group"
+              className="text-[#075B32] hover:text-[#4FAE2A] font-bold text-sm sm:text-base flex items-center gap-1 transition-colors group"
             >
               <span>View All</span>
               <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
@@ -120,17 +120,17 @@ export function ShopByDisease() {
             >
               {/* Circular Avatar / Card */}
               <div
-                className={`size-24 sm:size-28 md:size-32 rounded-full bg-white shadow-sm flex items-center justify-center p-1 sm:p-1.5 transition-all duration-300 group-hover:scale-105 group-hover:shadow-md relative overflow-hidden ${
+                className={`size-24 sm:size-28 md:size-32 rounded-full bg-white shadow-xs flex items-center justify-center p-1 sm:p-1.5 transition-all duration-300 group-hover:scale-105 group-hover:shadow-md relative overflow-hidden ${
                   disease.isPopular
-                    ? "ring-2 ring-emerald-500 shadow-emerald-100"
-                    : "ring-1 ring-emerald-100 group-hover:ring-2 group-hover:ring-emerald-400"
+                    ? "ring-2 ring-[#075B32] shadow-emerald-50"
+                    : "ring-1 ring-[#0B6B35]/20 group-hover:ring-2 group-hover:ring-[#D99A12]"
                 }`}
               >
                 <img
                   src={disease.image}
                   alt={disease.name}
                   loading="lazy"
-                  className="h-full w-full object-contain rounded-full transition-transform duration-500 group-hover:scale-110 drop-shadow-sm"
+                  className="h-full w-full object-contain rounded-full transition-transform duration-500 group-hover:scale-110 drop-shadow-xs"
                 />
               </div>
 
@@ -138,8 +138,8 @@ export function ShopByDisease() {
               <span
                 className={`text-xs sm:text-sm font-medium mt-2.5 sm:mt-3 text-center transition-colors line-clamp-1 ${
                   disease.isPopular
-                    ? "text-emerald-600 font-semibold"
-                    : "text-slate-700 group-hover:text-emerald-600"
+                    ? "text-[#075B32] font-semibold"
+                    : "text-slate-700 group-hover:text-[#4FAE2A]"
                 }`}
               >
                 {disease.name}

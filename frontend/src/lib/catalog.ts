@@ -11,55 +11,40 @@ export function getCategoryImage(nameOrSlug: string = "", customImage?: string):
     return customImage;
   }
   const s = (nameOrSlug || "").toLowerCase();
-  if (s.includes("harit") || s.includes("trichoderma") || s.includes("viride")) {
-    return "/products/harit.jpg";
-  }
-  if (s.includes("neem") || s.includes("azadirachtin") || s.includes("neem-oil")) {
-    return "/products/neem-oil.jpg";
-  }
-  if (s.includes("suraksha") || s.includes("pseudomonas") || s.includes("biofungal")) {
-    return "/products/suraksha.jpg";
-  }
-  if (s.includes("bhumi") || s.includes("shakti") || s.includes("humic") || s.includes("fulvic") || s.includes("soil-conditioner") || s.includes("biostimulant") || s.includes("soil")) {
-    return "/products/bhumi-shakti.jpg";
-  }
-  if (s.includes("balavan") || s.includes("bacillus") || s.includes("crop-protection") || s.includes("fungicide") || s.includes("protection") || s.includes("biological")) {
-    return "/products/balavan.jpg";
-  }
-  if (s.includes("pushkal") || s.includes("flowering") || s.includes("fruit-set")) {
-    return "/products/pushkal.jpg";
-  }
-  if (s.includes("dhanya") || s.includes("dharani") || s.includes("kmb") || s.includes("potassium")) {
+  if (s.includes("fertilizer") || s.includes("bio-fertilizer")) {
     return "/products/dharani.jpg";
   }
-  if (s.includes("nutrient") || s.includes("amino") || s.includes("fertilizer") || s.includes("bio") || s.includes("annada") || s.includes("plant nutrients")) {
+  if (s.includes("bio-pesticide") || s.includes("suraksha")) {
+    return "/products/suraksha.jpg";
+  }
+  if (s.includes("bio-fungicide") || s.includes("harit") || s.includes("trichoderma") || s.includes("viride")) {
+    return "/products/harit.jpg";
+  }
+  if (s.includes("stimulant") || s.includes("bio-stimulant") || s.includes("pushkal") || s.includes("vigor")) {
+    return "/products/pushkal.jpg";
+  }
+  if (s.includes("micro-nutrient") || s.includes("nutrient") || s.includes("annada") || s.includes("green-power")) {
     return "/products/annada.jpg";
   }
-  if (s.includes("oil") || s.includes("mustard") || s.includes("groundnut") || s.includes("sesame") || s.includes("coconut")) {
-    return "/products/category-oils.jpg";
+  if (s.includes("insecticide") || s.includes("shield")) {
+    return "/products/balavan.jpg";
   }
-  if (s.includes("rice") || s.includes("basmati") || s.includes("sonamasuri") || s.includes("paddy")) {
-    return "/products/category-rice.jpg";
+  if (s.includes("fungicide") || s.includes("care")) {
+    return "/products/suraksha.jpg";
   }
-  if (s.includes("pulse") || s.includes("dal") || s.includes("toor") || s.includes("gram") || s.includes("moong") || s.includes("urad")) {
-    return "/products/category-pulses.jpg";
+  if (s.includes("botanical") || s.includes("neem")) {
+    return "/products/neem-oil.jpg";
   }
-  if (s.includes("spice") || s.includes("turmeric") || s.includes("chilli") || s.includes("pepper") || s.includes("cumin") || s.includes("masala")) {
-    return "/products/category-spices.jpg";
+  if (s.includes("soluble") || s.includes("water-soluble") || s.includes("foliar")) {
+    return "/products/dhanya.jpg";
   }
-  if (s.includes("ghee") || s.includes("bilona") || s.includes("dairy") || s.includes("cow")) {
-    return "/products/category-ghee.jpg";
+  if (s.includes("input") || s.includes("agri-input") || s.includes("bhumi") || s.includes("soil")) {
+    return "/products/bhumi-shakti.jpg";
   }
-  if (s.includes("wheat") || s.includes("flour") || s.includes("grain") || s.includes("atta") || s.includes("besan") || s.includes("khapli")) {
-    return "/products/category-rice.jpg";
+  if (s.includes("other") || s.includes("stick")) {
+    return "/products/balavan-bottle.jpg";
   }
-  if (s.includes("millet") || s.includes("ragi") || s.includes("jowar") || s.includes("foxtail") || s.includes("bajra") || s.includes("kodo")) {
-    return "/products/category-pulses.jpg";
-  }
-  if (s.includes("seed") || s.includes("fruit") || s.includes("dry") || s.includes("honey") || s.includes("jaggery") || s.includes("sweet")) {
-    return "/products/category-spices.jpg";
-  }
-  return "/products/category-oils.jpg";
+  return "/products/harit.jpg";
 }
 
 // Smart Product Image Resolver
@@ -83,6 +68,7 @@ export type Product = {
   id: number;
   slug: string;
   name: string;
+  subtitle?: string;
   category: string;
   brand: string;
   price: number;
@@ -102,6 +88,8 @@ export type Product = {
   popularity: number;
   isNew: boolean;
   variants: ProductVariant[];
+  crops?: string[];
+  benefits?: string[];
   specifications?: Record<string, string>;
   recommendedCrops?: string;
   dosage?: string;
@@ -114,123 +102,97 @@ export type Product = {
 
 export const slugs = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
+// The 11 Core Agri Products Categories (from client specification)
 export const categories: { id: number; name: string; slug: string; count: number; image: string; description?: string }[] = [
-  { id: 1, name: "Biological Crop Protection", slug: "biological-crop-protection", count: 4, image: "/products/balavan.jpg", description: "Beneficial Trichoderma viride, Bacillus subtilis, Pseudomonas fluorescens, and cold-pressed Azadirachtin botanical formulations for disease management, pest control, root protection, and pathogen suppression." },
-  { id: 2, name: "Organic Plant Nutrients", slug: "organic-plant-nutrients", count: 2, image: "/products/annada.jpg", description: "Naturally derived fish amino acids, seaweed biostimulants, and organic crop nutrition for healthy vegetative and reproductive growth." },
-  { id: 3, name: "Soil Conditioners & Biostimulants", slug: "soil-conditioners-biostimulants", count: 2, image: "/products/bhumi-shakti.jpg", description: "Humic & fulvic organic acid formulations and potassium mobilizing biofertilizers designed to enrich soil fertility, unlock nutrient uptake, and develop healthy root zones." }
+  { id: 1, name: "Bio Fertilizers", slug: "bio-fertilizers", count: 2, image: "/products/dharani.jpg", description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
+  { id: 2, name: "Bio Pesticides", slug: "bio-pesticides", count: 2, image: "/products/suraksha.jpg", description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
+  { id: 3, name: "Bio Fungicides", slug: "bio-fungicides", count: 2, image: "/products/harit.jpg", description: "Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens." },
+  { id: 4, name: "Bio Stimulants", slug: "bio-stimulants", count: 4, image: "/products/pushkal.jpg", description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
+  { id: 5, name: "Micro Nutrients", slug: "micro-nutrients", count: 2, image: "/products/annada.jpg", description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
+  { id: 6, name: "Insecticides", slug: "insecticides", count: 1, image: "/products/balavan.jpg", description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
+  { id: 7, name: "Fungicides", slug: "fungicides", count: 1, image: "/products/suraksha.jpg", description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
+  { id: 8, name: "Botanical Extracts", slug: "botanical-extracts", count: 1, image: "/products/neem-oil.jpg", description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
+  { id: 9, name: "Water Solubles", slug: "water-solubles", count: 1, image: "/products/dhanya.jpg", description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
+  { id: 10, name: "Agri Inputs", slug: "agri-inputs", count: 2, image: "/products/bhumi-shakti.jpg", description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
+  { id: 11, name: "Others", slug: "others", count: 1, image: "/products/balavan-bottle.jpg", description: "Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants." }
 ];
 
 export const products: Product[] = [
   {
     id: 1,
-    slug: "annada-fish-amino-acid-5l",
-    name: "ANNADA - Fish Amino Acid (5L)",
-    category: "Organic Plant Nutrients",
+    slug: "harit",
+    name: "HARIT",
+    subtitle: "Trichoderma Viride Liquid Biofungal Formulation",
+    category: "Bio Fungicides",
     brand: "Janani Agro Products",
-    price: 3600,
-    oldPrice: 3999,
-    discount: 10,
-    unit: "5 L",
-    rating: 5.0,
-    reviews: 64,
+    price: 450,
+    oldPrice: 520,
+    discount: 13,
+    unit: "1 L",
+    rating: 4.8,
+    reviews: 142,
     inStock: true,
     stockCount: 150,
-    badge: "Flagship Nutrient",
-    image: "/products/annada.jpg",
-    description: "ANNADA is a naturally derived Fish Amino Acid formulation prepared from fish-based raw materials through controlled processing. It contains naturally occurring amino acids, peptides and organic nutrients that support plant growth and development. ANNADA helps supplement crop nutrition and supports healthy vegetative growth, plant vigour and overall crop performance.",
+    badge: "Best Seller",
+    image: "/products/harit.jpg",
+    description: "HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases.",
     origin: "Tal. Lodhika GIDC, Gujarat",
-    dietaryTags: ["Fish Amino Acid", "100% Organic", "Bio-Stimulant", "Plant Vigour", "Natural Nutrition"],
+    dietaryTags: ["Trichoderma Viride", "Biofungicide", "Wilt Protection", "Root Rot Control", "Rhizosphere Health"],
     certifications: ["For Agriculture Use Only", "Janani Certified Quality", "Gujarat State Reg. 24"],
     popularity: 100,
-    isNew: true,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cereals", "Pulses", "Cotton", "Sugarcane", "All Crops"],
+    benefits: ["Fungal Disease Control", "Damping Off Control", "Root Growth", "Soil Health"],
     variants: [
-      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 3600, oldPrice: 3999, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 850, oldPrice: 950, inStock: true }
+      { id: "250ml", label: "250 ml", unit: "250 ml", price: 150, oldPrice: 180, inStock: true },
+      { id: "500ml", label: "500 ml", unit: "500 ml", price: 280, oldPrice: 320, inStock: true },
+      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 450, oldPrice: 520, inStock: true },
+      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 2000, oldPrice: 2350, inStock: true }
     ],
     specifications: {
-      "Fish Amino Acid": "40.0% w/v (Min.)",
-      "Amino Nitrogen": "12.0% w/v (Min.)",
-      "Total Nitrogen": "4.0% w/v (Min.)",
-      "Organic Matter": "15.0% w/v (Min.)",
-      "Formulation": "Liquid",
-      "Colour": "Brown to Dark Brown",
-      "pH": "4.0 - 6.0",
-      "Expiry Date": "3 years from date of Mfg.",
-      "MRP": "Rs. 3600/- (Inclusive of all taxes)"
+      "Active Organism": "Trichoderma viride Minimum 5 × 10⁸ CFU/ml",
+      "Formulation": "Liquid Biofungal Formulation",
+      "Carrier / Base": "Suitable Microbial Carrier",
+      "Contamination Level": "Nil at 10⁶ dilution",
+      "pH": "6.5 – 7.5",
+      "Net Content": "1 Litre (1 Ltr.)",
+      "MRP": "Rs. 520/- (Inclusive of all taxes)",
+      "Expiry Date": "18 Months from date of Mfg."
     },
-    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, flowers and horticultural crops.",
-    dosage: "Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml – 1 litre per acre | Soil Application: 1–2 litres per acre diluted appropriately.",
-    methodOfApplication: "Apply through foliar spray, drip/fertigation or soil application according to crop requirement. For best results, use during active vegetative growth and important crop development stages.",
-    compatibility: "Generally compatible with organic inputs and many agricultural biostimulants. Conduct a compatibility test before mixing with other products. Avoid mixing with highly alkaline or strongly reactive products.",
-    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY."
+    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants and horticultural crops.",
+    dosage: "Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed.",
+    targetDiseases: "Wilt, Damping-off, Root rot, Collar rot, Seedling rot, Rhizoctonia-related root-zone problems, Fusarium-related soil-borne disease pressure."
   },
   {
     id: 2,
-    slug: "balavan-bacillus-subtilis-5l",
-    name: "BALAVAN - Bacillus Subtilis (5L)",
-    category: "Biological Crop Protection",
+    slug: "bhumi-shakti",
+    name: "BHUMI SHAKTI",
+    subtitle: "Humic & Fulvic Based Soil Conditioner",
+    category: "Bio Stimulants",
     brand: "Janani Agro Products",
-    price: 5600,
-    oldPrice: 6200,
-    discount: 10,
-    unit: "5 L",
-    rating: 5.0,
-    reviews: 52,
-    inStock: true,
-    stockCount: 100,
-    badge: "Biological Defense",
-    image: "/products/balavan.jpg",
-    description: "BALAVAN contains beneficial Bacillus subtilis, a naturally occurring bacterium used in agricultural and horticultural production. It supports biological management of blight-related diseases by colonizing plant surfaces and the rhizosphere and helping reduce disease pressure as part of an integrated crop-protection program. BALAVAN supports the plant's natural defence response, helps improve crop resilience during environmental and biological stress, and promotes healthy plant growth and recovery.",
-    origin: "Tal. Lodhika GIDC, Gujarat",
-    dietaryTags: ["Bacillus Subtilis", "Bio-Fungicide", "Blight Control", "Soil-Borne Disease Control", "Residue Free"],
-    certifications: ["For Agriculture Use Only", "Biological Formulation", "State: 24-Gujarat"],
-    popularity: 99,
-    isNew: true,
-    variants: [
-      { id: "5l", label: "5 Litre Jerry Can", unit: "5 L", price: 5600, oldPrice: 6200, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1350, oldPrice: 1500, inStock: true }
-    ],
-    specifications: {
-      "Bacillus subtilis": "Minimum 5 × 10⁷ CFU/ml",
-      "Base": "Liquid",
-      "Contamination Level": "Nil at 10⁵ dilution",
-      "pH": "6.5 – 7.5",
-      "Net Content": "5 Ltr.",
-      "MRP": "Rs. 5600/- (Inclusive of all taxes)",
-      "Expiry Date": "18 Months from date of Mfg."
-    },
-    recommendedCrops: "Suitable for all Agricultural, Horticultural, Vegetable, Fruit, Plantation, Spice, Flower and Ornamental Crops.",
-    dosage: "Seed Treatment: 10 ml/kg seed | Seedling Root Dip: 5–10 ml/L water (20–30 mins) | Soil Application: 1–2 L/Acre with 50–100 kg FYM/compost | Drip Irrigation: 1–2 L/Acre | Foliar Spray: 2–3 ml/L water.",
-    targetDiseases: "Damping-off, Root Rot, Collar Rot, Wilt, Leaf Spot, Early Blight, Anthracnose, Fruit Rot, Powdery Mildew, Bacterial disease suppression.",
-    methodOfApplication: "Apply as seed treatment, seedling root dip, soil application, drip irrigation, or uniform foliar spray according to crop stage.",
-    compatibility: "Compatible with most biofertilizers, organic manures, and biostimulants. Avoid mixing with chemical fungicides or bactericides during application.",
-    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
-  },
-  {
-    id: 3,
-    slug: "bhumi-shakti-humic-fulvic-biostimulant-5l",
-    name: "BHUMI SHAKTI - Humic & Fulvic Soil Conditioner Biostimulant (5L)",
-    category: "Soil Conditioners & Biostimulants",
-    brand: "Janani Agro Products",
-    price: 3900,
-    oldPrice: 4400,
-    discount: 11,
-    unit: "5 L",
-    rating: 4.9,
-    reviews: 58,
+    price: 380,
+    oldPrice: 450,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.7,
+    reviews: 98,
     inStock: true,
     stockCount: 120,
-    badge: "Soil Rejuvenator",
+    badge: "New",
     image: "/products/bhumi-shakti.jpg",
-    description: "BHUMI SHAKTI is a humic and fulvic based formulation designed to support soil health, improve nutrient availability and promote efficient nutrient utilization by plants. Its organic carbon-rich components help support favourable soil conditions and contribute to better root-zone development, plant vigour and overall crop performance. Enriches the soil, strengthens the crop, and unlocks maximum nutrient potential.",
+    description: "BHUMI SHAKTI is a humic and fulvic based formulation designed to support soil health, improve nutrient availability and promote efficient nutrient utilization by plants. Its organic carbon-rich components help support favourable soil conditions and contribute to better root-zone development.",
     origin: "Tal. Lodhika GIDC, Gujarat",
-    dietaryTags: ["Humic Acid 12%", "Fulvic Acid 5%", "Soil Conditioner", "Organic Carbon 8%", "Biostimulant"],
+    dietaryTags: ["Humic Acid 12%", "Fulvic Acid 5%", "Soil Conditioner", "Organic Carbon", "Biostimulant"],
     certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
     popularity: 98,
     isNew: true,
+    crops: ["Fruits", "Vegetables", "Cereals", "Pulses", "Oilseeds", "Cotton", "Sugarcane", "All Crops"],
+    benefits: ["Soil Health", "Root Growth", "Plant Growth", "Organic Farming"],
     variants: [
-      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 3900, oldPrice: 4400, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 950, oldPrice: 1100, inStock: true }
+      { id: "250ml", label: "250 ml", unit: "250 ml", price: 130, oldPrice: 150, inStock: true },
+      { id: "500ml", label: "500 ml", unit: "500 ml", price: 220, oldPrice: 260, inStock: true },
+      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 380, oldPrice: 450, inStock: true },
+      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 1750, oldPrice: 2100, inStock: true }
     ],
     specifications: {
       "Humic Acid": "12.00%",
@@ -239,21 +201,428 @@ export const products: Product[] = [
       "Potassium (K₂O)": "3.00%",
       "Amino Acids": "5.00%",
       "Organic Matter": "20.00%",
-      "Net Content": "5 Ltr.",
-      "MRP": "Rs. 3900/- (Inclusive of all taxes)",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 450/- (Inclusive of all taxes)",
       "Expiry Date": "3 years from date of Mfg."
     },
     recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, flowers, plantation crops and horticultural crops.",
-    dosage: "Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre. Dose may be adjusted according to formulation strength, crop and stage of application.",
-    methodOfApplication: "Apply through foliar spray, drip/fertigation or soil application according to crop requirement. For best results, apply during active crop growth and important nutrient-demand stages.",
-    compatibility: "Compatible with many organic fertilizers, biofertilizers and biostimulants. Conduct a compatibility test before tank mixing with other agricultural inputs.",
-    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
+    dosage: "Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre."
+  },
+  {
+    id: 3,
+    slug: "neem-oil-1000-ppm",
+    name: "NEEM OIL 1000 PPM",
+    subtitle: "Containing Azadirachtin 1000 PPM",
+    category: "Botanical Extracts",
+    brand: "Janani Agro Products",
+    price: 550,
+    oldPrice: 650,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.6,
+    reviews: 86,
+    inStock: true,
+    stockCount: 140,
+    badge: "Popular",
+    image: "/products/neem-oil.jpg",
+    description: "NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized azadirachtin (0.10% w/w minimum / 1000 ppm). It is intended for use as part of an Integrated Pest Management (IPM) programme for management of susceptible insect pests.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Neem Oil", "Azadirachtin 1000 PPM", "Insect Control", "Mite Control", "Botanical IPM"],
+    certifications: ["For Agriculture Use Only", "Botanical Formulation", "State: 24-Gujarat"],
+    popularity: 97,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cotton", "Pulses", "Cereals", "All Crops"],
+    benefits: ["Organic Farming", "Crop Yield"],
+    variants: [
+      { id: "250ml", label: "250 ml", unit: "250 ml", price: 180, oldPrice: 210, inStock: true },
+      { id: "500ml", label: "500 ml", unit: "500 ml", price: 320, oldPrice: 380, inStock: true },
+      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 550, oldPrice: 650, inStock: true },
+      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 2500, oldPrice: 2950, inStock: true }
+    ],
+    specifications: {
+      "Active Ingredient": "Azadirachtin - 0.10% w/w minimum (1000 ppm)",
+      "Technical Source": "Azadirachta indica (Neem)",
+      "Formulation": "Botanical Emulsifiable Formulation",
+      "Net Content": "1 Litre (1 Ltr.)",
+      "MRP": "Rs. 650/- (Inclusive of all taxes)",
+      "Expiry Date": "2 Years from date of Mfg."
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, cotton, pulses, cereals, tea, spices, floriculture and greenhouse horticultural crops.",
+    dosage: "Suggested dosage: 1–3 ml per litre of water. Ensure uniform coverage of foliage.",
+    targetDiseases: "Aphids, Whiteflies, Thrips, Jassids, Mealybugs, Caterpillars, Leaf Miners, Mites, and other susceptible insect pests."
   },
   {
     id: 4,
+    slug: "nano-gold",
+    name: "NANO GOLD",
+    subtitle: "Plant Growth Promoter",
+    category: "Bio Stimulants",
+    brand: "Janani Agro Products",
+    price: 600,
+    oldPrice: 720,
+    discount: 16,
+    unit: "1 L",
+    rating: 4.5,
+    reviews: 74,
+    inStock: true,
+    stockCount: 95,
+    image: "/products/pushkal.jpg",
+    description: "NANO GOLD is an advanced bio-nanotechnology plant growth promoter formulated with bioactive peptides, micronutrients and organic stimulants to enhance metabolic activity, chlorophyll synthesis and photosynthesis efficiency.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Nano Nutrients", "Growth Promoter", "Photosynthesis Booster", "100% Bio-active"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 95,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cotton", "Cereals", "Sugarcane"],
+    benefits: ["Plant Growth", "Crop Yield", "Root Growth"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 600, oldPrice: 720, inStock: true },
+      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 340, oldPrice: 400, inStock: true }
+    ],
+    specifications: {
+      "Bioactive Peptides": "8.00%",
+      "Chelated Trace Elements": "4.50%",
+      "Plant Stimulant Factors": "12.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 720/- (Inclusive of all taxes)",
+      "Expiry Date": "3 Years from date of Mfg."
+    },
+    recommendedCrops: "Cotton, Sugarcane, Chilli, Tomato, Pomegranate, Banana, Grapes, Paddy, Wheat, Maize.",
+    dosage: "Foliar Application: 1.5–2.5 ml per litre of water during rapid vegetative and pre-flowering stages."
+  },
+  {
+    id: 5,
+    slug: "vermi-boost",
+    name: "VERMI BOOST",
+    subtitle: "Organic Soil Enhancer",
+    category: "Agri Inputs",
+    brand: "Janani Agro Products",
+    price: 420,
+    oldPrice: 490,
+    discount: 14,
+    unit: "1 L",
+    rating: 4.6,
+    reviews: 65,
+    inStock: true,
+    stockCount: 110,
+    image: "/products/annada.jpg",
+    description: "VERMI BOOST is an enzymatic liquid extract rich in vermi-wash metabolites, organic acids, and beneficial soil microbe stimulants designed to enrich soil ecology and accelerate root aeration and nutrient assimilation.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Vermi Extract", "Soil Enhancer", "Organic Nutrition", "Rhizosphere Care"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 94,
+    isNew: false,
+    crops: ["Vegetables", "Fruits", "Cereals", "Pulses", "All Crops"],
+    benefits: ["Soil Health", "Organic Farming", "Plant Growth"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 420, oldPrice: 490, inStock: true }
+    ],
+    specifications: {
+      "Vermi-Derived Liquid": "35.00%",
+      "Humic Fractions": "6.00%",
+      "Organic Nitrogen": "2.50%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 490/- (Inclusive of all taxes)"
+    },
+    recommendedCrops: "All agricultural crops, open-field vegetables, orchards and protected cultivation greenhouses.",
+    dosage: "Drip / Drenching: 1–2 Litres per acre | Foliar: 3–5 ml per litre of water."
+  },
+  {
+    id: 6,
+    slug: "root-plus",
+    name: "ROOT PLUS",
+    subtitle: "Root Growth Promoter",
+    category: "Bio Fertilizers",
+    brand: "Janani Agro Products",
+    price: 390,
+    oldPrice: 460,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.4,
+    reviews: 53,
+    inStock: true,
+    stockCount: 85,
+    image: "/products/dharani.jpg",
+    description: "ROOT PLUS is a specialised rooting stimulant formulation containing natural auxin precursors, seaweed biostimulants, and phosphonate carriers to develop dense lateral feeder roots and white roots for superior water and nutrient uptake.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Root Initiator", "White Root Development", "Vigorous Establishment", "Nutrient Uptake"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 93,
+    isNew: false,
+    crops: ["Vegetables", "Cereals", "Pulses", "Cotton", "Sugarcane"],
+    benefits: ["Root Growth", "Plant Growth", "Crop Yield"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 390, oldPrice: 460, inStock: true }
+    ],
+    specifications: {
+      "Root Inducing Factors": "15.00%",
+      "Seaweed Ascophyllum Nodosum": "10.00%",
+      "Fulvic Carrier": "5.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 460/- (Inclusive of all taxes)"
+    },
+    recommendedCrops: "Paddy, Cotton, Tomato, Chilli, Onion, Sugarcane, Banana, Papaya, Mango, Potato.",
+    dosage: "Seedling Dip: 5 ml/L | Drip: 1 Litre per acre within 15–30 days of sowing/transplanting."
+  },
+  {
+    id: 7,
+    slug: "crop-shield",
+    name: "CROP SHIELD",
+    subtitle: "Botanical Pesticide",
+    category: "Insecticides",
+    brand: "Janani Agro Products",
+    price: 480,
+    oldPrice: 560,
+    discount: 14,
+    unit: "1 L",
+    rating: 4.5,
+    reviews: 61,
+    inStock: true,
+    stockCount: 90,
+    image: "/products/balavan.jpg",
+    description: "CROP SHIELD is a multi-action botanical crop protector synthesized from herbal extracts including Pongamia, Karanj and Castor oils with natural botanical alkaloids that repel chewing and sucking pests and inhibit fungal spore germination.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Botanical Pesticide", "Pest Repellent", "Zero Chemical Residue", "Eco-friendly"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 92,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cotton", "Pulses", "Oilseeds"],
+    benefits: ["Fungal Disease Control", "Organic Farming"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 480, oldPrice: 560, inStock: true }
+    ],
+    specifications: {
+      "Karanj Oil Extract": "20.00%",
+      "Botanical Alkaloids": "5.00%",
+      "Natural Emulsifier": "10.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 560/-"
+    },
+    recommendedCrops: "Vegetables, Cotton, Pomegranate, Citrus, Mango, Paddy, Pulses.",
+    dosage: "Foliar Spray: 2–3 ml per litre of water at first symptom of pest arrival."
+  },
+  {
+    id: 8,
+    slug: "foliar-nutri",
+    name: "FOLIAR NUTRI",
+    subtitle: "Micronutrient Mixture",
+    category: "Water Solubles",
+    brand: "Janani Agro Products",
+    price: 520,
+    oldPrice: 600,
+    discount: 13,
+    unit: "1 L",
+    rating: 4.3,
+    reviews: 49,
+    inStock: true,
+    stockCount: 75,
+    image: "/products/dhanya.jpg",
+    description: "FOLIAR NUTRI is an EDTA-chelated balanced liquid micronutrient formulation containing Zinc, Iron, Manganese, Copper, Boron and Molybdenum to remedy hidden hunger and deficiency chlorosis in demanding crops.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Chelated Micronutrients", "Foliar Spray", "Chlorosis Remedy", "Yield Booster"],
+    certifications: ["For Agriculture Use Only", "Fertilizer Grade Standards"],
+    popularity: 90,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cereals", "Cotton", "Sugarcane"],
+    benefits: ["Plant Growth", "Crop Yield"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 520, oldPrice: 600, inStock: true }
+    ],
+    specifications: {
+      "Chelated Zinc (Zn)": "3.00%",
+      "Chelated Iron (Fe)": "2.00%",
+      "Boron (B)": "0.50%",
+      "Manganese (Mn)": "1.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 600/-"
+    },
+    recommendedCrops: "Cotton, Paddy, Sugarcane, Vegetables, Citrus, Apple, Banana, Grapes.",
+    dosage: "Foliar spray: 2 ml per litre of water during vegetative and flowering flush."
+  },
+  {
+    id: 9,
+    slug: "bio-care",
+    name: "BIO CARE",
+    subtitle: "Biofungicide",
+    category: "Fungicides",
+    brand: "Janani Agro Products",
+    price: 410,
+    oldPrice: 480,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.4,
+    reviews: 58,
+    inStock: true,
+    stockCount: 130,
+    image: "/products/suraksha.jpg",
+    description: "BIO CARE is a broad-spectrum biological fungicide powered by beneficial antagonistic microorganisms that effectively protect roots and aerial plant foliage from blight, leaf spots, downy mildew and anthracnose.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Biofungicide", "Blight Defence", "Anthracnose Control", "Natural Microbial"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 91,
+    isNew: false,
+    crops: ["Vegetables", "Fruits", "Cereals", "Pulses", "Oilseeds"],
+    benefits: ["Fungal Disease Control", "Damping Off Control", "Soil Health"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 410, oldPrice: 480, inStock: true }
+    ],
+    specifications: {
+      "Bio-Active Antagonists": "Minimum 2 × 10⁸ CFU/ml",
+      "Formulation": "Aqueous Suspension",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 480/-"
+    },
+    recommendedCrops: "Tomato, Chilli, Potato, Groundnut, Ginger, Turmeric, Cumin, Mustard, Grapes.",
+    dosage: "Foliar spray: 2.5–3 ml per litre of water | Soil Drench: 1 Litre per acre."
+  },
+  {
+    id: 10,
+    slug: "plant-vigor",
+    name: "PLANT VIGOR",
+    subtitle: "Plant Growth Promoter",
+    category: "Bio Stimulants",
+    brand: "Janani Agro Products",
+    price: 495,
+    oldPrice: 580,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.5,
+    reviews: 72,
+    inStock: true,
+    stockCount: 95,
+    image: "/products/pushkal-bottle.jpg",
+    description: "PLANT VIGOR is an innovative speciality physiological activator designed to combat stress from drought, salinity, and heat. It enhances branching, vegetative shoots and overall vigour in critical development windows.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Stress Resilience", "Speciality Stimulant", "Vegetative Vigour", "Crop Activator"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 96,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cotton", "Sugarcane", "All Crops"],
+    benefits: ["Plant Growth", "Crop Yield", "Root Growth"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 495, oldPrice: 580, inStock: true }
+    ],
+    specifications: {
+      "Speciality Osmolytes": "12.00%",
+      "Fulvic Matrix": "8.00%",
+      "Micronutrient Traces": "3.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 580/-"
+    },
+    recommendedCrops: "Cotton, Sugarcane, Vegetables, Orchards, Cereals and Cash Crops.",
+    dosage: "Foliar spray: 2 ml per litre of water during stress conditions or active growth."
+  },
+  {
+    id: 11,
+    slug: "soil-sure",
+    name: "SOIL SURE",
+    subtitle: "Soil Conditioner",
+    category: "Agri Inputs",
+    brand: "Janani Agro Products",
+    price: 460,
+    oldPrice: 530,
+    discount: 13,
+    unit: "1 L",
+    rating: 4.3,
+    reviews: 40,
+    inStock: true,
+    stockCount: 80,
+    image: "/products/balavan-bottle.jpg",
+    description: "SOIL SURE is a natural soil buffering conditioner that corrects soil pH, reduces compaction, improves water holding capacity, and restores depleted beneficial soil microflora in intensive agricultural soils.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Soil Conditioner", "pH Buffer", "Water Retention", "Microflora Revival"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 88,
+    isNew: false,
+    crops: ["Cereals", "Pulses", "Cotton", "Sugarcane", "All Crops"],
+    benefits: ["Soil Health", "Organic Farming", "Root Growth"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 460, oldPrice: 530, inStock: true }
+    ],
+    specifications: {
+      "Organic Buffering Agents": "25.00%",
+      "Biological Activators": "5.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 530/-"
+    },
+    recommendedCrops: "Sugarcane, Cotton, Banana, Paddy, Maize, Wheat, Horticultural Soils.",
+    dosage: "Drip Irrigation / Flood: 1 to 2 Litres per acre with first basal irrigation."
+  },
+  {
+    id: 12,
+    slug: "green-power",
+    name: "GREEN POWER",
+    subtitle: "Organic Crop Booster",
+    category: "Micro Nutrients",
+    brand: "Janani Agro Products",
+    price: 575,
+    oldPrice: 670,
+    discount: 14,
+    unit: "1 L",
+    rating: 4.6,
+    reviews: 83,
+    inStock: true,
+    stockCount: 115,
+    image: "/products/annada-bottle.jpg",
+    description: "GREEN POWER is a powerful organic crop booster and bioprotectant formulated with sea-kelp minerals, organic plant extracts and microbial metabolites to provide deep green foliage and rapid recovery from fungal stress.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Crop Booster", "Deep Green Foliage", "Biological Immunity", "Organic Yield"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 97,
+    isNew: false,
+    crops: ["Vegetables", "Fruits", "Cotton", "Cereals", "All Crops"],
+    benefits: ["Plant Growth", "Crop Yield", "Fungal Disease Control"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 575, oldPrice: 670, inStock: true }
+    ],
+    specifications: {
+      "Organic Plant Extracts": "22.00%",
+      "Soluble Seaweed Kelp": "10.00%",
+      "Organic Nitrogen": "3.50%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 670/-"
+    },
+    recommendedCrops: "Vegetables, Fruit Orchards, Cotton, Spices, Floriculture, Tea and Coffee.",
+    dosage: "Foliar Spray: 2–3 ml per litre of water at intervals of 15 days."
+  },
+  {
+    id: 13,
+    slug: "balavan-bacillus-subtilis-5l",
+    name: "BALAVAN",
+    subtitle: "Bacillus Subtilis Liquid Biofungicide",
+    category: "Bio Fungicides",
+    brand: "Janani Agro Products",
+    price: 5600,
+    oldPrice: 6200,
+    discount: 10,
+    unit: "5 L",
+    rating: 5.0,
+    reviews: 52,
+    inStock: true,
+    stockCount: 120,
+    badge: "Bio Defense",
+    image: "/products/balavan.jpg",
+    description: "BALAVAN contains high-potency Bacillus subtilis bacteria that actively colonize plant surfaces and rhizosphere, producing lipopeptide antibiotics that prevent bacterial blights and fungal blast.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Bacillus Subtilis", "Bio Fungicide", "Bacterial Blight", "Blast Protection"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 98,
+    isNew: false,
+    crops: ["Paddy", "Cotton", "Chilli", "Tomato", "Pomegranate", "All Crops"],
+    benefits: ["Fungal Disease Control", "Soil Health", "Organic Farming"],
+    variants: [
+      { id: "5l", label: "5 Litre Can", unit: "5 L", price: 5600, oldPrice: 6200, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1250, oldPrice: 1400, inStock: true }
+    ],
+    recommendedCrops: "Paddy, Cotton, Chilli, Tomato, Pomegranate, Groundnut, Sugarcane.",
+    dosage: "Foliar Spray: 2–3 ml/L | Drip / Fertigation: 1–2 Litres per acre."
+  },
+  {
+    id: 14,
     slug: "suraksha-pseudomonas-fluorescens-5l",
-    name: "SURAKSHA - Pseudomonas Fluorescens Biofungal Formulation (5L)",
-    category: "Biological Crop Protection",
+    name: "SURAKSHA",
+    subtitle: "Pseudomonas Fluorescens Bio Formulation",
+    category: "Bio Pesticides",
     brand: "Janani Agro Products",
     price: 4900,
     oldPrice: 5500,
@@ -261,43 +630,31 @@ export const products: Product[] = [
     unit: "5 L",
     rating: 4.9,
     reviews: 63,
-    inStock: true,
-    stockCount: 110,
     badge: "Root Defender",
     image: "/products/suraksha.jpg",
-    description: "SURAKSHA contains beneficial Pseudomonas fluorescens, a naturally occurring beneficial bacterium used in agricultural and horticultural production. It supports biological management of soil-borne disease-causing organisms in the rhizosphere and helps maintain a healthy root-zone environment. SURAKSHA also supports the plant's natural defence mechanisms and helps improve its resistance power against stress and disease pressure. Controls soil-borne diseases, boosts plant resistance, and strengthens crops.",
+    inStock: true,
+    stockCount: 110,
+    description: "SURAKSHA is a potent liquid bio-pesticide and bio-protective formulation containing Pseudomonas fluorescens. It induces systemic resistance in crops and produces siderophores to suppress soil pathogens.",
     origin: "Tal. Lodhika GIDC, Gujarat",
-    dietaryTags: ["Pseudomonas Fluorescens", "Biofungal Formulation", "Root Zone Protection", "Residue Free", "Disease Control"],
-    certifications: ["For Agriculture Use Only", "Microbial Bio-Fungicide", "State: 24-Gujarat"],
-    popularity: 99,
-    isNew: true,
+    dietaryTags: ["Pseudomonas", "Bio Pesticide", "Induced Resistance", "Eco-safe"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 97,
+    isNew: false,
+    crops: ["Paddy", "Vegetables", "Ginger", "Turmeric", "Banana", "All Crops"],
+    benefits: ["Fungal Disease Control", "Soil Health", "Plant Growth"],
     variants: [
-      { id: "5l", label: "5 Litre Jerry Can", unit: "5 L", price: 4900, oldPrice: 5500, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1150, oldPrice: 1300, inStock: true }
+      { id: "5l", label: "5 Litre Can", unit: "5 L", price: 4900, oldPrice: 5500, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1100, oldPrice: 1250, inStock: true }
     ],
-    specifications: {
-      "Technical Composition": "Pseudomonas fluorescens",
-      "Potency": "Minimum 5 × 10⁹ CFU/ml",
-      "Formulation": "Liquid Biofungal Formulation",
-      "Carrier / Base": "Suitable Microbial Carrier",
-      "Contamination Level": "Nil at 10⁸ dilution",
-      "pH": "6.5 – 7.5",
-      "Net Content": "5 Ltr.",
-      "MRP": "Rs. 4900/- (Inclusive of all taxes)",
-      "Expiry Date": "18 Months from date of Mfg."
-    },
-    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants and horticultural crops.",
-    dosage: "Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed | Nursery Application: 2–5 ml per litre of water or as recommended.",
-    targetDiseases: "Soil-borne disease-causing organisms, Root Rot, Wilt, Damping-off, Collar Rot, Seedling Blight, Rhizosphere fungal pathogens.",
-    methodOfApplication: "Apply through seed treatment, nursery application, soil application or drip/fertigation as appropriate for the crop. For best results, apply under suitable soil-moisture conditions as part of an integrated crop-protection program.",
-    compatibility: "Compatible with many organic inputs and biological products. Avoid direct mixing with strong chemical bactericides, disinfectants or other products that may adversely affect Pseudomonas fluorescens viability.",
-    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
+    recommendedCrops: "Rice, Chilli, Cotton, Banana, Vegetables, Ginger, Turmeric.",
+    dosage: "Seed Treatment: 10 ml/kg | Drip: 1–2 Litres per acre | Foliar: 2.5 ml/L."
   },
   {
-    id: 5,
+    id: 15,
     slug: "dharani-kmb-potassium-mobilizing-biofertilizer-5l",
-    name: "DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)",
-    category: "Soil Conditioners & Biostimulants",
+    name: "DHARANI KMB",
+    subtitle: "Potassium Mobilizing Biofertilizer",
+    category: "Bio Fertilizers",
     brand: "Janani Agro Products",
     price: 5300,
     oldPrice: 5800,
@@ -305,41 +662,31 @@ export const products: Product[] = [
     unit: "5 L",
     rating: 5.0,
     reviews: 48,
-    inStock: true,
-    stockCount: 100,
     badge: "Potassium Mobilizer",
     image: "/products/dharani.jpg",
-    description: "DHARANI KMB is a high-grade microbial biofertilizer containing beneficial Potassium Mobilizing Bacteria (KMB). It helps mobilize fixed and unavailable forms of potassium present in the soil and makes potassium readily accessible to crops. Regular application supports efficient nutrient utilization, healthy and vigorous root development, plant vigour, balanced crop nutrition, and superior yield quality.",
+    inStock: true,
+    stockCount: 100,
+    description: "DHARANI KMB contains living cultures of Potassium Mobilizing Bacteria that solubilize and convert insoluble soil potassium into readily plant-absorbable ionic forms, maximizing crop size and sugar content.",
     origin: "Tal. Lodhika GIDC, Gujarat",
-    dietaryTags: ["Potassium Mobilizer", "KMB Biofertilizer", "Liquid Inoculant", "Nutrient Availability", "100% Organic"],
-    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    dietaryTags: ["Potassium Mobilizer", "Bio Fertilizer", "KMB Culture", "Bumper Yield"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
     popularity: 99,
-    isNew: true,
+    isNew: false,
+    crops: ["Sugarcane", "Cotton", "Banana", "Potato", "Paddy", "Grapes", "All Crops"],
+    benefits: ["Plant Growth", "Crop Yield", "Soil Health"],
     variants: [
-      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 5300, oldPrice: 5800, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1250, oldPrice: 1400, inStock: true }
+      { id: "5l", label: "5 Litre Can", unit: "5 L", price: 5300, oldPrice: 5800, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1150, oldPrice: 1300, inStock: true }
     ],
-    specifications: {
-      "Potassium Mobilizing Bacteria (KMB)": "Minimum 5 × 10⁷ CFU/ml",
-      "Formulation": "Liquid",
-      "Carrier / Base": "Suitable Microbial Carrier",
-      "Contamination Level": "Nil at 10⁻⁵ dilution",
-      "pH": "6.5 – 7.5",
-      "Net Content": "5 Litre (5 Ltr.)",
-      "MRP": "Rs. 5300/- (Inclusive of all taxes)",
-      "Expiry Date": "18 Months from date of Mfg."
-    },
-    recommendedCrops: "Suitable for Paddy, Wheat, Maize, Millets, Pulses, Oilseeds, Cotton, Sugarcane, Vegetables, Fruits, Plantation Crops and Horticultural Crops.",
-    dosage: "Soil Application: 500 ml – 1 Litre per acre | Drip / Fertigation: 500 ml – 1 Litre per acre | Seed Treatment: Use as recommended by agricultural experts.",
-    methodOfApplication: "Apply through soil application, drip/fertigation or seed treatment according to crop requirement and recommended agricultural practices. For best results, apply during active crop growth and root development stages.",
-    compatibility: "Compatible with most biofertilizers and organic inputs. Avoid direct mixing with strong chemical disinfectants or products that may adversely affect beneficial microorganisms.",
-    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
+    recommendedCrops: "Sugarcane, Banana, Potato, Cotton, Vegetables, Paddy, Fruit Orchards.",
+    dosage: "Drip Fertigation: 1–2 Litres per acre at vegetative and fruit development stages."
   },
   {
-    id: 6,
+    id: 16,
     slug: "pushkal-flowering-fruit-set-biostimulant-1l",
-    name: "PUSHKAL - Flowering & Fruit Set Biostimulant (1L)",
-    category: "Organic Plant Nutrients",
+    name: "PUSHKAL",
+    subtitle: "Flowering & Fruit Set Biostimulant",
+    category: "Bio Stimulants",
     brand: "Janani Agro Products",
     price: 999,
     oldPrice: 1199,
@@ -347,125 +694,88 @@ export const products: Product[] = [
     unit: "1 L",
     rating: 5.0,
     reviews: 42,
+    badge: "Flowering Booster",
+    image: "/products/pushkal.jpg",
     inStock: true,
     stockCount: 150,
-    badge: "Flowering & Fruit Set",
-    image: "/products/pushkal.jpg",
-    description: "PUSHKAL is a concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, 5% Fulvic Acid, Boron, Zinc and Potassium to support important reproductive stages of crop development. It provides balanced plant-supporting nutrition designed to maximize flower initiation, prevent flower drop, enhance fruit set, and ensure uniform fruit sizing.",
+    description: "PUSHKAL is a premium crop biostimulant formulated with 10% Free L-Amino Acids, 10% Seaweed Ascophyllum Nodosum extract, Fulvic Acid, Zinc and Boron for dramatic flower retention and fruit enlargement.",
     origin: "Tal. Lodhika GIDC, Gujarat",
-    dietaryTags: ["Amino Acids 10%", "Seaweed Extract 10%", "Fulvic Acid 5%", "Flowering Stimulant", "Fruit Set"],
-    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
-    popularity: 99,
+    dietaryTags: ["Biostimulant", "Flower Retention", "Fruit Enlargement", "Seaweed & Boron"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 100,
     isNew: true,
+    crops: ["Chilli", "Cotton", "Tomato", "Pomegranate", "Mango", "All Crops"],
+    benefits: ["Plant Growth", "Crop Yield"],
     variants: [
       { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 999, oldPrice: 1199, inStock: true },
-      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 550, oldPrice: 650, inStock: true },
-      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 4400, oldPrice: 5200, inStock: true }
+      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 550, oldPrice: 650, inStock: true }
     ],
-    specifications: {
-      "Free Amino Acids": "10.00%",
-      "Seaweed Extract": "10.00%",
-      "Fulvic Acid": "5.00%",
-      "Potassium (K₂O)": "3.00%",
-      "Boron (B)": "0.50%",
-      "Zinc (Zn)": "1.00%",
-      "Total Organic Carbon": "5.00%",
-      "Total Organic Matter": "15.00%",
-      "Net Content": "1 Ltr. (1 Litre)",
-      "MRP": "Rs. 999/- (Inclusive of all taxes)",
-      "Expiry Date": "3 years from date of Mfg."
-    },
-    recommendedCrops: "Fruit Crops (Mango, Pomegranate, Grapes, Citrus, Guava, Papaya, Banana, Apple), Vegetables (Tomato, Chilli, Brinjal, Okra, Cucumber, Gourds, Beans), Field Crops (Cotton, Pulses, Oilseeds, Maize, Paddy), Flowers (Rose, Marigold, Jasmine, Chrysanthemum).",
-    dosage: "Foliar Spray: Vegetative: 1.5–2 ml/L | Pre-flowering: 2–3 ml/L | Flowering: 2–3 ml/L | Fruit set / early development: 2–3 ml/L | Drip / Fertigation: 500 ml–1 Litre per acre.",
-    methodOfApplication: "Apply as foliar spray or drip/fertigation during reproductive stages (flower initiation, active blooming, fruit set). Repeat 10–15 days after first application where required.",
-    compatibility: "Compatible with most fertilizers, micronutrients, biostimulants, and biological inputs. Conduct a jar test before tank mixing. Avoid mixing directly with strongly acidic or alkaline products.",
-    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet."
+    recommendedCrops: "Chilli, Cotton, Tomato, Brinjal, Pomegranate, Citrus, Grapes, Mango.",
+    dosage: "Foliar Spray: 2 ml per litre of water at pre-flowering and fruit set."
   },
   {
-    id: 7,
-    slug: "harit-trichoderma-viride-liquid-biofungal-formulation-1l",
-    name: "HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)",
-    category: "Biological Crop Protection",
+    id: 17,
+    slug: "annada-fish-amino-acid-5l",
+    name: "ANNADA",
+    subtitle: "Fish Amino Acid & Micro Nutrients",
+    category: "Micro Nutrients",
     brand: "Janani Agro Products",
-    price: 950,
-    oldPrice: 1100,
-    discount: 14,
-    unit: "1 L",
+    price: 3600,
+    oldPrice: 3999,
+    discount: 10,
+    unit: "5 L",
     rating: 5.0,
-    reviews: 49,
+    reviews: 64,
+    badge: "Flagship Nutrient",
+    image: "/products/annada.jpg",
+    inStock: true,
+    stockCount: 150,
+    description: "ANNADA is a cold-fermented Fish Amino Acid formulation rich in natural organic peptides, macro and micro minerals that rapidly stimulate chlorophyll formation, crop canopy development, and stress relief.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Fish Amino Acid", "Micro Nutrients", "Protein Hydrolysate", "Vigorous Canopy"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 99,
+    isNew: false,
+    crops: ["Paddy", "Cotton", "Chilli", "Vegetables", "Horticulture", "All Crops"],
+    benefits: ["Plant Growth", "Crop Yield", "Organic Farming"],
+    variants: [
+      { id: "5l", label: "5 Litre Can", unit: "5 L", price: 3600, oldPrice: 3999, inStock: true },
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 850, oldPrice: 950, inStock: true }
+    ],
+    recommendedCrops: "Paddy, Cotton, Chilli, Sugarcane, Vegetables, Banana, Orchards.",
+    dosage: "Foliar Spray: 3 ml/L | Drip Irrigation: 2 Litres per acre."
+  },
+  {
+    id: 18,
+    slug: "agri-stick-silicone-spreader-activator",
+    name: "AGRI STICK",
+    subtitle: "Silicone Spreader, Sticker & Penetrator",
+    category: "Others",
+    brand: "Janani Agro Products",
+    price: 350,
+    oldPrice: 420,
+    discount: 17,
+    unit: "250 ml",
+    rating: 4.8,
+    reviews: 38,
+    badge: "Specialty Aid",
+    image: "/products/balavan-bottle.jpg",
     inStock: true,
     stockCount: 120,
-    badge: "Bio-Fungal Shield",
-    image: "/products/harit.jpg",
-    description: "HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases. It supports healthy root development, crop establishment and plant vigour as part of an integrated crop-management program. HARIT is suitable for integration with organic inputs, biofertilizers and sustainable crop-management practices.",
+    description: "AGRI STICK is a premium non-ionic organosilicone super-spreader and adjuvant that significantly lowers the surface tension of spray solutions, ensuring uniform droplet spreading, rainfastness and rapid cuticle penetration.",
     origin: "Tal. Lodhika GIDC, Gujarat",
-    dietaryTags: ["Trichoderma Viride", "Biofungal Formulation", "Wilt Protection", "Root Rot Control", "Rhizosphere Health"],
-    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
-    popularity: 99,
-    isNew: true,
+    dietaryTags: ["Organosilicone", "Super Spreader", "Rainfast Activator", "Spray Adjuvant"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 94,
+    isNew: false,
+    crops: ["All Crops", "Vegetables", "Cotton", "Paddy", "Orchards"],
+    benefits: ["Crop Yield", "Organic Farming"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 950, oldPrice: 1100, inStock: true },
-      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 520, oldPrice: 600, inStock: true },
-      { id: "5l", label: "5 Litre Canister", unit: "5 L", price: 4200, oldPrice: 4800, inStock: true }
+      { id: "250ml", label: "250 ml Bottle", unit: "250 ml", price: 350, oldPrice: 420, inStock: true },
+      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 650, oldPrice: 780, inStock: true }
     ],
-    specifications: {
-      "Trichoderma viride": "Minimum 5 × 10⁸ CFU/ml",
-      "Formulation": "Liquid",
-      "Carrier / Base": "Suitable Microbial Carrier",
-      "Contamination Level": "Nil at 10⁶ dilution",
-      "pH": "6.5 – 7.5",
-      "Net Content": "1 Litre (1 Ltr.)",
-      "MRP": "Rs. 1100/- (Inclusive of all taxes)",
-      "Expiry Date": "18 Months from date of Mfg."
-    },
-    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants and horticultural crops.",
-    dosage: "Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed | Nursery Application: 2–5 ml per litre of water or as recommended | Root-Dip Treatment: 5–10 ml per litre of water; dip seedling roots before transplanting. Dose may be adjusted according to formulation strength, crop stage and disease pressure.",
-    targetDiseases: "Wilt, Damping-off, Root rot, Collar rot, Seedling rot, Rhizoctonia-related root-zone problems, Fusarium-related soil-borne disease pressure, Pythium-related damping-off and root problems, and other harmful soil-borne fungal pathogens.",
-    methodOfApplication: "Apply as seed treatment, nursery seedling root-dip, soil application, or drip/fertigation according to crop stage. Best used preventively as part of an integrated crop-protection program.",
-    compatibility: "Compatible with many organic inputs and biological products. Avoid direct mixing with strong chemical fungicides, disinfectants, bactericidal products or other products that may adversely affect Trichoderma viride viability. If chemical fungicides are required, maintain a suitable interval between applications as recommended by an agricultural expert or product label. Conduct a small compatibility test before tank mixing with any other product.",
-    storageNotice: "Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet. Empty packages/containers should be destroyed after use."
-  },
-  {
-    id: 8,
-    slug: "neem-oil-1000-ppm-azadirachtin-1l",
-    name: "NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)",
-    category: "Biological Crop Protection",
-    brand: "Janani Agro Products",
-    price: 599,
-    oldPrice: 699,
-    discount: 14,
-    unit: "1 L",
-    rating: 4.9,
-    reviews: 44,
-    inStock: true,
-    stockCount: 140,
-    badge: "Botanical IPM",
-    image: "/products/neem-oil.jpg",
-    description: "NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized azadirachtin (0.10% w/w minimum / 1000 ppm). It is intended for use as part of an Integrated Pest Management (IPM) programme for management of susceptible insect pests. Azadirachtin exhibits botanical pest-management activity through effects including antifeedant, repellent and insect-growth-regulating properties against susceptible insect pests.",
-    origin: "Tal. Lodhika GIDC, Gujarat",
-    dietaryTags: ["Neem Oil", "Azadirachtin 1000 PPM", "Insect Control", "Mite Control", "Fungal Suppression", "Plant Protection"],
-    certifications: ["For Agriculture Use Only", "Botanical Formulation", "State: 24-Gujarat"],
-    popularity: 99,
-    isNew: true,
-    variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 599, oldPrice: 699, inStock: true },
-      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 349, oldPrice: 399, inStock: true },
-      { id: "5l", label: "5 Litre Jerry Can", unit: "5 L", price: 2650, oldPrice: 3100, inStock: true }
-    ],
-    specifications: {
-      "Active Ingredient": "Azadirachtin - 0.10% w/w minimum (1000 ppm)",
-      "Technical Source": "Azadirachta indica (Neem)",
-      "Formulation": "Botanical Emulsifiable Formulation",
-      "Net Content": "1 Litre (1 Ltr.)",
-      "MRP": "Rs. 699/- (Inclusive of all taxes)",
-      "Expiry Date": "2 Years from date of Mfg."
-    },
-    recommendedCrops: "Suitable for vegetables, fruits, cotton, pulses, cereals, tea, spices, floriculture and greenhouse horticultural crops.",
-    dosage: "Suggested dosage: 1–3 ml per litre of water. Ensure uniform coverage of foliage.",
-    targetDiseases: "Aphids, Whiteflies, Thrips, Jassids, Mealybugs, Caterpillars, Leaf Miners, Mites, and other susceptible insect pests.",
-    methodOfApplication: "Foliar spray: 1–3 ml per litre of water. Spray during early morning or evening. Avoid spraying during intense sunlight or extreme temperatures. Ensure uniform coverage of foliage. Do not exceed the recommended dose. Conduct a small-area compatibility/phytotoxicity test where crop sensitivity is unknown. Avoid mixing with incompatible products. Shake well before use.",
-    compatibility: "Compatibility with other pesticides, fertilizers, adjuvants or biological products should be established before tank mixing.",
-    storageNotice: "Keep in cool, dry place away from heat & open flame. Store in a cool, dry place away from direct sunlight. WARNING: Do not use near water sources. Keep out of reach of children. FOR AGRICULTURE USE ONLY. Caution: Not to be used on crops other than specified on this label / leaflet. Empty packages/containers should be destroyed after use."
+    recommendedCrops: "Suitable for tank mixing with all agricultural foliar sprays across all crops.",
+    dosage: "Tank Mix: 0.3 ml to 0.5 ml per litre of spray water (50 ml per 150–200 L drum)."
   }
 ];
 

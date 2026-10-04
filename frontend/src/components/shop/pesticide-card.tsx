@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag, Check, ShieldCheck, Sparkles, MessageCircle } from "lucide-react";
+import { Heart, ShoppingBag, Check, ShieldCheck, Sparkles } from "lucide-react";
+import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import { toast } from "sonner";
 import { type CropProtectionProduct } from "@/lib/crop-protection-data";
 import { useStore } from "@/components/store-provider";
@@ -158,9 +159,9 @@ export function PesticideCard({ product }: PesticideCardProps) {
             type="button"
             onClick={handleWhatsAppOrder}
             title="Chat & order on WhatsApp"
-            className="flex items-center justify-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50/80 py-2 px-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 active:scale-95"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50/80 py-2 px-2.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 active:scale-95"
           >
-            <MessageCircle className="size-3.5 text-emerald-700" />
+            <WhatsAppIcon className="size-3.5 text-[#25D366]" />
             <span>Order</span>
           </button>
         </div>

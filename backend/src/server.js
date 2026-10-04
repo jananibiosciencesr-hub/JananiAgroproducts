@@ -26,8 +26,8 @@ app.use(cors({
   origin: ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8080", "https://jananiagroproducts.com"],
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
@@ -107,6 +107,56 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/inquiries", inquiryRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/admin", adminRoutes);
+
+// Compatibility adapter: Route /api.php and /api/api.php to corresponding adminRoutes on Node.js
+app.all(["/api.php", "/api/api.php"], (req, res, next) => {
+  const action = req.query.action || "products";
+  const id = req.query.id;
+
+  if (action === "categories") {
+    if (req.method === "GET") {
+      req.url = `/categories${id ? `/${id}` : ""}`;
+      return adminRoutes(req, res, next);
+    }
+    if (req.method === "POST") {
+      if (id) {
+        req.url = `/categories/${id}`;
+        req.method = "PUT";
+        return adminRoutes(req, res, next);
+      }
+      req.url = "/categories";
+      return adminRoutes(req, res, next);
+    }
+    if (req.method === "DELETE") {
+      req.url = `/categories/${id || ""}`;
+      return adminRoutes(req, res, next);
+    }
+  }
+
+  if (action === "products") {
+    if (req.method === "GET") {
+      req.url = `/products${id ? `/${id}` : ""}`;
+      return adminRoutes(req, res, next);
+    }
+    if (req.method === "POST") {
+      if (id) {
+        req.url = `/products/${id}`;
+        req.method = "PUT";
+        return adminRoutes(req, res, next);
+      }
+      req.url = "/products";
+      return adminRoutes(req, res, next);
+    }
+  }
+
+  if (action === "orders") {
+    req.url = `/orders${id ? `/${id}` : ""}`;
+    return adminRoutes(req, res, next);
+  }
+
+  req.url = `/${action}${id ? `/${id}` : ""}`;
+  return adminRoutes(req, res, next);
+});
 
 // Error Handling Middleware
 app.use(notFound);

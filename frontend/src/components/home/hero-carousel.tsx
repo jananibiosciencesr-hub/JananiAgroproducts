@@ -181,7 +181,7 @@ export function HeroCarousel({
     <section className="relative w-full bg-stone-900 overflow-hidden select-none">
       {/* MAIN WIDESCREEN HERO CAROUSEL BANNER */}
       <div
-        className="relative w-full h-[340px] sm:h-[390px] md:h-[440px] lg:h-[480px] xl:h-[500px] overflow-hidden"
+        className="relative w-full h-[420px] sm:h-[400px] md:h-[450px] lg:h-[490px] xl:h-[520px] overflow-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
@@ -232,7 +232,7 @@ export function HeroCarousel({
 
         {/* Foreground Content: Sleek Luxury Typography */}
         <div
-          className={`relative z-20 mx-auto flex h-full max-w-7xl items-center px-6 sm:px-12 lg:px-16 ${
+          className={`relative z-20 mx-auto flex h-full max-w-7xl items-center px-4 sm:px-12 lg:px-16 pt-3 pb-16 sm:py-4 ${
             isCenterAlign
               ? "justify-center text-center"
               : isRightAlign
@@ -242,19 +242,19 @@ export function HeroCarousel({
         >
           <div
             key={active.id}
-            className={`max-w-xl lg:max-w-2xl animate-in fade-in slide-in-from-bottom-3 duration-700 select-none py-3 sm:py-4 ${
+            className={`max-w-xl lg:max-w-2xl animate-in fade-in slide-in-from-bottom-3 duration-700 select-none py-1 sm:py-4 ${
               isCenterAlign
                 ? "mx-auto text-center"
                 : isRightAlign
-                ? "sm:items-end text-right"
-                : "sm:items-start text-left"
+                ? "sm:items-end text-center sm:text-right"
+                : "sm:items-start text-center sm:text-left"
             }`}
           >
             {/* 1. Eco-Safe Pill Badge */}
             {active.badge && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-slate-950/60 px-3.5 sm:px-4 py-1.5 backdrop-blur-md shadow-lg shadow-black/40 mb-2 sm:mb-2.5">
-                <span className="flex size-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-300">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-emerald-400/40 bg-slate-950/60 px-3 sm:px-4 py-1 sm:py-1.5 backdrop-blur-md shadow-lg shadow-black/40 mb-2 sm:mb-2.5">
+                <span className="flex size-1.5 sm:size-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-300">
                   {active.badge}
                 </span>
               </div>
@@ -262,13 +262,13 @@ export function HeroCarousel({
 
             {/* 2. Headline Prefix */}
             {active.headlinePrefix && (
-              <p className="text-[11px] sm:text-xs md:text-sm font-extrabold uppercase tracking-[0.2em] text-amber-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] mb-1 sm:mb-1.5 font-sans">
+              <p className="text-[10px] sm:text-xs md:text-sm font-extrabold uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] mb-1 sm:mb-1.5 font-sans">
                 {active.headlinePrefix}
               </p>
             )}
 
             {/* 3. Main Multi-line Headline */}
-            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-[3.2rem] font-black leading-[1.08] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]">
+            <h1 className="font-display text-2xl sm:text-4xl md:text-5xl lg:text-[3.2rem] font-black leading-[1.12] sm:leading-[1.08] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]">
               {active.headlineLines ? (
                 active.headlineLines.map((line, lIdx) => (
                   <span
@@ -285,14 +285,14 @@ export function HeroCarousel({
 
             {/* 4. Subheadline */}
             {active.subheadline && (
-              <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm md:text-base font-normal text-slate-100/90 leading-relaxed max-w-lg drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+              <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base font-normal text-slate-100/90 leading-relaxed max-w-lg drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] line-clamp-2 sm:line-clamp-none">
                 {active.subheadline}
               </p>
             )}
 
             {/* 5. Luxury Action Buttons */}
             <div
-              className={`mt-4 sm:mt-6 flex flex-wrap items-center gap-3 sm:gap-4 ${
+              className={`mt-4 sm:mt-6 flex flex-wrap items-center gap-2.5 sm:gap-4 ${
                 isCenterAlign
                   ? "justify-center"
                   : isRightAlign
@@ -303,7 +303,7 @@ export function HeroCarousel({
               {/* Primary Explore Products Button */}
               <Link
                 to={active.ctaPrimaryLink || "/products"}
-                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-400 px-6 sm:px-7 py-2.5 sm:py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.4)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_28px_rgba(245,158,11,0.65)] active:scale-95"
+                className="group relative inline-flex items-center gap-1.5 sm:gap-2 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-400 px-5 sm:px-7 py-2.5 sm:py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,0.4)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_28px_rgba(245,158,11,0.65)] active:scale-95"
               >
                 <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                 <span>{active.ctaPrimaryText || "EXPLORE PRODUCTS"}</span>
@@ -313,7 +313,7 @@ export function HeroCarousel({
               {/* Secondary Enquire Button */}
               <Link
                 to={active.ctaSecondaryLink || "/contact"}
-                className="group inline-flex items-center gap-2 rounded-full border-2 border-white/70 bg-slate-950/40 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-white backdrop-blur-xl shadow-md transition-all duration-300 hover:scale-105 hover:bg-white hover:text-slate-950 hover:border-white hover:shadow-[0_8px_20px_rgba(255,255,255,0.3)] active:scale-95"
+                className="group inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/60 sm:border-2 sm:border-white/70 bg-slate-950/40 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-white backdrop-blur-xl shadow-md transition-all duration-300 hover:scale-105 hover:bg-white hover:text-slate-950 hover:border-white hover:shadow-[0_8px_20px_rgba(255,255,255,0.3)] active:scale-95"
               >
                 <MessageSquare className="size-3.5 sm:size-4 text-amber-400 transition-colors group-hover:text-slate-950" />
                 <span>{active.ctaSecondaryText || "ENQUIRE NOW"}</span>
@@ -327,7 +327,7 @@ export function HeroCarousel({
           type="button"
           onClick={prevSlide}
           aria-label="Previous Slide"
-          className="absolute left-2.5 sm:left-5 top-1/2 -translate-y-1/2 z-30 flex size-9 sm:size-11 items-center justify-center rounded-full border border-white/25 bg-slate-950/40 text-white backdrop-blur-xl shadow-xl transition hover:scale-110 hover:bg-white hover:text-slate-950 active:scale-95"
+          className="hidden sm:flex absolute left-2.5 sm:left-5 top-1/2 -translate-y-1/2 z-30 size-9 sm:size-11 items-center justify-center rounded-full border border-white/25 bg-slate-950/40 text-white backdrop-blur-xl shadow-xl transition hover:scale-110 hover:bg-white hover:text-slate-950 active:scale-95"
         >
           <ChevronLeft className="size-4 sm:size-5" />
         </button>
@@ -336,17 +336,17 @@ export function HeroCarousel({
           type="button"
           onClick={nextSlide}
           aria-label="Next Slide"
-          className="absolute right-2.5 sm:right-5 top-1/2 -translate-y-1/2 z-30 flex size-9 sm:size-11 items-center justify-center rounded-full border border-white/25 bg-slate-950/40 text-white backdrop-blur-xl shadow-xl transition hover:scale-110 hover:bg-white hover:text-slate-950 active:scale-95"
+          className="hidden sm:flex absolute right-2.5 sm:right-5 top-1/2 -translate-y-1/2 z-30 size-9 sm:size-11 items-center justify-center rounded-full border border-white/25 bg-slate-950/40 text-white backdrop-blur-xl shadow-xl transition hover:scale-110 hover:bg-white hover:text-slate-950 active:scale-95"
         >
           <ChevronRight className="size-4 sm:size-5" />
         </button>
 
         {/* 7. BOTTOM SLIDE PROGRESS TABS & COUNTER */}
-        <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 sm:gap-2.5 rounded-full border border-white/20 bg-slate-950/70 px-3.5 sm:px-4 py-1.5 backdrop-blur-xl shadow-xl">
-          <span className="text-[11px] font-bold text-amber-400 font-mono tracking-wider mr-0.5">
+        <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 sm:gap-2.5 rounded-full border border-white/20 bg-slate-950/75 px-3 sm:px-4 py-1 sm:py-1.5 backdrop-blur-xl shadow-xl">
+          <span className="text-[10px] sm:text-[11px] font-bold text-amber-400 font-mono tracking-wider mr-0.5">
             0{currentSlide + 1} / 0{slides.length}
           </span>
-          <div className="h-3 w-px bg-white/25" />
+          <div className="h-2.5 sm:h-3 w-px bg-white/25" />
           {slides.map((s, index) => {
             const isActive = index === currentSlide;
             return (
@@ -356,7 +356,7 @@ export function HeroCarousel({
                 onClick={() => goToSlide(index)}
                 aria-label={`Go to slide ${index + 1}`}
                 className={`relative group flex items-center justify-center rounded-full transition-all duration-300 ${
-                  isActive ? "w-8 sm:w-11 h-2 bg-white/20" : "size-2 bg-white/40 hover:bg-white/80"
+                  isActive ? "w-7 sm:w-11 h-1.5 sm:h-2 bg-white/20" : "size-1.5 sm:size-2 bg-white/40 hover:bg-white/80"
                 }`}
               >
                 {isActive && (

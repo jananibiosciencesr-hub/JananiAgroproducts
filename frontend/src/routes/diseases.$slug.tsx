@@ -19,6 +19,7 @@ import {
   type CropProtectionProduct
 } from "@/lib/crop-protection-data";
 import { PesticideCard } from "@/components/shop/pesticide-card";
+import { WhatsAppIcon } from "@/components/ui/brand-icons";
 
 export const Route = createFileRoute("/diseases/$slug")({
   head: ({ params }) => {
@@ -232,7 +233,7 @@ function DiseaseDetailPage() {
         aria-label="Chat on WhatsApp"
         className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl hover:scale-110 active:scale-95 transition-transform drop-shadow-md"
       >
-        <MessageCircle className="size-7 fill-white text-[#25D366]" />
+        <WhatsAppIcon className="size-7" />
       </a>
     </div>
   );

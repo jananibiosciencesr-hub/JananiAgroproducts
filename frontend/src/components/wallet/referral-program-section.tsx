@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { type ReferralAnalytics } from "./types";
+import { WhatsAppIcon, TelegramIcon } from "@/components/ui/brand-icons";
 
 const INITIAL_REFERRAL_DATA: ReferralAnalytics = {
   referralCode: "JANANI100",
@@ -243,7 +244,7 @@ export function ReferralProgramSection() {
               onClick={handleShareWhatsApp}
               className="p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#128C7E] dark:text-[#25D366] flex flex-col items-center justify-center gap-1.5 transition hover:scale-105 active:scale-95"
             >
-              <MessageCircle className="size-5 fill-current" />
+              <WhatsAppIcon className="size-5" />
               <span className="text-xs font-bold">WhatsApp</span>
             </button>
 
@@ -253,7 +254,7 @@ export function ReferralProgramSection() {
               onClick={handleShareTelegram}
               className="p-3 rounded-2xl bg-[#229ED9]/10 hover:bg-[#229ED9]/20 border border-[#229ED9]/30 text-[#229ED9] flex flex-col items-center justify-center gap-1.5 transition hover:scale-105 active:scale-95"
             >
-              <Send className="size-5" />
+              <TelegramIcon className="size-5" />
               <span className="text-xs font-bold">Telegram</span>
             </button>
 

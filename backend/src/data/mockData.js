@@ -1,133 +1,511 @@
-const names = [
-  ["ANNADA - Fish Amino Acid (5L)", "Organic Plant Nutrients", 3600, "5 L"],
-  ["BALAVAN - Bacillus Subtilis (5L)", "Biological Crop Protection", 5600, "5 L"],
-  ["BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)", "Soil Conditioners & Biostimulants", 3900, "5 L"],
-  ["SURAKSHA - Pseudomonas Fluorescens (5L)", "Biological Crop Protection", 4900, "5 L"],
-  ["DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)", "Soil Conditioners & Biostimulants", 5300, "5 L"],
-  ["PUSHKAL - Flowering & Fruit Set Biostimulant (1L)", "Organic Plant Nutrients", 999, "1 L"],
-  ["HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)", "Biological Crop Protection", 950, "1 L"],
-  ["NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)", "Biological Crop Protection", 599, "1 L"],
+export const products = [
+  {
+    id: 1,
+    slug: "harit",
+    name: "HARIT",
+    subtitle: "Trichoderma Viride Liquid Biofungal Formulation",
+    category: "Biofungicides",
+    brand: "Janani Agro Products",
+    price: 450,
+    oldPrice: 520,
+    discount: 13,
+    unit: "1 L",
+    rating: 4.8,
+    reviews: 142,
+    inStock: true,
+    stockCount: 150,
+    badge: "Best Seller",
+    image: "/products/harit.jpg",
+    description: "HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Trichoderma Viride", "Biofungicide", "Wilt Protection", "Root Rot Control", "Rhizosphere Health"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "Gujarat State Reg. 24"],
+    popularity: 100,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cereals", "Pulses", "Cotton", "Sugarcane", "All Crops"],
+    benefits: ["Fungal Disease Control", "Damping Off Control", "Root Growth", "Soil Health"],
+    variants: [
+      { id: "250ml", label: "250 ml", unit: "250 ml", price: 150, oldPrice: 180, inStock: true },
+      { id: "500ml", label: "500 ml", unit: "500 ml", price: 280, oldPrice: 320, inStock: true },
+      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 450, oldPrice: 520, inStock: true },
+      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 2000, oldPrice: 2350, inStock: true }
+    ],
+    specifications: {
+      "Active Organism": "Trichoderma viride Minimum 5 × 10⁸ CFU/ml",
+      "Formulation": "Liquid Biofungal Formulation",
+      "Carrier / Base": "Suitable Microbial Carrier",
+      "Contamination Level": "Nil at 10⁶ dilution",
+      "pH": "6.5 – 7.5",
+      "Net Content": "1 Litre (1 Ltr.)",
+      "MRP": "Rs. 520/- (Inclusive of all taxes)",
+      "Expiry Date": "18 Months from date of Mfg."
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants and horticultural crops.",
+    dosage: "Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed.",
+    targetDiseases: "Wilt, Damping-off, Root rot, Collar rot, Seedling rot, Rhizoctonia-related root-zone problems, Fusarium-related soil-borne disease pressure."
+  },
+  {
+    id: 2,
+    slug: "bhumi-shakti",
+    name: "BHUMI SHAKTI",
+    subtitle: "Humic & Fulvic Based Soil Conditioner",
+    category: "Soil Conditioners",
+    brand: "Janani Agro Products",
+    price: 380,
+    oldPrice: 450,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.7,
+    reviews: 98,
+    inStock: true,
+    stockCount: 120,
+    badge: "New",
+    image: "/products/bhumi-shakti.jpg",
+    description: "BHUMI SHAKTI is a humic and fulvic based formulation designed to support soil health, improve nutrient availability and promote efficient nutrient utilization by plants. Its organic carbon-rich components help support favourable soil conditions and contribute to better root-zone development.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Humic Acid 12%", "Fulvic Acid 5%", "Soil Conditioner", "Organic Carbon", "Biostimulant"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 98,
+    isNew: true,
+    crops: ["Fruits", "Vegetables", "Cereals", "Pulses", "Oilseeds", "Cotton", "Sugarcane", "All Crops"],
+    benefits: ["Soil Health", "Root Growth", "Plant Growth", "Organic Farming"],
+    variants: [
+      { id: "250ml", label: "250 ml", unit: "250 ml", price: 130, oldPrice: 150, inStock: true },
+      { id: "500ml", label: "500 ml", unit: "500 ml", price: 220, oldPrice: 260, inStock: true },
+      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 380, oldPrice: 450, inStock: true },
+      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 1750, oldPrice: 2100, inStock: true }
+    ],
+    specifications: {
+      "Humic Acid": "12.00%",
+      "Fulvic Acid": "5.00%",
+      "Total Organic Carbon": "8.00%",
+      "Potassium (K₂O)": "3.00%",
+      "Amino Acids": "5.00%",
+      "Organic Matter": "20.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 450/- (Inclusive of all taxes)",
+      "Expiry Date": "3 years from date of Mfg."
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, flowers, plantation crops and horticultural crops.",
+    dosage: "Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre."
+  },
+  {
+    id: 3,
+    slug: "neem-oil-1000-ppm",
+    name: "NEEM OIL 1000 PPM",
+    subtitle: "Containing Azadirachtin 1000 PPM",
+    category: "Botanical Pesticides",
+    brand: "Janani Agro Products",
+    price: 550,
+    oldPrice: 650,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.6,
+    reviews: 86,
+    inStock: true,
+    stockCount: 140,
+    badge: "Popular",
+    image: "/products/neem-oil.jpg",
+    description: "NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized azadirachtin (0.10% w/w minimum / 1000 ppm). It is intended for use as part of an Integrated Pest Management (IPM) programme for management of susceptible insect pests.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Neem Oil", "Azadirachtin 1000 PPM", "Insect Control", "Mite Control", "Botanical IPM"],
+    certifications: ["For Agriculture Use Only", "Botanical Formulation", "State: 24-Gujarat"],
+    popularity: 97,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cotton", "Pulses", "Cereals", "All Crops"],
+    benefits: ["Organic Farming", "Crop Yield"],
+    variants: [
+      { id: "250ml", label: "250 ml", unit: "250 ml", price: 180, oldPrice: 210, inStock: true },
+      { id: "500ml", label: "500 ml", unit: "500 ml", price: 320, oldPrice: 380, inStock: true },
+      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 550, oldPrice: 650, inStock: true },
+      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 2500, oldPrice: 2950, inStock: true }
+    ],
+    specifications: {
+      "Active Ingredient": "Azadirachtin - 0.10% w/w minimum (1000 ppm)",
+      "Technical Source": "Azadirachta indica (Neem)",
+      "Formulation": "Botanical Emulsifiable Formulation",
+      "Net Content": "1 Litre (1 Ltr.)",
+      "MRP": "Rs. 650/- (Inclusive of all taxes)",
+      "Expiry Date": "2 Years from date of Mfg."
+    },
+    recommendedCrops: "Suitable for vegetables, fruits, cotton, pulses, cereals, tea, spices, floriculture and greenhouse horticultural crops.",
+    dosage: "Suggested dosage: 1–3 ml per litre of water. Ensure uniform coverage of foliage.",
+    targetDiseases: "Aphids, Whiteflies, Thrips, Jassids, Mealybugs, Caterpillars, Leaf Miners, Mites, and other susceptible insect pests."
+  },
+  {
+    id: 4,
+    slug: "nano-gold",
+    name: "NANO GOLD",
+    subtitle: "Plant Growth Promoter",
+    category: "Plant Growth Promoters",
+    brand: "Janani Agro Products",
+    price: 600,
+    oldPrice: 720,
+    discount: 16,
+    unit: "1 L",
+    rating: 4.5,
+    reviews: 74,
+    inStock: true,
+    stockCount: 95,
+    badge: "Trending",
+    image: "/products/pushkal.jpg",
+    description: "NANO GOLD is an advanced bio-nanotechnology plant growth promoter formulated with bioactive peptides, micronutrients and organic stimulants to enhance metabolic activity, chlorophyll synthesis and photosynthesis efficiency.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Nano Nutrients", "Growth Promoter", "Photosynthesis Booster", "100% Bio-active"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 95,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cotton", "Cereals", "Sugarcane"],
+    benefits: ["Plant Growth", "Crop Yield", "Root Growth"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 600, oldPrice: 720, inStock: true },
+      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 340, oldPrice: 400, inStock: true }
+    ],
+    specifications: {
+      "Bioactive Peptides": "8.00%",
+      "Chelated Trace Elements": "4.50%",
+      "Plant Stimulant Factors": "12.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 720/- (Inclusive of all taxes)",
+      "Expiry Date": "3 Years from date of Mfg."
+    },
+    recommendedCrops: "Cotton, Sugarcane, Chilli, Tomato, Pomegranate, Banana, Grapes, Paddy, Wheat, Maize.",
+    dosage: "Foliar Application: 1.5–2.5 ml per litre of water during rapid vegetative and pre-flowering stages."
+  },
+  {
+    id: 5,
+    slug: "vermi-boost",
+    name: "VERMI BOOST",
+    subtitle: "Organic Soil Enhancer",
+    category: "Crop Nutrition",
+    brand: "Janani Agro Products",
+    price: 420,
+    oldPrice: 490,
+    discount: 14,
+    unit: "1 L",
+    rating: 4.6,
+    reviews: 65,
+    inStock: true,
+    stockCount: 110,
+    badge: "Natural Nutrition",
+    image: "/products/annada.jpg",
+    description: "VERMI BOOST is an enzymatic liquid extract rich in vermi-wash metabolites, organic acids, and beneficial soil microbe stimulants designed to enrich soil ecology and accelerate root aeration and nutrient assimilation.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Vermi Extract", "Soil Enhancer", "Organic Nutrition", "Rhizosphere Care"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality", "State: 24-Gujarat"],
+    popularity: 94,
+    isNew: false,
+    crops: ["Vegetables", "Fruits", "Cereals", "Pulses", "All Crops"],
+    benefits: ["Soil Health", "Organic Farming", "Plant Growth"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 420, oldPrice: 490, inStock: true }
+    ],
+    specifications: {
+      "Vermi-Derived Liquid": "35.00%",
+      "Humic Fractions": "6.00%",
+      "Organic Nitrogen": "2.50%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 490/- (Inclusive of all taxes)"
+    },
+    recommendedCrops: "All agricultural crops, open-field vegetables, orchards and protected cultivation greenhouses.",
+    dosage: "Drip / Drenching: 1–2 Litres per acre | Foliar: 3–5 ml per litre of water."
+  },
+  {
+    id: 6,
+    slug: "root-plus",
+    name: "ROOT PLUS",
+    subtitle: "Root Growth Promoter",
+    category: "Plant Growth Promoters",
+    brand: "Janani Agro Products",
+    price: 390,
+    oldPrice: 460,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.4,
+    reviews: 53,
+    inStock: true,
+    stockCount: 85,
+    badge: "Root Activator",
+    image: "/products/dharani.jpg",
+    description: "ROOT PLUS is a specialised rooting stimulant formulation containing natural auxin precursors, seaweed biostimulants, and phosphonate carriers to develop dense lateral feeder roots and white roots for superior water and nutrient uptake.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Root Initiator", "White Root Development", "Vigorous Establishment", "Nutrient Uptake"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 93,
+    isNew: false,
+    crops: ["Vegetables", "Cereals", "Pulses", "Cotton", "Sugarcane"],
+    benefits: ["Root Growth", "Plant Growth", "Crop Yield"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 390, oldPrice: 460, inStock: true }
+    ],
+    specifications: {
+      "Root Inducing Factors": "15.00%",
+      "Seaweed Ascophyllum Nodosum": "10.00%",
+      "Fulvic Carrier": "5.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 460/- (Inclusive of all taxes)"
+    },
+    recommendedCrops: "Paddy, Cotton, Tomato, Chilli, Onion, Sugarcane, Banana, Papaya, Mango, Potato.",
+    dosage: "Seedling Dip: 5 ml/L | Drip: 1 Litre per acre within 15–30 days of sowing/transplanting."
+  },
+  {
+    id: 7,
+    slug: "crop-shield",
+    name: "CROP SHIELD",
+    subtitle: "Botanical Pesticide",
+    category: "Botanical Pesticides",
+    brand: "Janani Agro Products",
+    price: 480,
+    oldPrice: 560,
+    discount: 14,
+    unit: "1 L",
+    rating: 4.5,
+    reviews: 61,
+    inStock: true,
+    stockCount: 90,
+    badge: "Bio-Shield",
+    image: "/products/balavan.jpg",
+    description: "CROP SHIELD is a multi-action botanical crop protector synthesized from herbal extracts including Pongamia, Karanj and Castor oils with natural botanical alkaloids that repel chewing and sucking pests and inhibit fungal spore germination.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Botanical Pesticide", "Pest Repellent", "Zero Chemical Residue", "Eco-friendly"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 92,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cotton", "Pulses", "Oilseeds"],
+    benefits: ["Fungal Disease Control", "Organic Farming"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 480, oldPrice: 560, inStock: true }
+    ],
+    specifications: {
+      "Karanj Oil Extract": "20.00%",
+      "Botanical Alkaloids": "5.00%",
+      "Natural Emulsifier": "10.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 560/-"
+    },
+    recommendedCrops: "Vegetables, Cotton, Pomegranate, Citrus, Mango, Paddy, Pulses.",
+    dosage: "Foliar Spray: 2–3 ml per litre of water at first symptom of pest arrival."
+  },
+  {
+    id: 8,
+    slug: "foliar-nutri",
+    name: "FOLIAR NUTRI",
+    subtitle: "Micronutrient Mixture",
+    category: "Crop Nutrition",
+    brand: "Janani Agro Products",
+    price: 520,
+    oldPrice: 600,
+    discount: 13,
+    unit: "1 L",
+    rating: 4.3,
+    reviews: 49,
+    inStock: true,
+    stockCount: 75,
+    badge: "Micro-Nutrients",
+    image: "/products/dhanya.jpg",
+    description: "FOLIAR NUTRI is an EDTA-chelated balanced liquid micronutrient formulation containing Zinc, Iron, Manganese, Copper, Boron and Molybdenum to remedy hidden hunger and deficiency chlorosis in demanding crops.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Chelated Micronutrients", "Foliar Spray", "Chlorosis Remedy", "Yield Booster"],
+    certifications: ["For Agriculture Use Only", "Fertilizer Grade Standards"],
+    popularity: 90,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cereals", "Cotton", "Sugarcane"],
+    benefits: ["Plant Growth", "Crop Yield"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 520, oldPrice: 600, inStock: true }
+    ],
+    specifications: {
+      "Chelated Zinc (Zn)": "3.00%",
+      "Chelated Iron (Fe)": "2.00%",
+      "Boron (B)": "0.50%",
+      "Manganese (Mn)": "1.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 600/-"
+    },
+    recommendedCrops: "Cotton, Paddy, Sugarcane, Vegetables, Citrus, Apple, Banana, Grapes.",
+    dosage: "Foliar spray: 2 ml per litre of water during vegetative and flowering flush."
+  },
+  {
+    id: 9,
+    slug: "bio-care",
+    name: "BIO CARE",
+    subtitle: "Biofungicide",
+    category: "Biofungicides",
+    brand: "Janani Agro Products",
+    price: 410,
+    oldPrice: 480,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.4,
+    reviews: 58,
+    inStock: true,
+    stockCount: 130,
+    badge: "Biofungicide",
+    image: "/products/suraksha.jpg",
+    description: "BIO CARE is a broad-spectrum biological fungicide powered by beneficial antagonistic microorganisms that effectively protect roots and aerial plant foliage from blight, leaf spots, downy mildew and anthracnose.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Biofungicide", "Blight Defence", "Anthracnose Control", "Natural Microbial"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 91,
+    isNew: false,
+    crops: ["Vegetables", "Fruits", "Cereals", "Pulses", "Oilseeds"],
+    benefits: ["Fungal Disease Control", "Damping Off Control", "Soil Health"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 410, oldPrice: 480, inStock: true }
+    ],
+    specifications: {
+      "Bio-Active Antagonists": "Minimum 2 × 10⁸ CFU/ml",
+      "Formulation": "Aqueous Suspension",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 480/-"
+    },
+    recommendedCrops: "Tomato, Chilli, Potato, Groundnut, Ginger, Turmeric, Cumin, Mustard, Grapes.",
+    dosage: "Foliar spray: 2.5–3 ml per litre of water | Soil Drench: 1 Litre per acre."
+  },
+  {
+    id: 10,
+    slug: "plant-vigor",
+    name: "PLANT VIGOR",
+    subtitle: "Plant Growth Promoter",
+    category: "Speciality Products",
+    brand: "Janani Agro Products",
+    price: 495,
+    oldPrice: 580,
+    discount: 15,
+    unit: "1 L",
+    rating: 4.5,
+    reviews: 72,
+    inStock: true,
+    stockCount: 95,
+    badge: "Speciality",
+    image: "/products/pushkal-bottle.jpg",
+    description: "PLANT VIGOR is an innovative speciality physiological activator designed to combat stress from drought, salinity, and heat. It enhances branching, vegetative shoots and overall vigour in critical development windows.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Stress Resilience", "Speciality Stimulant", "Vegetative Vigour", "Crop Activator"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 96,
+    isNew: false,
+    crops: ["Fruits", "Vegetables", "Cotton", "Sugarcane", "All Crops"],
+    benefits: ["Plant Growth", "Crop Yield", "Root Growth"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 495, oldPrice: 580, inStock: true }
+    ],
+    specifications: {
+      "Speciality Osmolytes": "12.00%",
+      "Fulvic Matrix": "8.00%",
+      "Micronutrient Traces": "3.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 580/-"
+    },
+    recommendedCrops: "Cotton, Sugarcane, Vegetables, Orchards, Cereals and Cash Crops.",
+    dosage: "Foliar spray: 2 ml per litre of water during stress conditions or active growth."
+  },
+  {
+    id: 11,
+    slug: "soil-sure",
+    name: "SOIL SURE",
+    subtitle: "Soil Conditioner",
+    category: "Soil Conditioners",
+    brand: "Janani Agro Products",
+    price: 460,
+    oldPrice: 530,
+    discount: 13,
+    unit: "1 L",
+    rating: 4.3,
+    reviews: 40,
+    inStock: true,
+    stockCount: 80,
+    badge: "Soil Rejuvenator",
+    image: "/products/balavan-bottle.jpg",
+    description: "SOIL SURE is a natural soil buffering conditioner that corrects soil pH, reduces compaction, improves water holding capacity, and restores depleted beneficial soil microflora in intensive agricultural soils.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Soil Conditioner", "pH Buffer", "Water Retention", "Microflora Revival"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 88,
+    isNew: false,
+    crops: ["Cereals", "Pulses", "Cotton", "Sugarcane", "All Crops"],
+    benefits: ["Soil Health", "Organic Farming", "Root Growth"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 460, oldPrice: 530, inStock: true }
+    ],
+    specifications: {
+      "Organic Buffering Agents": "25.00%",
+      "Biological Activators": "5.00%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 530/-"
+    },
+    recommendedCrops: "Sugarcane, Cotton, Banana, Paddy, Maize, Wheat, Horticultural Soils.",
+    dosage: "Drip Irrigation / Flood: 1 to 2 Litres per acre with first basal irrigation."
+  },
+  {
+    id: 12,
+    slug: "green-power",
+    name: "GREEN POWER",
+    subtitle: "Organic Crop Booster",
+    category: "Biofungicides",
+    brand: "Janani Agro Products",
+    price: 575,
+    oldPrice: 670,
+    discount: 14,
+    unit: "1 L",
+    rating: 4.6,
+    reviews: 83,
+    inStock: true,
+    stockCount: 115,
+    badge: "Crop Booster",
+    image: "/products/annada-bottle.jpg",
+    description: "GREEN POWER is a powerful organic crop booster and bioprotectant formulated with sea-kelp minerals, organic plant extracts and microbial metabolites to provide deep green foliage and rapid recovery from fungal stress.",
+    origin: "Tal. Lodhika GIDC, Gujarat",
+    dietaryTags: ["Crop Booster", "Deep Green Foliage", "Biological Immunity", "Organic Yield"],
+    certifications: ["For Agriculture Use Only", "Janani Certified Quality"],
+    popularity: 97,
+    isNew: false,
+    crops: ["Vegetables", "Fruits", "Cotton", "Cereals", "All Crops"],
+    benefits: ["Plant Growth", "Crop Yield", "Fungal Disease Control"],
+    variants: [
+      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 575, oldPrice: 670, inStock: true }
+    ],
+    specifications: {
+      "Organic Plant Extracts": "22.00%",
+      "Soluble Seaweed Kelp": "10.00%",
+      "Organic Nitrogen": "3.50%",
+      "Net Content": "1 Ltr.",
+      "MRP": "Rs. 670/-"
+    },
+    recommendedCrops: "Vegetables, Fruit Orchards, Cotton, Spices, Floriculture, Tea and Coffee.",
+    dosage: "Foliar Spray: 2–3 ml per litre of water at intervals of 15 days."
+  }
 ];
 
-const slugs = (val) => val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-
-export const products = names.map(([name, category, price, unit], index) => {
-  const isAnnada = name.includes("ANNADA");
-  const isBalavan = name.includes("BALAVAN");
-  const isBhumi = name.includes("BHUMI");
-  const isSuraksha = name.includes("SURAKSHA");
-  const isDharani = name.includes("DHARANI") || name.includes("DHANYA");
-  const isPushkal = name.includes("PUSHKAL");
-  const isHarit = name.includes("HARIT") || name.includes("Trichoderma");
-  const isNeem = name.includes("NEEM");
-  const image = isAnnada
-    ? "/products/annada.jpg"
-    : isBalavan
-    ? "/products/balavan.jpg"
-    : isBhumi
-    ? "/products/bhumi-shakti.jpg"
-    : isSuraksha
-    ? "/products/suraksha.jpg"
-    : isDharani
-    ? "/products/dharani.jpg"
-    : isPushkal
-    ? "/products/pushkal.jpg"
-    : isHarit
-    ? "/products/harit.jpg"
-    : isNeem
-    ? "/products/neem-oil.jpg"
-    : "/products/balavan.jpg";
-  const sku = isAnnada
-    ? "JAP-SKU-ANNADA"
-    : isBalavan
-    ? "JAP-SKU-BALAVAN"
-    : isBhumi
-    ? "JAP-SKU-BHUMISHAKTI"
-    : isSuraksha
-    ? "JAP-SKU-SURAKSHA"
-    : isDharani
-    ? "JAP-SKU-DHARANI"
-    : isPushkal
-    ? "JAP-SKU-PUSHKAL"
-    : isHarit
-    ? "JAP-SKU-HARIT"
-    : isNeem
-    ? "JAP-SKU-NEEM1000"
-    : `JAP-SKU-${String(index + 1).padStart(3, "0")}`;
-  const brand = "Janani Agro Products";
-
-  return {
-    id: index + 1,
-    slug: isHarit
-      ? "harit-trichoderma-viride-liquid-biofungal-formulation-1l"
-      : isNeem
-      ? "neem-oil-1000-ppm-azadirachtin-1l"
-      : slugs(name),
-    name,
-    category,
-    brand,
-    sku,
-    price,
-    oldPrice: Math.round(price * 1.2),
-    unit,
-    stock: 50 + index * 10,
-    rating: Number((4.6 + (index % 4) * 0.1).toFixed(1)),
-    reviews: 34 + index * 7,
-    badge: index < 4 ? "Bestseller" : "Bio-Certified",
-    image,
-    description: isAnnada
-      ? "ANNADA contains Fish Amino Acid, a natural organic bio-nutrient formulation rich in essential amino acids, proteins, and macro-micronutrients. Enhances chlorophyll synthesis, boosts vegetative growth, and increases crop yields."
-      : isBalavan
-      ? "BALAVAN contains beneficial Bacillus subtilis liquid biological formulation. It supports biological management of blight-related diseases, suppresses harmful fungal pathogens, and boosts crop resilience."
-      : isBhumi
-      ? "BHUMI SHAKTI is a humic and fulvic based soil conditioner biostimulant. Enriches soil fertility, unlocks nutrient availability, stimulates deep root development, and boosts organic carbon."
-      : isSuraksha
-      ? "SURAKSHA contains beneficial Pseudomonas fluorescens liquid biofungal formulation. Controls soil-borne diseases, protects the rhizosphere root-zone, and boosts natural crop resistance."
-      : isDharani
-      ? "DHARANI contains beneficial Potassium Mobilizing Bacteria (KMB). It helps mobilize fixed and unavailable forms of potassium present in the soil and makes potassium readily accessible to crops, supporting root vigour, efficient nutrient utilization, and overall yield."
-      : isPushkal
-      ? "PUSHKAL is a concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, 5% Fulvic Acid, Boron, Zinc and Potassium to maximize flower initiation, prevent flower drop, enhance fruit set, and ensure uniform fruit sizing."
-      : isHarit
-      ? "HARIT contains beneficial Trichoderma viride liquid biofungal formulation (Minimum 5 × 10⁸ CFU/ml). Helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases."
-      : isNeem
-      ? "NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized Azadirachtin (1000 ppm) for organic management of aphids, whiteflies, thrips, caterpillars, leaf miners and mites."
-      : `High-efficacy agricultural bio-input from Janani Agro Products.`,
-    origin: "Lodhika GIDC, Gujarat",
-    certification: "Certified Organic & NPOP Verified",
-    status: "In Stock",
-    active: true
-  };
-});
-
 export const categoryImages = {
-  "Biological Crop Protection": "/products/balavan.jpg",
-  "Organic Plant Nutrients": "/products/annada.jpg",
-  "Soil Conditioners & Biostimulants": "/products/bhumi-shakti.jpg",
+  "Bio Fertilizers": "/products/dharani.jpg",
+  "Bio Pesticides": "/products/neem-oil.jpg",
+  "Bio Fungicides": "/products/harit.jpg",
+  "Bio Stimulants": "/products/bhumi-shakti.jpg",
+  "Micro Nutrients": "/products/pushkal.jpg",
+  "Insecticides": "/products/neem-oil.jpg",
+  "Fungicides": "/products/harit.jpg",
+  "Botanical Extracts": "/products/annada.jpg",
+  "Water Solubles": "/products/bhumi-shakti.jpg",
+  "Agri Inputs": "/products/dharani.jpg",
+  "Others": "/products/balavan.jpg"
 };
 
 export const categories = [
-  "Biological Crop Protection",
-  "Organic Plant Nutrients",
-  "Soil Conditioners & Biostimulants",
-].map((name, index) => ({
-  id: index + 1,
-  name,
-  slug: slugs(name),
-  image: categoryImages[name] || "/products/balavan.jpg",
-  count: products.filter((p) => {
-    const pCat = p.category.toLowerCase();
-    const cName = name.toLowerCase();
-    return pCat === cName || cName.includes(pCat) || pCat.includes(cName);
-  }).length || 2,
-  description: name === "Biological Crop Protection"
-    ? "Beneficial Trichoderma viride, Bacillus subtilis, Pseudomonas fluorescens, and cold-pressed Azadirachtin botanical formulations for disease management, pest control, root protection, and pathogen suppression."
-    : name === "Organic Plant Nutrients"
-    ? "Naturally derived fish amino acids, seaweed biostimulants, and organic crop nutrition for healthy vegetative and reproductive growth."
-    : "Humic & fulvic organic acid formulations and potassium mobilizing biofertilizers designed to enrich soil fertility, unlock nutrient uptake, and develop healthy root zones.",
-}));
+  { id: 1, name: "Bio Fertilizers", slug: "bio-fertilizers", count: 3, image: "/products/dharani.jpg", description: "Potassium mobilizing, Rhizobium, and Azotobacter biological cultures for soil enrichment." },
+  { id: 2, name: "Bio Pesticides", slug: "bio-pesticides", count: 3, image: "/products/neem-oil.jpg", description: "Safe biological and botanical pest management solutions." },
+  { id: 3, name: "Bio Fungicides", slug: "bio-fungicides", count: 3, image: "/products/harit.jpg", description: "Trichoderma viride, Bacillus subtilis & biological disease control." },
+  { id: 4, name: "Bio Stimulants", slug: "bio-stimulants", count: 3, image: "/products/bhumi-shakti.jpg", description: "Humic, fulvic acid and seaweed extract formulations for vigorous plant growth." },
+  { id: 5, name: "Micro Nutrients", slug: "micro-nutrients", count: 2, image: "/products/pushkal.jpg", description: "Essential chelated zinc, boron and trace micronutrient complexes." },
+  { id: 6, name: "Insecticides", slug: "insecticides", count: 1, image: "/products/neem-oil.jpg", description: "Targeted crop insect pest control formulations." },
+  { id: 7, name: "Fungicides", slug: "fungicides", count: 1, image: "/products/harit.jpg", description: "Broad-spectrum fungal defense and curative treatments." },
+  { id: 8, name: "Botanical Extracts", slug: "botanical-extracts", count: 1, image: "/products/annada.jpg", description: "Pure herbal extracts and natural plant-derived bioactive agents." },
+  { id: 9, name: "Water Solubles", slug: "water-solubles", count: 1, image: "/products/bhumi-shakti.jpg", description: "High-grade 100% water soluble plant nutrients for drip & foliar application." },
+  { id: 10, name: "Agri Inputs", slug: "agri-inputs", count: 1, image: "/products/dharani.jpg", description: "Agricultural wetting agents, silicon spreaders and adjuvant enhancers." },
+  { id: 11, name: "Others", slug: "others", count: 1, image: "/products/balavan.jpg", description: "Speciality agricultural formulations and customized farm solutions." }
+];
 
 export let orders = [];
-
 export let inquiries = [];
 export let dealerApplications = [];
 export let contactMessages = [];

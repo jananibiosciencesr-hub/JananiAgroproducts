@@ -33,6 +33,7 @@ import { Route as ReturnPolicyRouteImport } from './routes/return-policy'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as WishlistRouteImport } from './routes/wishlist'
@@ -165,6 +166,11 @@ const ShippingPolicyRoute = ShippingPolicyRouteImport.update({
   path: '/shipping-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrackOrderRoute = TrackOrderRouteImport.update({
   id: '/track-order',
   path: '/track-order',
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/services': typeof ServicesRoute
   '/shipping-policy': typeof ShippingPolicyRoute
+  '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/wallet': typeof WalletRoute
   '/wishlist': typeof WishlistRoute
@@ -280,6 +287,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/services': typeof ServicesRoute
   '/shipping-policy': typeof ShippingPolicyRoute
+  '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/wallet': typeof WalletRoute
   '/wishlist': typeof WishlistRoute
@@ -318,6 +326,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/services': typeof ServicesRoute
   '/shipping-policy': typeof ShippingPolicyRoute
+  '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/wallet': typeof WalletRoute
   '/wishlist': typeof WishlistRoute
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/services'
     | '/shipping-policy'
+    | '/terms'
     | '/track-order'
     | '/wallet'
     | '/wishlist'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/services'
     | '/shipping-policy'
+    | '/terms'
     | '/track-order'
     | '/wallet'
     | '/wishlist'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/services'
     | '/shipping-policy'
+    | '/terms'
     | '/track-order'
     | '/wallet'
     | '/wishlist'
@@ -466,6 +478,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   ServicesRoute: typeof ServicesRoute
   ShippingPolicyRoute: typeof ShippingPolicyRoute
+  TermsRoute: typeof TermsRoute
   TrackOrderRoute: typeof TrackOrderRoute
   WalletRoute: typeof WalletRoute
   WishlistRoute: typeof WishlistRoute
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShippingPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/track-order': {
       id: '/track-order'
       path: '/track-order'
@@ -808,6 +828,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   ServicesRoute: ServicesRoute,
   ShippingPolicyRoute: ShippingPolicyRoute,
+  TermsRoute: TermsRoute,
   TrackOrderRoute: TrackOrderRoute,
   WalletRoute: WalletRoute,
   WishlistRoute: WishlistRoute,

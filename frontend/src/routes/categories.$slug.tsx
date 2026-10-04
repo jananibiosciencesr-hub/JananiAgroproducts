@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useMemo, useState } from "react";
 import {
-  ArrowLeft,
   ChevronRight,
   Grid2X2,
   List,
@@ -10,14 +9,13 @@ import {
   ArrowUpDown,
   Sparkles,
   ShieldCheck,
-  MapPin,
   Leaf,
-  Boxes
+  Package,
+  ArrowRight
 } from "lucide-react";
 import { categories, products, type Product } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
-import { PageHero } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
 import { ProductQuickViewModal } from "@/components/shop/product-quick-view-modal";
 
@@ -101,71 +99,90 @@ function CategoryDetailPage() {
 
   return (
     <>
-      <PageHero
-        eyebrow="Single-Origin Category Collection"
-        title={category.name}
-        copy={`Pure, freshly processed and farm-sourced ${category.name.toLowerCase()} packaged with authentic purity in Gujarat.`}
-        image={category.image}
-      >
-        <div className="flex items-center gap-2 text-xs font-semibold text-primary-foreground/80">
-          <Link to="/" className="hover:underline">
-            Home
-          </Link>
-          <ChevronRight className="size-3" />
-          <Link to="/categories" className="hover:underline">
-            Categories
-          </Link>
-          <ChevronRight className="size-3" />
-          <span className="text-brand-gold">{category.name}</span>
-        </div>
-      </PageHero>
+      {/* COMPACT CATEGORY HEADER & DIRECT PRODUCT DISPLAY */}
+      <div className="border-b border-border/70 bg-gradient-to-b from-emerald-950/10 via-background to-background pt-4 pb-3 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          {/* Breadcrumbs */}
+          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-2.5" aria-label="Breadcrumb">
+            <Link to="/" className="hover:text-foreground transition-colors">
+              Home
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <Link to="/categories" className="hover:text-foreground transition-colors">
+              Categories
+            </Link>
+            <ChevronRight className="size-3 text-muted-foreground/60" />
+            <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+              {category.name}
+            </span>
+          </nav>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        {/* Category Highlights Bar */}
-        <div className="mb-10 grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-3xl border border-border bg-card p-6 shadow-soft">
-          <div className="flex items-center gap-3">
-            <div className="size-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-              <Leaf className="size-5" />
-            </div>
+          {/* Title Row + Badge + Description */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3.5">
             <div>
-              <h4 className="text-xs font-bold text-foreground">100% Certified Organic</h4>
-              <p className="text-[11px] text-muted-foreground">NPOP & Jaivik Bharat Verified</p>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {category.name}
+                </h1>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 px-2.5 py-0.5 text-xs font-bold">
+                  {categoryProducts.length} Formulations
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 px-2.5 py-0.5 text-[11px] font-semibold">
+                  100% Certified Eco-Safe
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-3xl leading-relaxed">
+                {category.description || `Certified biological and organic ${category.name.toLowerCase()} formulated for disease protection, balanced nutrition, and high yields.`}
+              </p>
+            </div>
+
+            <div className="shrink-0 flex items-center gap-2">
+              <Button asChild variant="outline" size="sm" className="h-8 text-xs font-bold rounded-xl border-emerald-200 hover:bg-emerald-50">
+                <Link to="/products">
+                  All Products <ChevronRight className="size-3 ml-0.5" />
+                </Link>
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-3 sm:border-x sm:border-border sm:px-4">
-            <div className="size-10 rounded-2xl bg-brand-gold/15 flex items-center justify-center text-amber-600">
-              <Sparkles className="size-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-foreground">Single Farm Provenance</h4>
-              <p className="text-[11px] text-muted-foreground">Direct Farmer Profit Share</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="size-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-              <ShieldCheck className="size-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-foreground">Zero Preservatives</h4>
-              <p className="text-[11px] text-muted-foreground">No artificial heat or chemical polish</p>
-            </div>
+
+          {/* Quick Category Switcher Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap mr-1 hidden sm:inline">
+              Categories:
+            </span>
+            {allCats.map((cat) => {
+              const isSelected = cat.slug === category.slug;
+              return (
+                <Link
+                  key={cat.slug}
+                  to="/categories/$slug"
+                  params={{ slug: cat.slug }}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ${
+                    isSelected
+                      ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/20 scale-[1.02]"
+                      : "bg-card border border-border/80 text-muted-foreground hover:text-foreground hover:bg-emerald-50/50 hover:border-emerald-200"
+                  }`}
+                >
+                  <Leaf className={`size-3 ${isSelected ? "text-amber-300" : "text-emerald-600"}`} />
+                  {cat.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
+      </div>
 
-        {/* Top Controls Toolbar */}
-        <div className="mb-8 rounded-3xl border border-border bg-card p-4 shadow-soft flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      {/* MAIN PRODUCTS SECTION — DIRECTLY DISPLAYED */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+        {/* Controls Toolbar */}
+        <div className="mb-6 rounded-2xl border border-border/80 bg-card p-3 sm:p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="sm" className="rounded-xl text-xs font-semibold">
-              <Link to="/products">
-                <ArrowLeft className="size-3.5 mr-1" /> All Pantry
-              </Link>
-            </Button>
             <span className="text-xs font-semibold text-muted-foreground">
-              Showing <strong className="text-foreground">{categoryProducts.length}</strong> items in {category.name}
+              Showing <strong className="text-foreground">{categoryProducts.length}</strong> available products
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             {/* Search Inside Category */}
             <div className="relative flex-1 sm:flex-initial sm:w-56">
               <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -230,13 +247,13 @@ function CategoryDetailPage() {
           </div>
         </div>
 
-        {/* Product Grid */}
+        {/* Product Grid — DIRECTLY RENDERED */}
         {categoryProducts.length > 0 ? (
           <div
-            className={`grid gap-6 ${
+            className={`grid ${
               list
-                ? "grid-cols-1"
-                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                ? "grid-cols-1 gap-4"
+                : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-6"
             }`}
           >
             {categoryProducts.map((p) => (
@@ -252,13 +269,44 @@ function CategoryDetailPage() {
           <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center space-y-3">
             <p className="text-lg font-bold text-foreground">No products found matching "{query}"</p>
             <p className="text-xs text-muted-foreground">
-              Try modifying your search keywords or explore other pantry categories.
+              Try modifying your search keywords or explore other bio-input categories.
             </p>
             <Button onClick={() => setQuery("")} className="mt-2 rounded-full" variant="outline">
               Clear Search
             </Button>
           </div>
         )}
+
+        {/* Quality Guarantees Strip (Positioned Below Products) */}
+        <div className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-2xl border border-emerald-100/80 bg-emerald-50/40 dark:bg-emerald-950/20 p-5">
+          <div className="flex items-center gap-3">
+            <div className="size-9 rounded-xl bg-emerald-600/10 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
+              <Leaf className="size-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-foreground">100% Certified Organic</h4>
+              <p className="text-[11px] text-muted-foreground">Zero chemical residue, bio-safe</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 sm:border-x sm:border-emerald-200/60 sm:px-4">
+            <div className="size-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-700 dark:text-amber-400">
+              <Sparkles className="size-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-foreground">High Efficacy Concentration</h4>
+              <p className="text-[11px] text-muted-foreground">Potent liquid formulations</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="size-9 rounded-xl bg-emerald-600/10 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
+              <ShieldCheck className="size-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-foreground">Direct Farm Delivery</h4>
+              <p className="text-[11px] text-muted-foreground">PAN India courier dispatch</p>
+            </div>
+          </div>
+        </div>
 
         {/* Other Categories Carousel Strip */}
         <section className="mt-20 border-t border-border pt-12">

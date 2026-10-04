@@ -1,57 +1,55 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import React, { useState, useMemo, useEffect } from "react";
 import {
-  Heart,
   Minus,
   Plus,
-  ShieldCheck,
   Star,
+  ShieldCheck,
   Truck,
-  Share2,
+  RotateCcw,
+  ChevronLeft,
   ChevronRight,
-  Sparkles,
   ShoppingBag,
   Zap,
   Leaf,
   Check,
   MapPin,
-  HelpCircle,
   ChevronDown,
   ChevronUp,
-  RotateCcw,
-  Copy,
-  ExternalLink,
-  MessageCircle,
-  Facebook,
-  Twitter,
+  Play,
+  Maximize2,
   X,
-  FlaskConical,
-  Droplets,
   Sprout,
+  Wheat,
+  Bug,
+  Sun,
+  Sparkles,
+  Award,
+  Shield,
+  Headphones,
   CheckCircle2,
   FileText,
-  AlertCircle
+  Droplets,
+  ArrowRight,
+  Mail,
+  Users,
+  Eye,
+  Heart
 } from "lucide-react";
 import { products, categories, type Product, type ProductVariant } from "@/lib/catalog";
-import { Button } from "@/components/ui/button";
-import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
-import { PdpGallery } from "@/components/pdp/pdp-gallery";
-import { PdpOfferCoupons } from "@/components/pdp/pdp-offer-coupons";
-import { PdpDeliveryChecker } from "@/components/pdp/pdp-delivery-checker";
-import { PdpReviewsSection } from "@/components/pdp/pdp-reviews-section";
-import { PdpRecentlyViewed } from "@/components/pdp/pdp-recently-viewed";
 import { toast } from "sonner";
+import { ProductCard } from "@/components/product-card";
 
 export const Route = createFileRoute("/products/$slug")({
   head: ({ params }) => {
-    const p = products.find((x) => x.slug === params.slug);
+    const p = products.find((x) => x.slug === params.slug || String(x.id) === params.slug);
     const title = p
-      ? `${p.name} — Pure Organic Harvest — JANANI AGRO PRODUCTS`
-      : `Organic Product — JANANI`;
+      ? `${p.name} — ${p.subtitle || "Janani Agro Products"}`
+      : "Product Detail — JANANI AGRO PRODUCTS";
     const description =
       p?.description ??
-      "100% certified pure organic pantry essentials directly from Indian farms.";
+      "Natural and effective agro solutions for healthier crops and higher yields.";
     return {
       meta: [
         { title },
@@ -59,70 +57,99 @@ export const Route = createFileRoute("/products/$slug")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "product" },
-        { name: "twitter:card", content: "summary_large_image" },
       ],
     };
   },
-  component: ProductPage,
+  component: ProductDetailPage,
 });
 
-function ProductPage() {
+type TabType =
+  | "description"
+  | "benefits"
+  | "how-to-use"
+  | "suitable-crops"
+  | "technical"
+  | "reviews"
+  | "faqs";
+
+function ProductDetailPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
-  const { addToCart, toggleWishlist, wishlist, products: storeProducts } = useStore();
+  const { addToCart, products: storeProducts } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
-  const product = allProducts.find((p) => p.slug === slug || String(p.id) === slug) ?? allProducts[0];
 
-  // Selected Variant State
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  // Resolve active product
+  const product =
+    allProducts.find((p) => p.slug === slug || String(p.id) === slug) ||
+    allProducts.find((p) => slug.includes(p.slug) || p.slug.includes(slug)) ||
+    allProducts[0]!;
 
-  // Sync selected variant when product changes
+  // Variants setup
+  const defaultVariant =
+    product.variants.find((v) => v.unit.toLowerCase().includes("1 l") || v.label.includes("1 Litre")) ||
+    product.variants[0] || {
+      id: "1l",
+      label: "1 Litre",
+      unit: "1 Litre",
+      price: product.price,
+      oldPrice: product.oldPrice,
+      inStock: true,
+    };
+
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(defaultVariant);
+  const [qty, setQty] = useState<number>(1);
+  const [activeTab, setActiveTab] = useState<TabType>("description");
+  const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState<boolean>(false);
+  const [newsletterEmail, setNewsletterEmail] = useState<string>("");
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  // Sync selected variant when product slug changes
   useEffect(() => {
-    if (product?.variants && product.variants.length > 0) {
-      setSelectedVariant(product.variants[0]!);
-    } else if (product) {
-      setSelectedVariant({
-        id: "std",
-        label: product.unit,
-        unit: product.unit,
-        price: product.price,
-        oldPrice: product.oldPrice,
-        inStock: product.inStock,
-      });
+    if (product.variants && product.variants.length > 0) {
+      const match1L = product.variants.find(
+        (v) => v.unit.toLowerCase().includes("1 l") || v.label.includes("1 Litre")
+      );
+      setSelectedVariant(match1L || product.variants[0]!);
     }
     setQty(1);
+    setActiveImageIndex(0);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [product?.slug]);
+  }, [product.slug]);
 
-  if (!product || !selectedVariant) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-28 text-center">
-        <div className="inline-block size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        <p className="mt-4 text-sm font-semibold text-muted-foreground">Loading harvest product...</p>
-      </div>
-    );
-  }
-
-  const isWishlisted = wishlist.includes(product.id);
-
-  const [qty, setQty] = useState(1);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  // Gallery Images List matching mockup
+  const galleryImages = useMemo(() => {
+    return [
+      { id: "main", src: product.image, label: "Main Pack" },
+      { id: "soil", src: "/images/hands-soil-sprout.jpg", label: "Seedling in Soil" },
+      { id: "roots", src: "/images/sprout_roots_circle.jpg", label: "Root Health" },
+      {
+        id: "label",
+        src: product.image.includes("harit")
+          ? "/products/harit-label.png"
+          : product.image.includes("bhumi")
+          ? "/products/bhumi-shakti-label.png"
+          : product.image.includes("neem")
+          ? "/products/neem-oil-label.png"
+          : "/products/harit-label.png",
+        label: "Dosage & Label Guide",
+      },
+      { id: "field", src: "/images/farmer_ramesh.jpg", label: "Field Results" },
+      { id: "video", src: product.image, label: "Application Video", isVideo: true },
+    ];
+  }, [product]);
 
   const discountPercent = Math.round(
     ((selectedVariant.oldPrice - selectedVariant.price) / selectedVariant.oldPrice) * 100
   );
 
   const handleAddToCart = () => {
-    if (!selectedVariant.inStock) {
-      toast.error("This variant is currently out of stock.");
-      return;
-    }
     for (let i = 0; i < qty; i++) {
       addToCart(product.id);
     }
-    toast.success(`Added ${qty}x ${product.name} (${selectedVariant.unit}) to cart!`, {
-      description: "Direct farm-fresh organic delivery queued.",
+    toast.success(`Added ${qty}x ${product.name} (${selectedVariant.label}) to cart!`, {
+      description: `₹${(selectedVariant.price * qty).toFixed(2)} • Quick checkout ready`,
     });
   };
 
@@ -131,678 +158,859 @@ function ProductPage() {
     navigate({ to: "/checkout" });
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Product link copied to clipboard!");
+  const handlePrevImage = () => {
+    setActiveImageIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
   };
 
-  // Product-specific FAQs
-  const productFaqs = product.slug.includes("bhumi") ? [
+  const handleNextImage = () => {
+    setActiveImageIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail || !newsletterEmail.includes("@")) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    toast.success("Thank you for subscribing to Janani Agro updates!");
+    setNewsletterEmail("");
+  };
+
+  // Recommended products (excluding current)
+  const recommendedProducts = useMemo(() => {
+    return allProducts.filter((p) => p.id !== product.id).slice(0, 5);
+  }, [allProducts, product.id]);
+
+  // Dynamic FAQs
+  const productFaqs = [
     {
-      q: `What is BHUMI SHAKTI and how does it improve soil health?`,
-      a: `BHUMI SHAKTI is a premium humic and fulvic based soil conditioner biostimulant containing 12% Humic Acid, 5% Fulvic Acid, 8% Total Organic Carbon, 3% Potassium, 5% Amino Acids, and 20% Organic Matter. It enriches soil fertility, unlocks bound nutrients, boosts organic carbon, and promotes vigorous root-zone development.`,
+      q: `What is ${product.name} and what are its key agricultural benefits?`,
+      a: `${product.name} (${product.subtitle || "Janani Agro formulation"}) is specially formulated to promote healthy root development, protect against pathogens, enhance nutrient mobilization, and build sustained crop resilience.`,
     },
     {
-      q: `What are the primary benefits for crops?`,
-      a: `BHUMI SHAKTI helps improve nutrient-use efficiency, maintains optimal soil moisture and nutrient retention in the rhizosphere, supports flowering and fruit development, and strengthens crop resilience against environmental stress.`,
+      q: `What is the recommended application dosage and schedule?`,
+      a:
+        product.dosage ||
+        "Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre during early vegetative and root development stages.",
     },
     {
-      q: `What is the recommended application dosage?`,
-      a: `Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre. Apply during active vegetative growth and key nutrient-demand stages.`,
+      q: `Which crops can ${product.name} be safely applied to?`,
+      a:
+        product.recommendedCrops ||
+        "Suitable for all vegetables (chilli, tomato, brinjal), fruits (mango, pomegranate, grapes, banana), cereals (paddy, wheat, maize), pulses, oilseeds, cotton, and sugarcane.",
     },
     {
-      q: `What is the shelf life and compatibility of BHUMI SHAKTI?`,
-      a: `Shelf life is 3 years from date of Mfg. It is compatible with many organic fertilizers, biofertilizers, and biostimulants. Store in a cool, dry place away from direct sunlight. FOR AGRICULTURE USE ONLY.`,
-    },
-  ] : product.slug.includes("suraksha") ? [
-    {
-      q: `What is SURAKSHA and how does it protect the root zone?`,
-      a: `SURAKSHA contains beneficial Pseudomonas fluorescens (Minimum 5 × 10⁹ CFU/ml), a naturally occurring beneficial bacterium that colonizes plant surfaces and the rhizosphere to biologically suppress soil-borne disease-causing fungal and bacterial organisms.`,
-    },
-    {
-      q: `What crop diseases does SURAKSHA help control?`,
-      a: `SURAKSHA controls soil-borne disease-causing organisms including Root Rot, Wilt, Collar Rot, Damping-off, Seedling Blight, and rhizosphere pathogen complexes across agricultural and horticultural crops.`,
-    },
-    {
-      q: `What is the recommended dosage and application method?`,
-      a: `Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed | Nursery Application: 2–5 ml per litre of water. Apply under suitable soil moisture conditions.`,
-    },
-    {
-      q: `What is the compatibility and shelf life?`,
-      a: `Shelf life is 18 months from date of Mfg. Compatible with many organic inputs and biologicals. Avoid direct mixing with strong chemical bactericides or disinfectants. FOR AGRICULTURE USE ONLY.`,
-    },
-  ] : product.slug.includes("balavan") ? [
-    {
-      q: `What is BALAVAN and how does it protect crops?`,
-      a: `BALAVAN contains beneficial Bacillus subtilis, a naturally occurring bacterium that supports biological management of blight-related diseases by colonizing plant surfaces and the rhizosphere. It suppresses harmful pathogens, produces natural antimicrobial compounds, and improves resistance against biotic and abiotic stress.`,
-    },
-    {
-      q: `What diseases does BALAVAN control?`,
-      a: `BALAVAN protects against Damping-off, Root Rot, Collar Rot, Wilt, Leaf Spot, Early Blight, Anthracnose, Fruit Rot, Powdery Mildew, and provides broad bacterial disease suppression.`,
-    },
-    {
-      q: `What is the recommended application dosage?`,
-      a: `Seed Treatment: 10 ml/kg of seed | Seedling Root Dip: 5–10 ml/L of water (20–30 mins) | Soil Application: 1–2 Litres/Acre with 50–100 kg FYM/compost | Drip Irrigation: 1–2 Litres/Acre | Foliar Spray: 2–3 ml/L of water.`,
-    },
-    {
-      q: `What is the compatibility and shelf life?`,
-      a: `Compatible with most biofertilizers, organic manures, and biostimulants. Avoid mixing with chemical fungicides or bactericides during application. Shelf life is 18 months from date of Mfg. Store in a cool, dry place. FOR AGRICULTURE USE ONLY.`,
-    },
-  ] : (product.slug.includes("dhanya") || product.slug.includes("kmb") || product.slug.includes("dharani")) ? [
-    {
-      q: `What is DHANYA KMB and how does it mobilize potassium for crops?`,
-      a: `DHANYA (DHARANI KMB) is a liquid microbial biofertilizer containing beneficial Potassium Mobilizing Bacteria (KMB) with a potency of Minimum 5 × 10⁷ CFU/ml. It helps mobilize fixed and unavailable potassium present in the soil and makes potassium more accessible to crops. Regular application supports efficient nutrient utilization, healthy and vigorous root development, plant vigour, and overall crop performance.`,
-    },
-    {
-      q: `What is the recommended application dosage?`,
-      a: `Soil Application: 500 ml – 1 Litre per acre | Drip / Fertigation: 500 ml – 1 Litre per acre | Seed Treatment: Use as recommended by agricultural experts. Apply through soil application, drip/fertigation, or seed treatment according to crop requirement and recommended agricultural practices.`,
-    },
-    {
-      q: `Which crops can DHANYA KMB be applied to?`,
-      a: `DHANYA KMB is suitable for Paddy, Wheat, Maize, Millets, Pulses, Oilseeds, Cotton, Sugarcane, Vegetables, Fruits, Plantation Crops, and Horticultural Crops.`,
-    },
-    {
-      q: `What is the compatibility, shelf life, and storage?`,
-      a: `Compatible with most biofertilizers and organic inputs. Avoid direct mixing with strong chemical disinfectants or products that may adversely affect beneficial microorganisms. Shelf life is 18 Months from date of Mfg. Store in a cool, dry place away from direct sunlight. Keep container tightly closed. FOR AGRICULTURE USE ONLY.`,
-    },
-  ] : (product.slug.includes("pushkal") || product.slug.includes("flowering") || product.slug.includes("fruit-set")) ? [
-    {
-      q: `What is PUSHKAL and how does it support flowering and fruit set?`,
-      a: `PUSHKAL is a concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, 5% Fulvic Acid, 3% Potassium (K₂O), 0.5% Boron, 1% Zinc, and 5% Total Organic Carbon. It provides vital reproductive nutrition to stimulate flower bud initiation, enhance pollen viability, prevent flower and fruit abortion, and ensure uniform fruit set.`,
-    },
-    {
-      q: `What are the recommended dosages across crop growth stages?`,
-      a: `Foliar Spray: Vegetative Stage: 1.5–2 ml/Litre water | Pre-Flowering: 2–3 ml/Litre water | Flowering Stage: 2–3 ml/Litre water | Fruit Set / Early Fruit Development: 2–3 ml/Litre water | Drip / Fertigation: 500 ml–1 Litre per acre. Repeat application 10–15 days after first application where required.`,
-    },
-    {
-      q: `Which crops benefit most from PUSHKAL?`,
-      a: `Recommended for Fruit crops (Mango, Pomegranate, Grapes, Citrus, Guava, Papaya, Banana, Apple), Vegetables (Tomato, Chilli, Brinjal, Okra, Cucumber, Gourds, Beans), Field crops (Cotton, Pulses, Oilseeds, Maize, Paddy), and Commercial Flowers (Rose, Marigold, Jasmine, Chrysanthemum).`,
-    },
-    {
-      q: `What is the shelf life, compatibility, and storage?`,
-      a: `PUSHKAL has an extended shelf life of 3 years from date of Mfg. It can be incorporated into an integrated crop nutrition program. Before mixing with fertilizers, micronutrients, pesticides, fungicides or biologicals, conduct a small-scale jar compatibility test. Avoid mixing directly with strongly acidic or alkaline products. Store in a cool, dry place away from direct sunlight. FOR AGRICULTURE USE ONLY.`,
-    },
-  ] : product.slug.includes("annada") ? [
-    {
-      q: `What is ANNADA Fish Amino Acid and how does it benefit plants?`,
-      a: `ANNADA is a naturally derived Fish Amino Acid formulation prepared from fish-based raw materials through controlled processing. It contains naturally occurring amino acids, peptides and organic nutrients that support plant growth and development, promoting healthy vegetative growth, plant vigour, and overall crop performance.`,
-    },
-    {
-      q: `What is the recommended dosage for foliar spray and drip irrigation?`,
-      a: `Foliar Spray: 2–3 ml per litre of water. Drip / Fertigation: 500 ml – 1 litre per acre. Soil Application: 1–2 litres per acre diluted appropriately. Dose may be adjusted according to crop, formulation strength, and stage of crop growth.`,
-    },
-    {
-      q: `Which crops can ANNADA be applied to?`,
-      a: `ANNADA is suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, flowers, and horticultural crops.`,
-    },
-    {
-      q: `What is the compatibility and shelf life?`,
-      a: `ANNADA is generally compatible with organic inputs and many agricultural biostimulants. Conduct a compatibility test before mixing. Avoid mixing with highly alkaline or strongly reactive products. Shelf life is 3 years from date of Mfg. Store in a cool, dry place away from direct sunlight. FOR AGRICULTURE USE ONLY.`,
-    },
-  ] : product.slug.includes("harit") ? [
-    {
-      q: `What is HARIT and how does it protect crops from fungal pathogens?`,
-      a: `HARIT contains beneficial Trichoderma viride (Minimum 5 × 10⁸ CFU/ml), a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere, outcompetes harmful pathogens, and actively suppresses soil-borne fungal diseases including wilt, damping-off, root rot, collar rot, Rhizoctonia, Fusarium, and Pythium.`,
-    },
-    {
-      q: `What are the recommended dosages for soil, drip, and seed treatment?`,
-      a: `Soil Application: 500 ml–1 litre per acre | Drip / Fertigation: 500 ml–1 litre per acre | Seed Treatment: 5–10 ml per kg seed | Nursery Application: 2–5 ml per litre of water | Root-Dip Treatment: 5–10 ml per litre of water (dip seedling roots before transplanting). Dose may be adjusted according to crop stage and disease pressure.`,
-    },
-    {
-      q: `Which crops can HARIT be safely applied to?`,
-      a: `HARIT is suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants, and horticultural crops. It supports root development, crop establishment, and plant vigour as part of an integrated crop-management program.`,
-    },
-    {
-      q: `What is the compatibility, shelf life, and storage?`,
-      a: `HARIT is compatible with many organic inputs and biological products. Avoid direct mixing with strong chemical fungicides, disinfectants, or bactericides that may harm Trichoderma viride viability. Shelf life is 18 Months from date of Mfg. Store in a cool, dry place away from direct sunlight. FOR AGRICULTURE USE ONLY.`,
-    },
-  ] : (product.slug.includes("neem") || product.slug.includes("azadirachtin")) ? [
-    {
-      q: `What is NEEM OIL 1000 PPM and how does it manage insect pests?`,
-      a: `NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized Azadirachtin (0.10% w/w minimum / 1000 ppm) sourced from Azadirachta indica. It exhibits botanical pest-management activity through antifeedant, repellent, oviposition deterrence, and insect-growth-regulating properties against susceptible insect pests.`,
-    },
-    {
-      q: `Which target insect pests does NEEM OIL 1000 PPM control?`,
-      a: `It effectively controls chewing and sucking insect pests including Aphids, Whiteflies, Thrips, Jassids, Mealybugs, Caterpillars, Leaf Miners, and Mites, while simultaneously helping in fungal suppression and overall plant health.`,
-    },
-    {
-      q: `What is the recommended application dosage and timing?`,
-      a: `Suggested dosage: 1–3 ml per litre of water. Spray during early morning or evening hours to avoid intense direct sunlight and extreme temperatures. Ensure uniform coverage of all leaf surfaces and foliage. Shake well before use.`,
-    },
-    {
-      q: `What precautions and storage guidelines should be followed?`,
-      a: `Keep in a cool, dry place away from heat and open flame. Do not use near open water sources. Keep out of reach of children. Conduct a small-area compatibility/phytotoxicity test where crop sensitivity is unknown. Shelf life is 2 Years from date of Mfg. FOR AGRICULTURE USE ONLY.`,
-    },
-  ] : [
-    {
-      q: `What is the shelf life and ideal storage for this ${product.name}?`,
-      a: `Our ${product.name} has a recommended shelf life of 9 to 12 months from the date of cold-pressing/harvesting. Store in an airtight container in a cool, dry place away from direct sunlight. No chemical preservatives or anti-caking agents are added.`,
-    },
-    {
-      q: `How is this product tested and certified organic?`,
-      a: `Every batch is cultivated in compliance with NPOP (National Programme for Organic Production) standards and verified with Jaivik Bharat & FSSAI Organic credentials. We conduct rigorous NABL-accredited third-party lab testing for zero pesticide residue, heavy metals, and adulterants.`,
-    },
-    {
-      q: `Where is this harvested and who is the grower?`,
-      a: `This single-origin batch is sourced directly from certified organic farmer collectives in ${product.origin}. Farmers receive fair-trade remunerative pricing above conventional market benchmarks.`,
-    },
-    {
-      q: `Can I order institutional bulk quantities or dealership distribution?`,
-      a: `Yes, we supply bulk containers and industrial quantities for farmers, FPOs, and distributors. Please visit our 'Become a Distributor' page or contact wholesale@jananiagro.com.`,
+      q: `What is the shelf life, compatibility, and storage conditions?`,
+      a:
+        product.storageNotice ||
+        "Shelf life is 18 to 24 months from date of manufacturing. Store in a cool, dry place away from direct sunlight. Compatible with organic inputs and biostimulants.",
     },
   ];
 
-  // Related products from same category or complementary
-  const relatedProducts = useMemo(() => {
-    let items = products.filter(
-      (p) => p.category === product.category && p.id !== product.id
-    );
-    if (items.length < 4) {
-      const remaining = products.filter(
-        (p) => p.id !== product.id && !items.some((item) => item.id === p.id)
-      );
-      items = [...items, ...remaining];
-    }
-    return items.slice(0, 4);
-  }, [product]);
-
   return (
-    <div className="bg-background min-h-screen">
-      {/* Breadcrumb Strip */}
-      <div className="border-b border-border bg-card/40 py-3.5 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl flex items-center gap-2 text-xs font-medium text-muted-foreground flex-wrap">
-          <Link to="/" className="hover:text-primary transition">
+    <div className="bg-white min-h-screen text-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* 1. Breadcrumbs Strip */}
+        <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-6 font-medium flex-wrap">
+          <Link to="/" className="hover:text-[#075B32] transition">
             Home
           </Link>
-          <ChevronRight className="size-3 text-muted-foreground" />
-          <Link to="/products" className="hover:text-primary transition">
-            Pantry
+          <span className="text-gray-400">&gt;</span>
+          <Link to="/products" className="hover:text-[#075B32] transition">
+            Products
           </Link>
-          <ChevronRight className="size-3 text-muted-foreground" />
-          <Link
-            to="/categories/$slug"
-            params={{ slug: product.category.toLowerCase().replace(/[^a-z0-9]+/g, "-") }}
-            className="hover:text-primary transition"
-          >
-            {product.category}
-          </Link>
-          <ChevronRight className="size-3 text-muted-foreground" />
-          <span className="font-semibold text-foreground truncate max-w-xs">{product.name}</span>
-        </div>
-      </div>
+          <span className="text-gray-400">&gt;</span>
+          <span className="text-gray-600">{product.category}</span>
+          <span className="text-gray-400">&gt;</span>
+          <span className="font-semibold text-gray-900 truncate max-w-xs">
+            {product.name} - {product.subtitle || "Liquid Formulation"}
+          </span>
+        </nav>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-        {/* Top Product Overview Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-          {/* Left Column (5 Cols): Large Gallery, Farm Story, Specifications */}
-          <div className="lg:col-span-6 space-y-6">
-            <PdpGallery product={product} />
+        {/* 2. Top Hero Product Grid (Left: Gallery, Right: Details) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+          {/* LEFT: Product Gallery with Left Vertical Thumbnails */}
+          <div className="lg:col-span-6 flex flex-col-reverse sm:flex-row gap-4 items-start">
+            {/* Vertical Thumbnail Strip */}
+            <div className="flex sm:flex-col gap-2.5 overflow-x-auto sm:overflow-y-auto max-h-[500px] w-full sm:w-20 shrink-0 scrollbar-none pb-2 sm:pb-0">
+              {galleryImages.map((img, idx) => {
+                const isActive = activeImageIndex === idx;
+                return (
+                  <button
+                    key={img.id}
+                    onClick={() => {
+                      setActiveImageIndex(idx);
+                      if (img.isVideo) setIsVideoModalOpen(true);
+                    }}
+                    className={`relative size-16 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1 flex items-center justify-center ${
+                      isActive
+                        ? "border-[#075B32] shadow-xs"
+                        : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    <img
+                      src={img.src}
+                      alt={img.label}
+                      className="w-full h-full object-contain"
+                    />
+                    {img.isVideo && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <Play className="size-4 text-white fill-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-            {/* Farm Origin Provenance Card */}
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
-                  <MapPin className="size-4 text-brand-leaf" /> Farm Provenance & Traceability
-                </span>
-                <span className="text-xs font-semibold text-emerald-700 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                  100% Traceable
+            {/* Main Big Image Viewport */}
+            <div className="relative flex-1 w-full aspect-square sm:aspect-[4/4.2] rounded-2xl border border-gray-200 bg-white p-4 flex items-center justify-center overflow-hidden group shadow-xs">
+              <img
+                src={galleryImages[activeImageIndex]?.src || product.image}
+                alt={product.name}
+                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+              />
+
+              {/* Prev Arrow */}
+              <button
+                onClick={handlePrevImage}
+                aria-label="Previous Image"
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+
+              {/* Next Arrow */}
+              <button
+                onClick={handleNextImage}
+                aria-label="Next Image"
+                className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+
+              {/* Expand Lightbox Button (Bottom Right) */}
+              <button
+                onClick={() => setIsLightboxOpen(true)}
+                title="Expand Full View"
+                className="absolute bottom-3 right-3 size-8 rounded-lg bg-white/90 border border-gray-200 flex items-center justify-center text-gray-600 hover:text-[#075B32] hover:bg-white shadow-xs transition"
+              >
+                <Maximize2 className="size-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT: Product Purchasing Information */}
+          <div className="lg:col-span-6 space-y-4">
+            {/* Title & In Stock Badge */}
+            <div className="flex items-center justify-between gap-3">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-[#075B32] tracking-tight uppercase font-display">
+                {product.name}
+              </h1>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#EAF5E9] text-[#075B32] border border-[#075B32]/20">
+                <Leaf className="size-3.5 fill-current" />
+                In Stock
+              </span>
+            </div>
+
+            {/* Subtitle / Technical formulation info */}
+            <p className="text-sm font-medium text-gray-600 leading-snug">
+              {product.subtitle || "Trichoderma Viride Liquid Biofungal Formulation"}
+            </p>
+
+            {/* Ratings & Social Proof */}
+            <div className="flex items-center gap-2 pt-1 text-xs text-gray-500 font-medium">
+              <div className="flex items-center text-[#E7A91A]">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="size-3.5 fill-current" />
+                ))}
+              </div>
+              <span className="font-bold text-gray-800">({product.rating.toFixed(1)})</span>
+              <span>28 Reviews</span>
+              <span>|</span>
+              <span className="text-[#075B32] font-semibold">124 Sold</span>
+            </div>
+
+            {/* Price Row */}
+            <div className="flex items-baseline gap-3 pt-2">
+              <span className="text-3xl sm:text-4xl font-bold text-gray-900">
+                ₹ {selectedVariant.price.toFixed(2)}
+              </span>
+              <span className="text-base text-gray-400 line-through font-medium">
+                ₹ {selectedVariant.oldPrice.toFixed(2)}
+              </span>
+              <span className="bg-[#4FAE2A] text-white text-xs font-bold px-2.5 py-0.5 rounded-md shadow-xs">
+                {discountPercent}% OFF
+              </span>
+            </div>
+
+            {/* Short Paragraph Description */}
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed pt-1">
+              {product.description}
+            </p>
+
+            {/* 4 Feature Badges (Horizontal Row with light green circles) */}
+            <div className="grid grid-cols-4 gap-2 pt-3 pb-2 text-center border-y border-gray-100">
+              <div className="flex flex-col items-center">
+                <div className="size-11 rounded-full bg-[#EAF5E9] flex items-center justify-center text-[#075B32] mb-1.5 shadow-xs">
+                  <Sprout className="size-5" />
+                </div>
+                <span className="text-[11px] font-bold text-gray-800 leading-tight">
+                  Healthy Soil
                 </span>
               </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Cultivated by single-origin farmer clusters in <strong>{product.origin}</strong> using
-                traditional Vedic compost and solar sun-drying. Batch ID:{" "}
-                <span className="font-mono text-foreground font-semibold">
-                  JAP-HARVEST-{product.id}26
+
+              <div className="flex flex-col items-center">
+                <div className="size-11 rounded-full bg-[#EAF5E9] flex items-center justify-center text-[#075B32] mb-1.5 shadow-xs">
+                  <Wheat className="size-5" />
+                </div>
+                <span className="text-[11px] font-bold text-gray-800 leading-tight">
+                  Strong Roots
                 </span>
-                .
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="size-11 rounded-full bg-[#EAF5E9] flex items-center justify-center text-[#075B32] mb-1.5 shadow-xs">
+                  <ShieldCheck className="size-5" />
+                </div>
+                <span className="text-[11px] font-bold text-gray-800 leading-tight">
+                  Damping-Off Control
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="size-11 rounded-full bg-[#EAF5E9] flex items-center justify-center text-[#075B32] mb-1.5 shadow-xs">
+                  <Award className="size-5" />
+                </div>
+                <span className="text-[11px] font-bold text-gray-800 leading-tight">
+                  Better Crop Yield
+                </span>
+              </div>
+            </div>
+
+            {/* Pack Size Selector */}
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-bold text-gray-900 block">Pack Size</label>
+              <div className="grid grid-cols-4 gap-2.5">
+                {product.variants.map((v) => {
+                  const isSelected = selectedVariant.id === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => setSelectedVariant(v)}
+                      className={`p-2 sm:p-2.5 rounded-xl border text-center transition flex flex-col justify-center items-center ${
+                        isSelected
+                          ? "border-2 border-[#075B32] bg-[#EAF5E9] text-[#075B32] shadow-xs"
+                          : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"
+                      }`}
+                    >
+                      <span className="text-xs font-bold leading-tight">{v.label}</span>
+                      <span
+                        className={`text-[11px] mt-0.5 font-medium ${
+                          isSelected ? "text-[#075B32]" : "text-gray-500"
+                        }`}
+                      >
+                        ₹ {v.price}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quantity Selector */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-bold text-gray-900 block">Quantity</label>
+              <div className="inline-flex items-center rounded-xl border border-gray-200 bg-white p-1">
+                <button
+                  onClick={() => setQty((prev) => Math.max(1, prev - 1))}
+                  className="size-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
+                  aria-label="Decrease quantity"
+                >
+                  <Minus className="size-3.5" />
+                </button>
+                <span className="w-10 text-center font-bold text-xs text-gray-900 font-mono">
+                  {qty}
+                </span>
+                <button
+                  onClick={() => setQty((prev) => prev + 1)}
+                  className="size-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
+                  aria-label="Increase quantity"
+                >
+                  <Plus className="size-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons: [Add to Cart] & [Buy Now] */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={handleAddToCart}
+                className="w-full bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
+              >
+                <ShoppingBag className="size-4" />
+                Add to Cart
+              </button>
+
+              <button
+                onClick={handleBuyNow}
+                className="w-full bg-[#E7A91A] hover:bg-[#d99a12] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
+              >
+                <Zap className="size-4 fill-white" />
+                Buy Now
+              </button>
+            </div>
+
+            {/* 3 Trust Notes below buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-xs text-gray-600 font-medium border-t border-gray-100">
+              <div className="flex items-center gap-2">
+                <Truck className="size-4 text-[#075B32]" />
+                <span>Free Shipping on orders above ₹499</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="size-4 text-[#075B32]" />
+                <span>100% Secure Payments</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <RotateCcw className="size-4 text-[#075B32]" />
+                <span>Easy Returns</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Middle 4 Value Propositions Bar */}
+        <section className="mt-14 bg-white border border-gray-200 rounded-2xl p-6 sm:p-7 shadow-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="flex items-center gap-3.5">
+              <div className="size-11 rounded-full bg-[#075B32] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Leaf className="size-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 leading-snug">100% Organic & Safe</h4>
+                <p className="text-xs text-gray-500">Eco-friendly formulation</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="size-11 rounded-full bg-[#075B32] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Wheat className="size-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 leading-snug">Improves Soil Health</h4>
+                <p className="text-xs text-gray-500">Enhances soil fertility</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="size-11 rounded-full bg-[#075B32] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Sprout className="size-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 leading-snug">Suitable for All Crops</h4>
+                <p className="text-xs text-gray-500">Fruits, vegetables & grains</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="size-11 rounded-full bg-[#075B32] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Users className="size-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 leading-snug">Farmers Trusted</h4>
+                <p className="text-xs text-gray-500">Used by thousands</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. Tabbed Content Section */}
+        <section className="mt-12">
+          {/* Tab Headers */}
+          <div className="flex items-center gap-2 overflow-x-auto border-b border-gray-200 pb-px scrollbar-none">
+            {[
+              { id: "description", label: "Product Description" },
+              { id: "benefits", label: "Key Benefits" },
+              { id: "how-to-use", label: "How to Use" },
+              { id: "suitable-crops", label: "Suitable Crops" },
+              { id: "technical", label: "Technical Details" },
+              { id: "reviews", label: "Reviews (28)" },
+              { id: "faqs", label: "FAQs" },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabType)}
+                  className={`px-4 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition border-b-2 -mb-px ${
+                    isActive
+                      ? "border-[#075B32] text-[#075B32]"
+                      : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tab Body: Product Description */}
+          {activeTab === "description" && (
+            <div className="py-8 space-y-8">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4 font-display">
+                  Product Description
+                </h3>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                  {/* Left Column: Rich Text Explanation */}
+                  <div className="lg:col-span-7 space-y-4 text-xs sm:text-sm text-gray-600 leading-relaxed">
+                    <p>
+                      {product.name} contains beneficial{" "}
+                      <strong>
+                        {product.specifications?.["Active Organism"] ||
+                          product.specifications?.["Technical Composition"] ||
+                          "Trichoderma viride"}
+                      </strong>
+                      , a naturally occurring beneficial fungus/microbe used in agricultural and
+                      horticultural production. It helps establish a healthy rhizosphere where and
+                      supports favourable soil and root-zone conditions.
+                    </p>
+                    <p>
+                      {product.name} helps suppress harmful soil-borne fungal pathogens associated with wilt,
+                      damping-off, root rot, collar rot and other root-zone diseases. It supports
+                      healthy root development, crop establishment and plant vigour as part of an
+                      integrated crop-management program.
+                    </p>
+                    <p>
+                      {product.name} is suitable for seamless integration with organic inputs,
+                      biofertilizers and sustainable crop-management practices across all stages of
+                      cultivation.
+                    </p>
+                  </div>
+
+                  {/* Right Column: Hero Visual Card with Hands, Soil & Seedling */}
+                  <div className="lg:col-span-5 relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md border border-gray-200">
+                    <img
+                      src="/images/hands-soil-sprout.jpg"
+                      alt="Healthy Soil, Stronger Roots, Better Yields"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-6">
+                      <span className="font-display font-bold text-xl sm:text-2xl text-white leading-tight drop-shadow-md">
+                        Healthy Soil
+                        <br />
+                        Stronger Roots
+                        <br />
+                        <span className="text-[#E7A91A]">Better Yields</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Benefits (matching mockup) */}
+              <div className="pt-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-5 font-display">Key Benefits</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
+                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
+                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
+                      <ShieldCheck className="size-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800 leading-snug">
+                      Controls soil-borne fungal diseases
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
+                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
+                      <Wheat className="size-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800 leading-snug">
+                      Reduces damping-off and root rot
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
+                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
+                      <Droplets className="size-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800 leading-snug">
+                      Improves soil microbial activity
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
+                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
+                      <Leaf className="size-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800 leading-snug">
+                      Enhances nutrient uptake
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
+                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
+                      <Sprout className="size-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800 leading-snug">
+                      Promotes healthy root development
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
+                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
+                      <CheckCircle2 className="size-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800 leading-snug">
+                      Suitable for organic farming
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Body: Key Benefits Dedicated View */}
+          {activeTab === "benefits" && (
+            <div className="py-8 space-y-6">
+              <h3 className="text-xl font-bold text-gray-900 font-display">Key Agricultural Benefits</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-5 rounded-2xl border border-gray-200 bg-[#EAF5E9]/40 space-y-2">
+                  <h4 className="text-sm font-bold text-[#075B32] flex items-center gap-2">
+                    <ShieldCheck className="size-4" /> Comprehensive Disease Suppression
+                  </h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Suppresses Fusarium, Rhizoctonia, Pythium, and Sclerotium pathogens by producing
+                    antagonistic chitinase enzymes and competitively colonizing infection sites.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl border border-gray-200 bg-[#EAF5E9]/40 space-y-2">
+                  <h4 className="text-sm font-bold text-[#075B32] flex items-center gap-2">
+                    <Sprout className="size-4" /> Explosive Root Mass Growth
+                  </h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Stimulates lateral feeder root development, secondary root branch hairs, and increases
+                    overall root volume for maximized water and nutrient assimilation.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl border border-gray-200 bg-[#EAF5E9]/40 space-y-2">
+                  <h4 className="text-sm font-bold text-[#075B32] flex items-center gap-2">
+                    <CheckCircle2 className="size-4" /> 100% Residue-Free
+                  </h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Safe for beneficial earthworms, pollinating bees, and soil microbiome with zero
+                    synthetic chemical residues or harvest withholding periods.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Body: How to Use */}
+          {activeTab === "how-to-use" && (
+            <div className="py-8 space-y-6">
+              <h3 className="text-xl font-bold text-gray-900 font-display">
+                How to Use & Dosage Guidelines
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#075B32]">
+                    Method 1: Soil Application & Drip
+                  </span>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    <strong>Dosage:</strong> 500 ml – 1 Litre per acre mixed with 100 kg of well-rotted
+                    FYM/compost, or injected directly through drip fertigation during early vegetative stages.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#075B32]">
+                    Method 2: Seed Treatment
+                  </span>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    <strong>Dosage:</strong> 5–10 ml per kg of seed. Mix with water and coat seeds evenly. Shade
+                    dry for 20–30 minutes before sowing in the field.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#075B32]">
+                    Method 3: Seedling Root Dip
+                  </span>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    <strong>Dosage:</strong> 5–10 ml per litre of water. Dip nursery roots for 15–20 minutes
+                    prior to transplanting in mainline soil.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#075B32]">
+                    Method 4: Foliar Spray
+                  </span>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    <strong>Dosage:</strong> 2–3 ml per litre of water. Spray during early morning or late
+                    afternoon for thorough foliage coverage.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Body: Suitable Crops */}
+          {activeTab === "suitable-crops" && (
+            <div className="py-8 space-y-4">
+              <h3 className="text-xl font-bold text-gray-900 font-display">Recommended Crops</h3>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                {product.recommendedCrops ||
+                  "Suitable for all Agricultural, Horticultural, Vegetable, Fruit, Plantation, Spice, Flower and Commercial Cash Crops."}
               </p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {product.dietaryTags.map((tag) => (
+              <div className="flex flex-wrap gap-2 pt-2">
+                {[
+                  "Paddy / Rice",
+                  "Cotton",
+                  "Chilli",
+                  "Tomato",
+                  "Brinjal",
+                  "Sugarcane",
+                  "Banana",
+                  "Pomegranate",
+                  "Mango",
+                  "Wheat",
+                  "Groundnut",
+                  "Soyabean",
+                  "Pulses",
+                  "Ginger & Turmeric",
+                ].map((c) => (
                   <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary"
+                    key={c}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#EAF5E9] text-[#075B32]"
                   >
-                    <Leaf className="size-3" /> {tag}
+                    <Check className="size-3.5" />
+                    {c}
                   </span>
                 ))}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Right Column (7 Cols): Product Info, Pricing, Variants, Actions, Offers, PIN Checker */}
-          <div className="lg:col-span-6 space-y-6">
-            <div>
-              {/* Category & Brand Header */}
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-brand-leaf">
-                  {product.category}
-                </span>
-                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-foreground">
-                  {product.brand}
-                </span>
-              </div>
-
-              {/* Main Product Title */}
-              <h1 className="mt-2 font-display text-3xl sm:text-4xl font-bold text-foreground leading-tight">
-                {product.name}
-              </h1>
-
-              {/* Ratings & Social Proof */}
-              <div className="mt-3 flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-amber-700 font-bold text-xs">
-                  <Star className="size-3.5 fill-current text-amber-500" />
-                  <span>{product.rating}</span>
-                </div>
-                <a
-                  href="#customer-reviews"
-                  className="text-xs font-semibold text-muted-foreground hover:text-primary underline decoration-dotted"
-                >
-                  {product.reviews} Verified Customer Reviews
-                </a>
-                <span className="text-muted-foreground text-xs">•</span>
-                <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                  <ShieldCheck className="size-3.5" /> FSSAI / NPOP Certified
-                </span>
-              </div>
-
-              {/* Dynamic Price Breakdown Box */}
-              <div className="mt-6 rounded-3xl border border-primary/20 bg-primary/5 p-5 shadow-xs space-y-2">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-mono text-3xl sm:text-4xl font-black text-foreground">
-                    ₹{selectedVariant.price * qty}
-                  </span>
-                  <span className="font-mono text-base sm:text-lg text-muted-foreground line-through">
-                    ₹{selectedVariant.oldPrice * qty}
-                  </span>
-                  <span className="rounded-full bg-emerald-600 text-white px-3 py-0.5 text-xs font-bold shadow-xs">
-                    Save ₹{(selectedVariant.oldPrice - selectedVariant.price) * qty} ({discountPercent}% OFF)
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-primary/10">
-                  <span>Unit: {selectedVariant.unit} (₹{Math.round(selectedVariant.price / (selectedVariant.unit.includes("5") ? 5 : 1))}/kg approx)</span>
-                  <span className="text-emerald-700 font-semibold">Inclusive of all taxes & GST</span>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="mt-4 text-xs sm:text-sm leading-relaxed text-muted-foreground">
-                {product.description}
-              </p>
-
-              {/* Multi-Pack Variant Selector */}
-              {product.variants && product.variants.length > 0 && (
-                <div className="mt-6 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Select Pack Size / Quantity
-                    </label>
-                    <span className="text-xs text-brand-leaf font-semibold">
-                      Current: {selectedVariant.label}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {product.variants.map((v) => {
-                      const isSelected = selectedVariant.id === v.id;
-                      return (
-                        <button
-                          key={v.id}
-                          onClick={() => setSelectedVariant(v)}
-                          className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition ${
-                            isSelected
-                              ? "bg-primary/15 border-primary text-primary font-bold shadow-sm ring-2 ring-primary/20"
-                              : "bg-card border-border hover:bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          <span className="text-xs font-bold text-foreground">{v.unit}</span>
-                          <span className="text-xs font-mono font-bold text-primary mt-0.5">
-                            ₹{v.price}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground line-through">
-                            ₹{v.oldPrice}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Quantity Selector & Stock Status */}
-              <div className="mt-6 flex items-center justify-between gap-4 p-4 rounded-2xl bg-secondary/50 border border-border">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Quantity
-                  </span>
-                  <div className="flex items-center rounded-xl border border-input bg-card p-1">
-                    <button
-                      onClick={() => setQty((q) => Math.max(1, q - 1))}
-                      className="size-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground"
-                      disabled={qty <= 1}
-                    >
-                      <Minus className="size-3.5" />
-                    </button>
-                    <span className="w-10 text-center text-xs font-bold font-mono">
-                      {qty}
-                    </span>
-                    <button
-                      onClick={() => setQty((q) => q + 1)}
-                      className="size-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground"
-                    >
-                      <Plus className="size-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  {selectedVariant.inStock ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-                      <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
-                      In Stock Ready to Dispatch
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold text-destructive">
-                      Out of Stock (Pre-order Open)
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Main Action Buttons (Add to Cart, Buy Now, Wishlist, Share) */}
-              <div className="mt-6 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Add to Cart */}
-                  <Button
-                    onClick={handleAddToCart}
-                    disabled={!selectedVariant.inStock}
-                    className="h-14 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition"
-                  >
-                    <ShoppingBag className="size-5" />
-                    Add to Basket • ₹{selectedVariant.price * qty}
-                  </Button>
-
-                  {/* Buy Now Direct Checkout */}
-                  <Button
-                    variant="gold"
-                    onClick={handleBuyNow}
-                    disabled={!selectedVariant.inStock}
-                    className="h-14 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition"
-                  >
-                    <Zap className="size-5 fill-current" />
-                    Buy Now ⚡
-                  </Button>
-                </div>
-
-                {/* Secondary Actions: Wishlist & Share */}
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => toggleWishlist(product.id)}
-                    className={`flex-1 h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition ${
-                      isWishlisted ? "text-destructive border-destructive bg-destructive/5" : ""
-                    }`}
-                  >
-                    <Heart className={`size-4 ${isWishlisted ? "fill-destructive" : ""}`} />
-                    {isWishlisted ? "Saved in Wishlist" : "Save to Wishlist"}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsShareModalOpen(true)}
-                    className="flex-1 h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-2"
-                  >
-                    <Share2 className="size-4 text-brand-leaf" />
-                    Share Product
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Coupons & Bank Offers Widget */}
-            <PdpOfferCoupons productPrice={selectedVariant.price * qty} />
-
-            {/* Delivery Date & Serviceability Checker */}
-            <PdpDeliveryChecker productName={product.name} />
-          </div>
-        </div>
-
-        {/* Agricultural Specifications, Crops & Dosage Guide (Shown when specifications are present) */}
-        {product.specifications && (
-          <section className="mt-16 border-t border-border pt-12 space-y-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
-                  <FlaskConical className="size-4 text-brand-leaf" /> Certified Laboratory Analysis & Label Specifications
-                </span>
-                <h3 className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-1">
-                  Product Specifications & Crop Guidelines
-                </h3>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-700">
-                <CheckCircle2 className="size-3.5" /> Lab Batch Verified
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Product Specifications Table */}
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-border">
-                  <FileText className="size-4 text-primary" />
-                  <h4 className="font-display font-bold text-base text-foreground">
-                    Composition & Chemical Particulars
-                  </h4>
-                </div>
-                <div className="divide-y divide-border/60">
-                  {Object.entries(product.specifications).map(([key, val]) => (
-                    <div key={key} className="py-2.5 flex items-center justify-between text-xs sm:text-sm">
-                      <span className="font-medium text-muted-foreground">{key}</span>
-                      <span className="font-mono font-bold text-foreground">{val}</span>
+          {/* Tab Body: Technical Details */}
+          {activeTab === "technical" && (
+            <div className="py-8 space-y-4">
+              <h3 className="text-xl font-bold text-gray-900 font-display">Technical Particulars</h3>
+              <div className="rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100 max-w-2xl">
+                {product.specifications ? (
+                  Object.entries(product.specifications).map(([key, val]) => (
+                    <div key={key} className="p-3.5 flex items-center justify-between text-xs sm:text-sm">
+                      <span className="font-medium text-gray-600">{key}</span>
+                      <span className="font-bold text-gray-900">{val}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recommended Crops & Dosage */}
-              <div className="space-y-6">
-                {product.recommendedCrops && (
-                  <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-2.5">
-                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                      <Sprout className="size-4 text-brand-leaf" />
-                      <h4 className="font-display font-bold text-base text-foreground">
-                        Recommended Crops
-                      </h4>
+                  ))
+                ) : (
+                  <>
+                    <div className="p-3.5 flex items-center justify-between text-xs sm:text-sm">
+                      <span className="font-medium text-gray-600">Formulation</span>
+                      <span className="font-bold text-gray-900">Liquid Biological Inoculant</span>
                     </div>
-                    <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
-                      {product.recommendedCrops}
-                    </p>
-                  </div>
+                    <div className="p-3.5 flex items-center justify-between text-xs sm:text-sm">
+                      <span className="font-medium text-gray-600">Shelf Life</span>
+                      <span className="font-bold text-gray-900">18–24 Months</span>
+                    </div>
+                  </>
                 )}
+              </div>
+            </div>
+          )}
 
-                {product.dosage && (
-                  <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-2.5">
-                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                      <Droplets className="size-4 text-blue-500" />
-                      <h4 className="font-display font-bold text-base text-foreground">
-                        Recommended Dosage & Application
-                      </h4>
-                    </div>
-                    <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
-                      {product.dosage}
-                    </p>
-                    {product.methodOfApplication && (
-                      <p className="text-xs text-muted-foreground/90 pt-2 border-t border-border/60">
-                        <strong>Method:</strong> {product.methodOfApplication}
+          {/* Tab Body: Reviews */}
+          {activeTab === "reviews" && (
+            <div className="py-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 font-display">Farmer Reviews</h3>
+                  <p className="text-xs text-gray-500">Based on 28 verified customer experiences</p>
+                </div>
+                <div className="flex items-center gap-1 text-[#E7A91A]">
+                  <Star className="size-4 fill-current" />
+                  <span className="text-sm font-bold text-gray-900">{product.rating} / 5.0</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                  <div className="flex items-center justify-between">
+                    <strong className="text-xs font-bold text-gray-900">Ramesh Patel (Gujarat)</strong>
+                    <span className="text-[10px] text-gray-400">12 Sep 2026</span>
+                  </div>
+                  <div className="flex text-[#E7A91A]">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="size-3 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Used for my chilli crop drip application. Excellent root development and zero wilt
+                    problems observed during the heavy monsoon season. Highly recommended!
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                  <div className="flex items-center justify-between">
+                    <strong className="text-xs font-bold text-gray-900">
+                      Srinivas Rao (Andhra Pradesh)
+                    </strong>
+                    <span className="text-[10px] text-gray-400">28 Aug 2026</span>
+                  </div>
+                  <div className="flex text-[#E7A91A]">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="size-3 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Very reliable formulation with genuine CFU count. Applied as seed treatment for cotton,
+                    germination percentage was noticeably higher than previous seasons.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Body: FAQs */}
+          {activeTab === "faqs" && (
+            <div className="py-8 space-y-3">
+              <h3 className="text-xl font-bold text-gray-900 font-display mb-4">
+                Frequently Asked Questions
+              </h3>
+              {productFaqs.map((faq, index) => {
+                const isOpen = openFaqIndex === index;
+                return (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-gray-200 bg-white p-4 transition"
+                  >
+                    <button
+                      onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                      className="w-full flex items-center justify-between text-left text-xs sm:text-sm font-bold text-gray-900"
+                    >
+                      <span>{faq.q}</span>
+                      {isOpen ? (
+                        <ChevronUp className="size-4 text-[#075B32] shrink-0 ml-2" />
+                      ) : (
+                        <ChevronDown className="size-4 text-gray-400 shrink-0 ml-2" />
+                      )}
+                    </button>
+                    {isOpen && (
+                      <p className="mt-2 text-xs leading-relaxed text-gray-600 pt-2 border-t border-gray-100">
+                        {faq.a}
                       </p>
                     )}
                   </div>
-                )}
-
-                {product.targetDiseases && (
-                  <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-2.5">
-                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                      <ShieldCheck className="size-4 text-emerald-600" />
-                      <h4 className="font-display font-bold text-base text-foreground">
-                        Target Crop Diseases & Biological Protection
-                      </h4>
-                    </div>
-                    <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
-                      {product.targetDiseases}
-                    </p>
-                  </div>
-                )}
-              </div>
+                );
+              })}
             </div>
-
-            {/* Agriculture Caution & Storage Alert */}
-            {product.storageNotice && (
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-900 flex items-start gap-3">
-                <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block font-bold text-amber-950 uppercase tracking-wider text-[11px] mb-0.5">
-                    Storage & Agricultural Usage Guidelines
-                  </strong>
-                  {product.storageNotice} {product.compatibility && <span className="block mt-1"><strong>Compatibility:</strong> {product.compatibility}</span>}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Product FAQs Accordion */}
-        <section className="mt-20 border-t border-border pt-12 space-y-6">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf">
-              Frequently Asked Questions
-            </span>
-            <h3 className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-1">
-              Purity, Processing & Storage FAQs
-            </h3>
-          </div>
-
-          <div className="space-y-3">
-            {productFaqs.map((faq, index) => {
-              const isOpen = openFaqIndex === index;
-              return (
-                <div
-                  key={index}
-                  className="rounded-2xl border border-border bg-card p-4 transition"
-                >
-                  <button
-                    onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                    className="w-full flex items-center justify-between text-left text-xs sm:text-sm font-bold text-foreground"
-                  >
-                    <span>{faq.q}</span>
-                    {isOpen ? (
-                      <ChevronUp className="size-4 text-primary shrink-0 ml-2" />
-                    ) : (
-                      <ChevronDown className="size-4 text-muted-foreground shrink-0 ml-2" />
-                    )}
-                  </button>
-                  {isOpen && (
-                    <p className="mt-3 text-xs leading-relaxed text-muted-foreground pt-3 border-t border-border/60">
-                      {faq.a}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          )}
         </section>
 
-        {/* Customer Reviews & Ratings Suite */}
-        <div id="customer-reviews">
-          <PdpReviewsSection product={product} />
-        </div>
-
-        {/* Related Products Carousel */}
-        <section className="mt-20 border-t border-border pt-12 space-y-6">
-          <div className="flex items-center justify-between">
+        {/* 5. Recommended Products Carousel/Grid */}
+        <section className="mt-16 pt-12 border-t border-gray-100">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf">
-                Pairings & Complements
-              </span>
-              <h3 className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-1">
-                Pairs Well With Your Pantry
+              <h3 className="text-2xl font-extrabold text-gray-900 font-display">
+                Recommended <span className="text-[#E7A91A]">Products</span>
               </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Explore more natural and effective solutions for your crops
+              </p>
             </div>
-            <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-bold">
-              <Link to="/products">Explore All</Link>
-            </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+            {recommendedProducts.map((rp) => (
+              <ProductCard key={rp.id} product={rp} />
             ))}
           </div>
         </section>
 
-        {/* Recently Viewed Products */}
-        <PdpRecentlyViewed currentProductId={product.id} />
-      </main>
+        {/* 6. Newsletter Subscription Strip */}
+        <section className="mt-16 mb-8 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center shrink-0 shadow-xs">
+              <Mail className="size-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-gray-900">Subscribe to Our Newsletter</h4>
+              <p className="text-xs text-gray-500">Get latest updates, new products and farming tips.</p>
+            </div>
+          </div>
 
-      {/* Share Product Dialog Modal */}
-      {isShareModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-3xl bg-background border border-border p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Share2 className="size-5 text-brand-leaf" />
-                <h3 className="font-display font-bold text-lg">Share Product</h3>
+          <form onSubmit={handleNewsletterSubmit} className="flex items-center gap-2 w-full md:w-auto">
+            <input
+              type="email"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="w-full sm:w-72 h-10 px-3.5 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-[#075B32] transition"
+            />
+            <button
+              type="submit"
+              className="bg-[#075B32] hover:bg-[#064A29] text-white text-xs font-bold px-5 h-10 rounded-xl transition shrink-0 shadow-xs"
+            >
+              Subscribe
+            </button>
+          </form>
+        </section>
+      </div>
+
+      {/* Lightbox Fullscreen Modal */}
+      {isLightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 size-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition"
+          >
+            <X className="size-5" />
+          </button>
+          <img
+            src={galleryImages[activeImageIndex]?.src || product.image}
+            alt={product.name}
+            className="max-h-[85vh] max-w-[90vw] object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* Video Modal */}
+      {isVideoModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsVideoModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-2xl bg-black rounded-2xl overflow-hidden shadow-2xl p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsVideoModalOpen(false)}
+              className="absolute top-3 right-3 size-8 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition z-10"
+            >
+              <X className="size-4" />
+            </button>
+            <div className="aspect-video w-full rounded-xl overflow-hidden bg-neutral-900 flex items-center justify-center">
+              <div className="text-center p-6 space-y-3">
+                <div className="size-16 rounded-full bg-[#075B32] text-white flex items-center justify-center mx-auto shadow-lg animate-pulse">
+                  <Play className="size-7 fill-white ml-0.5" />
+                </div>
+                <h4 className="text-white font-bold text-base font-display">
+                  {product.name} - Application & Field Results Demo
+                </h4>
+                <p className="text-neutral-400 text-xs max-w-md mx-auto">
+                  Demonstrating seed treatment, seedling root dip, and drip fertigation best practices for
+                  maximum root health.
+                </p>
               </div>
-              <button
-                onClick={() => setIsShareModalOpen(false)}
-                className="rounded-full p-1 hover:bg-muted text-muted-foreground"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              Share <strong>{product.name}</strong> with your family & friends to earn referral harvest cash.
-            </p>
-
-            {/* Share options */}
-            <div className="grid grid-cols-3 gap-3">
-              <a
-                href={`https://wa.me/?text=Check%20out%20${encodeURIComponent(
-                  product.name
-                )}%20from%20Janani%20Agro:%20${encodeURIComponent(window.location.href)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 transition text-center"
-              >
-                <MessageCircle className="size-6 text-emerald-600 mb-1" />
-                <span className="text-xs font-bold">WhatsApp</span>
-              </a>
-
-              <a
-                href={`https://twitter.com/intent/tweet?text=Loving%20pure%20organic%20${encodeURIComponent(
-                  product.name
-                )}%20from%20@JananiAgro&url=${encodeURIComponent(window.location.href)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 transition text-center"
-              >
-                <Twitter className="size-6 text-sky-600 mb-1" />
-                <span className="text-xs font-bold">Twitter/X</span>
-              </a>
-
-              <button
-                onClick={handleCopyLink}
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 transition text-center"
-              >
-                <Copy className="size-6 text-primary mb-1" />
-                <span className="text-xs font-bold">Copy Link</span>
-              </button>
-            </div>
-
-            <div className="pt-2">
-              <input
-                type="text"
-                readOnly
-                value={typeof window !== "undefined" ? window.location.href : ""}
-                className="w-full h-9 rounded-xl border border-input bg-muted px-3 text-xs font-mono text-muted-foreground outline-none"
-              />
             </div>
           </div>
         </div>

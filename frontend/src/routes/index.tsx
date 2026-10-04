@@ -1,709 +1,726 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import React, { useState, useEffect } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import React, { useState, useRef } from "react";
 import {
   ArrowRight,
-  Award,
-  BadgeCheck,
+  ChevronLeft,
   ChevronRight,
-  HeartHandshake,
-  Leaf,
-  PackageCheck,
+  Star,
   ShieldCheck,
   Sprout,
-  Star,
-  Truck,
+  Leaf,
+  Award,
+  FlaskConical,
   Sparkles,
-  Search,
-  Flame,
-  Clock,
-  Gift,
-  CheckCircle2,
-  Copy,
-  ChevronLeft,
-  ShoppingBag,
+  Layers,
+  Package,
+  TrendingUp,
+  Activity,
   Heart,
-  Droplet,
-  Milk,
+  ShoppingBag,
+  ShieldAlert,
   Wheat,
-  CookingPot,
-  Instagram,
-  Send,
-  Check,
-  Share2
+  Bug,
+  Shield,
+  Droplets
 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useStore } from "@/components/store-provider";
+import { products, type Product } from "@/lib/catalog";
 import { ProductCard } from "@/components/product-card";
-import { SectionHeading } from "@/components/page-kit";
-import { HeroCarousel } from "@/components/home/hero-carousel";
+import { Button } from "@/components/ui/button";
+import { HeroBannerCarousel } from "@/components/home/hero-banner-carousel";
 import { ShopByCrop } from "@/components/home/shop-by-crop";
 import { ShopByDisease } from "@/components/home/shop-by-disease";
-import {
-  categories,
-  faqs,
-  heroImage,
-  pantryImage,
-  posts,
-  products,
-  services,
-  storyImage,
-  testimonials,
-  getCategoryImage,
-  getProductImage,
-  type Product
-} from "@/lib/catalog";
-import { useStore } from "@/components/store-provider";
-import { HomeFlashSale } from "@/components/home-flash-sale";
-import {
-  getHomepageCms,
-  subscribeNewsletter,
-  type HomepageCmsData,
-  type HeroBanner
-} from "@/lib/api";
+import { ProductQuickViewModal } from "@/components/shop/product-quick-view-modal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "JANANI AGRO PRODUCTS — 100% Certified Pure Organic Harvest" },
-      { name: "description", content: "Premium single-origin wood-pressed oils, Vedic A2 bilona cow ghee, unpolished native millets, and organic pulses directly from trusted Indian farms." },
-      { property: "og:title", content: "JANANI AGRO PRODUCTS — Pure Organic Harvest" },
-      { property: "og:description", content: "Farm-traceable organic pantry essentials from Gujarat & Karnataka, India." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" }
+      { title: "Janani Agro Products — Grow Healthy Crops with Natural Care" },
+      {
+        name: "description",
+        content:
+          "High quality agro inputs for sustainable farming. Certified biological crop protection, organic plant nutrients, and soil conditioners for bumper crop yields.",
+      },
+      { property: "og:title", content: "Janani Agro Products — Healthy Soil, Brighter Harvests" },
+      {
+        property: "og:description",
+        content: "Natural and effective agro solutions for sustainable farming and peak crop productivity across India.",
+      },
     ],
-    links: [{ rel: "canonical", href: "/" }]
   }),
   component: HomePage,
 });
 
-function HomePage() {
-  const navigate = useNavigate();
-  const { user, wishlist, toggleWishlist, addToCart, products: storeProducts, categories: storeCategories } = useStore();
+export function HomePage() {
+  const { products: storeProducts, addToCart, wishlist, toggleWishlist } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
-  const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
-  const agroCategories = allCategories.filter((c) =>
-    ["biological-crop-protection", "organic-plant-nutrients", "soil-conditioners-biostimulants"].includes(c.slug?.toLowerCase()) ||
-    c.name?.toLowerCase().includes("biological") ||
-    c.name?.toLowerCase().includes("nutrient") ||
-    c.name?.toLowerCase().includes("soil")
-  );
-  const displayCategories = agroCategories.length > 0 ? agroCategories.slice(0, 3) : categories.slice(0, 3);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
-  // CMS State
-  const [cmsData, setCmsData] = useState<HomepageCmsData | null>(null);
-  const [loadingCms, setLoadingCms] = useState(true);
-
-  // Hero Carousel State
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-
-  // Search Input State
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Trending Filter Tab
-  const [trendingTab, setTrendingTab] = useState<"all" | "nutrients" | "protection" | "soil">("all");
-
-  // Newsletter State
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [subscribing, setSubscribing] = useState(false);
-
-  // Load Live Dynamic CMS Data from Backend API
-  useEffect(() => {
-    async function loadCms() {
-      try {
-        const data = await getHomepageCms();
-        if (data) setCmsData(data);
-      } catch (err) {
-        console.error("Failed to fetch homepage CMS data:", err);
-      } finally {
-        setLoadingCms(false);
-      }
+  // Categories Carousel Ref for Smooth Scrolling
+  const categoriesScrollRef = useRef<HTMLDivElement>(null);
+  const scrollCategories = (direction: "left" | "right") => {
+    if (categoriesScrollRef.current) {
+      const offset = direction === "left" ? -300 : 300;
+      categoriesScrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
     }
-    loadCms();
-  }, []);
+  };
 
-  // Multi-Slide Hero Carousel Slides (Defaults & CMS Overrides)
-  const heroSlides = (cmsData?.heroBanners?.length ? cmsData.heroBanners : [
+  // Featured Products Carousel Ref for Smooth Scrolling
+  const productsScrollRef = useRef<HTMLDivElement>(null);
+  const scrollProducts = (direction: "left" | "right") => {
+    if (productsScrollRef.current) {
+      const offset = direction === "left" ? -320 : 320;
+      productsScrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
+    }
+  };
+
+  // Testimonial Carousel State
+  const [testimonialIdx, setTestimonialIdx] = useState(0);
+
+  // 11 Agri Products Categories (From user taxonomy)
+  const categoryCards = [
     {
-      id: "slide-1",
-      eyebrow: "Single-Origin Cold-Pressed Purity",
-      title: "Pure Organic Harvest, Shaped by Nature.",
-      subtitle: "Traditional wood-pressed oils, unpolished native grains, and Vedic churned A2 Ghee delivered farm-fresh with zero chemical refining.",
-      primaryCtaLabel: "Explore Heritage Harvest",
-      primaryCtaUrl: "/products",
-      secondaryCtaLabel: "Claim ₹150 Bonus",
-      secondaryCtaUrl: "/login",
-      desktopImageUrl: heroImage,
-      badgeText: "100% Certified Organic",
-      slideOrder: 1,
-      active: true
+      id: "bio-fertilizers",
+      title: "Bio Fertilizers",
+      icon: Sprout,
+      link: "/categories/bio-fertilizers",
+      description: "Rhizobium, PSB & bio-inoculants for soil enrichment",
+      color: "text-emerald-700 bg-emerald-50",
     },
     {
-      id: "slide-2",
-      eyebrow: "Ancient Ayurvedic Bilona Method",
-      title: "Hand-Churned Vedic A2 Gir Cow Ghee.",
-      subtitle: "Slow-cooked in small batches from grass-fed Gir cow curd. Rich in natural beta-casein, aroma, and granular golden texture.",
-      primaryCtaLabel: "Shop Vedic Ghee",
-      primaryCtaUrl: "/categories/vedic-ghee",
-      secondaryCtaLabel: "Our Farm Story",
-      secondaryCtaUrl: "/about",
-      desktopImageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=1920",
-      badgeText: "A2 Certified Bilona",
-      slideOrder: 2,
-      active: true
+      id: "bio-pesticides",
+      title: "Bio Pesticides",
+      icon: ShieldAlert,
+      link: "/categories/bio-pesticides",
+      description: "Biological pest control & natural neem formulations",
+      color: "text-emerald-700 bg-emerald-50",
     },
     {
-      id: "slide-3",
-      eyebrow: "Cold Churned A2 Vedic Excellence",
-      title: "Authentic Gir Cow Bilona Ghee",
-      highlightText: "Gir Cow Bilona Ghee",
-      subtitle: "Crafted strictly through curd-churning method using Vedic brass vessels. Rich in natural aroma and golden granules.",
-      primaryCtaLabel: "Order A2 Vedic Ghee",
-      primaryCtaUrl: "/products/a2-desi-ghee",
-      ctaPrimaryText: "Order A2 Vedic Ghee",
-      ctaPrimaryLink: "/products/a2-desi-ghee",
-      secondaryCtaLabel: "Lab Certificates",
-      secondaryCtaUrl: "/about",
-      ctaSecondaryText: "Lab Certificates",
-      ctaSecondaryLink: "/about",
-      desktopImageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&q=80&w=1920",
-      badgeText: "Direct Farm Traceable",
-      slideOrder: 3,
-      active: true
-    }
-  ]).filter((s) => s.active !== false);
+      id: "bio-fungicides",
+      title: "Bio Fungicides",
+      icon: ShieldCheck,
+      link: "/categories/bio-fungicides",
+      description: "Trichoderma viride & organic fungal defenses",
+      color: "text-emerald-700 bg-emerald-50",
+    },
+    {
+      id: "bio-stimulants",
+      title: "Bio Stimulants",
+      icon: TrendingUp,
+      link: "/categories/bio-stimulants",
+      description: "Humic, fulvic & seaweed vegetative growth boosters",
+      color: "text-amber-700 bg-amber-50",
+    },
+    {
+      id: "micro-nutrients",
+      title: "Micro Nutrients",
+      icon: Wheat,
+      link: "/categories/micro-nutrients",
+      description: "Zinc, Boron & trace minerals for balanced nutrition",
+      color: "text-emerald-700 bg-emerald-50",
+    },
+    {
+      id: "insecticides",
+      title: "Insecticides",
+      icon: Bug,
+      link: "/categories/insecticides",
+      description: "Targeted crop insect & pest protection",
+      color: "text-amber-700 bg-amber-50",
+    },
+    {
+      id: "fungicides",
+      title: "Fungicides",
+      icon: Shield,
+      link: "/categories/fungicides",
+      description: "Protective & curative fungal disease treatments",
+      color: "text-emerald-700 bg-emerald-50",
+    },
+    {
+      id: "botanical-extracts",
+      title: "Botanical Extracts",
+      icon: Leaf,
+      link: "/categories/botanical-extracts",
+      description: "Herbal extracts & natural plant-derived bio-actives",
+      color: "text-emerald-700 bg-emerald-50",
+    },
+    {
+      id: "water-solubles",
+      title: "Water Solubles",
+      icon: Droplets,
+      link: "/categories/water-solubles",
+      description: "100% soluble drip & foliar spray formulations",
+      color: "text-blue-700 bg-blue-50",
+    },
+    {
+      id: "agri-inputs",
+      title: "Agri Inputs",
+      icon: Layers,
+      link: "/categories/agri-inputs",
+      description: "Wetting agents, spreaders & soil enhancers",
+      color: "text-emerald-700 bg-emerald-50",
+    },
+    {
+      id: "others",
+      title: "Others",
+      icon: Sparkles,
+      link: "/categories/others",
+      description: "Speciality formulations & custom farm solutions",
+      color: "text-amber-700 bg-amber-50",
+    },
+  ];
 
-  // Auto-play timer for hero carousel
-  useEffect(() => {
-    if (!isAutoPlaying || heroSlides.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, heroSlides.length]);
+  // 5 Featured Products (From Mockup)
+  const featuredProductsList = [
+    {
+      id: "harit",
+      numId: 1,
+      name: "HARIT",
+      spec: "Trichoderma Viride Liquid Biofungal Formulation",
+      image: "/products/harit.jpg",
+      link: "/products/harit-trichoderma-viride-liquid-biofungal-formulation-1l",
+      price: 950,
+      oldPrice: 1100,
+    },
+    {
+      id: "bhumi-shakti",
+      numId: 3,
+      name: "BHUMI SHAKTI",
+      spec: "Humic & Fulvic Based Soil Conditioner Biostimulant",
+      image: "/products/bhumi-shakti.jpg",
+      link: "/products/bhumi-shakti-humic-fulvic-biostimulant-5l",
+      price: 3900,
+      oldPrice: 4400,
+    },
+    {
+      id: "neem-oil",
+      numId: 2,
+      name: "NEEM OIL",
+      spec: "Containing Azadirachtin 1000 PPM",
+      image: "/products/neem-oil.jpg",
+      link: "/products/neem-oil-1000-ppm-azadirachtin-1l",
+      price: 599,
+      oldPrice: 750,
+    },
+    {
+      id: "nano-gold",
+      numId: 4,
+      name: "NANO GOLD",
+      spec: "Plant Growth Promoter",
+      image: "/products/pushkal.jpg",
+      link: "/products/pushkal-flowering-fruit-set-biostimulant-1l",
+      price: 999,
+      oldPrice: 1200,
+    },
+    {
+      id: "vermi-boost",
+      numId: 5,
+      name: "VERMI BOOST",
+      spec: "Organic Soil Enhancer",
+      image: "/products/annada.jpg",
+      link: "/products/annada-fish-amino-acid-5l",
+      price: 3600,
+      oldPrice: 3999,
+    },
+  ];
 
-  // Handle Search Submission
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate({ to: "/search", search: { q: searchQuery.trim() } as any });
-    }
-  };
-
-  // Trending Products Filtering
-  const filteredTrendingProducts = allProducts.filter((p) => {
-    const cat = p.category.toLowerCase();
-    if (trendingTab === "nutrients") return cat.includes("nutrient") || cat.includes("amino");
-    if (trendingTab === "protection") return cat.includes("protection") || cat.includes("bacillus") || cat.includes("balavan") || cat.includes("suraksha") || cat.includes("pseudomonas") || cat.includes("harit") || cat.includes("neem");
-    if (trendingTab === "soil") return cat.includes("soil") || cat.includes("humic") || cat.includes("shakti") || cat.includes("conditioner") || cat.includes("dharani") || cat.includes("kmb");
-    return true;
-  }).slice(0, 8);
-
-  // Recommended Products: prioritize customer onboarding preferences if logged in
-  const userPreferences = user?.preferences?.dietary || [];
-  const recommendedProducts = allProducts.filter((p) => {
-    const cat = p.category.toLowerCase();
-    if (userPreferences.length > 0) {
-      if (userPreferences.includes("Crop Protection") && cat.includes("protection")) return true;
-      if (userPreferences.includes("Plant Nutrition") && (cat.includes("nutrient") || cat.includes("amino"))) return true;
-      if (userPreferences.includes("Soil Health") && cat.includes("soil")) return true;
-    }
-    return p.badge === "Bestseller" || p.price > 200;
-  }).slice(0, 4);
-
-  // Handle Coupon Copy Trigger
-  const handleCopyCoupon = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast.success(`Coupon code "${code}" copied! Apply at checkout for flat savings.`);
-  };
-
-  // Handle Referral Link Copy Trigger
-  const handleCopyReferral = () => {
-    const code = user?.referralCode || "JANANI250";
-    const shareUrl = `${window.location.origin}/login?ref=${code}`;
-    navigator.clipboard.writeText(shareUrl);
-    toast.success(`Referral link copied! Share with friends to earn ₹250 harvest cash.`);
-  };
-
-  // Handle Newsletter Submit
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail || !newsletterEmail.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    setSubscribing(true);
-    try {
-      await subscribeNewsletter(newsletterEmail);
-      toast.success("Welcome to the Harvest Club! Your ₹100 welcome code has been sent to your email.");
-      setNewsletterEmail("");
-    } catch {
-      toast.success("Welcome to the Harvest Club! Your ₹100 welcome code has been sent to your email.");
-      setNewsletterEmail("");
-    } finally {
-      setSubscribing(false);
-    }
-  };
-
-  const activeSlide = heroSlides[currentSlide] || heroSlides[0] || {
-    id: "default-slide",
-    eyebrow: "From Soil to Soul",
-    title: "Pure Organic Harvest, Shaped by Nature.",
-    subtitle: "Traditional wood-pressed oils, unpolished native grains, and Vedic churned A2 Ghee delivered farm-fresh with zero chemical refining.",
-    primaryCtaLabel: "Explore Products",
-    primaryCtaUrl: "/products",
-    secondaryCtaLabel: "Claim ₹150 Bonus",
-    secondaryCtaUrl: "/login",
-    desktopImageUrl: heroImage,
-    badgeText: "100% Certified Organic",
-    slideOrder: 1,
-    active: true
-  };
+  // 3 Real Indian Farmer Testimonials (From Mockup)
+  const testimonials = [
+    {
+      id: 1,
+      name: "Ramesh Kumar",
+      location: "Mango Farmer, Andhra Pradesh",
+      image: "/images/farmer_ramesh.jpg",
+      quote:
+        "Using Janani products improved my soil health and increased my yield significantly. Highly recommended!",
+      stars: 5,
+    },
+    {
+      id: 2,
+      name: "Srinivas Reddy",
+      location: "Vegetable Farmer, Telangana",
+      image: "/images/farmer_srinivas.jpg",
+      quote:
+        "HARIT helped in controlling root rot and my plants are now much healthier.",
+      stars: 5,
+    },
+    {
+      id: 3,
+      name: "Mahesh Patel",
+      location: "Cotton Farmer, Gujarat",
+      image: "/images/farmer_mahesh.jpg",
+      quote:
+        "Good quality products and excellent results. My cotton crop showed great improvement.",
+      stars: 5,
+    },
+  ];
 
   return (
-    <div className="space-y-0">
-      
+    <div className="bg-white text-[#075B32] overflow-hidden">
       {/* ========================================================================= */}
-      {/* SECTION 1: PREMIUM BHARAT AGRI & ORGANIC HERO CAROUSEL                     */}
+      {/* 1. HERO SECTION: CAMPAIGN CAROUSEL WITH DEDICATED DESKTOP & MOBILE BANNERS */}
       {/* ========================================================================= */}
-      <HeroCarousel />
-
-
+      <HeroBannerCarousel />
 
       {/* ========================================================================= */}
-      {/* SECTION 3: TRUST GUARANTEES STRIP                                         */}
+      {/* 2. EXPLORE OUR PRODUCT CATEGORIES                                         */}
       {/* ========================================================================= */}
-      <section className="border-b border-border/60 bg-cream py-8 px-4 sm:px-6">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 md:grid-cols-5">
-          {[
-            { Icon: Award, title: "100% Organic Certified", subtitle: "NPOP & FSSAI Standards" },
-            { Icon: Droplet, title: "Zero Chemical Hexane", subtitle: "Traditional Wood Expellers" },
-            { Icon: Sprout, title: "Farm-to-Door Traceable", subtitle: "Direct from 450+ Farmers" },
-            { Icon: Truck, title: "Free Express Shipping", subtitle: "On all orders above ₹799" },
-            { Icon: ShieldCheck, title: "100% Secure Checkout", subtitle: "Razorpay, UPI & COD" }
-          ].map(({ Icon, title, subtitle }) => (
-            <div key={title} className="flex items-center gap-3.5 p-2">
-              <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-gold/15 text-brand-leaf">
-                <Icon className="size-5 text-brand-leaf" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-foreground leading-snug">{title}</h4>
-                <p className="text-[11px] text-muted-foreground">{subtitle}</p>
-              </div>
+      <section className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white relative">
+        <div className="mx-auto max-w-7xl">
+          {/* Section Header */}
+          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+            <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
+              AGRI PRODUCTS
+            </p>
+            <h2 className="mt-1 text-2xl sm:text-4xl font-black text-[#075B32] tracking-tight">
+              PRODUCT <span className="text-[#D99A12]">CATEGORIES</span>
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm text-slate-600">
+              Natural, biological, and effective solutions for every stage of crop growth.
+            </p>
+          </div>
+
+          {/* Carousel Controls & Cards Strip */}
+          <div className="relative">
+            {/* Left Nav Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollCategories("left")}
+              aria-label="Previous Categories"
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full border border-[#0B6B35]/25 bg-white shadow-md text-[#075B32] hover:text-[#4FAE2A] hover:border-[#D99A12] hover:bg-[#F8FAEE] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+
+            {/* Right Nav Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollCategories("right")}
+              aria-label="Next Categories"
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full border border-[#0B6B35]/25 bg-white shadow-md text-[#075B32] hover:text-[#4FAE2A] hover:border-[#D99A12] hover:bg-[#F8FAEE] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+            >
+              <ChevronRight className="size-5" />
+            </button>
+
+            {/* Scrollable Container */}
+            <div
+              ref={categoriesScrollRef}
+              className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 px-2 scrollbar-none snap-x snap-mandatory"
+            >
+              {categoryCards.map((cat) => {
+                const IconComponent = cat.icon;
+                return (
+                  <Link
+                    key={cat.id}
+                    to={cat.link}
+                    className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-5 rounded-2xl border border-[#0B6B35]/20 bg-white shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:border-[#D99A12] hover:bg-[#F8FAEE] group"
+                  >
+                    <div className="size-16 rounded-2xl bg-[#4FAE2A]/10 text-[#4FAE2A] flex items-center justify-center mb-3.5 group-hover:scale-110 group-hover:bg-[#075B32] group-hover:text-white transition-all duration-300">
+                      <IconComponent className="size-8" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors line-clamp-1">
+                      {cat.title}
+                    </h3>
+                    <p className="mt-1 text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                      {cat.description}
+                    </p>
+                  </Link>
+                );
+              })}
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 3.5: SHOP BY CROP & SHOP BY DISEASE CAROUSELS                     */}
+      {/* 3. FEATURED PRODUCTS SECTION                                              */}
+      {/* ========================================================================= */}
+      <section className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-[#0B6B35]/15 relative">
+        <div className="mx-auto max-w-7xl">
+          {/* Header Row */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div>
+              <h2 className="text-2xl sm:text-4xl font-black text-[#075B32] tracking-tight">
+                FEATURED <span className="text-[#D99A12]">PRODUCTS</span>
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm text-slate-600">
+                Our most trusted and effective products for healthier crops and higher yields.
+              </p>
+            </div>
+
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="self-start sm:self-auto rounded-full font-bold text-xs border-[#0B6B35]/40 hover:border-[#D99A12] hover:bg-[#F8FAEE] text-[#075B32]"
+            >
+              <Link to="/products">
+                View All Products <ArrowRight className="size-3.5 ml-1 text-[#4FAE2A]" />
+              </Link>
+            </Button>
+          </div>
+
+          {/* Carousel Wrapper */}
+          <div className="relative">
+            {/* Left Scroll Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollProducts("left")}
+              aria-label="Previous Products"
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full border border-[#0B6B35]/25 bg-white shadow-md text-[#075B32] hover:text-[#4FAE2A] hover:border-[#D99A12] hover:bg-[#F8FAEE] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+
+            {/* Right Scroll Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollProducts("right")}
+              aria-label="Next Products"
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full border border-[#0B6B35]/25 bg-white shadow-md text-[#075B32] hover:text-[#4FAE2A] hover:border-[#D99A12] hover:bg-[#F8FAEE] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+            >
+              <ChevronRight className="size-5" />
+            </button>
+
+            {/* Product Cards Row */}
+            <div
+              ref={productsScrollRef}
+              className="flex items-stretch gap-5 sm:gap-6 overflow-x-auto pb-4 pt-1 px-2 scrollbar-none snap-x snap-mandatory"
+            >
+              {featuredProductsList.map((prod) => {
+                const isWishlisted = wishlist.includes(prod.numId);
+                const discountVal = prod.oldPrice
+                  ? Math.round(((prod.oldPrice - prod.price) / prod.oldPrice) * 100)
+                  : 12;
+
+                return (
+                  <div
+                    key={prod.id}
+                    className="snap-start flex-none w-[calc(50%-10px)] min-w-[155px] sm:w-[245px] flex flex-col justify-between rounded-none border border-gray-200 bg-white shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden"
+                  >
+                    {/* Bottle Image with natural backdrop */}
+                    <div className="relative aspect-square w-full bg-white p-2 sm:p-2.5 overflow-hidden flex items-center justify-center rounded-none">
+                      <Link
+                        to={prod.link}
+                        className="w-full h-full flex items-center justify-center"
+                      >
+                        <img
+                          src={prod.image}
+                          alt={prod.name}
+                          loading="lazy"
+                          className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </Link>
+
+                      {/* Top-Left Red Discount Badge - Sharp corners */}
+                      <div className="absolute top-2 left-2 z-10">
+                        <span className="bg-[#E53E3E] text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-none uppercase tracking-wider shadow-xs">
+                          SAVE {discountVal}%
+                        </span>
+                      </div>
+
+                      {/* Top-Right Circular Wishlist Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleWishlist(prod.numId);
+                        }}
+                        aria-label={`Save ${prod.name}`}
+                        className={`absolute top-2 right-2 z-10 size-7 sm:size-8 rounded-full shadow-xs flex items-center justify-center transition backdrop-blur-xs ${
+                          isWishlisted
+                            ? "bg-red-500 text-white"
+                            : "bg-white/95 text-gray-700 hover:text-red-500 hover:bg-white"
+                        }`}
+                      >
+                        <Heart
+                          className={`size-3.5 sm:size-4 transition ${
+                            isWishlisted ? "fill-current text-white scale-110" : "text-gray-700"
+                          }`}
+                        />
+                      </button>
+
+                      {/* Bottom-Center Pill - 🔥 BESTSELLER */}
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap pointer-events-none">
+                        <span className="inline-flex items-center gap-1 bg-[#064A29]/95 text-white text-[8px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-xs uppercase tracking-wider backdrop-blur-xs">
+                          <span>🔥</span>
+                          <span>BESTSELLER</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Product Info & CTA */}
+                    <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between border-t border-gray-100">
+                      <div>
+                        <Link
+                          to={prod.link}
+                          className="text-xs sm:text-sm font-bold text-[#075B32] hover:text-[#064A29] line-clamp-1 block transition leading-snug"
+                        >
+                          {prod.name}
+                        </Link>
+                        <p className="mt-0.5 text-[10px] sm:text-[11px] text-gray-500 line-clamp-1">
+                          {prod.spec}
+                        </p>
+
+                        {/* Rating */}
+                        <div className="mt-1 flex items-center gap-1 text-[10px] sm:text-[11px]">
+                          <div className="flex items-center text-[#E7A91A]">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className="size-2.5 sm:size-3 fill-current" />
+                            ))}
+                          </div>
+                          <span className="text-gray-500 font-semibold ml-0.5">
+                            (89 reviews)
+                          </span>
+                        </div>
+
+                        {/* Price: Rs. XXX  Rs. YYY */}
+                        <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
+                          <span className="font-bold text-xs sm:text-base text-gray-900 font-mono">
+                            Rs. {prod.price}
+                          </span>
+                          {prod.oldPrice && (
+                            <span className="text-[10px] sm:text-xs text-gray-400 line-through font-mono">
+                              Rs. {prod.oldPrice}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Full-width Rectangular Add to Cart Button */}
+                      <div className="mt-2.5 pt-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            addToCart(prod.numId, 1);
+                            toast.success(`Added ${prod.name} to cart!`);
+                          }}
+                          className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+                        >
+                          <ShoppingBag className="size-3.5 sm:size-4" />
+                          <span>ADD TO CART</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. WHY CHOOSE JANANI AGRO PRODUCTS?                                       */}
+      {/* ========================================================================= */}
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden border-t border-[#0B6B35]/15">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+            {/* Left Column: Golden Circular Sprout Photo */}
+            <div className="lg:col-span-5 flex justify-center">
+              <div className="relative">
+                {/* Floating Decorative Gold Circles */}
+                <div className="absolute -inset-3 sm:-inset-4 rounded-full border-2 border-dashed border-[#D99A12]/40 animate-[spin_40s_linear_infinite]" />
+                <div className="absolute -inset-7 sm:-inset-8 rounded-full border border-[#4FAE2A]/30" />
+                
+                {/* Circular Sprout Root Photo */}
+                <div className="relative size-60 sm:size-80 rounded-full overflow-hidden border-4 border-[#D99A12] shadow-2xl shadow-[#064A29]/20">
+                  <img
+                    src="/images/sprout_roots_circle.jpg"
+                    alt="Plant Sprout Root Health"
+                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#064A29]/30 via-transparent to-transparent pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Content & 4 Features */}
+            <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+              <h2 className="text-2xl sm:text-4xl font-black text-[#075B32] tracking-tight leading-[1.12]">
+                WHY CHOOSE<br />
+                <span className="text-[#075B32]">JANANI </span>
+                <span className="text-[#D99A12]">AGRO PRODUCTS?</span>
+              </h2>
+
+              <p className="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed max-w-xl">
+                We are committed to providing high-quality, eco-friendly and effective agricultural solutions for sustainable farming.
+              </p>
+
+              {/* 4 Features Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2">
+                {[
+                  {
+                    title: "Natural Formulations",
+                    desc: "Plant and soil-friendly products",
+                    icon: Leaf,
+                  },
+                  {
+                    title: "Improves Soil Health",
+                    desc: "Enhances soil fertility and structure",
+                    icon: Sprout,
+                  },
+                  {
+                    title: "Better Crop Yield",
+                    desc: "Healthier plants, higher productivity",
+                    icon: Award,
+                  },
+                  {
+                    title: "Safe & Sustainable",
+                    desc: "Environment friendly farming solutions",
+                    icon: ShieldCheck,
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white border border-[#0B6B35]/20 hover:bg-[#F8FAEE] hover:border-[#D99A12] transition-colors shadow-xs"
+                  >
+                    <div className="size-10 rounded-full border border-[#4FAE2A] bg-white text-[#075B32] flex items-center justify-center shrink-0 shadow-xs">
+                      <item.icon className="size-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-bold text-[#075B32]">
+                        {item.title}
+                      </h3>
+                      <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. WHAT OUR FARMERS SAY (TESTIMONIALS)                                    */}
+      {/* ========================================================================= */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-[#0B6B35]/15 relative">
+        <div className="mx-auto max-w-7xl">
+          {/* Header */}
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-4xl font-black text-[#075B32] tracking-tight">
+              WHAT OUR <span className="text-[#D99A12]">FARMERS SAY</span>
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-600">
+              Real experiences from farmers who trust Janani Agro Products.
+            </p>
+          </div>
+
+          {/* Testimonial Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            {testimonials.map((t) => (
+              <div
+                key={t.id}
+                className="flex flex-col justify-between p-6 rounded-3xl border border-[#0B6B35]/20 bg-white shadow-xs hover:shadow-md hover:border-[#D99A12] hover:bg-[#F8FAEE] transition-all duration-300 hover:-translate-y-1"
+              >
+                <div>
+                  {/* Farmer Headshot + Rating Stars */}
+                  <div className="flex items-center gap-3.5 mb-4">
+                    <img
+                      src={t.image}
+                      alt={t.name}
+                      className="size-14 rounded-full object-cover border-2 border-[#4FAE2A] shadow-xs"
+                    />
+                    <div>
+                      {/* 5 Stars */}
+                      <div className="flex items-center gap-1 text-[#E7A91A]">
+                        {Array.from({ length: t.stars }).map((_, s) => (
+                          <Star key={s} className="size-3.5 fill-current" />
+                        ))}
+                      </div>
+                      <h3 className="text-sm font-bold text-[#075B32] mt-0.5">
+                        {t.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        {t.location}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quote */}
+                  <p className="text-xs sm:text-[13px] text-slate-700 italic leading-relaxed">
+                    "{t.quote}"
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Slider Pagination Dots */}
+          <div className="mt-10 flex items-center justify-center gap-2">
+            <span className="size-2 rounded-full bg-slate-300" />
+            <span className="size-2.5 rounded-full bg-[#075B32] ring-2 ring-[#D99A12]" />
+            <span className="size-2.5 rounded-full bg-slate-300" />
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 6. NATURAL CARE FOR HEALTHY HARVESTS PROMO BANNER                         */}
+      {/* ========================================================================= */}
+      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-white border-t border-[#0B6B35]/15">
+        <div className="mx-auto max-w-7xl rounded-3xl border border-[#D99A12]/35 bg-gradient-to-r from-[#F8FAEE] via-white to-[#F8FAEE] p-8 sm:p-12 shadow-sm relative overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Content */}
+            <div className="lg:col-span-6 space-y-4">
+              {/* Brand Logo Seal */}
+              <img
+                src="/logo.png"
+                alt="Janani Agro Products"
+                className="h-16 sm:h-20 w-auto object-contain drop-shadow-xs"
+              />
+
+              <h2 className="text-2xl sm:text-4xl lg:text-[2.75rem] font-black tracking-tight leading-[1.15] text-[#075B32]">
+                NATURAL CARE FOR<br />
+                <span className="text-[#D99A12]">HEALTHY HARVESTS</span>
+              </h2>
+
+              <p className="text-xs sm:text-sm md:text-base text-slate-700 max-w-lg leading-relaxed">
+                Trusted agro solutions for fruits, vegetables, field crops and more.
+              </p>
+
+              <div className="pt-2">
+                <Link
+                  to="/products"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#075B32] hover:bg-[#064A29] text-white border border-[#D99A12] font-bold text-xs sm:text-sm px-8 py-3.5 shadow-md transition-all hover:scale-105 active:scale-95 group"
+                >
+                  <span>Explore Now</span>
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Fresh Harvest Bounty Image */}
+            <div className="lg:col-span-6 flex justify-center lg:justify-end">
+              <div className="relative max-w-lg w-full">
+                <img
+                  src="/banners/harvest_produce_banner.jpg"
+                  alt="Healthy Harvest Bounty (Tomatoes, Mangoes, Cotton)"
+                  className="w-full h-auto object-cover rounded-3xl shadow-lg border border-[#D99A12]/40 transition-transform duration-700 hover:scale-105"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 7. INTERACTIVE CROP & DISEASE CLINIC (For Farmers)                         */}
       {/* ========================================================================= */}
       <ShopByCrop />
       <ShopByDisease />
 
-      {/* ========================================================================= */}
-      {/* SECTION 4: FEATURED HARVEST CATEGORIES (3-CARD INTERACTIVE GRID)          */}
-      {/* ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="mx-auto max-w-7xl">
-          <SectionHeading
-            eyebrow="Curated Bio-Inputs & Organic Formulations"
-            title="Explore Our Product Categories"
-            copy="From biological crop protection and organic plant nutrients to soil biostimulants, sustainably formulated with zero chemical compromise."
-          />
-
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {displayCategories.map((cat) => {
-              const count = allProducts.filter((p) => p.category.toLowerCase().includes(cat.name.toLowerCase()) || p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))).length || cat.count || 2;
-              const catImg = getCategoryImage(cat.slug || cat.name, cat.image);
-              return (
-                <Link
-                  key={cat.slug}
-                  to="/categories/$slug"
-                  params={{ slug: cat.slug }}
-                  className="group relative flex flex-col items-center overflow-hidden rounded-3xl border border-border/70 bg-card p-6 text-center shadow-sm transition duration-300 hover:-translate-y-1.5 hover:border-primary/40 hover:shadow-xl"
-                >
-                  <div className="relative aspect-square w-full max-w-[260px] overflow-hidden rounded-2xl bg-secondary/40">
-                    <img
-                      src={catImg}
-                      alt={cat.name}
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/products/balavan.jpg";
-                      }}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300" />
-                  </div>
-
-                  <h3 className="mt-4 font-display text-base font-bold text-foreground group-hover:text-primary transition line-clamp-1">
-                    {cat.name}
-                  </h3>
-                  <span className="mt-1 text-xs font-semibold text-brand-leaf">
-                    {count} Products
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 5: FLASH SALE COUNTDOWN WITH LIVE STOCK METER                     */}
-      {/* ========================================================================= */}
-      <HomeFlashSale />
-
-      {/* ========================================================================= */}
-      {/* SECTION 6: TRENDING PRODUCTS WITH CATEGORY TABS                           */}
-      {/* ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card/40">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf">
-                Popular Demands
-              </span>
-              <h2 className="mt-1 font-display text-3xl font-bold text-foreground">
-                Trending Bio-Formulations This Week
-              </h2>
-            </div>
-
-            {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-1.5 rounded-2xl bg-secondary/80 p-1 border border-border/60">
-              {[
-                { id: "all", label: "All Formulations" },
-                { id: "protection", label: "Crop Protection" },
-                { id: "nutrients", label: "Plant Nutrients" },
-                { id: "soil", label: "Soil Health" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setTrendingTab(tab.id as any)}
-                  className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
-                    trendingTab === tab.id
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Trending 4-Column Product Grid */}
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredTrendingProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-
-          <div className="mt-12 text-center">
-            <Button asChild variant="outline" size="lg" className="rounded-2xl font-bold text-xs">
-              <Link to="/products">
-                View All {allProducts.length} Products <ArrowRight className="size-4 ml-1.5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 7: INTERACTIVE COPYABLE COUPON BANNER                             */}
-      {/* ========================================================================= */}
-      <section className="py-10 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] border border-brand-gold/30 bg-gradient-to-r from-[#1c3827] via-forest to-[#0f2418] p-8 sm:p-12 text-primary-foreground shadow-2xl relative">
-          <div className="absolute right-0 top-0 size-80 rounded-full bg-brand-gold/15 blur-3xl" />
-          
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-            <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-2 rounded-full bg-brand-gold/20 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-gold">
-                <Gift className="size-3.5" /> Exclusive Harvest Voucher
-              </div>
-              <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-white leading-tight">
-                Get Flat ₹250 Off On Your Bio-Input Order
-              </h2>
-              <p className="text-xs sm:text-sm text-white/75 leading-relaxed">
-                Applicable on orders above ₹999 across all biological crop protection formulations, plant nutrients, and soil biostimulants.
-              </p>
-            </div>
-
-            {/* Voucher Box with 1-Click Copy */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 bg-black/30 p-3 rounded-2xl border border-white/15 backdrop-blur-md">
-              <div className="text-center sm:text-left px-3">
-                <span className="text-[10px] uppercase font-bold text-white/60 block">Coupon Code</span>
-                <span className="font-mono text-xl sm:text-2xl font-extrabold text-brand-gold tracking-widest">
-                  ORGANIC250
-                </span>
-              </div>
-              <Button
-                type="button"
-                onClick={() => handleCopyCoupon("ORGANIC250")}
-                variant="gold"
-                className="rounded-xl font-bold text-xs shadow-md gap-2"
-              >
-                <Copy className="size-3.5" /> Copy Code
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 8: PROVEN BIO-FORMULATIONS                                        */}
-      {/* ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="mx-auto max-w-7xl">
-          <SectionHeading
-            eyebrow="Bio-Protection & Crop Health"
-            title="Proven Agricultural Formulations"
-            copy="Scientifically validated bio-fungal cultures, liquid bio-fertilizers and botanical pest management solutions."
-          />
-
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {allProducts.slice(4, 8).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 9: PERSONALIZED RECOMMENDED PRODUCTS (AI PANTRY PICKS)            */}
-      {/* ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-secondary/50">
-        <div className="mx-auto max-w-7xl">
-          <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-            <div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-wider">
-                <Sparkles className="size-3.5" />
-                {user ? `Personalized for ${user.name}` : "Smart Agri Solutions"}
-              </span>
-              <h2 className="mt-1 font-display text-2xl sm:text-3xl font-bold text-foreground">
-                Recommended For Your Farmland
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Targeted bio-protection, nutrition enhancers, and microbial inoculants for your crops.
-              </p>
-            </div>
-
-            <Button asChild variant="outline" size="sm" className="rounded-xl font-semibold text-xs shrink-0">
-              <Link to="/products">Browse All Formulations</Link>
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {recommendedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 10: REFER & EARN ADVOCATE BANNER                                  */}
-      {/* ========================================================================= */}
-      <section className="py-10 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl rounded-[2.5rem] border border-border/80 bg-card p-8 sm:p-12 shadow-luxe flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-          <div className="space-y-2 max-w-xl">
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-              <HeartHandshake className="size-3.5" /> Refer & Earn Community
-            </span>
-            <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
-              Give ₹150, Earn ₹250 Harvest Cash
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Introduce pure organic wellness to your friends. They get ₹150 off their first harvest order, and you receive ₹250 directly in your Janani Wallet!
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="rounded-2xl border border-border bg-secondary/80 px-4 py-2.5 text-center sm:text-left">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Your Invite Code</span>
-              <span className="font-mono text-lg font-bold text-foreground">
-                {user?.referralCode || "JANANI100"}
-              </span>
-            </div>
-            <Button
-              onClick={handleCopyReferral}
-              variant="gold"
-              className="rounded-2xl font-bold text-xs h-11 px-5 shadow-sm gap-2"
-            >
-              <Share2 className="size-3.5" /> Share Referral Link
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 11: BRAND CERTIFICATIONS & TRADITION PROMISES                     */}
-      {/* ========================================================================= */}
-      <section className="py-16 px-4 sm:px-6 bg-forest text-primary-foreground">
-        <div className="mx-auto max-w-7xl text-center">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
-            Uncompromising Standards
-          </span>
-          <h2 className="mt-2 font-display text-3xl sm:text-4xl font-bold">
-            Certified Organic. Grounded in Integrity.
-          </h2>
-
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
-            {[
-              { label: "India Organic (NPOP)", sub: "Govt. Accredited" },
-              { label: "Jaivik Bharat", sub: "FSSAI Verified" },
-              { label: "Non-GMO Verified", sub: "100% Native Seeds" },
-              { label: "Traditional Vagai Wood", sub: "<40°C Cold Press" },
-              { label: "Zero Added Palm Oil", sub: "Single Origin" },
-              { label: "Direct Farm Traceable", sub: "Grower Collective" }
-            ].map((cert) => (
-              <div
-                key={cert.label}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md shadow-sm text-center"
-              >
-                <div className="mx-auto grid size-10 place-items-center rounded-xl bg-brand-gold/20 text-brand-gold mb-2">
-                  <BadgeCheck className="size-5" />
-                </div>
-                <h4 className="text-xs font-bold text-white leading-tight">{cert.label}</h4>
-                <p className="text-[10px] text-white/60 mt-0.5">{cert.sub}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 12: CUSTOMER TESTIMONIALS & SOCIAL PROOF                          */}
-      {/* ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="mx-auto max-w-7xl">
-          <SectionHeading
-            eyebrow="From Our Community"
-            title="Loved by 50,000+ Conscious Kitchens"
-            copy="Real feedback from families and chefs who made the permanent switch to unadulterated cold-pressed nourishment."
-          />
-
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {testimonials.slice(0, 4).map(([name, city, review], index) => (
-              <figure
-                key={name}
-                className="flex flex-col justify-between rounded-3xl border border-border/80 bg-card p-6 shadow-soft transition hover:border-primary/40 hover:shadow-md"
-              >
-                <div>
-                  <div className="flex items-center gap-1 text-brand-gold mb-4">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="size-4 fill-current" />
-                    ))}
-                  </div>
-                  <blockquote className="text-xs sm:text-sm leading-relaxed text-foreground/80">
-                    “{review}”
-                  </blockquote>
-                </div>
-
-                <figcaption className="mt-6 flex items-center gap-3 border-t border-border/50 pt-4">
-                  <div className="grid size-9 place-items-center rounded-full bg-brand-gold/20 text-xs font-bold text-forest">
-                    {name.split(" ").map((n) => n[0]).join("")}
-                  </div>
-                  <div>
-                    <strong className="block text-xs font-bold text-foreground">{name}</strong>
-                    <span className="text-[11px] text-muted-foreground">{city} · Verified Patron</span>
-                  </div>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 13: INSTAGRAM & FARM HARVEST MASONRY GALLERY                      */}
-      {/* ========================================================================= */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-secondary/30">
-        <div className="mx-auto max-w-7xl text-center">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-leaf">
-            <Instagram className="size-4" /> #JananiHarvestJourney
-          </div>
-          <h2 className="mt-1 font-display text-2xl sm:text-3xl font-bold text-foreground">
-            Follow Our Harvest from Farm to Mill
-          </h2>
-
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            {[
-              { img: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&q=80&w=400", title: "Sunrise Wheat Harvest" },
-              { img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400", title: "Vedic Bilona Churning" },
-              { img: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=400", title: "Wood Pressed Sesame Press" },
-              { img: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=400", title: "Unpolished Native Rice" },
-              { img: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400", title: "Stone Ground Turmeric" },
-              { img: "https://images.unsplash.com/photo-1584947920409-5a63c7ef95a3?auto=format&fit=crop&q=80&w=400", title: "Raw Wild Honey Collection" }
-            ].map((pic, idx) => (
-              <div
-                key={idx}
-                className="group relative aspect-square overflow-hidden rounded-2xl bg-muted shadow-sm"
-              >
-                <img
-                  src={pic.img}
-                  alt={pic.title}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-forest/70 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center p-2 text-center">
-                  <span className="text-[11px] font-bold text-white leading-tight">
-                    {pic.title}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 14: NEWSLETTER SUBSCRIPTION WITH INSTANT UNLOCK                   */}
-      {/* ========================================================================= */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-[2.5rem] border border-border/80 bg-gradient-to-br from-cream via-cream to-amber-50/60 p-8 sm:p-12 text-center shadow-luxe">
-          <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-gold/20 text-brand-leaf mb-4">
-            <Sprout className="size-7" />
-          </div>
-
-          <span className="text-[11px] font-bold uppercase tracking-widest text-brand-leaf">
-            Harvest Gazette
-          </span>
-          <h2 className="mt-1 font-display text-3xl sm:text-4xl font-extrabold text-foreground">
-            Unlock ₹100 Off Your First Order
-          </h2>
-          <p className="mt-2 text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
-            Subscribe for seasonal harvest updates, traditional recipe guides, and members-only flash discounts.
-          </p>
-
-          <form onSubmit={handleNewsletterSubmit} className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 max-w-md mx-auto">
-            <input
-              type="email"
-              required
-              value={newsletterEmail}
-              onChange={(e) => setNewsletterEmail(e.target.value)}
-              placeholder="Enter your email address"
-              className="h-12 w-full rounded-2xl border border-input bg-background px-4 text-xs sm:text-sm outline-none focus:border-primary shadow-inner"
-            />
-            <Button
-              type="submit"
-              variant="gold"
-              disabled={subscribing}
-              className="w-full sm:w-auto h-12 rounded-2xl font-bold text-xs px-6 shadow-md shrink-0"
-            >
-              {subscribing ? "Claiming..." : "Claim ₹100"} <ArrowRight className="size-3.5 ml-1" />
-            </Button>
-          </form>
-
-          <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
-            <span>✓ No spam ever</span>
-            <span>✓ Unsubscribe anytime</span>
-            <span>✓ Instant promo delivery</span>
-          </div>
-        </div>
-      </section>
-
+      {/* Quick View Modal */}
+      <ProductQuickViewModal
+        product={quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </div>
   );
 }

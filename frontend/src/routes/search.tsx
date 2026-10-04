@@ -644,9 +644,9 @@ function SearchPage() {
             </div>
           )}
 
-          {/* Products Grid or Empty State */}
+          {/* Products Grid or Empty State: 2 columns on mobile */}
           {filteredProducts.length > 0 ? (
-            <div className={list ? "grid gap-5" : "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"}>
+            <div className={list ? "grid gap-3 sm:gap-5" : "grid grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-6"}>
               {filteredProducts.map((p) => (
                 <ProductCard key={p.id} product={p} list={list} />
               ))}

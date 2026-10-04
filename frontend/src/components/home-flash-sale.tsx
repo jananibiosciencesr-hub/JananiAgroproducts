@@ -147,8 +147,8 @@ export function HomeFlashSale({
           </div>
         </div>
 
-        {/* Flash Deals 4-Card Grid */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Flash Deals 4-Card Grid: 2 columns on mobile, 4 columns on desktop */}
+        <div className="mt-6 sm:mt-8 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
           {flashDeals.map((item) => {
             const isWishlisted = wishlist.includes(item.id);
             const remaining = Math.max(1, item.totalStock - item.claimed);
@@ -157,107 +157,114 @@ export function HomeFlashSale({
             return (
               <div
                 key={item.id}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-[2rem] border border-border/70 bg-card p-5 shadow-md transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-none border border-gray-200 bg-white shadow-xs hover:shadow-md transition duration-300"
               >
                 {/* Image & Badges */}
-                <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-secondary/30">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/assets/janani-pantry.jpg";
-                    }}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
+                <div className="relative aspect-square w-full overflow-hidden rounded-none bg-white p-2.5 flex items-center justify-center">
+                  <Link
+                    to="/products/$slug"
+                    params={{ slug: item.slug }}
+                    className="w-full h-full flex items-center justify-center"
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/assets/janani-pantry.jpg";
+                      }}
+                      className="max-h-full max-w-full object-contain transition duration-500 group-hover:scale-105"
+                    />
+                  </Link>
                   
-                  <span className="absolute left-3 top-3 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md">
-                    {item.discount}% OFF
+                  {/* Top-Left Red Badge - Sharp corners */}
+                  <span className="absolute left-2 top-2 z-10 rounded-none bg-[#E53E3E] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white shadow-xs">
+                    SAVE {item.discount}%
                   </span>
 
+                  {/* Top-Right Circular Wishlist Button */}
                   <button
                     type="button"
                     onClick={() => toggleWishlist(item.id)}
                     aria-label="Wishlist"
-                    className={`absolute right-3 top-3 grid size-8 place-items-center rounded-full backdrop-blur-md transition shadow-sm ${
+                    className={`absolute right-2 top-2 z-10 grid size-7 sm:size-8 place-items-center rounded-full backdrop-blur-md transition shadow-xs ${
                       isWishlisted
                         ? "bg-red-500 text-white"
-                        : "bg-white/80 text-foreground hover:bg-white hover:text-red-500"
+                        : "bg-white/95 text-gray-700 hover:bg-white hover:text-red-500"
                     }`}
                   >
-                    <Heart className={`size-4 ${isWishlisted ? "fill-current" : ""}`} />
+                    <Heart className={`size-3.5 sm:size-4 ${isWishlisted ? "fill-current" : ""}`} />
                   </button>
 
-                  <div className="absolute bottom-3 left-3 rounded-md bg-forest/80 px-2 py-0.5 text-[10px] font-bold text-brand-gold backdrop-blur-sm">
-                    {item.badge}
+                  {/* Bottom-Center Pill - 🔥 BESTSELLER */}
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap pointer-events-none">
+                    <span className="inline-flex items-center gap-1 bg-[#064A29]/95 text-white text-[8px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-xs uppercase tracking-wider backdrop-blur-xs">
+                      <span>🔥</span>
+                      <span>{item.badge}</span>
+                    </span>
                   </div>
                 </div>
 
                 {/* Details */}
-                <div className="mt-4 flex-1">
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-brand-gold">
-                    <Star className="size-3.5 fill-current" />
-                    <span>{item.rating}</span>
-                    <span className="text-muted-foreground font-normal">({item.reviews})</span>
-                  </div>
+                <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between border-t border-gray-100">
+                  <div>
+                    <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-[#E7A91A]">
+                      <Star className="size-2.5 sm:size-3 fill-current" />
+                      <span>{item.rating}</span>
+                      <span className="text-gray-500 font-normal">({item.reviews})</span>
+                    </div>
 
-                  <h3 className="mt-1 font-display text-base font-bold text-foreground group-hover:text-primary transition line-clamp-1">
-                    <Link to="/products/$slug" params={{ slug: item.slug }}>
-                      {item.name}
-                    </Link>
-                  </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                    {item.subtitle}
-                  </p>
+                    <h3 className="mt-1 font-bold text-xs sm:text-sm text-[#075B32] group-hover:text-[#064A29] transition line-clamp-1 leading-snug">
+                      <Link to="/products/$slug" params={{ slug: item.slug }}>
+                        {item.name}
+                      </Link>
+                    </h3>
+                    <p className="mt-0.5 text-[10px] sm:text-[11px] text-gray-500 line-clamp-1">
+                      {item.subtitle}
+                    </p>
 
-                  {/* Price Row */}
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="font-display text-xl font-extrabold text-foreground">
-                      ₹{item.flashPrice}
-                    </span>
-                    {item.originalPrice > item.flashPrice && (
-                      <>
-                        <span className="text-xs text-muted-foreground line-through">
-                          ₹{item.originalPrice}
-                        </span>
-                        <span className="text-[11px] font-bold text-emerald-600">
-                          Save ₹{item.originalPrice - item.flashPrice}
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Stock Scarcity Progress Meter */}
-                  <div className="mt-3 space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-semibold text-red-600 flex items-center gap-1">
-                        <Flame className="size-3 fill-current" /> Only {remaining} left!
+                    {/* Price Row */}
+                    <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
+                      <span className="font-bold text-xs sm:text-base text-gray-900 font-mono">
+                        Rs. {item.flashPrice}
                       </span>
-                      <span className="text-muted-foreground">{progressPercent}% Claimed</span>
+                      {item.originalPrice > item.flashPrice && (
+                        <span className="text-[10px] sm:text-xs text-gray-400 line-through font-mono">
+                          Rs. {item.originalPrice}
+                        </span>
+                      )}
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                      <div
-                        className="h-full bg-gradient-to-r from-amber-500 to-red-600 transition-all duration-500"
-                        style={{ width: `${progressPercent}%` }}
-                      />
+
+                    {/* Stock Scarcity Progress Meter */}
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center justify-between text-[9px] sm:text-[10px]">
+                        <span className="font-semibold text-red-600 flex items-center gap-0.5 truncate">
+                          <Flame className="size-2.5 fill-current shrink-0" /> Only {remaining} left!
+                        </span>
+                        <span className="text-gray-400 shrink-0">{progressPercent}%</span>
+                      </div>
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-500 to-red-600 transition-all duration-500"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Add to Cart CTA */}
-                <div className="mt-4 pt-3 border-t border-border/50">
-                  <Button
-                    onClick={() => {
-                      addToCart(item.id, 1);
-                      toast.success(`⚡ Flash deal ${item.name} added to cart!`);
-                    }}
-                    variant="gold"
-                    size="sm"
-                    className="w-full rounded-xl font-bold text-xs shadow-sm gap-1.5 active:scale-95"
-                  >
-                    <ShoppingBag className="size-3.5" />
-                    Claim Deal Now
-                  </Button>
+                  {/* Add to Cart CTA */}
+                  <div className="mt-2.5 pt-2">
+                    <button
+                      onClick={() => {
+                        addToCart(item.id, 1);
+                        toast.success(`⚡ Flash deal ${item.name} added to cart!`);
+                      }}
+                      className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+                    >
+                      <ShoppingBag className="size-3.5 sm:size-4 shrink-0" />
+                      <span>CLAIM DEAL</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );

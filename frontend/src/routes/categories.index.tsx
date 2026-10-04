@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronRight, Package, Sparkles } from "lucide-react";
-import { PageHero } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
 import { categories, products, getCategoryImage, pantryImage } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
@@ -8,9 +7,9 @@ import { useStore } from "@/components/store-provider";
 export const Route = createFileRoute("/categories/")({
   head: () => ({
     meta: [
-      { title: "Product Categories — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Explore Janani Agro Products by category: Rice, Grains, Pulses, Spices, Oils, Seeds and Organic Fertilizers." },
-      { property: "og:title", content: "Product Categories — JANANI AGRO PRODUCTS" },
+      { title: "Agri Products Categories — JANANI AGRO PRODUCTS" },
+      { name: "description", content: "Explore Janani Agri Products by category: Bio Fertilizers, Bio Pesticides, Bio Fungicides, Bio Stimulants, Micro Nutrients, Insecticides, Fungicides, Botanical Extracts, Water Solubles, Agri Inputs and Others." },
+      { property: "og:title", content: "Agri Products Categories — JANANI AGRO PRODUCTS" },
     ],
   }),
   component: CategoriesIndexPage,
@@ -20,25 +19,34 @@ function CategoriesIndexPage() {
   const { categories: storeCats, products: storeProds } = useStore();
   const allCats = storeCats && storeCats.length > 0 ? storeCats : categories;
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
-
-  const agroCats = allCats.filter((c) =>
-    ["biological-crop-protection", "organic-plant-nutrients", "soil-conditioners-biostimulants"].includes(c.slug?.toLowerCase()) ||
-    c.name?.toLowerCase().includes("biological") ||
-    c.name?.toLowerCase().includes("nutrient") ||
-    c.name?.toLowerCase().includes("soil")
-  );
-  const displayCats = agroCats.length > 0 ? agroCats.slice(0, 3) : categories.slice(0, 3);
+  const displayCats = allCats;
 
   return (
     <>
-      <PageHero
-        eyebrow="Agricultural Bio-Inputs"
-        title="Explore by Category"
-        copy="Browse our scientifically formulated range of certified organic biological crop protection, plant nutrients, and soil conditioners."
-      />
+      {/* Compact Categories Header */}
+      <div className="border-b border-border/70 bg-gradient-to-b from-emerald-950/10 via-background to-background pt-5 pb-4 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <nav className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-1.5" aria-label="Breadcrumb">
+              <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+              <ChevronRight className="size-3 text-muted-foreground/60" />
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold">Agri Products</span>
+            </nav>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              Agri Products Categories
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-0.5">
+              Certified bio-inputs, organic crop protection, stimulants, micronutrients, and water solubles.
+            </p>
+          </div>
+          <Button asChild size="sm" variant="outline" className="self-start sm:self-center h-8 text-xs font-bold rounded-xl border-emerald-200 hover:bg-emerald-50">
+            <Link to="/products">View All Products <ArrowRight className="size-3 ml-1" /></Link>
+          </Button>
+        </div>
+      </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-14">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mx-auto">
           {displayCats.map((cat) => {
             const count = allProds.filter((p) => p.category.toLowerCase() === cat.name.toLowerCase() || p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))).length;
             const catImg = getCategoryImage(cat.slug || cat.name, cat.image);

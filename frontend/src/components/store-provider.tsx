@@ -91,10 +91,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         getProducts(),
         getCategories()
       ]);
-      if (fetchedProds && fetchedProds.length > 0) {
+      if (fetchedProds && fetchedProds.length >= 12 && fetchedProds.some((p: any) => p.category === "Bio Fertilizers" || p.category === "Bio fertilizers")) {
         setLiveProducts(fetchedProds);
       }
-      if (fetchedCats && fetchedCats.length > 0) {
+      if (fetchedCats && fetchedCats.length >= 6 && fetchedCats.some((c: any) => c.name === "Bio Fertilizers" || c.name === "Bio fertilizers")) {
         setLiveCategories(fetchedCats);
       }
     } catch (e) {
@@ -116,15 +116,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
         });
 
-        // Ensure fresh catalog loads with all flagship agro products
+        // Ensure fresh catalog loads with all flagship agri products and the new 11 taxonomy categories
         const storedProducts = localStorage.getItem("janani_admin_products");
-        if (storedProducts && (!storedProducts.includes("ANNADA") || !storedProducts.includes("BALAVAN") || !storedProducts.includes("BHUMI") || !storedProducts.includes("SURAKSHA") || !storedProducts.includes("DHARANI") || !storedProducts.includes("PUSHKAL") || !storedProducts.includes("HARIT") || !storedProducts.includes("NEEM"))) {
+        if (storedProducts && (!storedProducts.includes("HARIT") || !storedProducts.includes("Bio Fertilizers") || storedProducts.includes("Biological Crop Protection") || storedProducts.includes("Biofungicides"))) {
           localStorage.removeItem("janani_admin_products");
           localStorage.removeItem("janani_admin_categories");
         }
 
         const storedCategories = localStorage.getItem("janani_admin_categories");
-        if (storedCategories && (!storedCategories.includes("Biological Crop Protection") || storedCategories.includes("CAT-SUB-1") || storedCategories.includes("/images/cat-"))) {
+        if (storedCategories && (!storedCategories.includes("Bio Fertilizers") || storedCategories.includes("Biological Crop Protection") || storedCategories.includes("Biofungicides"))) {
           localStorage.removeItem("janani_admin_categories");
         }
       } catch (e) {}

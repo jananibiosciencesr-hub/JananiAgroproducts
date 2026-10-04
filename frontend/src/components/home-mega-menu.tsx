@@ -2,9 +2,19 @@ import React from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ChevronRight,
+  ArrowRight,
   ShieldCheck,
+  ShieldAlert,
   Sprout,
-  Layers
+  TrendingUp,
+  Wheat,
+  Bug,
+  Shield,
+  Leaf,
+  Droplets,
+  Layers,
+  Sparkles,
+  Package
 } from "lucide-react";
 import { categories, products } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
@@ -17,7 +27,6 @@ interface MegaMenuProps {
 export function HomeMegaMenu({ isOpen, onClose }: MegaMenuProps) {
   const { products: storeProducts, categories: storeCategories } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
-  const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -43,184 +52,219 @@ export function HomeMegaMenu({ isOpen, onClose }: MegaMenuProps) {
 
   if (!isOpen) return null;
 
-  // Authentic Agricultural Category Configs
-  const categoryConfigs = [
+  // 11 Agri Products Categories (from handwritten specification)
+  const agriCategories = [
     {
-      slug: "biological-crop-protection",
-      name: "Biological Crop Protection",
-      tagline: "Bio-Fungicides & Botanical Pest Controls",
-      Icon: ShieldCheck,
-      colorClass: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
-      accentBg: "group-hover:bg-emerald-600",
-      items: [
-        {
-          name: "BALAVAN - Bacillus Subtilis (5L)",
-          slug: "balavan-bacillus-subtilis-5l",
-          image: "/products/balavan.jpg",
-          price: 5600
-        },
-        {
-          name: "SURAKSHA - Pseudomonas (5L)",
-          slug: "suraksha-pseudomonas-fluorescens-5l",
-          image: "/products/suraksha.jpg",
-          price: 4900
-        },
-        {
-          name: "HARIT - Trichoderma Viride (1L)",
-          slug: "harit-trichoderma-viride-liquid-biofungal-formulation-1l",
-          image: "/products/harit.jpg",
-          price: 950
-        },
-        {
-          name: "NEEM OIL 1000 PPM (1L)",
-          slug: "neem-oil-1000-ppm-azadirachtin-1l",
-          image: "/products/neem-oil.jpg",
-          price: 599
-        }
-      ]
-    },
-    {
-      slug: "organic-plant-nutrients",
-      name: "Organic Plant Nutrients",
-      tagline: "Natural Amino Acids & Flowering Boosters",
+      slug: "bio-fertilizers",
+      name: "Bio Fertilizers",
+      tagline: "Rhizobium, PSB & bio-inoculants",
       Icon: Sprout,
-      colorClass: "bg-amber-500/10 text-amber-700 border-amber-500/20",
-      accentBg: "group-hover:bg-amber-600",
-      items: [
-        {
-          name: "ANNADA - Fish Amino Acid (5L)",
-          slug: "annada-fish-amino-acid-5l",
-          image: "/products/annada.jpg",
-          price: 3600
-        },
-        {
-          name: "PUSHKAL - Fruit Set Biostimulant (1L)",
-          slug: "pushkal-flowering-fruit-set-biostimulant-1l",
-          image: "/products/pushkal.jpg",
-          price: 999
-        }
-      ]
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+      featured: "Dharani KMB, Janani Rhizo",
     },
     {
-      slug: "soil-conditioners-biostimulants",
-      name: "Soil Conditioners & Biostimulants",
-      tagline: "Humic Biostimulants & K-Mobilizers",
+      slug: "bio-pesticides",
+      name: "Bio Pesticides",
+      tagline: "Biological pest control & neem solutions",
+      Icon: ShieldAlert,
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+      featured: "Neem Oil 1000 PPM, Bioguard",
+    },
+    {
+      slug: "bio-fungicides",
+      name: "Bio Fungicides",
+      tagline: "Trichoderma & biological fungal defense",
+      Icon: ShieldCheck,
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+      featured: "Harit Trichoderma, Balavan",
+    },
+    {
+      slug: "bio-stimulants",
+      name: "Bio Stimulants",
+      tagline: "Humic, fulvic & flowering boosters",
+      Icon: TrendingUp,
+      color: "text-amber-700 bg-amber-50 border-amber-200",
+      featured: "Bhumi Shakti, Pushkal",
+    },
+    {
+      slug: "micro-nutrients",
+      name: "Micro Nutrients",
+      tagline: "Chelated Zinc, Boron & trace minerals",
+      Icon: Wheat,
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+      featured: "Zinc Max, Micro Plus",
+    },
+    {
+      slug: "insecticides",
+      name: "Insecticides",
+      tagline: "Targeted insect & pest protection",
+      Icon: Bug,
+      color: "text-amber-700 bg-amber-50 border-amber-200",
+      featured: "Bio-Insecto Targeted Defense",
+    },
+    {
+      slug: "fungicides",
+      name: "Fungicides",
+      tagline: "Protective copper & curative treatments",
+      Icon: Shield,
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+      featured: "Janani Copper Bio-Shield",
+    },
+    {
+      slug: "botanical-extracts",
+      name: "Botanical Extracts",
+      tagline: "Plant extracts & herbal formulations",
+      Icon: Leaf,
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+      featured: "Herbo-Extract Multi-Action",
+    },
+    {
+      slug: "water-solubles",
+      name: "Water Solubles",
+      tagline: "100% soluble drip & foliar formulations",
+      Icon: Droplets,
+      color: "text-blue-700 bg-blue-50 border-blue-200",
+      featured: "Solu-NPK 19:19:19 Complex",
+    },
+    {
+      slug: "agri-inputs",
+      name: "Agri Inputs",
+      tagline: "Wetting agents, spreaders & soil activators",
       Icon: Layers,
-      colorClass: "bg-teal-500/10 text-teal-700 border-teal-500/20",
-      accentBg: "group-hover:bg-teal-600",
-      items: [
-        {
-          name: "BHUMI SHAKTI - Humic & Fulvic (5L)",
-          slug: "bhumi-shakti-humic-fulvic-biostimulant-5l",
-          image: "/products/bhumi-shakti.jpg",
-          price: 3900
-        },
-        {
-          name: "DHARANI KMB - Potassium Mobilizer (5L)",
-          slug: "dharani-kmb-potassium-mobilizing-biofertilizer-5l",
-          image: "/products/dharani.jpg",
-          price: 5300
-        }
-      ]
-    }
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+      featured: "Agri-Stick Organic Spreader",
+    },
+    {
+      slug: "others",
+      name: "Others",
+      tagline: "Speciality farm formulations & custom mixes",
+      Icon: Sparkles,
+      color: "text-amber-700 bg-amber-50 border-amber-200",
+      featured: "Speciality Agro Formulations",
+    },
   ];
 
   return (
     <>
       {/* Click-outside backdrop */}
       <div
-        className="fixed inset-0 top-20 z-40 bg-black/15 backdrop-blur-[1px] transition-opacity"
+        className="fixed inset-0 top-20 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity"
         onClick={onClose}
       />
       <div
         onMouseLeave={onClose}
-        className="absolute left-0 right-0 top-full z-50 border-b border-border bg-[#fdfdfb] p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(15,35,22,0.22)] transition-all duration-300 animate-in fade-in slide-in-from-top-2"
+        className="absolute left-0 right-0 top-full z-50 border-b border-border bg-[#fafaf7] p-5 sm:p-7 shadow-[0_25px_60px_-15px_rgba(15,35,22,0.22)] transition-all duration-300 animate-in fade-in slide-in-from-top-2 max-h-[85vh] overflow-y-auto"
       >
-      <div className="mx-auto max-w-7xl space-y-5">
-
-        {/* Mega Menu 3-Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Columns 1-3: The 3 Agricultural Categories */}
-          {categoryConfigs.map((cat) => {
-            const Icon = cat.Icon;
-
-            return (
-              <div
-                key={cat.slug}
-                className="group flex flex-col justify-between rounded-3xl border border-border/80 bg-white p-5 shadow-sm transition-all duration-300 hover:border-emerald-600/40 hover:shadow-lg"
+        <div className="mx-auto max-w-7xl space-y-5">
+          {/* Header Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/70">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#075B32] text-white">
+                  AGRI PRODUCTS
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground">
+                  11 Specialized Agro Categories
+                </span>
+              </div>
+              <h2 className="text-lg font-black text-[#075B32] tracking-tight mt-1">
+                Explore Agricultural Formulations by Category
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                to="/categories"
+                onClick={onClose}
+                className="text-xs font-bold text-[#075B32] hover:text-[#0B6B35] px-3 py-1.5 rounded-lg border border-[#075B32]/20 hover:bg-white transition"
               >
-                <div>
-                  {/* Category Header */}
-                  <Link
-                    to="/categories/$slug"
-                    params={{ slug: cat.slug }}
-                    onClick={onClose}
-                    className="flex items-start gap-3.5 mb-4"
-                  >
-                    <div className={`grid size-11 shrink-0 place-items-center rounded-2xl border transition-all duration-300 ${cat.colorClass} ${cat.accentBg} group-hover:text-white group-hover:shadow-md`}>
+                All Categories Directory
+              </Link>
+              <Link
+                to="/products"
+                onClick={onClose}
+                className="text-xs font-bold text-white bg-[#075B32] hover:bg-[#064A29] px-3 py-1.5 rounded-lg shadow-sm transition inline-flex items-center gap-1"
+              >
+                <span>View All Products</span>
+                <ArrowRight className="size-3" />
+              </Link>
+            </div>
+          </div>
+
+          {/* 11 Categories Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            {agriCategories.map((cat) => {
+              const Icon = cat.Icon;
+              const prodCount = allProducts.filter(
+                (p) => p.category.toLowerCase() === cat.name.toLowerCase()
+              ).length;
+
+              return (
+                <Link
+                  key={cat.slug}
+                  to="/categories/$slug"
+                  params={{ slug: cat.slug }}
+                  onClick={onClose}
+                  className="group flex flex-col justify-between p-3.5 rounded-2xl border border-border/80 bg-white hover:border-[#075B32]/40 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`grid size-10 shrink-0 place-items-center rounded-xl border ${cat.color} group-hover:scale-105 transition-transform`}
+                    >
                       <Icon className="size-5" />
                     </div>
-                    <div>
-                      <h3 className="font-display text-sm sm:text-base font-bold text-foreground group-hover:text-emerald-800 transition line-clamp-1">
-                        {cat.name}
-                      </h3>
-                      <p className="text-[11px] text-muted-foreground font-medium line-clamp-1">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <h3 className="text-xs font-black text-gray-900 group-hover:text-[#075B32] transition truncate">
+                          {cat.name}
+                        </h3>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 shrink-0">
+                          {prodCount > 0 ? `${prodCount}` : "1+"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
                         {cat.tagline}
                       </p>
+                      <p className="text-[10px] text-[#0B6B35] font-semibold truncate mt-1">
+                        {cat.featured}
+                      </p>
                     </div>
-                  </Link>
-
-                  {/* Product List Rows */}
-                  <div className="space-y-2 border-t border-border/60 pt-3">
-                    {cat.items.map((prod) => (
-                      <Link
-                        key={prod.slug}
-                        to="/products/$slug"
-                        params={{ slug: prod.slug }}
-                        onClick={onClose}
-                        className="group/item flex items-center justify-between rounded-2xl p-2.5 transition duration-200 hover:bg-emerald-50/60 border border-transparent hover:border-emerald-100"
-                      >
-                        <div className="flex items-center gap-3 min-w-0 pr-3">
-                          <img
-                            src={prod.image}
-                            alt={prod.name}
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = "/products/balavan.jpg";
-                            }}
-                            className="size-9 rounded-xl object-cover shrink-0 border border-border/60 bg-muted/30 shadow-xs group-hover/item:scale-105 transition"
-                          />
-                          <span className="text-xs font-bold text-foreground group-hover/item:text-emerald-800 transition truncate">
-                            {prod.name}
-                          </span>
-                        </div>
-
-                        <div className="text-right shrink-0">
-                          <span className="block text-xs font-bold text-foreground">
-                            ₹{prod.price}
-                          </span>
-                        </div>
-                      </Link>
-                    ))}
                   </div>
-                </div>
 
-                <div className="pt-3 border-t border-border/60 mt-3">
-                  <Link
-                    to="/categories/$slug"
-                    params={{ slug: cat.slug }}
-                    onClick={onClose}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition"
-                  >
-                    View All Formulations in Category
-                    <ChevronRight className="size-3.5" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition">
+                    <span>Explore Products</span>
+                    <ChevronRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Footer Information Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/70 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 text-[11px]">
+              <span className="flex items-center gap-1.5 font-medium text-gray-700">
+                <span className="size-1.5 rounded-full bg-emerald-500 inline-block" />
+                100% Bio-Organic Formulations
+              </span>
+              <span className="flex items-center gap-1.5 font-medium text-gray-700">
+                <span className="size-1.5 rounded-full bg-amber-500 inline-block" />
+                All India Farm Delivery
+              </span>
+              <span className="flex items-center gap-1.5 font-medium text-gray-700">
+                <span className="size-1.5 rounded-full bg-blue-500 inline-block" />
+                Agronomy Guidance Support
+              </span>
+            </div>
+            <Link
+              to="/crops"
+              onClick={onClose}
+              className="text-[11px] font-bold text-[#075B32] hover:underline"
+            >
+              Shop Solutions by Crop (Paddy, Cotton, Chilli...) →
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

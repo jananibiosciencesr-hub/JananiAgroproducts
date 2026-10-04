@@ -251,18 +251,19 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
 -- SEED DATA
 -- ========================================================
 
--- Categories Seed
-INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`) VALUES
-('cat-oils', 'Cold Pressed Oils', 'cold-pressed-oils', 1, NULL, NULL, '/images/categories/oils.webp', 4, 1, 1, 1, 1),
-('cat-rice', 'Organic Rice', 'organic-rice', 1, NULL, NULL, '/images/categories/rice.webp', 3, 1, 1, 0, 2),
-('cat-pulses', 'Pulses & Dals', 'pulses', 1, NULL, NULL, '/images/categories/pulses.webp', 3, 1, 1, 0, 3),
-('cat-spices', 'Raw Spices', 'spices', 1, NULL, NULL, '/images/categories/spices.webp', 4, 1, 1, 1, 4),
-('cat-wheat', 'Wheat & Grains', 'wheat', 1, NULL, NULL, '/images/categories/wheat.webp', 2, 1, 0, 0, 5),
-('cat-millets', 'Ancient Millets', 'millets', 1, NULL, NULL, '/images/categories/millets.webp', 2, 1, 0, 1, 6),
-('cat-seeds', 'Seeds & Superfoods', 'seeds', 1, NULL, NULL, '/images/categories/seeds.webp', 3, 1, 0, 0, 7),
-('cat-flours', 'Stoneground Flours', 'flours', 1, NULL, NULL, '/images/categories/flours.webp', 2, 1, 0, 0, 8),
-('cat-dryfruits', 'Dry Fruits & Sweeteners', 'dry-fruits', 1, NULL, NULL, '/images/categories/dryfruits.webp', 2, 1, 0, 0, 9),
-('cat-fertilizers', 'Organic Fertilizers', 'organic-fertilizers', 1, NULL, NULL, '/images/categories/fertilizers.webp', 1, 1, 0, 0, 10);
+-- Categories Seed (Agri Products Taxonomy)
+INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES
+('cat-bio-fertilizers', 'Bio Fertilizers', 'bio-fertilizers', 1, NULL, NULL, '/products/dharani.jpg', 3, 1, 1, 1, 1, 'Potassium mobilizing, Rhizobium, and Azotobacter biological cultures for soil enrichment.'),
+('cat-bio-pesticides', 'Bio Pesticides', 'bio-pesticides', 1, NULL, NULL, '/products/neem-oil.jpg', 3, 1, 1, 1, 2, 'Safe biological and botanical pest management solutions.'),
+('cat-bio-fungicides', 'Bio Fungicides', 'bio-fungicides', 1, NULL, NULL, '/products/harit.jpg', 3, 1, 1, 1, 3, 'Trichoderma viride, Bacillus subtilis & biological disease control.'),
+('cat-bio-stimulants', 'Bio Stimulants', 'bio-stimulants', 1, NULL, NULL, '/products/bhumi-shakti.jpg', 3, 1, 1, 1, 4, 'Humic, fulvic acid and seaweed extract formulations for vigorous plant growth.'),
+('cat-micro-nutrients', 'Micro Nutrients', 'micro-nutrients', 1, NULL, NULL, '/products/pushkal.jpg', 2, 1, 1, 0, 5, 'Essential chelated zinc, boron and trace micronutrient complexes.'),
+('cat-insecticides', 'Insecticides', 'insecticides', 1, NULL, NULL, '/products/neem-oil.jpg', 1, 1, 0, 0, 6, 'Targeted crop insect pest control formulations.'),
+('cat-fungicides', 'Fungicides', 'fungicides', 1, NULL, NULL, '/products/harit.jpg', 1, 1, 0, 0, 7, 'Broad-spectrum fungal defense and curative treatments.'),
+('cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, NULL, NULL, '/products/annada.jpg', 1, 1, 0, 0, 8, 'Pure herbal extracts and natural plant-derived bioactive agents.'),
+('cat-water-solubles', 'Water Solubles', 'water-solubles', 1, NULL, NULL, '/products/bhumi-shakti.jpg', 1, 1, 0, 0, 9, 'High-grade 100% water soluble plant nutrients for drip & foliar application.'),
+('cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, NULL, NULL, '/products/dharani.jpg', 1, 1, 0, 0, 10, 'Agricultural wetting agents, silicon spreaders and adjuvant enhancers.'),
+('cat-others', 'Others', 'others', 1, NULL, NULL, '/products/balavan.jpg', 1, 1, 0, 0, 11, 'Speciality agricultural formulations and customized farm solutions.');
 
 -- Products Seed (Organic SKUs)
 INSERT IGNORE INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`) VALUES

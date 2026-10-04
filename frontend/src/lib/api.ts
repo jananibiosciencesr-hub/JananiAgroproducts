@@ -44,7 +44,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
     });
 
     const isJson = res.headers.get("content-type")?.includes("application/json");
-    if (isJson) {
+    if (res.ok && isJson) {
       try {
         const data = await res.json();
         return data as T;
@@ -53,7 +53,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       }
     }
 
-    // If request fails or returns non-JSON HTML:
+    // If request fails (non-2xx) or returns non-JSON HTML:
     if (!res.ok || !isJson) {
       // 1. If /api/* rewrite fails, try direct /api.php endpoint
       if (!endpoint.startsWith("http") && !endpoint.includes("api.php") && !endpoint.includes("db_init.php")) {
@@ -147,6 +147,9 @@ export function normalizeProduct(raw: any): Product {
     variants: raw.variants || [
       { id: "500g", label: raw.unit || "1 kg", unit: raw.unit || "1 kg", price: price, oldPrice: oldPrice, inStock: stock > 0 }
     ],
+    subtitle: raw.subtitle,
+    crops: raw.crops,
+    benefits: raw.benefits,
     specifications: raw.specifications,
     recommendedCrops: raw.recommendedCrops,
     dosage: raw.dosage,
@@ -2186,20 +2189,49 @@ export async function createAdminCategory(payload: any) {
     seo: payload.seo || {}
   };
 
-  const res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
-    `/api.php?action=categories`,
+  // 1. Try Node Express endpoint first
+  let res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
+    `/admin/categories`,
     {
       method: "POST",
       body: JSON.stringify(reqBody)
     }
   );
 
+  // 2. Try PHP endpoint if Node endpoint is not available
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
+      `/api.php?action=categories`,
+      {
+        method: "POST",
+        body: JSON.stringify(reqBody)
+      }
+    );
+  }
+
+  // 3. If backend endpoints fail, gracefully save to localStorage
+  if (!res?.success) {
+    try {
+      const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
+      const newCat = {
+        id: `CAT-${payload.level || "root"}-${Date.now()}`,
+        ...reqBody,
+        level: payload.level || "root",
+        productsCount: 0,
+        createdAt: new Date().toISOString().split("T")[0]
+      };
+      const updated = [newCat, ...stored];
+      setStored(STORAGE_KEYS.CATEGORIES, updated);
+      return { success: true, message: "Category created successfully", data: normalizeAdminCategory(newCat) };
+    } catch {}
+  }
+
   if (res?.success && (res.data || res.category)) {
     const cat = normalizeAdminCategory(res.data || res.category);
     return { success: true, message: res.message || "Category created successfully", data: cat };
   }
 
-  const errorMsg = res?.message || res?.error || "Could not create category in MySQL database";
+  const errorMsg = res?.message || res?.error || "Could not create category in database";
   return { success: false, message: errorMsg, error: errorMsg };
 }
 
@@ -2229,13 +2261,38 @@ export async function updateAdminCategory(id: string, payload: any) {
     reqBody.orderIndex = reqBody.display_order;
   }
 
-  const res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
-    `/api.php?action=categories&id=${encodeURIComponent(id)}`,
+  // 1. Try Node Express endpoint first
+  let res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
+    `/admin/categories/${encodeURIComponent(id)}`,
     {
-      method: "POST",
+      method: "PUT",
       body: JSON.stringify(reqBody)
     }
   );
+
+  // 2. Try PHP endpoint
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
+      `/api.php?action=categories&id=${encodeURIComponent(id)}`,
+      {
+        method: "POST",
+        body: JSON.stringify(reqBody)
+      }
+    );
+  }
+
+  // 3. Fallback to localStorage
+  if (!res?.success) {
+    try {
+      const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
+      const idx = stored.findIndex((c) => c.id === id);
+      if (idx !== -1) {
+        stored[idx] = { ...stored[idx], ...reqBody };
+        setStored(STORAGE_KEYS.CATEGORIES, stored);
+        return { success: true, message: "Category updated successfully", data: normalizeAdminCategory(stored[idx]) };
+      }
+    } catch {}
+  }
 
   if (res?.success && (res.data || res.category)) {
     return {
@@ -2245,24 +2302,24 @@ export async function updateAdminCategory(id: string, payload: any) {
     };
   }
 
-  const errorMsg = res?.message || res?.error || "Could not update category in MySQL database";
+  const errorMsg = res?.message || res?.error || "Could not update category in database";
   return { success: false, message: errorMsg, error: errorMsg };
 }
 
 export async function toggleAdminCategory(id: string, field: "active" | "featured" | "trending") {
   let res = await fetchJson<{ success: boolean; message: string; data?: any }>(
-    `/api.php?action=categories&id=${encodeURIComponent(id)}/toggle`,
+    `/admin/categories/${encodeURIComponent(id)}/toggle`,
     {
-      method: "POST",
+      method: "PATCH",
       body: JSON.stringify({ field })
     }
   );
 
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; message: string; data?: any }>(
-      `/admin/categories/${encodeURIComponent(id)}/toggle`,
+      `/api.php?action=categories&id=${encodeURIComponent(id)}/toggle`,
       {
-        method: "PATCH",
+        method: "POST",
         body: JSON.stringify({ field })
       }
     );
@@ -2273,7 +2330,7 @@ export async function toggleAdminCategory(id: string, field: "active" | "feature
 
 export async function deleteAdminCategory(id: string) {
   let res = await fetchJson<{ success: boolean; message: string }>(
-    `/api.php?action=categories&id=${encodeURIComponent(id)}`,
+    `/admin/categories/${encodeURIComponent(id)}`,
     {
       method: "DELETE"
     }
@@ -2281,7 +2338,7 @@ export async function deleteAdminCategory(id: string) {
 
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; message: string }>(
-      `/admin/categories/${encodeURIComponent(id)}`,
+      `/api.php?action=categories&id=${encodeURIComponent(id)}`,
       {
         method: "DELETE"
       }
