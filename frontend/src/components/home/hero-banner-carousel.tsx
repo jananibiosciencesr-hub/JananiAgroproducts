@@ -94,7 +94,7 @@ export function HeroBannerCarousel() {
       aria-label="Janani Agro Featured Campaigns"
     >
       {/* Slides Container */}
-      <div className="relative w-full h-[380px] sm:h-[420px] md:h-[460px] lg:h-[500px] xl:h-[540px] overflow-hidden">
+      <div className="relative w-full aspect-[9/16] md:aspect-[1376/768] max-h-[85vh] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
