@@ -94,24 +94,24 @@ export function HeroBannerCarousel() {
       aria-label="Janani Agro Featured Campaigns"
     >
       {/* Slides Container */}
-      <div className="relative w-full overflow-hidden">
+      <div className="relative w-full h-[380px] sm:h-[420px] md:h-[460px] lg:h-[500px] xl:h-[540px] overflow-hidden">
         <div
-          className="flex w-full transition-transform duration-700 ease-in-out"
+          className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
         >
           {HERO_SLIDES.map((slide, idx) => (
             <div
               key={slide.id}
-              className="w-full shrink-0 relative flex justify-center items-center"
+              className="w-full h-full shrink-0 relative"
             >
               <Link
                 to={slide.link}
-                className="block w-full relative group cursor-pointer focus:outline-hidden"
+                className="block w-full h-full relative group cursor-pointer focus:outline-hidden"
                 tabIndex={current === idx ? 0 : -1}
                 aria-label={slide.title}
               >
-                {/* Responsive Picture: Portrait 9:16 for mobile screens, Landscape 16:9 for desktop */}
-                <picture className="w-full block">
+                {/* Responsive Picture: Portrait 9:16 for mobile screens, Landscape for desktop */}
+                <picture className="w-full h-full block">
                   <source
                     media="(max-width: 768px)"
                     srcSet={slide.mobileImage}
@@ -120,7 +120,7 @@ export function HeroBannerCarousel() {
                     src={slide.desktopImage}
                     alt={slide.alt}
                     loading={idx === 0 ? "eager" : "lazy"}
-                    className="w-full h-auto object-cover block transition-transform duration-700 group-hover:scale-[1.01]"
+                    className="w-full h-full object-cover object-center block transition-transform duration-700 group-hover:scale-[1.01]"
                   />
                 </picture>
               </Link>
@@ -152,23 +152,23 @@ export function HeroBannerCarousel() {
         >
           <ChevronRight className="size-5 sm:size-6" />
         </button>
-      </div>
 
-      {/* Clean Bottom Pagination Indicators below banner (Zero overlap with banner buttons) */}
-      <div className="py-2.5 sm:py-3.5 flex items-center justify-center gap-2 bg-white">
-        {HERO_SLIDES.map((slide, idx) => (
-          <button
-            key={slide.id}
-            type="button"
-            onClick={() => setCurrent(idx)}
-            aria-label={`Jump to slide ${idx + 1}`}
-            className={`transition-all duration-300 rounded-full cursor-pointer ${
-              current === idx
-                ? "w-8 sm:w-10 h-2 sm:h-2.5 bg-[#075B32]"
-                : "w-2 sm:w-2.5 h-2 sm:h-2.5 bg-slate-300 hover:bg-slate-400"
-            }`}
-          />
-        ))}
+        {/* Sleek Floating Pagination Indicators inside banner (Zero space gap) */}
+        <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/25 backdrop-blur-xs px-3 py-1.5 rounded-full">
+          {HERO_SLIDES.map((slide, idx) => (
+            <button
+              key={slide.id}
+              type="button"
+              onClick={() => setCurrent(idx)}
+              aria-label={`Jump to slide ${idx + 1}`}
+              className={`transition-all duration-300 rounded-full cursor-pointer ${
+                current === idx
+                  ? "w-7 sm:w-8 h-2 bg-[#E7A91A] shadow-xs"
+                  : "w-2 h-2 bg-white/70 hover:bg-white"
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
