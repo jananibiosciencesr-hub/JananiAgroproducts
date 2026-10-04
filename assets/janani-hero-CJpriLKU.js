@@ -1,1 +1,0 @@
-var e=`/assets/janani-hero-C6oXTXXU.jpg`;export{e as t};

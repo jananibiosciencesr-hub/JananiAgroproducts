@@ -531,6 +531,8 @@ export function HomePage() {
                   <img
                     src="/images/sprout_roots_circle.jpg"
                     alt="Plant Sprout Root Health"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#064A29]/30 via-transparent to-transparent pointer-events-none" />
@@ -625,6 +627,8 @@ export function HomePage() {
                     <img
                       src={t.image}
                       alt={t.name}
+                      loading="lazy"
+                      decoding="async"
                       className="size-14 rounded-full object-cover border-2 border-[#4FAE2A] shadow-xs"
                     />
                     <div>
@@ -673,6 +677,8 @@ export function HomePage() {
               <img
                 src="/logo.png"
                 alt="Janani Agro Products"
+                loading="lazy"
+                decoding="async"
                 className="h-16 sm:h-20 w-auto object-contain drop-shadow-xs"
               />
 
@@ -702,6 +708,8 @@ export function HomePage() {
                 <img
                   src="/banners/harvest_produce_banner.jpg"
                   alt="Healthy Harvest Bounty (Tomatoes, Mangoes, Cotton)"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-auto object-cover rounded-3xl shadow-lg border border-[#D99A12]/40 transition-transform duration-700 hover:scale-105"
                 />
               </div>
