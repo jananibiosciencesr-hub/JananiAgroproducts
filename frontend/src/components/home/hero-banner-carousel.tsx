@@ -120,7 +120,7 @@ export function HeroBannerCarousel() {
                     src={slide.desktopImage}
                     alt={slide.alt}
                     loading={idx === 0 ? "eager" : "lazy"}
-                    className="w-full h-auto max-h-[88vh] object-cover sm:object-contain mx-auto block transition-transform duration-700 group-hover:scale-[1.01]"
+                    className="w-full h-auto object-cover block transition-transform duration-700 group-hover:scale-[1.01]"
                   />
                 </picture>
               </Link>
