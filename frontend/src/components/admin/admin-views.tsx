@@ -131,11 +131,17 @@ export function ProductsView({
             className="h-9 rounded-xl border border-border bg-card px-3 text-xs outline-none focus:border-emerald-600 font-medium"
           >
             <option value="all">All Categories</option>
-            <option value="Cold Pressed Oils">Cold Pressed Oils</option>
-            <option value="Organic Rice">Organic Rice</option>
-            <option value="Spices">Spices</option>
-            <option value="Pulses">Pulses</option>
-            <option value="Flours">Flours</option>
+            <option value="Bio Fertilizers">Bio Fertilizers</option>
+            <option value="Bio Pesticides">Bio Pesticides</option>
+            <option value="Bio Fungicides">Bio Fungicides</option>
+            <option value="Bio Stimulants">Bio Stimulants</option>
+            <option value="Micro Nutrients">Micro Nutrients</option>
+            <option value="Insecticides">Insecticides</option>
+            <option value="Fungicides">Fungicides</option>
+            <option value="Botanical Extracts">Botanical Extracts</option>
+            <option value="Water Solubles">Water Solubles</option>
+            <option value="Agri Inputs">Agri Inputs</option>
+            <option value="Others">Others</option>
           </select>
           <Button onClick={onOpenAddProductModal} size="sm" className="rounded-xl bg-emerald-600 text-white font-bold text-xs gap-1.5 shadow-sm">
             <Plus className="size-4" /> Add Product

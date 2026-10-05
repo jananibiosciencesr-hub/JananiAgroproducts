@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { SavedAddress } from "./types";
 import { useStore } from "@/components/store-provider";
+import { validatePhone } from "@/lib/validation";
 
 export function AddressManagerTab() {
   const { user } = useStore();
@@ -170,6 +171,12 @@ export function AddressManagerTab() {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const phoneCheck = validatePhone(formData.phone);
+    if (!phoneCheck.isValid) {
+      toast.error(phoneCheck.error || "Please enter a valid 10-digit Indian mobile number.");
+      return;
+    }
 
     if (editingAddress) {
       // Update
@@ -391,17 +398,22 @@ export function AddressManagerTab() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Mobile Phone</label>
-                  <input
-                    required
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="10-digit mobile number"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                    className="w-full h-10 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-brand-leaf font-mono"
-                  />
+                  <label className="text-xs font-medium text-foreground">Mobile Phone *</label>
+                  <div className="flex items-center rounded-xl border border-input bg-card shadow-xs focus-within:border-brand-leaf">
+                    <span className="flex items-center gap-1 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
+                      🇮🇳 +91
+                    </span>
+                    <input
+                      required
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="93114 16225"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                      className="w-full h-10 rounded-r-xl bg-transparent px-3 text-xs outline-none font-mono font-medium"
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -27,14 +27,14 @@ export function AddProductModal({
 }) {
   const [formData, setFormData] = useState({
     name: "",
-    category: "Organic Rice",
+    category: "Bio Fertilizers",
     price: "",
     originalPrice: "",
     stock: "50",
     sku: "",
     badge: "100% Organic",
     description: "",
-    unit: "1 kg"
+    unit: "1 L"
   });
 
   if (!isOpen) return null;
@@ -44,7 +44,7 @@ export function AddProductModal({
       <div className="relative w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl">
         <div className="flex items-center justify-between pb-4 border-b border-border">
           <div>
-            <h3 className="text-base font-bold text-foreground">Add New Organic Product</h3>
+            <h3 className="text-base font-bold text-foreground">Add New Agro Product</h3>
             <p className="text-xs text-muted-foreground">List a new product in the Janani Agro online store</p>
           </div>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-accent text-muted-foreground"><X className="size-4" /></button>
@@ -61,7 +61,7 @@ export function AddProductModal({
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. Royal Traditional Aged Basmati Rice (5kg)"
+              placeholder="e.g. HARIT Bio-Fungicide (1 L)"
               className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-emerald-600"
             />
           </div>
@@ -74,13 +74,17 @@ export function AddProductModal({
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs font-semibold outline-none"
               >
-                <option value="Cold Pressed Oils">Cold Pressed Oils</option>
-                <option value="Organic Rice">Organic Rice</option>
-                <option value="Pulses">Pulses</option>
-                <option value="Spices">Spices</option>
-                <option value="Flours">Flours</option>
-                <option value="Millets">Millets</option>
-                <option value="Organic Fertilizers">Organic Fertilizers</option>
+                <option value="Bio Fertilizers">Bio Fertilizers</option>
+                <option value="Bio Pesticides">Bio Pesticides</option>
+                <option value="Bio Fungicides">Bio Fungicides</option>
+                <option value="Bio Stimulants">Bio Stimulants</option>
+                <option value="Micro Nutrients">Micro Nutrients</option>
+                <option value="Insecticides">Insecticides</option>
+                <option value="Fungicides">Fungicides</option>
+                <option value="Botanical Extracts">Botanical Extracts</option>
+                <option value="Water Solubles">Water Solubles</option>
+                <option value="Agri Inputs">Agri Inputs</option>
+                <option value="Others">Others</option>
               </select>
             </div>
             <div>

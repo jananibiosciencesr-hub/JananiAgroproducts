@@ -59,6 +59,26 @@ export interface ProductVariant {
   stock: number;
 }
 
+export const JANANI_DEFAULT_CATEGORIES = [
+  "Bio Fertilizers",
+  "Bio Pesticides",
+  "Bio Fungicides",
+  "Bio Stimulants",
+  "Micro Nutrients",
+  "Insecticides",
+  "Fungicides",
+  "Botanical Extracts",
+  "Water Solubles",
+  "Agri Inputs",
+  "Others"
+];
+
+export const JANANI_DEFAULT_BRANDS = [
+  "Janani Agro Products",
+  "Janani Bio Sciences",
+  "Janani Farm Care"
+];
+
 export interface AdminProductItem {
   id: string;
   name: string;
@@ -394,15 +414,9 @@ export function ProductsManagement() {
             className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600"
           >
             <option value="all">All Categories</option>
-            <option value="Cold Pressed Oils">Cold Pressed Oils</option>
-            <option value="Organic Rice">Organic Rice</option>
-            <option value="Pulses">Pulses & Dals</option>
-            <option value="Spices">Spices & Herbs</option>
-            <option value="Flours">Whole Grain Flours</option>
-            <option value="Millets">Millets</option>
-            <option value="Seeds">Native Seeds</option>
-            <option value="Dry Fruits">Dry Fruits</option>
-            <option value="Organic Fertilizers">Organic Fertilizers</option>
+            {JANANI_DEFAULT_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
 
           {/* Brand Filter */}
@@ -415,9 +429,9 @@ export function ProductsManagement() {
             className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600"
           >
             <option value="all">All Brands</option>
-            <option value="Janani Gold Reserve">Janani Gold Reserve</option>
-            <option value="Janani Farm Fresh">Janani Farm Fresh</option>
-            <option value="Heritage Organic">Heritage Organic</option>
+            {JANANI_DEFAULT_BRANDS.map((brand) => (
+              <option key={brand} value={brand}>{brand}</option>
+            ))}
           </select>
 
           {/* Stock Level Filter */}
@@ -1060,19 +1074,19 @@ function ProductFormModal({
     name: "",
     slug: "",
     sku: "",
-    category: "Organic Rice",
-    brand: "Janani Gold Reserve",
-    price: "299",
-    originalPrice: "399",
-    unit: "1 kg",
+    category: "Bio Fertilizers",
+    brand: "Janani Agro Products",
+    price: "450",
+    originalPrice: "520",
+    unit: "1 L",
     warehouseStock: "50",
     reservedStock: "0",
     lowStockThreshold: "20",
     badge: "100% Organic",
     description: "",
-    harvestOrigin: "Gujarat Certified Farmer Cluster",
-    image: "/images/categories/rice.webp",
-    gallery: ["/images/categories/rice.webp"] as string[],
+    harvestOrigin: "Janani Bio Sciences Cluster, Gujarat",
+    image: "/products/dharani.jpg",
+    gallery: ["/products/dharani.jpg"] as string[],
     variants: [] as ProductVariant[],
     organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
     seo: {
@@ -1096,19 +1110,19 @@ function ProductFormModal({
         name: initialData.name || "",
         slug: initialData.slug || "",
         sku: initialData.sku || "",
-        category: initialData.category || "Organic Rice",
-        brand: initialData.brand || "Janani Gold Reserve",
-        price: String(initialData.price || 299),
-        originalPrice: String(initialData.originalPrice || 399),
-        unit: initialData.unit || "1 kg",
+        category: initialData.category || "Bio Fertilizers",
+        brand: initialData.brand || "Janani Agro Products",
+        price: String(initialData.price || 450),
+        originalPrice: String(initialData.originalPrice || 520),
+        unit: initialData.unit || "1 L",
         warehouseStock: String(initialData.warehouseStock ?? initialData.stock ?? 50),
         reservedStock: String(initialData.reservedStock ?? 0),
         lowStockThreshold: String(initialData.lowStockThreshold || 20),
         badge: initialData.badge || "100% Organic",
         description: initialData.description || "",
-        harvestOrigin: initialData.harvestOrigin || "Gujarat Certified Farmer Cluster",
-        image: initialData.image || "/images/categories/rice.webp",
-        gallery: (initialData.gallery && initialData.gallery.length > 0) ? initialData.gallery : [initialData.image || "/images/categories/rice.webp"],
+        harvestOrigin: initialData.harvestOrigin || "Janani Bio Sciences Cluster, Gujarat",
+        image: initialData.image || "/products/dharani.jpg",
+        gallery: (initialData.gallery && initialData.gallery.length > 0) ? initialData.gallery : [initialData.image || "/products/dharani.jpg"],
         variants: initialData.variants || [],
         organicCertifications: initialData.organicCertifications || ["NPOP Certified Organic"],
         seo: {
@@ -1128,22 +1142,22 @@ function ProductFormModal({
         name: "",
         slug: "",
         sku: `JAP-${Math.floor(1000 + Math.random() * 9000)}`,
-        category: "Organic Rice",
-        brand: "Janani Gold Reserve",
-        price: "299",
-        originalPrice: "399",
-        unit: "1 kg",
+        category: "Bio Fertilizers",
+        brand: "Janani Agro Products",
+        price: "450",
+        originalPrice: "520",
+        unit: "1 L",
         warehouseStock: "50",
         reservedStock: "0",
         lowStockThreshold: "20",
         badge: "100% Organic",
         description: "",
-        harvestOrigin: "Gujarat Certified Farmer Cluster",
-        image: "/images/categories/rice.webp",
-        gallery: ["/images/categories/rice.webp"],
+        harvestOrigin: "Janani Bio Sciences Cluster, Gujarat",
+        image: "/products/dharani.jpg",
+        gallery: ["/products/dharani.jpg"],
         variants: [
-          { id: `VAR-1`, name: "500g Pack", sku: `JAP-500G`, price: 150, originalPrice: 199, stock: 25 },
-          { id: `VAR-2`, name: "1 kg Standard", sku: `JAP-1KG`, price: 299, originalPrice: 399, stock: 25 }
+          { id: `VAR-1`, name: "500 ml Pack", sku: `JAP-500ML`, price: 250, originalPrice: 290, stock: 25 },
+          { id: `VAR-2`, name: "1 L Standard", sku: `JAP-1L`, price: 450, originalPrice: 520, stock: 25 }
         ],
         organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
         seo: {
@@ -1322,14 +1336,9 @@ function ProductFormModal({
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
                   >
-                    <option value="Organic Rice">Organic Rice</option>
-                    <option value="Cold Pressed Oils">Cold Pressed Oils</option>
-                    <option value="Pulses">Pulses & Dals</option>
-                    <option value="Spices">Spices & Herbs</option>
-                    <option value="Flours">Flours</option>
-                    <option value="Millets">Millets</option>
-                    <option value="Seeds">Seeds</option>
-                    <option value="Organic Fertilizers">Organic Fertilizers</option>
+                    {JANANI_DEFAULT_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -1339,9 +1348,9 @@ function ProductFormModal({
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                     className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
                   >
-                    <option value="Janani Gold Reserve">Janani Gold Reserve</option>
-                    <option value="Janani Farm Fresh">Janani Farm Fresh</option>
-                    <option value="Heritage Organic">Heritage Organic</option>
+                    {JANANI_DEFAULT_BRANDS.map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -1582,19 +1591,16 @@ function ProductFormModal({
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    { label: "Rice", url: "/images/categories/rice.webp" },
-                    { label: "Wheat", url: "/images/categories/wheat.webp" },
-                    { label: "Pulses", url: "/images/categories/pulses.webp" },
-                    { label: "Millets", url: "/images/categories/millets.webp" },
-                    { label: "Flours", url: "/images/categories/flours.webp" },
-                    { label: "Spices", url: "/images/categories/spices.webp" },
-                    { label: "Cold Oils", url: "/images/categories/oils.webp" },
-                    { label: "Dry Fruits", url: "/images/categories/dryfruits.webp" },
-                    { label: "Seeds", url: "/images/categories/seeds.webp" },
-                    { label: "Bio-Fertilizer", url: "/images/categories/bio-fertilizers.jpg" },
-                    { label: "Bio-Pesticide", url: "/images/categories/bio-pesticides.jpg" },
-                    { label: "Bio-Fungicide", url: "/images/categories/bio-fungicides.jpg" },
-                    { label: "Bio-Stimulant", url: "/images/categories/bio-stimulants.jpg" }
+                    { label: "Bio-Fertilizers", url: "/products/dharani.jpg" },
+                    { label: "Bio-Pesticides", url: "/products/suraksha.jpg" },
+                    { label: "Bio-Fungicides", url: "/products/harit.jpg" },
+                    { label: "Bio-Stimulants", url: "/products/pushkal.jpg" },
+                    { label: "Micro Nutrients", url: "/products/annada.jpg" },
+                    { label: "Insecticides", url: "/products/balavan.jpg" },
+                    { label: "Botanical Neem", url: "/products/neem-oil.jpg" },
+                    { label: "Water Solubles", url: "/products/dhanya.jpg" },
+                    { label: "Agri Inputs", url: "/products/bhumi-shakti.jpg" },
+                    { label: "Growth Activator", url: "/products/balavan-bottle.jpg" }
                   ].map((preset) => (
                     <button
                       key={preset.url}

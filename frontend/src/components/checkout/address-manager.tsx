@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { validatePhone } from "@/lib/validation";
 
 export interface ShippingAddress {
   id: string;
@@ -225,6 +226,20 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
     if (!formData.fullName.trim() || !formData.phone.trim() || !formData.street.trim() || !formData.pincode.trim()) {
       toast.error("Please fill in all mandatory address fields.");
       return;
+    }
+
+    const phoneCheck = validatePhone(formData.phone);
+    if (!phoneCheck.isValid) {
+      toast.error(phoneCheck.error || "Please enter a valid 10-digit Indian mobile number.");
+      return;
+    }
+
+    if (formData.alternatePhone) {
+      const altCheck = validatePhone(formData.alternatePhone);
+      if (!altCheck.isValid) {
+        toast.error(`Alternate mobile: ${altCheck.error}`);
+        return;
+      }
     }
 
     if (editingAddress) {
@@ -438,31 +453,41 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
 
               {/* Phone Numbers */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="grid gap-1.5">
+                <div className="grid gap-1.5">
                   <span className="text-foreground">Primary Mobile Number *</span>
-                  <input
-                    required
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="10-digit mobile number"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground"
-                  />
-                </label>
-                <label className="grid gap-1.5">
+                  <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf">
+                    <span className="flex items-center gap-1 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
+                      🇮🇳 +91
+                    </span>
+                    <input
+                      required
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="93114 16225"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                      className="h-10 w-full rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-1.5">
                   <span className="text-muted-foreground">Alternate Phone (Optional)</span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="Backup contact number"
-                    value={formData.alternatePhone || ""}
-                    onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground"
-                  />
-                </label>
+                  <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf">
+                    <span className="flex items-center gap-1 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
+                      🇮🇳 +91
+                    </span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="Backup mobile"
+                      value={formData.alternatePhone || ""}
+                      onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                      className="h-10 w-full rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* House / Flat & Street */}
