@@ -300,6 +300,143 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
     return ['success' => false, 'error' => "All delivery channels failed. Check SMTP credentials or host outbound port restrictions."];
 }
 
+function ensureCategoriesTableSchema($pdo) {
+    static $schemaChecked = false;
+    if ($schemaChecked) return;
+    $schemaChecked = true;
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `categories` (
+            `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+            `name` VARCHAR(255) NOT NULL,
+            `slug` VARCHAR(255) NOT NULL UNIQUE,
+            `level` INT DEFAULT 1,
+            `parent_id` VARCHAR(64) DEFAULT NULL,
+            `parent_name` VARCHAR(255) DEFAULT NULL,
+            `image` MEDIUMTEXT DEFAULT NULL,
+            `banner_image` MEDIUMTEXT DEFAULT NULL,
+            `icon` VARCHAR(50) DEFAULT '🌾',
+            `product_count` INT DEFAULT 0,
+            `active` TINYINT(1) DEFAULT 1,
+            `featured` TINYINT(1) DEFAULT 0,
+            `trending` TINYINT(1) DEFAULT 0,
+            `display_order` INT DEFAULT 0,
+            `description` MEDIUMTEXT DEFAULT NULL,
+            `meta_title` VARCHAR(255) DEFAULT NULL,
+            `meta_description` TEXT DEFAULT NULL,
+            `meta_keywords` TEXT DEFAULT NULL,
+            `canonical_url` VARCHAR(500) DEFAULT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            `deleted_at` TIMESTAMP NULL DEFAULT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $existingCols = [];
+        try {
+            $colStmt = $pdo->query("SHOW COLUMNS FROM `categories`");
+            while ($col = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+                $existingCols[strtolower($col['Field'])] = strtolower($col['Type'] ?? '');
+            }
+        } catch (Exception $e) {}
+
+        // Alter image and description to MEDIUMTEXT so long image URLs / data URLs never fail
+        if (isset($existingCols['image']) && strpos($existingCols['image'], 'varchar') !== false) {
+            try { $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `image` MEDIUMTEXT NULL"); } catch (Exception $e) {}
+        }
+        if (isset($existingCols['description']) && strpos($existingCols['description'], 'varchar') !== false) {
+            try { $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `description` MEDIUMTEXT NULL"); } catch (Exception $e) {}
+        }
+
+        $needed = [
+            'banner_image' => 'MEDIUMTEXT NULL',
+            'icon' => "VARCHAR(50) DEFAULT '🌾'",
+            'parent_id' => 'VARCHAR(64) NULL',
+            'parent_name' => 'VARCHAR(255) NULL',
+            'level' => 'INT DEFAULT 1',
+            'product_count' => 'INT DEFAULT 0',
+            'active' => 'TINYINT(1) DEFAULT 1',
+            'featured' => 'TINYINT(1) DEFAULT 0',
+            'trending' => 'TINYINT(1) DEFAULT 0',
+            'display_order' => 'INT DEFAULT 0',
+            'meta_title' => 'VARCHAR(255) NULL',
+            'meta_description' => 'TEXT NULL',
+            'meta_keywords' => 'TEXT NULL',
+            'canonical_url' => 'VARCHAR(500) NULL',
+            'deleted_at' => 'TIMESTAMP NULL DEFAULT NULL'
+        ];
+
+        foreach ($needed as $colName => $colDef) {
+            if (!isset($existingCols[strtolower($colName)])) {
+                try {
+                    $pdo->exec("ALTER TABLE `categories` ADD COLUMN `{$colName}` {$colDef}");
+                } catch (Exception $e) {}
+            }
+        }
+    } catch (Exception $e) {}
+}
+
+function ensureJananiCatalogSynced($pdo) {
+    static $synced = false;
+    if ($synced) return;
+    $synced = true;
+    try {
+        ensureCategoriesTableSchema($pdo);
+
+        $checkOld = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices')")->fetchColumn();
+        $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories`")->fetchColumn();
+
+        if ($checkOld > 0 || $catCount === 0) {
+            // Auto-clean legacy demo grocery categories
+            $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
+            
+            $categories = [
+                ['cat-bio-fertilizers', 'Bio Fertilizers', 'bio-fertilizers', 1, null, null, '/products/dharani.jpg', '/products/dharani.jpg', '🌾', 2, 1, 1, 1, 1, 'Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour.'],
+                ['cat-bio-pesticides', 'Bio Pesticides', 'bio-pesticides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🛡️', 2, 1, 1, 1, 2, 'Targeted biological and microbial pest management formulations for organic insect and borer control.'],
+                ['cat-bio-fungicides', 'Bio Fungicides', 'bio-fungicides', 1, null, null, '/products/harit.jpg', '/products/harit.jpg', '🍄', 2, 1, 1, 1, 3, 'Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens.'],
+                ['cat-bio-stimulants', 'Bio Stimulants', 'bio-stimulants', 1, null, null, '/products/pushkal.jpg', '/products/pushkal.jpg', '⚡', 4, 1, 1, 1, 4, 'Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield.'],
+                ['cat-micro-nutrients', 'Micro Nutrients', 'micro-nutrients', 1, null, null, '/products/annada.jpg', '/products/annada.jpg', '🌱', 2, 1, 1, 1, 5, 'Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health.'],
+                ['cat-insecticides', 'Insecticides', 'insecticides', 1, null, null, '/products/balavan.jpg', '/products/balavan.jpg', '🦗', 1, 1, 1, 0, 6, 'Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers.'],
+                ['cat-fungicides', 'Fungicides', 'fungicides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🍃', 1, 1, 1, 0, 7, 'Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots.'],
+                ['cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, null, null, '/products/neem-oil.jpg', '/products/neem-oil.jpg', '🌿', 1, 1, 1, 0, 8, 'Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection.'],
+                ['cat-water-solubles', 'Water Solubles', 'water-solubles', 1, null, null, '/products/dhanya.jpg', '/products/dhanya.jpg', '💧', 1, 1, 1, 0, 9, '100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery.'],
+                ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', '/products/bhumi-shakti.jpg', '🚜', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.'],
+                ['cat-others', 'Others', 'others', 1, null, null, '/products/balavan-bottle.jpg', '/products/balavan-bottle.jpg', '📦', 1, 1, 0, 0, 11, 'Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants.']
+            ];
+            $stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `image`=VALUES(`image`), `banner_image`=VALUES(`banner_image`), `product_count`=VALUES(`product_count`), `active`=1, `description`=VALUES(`description`)");
+            foreach ($categories as $cat) { 
+                try { $stmtCat->execute($cat); } catch (Exception $e) {} 
+            }
+
+            $validProductSlugs = [
+                'balavan-bacillus-subtilis-5l',
+                'suraksha-pseudomonas-fluorescens-5l',
+                'harit-trichoderma-viride-liquid-biofungal-formulation-1l',
+                'neem-oil-1000-ppm-azadirachtin-1l',
+                'annada-fish-amino-acid-5l',
+                'pushkal-flowering-fruit-set-biostimulant-1l',
+                'bhumi-shakti-humic-fulvic-biostimulant-5l',
+                'dharani-kmb-potassium-mobilizing-biofertilizer-5l'
+            ];
+            $inProds = "'" . implode("','", $validProductSlugs) . "'";
+            $pdo->exec("DELETE FROM `products` WHERE `slug` NOT IN ({$inProds})");
+
+            $products = [
+                ['balavan-bacillus-subtilis-5l', 'BALAVAN - Bacillus Subtilis (5L)', 'Biological Crop Protection', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Flagship Bio-Shield', '/products/balavan.jpg', 'Beneficial Bacillus subtilis liquid biological formulation for blight control, fungal disease suppression, and systemic acquired resistance across all commercial crops.', 'JAP-SKU-BALAVAN'],
+                ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA - Pseudomonas Fluorescens (5L)', 'Biological Crop Protection', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'High-potency Pseudomonas fluorescens liquid bio-fungal formulation for soil-borne pathogen control, root wilt prevention, and rhizosphere colonization.', 'JAP-SKU-SURAKSHA'],
+                ['harit-trichoderma-viride-liquid-biofungal-formulation-1l', 'HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)', 'Bio Fungicides', 950.00, 1100.00, '1 L', 120, 5.0, 39, 'Bio-Fungal Shield', '/products/harit.jpg', 'Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off, root rot, collar rot, and rhizosphere diseases.', 'JAP-SKU-HARIT'],
+                ['neem-oil-1000-ppm-azadirachtin-1l', 'NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)', 'Botanical Extracts', 599.00, 699.00, '1 L', 140, 4.9, 44, 'Botanical IPM', '/products/neem-oil.jpg', 'Cold-pressed neem-oil-based botanical formulation containing standardized Azadirachtin 1000 PPM for organic management of aphids, whiteflies, thrips, caterpillars, and mites.', 'JAP-SKU-NEEM1000'],
+                ['annada-fish-amino-acid-5l', 'ANNADA - Fish Amino Acid (5L)', 'Micro Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'Naturally derived cold-hydrolysed Fish Amino Acid formulation rich in natural L-amino acids and peptides for vigorous vegetative growth, chlorophyll synthesis, and stress tolerance.', 'JAP-SKU-ANNADA'],
+                ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL - Flowering & Fruit Set Biostimulant (1L)', 'Bio Stimulants', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering & Fruit Set', '/products/pushkal.jpg', 'Concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, Fulvic Acid, Boron, and Zinc to support flower initiation, prevent flower drop, and boost fruit set.', 'JAP-SKU-PUSHKAL'],
+                ['bhumi-shakti-humic-fulvic-biostimulant-5l', 'BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)', 'Agri Inputs', 3900.00, 4400.00, '5 L', 120, 4.9, 58, 'Soil Rejuvenator', '/products/bhumi-shakti.jpg', 'High-purity potassium humate and fulvic acid complex for improving soil structure, cation exchange capacity, microbial life, and root nutrient absorption.', 'JAP-SKU-BHUMISHAKTI'],
+                ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)', 'Bio Fertilizers', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'Liquid biofertilizer containing beneficial Potassium Mobilizing Bacteria (Frateuria aurantia) to solubilize and unlock fixed soil potassium into plant-available form.', 'JAP-SKU-DHARANI']
+            ];
+            $stmtProd = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active') ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `category_name`=VALUES(`category_name`), `price`=VALUES(`price`), `old_price`=VALUES(`old_price`), `unit`=VALUES(`unit`), `image`=VALUES(`image`), `description`=VALUES(`description`), `badge`=VALUES(`badge`), `active`=1, `status`='Active'");
+            foreach ($products as $prod) { 
+                try { $stmtProd->execute($prod); } catch (Exception $e) {} 
+            }
+        }
+    } catch (Exception $e) {}
+}
+
 try {
     switch ($action) {
         case 'init':
@@ -541,123 +678,7 @@ try {
                 ]);
                 exit;
             }
-function ensureCategoriesTableSchema($pdo) {
-    static $schemaChecked = false;
-    if ($schemaChecked) return;
-    $schemaChecked = true;
-    try {
-        $pdo->exec("CREATE TABLE IF NOT EXISTS `categories` (
-            `id` VARCHAR(64) NOT NULL PRIMARY KEY,
-            `name` VARCHAR(255) NOT NULL,
-            `slug` VARCHAR(255) NOT NULL UNIQUE,
-            `level` INT DEFAULT 1,
-            `parent_id` VARCHAR(64) DEFAULT NULL,
-            `parent_name` VARCHAR(255) DEFAULT NULL,
-            `image` MEDIUMTEXT DEFAULT NULL,
-            `banner_image` MEDIUMTEXT DEFAULT NULL,
-            `icon` VARCHAR(50) DEFAULT '🌾',
-            `product_count` INT DEFAULT 0,
-            `active` TINYINT(1) DEFAULT 1,
-            `featured` TINYINT(1) DEFAULT 0,
-            `trending` TINYINT(1) DEFAULT 0,
-            `display_order` INT DEFAULT 0,
-            `description` MEDIUMTEXT DEFAULT NULL,
-            `meta_title` VARCHAR(255) DEFAULT NULL,
-            `meta_description` TEXT DEFAULT NULL,
-            `meta_keywords` TEXT DEFAULT NULL,
-            `canonical_url` VARCHAR(500) DEFAULT NULL,
-            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            `deleted_at` TIMESTAMP NULL DEFAULT NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-        $existingCols = [];
-        $colStmt = $pdo->query("SHOW COLUMNS FROM `categories`");
-        while ($col = $colStmt->fetch(PDO::FETCH_ASSOC)) {
-            $existingCols[strtolower($col['Field'])] = strtolower($col['Type']);
-        }
-
-        // Alter image and description to MEDIUMTEXT so long image URLs / data URLs never fail
-        if (isset($existingCols['image']) && strpos($existingCols['image'], 'varchar') !== false) {
-            $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `image` MEDIUMTEXT NULL");
-        }
-        if (isset($existingCols['description']) && strpos($existingCols['description'], 'varchar') !== false) {
-            $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `description` MEDIUMTEXT NULL");
-        }
-
-        $needed = [
-            'banner_image' => 'MEDIUMTEXT NULL',
-            'icon' => "VARCHAR(50) DEFAULT '🌾'",
-            'parent_id' => 'VARCHAR(64) NULL',
-            'parent_name' => 'VARCHAR(255) NULL',
-            'level' => 'INT DEFAULT 1',
-            'product_count' => 'INT DEFAULT 0',
-            'active' => 'TINYINT(1) DEFAULT 1',
-            'featured' => 'TINYINT(1) DEFAULT 0',
-            'trending' => 'TINYINT(1) DEFAULT 0',
-            'display_order' => 'INT DEFAULT 0',
-            'meta_title' => 'VARCHAR(255) NULL',
-            'meta_description' => 'TEXT NULL',
-            'meta_keywords' => 'TEXT NULL',
-            'canonical_url' => 'VARCHAR(500) NULL',
-            'deleted_at' => 'TIMESTAMP NULL DEFAULT NULL'
-        ];
-
-        foreach ($needed as $colName => $colDef) {
-            if (!isset($existingCols[strtolower($colName)])) {
-                $pdo->exec("ALTER TABLE `categories` ADD COLUMN `{$colName}` {$colDef}");
-            }
-        }
-    } catch (Exception $e) {}
-}
-
-function ensureJananiCatalogSynced($pdo) {
-    static $synced = false;
-    if ($synced) return;
-    $synced = true;
-    try {
-        $checkOld = $pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices')")->fetchColumn();
-        $checkNew = $pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` = 'biological-crop-protection'")->fetchColumn();
-        if ($checkOld > 0 || $checkNew == 0) {
-            // Auto-clean legacy demo grocery categories
-            $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
-            
-            $categories = [
-                ['cat-crop-protection', 'Biological Crop Protection', 'biological-crop-protection', 1, null, null, '/products/balavan.jpg', 4, 1, 1, 1, 1, 'Beneficial Trichoderma viride, Bacillus subtilis, Pseudomonas fluorescens, and cold-pressed Azadirachtin botanical formulations for disease management, pest control, root protection, and pathogen suppression.'],
-                ['cat-plant-nutrients', 'Organic Plant Nutrients', 'organic-plant-nutrients', 1, null, null, '/products/annada.jpg', 2, 1, 1, 1, 2, 'Cold-hydrolysed marine fish amino acids and seaweed-based organic biostimulants rich in organic nitrogen, polypeptides, and trace minerals for robust vegetative growth, flowering, and fruit development.'],
-                ['cat-soil-conditioners', 'Soil Conditioners & Biostimulants', 'soil-conditioners-biostimulants', 1, null, null, '/products/bhumi-shakti.jpg', 2, 1, 1, 1, 3, 'Potassium humate, concentrated fulvic extracts, and beneficial potassium-mobilizing bacteria (KMB) to improve soil aggregation, CEC, microbial flora, and nutrient bio-availability.']
-            ];
-            $stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `image`=VALUES(`image`), `product_count`=VALUES(`product_count`), `active`=1, `description`=VALUES(`description`)");
-            foreach ($categories as $cat) { $stmtCat->execute($cat); }
-
-            $validProductSlugs = [
-                'balavan-bacillus-subtilis-5l',
-                'suraksha-pseudomonas-fluorescens-5l',
-                'harit-trichoderma-viride-liquid-biofungal-formulation-1l',
-                'neem-oil-1000-ppm-azadirachtin-1l',
-                'annada-fish-amino-acid-5l',
-                'pushkal-flowering-fruit-set-biostimulant-1l',
-                'bhumi-shakti-humic-fulvic-biostimulant-5l',
-                'dharani-kmb-potassium-mobilizing-biofertilizer-5l'
-            ];
-            $inProds = "'" . implode("','", $validProductSlugs) . "'";
-            $pdo->exec("DELETE FROM `products` WHERE `slug` NOT IN ({$inProds})");
-
-            $products = [
-                ['balavan-bacillus-subtilis-5l', 'BALAVAN - Bacillus Subtilis (5L)', 'Biological Crop Protection', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Flagship Bio-Shield', '/products/balavan.jpg', 'Beneficial Bacillus subtilis liquid biological formulation for blight control, fungal disease suppression, and systemic acquired resistance across all commercial crops.', 'JAP-SKU-BALAVAN'],
-                ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA - Pseudomonas Fluorescens (5L)', 'Biological Crop Protection', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'High-potency Pseudomonas fluorescens liquid bio-fungal formulation for soil-borne pathogen control, root wilt prevention, and rhizosphere colonization.', 'JAP-SKU-SURAKSHA'],
-                ['harit-trichoderma-viride-liquid-biofungal-formulation-1l', 'HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)', 'Biological Crop Protection', 950.00, 1100.00, '1 L', 120, 5.0, 39, 'Bio-Fungal Shield', '/products/harit.jpg', 'Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off, root rot, collar rot, and rhizosphere diseases.', 'JAP-SKU-HARIT'],
-                ['neem-oil-1000-ppm-azadirachtin-1l', 'NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)', 'Biological Crop Protection', 599.00, 699.00, '1 L', 140, 4.9, 44, 'Botanical IPM', '/products/neem-oil.jpg', 'Cold-pressed neem-oil-based botanical formulation containing standardized Azadirachtin 1000 PPM for organic management of aphids, whiteflies, thrips, caterpillars, and mites.', 'JAP-SKU-NEEM1000'],
-                ['annada-fish-amino-acid-5l', 'ANNADA - Fish Amino Acid (5L)', 'Organic Plant Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'Naturally derived cold-hydrolysed Fish Amino Acid formulation rich in natural L-amino acids and peptides for vigorous vegetative growth, chlorophyll synthesis, and stress tolerance.', 'JAP-SKU-ANNADA'],
-                ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL - Flowering & Fruit Set Biostimulant (1L)', 'Organic Plant Nutrients', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering & Fruit Set', '/products/pushkal.jpg', 'Concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, Fulvic Acid, Boron, and Zinc to support flower initiation, prevent flower drop, and boost fruit set.', 'JAP-SKU-PUSHKAL'],
-                ['bhumi-shakti-humic-fulvic-biostimulant-5l', 'BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)', 'Soil Conditioners & Biostimulants', 3900.00, 4400.00, '5 L', 120, 4.9, 58, 'Soil Rejuvenator', '/products/bhumi-shakti.jpg', 'High-purity potassium humate and fulvic acid complex for improving soil structure, cation exchange capacity, microbial life, and root nutrient absorption.', 'JAP-SKU-BHUMISHAKTI'],
-                ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)', 'Soil Conditioners & Biostimulants', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'Liquid biofertilizer containing beneficial Potassium Mobilizing Bacteria (Frateuria aurantia) to solubilize and unlock fixed soil potassium into plant-available form.', 'JAP-SKU-DHARANI']
-            ];
-            $stmtProd = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active') ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `category_name`=VALUES(`category_name`), `price`=VALUES(`price`), `old_price`=VALUES(`old_price`), `unit`=VALUES(`unit`), `image`=VALUES(`image`), `description`=VALUES(`description`), `badge`=VALUES(`badge`), `active`=1, `status`='Active'");
-            foreach ($products as $prod) { $stmtProd->execute($prod); }
-        }
-    } catch (Exception $e) {}
-}
+            break;
 
         case 'products':
             ensureJananiCatalogSynced($pdo);
@@ -1328,6 +1349,26 @@ function ensureJananiCatalogSynced($pdo) {
                             $created['active'] = (bool)$created['active'];
                             $created['featured'] = (bool)$created['featured'];
                             $created['trending'] = (bool)$created['trending'];
+                            $lvl = (int)($created['level'] ?? 1);
+                            $created['level'] = $lvl === 2 ? 'sub' : ($lvl === 3 ? 'child' : 'root');
+                        } else {
+                            $created = [
+                                'id' => $catId,
+                                'name' => $name,
+                                'slug' => $slug,
+                                'level' => $levelVal === 2 ? 'sub' : ($levelVal === 3 ? 'child' : 'root'),
+                                'parentId' => $parentId,
+                                'parentName' => $parentName,
+                                'image' => $image,
+                                'bannerImage' => $bannerImage,
+                                'icon' => $icon,
+                                'productCount' => 0,
+                                'active' => (bool)$active,
+                                'featured' => (bool)$featured,
+                                'trending' => (bool)$trending,
+                                'orderIndex' => $displayOrder,
+                                'description' => $description
+                            ];
                         }
 
                         echo json_encode([

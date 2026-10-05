@@ -702,12 +702,18 @@ export function CategoriesManagement() {
                 toast.error(res?.message || `Failed to update category "${formData.name}"`);
                 return;
               }
+              if (res?.data) {
+                setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? res.data : c)));
+              }
               toast.success(res?.message || `Category "${formData.name}" updated successfully`);
             } else {
               const res = await createAdminCategory(formData);
               if (res?.success === false) {
                 toast.error(res?.message || `Failed to create category "${formData.name}"`);
                 return;
+              }
+              if (res?.data) {
+                setCategories((prev) => [res.data, ...prev.filter((c) => c.id !== res.data.id)]);
               }
               toast.success(res?.message || `Category "${formData.name}" created successfully`);
             }

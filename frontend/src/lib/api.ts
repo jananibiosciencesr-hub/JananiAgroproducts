@@ -197,12 +197,12 @@ export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | 
 }
 
 export async function getCategories() {
-  let data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/products/categories`);
+  let data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/api.php?action=categories`);
   if (!data?.success) {
-    data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/categories`);
+    data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/products/categories`);
   }
   if (!data?.success) {
-    data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/api.php?action=categories`);
+    data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/categories`);
   }
   const rawList = data?.categories || data?.data;
   if (data?.success && Array.isArray(rawList) && rawList.length > 0) {
@@ -2135,8 +2135,51 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
 
   const rawList = res?.data || res?.categories;
   let list: any[] = [];
-  if (Array.isArray(rawList)) {
+  if (Array.isArray(rawList) && rawList.length > 0) {
     list = rawList.map(normalizeAdminCategory).filter(Boolean);
+  }
+
+  // Fallback to localStorage and 11 core catalog categories if database is empty or unreached
+  if (list.length === 0) {
+    const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
+    const catalogSeed = [
+      { id: "cat-bio-fertilizers", name: "Bio Fertilizers", slug: "bio-fertilizers", image: "/products/dharani.jpg", bannerImage: "/products/dharani.jpg", icon: "🌾", count: 2, description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
+      { id: "cat-bio-pesticides", name: "Bio Pesticides", slug: "bio-pesticides", image: "/products/suraksha.jpg", bannerImage: "/products/suraksha.jpg", icon: "🛡️", count: 2, description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
+      { id: "cat-bio-fungicides", name: "Bio Fungicides", slug: "bio-fungicides", image: "/products/harit.jpg", bannerImage: "/products/harit.jpg", icon: "🍄", count: 2, description: "Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens." },
+      { id: "cat-bio-stimulants", name: "Bio Stimulants", slug: "bio-stimulants", image: "/products/pushkal.jpg", bannerImage: "/products/pushkal.jpg", icon: "⚡", count: 4, description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
+      { id: "cat-micro-nutrients", name: "Micro Nutrients", slug: "micro-nutrients", image: "/products/annada.jpg", bannerImage: "/products/annada.jpg", icon: "🌱", count: 2, description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
+      { id: "cat-insecticides", name: "Insecticides", slug: "insecticides", image: "/products/balavan.jpg", bannerImage: "/products/balavan.jpg", icon: "🦗", count: 1, description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
+      { id: "cat-fungicides", name: "Fungicides", slug: "fungicides", image: "/products/suraksha.jpg", bannerImage: "/products/suraksha.jpg", icon: "🍃", count: 1, description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
+      { id: "cat-botanical-extracts", name: "Botanical Extracts", slug: "botanical-extracts", image: "/products/neem-oil.jpg", bannerImage: "/products/neem-oil.jpg", icon: "🌿", count: 1, description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
+      { id: "cat-water-solubles", name: "Water Solubles", slug: "water-solubles", image: "/products/dhanya.jpg", bannerImage: "/products/dhanya.jpg", icon: "💧", count: 1, description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
+      { id: "cat-agri-inputs", name: "Agri Inputs", slug: "agri-inputs", image: "/products/bhumi-shakti.jpg", bannerImage: "/products/bhumi-shakti.jpg", icon: "🚜", count: 2, description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
+      { id: "cat-others", name: "Others", slug: "others", image: "/products/balavan-bottle.jpg", bannerImage: "/products/balavan-bottle.jpg", icon: "📦", count: 1, description: "Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants." }
+    ].map((c, idx) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      level: "root",
+      parentId: null,
+      parentName: null,
+      image: c.image,
+      bannerImage: c.bannerImage,
+      icon: c.icon,
+      productsCount: c.count,
+      active: true,
+      featured: idx < 4,
+      trending: idx < 3,
+      orderIndex: idx + 1,
+      description: c.description,
+      createdAt: "2025-01-01"
+    }));
+
+    const combined = [...stored];
+    for (const item of catalogSeed) {
+      if (!combined.some((x: any) => x.slug === item.slug || x.id === item.id)) {
+        combined.push(item);
+      }
+    }
+    list = combined.map(normalizeAdminCategory).filter(Boolean);
   }
 
   if (params?.status === "active") {
@@ -2169,9 +2212,12 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
 
 export async function createAdminCategory(payload: any) {
   const levelNum = payload.level === "sub" ? 2 : (payload.level === "child" ? 3 : 1);
+  const slug = payload.slug || payload.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `cat-${Date.now()}`;
+  const catId = payload.id || `cat-${slug}`;
   const reqBody = {
+    id: catId,
     name: payload.name,
-    slug: payload.slug || payload.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+    slug,
     level: levelNum,
     parentId: payload.parentId || null,
     parent_id: payload.parentId || null,
@@ -2189,19 +2235,19 @@ export async function createAdminCategory(payload: any) {
     seo: payload.seo || {}
   };
 
-  // 1. Try Node Express endpoint first
+  // 1. Try PHP endpoint FIRST on live Hostinger production
   let res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
-    `/admin/categories`,
+    `/api.php?action=categories`,
     {
       method: "POST",
       body: JSON.stringify(reqBody)
     }
   );
 
-  // 2. Try PHP endpoint if Node endpoint is not available
+  // 2. Try Node endpoint if PHP endpoint not available
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
-      `/api.php?action=categories`,
+      `/admin/categories`,
       {
         method: "POST",
         body: JSON.stringify(reqBody)
@@ -2209,27 +2255,36 @@ export async function createAdminCategory(payload: any) {
     );
   }
 
-  // 3. If backend endpoints fail, gracefully save to localStorage
-  if (!res?.success) {
-    try {
-      const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
-      const newCat = {
-        id: `CAT-${payload.level || "root"}-${Date.now()}`,
-        ...reqBody,
-        level: payload.level || "root",
-        productsCount: 0,
-        createdAt: new Date().toISOString().split("T")[0]
-      };
-      const updated = [newCat, ...stored];
-      setStored(STORAGE_KEYS.CATEGORIES, updated);
-      return { success: true, message: "Category created successfully", data: normalizeAdminCategory(newCat) };
-    } catch {}
+  // If backend returned explicit failure, surface error to user
+  if (res && res.success === false) {
+    return { success: false, message: res.message || res.error || "Failed to create category in database" };
   }
 
+  // Backend succeeded: update local cache and return
   if (res?.success && (res.data || res.category)) {
     const cat = normalizeAdminCategory(res.data || res.category);
-    return { success: true, message: res.message || "Category created successfully", data: cat };
+    try {
+      const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
+      const filtered = stored.filter((c: any) => c.id !== cat.id && c.slug !== cat.slug);
+      setStored(STORAGE_KEYS.CATEGORIES, [cat, ...filtered]);
+    } catch {}
+    return { success: true, message: res.message || "Category created successfully in database", data: cat };
   }
+
+  // 3. Fallback only if server completely unreachable (offline)
+  try {
+    const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
+    const newCat = {
+      id: catId,
+      ...reqBody,
+      level: payload.level || "root",
+      productsCount: 0,
+      createdAt: new Date().toISOString().split("T")[0]
+    };
+    const updated = [newCat, ...stored.filter((c: any) => c.id !== newCat.id && c.slug !== newCat.slug)];
+    setStored(STORAGE_KEYS.CATEGORIES, updated);
+    return { success: true, message: "Category created (saved locally)", data: normalizeAdminCategory(newCat) };
+  } catch {}
 
   const errorMsg = res?.message || res?.error || "Could not create category in database";
   return { success: false, message: errorMsg, error: errorMsg };
@@ -2261,21 +2316,21 @@ export async function updateAdminCategory(id: string, payload: any) {
     reqBody.orderIndex = reqBody.display_order;
   }
 
-  // 1. Try Node Express endpoint first
+  // 1. Try PHP endpoint FIRST
   let res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
-    `/admin/categories/${encodeURIComponent(id)}`,
+    `/api.php?action=categories&id=${encodeURIComponent(id)}`,
     {
-      method: "PUT",
+      method: "POST",
       body: JSON.stringify(reqBody)
     }
   );
 
-  // 2. Try PHP endpoint
+  // 2. Try Node endpoint if PHP endpoint not available
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
-      `/api.php?action=categories&id=${encodeURIComponent(id)}`,
+      `/admin/categories/${encodeURIComponent(id)}`,
       {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify(reqBody)
       }
     );
