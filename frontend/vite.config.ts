@@ -12,11 +12,17 @@ export default defineConfig({
       server: { entry: "server" },
       prerender: {
         enabled: true,
+        concurrency: 2,
+        failOnError: false,
       },
     }),
     react(),
   ],
+  preview: {
+    host: "127.0.0.1",
+  },
   server: {
+    host: "127.0.0.1",
     proxy: {
       "/api": {
         target: "http://localhost:5000",
