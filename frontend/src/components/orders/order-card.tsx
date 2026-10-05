@@ -247,7 +247,7 @@ export function OrderCard({
               </span>
               <p className="font-medium text-foreground mt-1">{order.address?.fullName || "Valued Customer"}</p>
               <p className="text-muted-foreground mt-0.5">{order.address?.streetAddress || "Registered Address"}, {order.address?.city || "Ahmedabad"}, {order.address?.state || "Gujarat"} - {order.address?.pincode || "380054"}</p>
-              <p className="text-muted-foreground mt-0.5">📞 {order.address?.phone || "+91 98480 22338"}</p>
+              {order.address?.phone ? <p className="text-muted-foreground mt-0.5">📞 {order.address.phone}</p> : null}
             </div>
 
             <div>

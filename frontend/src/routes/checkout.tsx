@@ -204,7 +204,7 @@ export function CheckoutPage() {
         const updatedUser = {
           ...res.user,
           name: checkoutName.trim() || res.user.name || "Valued Patron",
-          phone: checkoutPhone.trim() || res.user.phone || "+91 98480 22338",
+          phone: checkoutPhone.trim() || res.user.phone || "",
         };
         loginUser(updatedUser);
         toast.success(`Welcome ${updatedUser.name}! Signed in successfully. Your cart items are preserved.`);
@@ -283,7 +283,7 @@ export function CheckoutPage() {
       orderNumber: `JAP-${Math.floor(100000 + Math.random() * 900000)}`,
       customerName: selectedAddress.fullName || user?.name || checkoutName || "Valued Patron",
       customerEmail: user?.email || checkoutEmail || "patron@jananiagro.com",
-      customerPhone: selectedAddress.phone || user?.phone || checkoutPhone || "+91 98480 22338",
+      customerPhone: selectedAddress.phone || user?.phone || checkoutPhone || "",
       address: selectedAddress,
       slot: selectedSlot,
       items: cartItems,

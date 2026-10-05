@@ -51,7 +51,7 @@ export function loadCustomerOrders(): CustomerOrder[] {
               transactionId: latest.transactionId || `pay_rzp_${Date.now()}`,
               address: {
                 fullName: latest.customerName || latest.address?.fullName || "Valued Patron",
-                phone: latest.customerPhone || latest.address?.phone || "+91 98480 22338",
+                phone: latest.customerPhone || latest.address?.phone || "",
                 streetAddress: latest.customerAddress || latest.address?.streetAddress || "Registered Delivery Address",
                 city: latest.address?.city || "Ahmedabad",
                 state: latest.address?.state || "Gujarat",

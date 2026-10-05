@@ -536,7 +536,7 @@ try {
 $userCount = $pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
 if ($userCount <= 1) {
     $users = [
-        ['STAFF-001', 'Rajesh Varma', 'admin@jananiagro.com', '+91 98480 22338', 'Super Admin', 250.00, 500, 'Platinum', 'Active', 'JANANI8492'],
+        ['STAFF-001', 'Rajesh Varma', 'admin@jananiagro.com', '+91 98490 55441', 'Super Admin', 250.00, 500, 'Platinum', 'Active', 'JANANI8492'],
         ['CUST-001', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223', 'Customer', 420.00, 850, 'Gold', 'Active', 'JANANI3821'],
         ['CUST-002', 'Vikramaditya Rao', 'vikram.rao@technocorp.in', '+91 99800 44556', 'Customer', 150.00, 320, 'Silver', 'Active', 'JANANI9104']
     ];
@@ -547,12 +547,19 @@ if ($userCount <= 1) {
     $response['seeds_inserted'][] = 'users (3)';
 }
 
+// Auto-repair duplicate customer phone numbers in users table
+try {
+    $pdo->exec("UPDATE `users` SET `phone` = '' WHERE `phone` = '+91 98480 22338' AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
+    $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
+    $pdo->exec("UPDATE `orders` SET `customer_phone` = '+91 98490 55441' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND `customer_phone` = '+91 98480 22338'");
+} catch (Exception $e) {}
+
 // 6. Orders
 $orderCount = $pdo->query("SELECT COUNT(*) FROM `orders`")->fetchColumn();
 if ($orderCount == 0) {
     $orders = [
         [
-            'JAP-849201', 'JAP-849201', '11 Sep 2026, 14:20', 'Rajesh Varma', 'rajesh.varma@gmail.com', '+91 98480 22338',
+            'JAP-849201', 'JAP-849201', '11 Sep 2026, 14:20', 'Rajesh Varma', 'rajesh.varma@gmail.com', '+91 98490 55441',
             json_encode(['name' => 'Rajesh Varma', 'street' => 'Flat 402, Green Palms, Indiranagar', 'city' => 'Bengaluru', 'state' => 'Karnataka', 'pincode' => '560038']),
             json_encode([['productId' => 1, 'title' => 'Wood Pressed Groundnut Oil (5L)', 'price' => 1850, 'quantity' => 1, 'subtotal' => 1850]]),
             2450.00, 245.00, 0.00, 2205.00, 'UPI Instant', 'Paid', 'Delivered', 'Delhivery Air Express', 'DEL-8492048194', 'DEL-8492048194'

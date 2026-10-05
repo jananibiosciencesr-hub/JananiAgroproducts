@@ -110,7 +110,7 @@ export function MyOrdersPage() {
               transactionId: o.transaction_id || o.transactionId || "pay_rzp_verified",
               address: {
                 fullName: o.shippingAddress?.fullName || o.shippingAddress?.name || o.customer_name || user?.name || "Valued Patron",
-                phone: o.shippingAddress?.phone || o.customer_phone || user?.phone || "+91 98480 22338",
+                phone: o.shippingAddress?.phone || o.customer_phone || user?.phone || "",
                 streetAddress: o.shippingAddress?.streetAddress || o.shippingAddress?.street || "Registered Delivery Address",
                 city: o.shippingAddress?.city || "Ahmedabad",
                 state: o.shippingAddress?.state || "Gujarat",
@@ -567,7 +567,7 @@ export function MyOrdersPage() {
           orderNumber={selectedInvoiceOrder.number || selectedInvoiceOrder.orderNumber || "ORD-000"}
           invoiceDate={selectedInvoiceOrder.date || "Recent"}
           customerName={selectedInvoiceOrder.address?.fullName || user?.name || "Valued Customer"}
-          customerPhone={selectedInvoiceOrder.address?.phone || user?.phone || "+91 98480 22338"}
+          customerPhone={selectedInvoiceOrder.address?.phone || user?.phone || ""}
           customerAddress={selectedInvoiceOrder.address ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}` : "Registered Delivery Address"}
           items={(Array.isArray(selectedInvoiceOrder.items) ? selectedInvoiceOrder.items : []).map((it) => ({
             name: it.name,

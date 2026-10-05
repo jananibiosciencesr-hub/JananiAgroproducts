@@ -66,7 +66,7 @@ export function OrderInvoiceModal({
   const resolvedOrderNumber = orderNumber || order?.orderNumber || order?.number || "JAP-202601";
   const resolvedInvoiceDate = invoiceDate || order?.invoiceDate || order?.date || "Today";
   const resolvedCustomerName = customerName || order?.customerName || order?.address?.fullName || "Valued Patron";
-  const resolvedCustomerPhone = customerPhone || order?.customerPhone || order?.address?.phone || "9848022338";
+  const resolvedCustomerPhone = customerPhone || order?.customerPhone || order?.address?.phone || "";
   const resolvedCustomerAddress = customerAddress || order?.customerAddress || (order?.address ? `${order.address.streetAddress || ""}, ${order.address.city || ""}, ${order.address.state || ""} - ${order.address.pincode || ""}` : "Delivery Address");
   
   const resolvedItems: InvoiceItem[] = (items && items.length > 0)

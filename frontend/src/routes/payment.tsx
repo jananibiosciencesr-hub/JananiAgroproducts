@@ -88,7 +88,7 @@ export function PaymentPage() {
   const effectiveAmount = checkoutData?.finalTotal || (subtotal > 0 ? subtotal : 420);
   const effectiveOrderNumber = checkoutData?.orderNumber || transactionDetails.orderNumber;
   const customerName = checkoutData?.customerName || checkoutData?.address?.fullName || user?.name || "Valued Patron";
-  const customerPhone = checkoutData?.customerPhone || checkoutData?.address?.phone || user?.phone || "+91 98480 22338";
+  const customerPhone = checkoutData?.customerPhone || checkoutData?.address?.phone || user?.phone || "";
   const customerEmail = checkoutData?.customerEmail || user?.email || "patron@jananiagro.com";
   const deliveryDate = checkoutData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
   const city = checkoutData?.address?.city || "Ahmedabad";

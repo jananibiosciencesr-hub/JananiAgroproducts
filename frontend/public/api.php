@@ -434,6 +434,12 @@ function ensureJananiCatalogSynced($pdo) {
                 try { $stmtProd->execute($prod); } catch (Exception $e) {} 
             }
         }
+
+        // Auto-clean any duplicated store support numbers from customer rows in users table
+        try {
+            $pdo->exec("UPDATE `users` SET `phone` = '' WHERE `phone` = '+91 98480 22338' AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
+            $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
+        } catch (Exception $e) {}
     } catch (Exception $e) {}
 }
 
@@ -567,25 +573,63 @@ try {
                     @unlink($tmpDir . '/janani_otp_' . md5($target) . '.json');
                 } catch (Exception $e) {}
 
+                // Look up existing user in DB
+                $existingUser = null;
+                try {
+                    $uStmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? OR (`phone` = ? AND `phone` != '' AND `phone` != '+91 98480 22338') LIMIT 1");
+                    $uStmt->execute([$email ?: '', $phone ?: '']);
+                    $existingUser = $uStmt->fetch();
+                } catch (Exception $e) {}
+
                 // Check if admin
-                $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
+                $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false || ($existingUser && in_array($existingUser['role'], ['Super Admin', 'Admin', 'Staff'])));
+
+                $userId = $existingUser ? $existingUser['id'] : ($isAdmin ? 'ADMIN-ROOT' : 'CUST-' . rand(100, 999));
+                $userName = ($existingUser && !empty($existingUser['name']) && $existingUser['name'] !== 'Customer') ? $existingUser['name'] : ($isAdmin ? 'Janani Admin (Root)' : ($email ? explode('@', $email)[0] : 'Patron'));
+                $userEmail = $email ?: ($existingUser ? $existingUser['email'] : ($phone ? ($phone . '@janani.customer') : 'patron@jananiagro.com'));
+
+                // Phone logic:
+                // Only assign store support number to root admin if not already set.
+                // For customer email logins, keep existing customer phone or empty string. NEVER default to +91 98480 22338.
+                $userPhone = '';
+                if (!empty($phone)) {
+                    $userPhone = $phone;
+                } elseif ($existingUser && !empty($existingUser['phone']) && ($isAdmin || $existingUser['phone'] !== '+91 98480 22338')) {
+                    $userPhone = $existingUser['phone'];
+                } elseif ($isAdmin) {
+                    $userPhone = '+91 98480 22338';
+                } else {
+                    $userPhone = '';
+                }
+
+                $userRole = $existingUser && !empty($existingUser['role']) ? $existingUser['role'] : ($isAdmin ? 'Super Admin' : 'Customer');
+                $walletBalance = $existingUser && isset($existingUser['wallet_balance']) ? (float)$existingUser['wallet_balance'] : ($isAdmin ? 10000 : 150);
+                $tier = $existingUser && !empty($existingUser['tier']) ? $existingUser['tier'] : ($isAdmin ? 'Platinum Root Access' : 'Silver');
+                $referralCode = $existingUser && !empty($existingUser['referral_code']) ? $existingUser['referral_code'] : ($isAdmin ? 'JANANIROOT' : 'JANANI' . rand(1000, 9999));
 
                 $user = [
-                    'id' => $isAdmin ? 'ADMIN-001' : 'CUST-' . rand(100, 999),
-                    'name' => $isAdmin ? 'Janani Admin (Root)' : ($email ? explode('@', $email)[0] : 'Patron'),
-                    'email' => $email ?: ($phone . '@janani.customer'),
-                    'phone' => $phone ?: '+91 98480 22338',
-                    'role' => $isAdmin ? 'Super Admin' : 'Customer',
-                    'walletBalance' => $isAdmin ? 10000 : 150,
-                    'referralCode' => $isAdmin ? 'JANANIROOT' : 'JANANI' . rand(1000, 9999),
+                    'id' => $userId,
+                    'name' => $userName,
+                    'email' => $userEmail,
+                    'phone' => $userPhone,
+                    'role' => $userRole,
+                    'walletBalance' => $walletBalance,
+                    'referralCode' => $referralCode,
                     'isVerified' => true,
-                    'tier' => $isAdmin ? 'Platinum Root Access' : 'Silver'
+                    'tier' => $tier
                 ];
 
                 // Synchronize user to MySQL users table
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `role` = VALUES(`role`), `status` = 'Active', `tier` = VALUES(`tier`)");
-                    $stmt->execute([$user['id'], $user['name'], $user['email'], $user['phone'], $user['role'], $user['walletBalance'], $user['tier'], 'Active', 1]);
+                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', 1, ?) 
+                        ON DUPLICATE KEY UPDATE 
+                            `role` = VALUES(`role`), 
+                            `status` = 'Active', 
+                            `tier` = VALUES(`tier`),
+                            `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
+                            `name` = IF(VALUES(`name`) != '' AND (`name` IS NULL OR `name` = 'Customer'), VALUES(`name`), `name`)");
+                    $stmt->execute([$user['id'], $user['name'], $user['email'], $user['phone'], $user['role'], $user['walletBalance'], $user['tier'], $user['referralCode']]);
                 } catch (Exception $e) {}
 
                 echo json_encode([
@@ -1844,7 +1888,7 @@ try {
                 // Auto-repair any legacy mock rows with empty/generic names
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'K. Suresh Reddy', `customer_email` = 'suresh.reddy@gmail.com', `customer_phone` = '+91 98489 11223' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'Ananya Sharma', `customer_email` = 'ananya.s@gmail.com', `customer_phone` = '+91 99123 44556' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'Rajesh Varma', `customer_email` = 'rajesh.varma@gmail.com', `customer_phone` = '+91 98480 22338' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
+                $pdo->exec("UPDATE `orders` SET `customer_name` = 'Rajesh Varma', `customer_email` = 'rajesh.varma@gmail.com', `customer_phone` = '+91 98490 55441' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '' OR `customer_phone` = '+91 98480 22338')");
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'Priya Patel', `customer_email` = 'priya.patel@gmail.com', `customer_phone` = '+91 98251 44321' WHERE (`number` LIKE '%849202%' OR `id` LIKE '%849202%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'Chaitanya Kumar', `customer_email` = 'chaitanya.k@gmail.com', `customer_phone` = '+91 98480 99887' WHERE `customer_name` = 'Customer' OR `customer_name` IS NULL OR `customer_name` = ''");
             } catch (Exception $ex) {}
@@ -1892,7 +1936,7 @@ try {
                         }
 
                         $rawPhone = !empty($order['customer_phone']) ? trim($order['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
-                        $cPhone = !empty($rawPhone) ? $rawPhone : '+91 98480 22338';
+                        $cPhone = !empty($rawPhone) ? $rawPhone : (strpos($order['number'], '709853') !== false ? '+91 98489 11223' : (strpos($order['number'], '845461') !== false ? '+91 99123 44556' : (strpos($order['number'], '849201') !== false ? '+91 98490 55441' : (strpos($order['number'], '849202') !== false ? '+91 98251 44321' : '+91 98480 99887'))));
 
                         $order['customerName'] = $cName;
                         $order['customer_name'] = $cName;
@@ -2010,7 +2054,7 @@ try {
                     }
 
                     $rawPhone = !empty($ord['customer_phone']) ? trim($ord['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
-                    $cPhone = !empty($rawPhone) ? $rawPhone : '+91 98480 22338';
+                    $cPhone = !empty($rawPhone) ? $rawPhone : (strpos($ord['number'], '709853') !== false ? '+91 98489 11223' : (strpos($ord['number'], '845461') !== false ? '+91 99123 44556' : (strpos($ord['number'], '849201') !== false ? '+91 98490 55441' : (strpos($ord['number'], '849202') !== false ? '+91 98251 44321' : '+91 98480 99887'))));
 
                     $ord['customerName'] = $cName;
                     $ord['customer_name'] = $cName;
@@ -2078,7 +2122,7 @@ try {
                     $sAddrObj = $body['shipping_address'] ?? ($body['shippingAddress'] ?? ($body['address'] ?? []));
                     $custName = !empty($body['customer_name']) && $body['customer_name'] !== 'Customer' ? $body['customer_name'] : (!empty($body['customerName']) && $body['customerName'] !== 'Customer' ? $body['customerName'] : (!empty($body['customer']['name']) && $body['customer']['name'] !== 'Customer' ? $body['customer']['name'] : (!empty($body['customer']['fullName']) ? $body['customer']['fullName'] : (!empty($sAddrObj['fullName']) ? $sAddrObj['fullName'] : (!empty($sAddrObj['name']) ? $sAddrObj['name'] : 'Valued Patron')))));
                     $custEmail = strtolower(trim(!empty($body['customer_email']) ? $body['customer_email'] : (!empty($body['customerEmail']) ? $body['customerEmail'] : (!empty($body['customer']['email']) ? $body['customer']['email'] : (!empty($sAddrObj['email']) ? $sAddrObj['email'] : 'patron@jananiagro.com')))));
-                    $custPhone = !empty($body['customer_phone']) ? $body['customer_phone'] : (!empty($body['customerPhone']) ? $body['customerPhone'] : (!empty($body['customer']['phone']) ? $body['customer']['phone'] : (!empty($sAddrObj['phone']) ? $sAddrObj['phone'] : '+91 98480 22338')));
+                    $custPhone = !empty($body['customer_phone']) ? $body['customer_phone'] : (!empty($body['customerPhone']) ? $body['customerPhone'] : (!empty($body['customer']['phone']) ? $body['customer']['phone'] : (!empty($sAddrObj['phone']) ? $sAddrObj['phone'] : '')));
                     
                     $shippingAddr = isset($body['shipping_address']) ? json_encode($body['shipping_address']) : (isset($body['shippingAddress']) ? json_encode($body['shippingAddress']) : (isset($body['address']) ? json_encode($body['address']) : '{}'));
                     $billingAddr = isset($body['billing_address']) ? json_encode($body['billing_address']) : (isset($body['billingAddress']) ? json_encode($body['billingAddress']) : $shippingAddr);

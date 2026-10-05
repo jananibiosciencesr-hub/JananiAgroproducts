@@ -149,7 +149,7 @@ function DashboardPage() {
                 transactionId: o?.transaction_id || o?.transactionId || "pay_rzp_verified",
                 address: {
                   fullName: o?.shippingAddress?.fullName || o?.shippingAddress?.name || o?.customer_name || user?.name || "Valued Patron",
-                  phone: o?.shippingAddress?.phone || o?.customer_phone || user?.phone || "+91 98480 22338",
+                  phone: o?.shippingAddress?.phone || o?.customer_phone || user?.phone || "",
                   streetAddress: o?.shippingAddress?.streetAddress || o?.shippingAddress?.street || "Registered Delivery Address",
                   city: o?.shippingAddress?.city || "Ahmedabad",
                   state: o?.shippingAddress?.state || "Gujarat",
@@ -620,7 +620,7 @@ function DashboardPage() {
             date: selectedInvoiceOrder.date || "Recent",
             paymentMethod: selectedInvoiceOrder.paymentMethod || "Razorpay (Online)",
             customerName: selectedInvoiceOrder.address?.fullName || userName || "Valued Patron",
-            customerPhone: selectedInvoiceOrder.address?.phone || userPhone || "+91 98480 22338",
+            customerPhone: selectedInvoiceOrder.address?.phone || userPhone || "",
             customerAddress: selectedInvoiceOrder.address
               ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}`
               : "Registered Delivery Address",

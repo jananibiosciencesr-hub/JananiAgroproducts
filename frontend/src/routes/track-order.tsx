@@ -63,7 +63,7 @@ export function LiveTrackingPage() {
       courier: found?.courier || "Delhivery Air Express",
       awb: found?.awb && found.awb !== "N/A" ? found.awb : "DEL-8492048194",
       destination: found?.address ? `${found.address.city}, ${found.address.state}` : "Bodakdev, Ahmedabad, Gujarat",
-      recipientPhone: found?.address?.phone || user?.phone || "+91 98480 22338",
+      recipientPhone: found?.address?.phone || user?.phone || "",
       expected: found?.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
       riderName: "Ramesh Kumar",
       riderPhone: "+91 98765 43210",
@@ -106,7 +106,7 @@ export function LiveTrackingPage() {
             courier: serverOrder.courier || "Delhivery Air Express & Janani Fleet",
             awb: serverOrder.awb || serverOrder.tracking_id || serverOrder.trackingId || "DEL-8492048194",
             destination: sAddr.city ? `${sAddr.street || ""}, ${sAddr.city}, ${sAddr.state || "India"} - ${sAddr.pincode || ""}` : "Registered Delivery Address, India",
-            recipientPhone: serverOrder.customer_phone || serverOrder.customerPhone || sAddr.phone || user?.phone || "+91 98480 22338",
+            recipientPhone: serverOrder.customer_phone || serverOrder.customerPhone || sAddr.phone || user?.phone || "",
             recipientName: serverOrder.customer_name || serverOrder.customerName || sAddr.fullName || "Valued Patron",
             expected: serverOrder.expected_delivery || serverOrder.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
             riderName: isShipped || isDelivered ? "Ramesh Kumar (Janani Express)" : "Assigning Courier Rider...",
@@ -182,7 +182,7 @@ export function LiveTrackingPage() {
         courier: match.courier || "Delhivery Air Express",
         awb: match.awb && match.awb !== "N/A" ? match.awb : "DEL-8492048194",
         destination: match.address ? `${match.address.streetAddress || ""}, ${match.address.city}, ${match.address.state} - ${match.address.pincode}` : "Registered Delivery Address, India",
-        recipientPhone: match.address?.phone || user?.phone || "+91 98480 22338",
+        recipientPhone: match.address?.phone || user?.phone || "",
         recipientName: match.address?.fullName || "Valued Patron",
         expected: match.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
         riderName: isShipped || isDelivered ? "Ramesh Kumar" : "Assigning Courier Rider...",
@@ -423,7 +423,7 @@ export function LiveTrackingPage() {
             {/* Feature 5: Delivery OTP Card */}
             <DeliveryOtpCard
               initialOtp={activeTracking.otp}
-              recipientPhone={activeTracking.recipientPhone || user?.phone || "+91 98480 22338"}
+              recipientPhone={activeTracking.recipientPhone || user?.phone || ""}
             />
 
             {/* Feature 2, 3, 4: Live Courier Partner & AWB Card */}
