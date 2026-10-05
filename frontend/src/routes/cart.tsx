@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
+import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
@@ -40,7 +41,17 @@ export const Route = createFileRoute("/cart")({
 
 export function CartPage() {
   const navigate = useNavigate();
-  const { cart, updateQuantity, removeFromCart, addToCart, subtotal, cartCount, products: storeProducts } = useStore();
+  const {
+    cart,
+    updateQuantity,
+    removeFromCart,
+    addToCart,
+    subtotal,
+    cartCount,
+    products: storeProducts,
+    wishlist,
+    toggleWishlist,
+  } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   // Coupon State
@@ -101,11 +112,52 @@ export function CartPage() {
     }
   }, [cart, allProducts, removeFromCart]);
 
+  // Active items currently in the cart
+  const activeCartIds = useMemo(() => new Set(Object.keys(cart).map(Number)), [cart]);
+
+  // Combined Saved for Later and Liked (Wishlisted) products not currently in the active cart
   const savedForLaterProducts = useMemo(() => {
-    return savedForLater
-      .map((id) => allProducts.find((p) => p.id === id))
+    const combinedIds = Array.from(new Set([...savedForLater, ...(wishlist || [])]));
+    const availableIds = combinedIds.filter((id) => !activeCartIds.has(id));
+
+    return availableIds
+      .map((id) => {
+        const catalogProd = allProducts.find((p) => p.id === id);
+        if (catalogProd) return catalogProd;
+        const pesticide = ALL_PESTICIDES.find((p) => p.catalogId === id);
+        if (pesticide) {
+          return {
+            id: pesticide.catalogId,
+            slug: pesticide.slug,
+            name: pesticide.title,
+            subtitle: pesticide.technicalName,
+            category: pesticide.category,
+            brand: pesticide.brand,
+            price: pesticide.price,
+            oldPrice: pesticide.oldPrice,
+            discount: pesticide.discount,
+            unit: "Unit",
+            rating: pesticide.rating,
+            reviews: pesticide.reviewsCount,
+            inStock: pesticide.inStock,
+            stockCount: 50,
+            badge: pesticide.badge || "Popular",
+            image: pesticide.image,
+            description: pesticide.description,
+            origin: "Janani Agro",
+            dietaryTags: [],
+            certifications: [],
+            popularity: 90,
+            isNew: false,
+            crops: pesticide.crops,
+            benefits: [],
+            variants: [],
+          } as Product;
+        }
+        return undefined;
+      })
       .filter((p): p is Product => Boolean(p));
-  }, [savedForLater, allProducts]);
+  }, [savedForLater, wishlist, activeCartIds, allProducts]);
 
   // Shipping Calculation
   const freeShippingThreshold = 799;
@@ -172,12 +224,18 @@ export function CartPage() {
   const handleMoveBackToCart = (productId: number, productName: string) => {
     addToCart(productId, 1);
     setSavedForLater((prev) => prev.filter((id) => id !== productId));
+    if (wishlist.includes(productId)) {
+      toggleWishlist(productId);
+    }
     toast.success(`Moved ${productName} back to your active basket!`);
   };
 
-  const handleRemoveFromSaved = (productId: number) => {
+  const handleRemoveFromSaved = (productId: number, productName?: string) => {
     setSavedForLater((prev) => prev.filter((id) => id !== productId));
-    toast.info("Item removed from saved list.");
+    if (wishlist.includes(productId)) {
+      toggleWishlist(productId);
+    }
+    toast.info(productName ? `Removed ${productName} from saved list.` : "Item removed from saved list.");
   };
 
   const finalTotal = Math.max(0, subtotal - discount + shippingFee + giftWrapFee);
@@ -441,7 +499,7 @@ export function CartPage() {
                           Move to Basket
                         </Button>
                         <button
-                          onClick={() => handleRemoveFromSaved(prod.id)}
+                          onClick={() => handleRemoveFromSaved(prod.id, prod.name)}
                           className="p-1.5 text-muted-foreground hover:text-destructive"
                           title="Remove from saved"
                         >
@@ -586,24 +644,90 @@ export function CartPage() {
         </div>
       ) : (
         /* Empty Cart State */
-        <div className="mx-auto max-w-md py-20 text-center space-y-4">
-          <span className="mx-auto grid size-20 place-items-center rounded-full bg-primary/10 text-primary">
-            <ShoppingBag className="size-10" />
-          </span>
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-            Your Basket is Currently Empty
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Looks like you haven't added any pure organic harvests yet. Explore our pantry staples,
-            single-origin oils, and native millets to start filling your basket.
-          </p>
-          <div className="pt-2">
-            <Button asChild className="rounded-full px-8 font-bold shadow-md" size="lg">
-              <Link to="/products">
-                Explore Farm Harvests <ArrowRight className="size-4 ml-1" />
-              </Link>
-            </Button>
+        <div className="space-y-12">
+          <div className="mx-auto max-w-md py-16 text-center space-y-4">
+            <span className="mx-auto grid size-20 place-items-center rounded-full bg-primary/10 text-primary">
+              <ShoppingBag className="size-10" />
+            </span>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+              Your Basket is Currently Empty
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              {savedForLaterProducts.length > 0
+                ? "You have saved or liked harvests waiting below. Move them into your active basket or explore our full catalog."
+                : "Looks like you haven't added any pure organic harvests yet. Explore our pantry staples, single-origin oils, and native millets to start filling your basket."}
+            </p>
+            <div className="pt-2">
+              <Button asChild className="rounded-full px-8 font-bold shadow-md" size="lg">
+                <Link to="/products">
+                  Explore Farm Harvests <ArrowRight className="size-4 ml-1" />
+                </Link>
+              </Button>
+            </div>
           </div>
+
+          {savedForLaterProducts.length > 0 && (
+            <div className="max-w-4xl mx-auto pt-6 border-t border-border space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-bold text-xl text-foreground flex items-center gap-2">
+                  <Bookmark className="size-5 text-brand-leaf" /> Saved for Later ({savedForLaterProducts.length})
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {savedForLaterProducts.map((prod) => (
+                  <div
+                    key={prod.id}
+                    className="flex items-center justify-between p-4 rounded-2xl border border-border bg-card shadow-xs hover:border-primary/30 transition"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={getProductImage(prod.name || prod.category, prod.image)}
+                        alt={prod.name}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = pantryImage;
+                        }}
+                        className="size-14 rounded-xl object-cover border border-border shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <Link
+                          to="/products/$slug"
+                          params={{ slug: prod.slug }}
+                          className="font-bold text-xs text-foreground hover:text-primary transition truncate block"
+                        >
+                          {prod.name}
+                        </Link>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          ₹{prod.price}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground ml-1.5 line-through">
+                          ₹{prod.oldPrice}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleMoveBackToCart(prod.id, prod.name)}
+                        className="h-8 rounded-xl text-xs font-bold hover:bg-primary hover:text-primary-foreground transition"
+                      >
+                        Move to Basket
+                      </Button>
+                      <button
+                        onClick={() => handleRemoveFromSaved(prod.id, prod.name)}
+                        className="p-1.5 text-muted-foreground hover:text-destructive transition"
+                        title="Remove from saved"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
