@@ -12,6 +12,8 @@ export default defineConfig({
       server: { entry: "server" },
       prerender: {
         enabled: false,
+        concurrency: 2,
+        failOnError: false,
       },
     }),
     react(),

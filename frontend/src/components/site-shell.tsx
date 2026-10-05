@@ -67,6 +67,16 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdminRoute = pathname.startsWith("/admin");
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 15);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Automatically close mega menu and mobile menu whenever route changes
   useEffect(() => {
@@ -128,7 +138,12 @@ function Shell({ children }: { children: React.ReactNode }) {
 
       {/* Sticky Main Header - Pure White (#FFFFFF) */}
       <header
-        className="sticky top-0 z-40 border-b border-[#0B6B35]/20 bg-white/95 backdrop-blur-xl"
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? "border-b border-[#0B6B35]/30 bg-white/98 shadow-md backdrop-blur-xl"
+            : "border-b border-[#0B6B35]/20 bg-white/95 backdrop-blur-xl shadow-xs"
+        }`}
+        style={{ position: "-webkit-sticky", position: "sticky", top: 0 }}
         onMouseLeave={() => setIsMegaMenuOpen(false)}
       >
         <div className="mx-auto grid h-16 sm:h-18 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
