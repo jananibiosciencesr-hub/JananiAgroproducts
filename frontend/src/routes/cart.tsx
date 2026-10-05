@@ -63,7 +63,7 @@ export function CartPage() {
         // ignore
       }
     }
-    return [4, 8]; // Pre-seed 2 items for demonstration
+    return [];
   });
 
   useEffect(() => {

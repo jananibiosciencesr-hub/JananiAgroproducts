@@ -34,6 +34,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Record<number, number>>(() => {
     if (typeof window !== "undefined") {
       try {
+        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+        const guestCleaned = localStorage.getItem("janani_guest_cart_purged_v3");
+        // If visitor is not logged in / registered, purge any leftover stale demo cart from localStorage
+        if (!storedUser && !guestCleaned) {
+          localStorage.removeItem("janani_cart");
+          localStorage.removeItem("janani_saved_for_later");
+          localStorage.setItem("janani_guest_cart_purged_v3", "true");
+          return {};
+        }
         const stored = localStorage.getItem("janani_cart");
         if (stored) return JSON.parse(stored);
       } catch (e) {
@@ -71,6 +80,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem("janani_auth_user");
             localStorage.removeItem("janani_token");
             localStorage.removeItem("janani_auth_token");
+            localStorage.removeItem("janani_cart");
+            localStorage.removeItem("janani_saved_for_later");
             return null;
           }
           return parsed;
@@ -108,6 +119,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Auto-purge any stale legacy demo data from customer's browser localStorage
     if (typeof window !== "undefined") {
       try {
+        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+        const guestCleaned = localStorage.getItem("janani_guest_cart_purged_v3");
+        if (!storedUser && !guestCleaned) {
+          localStorage.removeItem("janani_cart");
+          localStorage.removeItem("janani_saved_for_later");
+          localStorage.setItem("janani_guest_cart_purged_v3", "true");
+          setCart({});
+        }
+
         const legacyKeys = ["janani_saved_addresses", "janani_customer_orders", "janani_latest_order", "janani_pending_checkout"];
         legacyKeys.forEach((key) => {
           const item = localStorage.getItem(key);
@@ -218,11 +238,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const logoutUser = () => {
     setUser(null);
+    setCart({});
     if (typeof window !== "undefined") {
       localStorage.removeItem("janani_token");
       localStorage.removeItem("janani_auth_token");
       localStorage.removeItem("janani_user");
       localStorage.removeItem("janani_auth_user");
+      localStorage.removeItem("janani_cart");
+      localStorage.removeItem("janani_saved_for_later");
+      localStorage.removeItem("janani_pending_checkout");
     }
     toast.info("You have been signed out.");
   };
