@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -19,9 +20,9 @@
  */
 
 @theme inline {
-  --font-display: "Playfair Display", serif;
-  --font-sans: "Poppins", sans-serif;
-  --font-button: "Montserrat", sans-serif;
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-button: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -100,7 +101,7 @@
   --accent-foreground: #075B32;
   --destructive: #d32f2f;
   --destructive-foreground: #ffffff;
-  --border: #D99A12;
+  --border: transparent;
   --input: #0B6B35;
   --ring: #4FAE2A;
   --brand-forest: #075B32;
@@ -167,9 +168,10 @@
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    border-color: transparent;
   }
 
+  html,
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -177,7 +179,13 @@
     letter-spacing: 0;
     overflow-x: hidden;
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: 0; }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: 0;
+  }
+  button, input, optgroup, select, textarea {
+    font-family: inherit;
+  }
   ::selection { background: var(--brand-gold); color: var(--forest); }
 }
 
@@ -210,3 +218,65 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* Global Zero-Gap & Compact Layout System */
+main {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+main > section,
+main section {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Eliminate excessive section vertical paddings across all views */
+.py-12, .py-14, .py-16, .py-20, .py-24,
+.sm\:py-14, .sm\:py-16, .sm\:py-20, .sm\:py-24,
+.lg\:py-24, .lg\:py-28 {
+  padding-top: clamp(0.75rem, 1.5vw, 1.25rem) !important;
+  padding-bottom: clamp(0.75rem, 1.5vw, 1.25rem) !important;
+}
+
+/* Remove oversized margins and gaps between components */
+.mb-8, .mb-10, .mb-12, .mb-14, .mb-16,
+.sm\:mb-8, .sm\:mb-10, .sm\:mb-12 {
+  margin-bottom: 0.75rem !important;
+}
+
+.mt-8, .mt-10, .mt-12, .mt-14, .mt-16, .mt-20,
+.sm\:mt-8, .sm\:mt-10, .sm\:mt-12, .sm\:mt-14 {
+  margin-top: 0.75rem !important;
+}
+
+.gap-10, .gap-12, .gap-14, .gap-16,
+.lg\:gap-12, .lg\:gap-14 {
+  gap: 1rem !important;
+}
+
+/* Remove all borders from sections, cards, decorative boxes, and buttons */
+section,
+section > div,
+.rounded-2xl,
+.rounded-3xl,
+.border,
+.border-t,
+.border-b,
+.border-l,
+.border-r,
+.border-2,
+.border-4 {
+  border-width: 0 !important;
+  border-color: transparent !important;
+}
+
+/* Retain clean borders only for form inputs/selects for usability */
+input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+select,
+textarea {
+  border-width: 1px !important;
+  border-color: #e2e8f0 !important;
+}
+
+

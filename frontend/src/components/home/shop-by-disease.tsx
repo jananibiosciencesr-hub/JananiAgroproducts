@@ -61,12 +61,12 @@ export function ShopByDisease() {
   };
 
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-white">
-      <div className="mx-auto max-w-7xl rounded-3xl bg-white border border-[#0B6B35]/20 p-6 sm:p-8 lg:p-10 shadow-xs relative">
+    <section className="px-4 sm:px-6 lg:px-8 py-2 sm:py-3 bg-white">
+      <div className="mx-auto max-w-7xl bg-white p-2 sm:p-3 relative">
         {/* Header row: Title, Subtitle, and View All link */}
-        <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8">
+        <div className="flex items-center justify-between gap-3 mb-2 sm:mb-2.5">
           <div>
-            <h2 className="text-xl sm:text-2xl md:text-[1.65rem] font-black text-[#075B32] tracking-tight">
+            <h2 className="text-xl sm:text-2xl md:text-[1.5rem] font-black text-[#075B32] tracking-tight">
               Shop By Disease & Pest
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-0.5 font-medium">
@@ -81,7 +81,7 @@ export function ShopByDisease() {
                 type="button"
                 onClick={() => scroll("left")}
                 aria-label="Scroll left"
-                className="size-8 rounded-full border border-[#0B6B35]/25 bg-white text-[#075B32] shadow-xs flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] hover:scale-105 active:scale-95"
+                className="size-8 rounded-full bg-slate-100 text-[#075B32] flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] hover:scale-105 active:scale-95"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -89,7 +89,7 @@ export function ShopByDisease() {
                 type="button"
                 onClick={() => scroll("right")}
                 aria-label="Scroll right"
-                className="size-8 rounded-full border border-[#0B6B35]/25 bg-white text-[#075B32] shadow-xs flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] hover:scale-105 active:scale-95"
+                className="size-8 rounded-full bg-slate-100 text-[#075B32] flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] hover:scale-105 active:scale-95"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -120,11 +120,7 @@ export function ShopByDisease() {
             >
               {/* Circular Avatar / Card */}
               <div
-                className={`size-24 sm:size-28 md:size-32 rounded-full bg-white shadow-xs flex items-center justify-center p-1 sm:p-1.5 transition-all duration-300 group-hover:scale-105 group-hover:shadow-md relative overflow-hidden ${
-                  disease.isPopular
-                    ? "ring-2 ring-[#075B32] shadow-emerald-50"
-                    : "ring-1 ring-[#0B6B35]/20 group-hover:ring-2 group-hover:ring-[#D99A12]"
-                }`}
+                className="size-24 sm:size-28 md:size-32 rounded-full bg-[#f4f7f2] flex items-center justify-center p-1.5 sm:p-2 transition-all duration-300 group-hover:scale-105 group-hover:bg-[#ebf3e7] relative overflow-hidden"
               >
                 <img
                   src={disease.image}

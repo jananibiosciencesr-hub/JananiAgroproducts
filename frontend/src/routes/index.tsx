@@ -32,6 +32,7 @@ import { HeroBannerCarousel } from "@/components/home/hero-banner-carousel";
 import { ShopByCrop } from "@/components/home/shop-by-crop";
 import { ShopByDisease } from "@/components/home/shop-by-disease";
 import { ProductQuickViewModal } from "@/components/shop/product-quick-view-modal";
+import { GrowingPlantAnimation } from "@/components/home/growing-plant-animation";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -75,8 +76,42 @@ export function HomePage() {
     }
   };
 
-  // Testimonial Carousel State
-  const [testimonialIdx, setTestimonialIdx] = useState(0);
+  // Testimonial Carousel Ref & State
+  const testimonialsScrollRef = useRef<HTMLDivElement>(null);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+
+  const scrollTestimonials = (direction: "left" | "right") => {
+    if (testimonialsScrollRef.current) {
+      const container = testimonialsScrollRef.current;
+      const scrollAmount = container.clientWidth > 768 ? 400 : 310;
+      container.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const handleTestimonialScroll = () => {
+    if (testimonialsScrollRef.current) {
+      const container = testimonialsScrollRef.current;
+      const scrollLeft = container.scrollLeft;
+      const cardWidth = container.clientWidth > 768 ? 400 : 310;
+      const idx = Math.round(scrollLeft / cardWidth);
+      setActiveTestimonial(Math.min(Math.max(0, idx), 4));
+    }
+  };
+
+  const scrollToTestimonialIndex = (idx: number) => {
+    if (testimonialsScrollRef.current) {
+      const container = testimonialsScrollRef.current;
+      const cardWidth = container.clientWidth > 768 ? 400 : 310;
+      container.scrollTo({
+        left: idx * cardWidth,
+        behavior: "smooth",
+      });
+      setActiveTestimonial(idx);
+    }
+  };
 
   // 11 Agri Products Categories (From user taxonomy)
   const categoryCards = [
@@ -224,7 +259,7 @@ export function HomePage() {
     },
   ];
 
-  // 3 Real Indian Farmer Testimonials (From Mockup)
+  // 5 Real Indian Farmer Testimonials
   const testimonials = [
     {
       id: 1,
@@ -253,6 +288,24 @@ export function HomePage() {
         "Good quality products and excellent results. My cotton crop showed great improvement.",
       stars: 5,
     },
+    {
+      id: 4,
+      name: "Suresh Patil",
+      location: "Sugarcane Farmer, Maharashtra",
+      image: "/images/farmer_suresh.jpg",
+      quote:
+        "Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!",
+      stars: 5,
+    },
+    {
+      id: 5,
+      name: "Baldev Singh",
+      location: "Wheat & Paddy Farmer, Punjab",
+      image: "/images/farmer_baldev.jpg",
+      quote:
+        "Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.",
+      stars: 5,
+    },
   ];
 
   return (
@@ -265,17 +318,17 @@ export function HomePage() {
       {/* ========================================================================= */}
       {/* 2. EXPLORE OUR PRODUCT CATEGORIES                                         */}
       {/* ========================================================================= */}
-      <section className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white relative">
+      <section className="py-4 sm:py-5 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className="mx-auto max-w-7xl">
           {/* Section Header */}
-          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+          <div className="text-center max-w-2xl mx-auto mb-3 sm:mb-4">
             <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
               AGRI PRODUCTS
             </p>
-            <h2 className="mt-1 text-2xl sm:text-4xl font-black text-[#075B32] tracking-tight">
+            <h2 className="mt-0.5 text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
               PRODUCT <span className="text-[#D99A12]">CATEGORIES</span>
             </h2>
-            <p className="mt-2 text-xs sm:text-sm text-slate-600">
+            <p className="mt-1 text-xs sm:text-sm text-slate-600">
               Natural, biological, and effective solutions for every stage of crop growth.
             </p>
           </div>
@@ -287,7 +340,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollCategories("left")}
               aria-label="Previous Categories"
-              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full border border-[#0B6B35]/25 bg-white shadow-md text-[#075B32] hover:text-[#4FAE2A] hover:border-[#D99A12] hover:bg-[#F8FAEE] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -297,7 +350,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollCategories("right")}
               aria-label="Next Categories"
-              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full border border-[#0B6B35]/25 bg-white shadow-md text-[#075B32] hover:text-[#4FAE2A] hover:border-[#D99A12] hover:bg-[#F8FAEE] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -313,7 +366,7 @@ export function HomePage() {
                   <Link
                     key={cat.id}
                     to={cat.link}
-                    className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-5 rounded-2xl border border-[#0B6B35]/20 bg-white shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:border-[#D99A12] hover:bg-[#F8FAEE] group"
+                    className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1.5 group"
                   >
                     <div className="size-16 rounded-2xl bg-[#4FAE2A]/10 text-[#4FAE2A] flex items-center justify-center mb-3.5 group-hover:scale-110 group-hover:bg-[#075B32] group-hover:text-white transition-all duration-300">
                       <IconComponent className="size-8" />
@@ -335,15 +388,15 @@ export function HomePage() {
       {/* ========================================================================= */}
       {/* 3. FEATURED PRODUCTS SECTION                                              */}
       {/* ========================================================================= */}
-      <section className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-[#0B6B35]/15 relative">
+      <section className="py-4 sm:py-5 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className="mx-auto max-w-7xl">
           {/* Header Row */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-3 sm:mb-4">
             <div>
-              <h2 className="text-2xl sm:text-4xl font-black text-[#075B32] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
                 FEATURED <span className="text-[#D99A12]">PRODUCTS</span>
               </h2>
-              <p className="mt-1 text-xs sm:text-sm text-slate-600">
+              <p className="mt-0.5 text-xs sm:text-sm text-slate-600">
                 Our most trusted and effective products for healthier crops and higher yields.
               </p>
             </div>
@@ -352,7 +405,7 @@ export function HomePage() {
               asChild
               variant="outline"
               size="sm"
-              className="self-start sm:self-auto rounded-full font-bold text-xs border-[#0B6B35]/40 hover:border-[#D99A12] hover:bg-[#F8FAEE] text-[#075B32]"
+              className="self-start sm:self-auto rounded-full font-bold text-xs border-0 bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32]"
             >
               <Link to="/products">
                 View All Products <ArrowRight className="size-3.5 ml-1 text-[#4FAE2A]" />
@@ -367,7 +420,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollProducts("left")}
               aria-label="Previous Products"
-              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full border border-[#0B6B35]/25 bg-white shadow-md text-[#075B32] hover:text-[#4FAE2A] hover:border-[#D99A12] hover:bg-[#F8FAEE] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -377,7 +430,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollProducts("right")}
               aria-label="Next Products"
-              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full border border-[#0B6B35]/25 bg-white shadow-md text-[#075B32] hover:text-[#4FAE2A] hover:border-[#D99A12] hover:bg-[#F8FAEE] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -396,10 +449,10 @@ export function HomePage() {
                 return (
                   <div
                     key={prod.id}
-                    className="snap-start flex-none w-[calc(50%-10px)] min-w-[155px] sm:w-[245px] flex flex-col justify-between rounded-none border border-gray-200 bg-white shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden"
+                    className="snap-start flex-none w-[calc(50%-10px)] min-w-[155px] sm:w-[245px] flex flex-col justify-between rounded-2xl bg-[#f4f7f2] shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden"
                   >
                     {/* Bottle Image with natural backdrop */}
-                    <div className="relative aspect-square w-full bg-white p-2 sm:p-2.5 overflow-hidden flex items-center justify-center rounded-none">
+                    <div className="relative aspect-square w-full bg-white p-2 sm:p-2.5 overflow-hidden flex items-center justify-center">
                       <Link
                         to={prod.link}
                         className="w-full h-full flex items-center justify-center"
@@ -451,7 +504,7 @@ export function HomePage() {
                     </div>
 
                     {/* Product Info & CTA */}
-                    <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between border-t border-gray-100">
+                    <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
                       <div>
                         <Link
                           to={prod.link}
@@ -516,44 +569,28 @@ export function HomePage() {
       {/* ========================================================================= */}
       {/* 4. WHY CHOOSE JANANI AGRO PRODUCTS?                                       */}
       {/* ========================================================================= */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden border-t border-[#0B6B35]/15">
+      <section className="py-4 sm:py-6 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
         <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-            {/* Left Column: Golden Circular Sprout Photo */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
+            {/* Left Column: Dynamic Growing Plant Animation */}
             <div className="lg:col-span-5 flex justify-center">
-              <div className="relative">
-                {/* Floating Decorative Gold Circles */}
-                <div className="absolute -inset-3 sm:-inset-4 rounded-full border-2 border-dashed border-[#D99A12]/40 animate-[spin_40s_linear_infinite]" />
-                <div className="absolute -inset-7 sm:-inset-8 rounded-full border border-[#4FAE2A]/30" />
-                
-                {/* Circular Sprout Root Photo */}
-                <div className="relative size-60 sm:size-80 rounded-full overflow-hidden border-4 border-[#D99A12] shadow-2xl shadow-[#064A29]/20">
-                  <img
-                    src="/images/sprout_roots_circle.jpg"
-                    alt="Plant Sprout Root Health"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#064A29]/30 via-transparent to-transparent pointer-events-none" />
-                </div>
-              </div>
+              <GrowingPlantAnimation />
             </div>
 
             {/* Right Column: Content & 4 Features */}
-            <div className="lg:col-span-7 space-y-4 sm:space-y-6">
-              <h2 className="text-2xl sm:text-4xl font-black text-[#075B32] tracking-tight leading-[1.12]">
+            <div className="lg:col-span-7 space-y-2 sm:space-y-3">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight leading-[1.12]">
                 WHY CHOOSE<br />
                 <span className="text-[#075B32]">JANANI </span>
                 <span className="text-[#D99A12]">AGRO PRODUCTS?</span>
               </h2>
 
-              <p className="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed max-w-xl">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
                 We are committed to providing high-quality, eco-friendly and effective agricultural solutions for sustainable farming.
               </p>
 
               {/* 4 Features Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-1">
                 {[
                   {
                     title: "Natural Formulations",
@@ -578,9 +615,9 @@ export function HomePage() {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white border border-[#0B6B35]/20 hover:bg-[#F8FAEE] hover:border-[#D99A12] transition-colors shadow-xs"
+                    className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-colors"
                   >
-                    <div className="size-10 rounded-full border border-[#4FAE2A] bg-white text-[#075B32] flex items-center justify-center shrink-0 shadow-xs">
+                    <div className="size-10 rounded-full bg-white text-[#075B32] flex items-center justify-center shrink-0 shadow-xs">
                       <item.icon className="size-5" />
                     </div>
                     <div>
@@ -602,65 +639,102 @@ export function HomePage() {
       {/* ========================================================================= */}
       {/* 5. WHAT OUR FARMERS SAY (TESTIMONIALS)                                    */}
       {/* ========================================================================= */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-[#0B6B35]/15 relative">
+      <section className="py-4 sm:py-6 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-4xl font-black text-[#075B32] tracking-tight">
+          <div className="text-center max-w-2xl mx-auto mb-3 sm:mb-4">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
               WHAT OUR <span className="text-[#D99A12]">FARMERS SAY</span>
             </h2>
-            <p className="mt-1 text-xs sm:text-sm text-slate-600">
+            <p className="mt-0.5 text-xs sm:text-sm text-slate-600">
               Real experiences from farmers who trust Janani Agro Products.
             </p>
           </div>
 
-          {/* Testimonial Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {testimonials.map((t) => (
-              <div
-                key={t.id}
-                className="flex flex-col justify-between p-6 rounded-3xl border border-[#0B6B35]/20 bg-white shadow-xs hover:shadow-md hover:border-[#D99A12] hover:bg-[#F8FAEE] transition-all duration-300 hover:-translate-y-1"
-              >
-                <div>
-                  {/* Farmer Headshot + Rating Stars */}
-                  <div className="flex items-center gap-3.5 mb-4">
-                    <img
-                      src={t.image}
-                      alt={t.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-14 rounded-full object-cover border-2 border-[#4FAE2A] shadow-xs"
-                    />
-                    <div>
-                      {/* 5 Stars */}
-                      <div className="flex items-center gap-1 text-[#E7A91A]">
-                        {Array.from({ length: t.stars }).map((_, s) => (
-                          <Star key={s} className="size-3.5 fill-current" />
-                        ))}
-                      </div>
-                      <h3 className="text-sm font-bold text-[#075B32] mt-0.5">
-                        {t.name}
-                      </h3>
-                      <p className="text-[11px] text-slate-500 font-medium">
-                        {t.location}
-                      </p>
-                    </div>
-                  </div>
+          {/* Testimonial Cards Carousel Container */}
+          <div className="relative">
+            {/* Left Nav Arrow Button */}
+            <button
+              type="button"
+              onClick={() => scrollTestimonials("left")}
+              aria-label="Previous Testimonials"
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
 
-                  {/* Quote */}
-                  <p className="text-xs sm:text-[13px] text-slate-700 italic leading-relaxed">
-                    "{t.quote}"
-                  </p>
+            {/* Right Nav Arrow Button */}
+            <button
+              type="button"
+              onClick={() => scrollTestimonials("right")}
+              aria-label="Next Testimonials"
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+            >
+              <ChevronRight className="size-5" />
+            </button>
+
+            {/* Scrollable Testimonials Strip */}
+            <div
+              ref={testimonialsScrollRef}
+              onScroll={handleTestimonialScroll}
+              className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none snap-x snap-mandatory"
+            >
+              {testimonials.map((t) => (
+                <div
+                  key={t.id}
+                  className="snap-start flex-none w-[290px] sm:w-[350px] md:w-[380px] flex flex-col justify-between p-6 rounded-3xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div>
+                    {/* Farmer Headshot + Rating Stars */}
+                    <div className="flex items-center gap-3.5 mb-4">
+                      <img
+                        src={t.image}
+                        alt={t.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="size-14 rounded-full object-cover shadow-xs"
+                      />
+                      <div>
+                        {/* 5 Stars */}
+                        <div className="flex items-center gap-1 text-[#E7A91A]">
+                          {Array.from({ length: t.stars }).map((_, s) => (
+                            <Star key={s} className="size-3.5 fill-current" />
+                          ))}
+                        </div>
+                        <h3 className="text-sm font-bold text-[#075B32] mt-0.5">
+                          {t.name}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          {t.location}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Quote */}
+                    <p className="text-xs sm:text-[13px] text-slate-700 italic leading-relaxed">
+                      "{t.quote}"
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* Slider Pagination Dots */}
-          <div className="mt-10 flex items-center justify-center gap-2">
-            <span className="size-2 rounded-full bg-slate-300" />
-            <span className="size-2.5 rounded-full bg-[#075B32] ring-2 ring-[#D99A12]" />
-            <span className="size-2.5 rounded-full bg-slate-300" />
+          {/* Slider Pagination Indicator Dots */}
+          <div className="mt-2 flex items-center justify-center gap-2">
+            {testimonials.map((t, idx) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => scrollToTestimonialIndex(idx)}
+                aria-label={`Go to testimonial ${idx + 1}`}
+                className={`transition-all duration-300 rounded-full h-2 cursor-pointer ${
+                  activeTestimonial === idx
+                    ? "w-6 bg-[#075B32]"
+                    : "w-2 bg-slate-300 hover:bg-slate-400"
+                }`}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -668,9 +742,9 @@ export function HomePage() {
       {/* ========================================================================= */}
       {/* 6. NATURAL CARE FOR HEALTHY HARVESTS PROMO BANNER                         */}
       {/* ========================================================================= */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-white border-t border-[#0B6B35]/15">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-[#D99A12]/35 bg-gradient-to-r from-[#F8FAEE] via-white to-[#F8FAEE] p-8 sm:p-12 shadow-sm relative overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <section className="py-3 sm:py-5 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="mx-auto max-w-7xl rounded-3xl bg-gradient-to-r from-[#F8FAEE] via-white to-[#F8FAEE] p-4 sm:p-6 shadow-sm relative overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
             {/* Left Content */}
             <div className="lg:col-span-6 space-y-4">
               {/* Brand Logo Seal */}
@@ -694,7 +768,7 @@ export function HomePage() {
               <div className="pt-2">
                 <Link
                   to="/products"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#075B32] hover:bg-[#064A29] text-white border border-[#D99A12] font-bold text-xs sm:text-sm px-8 py-3.5 shadow-md transition-all hover:scale-105 active:scale-95 group"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-xs sm:text-sm px-8 py-3.5 shadow-md transition-all hover:scale-105 active:scale-95 group"
                 >
                   <span>Explore Now</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
@@ -710,7 +784,7 @@ export function HomePage() {
                   alt="Healthy Harvest Bounty (Tomatoes, Mangoes, Cotton)"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto object-cover rounded-3xl shadow-lg border border-[#D99A12]/40 transition-transform duration-700 hover:scale-105"
+                  className="w-full h-auto object-cover rounded-3xl shadow-lg transition-transform duration-700 hover:scale-105"
                 />
               </div>
             </div>

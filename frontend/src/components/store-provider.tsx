@@ -153,6 +153,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [cart]);
 
+  // Auto-prune any orphan or invalid cart items that do not exist in the active product catalog
+  useEffect(() => {
+    if (liveProducts && liveProducts.length > 0 && Object.keys(cart).length > 0) {
+      const validEntries = Object.entries(cart).filter(([id, qty]) => {
+        const numId = Number(id);
+        return !isNaN(numId) && qty > 0 && liveProducts.some((p) => p.id === numId);
+      });
+      if (validEntries.length !== Object.keys(cart).length) {
+        const sanitized = Object.fromEntries(validEntries);
+        setCart(sanitized);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("janani_cart", JSON.stringify(sanitized));
+        }
+      }
+    }
+  }, [liveProducts, cart]);
+
   // Sync wishlist to localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -238,16 +255,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     refreshProducts,
     cart,
     wishlist,
-    cartCount: Object.values(cart).reduce((sum, qty) => sum + qty, 0),
+    cartCount: Object.entries(cart).reduce((sum, [id, qty]) => {
+      const numId = Number(id);
+      const exists = liveProducts.some((p) => p.id === numId);
+      return exists && qty > 0 ? sum + qty : sum;
+    }, 0),
     subtotal: Object.entries(cart).reduce((sum, [id, qty]) => sum + (liveProducts.find((p) => p.id === Number(id))?.price ?? 0) * qty, 0),
     user,
     isAuthenticated: !!user,
     addToCart: (id: number, quantity = 1) => {
-      setCart((current) => ({ ...current, [id]: (current[id] ?? 0) + quantity }));
+      const numId = Number(id);
+      if (isNaN(numId) || quantity <= 0) return;
+      setCart((current) => ({ ...current, [numId]: (current[numId] ?? 0) + quantity }));
       toast.success("Added to your cart");
     },
-    updateQuantity: (id: number, quantity: number) => setCart((current) => quantity <= 0 ? Object.fromEntries(Object.entries(current).filter(([key]) => Number(key) !== id)) : ({ ...current, [id]: quantity })),
-    removeFromCart: (id: number) => setCart((current) => Object.fromEntries(Object.entries(current).filter(([key]) => Number(key) !== id))),
+    updateQuantity: (id: number, quantity: number) => {
+      const numId = Number(id);
+      if (isNaN(numId)) return;
+      setCart((current) =>
+        quantity <= 0
+          ? Object.fromEntries(Object.entries(current).filter(([key]) => Number(key) !== numId))
+          : { ...current, [numId]: quantity }
+      );
+    },
+    removeFromCart: (id: number) => {
+      const numId = Number(id);
+      setCart((current) =>
+        Object.fromEntries(
+          Object.entries(current).filter(([key]) => {
+            const k = Number(key);
+            return isNaN(k) ? false : k !== numId;
+          })
+        )
+      );
+    },
     toggleWishlist: (id: number) => setWishlist((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]),
     clearWishlist: () => {
       setWishlist([]);

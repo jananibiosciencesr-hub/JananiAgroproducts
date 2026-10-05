@@ -5,9 +5,9 @@ dotenv.config();
 
 const DB_HOST = process.env.DB_HOST || "localhost";
 const DB_PORT = Number(process.env.DB_PORT) || 3306;
-const DB_USER = process.env.DB_USER || "u409810820_Jananiagropro";
-const DB_PASSWORD = process.env.DB_PASSWORD || "Jananiagro@123";
-const DB_NAME = process.env.DB_NAME || "u409810820_Jananiagro";
+const DB_USER = process.env.DB_USER ?? "u409810820_Jananiagropro";
+const DB_PASSWORD = process.env.DB_PASSWORD ?? "Jananiagro@123";
+const DB_NAME = process.env.DB_NAME ?? "u409810820_Jananiagro";
 
 export async function initDatabase() {
   let connection;

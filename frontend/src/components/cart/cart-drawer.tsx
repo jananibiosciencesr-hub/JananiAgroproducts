@@ -36,6 +36,8 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         item.product !== undefined
     );
 
+  const actualCartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
+
   const freeShippingThreshold = 799;
   const amountToFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
   const progressPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
@@ -57,7 +59,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           <div className="flex items-center gap-2.5">
             <ShoppingBag className="size-5 text-brand-leaf" />
             <h3 className="font-display font-bold text-lg text-foreground">
-              Your Basket ({cartCount})
+              Your Basket ({actualCartCount})
             </h3>
           </div>
           <button

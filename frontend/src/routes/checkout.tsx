@@ -235,6 +235,10 @@ export function CheckoutPage() {
       );
   }, [cart, allProducts]);
 
+  const actualCartCount = useMemo(() => {
+    return cartItems.reduce((sum, item) => sum + item.qty, 0);
+  }, [cartItems]);
+
   // Financial Calculations
   const standardShippingFee = subtotal >= 799 || subtotal === 0 ? 0 : 60;
   // Slot surcharge: express priority is free if subtotal >= 1200
@@ -814,7 +818,7 @@ export function CheckoutPage() {
           <div className="rounded-2xl border border-border bg-card p-4 shadow-xs mb-4">
             <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex justify-between">
               <span>Items in Basket</span>
-              <span className="font-mono">{cartCount} Total</span>
+              <span className="font-mono">{actualCartCount} Total</span>
             </h4>
             <div className="max-h-48 overflow-y-auto divide-y divide-border/60 pr-1 mt-2 space-y-1">
               {cartItems.map(({ product, qty }) => (
@@ -845,7 +849,7 @@ export function CheckoutPage() {
 
           {/* Payment & Tax Summary Card */}
           <PaymentSummaryCard
-            cartItemsCount={cartCount}
+            cartItemsCount={actualCartCount}
             subtotal={subtotal}
             shippingFee={standardShippingFee}
             slotFee={slotFee}

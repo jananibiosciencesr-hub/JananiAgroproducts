@@ -84,6 +84,23 @@ export function CartPage() {
       );
   }, [cart, allProducts]);
 
+  // Actual total quantity of verified items in the basket
+  const actualCartCount = useMemo(() => {
+    return cartItems.reduce((sum, item) => sum + item.qty, 0);
+  }, [cartItems]);
+
+  // Auto-remove any orphan or non-existent product IDs from the cart
+  useEffect(() => {
+    if (allProducts && allProducts.length > 0 && Object.keys(cart).length > 0) {
+      const orphanIds = Object.keys(cart).filter(
+        (idStr) => !allProducts.some((p) => p.id === Number(idStr))
+      );
+      if (orphanIds.length > 0) {
+        orphanIds.forEach((idStr) => removeFromCart(Number(idStr)));
+      }
+    }
+  }, [cart, allProducts, removeFromCart]);
+
   const savedForLaterProducts = useMemo(() => {
     return savedForLater
       .map((id) => allProducts.find((p) => p.id === id))
@@ -184,18 +201,18 @@ export function CartPage() {
             <ShoppingBag className="size-4 text-brand-leaf" /> Harvest Basket
           </span>
           <h1 className="mt-1.5 font-display text-3xl sm:text-4xl font-bold text-foreground">
-            Shopping Cart ({cartCount} {cartCount === 1 ? "item" : "items"})
+            Shopping Cart ({actualCartCount} {actualCartCount === 1 ? "item" : "items"})
           </h1>
         </div>
 
-        {cartItems.length > 0 && (
+        {actualCartCount > 0 && (
           <Button asChild variant="outline" size="sm" className="rounded-xl text-xs font-semibold">
             <Link to="/products">← Continue Shopping</Link>
           </Button>
         )}
       </div>
 
-      {cartItems.length > 0 ? (
+      {actualCartCount > 0 ? (
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_400px] items-start">
           {/* Left Column: Free Shipping Bar, Cart Items List, Gift Wrap, Save for Later */}
           <div className="space-y-6">
@@ -447,7 +464,7 @@ export function CartPage() {
 
               <div className="space-y-3 text-xs sm:text-sm">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Bag Subtotal ({cartCount} items)</span>
+                  <span>Bag Subtotal ({actualCartCount} {actualCartCount === 1 ? "item" : "items"})</span>
                   <span className="font-semibold font-mono text-foreground">₹{subtotal}</span>
                 </div>
 

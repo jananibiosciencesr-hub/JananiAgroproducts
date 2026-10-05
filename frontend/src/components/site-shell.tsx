@@ -131,7 +131,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         className="sticky top-0 z-40 border-b border-[#0B6B35]/20 bg-white/95 backdrop-blur-xl"
         onMouseLeave={() => setIsMegaMenuOpen(false)}
       >
-        <div className="mx-auto grid h-20 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
+        <div className="mx-auto grid h-16 sm:h-18 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
           <Brand />
           
           <nav className="hidden items-center justify-center gap-6 xl:flex" aria-label="Main navigation">
@@ -190,25 +190,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               {cartCount > 0 && <Count value={cartCount} />}
             </Button>
 
-            {/* Get Quote Pill CTA Button - Deep Forest Green with Gold Accent */}
-            <Button
-              asChild
-              size="sm"
-              className="hidden sm:inline-flex bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-xs rounded-full px-5 py-2 border border-[#D99A12] shadow-sm transition hover:scale-105 active:scale-95"
-            >
-              <Link to="/contact">Get Quote</Link>
-            </Button>
-            
-            {user && (
-              <Link
-                to="/wallet"
-                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-bold shadow-xs"
-                title="Janani Farm Wallet & Rewards"
-              >
-                <Wallet className="size-3.5 text-emerald-600" />
-                <span>₹{user.walletBalance || 0}</span>
-              </Link>
-            )}
+
 
             {user ? (
               <Link
@@ -381,13 +363,13 @@ function Footer() {
   ];
 
   return (
-    <footer className="relative bg-[#064A29] text-white pt-12 pb-16 md:pb-8 overflow-hidden select-none">
+    <footer className="relative bg-[#064A29] text-white pt-6 pb-12 md:pb-6 overflow-hidden select-none">
       {/* Top Graceful Wavy Ribbon Curve */}
       <div className="absolute top-0 inset-x-0 overflow-hidden leading-none pointer-events-none -translate-y-[1px]">
         <svg
           viewBox="0 0 1200 120"
           preserveAspectRatio="none"
-          className="relative block w-full h-10 sm:h-14 text-[#064A29] fill-current"
+          className="relative block w-full h-8 sm:h-10 text-[#064A29] fill-current"
         >
           <path
             d="M0,0 C150,60 350,-30 500,45 C650,110 900,10 1200,60 L1200,0 L0,0 Z"
@@ -401,8 +383,8 @@ function Footer() {
         </svg>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 pb-12 border-b border-[#0B6B35]/50">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-6 pb-6 border-b border-[#0B6B35]/50">
           {/* Column 1: Brand & About */}
           <div className="space-y-4">
             <Link to="/" className="inline-block group">
