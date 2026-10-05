@@ -35,11 +35,11 @@ export const Route = createFileRoute("/search")({
   },
   head: () => ({
     meta: [
-      { title: "Smart Search & AI Pantry Discovery — JANANI AGRO PRODUCTS" },
+      { title: "Bio-Inputs & Crop Solutions Search — JANANI AGRO PRODUCTS" },
       {
         name: "description",
         content:
-          "Search 100% certified organic grains, cold-pressed oils, native millets, and Vedic pantry essentials with smart voice and AI health filters.",
+          "Search certified bio-fertilizers, bio-pesticides, bio-stimulants, and crop disease solutions with smart voice and AI agronomist filters.",
       },
     ],
   }),
@@ -47,50 +47,38 @@ export const Route = createFileRoute("/search")({
 });
 
 const trendingSearches = [
-  "Wood-Pressed Groundnut Oil",
-  "Lakadong Turmeric",
-  "Foxtail Millet",
-  "Vedic A2 Ghee",
-  "Khapli Wheat",
-  "Cold-Pressed Mustard Oil",
-  "Organic Basmati Rice",
-  "Virgin Coconut Oil",
+  "Bhumi Shakti",
+  "Harit Trichoderma",
+  "Neem Oil 1000 PPM",
+  "Pushkal Fruit Set",
+  "Dharani KMB",
+  "Balavan Bacillus",
+  "Bio Fertilizers",
+  "Bio Fungicides",
 ];
 
-const aiHealthSuggestions = [
-  { label: "Diabetic Friendly", query: "Foxtail Millet", badge: "Low GI Native Grain" },
-  { label: "Heart Healthy", query: "Wood-Pressed Groundnut Oil", badge: "Cold Pressed MUFA Rich" },
-  { label: "Immunity Boost", query: "Lakadong Turmeric Powder", badge: "7%+ Curcumin" },
-  { label: "Ancient Grains", query: "Khapli Wheat", badge: "Ancient Emmer" },
-  { label: "High Protein", query: "Organic Green Gram", badge: "Unpolished Pulse" },
-];
-
-const dietaryBadges = [
-  "Gluten Free",
-  "Diabetic Friendly",
-  "High Fiber",
-  "High Protein",
-  "Low GI",
-  "Cold Pressed",
-  "Zero Chemical",
-  "Single Origin",
+const aiCropSuggestions = [
+  { label: "Paddy Blast & Blight", query: "Harit", badge: "Trichoderma Viride" },
+  { label: "Soil Carbon & Roots", query: "Bhumi Shakti", badge: "Humic & Fulvic Acid" },
+  { label: "Sucking Pest Defense", query: "Neem Oil 1000 PPM", badge: "Botanical Azadirachtin" },
+  { label: "Flower & Fruit Setting", query: "Pushkal", badge: "Seaweed Biostimulant" },
+  { label: "Potassium Uptake", query: "Dharani KMB", badge: "K-Mobilizing Bio-Fertilizer" },
 ];
 
 const allBrands = [
-  "Janani Pure Harvest",
-  "Janani Vedic Reserve",
-  "Janani Single-Origin",
-  "Janani Wild Harvest",
+  "Janani Agro Products",
+  "Janani Certified Bio-Inputs",
 ];
 
-const dietaryTagOptions = [
-  "Cold Pressed",
-  "Gluten Free",
-  "Diabetic Friendly",
-  "High Protein",
-  "High Fiber",
-  "Zero Chemical",
-  "Single Origin",
+const agroTagOptions = [
+  "Biofungicide",
+  "Trichoderma Viride",
+  "Wilt Protection",
+  "Root Rot Control",
+  "Rhizosphere Health",
+  "Soil Conditioner",
+  "Botanical IPM",
+  "Biostimulant",
 ];
 
 function SearchPage() {
@@ -263,13 +251,13 @@ function SearchPage() {
       {/* Search Header Hero */}
       <div className="mx-auto max-w-3xl text-center space-y-3">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3.5 py-1 text-xs font-bold uppercase tracking-wider">
-          <Sparkles className="size-3.5" /> AI Smart Search & Filter Suite
+          <Sparkles className="size-3.5" /> AI Smart Agronomy & Product Discovery
         </span>
         <h1 className="font-display text-3xl font-bold sm:text-4xl text-foreground">
-          Find Your Pure Organic Essentials
+          Find Certified Bio-Inputs & Crop Solutions
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
-          Search with real-time text, voice recognition, or AI nutrition recommendations across 100% certified farm harvests.
+          Search with real-time text, voice recognition, or AI crop suggestions across certified bio-fertilizers, pesticides, and biostimulants.
         </p>
 
         {/* Global Smart Search Bar */}
@@ -282,7 +270,7 @@ function SearchPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") saveQuery(query);
             }}
-            placeholder="Search by grain, cold-pressed oil, Vedic spice, or health goal..."
+            placeholder="Search by crop disease, bio-fertilizer, pesticide, or active organism (e.g. Harit, Bhumi Shakti)..."
             className="h-14 w-full rounded-full border-2 border-primary/30 bg-card pl-14 pr-24 text-sm sm:text-base outline-none transition focus:border-primary shadow-soft text-foreground placeholder:text-muted-foreground font-medium"
             autoFocus
           />
@@ -361,16 +349,16 @@ function SearchPage() {
           ))}
         </div>
 
-        {/* AI Health & Dietary Recommendation Strip */}
+        {/* AI Crop Health Recommendation Strip */}
         <div className="mt-6 rounded-3xl border border-primary/20 bg-primary/5 p-4 text-left">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="size-4 text-brand-gold" />
             <span className="text-xs font-bold uppercase tracking-wider text-primary">
-              AI Smart Health Suggestions
+              AI Crop Health & Disease Solutions
             </span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {aiHealthSuggestions.map((s) => (
+            {aiCropSuggestions.map((s) => (
               <button
                 key={s.label}
                 onClick={() => handleApplyQuery(s.query)}
@@ -522,13 +510,13 @@ function SearchPage() {
             </button>
           </div>
 
-          {/* 6. Dietary Tags */}
+          {/* 6. Agro Formulations & Benefits */}
           <div className="border-t border-border pt-4 space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-brand-leaf" /> Dietary Benefits
+              <Sparkles className="size-3.5 text-brand-leaf" /> Agro Formulations & Benefits
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {dietaryTagOptions.map((tag) => {
+              {agroTagOptions.map((tag) => {
                 const isSelected = selectedDietary.includes(tag);
                 return (
                   <button
@@ -554,7 +542,7 @@ function SearchPage() {
           <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 shadow-soft flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-foreground">
-                Found <strong className="text-primary">{filteredProducts.length}</strong> organic harvests
+                Found <strong className="text-primary">{filteredProducts.length}</strong> agricultural solutions
                 {query && (
                   <span className="font-normal text-muted-foreground"> matching "{query}"</span>
                 )}
@@ -657,7 +645,7 @@ function SearchPage() {
                 <SearchIcon className="size-8" />
               </div>
               <h3 className="font-display text-2xl font-bold text-foreground">
-                No Harvest Products Found
+                No Agricultural Solutions Found
               </h3>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
                 We couldn't find any products matching your exact filters. Try adjusting your query, exploring trending searches, or reset the filters.
@@ -668,10 +656,10 @@ function SearchPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setQuery("Oils")}
+                  onClick={() => setQuery("Bio Fertilizers")}
                   className="rounded-full px-6 font-bold"
                 >
-                  Explore Oils
+                  Explore Bio-Fertilizers
                 </Button>
               </div>
             </div>

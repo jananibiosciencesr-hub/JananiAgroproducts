@@ -12,11 +12,12 @@ import {
   Tag,
   Star,
   CornerDownLeft,
-  RotateCcw,
-  SlidersHorizontal,
-  ExternalLink
+  Sprout,
+  ShieldCheck,
 } from "lucide-react";
 import { products, categories, type Product, getProductImage, pantryImage } from "@/lib/catalog";
+import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
+import { useStore } from "@/components/store-provider";
 import { VoiceSearchModal } from "@/components/search/voice-search-modal";
 import { Button } from "@/components/ui/button";
 
@@ -26,34 +27,64 @@ interface GlobalSearchModalProps {
 }
 
 const trendingQueries = [
-  "Wood-Pressed Groundnut Oil",
-  "Lakadong Turmeric",
-  "Foxtail Millet",
-  "Vedic A2 Cow Ghee",
-  "Khapli Ancient Wheat",
-  "Cold-Pressed Mustard Oil",
+  "Bhumi Shakti",
+  "Harit Trichoderma",
+  "Neem Oil 1000 PPM",
+  "Pushkal Fruit Set",
+  "Bio Fertilizers",
+  "Bio Fungicides",
+  "Bio Stimulants",
+  "Humic & Fulvic",
 ];
 
-const aiHealthPrompts = [
-  { prompt: "Diabetic friendly grains", query: "Foxtail Millet" },
-  { prompt: "Heart healthy cooking oil", query: "Wood-Pressed Groundnut Oil" },
-  { prompt: "High curcumin immunity booster", query: "Lakadong Turmeric" },
-  { prompt: "Low gluten ancient wheat", query: "Khapli Wheat" },
+const cropQuickFilters = [
+  { name: "Rice (Paddy)", query: "Rice" },
+  { name: "Cotton", query: "Cotton" },
+  { name: "Chilli & Spices", query: "Chilli" },
+  { name: "Soya Bean", query: "Soyabean" },
+  { name: "Maize", query: "Maize" },
+  { name: "Sugarcane", query: "Sugarcane" },
+  { name: "Groundnut", query: "Groundnut" },
+  { name: "Wheat", query: "Wheat" },
+];
+
+const aiCropPrompts = [
+  { prompt: "Paddy Sheath Blight & Blast control", query: "Harit", benefit: "Suggests: HARIT (Trichoderma Viride)" },
+  { prompt: "Soil carbon & root zone development", query: "Bhumi Shakti", benefit: "Suggests: BHUMI SHAKTI (Humic & Fulvic)" },
+  { prompt: "Aphids, Whiteflies & Caterpillar defense", query: "Neem Oil 1000 PPM", benefit: "Suggests: NEEM OIL (Azadirachtin)" },
+  { prompt: "Fruit setting & flower drop prevention", query: "Pushkal", benefit: "Suggests: PUSHKAL Biostimulant" },
+  { prompt: "Potassium mobilization for crop yield", query: "Dharani KMB", benefit: "Suggests: DHARANI KMB Bio-Fertilizer" },
+  { prompt: "Soil-borne Wilt & Root Rot treatment", query: "Balavan", benefit: "Suggests: BALAVAN (Bacillus Subtilis)" },
 ];
 
 export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
   const navigate = useNavigate();
+  const { products: storeProducts, categories: storeCategories } = useStore();
+  const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
+  const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
+
   const [query, setQuery] = useState("");
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load recent searches from localStorage
+  // Load recent searches from localStorage and purge any legacy dummy grocery strings
   useEffect(() => {
     try {
       const stored = localStorage.getItem("janani_recent_searches");
       if (stored) {
-        setRecentSearches(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        const cleaned = (Array.isArray(parsed) ? parsed : []).filter(
+          (s: string) =>
+            !s.toLowerCase().includes("groundnut oil") &&
+            !s.toLowerCase().includes("ghee") &&
+            !s.toLowerCase().includes("millet") &&
+            !s.toLowerCase().includes("turmeric") &&
+            !s.toLowerCase().includes("khapli") &&
+            !s.toLowerCase().includes("mustard oil")
+        );
+        setRecentSearches(cleaned);
+        localStorage.setItem("janani_recent_searches", JSON.stringify(cleaned));
       }
     } catch (e) {
       // ignore
@@ -78,8 +109,6 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
         e.preventDefault();
         if (isOpen) {
           onClose();
-        } else {
-          // Trigger open via custom event or handler
         }
       }
       if (e.key === "Escape" && isOpen) {
@@ -126,35 +155,81 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
   // Live Autocomplete Results
   const matchingProducts = useMemo(() => {
     if (!query.trim()) return [];
-    return products
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(query.toLowerCase()) ||
-          p.category.toLowerCase().includes(query.toLowerCase()) ||
-          p.brand.toLowerCase().includes(query.toLowerCase()) ||
-          p.dietaryTags.some((t) => t.toLowerCase().includes(query.toLowerCase()))
-      )
-      .slice(0, 5);
-  }, [query]);
+    const q = query.toLowerCase();
+
+    const catalogMatches = allProducts.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.subtitle && p.subtitle.toLowerCase().includes(q)) ||
+        p.category.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        (p.crops && p.crops.some((c) => c.toLowerCase().includes(q))) ||
+        (p.targetDiseases && p.targetDiseases.toLowerCase().includes(q)) ||
+        (p.dietaryTags && p.dietaryTags.some((t) => t.toLowerCase().includes(q)))
+    );
+
+    if (catalogMatches.length > 0) {
+      return catalogMatches.slice(0, 5);
+    }
+
+    // Fallback to ALL_PESTICIDES if no catalog match
+    const pesticideMatches = ALL_PESTICIDES.filter(
+      (pest) =>
+        pest.title.toLowerCase().includes(q) ||
+        pest.technicalName.toLowerCase().includes(q) ||
+        pest.crops.some((c) => c.toLowerCase().includes(q)) ||
+        pest.diseases.some((d) => d.toLowerCase().includes(q))
+    ).map(
+      (pest) =>
+        ({
+          id: pest.catalogId,
+          slug: pest.slug,
+          name: pest.title,
+          subtitle: pest.technicalName,
+          category: pest.category,
+          brand: pest.brand,
+          price: pest.price,
+          oldPrice: pest.oldPrice,
+          discount: pest.discount,
+          unit: "1 Unit",
+          rating: pest.rating,
+          reviews: pest.reviewsCount,
+          inStock: pest.inStock,
+          stockCount: 50,
+          badge: pest.badge || "Popular",
+          image: pest.image,
+          description: pest.description,
+          origin: "Janani Agro Products",
+          dietaryTags: [],
+          certifications: [],
+          popularity: 90,
+          isNew: false,
+          crops: pest.crops,
+          benefits: [],
+          variants: [],
+        } as Product)
+    );
+
+    return pesticideMatches.slice(0, 5);
+  }, [query, allProducts]);
 
   const matchingCategories = useMemo(() => {
     if (!query.trim()) return [];
-    return categories
-      .filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 3);
-  }, [query]);
+    const q = query.toLowerCase();
+    return allCategories
+      .filter((c) => c.name.toLowerCase().includes(q))
+      .slice(0, 4);
+  }, [query, allCategories]);
 
   const matchingBrands = useMemo(() => {
     if (!query.trim()) return [];
+    const q = query.toLowerCase();
     const allBrands = [
-      "Janani Pure Harvest",
-      "Janani Vedic Reserve",
-      "Janani Single-Origin",
-      "Janani Wild Harvest",
+      "Janani Agro Products",
+      "Janani Certified Quality",
+      "Janani Bio Sciences",
     ];
-    return allBrands
-      .filter((b) => b.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 2);
+    return allBrands.filter((b) => b.toLowerCase().includes(q)).slice(0, 2);
   }, [query]);
 
   if (!isOpen) return null;
@@ -164,8 +239,8 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 bg-black/70 backdrop-blur-md">
         <div className="relative w-full max-w-2xl rounded-[2.5rem] bg-background border border-border shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
           {/* Top Search Input Bar */}
-          <div className="relative flex items-center px-6 py-4 border-b border-border">
-            <Search className="size-5 text-brand-leaf shrink-0" />
+          <div className="relative flex items-center px-6 py-4 border-b border-border bg-card">
+            <Search className="size-5 text-[#075B32] shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -176,7 +251,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                   handleExecuteSearch(query);
                 }
               }}
-              placeholder="Search organic oils, millets, Vedic staples or health benefits..."
+              placeholder="Search bio-fertilizers, pesticides, crop diseases, or products (e.g. Bhumi Shakti, Harit)..."
               className="flex-1 bg-transparent px-4 text-sm sm:text-base outline-none text-foreground placeholder:text-muted-foreground font-medium"
             />
 
@@ -193,7 +268,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
               {/* Voice Search Trigger */}
               <button
                 onClick={() => setIsVoiceOpen(true)}
-                className="rounded-full p-2 text-brand-leaf hover:bg-primary/10 hover:text-primary transition"
+                className="rounded-full p-2 text-[#075B32] hover:bg-primary/10 hover:text-primary transition"
                 title="Voice Search"
               >
                 <Mic className="size-4.5" />
@@ -217,7 +292,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                 {matchingCategories.length > 0 && (
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Boxes className="size-3.5 text-brand-leaf" /> Matching Categories
+                      <Boxes className="size-3.5 text-[#075B32]" /> Matching Categories
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {matchingCategories.map((c) => (
@@ -241,14 +316,14 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                 {matchingBrands.length > 0 && (
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Sparkles className="size-3.5 text-brand-gold" /> Brand Reserves
+                      <ShieldCheck className="size-3.5 text-[#075B32]" /> Genuine Brand
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {matchingBrands.map((b) => (
                         <button
                           key={b}
                           onClick={() => handleExecuteSearch(b)}
-                          className="rounded-full bg-brand-gold/10 border border-brand-gold/30 text-amber-800 px-3 py-1 text-xs font-semibold hover:bg-brand-gold/20 transition"
+                          className="rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 text-xs font-semibold hover:bg-emerald-100 transition"
                         >
                           {b}
                         </button>
@@ -290,7 +365,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                                 {p.name}
                               </p>
                               <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                                <span>{p.category}</span>
+                                <span className="text-emerald-700 font-medium">{p.category}</span>
                                 <span>•</span>
                                 <span className="text-foreground font-semibold">₹{p.price}</span>
                                 <span>•</span>
@@ -309,14 +384,14 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                       {/* View All Matches Button */}
                       <Button
                         onClick={() => handleExecuteSearch(query)}
-                        className="w-full rounded-2xl h-11 text-xs font-bold mt-2"
+                        className="w-full rounded-2xl h-11 text-xs font-bold mt-2 bg-[#075B32] hover:bg-[#064A29]"
                       >
                         View All Results for "{query}" <CornerDownLeft className="size-3.5 ml-1" />
                       </Button>
                     </div>
                   ) : (
                     <div className="text-center py-6 text-xs text-muted-foreground">
-                      No direct product matches found for "{query}". Try pressing Enter to view all pantry items.
+                      No direct product matches found for "{query}". Try pressing Enter to explore all agricultural inputs.
                     </div>
                   )}
                 </div>
@@ -331,7 +406,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <Clock className="size-3.5 text-brand-leaf" /> Recent Searches
+                        <Clock className="size-3.5 text-[#075B32]" /> Recent Searches
                       </span>
                       <button
                         onClick={clearRecentSearches}
@@ -369,14 +444,14 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                 {/* 2. Trending Searches */}
                 <div className="space-y-2.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Flame className="size-3.5 text-amber-500 fill-amber-500" /> Trending Harvests
+                    <Flame className="size-3.5 text-emerald-600 fill-emerald-600" /> Trending Agro Searches
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {trendingQueries.map((trend) => (
                       <button
                         key={trend}
                         onClick={() => handleExecuteSearch(trend)}
-                        className="rounded-full border border-border bg-secondary/80 hover:bg-primary hover:text-primary-foreground px-3.5 py-1.5 text-xs font-medium text-foreground transition"
+                        className="rounded-full border border-border bg-secondary/80 hover:bg-[#075B32] hover:text-white px-3.5 py-1.5 text-xs font-medium text-foreground transition"
                       >
                         {trend}
                       </button>
@@ -384,27 +459,45 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                   </div>
                 </div>
 
-                {/* 3. AI Smart Recommended Queries */}
-                <div className="space-y-2.5 rounded-3xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                    <Sparkles className="size-4" /> AI Health & Nutrition Recommendations
+                {/* 3. Quick Crop Solutions */}
+                <div className="space-y-2.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Sprout className="size-3.5 text-[#075B32]" /> Search by Crop Solutions
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {cropQuickFilters.map((crop) => (
+                      <button
+                        key={crop.name}
+                        onClick={() => handleExecuteSearch(crop.query)}
+                        className="rounded-full border border-emerald-200/70 bg-emerald-50/50 hover:bg-[#075B32] hover:text-white px-3.5 py-1.5 text-xs font-medium text-[#075B32] transition"
+                      >
+                        🌾 {crop.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. AI Crop Care & Disease Solutions */}
+                <div className="space-y-2.5 rounded-3xl border border-emerald-500/20 bg-emerald-50/40 p-4 sm:p-5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#075B32] flex items-center gap-1.5">
+                    <Sparkles className="size-4 text-[#D99A12]" /> AI Crop Care & Disease Solutions
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                    {aiHealthPrompts.map((item) => (
+                    {aiCropPrompts.map((item) => (
                       <button
                         key={item.prompt}
                         onClick={() => handleExecuteSearch(item.query)}
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card hover:bg-primary hover:text-primary-foreground transition text-left group"
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card hover:bg-[#075B32] hover:text-white transition text-left group"
                       >
                         <div>
-                          <p className="text-xs font-bold text-foreground group-hover:text-primary-foreground">
+                          <p className="text-xs font-bold text-foreground group-hover:text-white">
                             "{item.prompt}"
                           </p>
-                          <p className="text-[10px] text-muted-foreground group-hover:text-primary-foreground/80">
-                            Suggests: {item.query}
+                          <p className="text-[10px] text-emerald-700 font-semibold group-hover:text-emerald-100">
+                            {item.benefit}
                           </p>
                         </div>
-                        <ArrowRight className="size-3.5 text-primary group-hover:text-primary-foreground shrink-0" />
+                        <ArrowRight className="size-3.5 text-[#075B32] group-hover:text-white shrink-0 ml-2" />
                       </button>
                     ))}
                   </div>

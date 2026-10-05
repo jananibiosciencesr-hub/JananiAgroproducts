@@ -14,11 +14,11 @@ export function VoiceSearchModal({ isOpen, onClose, onSearch }: VoiceSearchModal
   const [errorMessage, setErrorMessage] = useState("");
 
   const sampleVoicePrompts = [
-    "Cold pressed groundnut oil",
-    "Best unpolished millets for diabetes",
-    "Pure Lakadong turmeric powder",
-    "Vedic A2 bilona cow ghee",
-    "Organic basmati rice 5kg",
+    "Bhumi Shakti soil conditioner",
+    "Harit Trichoderma for wilt protection",
+    "Neem oil 1000 PPM for pest control",
+    "Pushkal biostimulant for fruit setting",
+    "Bio-fertilizer for rice and wheat",
   ];
 
   useEffect(() => {

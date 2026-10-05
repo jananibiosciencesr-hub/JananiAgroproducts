@@ -173,14 +173,14 @@ export function ShopFilterSidebar({
       {/* 1. Search Inside Shop / Category */}
       <div className="space-y-2">
         <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Search className="size-3.5 text-brand-leaf" /> Search in Pantry
+          <Search className="size-3.5 text-brand-leaf" /> Search Products
         </label>
         <div className="relative">
           <input
             type="text"
             value={filters.searchQuery}
             onChange={(e) => setFilters((prev) => ({ ...prev, searchQuery: e.target.value }))}
-            placeholder="Search oils, millets, spices..."
+            placeholder="Search bio-fertilizers, pesticides, crop inputs..."
             className="w-full h-9 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-primary transition"
           />
           {filters.searchQuery && (
@@ -400,10 +400,10 @@ export function ShopFilterSidebar({
         </div>
       </div>
 
-      {/* 8. Dietary & Health Benefits */}
+      {/* 8. Agro Formulations & Benefits */}
       <div className="space-y-2.5 pt-2 border-t border-border">
         <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Sparkles className="size-3.5 text-brand-leaf" /> Dietary & Health Tags
+          <Sparkles className="size-3.5 text-brand-leaf" /> Agro Formulations & Benefits
         </label>
         <div className="flex flex-wrap gap-1.5">
           {allDietaryTags.map((tag) => {
