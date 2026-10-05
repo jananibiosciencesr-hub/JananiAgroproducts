@@ -443,6 +443,8 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                   <input
                     required
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     placeholder="10-digit mobile number"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
@@ -453,6 +455,8 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                   <span className="text-muted-foreground">Alternate Phone (Optional)</span>
                   <input
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     placeholder="Backup contact number"
                     value={formData.alternatePhone || ""}
                     onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })}

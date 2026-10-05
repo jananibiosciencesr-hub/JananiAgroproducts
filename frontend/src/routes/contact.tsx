@@ -44,15 +44,20 @@ function ContactPage() {
   });
   const [sending, setSending] = useState(false);
 
-  // Phone change handler: restricts non-digits and validates
+  // Phone change handler: strictly only digits, strictly max 10 digits, real-time validation
   const handlePhoneChange = (val: string) => {
-    if (!/^[\d+\s-]*$/.test(val)) return;
-    setForm((prev) => ({ ...prev, phone: val }));
+    // Only accept digits, max 10 digits
+    const digitsOnly = val.replace(/\D/g, "").slice(0, 10);
+    setForm((prev) => ({ ...prev, phone: digitsOnly }));
+    setTouched((prev) => ({ ...prev, phone: true }));
 
-    if (touched.phone) {
-      const res = validatePhone(val);
-      setErrors((prev) => ({ ...prev, phone: res.isValid ? undefined : res.error }));
+    if (!digitsOnly) {
+      setErrors((prev) => ({ ...prev, phone: "Phone number is required." }));
+      return;
     }
+
+    const res = validatePhone(digitsOnly);
+    setErrors((prev) => ({ ...prev, phone: res.isValid ? undefined : res.error }));
   };
 
   const handlePhoneBlur = () => {
@@ -61,16 +66,19 @@ function ContactPage() {
     setErrors((prev) => ({ ...prev, phone: res.isValid ? undefined : res.error }));
   };
 
-  // Email/Gmail change handler: validates format and common typos
+  // Email/Gmail change handler: real-time validation on typing
   const handleEmailChange = (val: string) => {
     setForm((prev) => ({ ...prev, email: val }));
-    if (touched.email) {
+    if (touched.email || val.includes("@") || val.length > 3) {
+      setTouched((prev) => ({ ...prev, email: true }));
       const res = validateEmail(val);
       setErrors((prev) => ({
         ...prev,
         email: res.isValid ? undefined : res.error,
         emailSuggestion: res.suggestion,
       }));
+    } else {
+      setErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
     }
   };
 
@@ -88,11 +96,27 @@ function ContactPage() {
     const atIndex = form.email.indexOf("@");
     if (atIndex !== -1) {
       const username = form.email.slice(0, atIndex);
-      const corrected = `${username}@gmail.com`;
+      let targetDomain = "@gmail.com";
+      if (errors.emailSuggestion?.includes("@yahoo.com")) targetDomain = "@yahoo.com";
+      else if (errors.emailSuggestion?.includes("@outlook.com")) targetDomain = "@outlook.com";
+      else if (errors.emailSuggestion?.includes("@hotmail.com")) targetDomain = "@hotmail.com";
+      else if (errors.emailSuggestion?.includes(".com")) {
+        const parts = form.email.split("@");
+        const domainParts = parts[1]?.split(".") || [];
+        domainParts[domainParts.length - 1] = "com";
+        const corrected = `${parts[0]}@${domainParts.join(".")}`;
+        setForm((prev) => ({ ...prev, email: corrected }));
+        setErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
+        return;
+      }
+      const corrected = `${username}${targetDomain}`;
       setForm((prev) => ({ ...prev, email: corrected }));
       setErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
     }
   };
+
+  const isPhoneValid = form.phone.length === 10 && /^[6-9][0-9]{9}$/.test(form.phone);
+  const isEmailValid = Boolean(form.email && !errors.email && !errors.emailSuggestion && validateEmail(form.email).isValid);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,38 +285,48 @@ function ContactPage() {
                 <div className="grid gap-1.5 text-xs font-semibold">
                   <div className="flex items-center justify-between">
                     <span>Phone Number *</span>
-                    {touched.phone && !errors.phone && form.phone.trim() && (
+                    {isPhoneValid && (
                       <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
                         <CheckCircle2 className="size-3" /> Valid Indian Mobile
                       </span>
                     )}
                   </div>
-                  <div className="relative">
+                  <div className="relative flex items-center">
+                    <div className="absolute left-3 flex items-center gap-1 text-xs text-muted-foreground font-semibold pointer-events-none select-none border-r border-border pr-2.5">
+                      <span>🇮🇳</span>
+                      <span>+91</span>
+                    </div>
                     <input
                       required
                       type="tel"
+                      inputMode="numeric"
+                      pattern="[6-9][0-9]{9}"
+                      maxLength={10}
                       value={form.phone}
                       onChange={(e) => handlePhoneChange(e.target.value)}
                       onBlur={handlePhoneBlur}
-                      placeholder="+91 93114 16225"
-                      maxLength={16}
-                      className={`h-11 w-full rounded-2xl border bg-background px-4 text-xs sm:text-sm outline-none transition ${
+                      placeholder="93114 16225"
+                      className={`h-11 w-full rounded-2xl border bg-background pl-16 pr-10 text-xs sm:text-sm outline-none transition tracking-wide font-mono ${
                         touched.phone && errors.phone
                           ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 bg-destructive/5 text-destructive"
-                          : touched.phone && !errors.phone && form.phone.trim()
+                          : isPhoneValid
                           ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
                           : "border-input focus:border-primary"
                       }`}
                     />
-                    {touched.phone && !errors.phone && form.phone.trim() && (
+                    {isPhoneValid && (
                       <CheckCircle2 className="absolute right-3.5 top-3.5 size-4 text-emerald-600 pointer-events-none" />
                     )}
                   </div>
-                  {touched.phone && errors.phone && (
+                  {touched.phone && errors.phone ? (
                     <p className="text-[11px] text-destructive flex items-center gap-1 font-medium mt-0.5">
                       <AlertCircle className="size-3 shrink-0" /> {errors.phone}
                     </p>
-                  )}
+                  ) : form.phone.length > 0 && form.phone.length < 10 ? (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Enter 10-digit mobile number ({form.phone.length}/10 digits)
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
@@ -301,7 +335,7 @@ function ContactPage() {
                 <div className="grid gap-1.5 text-xs font-semibold">
                   <div className="flex items-center justify-between">
                     <span>Email Address *</span>
-                    {touched.email && !errors.email && form.email.trim() && (
+                    {isEmailValid && (
                       <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
                         <CheckCircle2 className="size-3" /> Valid Email
                       </span>
@@ -315,15 +349,15 @@ function ContactPage() {
                       onChange={(e) => handleEmailChange(e.target.value)}
                       onBlur={handleEmailBlur}
                       placeholder="priyesh@gmail.com"
-                      className={`h-11 w-full rounded-2xl border bg-background px-4 text-xs sm:text-sm outline-none transition ${
+                      className={`h-11 w-full rounded-2xl border bg-background px-4 pr-10 text-xs sm:text-sm outline-none transition ${
                         touched.email && errors.email
                           ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 bg-destructive/5 text-destructive"
-                          : touched.email && !errors.email && form.email.trim()
+                          : isEmailValid
                           ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
                           : "border-input focus:border-primary"
                       }`}
                     />
-                    {touched.email && !errors.email && form.email.trim() && (
+                    {isEmailValid && (
                       <CheckCircle2 className="absolute right-3.5 top-3.5 size-4 text-emerald-600 pointer-events-none" />
                     )}
                   </div>

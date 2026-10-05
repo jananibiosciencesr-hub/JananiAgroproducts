@@ -136,8 +136,11 @@ export function EditProfileTab() {
           <input
             required
             type="tel"
+            inputMode="numeric"
+            maxLength={10}
+            placeholder="10-digit mobile number"
             value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
             className="w-full h-11 rounded-2xl border border-input bg-card px-4 text-xs sm:text-sm text-foreground outline-none focus:border-brand-leaf font-medium transition font-mono"
           />
         </div>

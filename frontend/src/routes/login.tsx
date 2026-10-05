@@ -301,9 +301,13 @@ export function AuthenticationPage() {
   // 2. Handle Send OTP (Phone)
   const handleRequestOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const target = phone.replace(/\D/g, "");
-    if (!target || target.length < 10) {
-      toast.error("Please enter a valid 10-digit mobile number.");
+    const target = phone.replace(/\D/g, "").slice(0, 10);
+    if (!target || target.length !== 10 || !/^[6-9]/.test(target)) {
+      if (target.length > 0 && !/^[6-9]/.test(target)) {
+        toast.error(`Indian mobile number cannot start with '${target[0]}'. It must start with 6, 7, 8, or 9.`);
+      } else {
+        toast.error("Please enter a valid 10-digit Indian mobile number.");
+      }
       return;
     }
 
@@ -995,11 +999,13 @@ export function AuthenticationPage() {
                           </span>
                           <input
                             type="tel"
+                            inputMode="numeric"
+                            maxLength={10}
                             required
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                             placeholder="e.g. 93114 16225"
-                            className="h-11 w-full rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm font-medium outline-none"
+                            className="h-11 w-full rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm font-medium outline-none font-mono"
                           />
                         </div>
                       </div>
@@ -1164,11 +1170,13 @@ export function AuthenticationPage() {
                         <Phone className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                         <input
                           type="tel"
+                          inputMode="numeric"
+                          maxLength={10}
                           required
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                           placeholder="10-digit mobile number"
-                          className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-3 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-3 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono"
                         />
                       </div>
                     </div>
