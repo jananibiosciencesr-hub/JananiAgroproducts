@@ -1071,8 +1071,8 @@ function ProductFormModal({
     badge: "100% Organic",
     description: "",
     harvestOrigin: "Gujarat Certified Farmer Cluster",
-    image: "/images/cat-rice.jpg",
-    gallery: [] as string[],
+    image: "/images/categories/rice.webp",
+    gallery: ["/images/categories/rice.webp"] as string[],
     variants: [] as ProductVariant[],
     organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
     seo: {
@@ -1107,8 +1107,8 @@ function ProductFormModal({
         badge: initialData.badge || "100% Organic",
         description: initialData.description || "",
         harvestOrigin: initialData.harvestOrigin || "Gujarat Certified Farmer Cluster",
-        image: initialData.image || "/images/cat-rice.jpg",
-        gallery: initialData.gallery || [initialData.image || "/images/cat-rice.jpg"],
+        image: initialData.image || "/images/categories/rice.webp",
+        gallery: (initialData.gallery && initialData.gallery.length > 0) ? initialData.gallery : [initialData.image || "/images/categories/rice.webp"],
         variants: initialData.variants || [],
         organicCertifications: initialData.organicCertifications || ["NPOP Certified Organic"],
         seo: {
@@ -1139,8 +1139,8 @@ function ProductFormModal({
         badge: "100% Organic",
         description: "",
         harvestOrigin: "Gujarat Certified Farmer Cluster",
-        image: "/images/cat-rice.jpg",
-        gallery: ["/images/cat-rice.jpg"],
+        image: "/images/categories/rice.webp",
+        gallery: ["/images/categories/rice.webp"],
         variants: [
           { id: `VAR-1`, name: "500g Pack", sku: `JAP-500G`, price: 150, originalPrice: 199, stock: 25 },
           { id: `VAR-2`, name: "1 kg Standard", sku: `JAP-1KG`, price: 299, originalPrice: 399, stock: 25 }
@@ -1189,6 +1189,7 @@ function ProductFormModal({
       ...prev,
       variants: [...prev.variants, newVar]
     }));
+    toast.success("New product variant added!");
   };
 
   const handleRemoveVariant = (index: number) => {
@@ -1198,14 +1199,42 @@ function ProductFormModal({
     }));
   };
 
-  // Add Gallery Image
-  const handleAddGalleryImage = () => {
-    if (!newGalleryUrl) return;
+  // Add Gallery Image (with URL trimming and toast)
+  const handleAddGalleryImage = (urlToAdd?: string) => {
+    const target = (typeof urlToAdd === "string" ? urlToAdd : newGalleryUrl).trim();
+    if (!target) {
+      toast.error("Please enter or paste an image URL, or select from catalog presets.");
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
-      gallery: [...prev.gallery, newGalleryUrl]
+      image: prev.image || target,
+      gallery: [...prev.gallery, target]
     }));
     setNewGalleryUrl("");
+    toast.success("Image added to product gallery!");
+  };
+
+  // Upload local image files directly
+  const handleUploadGalleryFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) {
+          setFormData((prev) => ({
+            ...prev,
+            image: prev.image || dataUrl,
+            gallery: [...prev.gallery, dataUrl]
+          }));
+          toast.success(`Uploaded ${file.name} to gallery!`);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = "";
   };
 
   if (!isOpen) return null;
@@ -1488,12 +1517,25 @@ function ProductFormModal({
           {activeTab === "gallery" && (
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Primary Thumbnail Image URL</label>
-                <input
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                />
+                <label className="text-xs font-bold text-foreground block mb-1">Primary Thumbnail Image URL *</label>
+                <div className="flex gap-2">
+                  <input
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="e.g. /images/categories/rice.webp or https://..."
+                    className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono"
+                  />
+                  {formData.image && (
+                    <div className="size-10 rounded-xl border border-border bg-muted overflow-hidden shrink-0">
+                      <img
+                        src={formData.image}
+                        alt="Primary thumbnail"
+                        className="size-full object-cover"
+                        onError={(e) => { e.currentTarget.src = "/images/categories/rice.webp"; }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -1502,29 +1544,144 @@ function ProductFormModal({
                   <input
                     value={newGalleryUrl}
                     onChange={(e) => setNewGalleryUrl(e.target.value)}
-                    placeholder="https://.../product-shot.jpg"
-                    className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddGalleryImage();
+                      }
+                    }}
+                    placeholder="Enter URL or paste image link (e.g. /images/categories/rice.webp)"
+                    className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono"
                   />
-                  <Button type="button" onClick={handleAddGalleryImage} size="sm" className="rounded-2xl bg-emerald-600 text-white font-bold text-xs">
+                  <Button
+                    type="button"
+                    onClick={() => handleAddGalleryImage()}
+                    size="sm"
+                    className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 shadow-sm"
+                  >
                     Add
                   </Button>
+                  <label className="inline-flex items-center justify-center gap-1.5 px-3 rounded-2xl border border-border bg-card hover:bg-accent text-foreground text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-sm">
+                    <Upload className="size-3.5 text-brand-leaf" />
+                    <span>Upload File</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleUploadGalleryFile}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Quick Preset Images */}
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  Quick Catalog Presets (Click to add):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "Rice", url: "/images/categories/rice.webp" },
+                    { label: "Wheat", url: "/images/categories/wheat.webp" },
+                    { label: "Pulses", url: "/images/categories/pulses.webp" },
+                    { label: "Millets", url: "/images/categories/millets.webp" },
+                    { label: "Flours", url: "/images/categories/flours.webp" },
+                    { label: "Spices", url: "/images/categories/spices.webp" },
+                    { label: "Cold Oils", url: "/images/categories/oils.webp" },
+                    { label: "Dry Fruits", url: "/images/categories/dryfruits.webp" },
+                    { label: "Seeds", url: "/images/categories/seeds.webp" },
+                    { label: "Bio-Fertilizer", url: "/images/categories/bio-fertilizers.jpg" },
+                    { label: "Bio-Pesticide", url: "/images/categories/bio-pesticides.jpg" },
+                    { label: "Bio-Fungicide", url: "/images/categories/bio-fungicides.jpg" },
+                    { label: "Bio-Stimulant", url: "/images/categories/bio-stimulants.jpg" }
+                  ].map((preset) => (
+                    <button
+                      key={preset.url}
+                      type="button"
+                      onClick={() => handleAddGalleryImage(preset.url)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/50 hover:bg-emerald-500/10 hover:border-emerald-500/50 text-[11px] font-medium text-foreground transition-all"
+                    >
+                      <span className="text-emerald-600 font-bold">+</span> {preset.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {/* Gallery Grid */}
-              <div className="grid grid-cols-4 gap-3">
-                {formData.gallery.map((img, i) => (
-                  <div key={i} className="relative group rounded-2xl border border-border bg-muted h-24 overflow-hidden shadow-sm">
-                    <img src={img} alt="preview" className="size-full object-cover" />
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-foreground">
+                    Product Gallery ({formData.gallery.length} Images)
+                  </span>
+                  {formData.gallery.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, gallery: formData.gallery.filter((_, idx) => idx !== i) })}
-                      className="absolute top-1 right-1 size-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setFormData({ ...formData, gallery: [] })}
+                      className="text-[11px] text-rose-500 hover:underline font-medium"
                     >
-                      <X className="size-3.5" />
+                      Clear All
                     </button>
+                  )}
+                </div>
+
+                {formData.gallery.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
+                    <ImageIcon className="size-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-xs font-medium text-muted-foreground">No gallery images added yet</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Type an image URL above, upload from your PC, or click a catalog preset.</p>
                   </div>
-                ))}
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {formData.gallery.map((img, i) => {
+                      const isPrimary = formData.image === img;
+                      return (
+                        <div
+                          key={i}
+                          className={`relative group rounded-2xl border bg-muted h-28 overflow-hidden shadow-sm transition-all ${
+                            isPrimary ? "ring-2 ring-emerald-600 border-emerald-600" : "border-border hover:border-foreground/40"
+                          }`}
+                        >
+                          <img
+                            src={img}
+                            alt={`Gallery ${i + 1}`}
+                            className="size-full object-cover"
+                            onError={(e) => { e.currentTarget.src = "/images/categories/rice.webp"; }}
+                          />
+                          {isPrimary && (
+                            <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow">
+                              Primary
+                            </span>
+                          )}
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
+                            <div className="flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, gallery: formData.gallery.filter((_, idx) => idx !== i) })}
+                                className="size-6 rounded-full bg-rose-600 text-white flex items-center justify-center hover:bg-rose-700 transition"
+                                title="Remove image"
+                              >
+                                <X className="size-3.5" />
+                              </button>
+                            </div>
+                            {!isPrimary && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, image: img });
+                                  toast.success("Set as primary thumbnail!");
+                                }}
+                                className="w-full py-1 rounded-lg bg-white/90 text-foreground text-[10px] font-bold hover:bg-white transition"
+                              >
+                                Set as Primary
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
