@@ -33,11 +33,14 @@ export function EditProfileTab() {
   const [errors, setErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
   const [touched, setTouched] = useState<{ phone?: boolean; email?: boolean }>({});
 
-  const [selectedDietary, setSelectedDietary] = useState<string[]>(
-    user?.preferences?.dietary || [
-      "Bio Fertilizers",
-      "Bio Stimulants"
-    ]
+  const getCleanAgriInterests = (tags?: string[]) => {
+    if (!tags || !Array.isArray(tags)) return ["Bio Fertilizers", "Bio Stimulants"];
+    const valid = tags.filter((t) => AGRI_INTEREST_TAGS.includes(t));
+    return valid.length > 0 ? valid : ["Bio Fertilizers", "Bio Stimulants"];
+  };
+
+  const [selectedDietary, setSelectedDietary] = useState<string[]>(() =>
+    getCleanAgriInterests(user?.preferences?.dietary)
   );
 
   useEffect(() => {
@@ -51,7 +54,7 @@ export function EditProfileTab() {
         bio: (user as any).bio || "",
       });
       if (user.preferences?.dietary) {
-        setSelectedDietary(user.preferences.dietary);
+        setSelectedDietary(getCleanAgriInterests(user.preferences.dietary));
       }
     }
   }, [user]);

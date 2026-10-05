@@ -189,10 +189,10 @@ export function AuthenticationPage() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3>(1);
   const [selectedDietary, setSelectedDietary] = useState<string[]>([
-    "Cold-Pressed Oils",
-    "Wood-Pressed Ghee"
+    "Bio Fertilizers",
+    "Bio Stimulants"
   ]);
-  const [deliveryPinCode, setDeliveryPinCode] = useState("560001");
+  const [deliveryPinCode, setDeliveryPinCode] = useState("380054");
   const [pinAvailable, setPinAvailable] = useState<boolean | null>(null);
 
   // Countdown timer for OTP Resend
@@ -1882,31 +1882,33 @@ export function AuthenticationPage() {
                   variant="gold"
                   className="w-full rounded-2xl font-bold"
                 >
-                  Personalize My Pantry <ArrowRight className="size-4 ml-1.5" />
+                  Personalize Crop & Agro Needs <ArrowRight className="size-4 ml-1.5" />
                 </Button>
               </div>
             )}
 
-            {/* STEP 2: Dietary & Pantry Preferences */}
+            {/* STEP 2: Crop & Agro Input Preferences */}
             {onboardingStep === 2 && (
               <div className="space-y-4 animate-in fade-in">
                 <div>
                   <h3 className="font-display text-xl font-bold text-foreground">
-                    What does your household love?
+                    Which crop solutions do you need?
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Select your preferred organic categories for tailored recommendations:
+                    Select your preferred agricultural categories for tailored recommendations:
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
                   {[
-                    "Cold-Pressed Oils",
-                    "Wood-Pressed Ghee",
-                    "Organic Millets",
-                    "Stone-Ground Flours",
-                    "Heritage Spices",
-                    "Raw Forest Honey"
+                    "Bio Fertilizers",
+                    "Bio Pesticides",
+                    "Bio Fungicides",
+                    "Bio Stimulants",
+                    "Micro Nutrients",
+                    "Insecticides",
+                    "Botanical Extracts",
+                    "Water Solubles"
                   ].map((category) => {
                     const isSelected = selectedDietary.includes(category);
                     return (
@@ -1920,7 +1922,7 @@ export function AuthenticationPage() {
                         }}
                         className={`flex items-center justify-between p-3 rounded-2xl border text-xs font-semibold transition ${
                           isSelected
-                            ? "border-primary bg-primary/10 text-primary shadow-sm"
+                            ? "border-primary bg-primary/10 text-primary shadow-sm font-bold"
                             : "border-border bg-background hover:bg-secondary text-foreground"
                         }`}
                       >

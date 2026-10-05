@@ -6446,8 +6446,8 @@ export async function signupCustomer(payload: {
     latitude: payload.latitude,
     longitude: payload.longitude,
     preferences: {
-      dietary: ["Cold-Pressed Oils", "Organic Millets"],
-      pinCode: payload.pincode || "560001"
+      dietary: ["Bio Fertilizers", "Bio Stimulants"],
+      pinCode: payload.pincode || "380054"
     }
   };
   const authData: AuthResponse = {
