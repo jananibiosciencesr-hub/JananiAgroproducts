@@ -32,7 +32,32 @@ export const Route = createFileRoute("/dashboard")({
     ],
   }),
   component: DashboardPage,
+  errorComponent: DashboardErrorFallback,
 });
+
+function DashboardErrorFallback({ error, reset }: { error: any; reset: () => void }) {
+  return (
+    <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6">
+      <div className="size-20 mx-auto rounded-3xl bg-amber-500/10 text-amber-600 grid place-items-center">
+        <AlertCircle className="size-10" />
+      </div>
+      <div className="space-y-2">
+        <h2 className="font-display text-2xl font-bold text-foreground">Dashboard Temporary Notice</h2>
+        <p className="text-xs text-muted-foreground">
+          We encountered an issue reading your cached account session. You can retry or refresh to continue.
+        </p>
+      </div>
+      <div className="flex justify-center gap-3">
+        <Button onClick={() => reset()} variant="gold" size="sm" className="rounded-full px-6 font-bold">
+          Refresh Dashboard
+        </Button>
+        <Button asChild variant="outline" size="sm" className="rounded-full px-6 font-semibold">
+          <Link to="/">Go Home</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -40,7 +65,15 @@ function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
 
   // Real-time dynamic customer orders list
-  const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>(() => loadCustomerOrders());
+  const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>(() => {
+    try {
+      const list = loadCustomerOrders();
+      return Array.isArray(list) ? list.filter((o) => o && typeof o === "object") : [];
+    } catch (e) {
+      console.warn("Failed to load initial customer orders:", e);
+      return [];
+    }
+  });
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<CustomerOrder | null>(null);
 
   // Saved addresses state
@@ -48,8 +81,15 @@ function DashboardPage() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("janani_saved_addresses");
-        if (stored) return JSON.parse(stored);
-      } catch (e) {}
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((a) => a && typeof a === "object");
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to parse saved addresses:", e);
+      }
     }
     return [];
   });
@@ -61,7 +101,15 @@ function DashboardPage() {
 
   // Refresh orders when component mounts or updates
   useEffect(() => {
-    setCustomerOrders(loadCustomerOrders());
+    try {
+      const list = loadCustomerOrders();
+      if (Array.isArray(list)) {
+        setCustomerOrders(list.filter((o) => o && typeof o === "object"));
+      }
+    } catch (e) {
+      console.warn("Failed to refresh customer orders in useEffect:", e);
+    }
+
     if (user) {
       setProfileName(user.name || "");
       setProfilePhone(user.phone || "");
@@ -78,44 +126,44 @@ function DashboardPage() {
             const data = await res.json();
             if (data?.success && Array.isArray(data.orders) && data.orders.length > 0) {
               const serverOrders: CustomerOrder[] = data.orders.map((o: any) => ({
-                id: o.id || `ord-${o.number}`,
-                number: o.number || o.orderNumber,
-                orderNumber: o.number || o.orderNumber,
-                date: o.order_date || o.date || "Recent",
-                isoDate: o.created_at ? o.created_at.split(" ")[0] : new Date().toISOString().split("T")[0]!,
-                status: (o.order_status || o.status || "Processing") as any,
-                courier: o.courier || "Delhivery Air Express & Janani Fleet",
-                awb: o.awb || o.tracking_id || `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-                expectedDelivery: o.expected_delivery || o.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
-                deliverySlot: o.delivery_slot || o.deliverySlot,
-                subtotal: Number(o.subtotal) || 0,
-                discount: Number(o.discount) || 0,
-                couponCode: o.coupon_code || o.couponCode,
-                couponDiscount: Number(o.coupon_discount || o.couponDiscount || 0),
-                walletDeduction: Number(o.wallet_deduction || o.walletDeduction || 0),
-                deliveryFee: Number(o.delivery_fee || o.deliveryFee || 0),
-                total: Number(o.total || o.finalTotal || 0),
-                finalTotal: Number(o.total || o.finalTotal || 0),
-                paymentMethod: o.payment_method || o.paymentMethod || "Razorpay (Online)",
-                paymentStatus: o.payment_status || o.paymentStatus || "Paid",
-                transactionId: o.transaction_id || o.transactionId || "pay_rzp_verified",
+                id: o?.id || `ord-${o?.number || Date.now()}`,
+                number: o?.number || o?.orderNumber || "ORD-000",
+                orderNumber: o?.number || o?.orderNumber || "ORD-000",
+                date: o?.order_date || o?.date || "Recent",
+                isoDate: o?.created_at ? o.created_at.split(" ")[0] : new Date().toISOString().split("T")[0]!,
+                status: (o?.order_status || o?.status || "Processing") as any,
+                courier: o?.courier || "Delhivery Air Express & Janani Direct",
+                awb: o?.awb || o?.tracking_id || `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+                expectedDelivery: o?.expected_delivery || o?.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
+                deliverySlot: o?.delivery_slot || o?.deliverySlot,
+                subtotal: Number(o?.subtotal) || 0,
+                discount: Number(o?.discount) || 0,
+                couponCode: o?.coupon_code || o?.couponCode,
+                couponDiscount: Number(o?.coupon_discount || o?.couponDiscount || 0),
+                walletDeduction: Number(o?.wallet_deduction || o?.walletDeduction || 0),
+                deliveryFee: Number(o?.delivery_fee || o?.deliveryFee || 0),
+                total: Number(o?.total || o?.finalTotal || 0),
+                finalTotal: Number(o?.total || o?.finalTotal || 0),
+                paymentMethod: o?.payment_method || o?.paymentMethod || "Razorpay (Online)",
+                paymentStatus: o?.payment_status || o?.paymentStatus || "Paid",
+                transactionId: o?.transaction_id || o?.transactionId || "pay_rzp_verified",
                 address: {
-                  fullName: o.shippingAddress?.fullName || o.shippingAddress?.name || o.customer_name || user?.name || "Valued Patron",
-                  phone: o.shippingAddress?.phone || o.customer_phone || user?.phone || "+91 98480 22338",
-                  streetAddress: o.shippingAddress?.streetAddress || o.shippingAddress?.street || "Registered Delivery Address",
-                  city: o.shippingAddress?.city || "Ahmedabad",
-                  state: o.shippingAddress?.state || "Gujarat",
-                  pincode: o.shippingAddress?.pincode || "380054",
+                  fullName: o?.shippingAddress?.fullName || o?.shippingAddress?.name || o?.customer_name || user?.name || "Valued Patron",
+                  phone: o?.shippingAddress?.phone || o?.customer_phone || user?.phone || "+91 98480 22338",
+                  streetAddress: o?.shippingAddress?.streetAddress || o?.shippingAddress?.street || "Registered Delivery Address",
+                  city: o?.shippingAddress?.city || "Ahmedabad",
+                  state: o?.shippingAddress?.state || "Gujarat",
+                  pincode: o?.shippingAddress?.pincode || "380054",
                 },
-                items: Array.isArray(o.items) ? o.items.map((it: any) => ({
-                  productId: it.productId || it.id || 1,
-                  name: it.title || it.name || "Single-Origin Organic Harvest",
-                  variant: it.variant || "Standard Pack",
-                  quantity: it.quantity || it.qty || 1,
-                  price: Number(it.price) || 399,
-                  image: it.image || "",
+                items: Array.isArray(o?.items) ? o.items.map((it: any) => ({
+                  productId: it?.productId || it?.id || 1,
+                  name: it?.title || it?.name || "Single-Origin Organic Harvest",
+                  variant: it?.variant || "Standard Pack",
+                  quantity: it?.quantity || it?.qty || 1,
+                  price: Number(it?.price) || 399,
+                  image: it?.image || "",
                 })) : [],
-                timeline: Array.isArray(o.timeline) ? o.timeline : []
+                timeline: Array.isArray(o?.timeline) ? o.timeline : []
               }));
               setCustomerOrders(serverOrders);
             }
@@ -135,15 +183,17 @@ function DashboardPage() {
   };
 
   const handleReorder = (order: CustomerOrder) => {
-    if (order.items && order.items.length > 0) {
+    if (order?.items && Array.isArray(order.items) && order.items.length > 0) {
       order.items.forEach((item) => {
-        addToCart(item.productId, item.quantity);
+        if (item?.productId) {
+          addToCart(item.productId, item.quantity || 1);
+        }
       });
-      toast.success(`Items from order ${order.number} added to your basket!`);
+      toast.success(`Items from order ${order.number || "order"} added to your basket!`);
       navigate({ to: "/cart" });
     } else {
       addToCart(1, 1);
-      toast.success(`Order ${order.number} items added to your basket!`);
+      toast.success(`Order items added to your basket!`);
       navigate({ to: "/cart" });
     }
   };
@@ -161,13 +211,13 @@ function DashboardPage() {
   const userName = user?.name || "Valued Patron";
   const userEmail = user?.email || "";
   const userPhone = user?.phone || "";
-  const initials = userName
+  const initials = (userName || "JP")
     .split(" ")
     .filter(Boolean)
     .map((n) => n[0])
     .slice(0, 2)
     .join("")
-    .toUpperCase();
+    .toUpperCase() || "JP";
 
   if (!user) {
     return (
@@ -327,113 +377,125 @@ function DashboardPage() {
                   <div>
                     <h3 className="font-display text-lg font-bold text-foreground">No Harvest Orders Yet</h3>
                     <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
-                      Explore our single-origin cold-pressed oils, aged basmati rice, and certified organic pantry staples.
+                      Explore our single-origin cold-pressed oils, bio-inputs, and certified organic agricultural staples.
                     </p>
                   </div>
                   <Button asChild variant="gold" size="sm" className="rounded-full px-6 font-bold shadow-md">
                     <Link to="/products">
-                      Browse Organic Staples <ArrowRight className="size-3.5 ml-1.5" />
+                      Browse Products <ArrowRight className="size-3.5 ml-1.5" />
                     </Link>
                   </Button>
                 </div>
               ) : (
                 /* Orders List */
                 <div className="space-y-5">
-                  {customerOrders.map((o) => (
-                    <div
-                      key={o.number}
-                      className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-soft transition hover:shadow-md space-y-4"
-                    >
-                      {/* Order Header */}
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
-                        <div>
+                  {customerOrders.filter(Boolean).map((o, idx) => {
+                    const orderNum = o.number || o.orderNumber || `ORD-${idx + 1}`;
+                    const orderTotal = o.total ?? o.finalTotal ?? 0;
+                    const orderItems = Array.isArray(o.items) ? o.items.filter(Boolean) : [];
+                    const orderAddress = o.address || {
+                      fullName: userName,
+                      city: "Ahmedabad",
+                      pincode: "380054",
+                      streetAddress: "Registered Delivery Address",
+                    };
+
+                    return (
+                      <div
+                        key={o.id || orderNum || idx}
+                        className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-soft transition hover:shadow-md space-y-4"
+                      >
+                        {/* Order Header */}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <strong className="font-mono text-base font-bold text-foreground">{orderNum}</strong>
+                              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                                o.status === "Delivered"
+                                  ? "bg-brand-leaf/15 text-brand-leaf"
+                                  : o.status === "Cancelled"
+                                  ? "bg-destructive/15 text-destructive"
+                                  : "bg-brand-gold/20 text-brand-gold"
+                              }`}>
+                                ● {o.status || "Processing"}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Placed on <strong className="text-foreground">{o.date || "Recent"}</strong> · {orderItems.length || 1} distinct products · Paid via {o.paymentMethod || "Online"}
+                            </p>
+                          </div>
+
                           <div className="flex items-center gap-3">
-                            <strong className="font-mono text-base font-bold text-foreground">{o.number}</strong>
-                            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                              o.status === "Delivered"
-                                ? "bg-brand-leaf/15 text-brand-leaf"
-                                : o.status === "Cancelled"
-                                ? "bg-destructive/15 text-destructive"
-                                : "bg-brand-gold/20 text-brand-gold"
-                            }`}>
-                              ● {o.status}
+                            <div className="text-right">
+                              <span className="text-[11px] text-muted-foreground block">Total Amount</span>
+                              <strong className="text-lg font-bold text-foreground">₹{orderTotal}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Items Preview */}
+                        {orderItems.length > 0 && (
+                          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 bg-secondary/40 p-3.5 rounded-2xl border border-border/70">
+                            {orderItems.map((item, itemIdx) => (
+                              <div key={itemIdx} className="flex items-center gap-3">
+                                {item?.image && (
+                                  <img
+                                    src={item.image}
+                                    alt={item.name || "Product"}
+                                    className="size-12 rounded-xl object-cover border border-border shrink-0 bg-white"
+                                  />
+                                )}
+                                <div className="min-w-0 flex-1 text-xs">
+                                  <p className="font-semibold text-foreground truncate">{item?.name || "Organic Product"}</p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    Qty: {item?.quantity || 1} × ₹{item?.price || 0}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Delivery Address & Status Info */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-muted-foreground pt-1">
+                          <div className="flex items-start sm:items-center gap-2">
+                            <MapPin className="size-4 text-brand-leaf shrink-0 mt-0.5 sm:mt-0" />
+                            <span>
+                              Deliver to: <strong className="text-foreground">{orderAddress?.fullName || userName}</strong> ({orderAddress?.city || "Ahmedabad"}, {orderAddress?.pincode || "380054"})
                             </span>
                           </div>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Placed on <strong className="text-foreground">{o.date}</strong> · {o.items?.length || 1} distinct products · Paid via {o.paymentMethod}
-                          </p>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Truck className="size-4 text-brand-leaf shrink-0" />
+                            <span>{o.courier || "Delhivery Air Express"}</span>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="text-[11px] text-muted-foreground block">Total Amount</span>
-                            <strong className="text-lg font-bold text-foreground">₹{o.total}</strong>
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedInvoiceOrder(o)}
+                            className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                          >
+                            <FileText className="size-3.5 text-brand-leaf" /> View GST Invoice
+                          </Button>
+
+                          <div className="flex items-center gap-2.5">
+                            <Button asChild variant="outline" size="sm" className="h-8 text-xs rounded-xl">
+                              <Link to="/track-order">
+                                Track Shipment <ArrowRight className="size-3 ml-1" />
+                              </Link>
+                            </Button>
+                            <Button onClick={() => handleReorder(o)} variant="gold" size="sm" className="h-8 text-xs gap-1.5 rounded-xl font-bold">
+                              <RefreshCw className="size-3" /> Reorder
+                            </Button>
                           </div>
                         </div>
                       </div>
-
-                      {/* Items Preview */}
-                      {o.items && o.items.length > 0 && (
-                        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 bg-secondary/40 p-3.5 rounded-2xl border border-border/70">
-                          {o.items.map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-3">
-                              {item.image && (
-                                <img
-                                  src={item.image}
-                                  alt={item.name}
-                                  className="size-12 rounded-xl object-cover border border-border shrink-0 bg-white"
-                                />
-                              )}
-                              <div className="min-w-0 flex-1 text-xs">
-                                <p className="font-semibold text-foreground truncate">{item.name}</p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  Qty: {item.quantity} × ₹{item.price}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Delivery Address & Status Info */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-muted-foreground pt-1">
-                        <div className="flex items-start sm:items-center gap-2">
-                          <MapPin className="size-4 text-brand-leaf shrink-0 mt-0.5 sm:mt-0" />
-                          <span>
-                            Deliver to: <strong className="text-foreground">{o.address?.fullName || userName}</strong> ({o.address?.city || "Ahmedabad"}, {o.address?.pincode || "380054"})
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Truck className="size-4 text-brand-leaf shrink-0" />
-                          <span>{o.courier || "Delhivery Air Express"}</span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedInvoiceOrder(o)}
-                          className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                        >
-                          <FileText className="size-3.5 text-brand-leaf" /> View GST Invoice
-                        </Button>
-
-                        <div className="flex items-center gap-2.5">
-                          <Button asChild variant="outline" size="sm" className="h-8 text-xs rounded-xl">
-                            <Link to="/track-order">
-                              Track Shipment <ArrowRight className="size-3 ml-1" />
-                            </Link>
-                          </Button>
-                          <Button onClick={() => handleReorder(o)} variant="gold" size="sm" className="h-8 text-xs gap-1.5 rounded-xl font-bold">
-                            <RefreshCw className="size-3" /> Reorder
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -462,26 +524,26 @@ function DashboardPage() {
                 </div>
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2">
-                  {savedAddresses.map((addr: any, idx: number) => (
+                  {savedAddresses.filter(Boolean).map((addr: any, idx: number) => (
                     <div
-                      key={addr.id || idx}
+                      key={addr?.id || idx}
                       className={`rounded-3xl border p-6 shadow-soft relative bg-card ${
-                        addr.isDefault ? "border-brand-leaf/50 ring-1 ring-brand-leaf/20" : "border-border"
+                        addr?.isDefault ? "border-brand-leaf/50 ring-1 ring-brand-leaf/20" : "border-border"
                       }`}
                     >
-                      {addr.isDefault && (
+                      {addr?.isDefault && (
                         <span className="absolute right-4 top-4 rounded-full bg-brand-leaf/10 px-2.5 py-0.5 text-[10px] font-bold text-brand-leaf">
                           Default
                         </span>
                       )}
                       <p className="font-semibold text-sm capitalize flex items-center gap-1.5">
-                        <MapPin className="size-4 text-brand-leaf" /> {addr.type || "Home"} Address
+                        <MapPin className="size-4 text-brand-leaf" /> {addr?.type || "Home"} Address
                       </p>
                       <p className="mt-2 text-xs text-muted-foreground leading-6">
-                        <strong className="text-foreground">{addr.fullName || addr.name || userName}</strong><br />
-                        {[addr.houseFlat, addr.street, addr.landmark].filter(Boolean).join(", ") || addr.streetAddress || "Registered Address"}<br />
-                        {addr.city}, {addr.state} – {addr.pincode}<br />
-                        Phone: <span className="text-foreground font-mono">{addr.phone || userPhone}</span>
+                        <strong className="text-foreground">{addr?.fullName || addr?.name || userName}</strong><br />
+                        {[addr?.houseFlat, addr?.street, addr?.landmark].filter(Boolean).join(", ") || addr?.streetAddress || addr?.addressLine1 || "Registered Address"}<br />
+                        {addr?.city || "Ahmedabad"}, {addr?.state || "Gujarat"} – {addr?.pincode || "380054"}<br />
+                        Phone: <span className="text-foreground font-mono">{addr?.phone || userPhone}</span>
                       </p>
                     </div>
                   ))}
@@ -553,29 +615,30 @@ function DashboardPage() {
           isOpen={!!selectedInvoiceOrder}
           onClose={() => setSelectedInvoiceOrder(null)}
           order={{
-            orderNumber: selectedInvoiceOrder.number,
-            transactionId: selectedInvoiceOrder.transactionId,
-            date: selectedInvoiceOrder.date,
-            paymentMethod: selectedInvoiceOrder.paymentMethod,
-            customerName: selectedInvoiceOrder.address.fullName,
-            customerPhone: selectedInvoiceOrder.address.phone,
-            customerAddress: `${selectedInvoiceOrder.address.streetAddress}, ${selectedInvoiceOrder.address.city}, ${selectedInvoiceOrder.address.state} - ${selectedInvoiceOrder.address.pincode}`,
-            items: selectedInvoiceOrder.items.map((it) => ({
+            orderNumber: selectedInvoiceOrder.number || selectedInvoiceOrder.orderNumber || "ORD-000",
+            transactionId: selectedInvoiceOrder.transactionId || "pay_rzp_verified",
+            date: selectedInvoiceOrder.date || "Recent",
+            paymentMethod: selectedInvoiceOrder.paymentMethod || "Razorpay (Online)",
+            customerName: selectedInvoiceOrder.address?.fullName || userName || "Valued Patron",
+            customerPhone: selectedInvoiceOrder.address?.phone || userPhone || "+91 98480 22338",
+            customerAddress: selectedInvoiceOrder.address
+              ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}`
+              : "Registered Delivery Address",
+            items: (Array.isArray(selectedInvoiceOrder.items) ? selectedInvoiceOrder.items : []).map((it) => ({
               product: {
-                id: it.productId,
-                name: it.name,
-                price: it.price,
+                id: it?.productId || 1,
+                name: it?.name || "Single-Origin Organic Harvest",
+                price: it?.price || 0,
               },
-              qty: it.quantity,
+              qty: it?.quantity || 1,
             })),
-            subtotal: selectedInvoiceOrder.subtotal,
-            discount: selectedInvoiceOrder.discount,
-            deliveryFee: selectedInvoiceOrder.deliveryFee,
-            finalTotal: selectedInvoiceOrder.total,
+            subtotal: selectedInvoiceOrder.subtotal || selectedInvoiceOrder.total || 0,
+            discount: selectedInvoiceOrder.discount || 0,
+            deliveryFee: selectedInvoiceOrder.deliveryFee || 0,
+            finalTotal: selectedInvoiceOrder.total || selectedInvoiceOrder.finalTotal || 0,
           }}
         />
       )}
     </div>
   );
 }
-

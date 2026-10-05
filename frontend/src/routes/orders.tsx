@@ -564,21 +564,21 @@ export function MyOrdersPage() {
         <OrderInvoiceModal
           isOpen={!!selectedInvoiceOrder}
           onClose={() => setSelectedInvoiceOrder(null)}
-          orderNumber={selectedInvoiceOrder.number}
-          invoiceDate={selectedInvoiceOrder.date}
-          customerName={selectedInvoiceOrder.address.fullName}
-          customerPhone={selectedInvoiceOrder.address.phone}
-          customerAddress={`${selectedInvoiceOrder.address.streetAddress}, ${selectedInvoiceOrder.address.city}, ${selectedInvoiceOrder.address.state} - ${selectedInvoiceOrder.address.pincode}`}
-          items={selectedInvoiceOrder.items.map((it) => ({
+          orderNumber={selectedInvoiceOrder.number || selectedInvoiceOrder.orderNumber || "ORD-000"}
+          invoiceDate={selectedInvoiceOrder.date || "Recent"}
+          customerName={selectedInvoiceOrder.address?.fullName || user?.name || "Valued Customer"}
+          customerPhone={selectedInvoiceOrder.address?.phone || user?.phone || "+91 98480 22338"}
+          customerAddress={selectedInvoiceOrder.address ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}` : "Registered Delivery Address"}
+          items={(Array.isArray(selectedInvoiceOrder.items) ? selectedInvoiceOrder.items : []).map((it) => ({
             name: it.name,
             quantity: it.quantity,
             price: it.price,
           }))}
-          subtotal={selectedInvoiceOrder.subtotal}
-          deliveryFee={selectedInvoiceOrder.deliveryFee}
-          discount={selectedInvoiceOrder.discount}
-          finalTotal={selectedInvoiceOrder.total}
-          paymentMethod={selectedInvoiceOrder.paymentMethod}
+          subtotal={selectedInvoiceOrder.subtotal || selectedInvoiceOrder.total || 0}
+          deliveryFee={selectedInvoiceOrder.deliveryFee || 0}
+          discount={selectedInvoiceOrder.discount || 0}
+          finalTotal={selectedInvoiceOrder.total || selectedInvoiceOrder.finalTotal || 0}
+          paymentMethod={selectedInvoiceOrder.paymentMethod || "Online"}
         />
       )}
     </div>

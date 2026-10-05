@@ -59,10 +59,14 @@ export function OrderCard({
   };
 
   const handleReorder = () => {
-    order.items.forEach((item) => {
-      addToCart(item.productId, item.quantity);
-    });
-    toast.success(`Added ${order.items.length} items from ${order.number} to cart!`);
+    if (order.items && Array.isArray(order.items)) {
+      order.items.forEach((item) => {
+        if (item?.productId) {
+          addToCart(item.productId, item.quantity || 1);
+        }
+      });
+      toast.success(`Added items from ${order.number || "order"} to cart!`);
+    }
   };
 
   const getStatusBadge = () => {
@@ -241,9 +245,9 @@ export function OrderCard({
               <span className="text-muted-foreground font-semibold flex items-center gap-1.5">
                 <MapPin className="size-3.5 text-brand-leaf" /> Delivery Address
               </span>
-              <p className="font-medium text-foreground mt-1">{order.address.fullName}</p>
-              <p className="text-muted-foreground mt-0.5">{order.address.streetAddress}, {order.address.city}, {order.address.state} - {order.address.pincode}</p>
-              <p className="text-muted-foreground mt-0.5">📞 {order.address.phone}</p>
+              <p className="font-medium text-foreground mt-1">{order.address?.fullName || "Valued Customer"}</p>
+              <p className="text-muted-foreground mt-0.5">{order.address?.streetAddress || "Registered Address"}, {order.address?.city || "Ahmedabad"}, {order.address?.state || "Gujarat"} - {order.address?.pincode || "380054"}</p>
+              <p className="text-muted-foreground mt-0.5">📞 {order.address?.phone || "+91 98480 22338"}</p>
             </div>
 
             <div>
