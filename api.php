@@ -3546,6 +3546,25 @@ function ensureJananiCatalogSynced($pdo) {
             ], JSON_PRETTY_PRINT);
             exit;
 
+        case 'fs_debug':
+            $assetsFiles = is_dir(__DIR__ . '/assets') ? scandir(__DIR__ . '/assets') : false;
+            $distFiles = is_dir(__DIR__ . '/frontend/dist/client/assets') ? scandir(__DIR__ . '/frontend/dist/client/assets') : false;
+            $gitStatus = function_exists('shell_exec') ? @shell_exec('git status 2>&1') : 'disabled';
+            $gitLog = function_exists('shell_exec') ? @shell_exec('git log -n 3 --oneline 2>&1') : 'disabled';
+            echo json_encode([
+                'success' => true,
+                'time' => date('Y-m-d H:i:s'),
+                'dir' => __DIR__,
+                'git_status' => $gitStatus,
+                'git_log' => $gitLog,
+                'index_html_exists' => file_exists(__DIR__ . '/index.html'),
+                'index_html_size' => file_exists(__DIR__ . '/index.html') ? filesize(__DIR__ . '/index.html') : 0,
+                'assets_count' => is_array($assetsFiles) ? count($assetsFiles) : 0,
+                'assets_all' => is_array($assetsFiles) ? array_values(array_diff($assetsFiles, ['.', '..'])) : [],
+                'dist_assets_count' => is_array($distFiles) ? count($distFiles) : 0,
+            ], JSON_PRETTY_PRINT);
+            exit;
+
         case 'init':
             require_once __DIR__ . '/db_init.php';
             exit;

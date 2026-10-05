@@ -9,6 +9,17 @@ DirectoryIndex index.html index.php
 # Prevent Directory Browsing
 Options -Indexes
 
+# Force correct MIME types for Web assets
+<IfModule mod_mime.c>
+  AddType text/css .css
+  AddType application/javascript .js
+  AddType application/json .json
+  AddType image/svg+xml .svg
+  AddType image/webp .webp
+  AddType font/woff2 .woff2
+  AddType font/woff .woff
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -31,7 +42,10 @@ Options -Indexes
   RewriteRule ^ - [L]
 
   # 5. SPA Route Fallback: Rewrite all page routes (/about, /cart, /admin, /products, etc.) to index.html
+  # Strictly NEVER rewrite assets, images, banners, or static file requests to index.html
   RewriteCond %{REQUEST_URI} !^/api
+  RewriteCond %{REQUEST_URI} !^/(assets|images|banners|favicon) [NC]
+  RewriteCond %{REQUEST_URI} !\.(css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$ [NC]
   RewriteRule ^ index.html [L]
 </IfModule>
 

@@ -11,9 +11,7 @@ export default defineConfig({
     tanstackStart({
       server: { entry: "server" },
       prerender: {
-        enabled: true,
-        concurrency: 2,
-        failOnError: false,
+        enabled: false,
       },
     }),
     react(),
