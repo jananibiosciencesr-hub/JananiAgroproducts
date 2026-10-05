@@ -173,6 +173,7 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: visible;
   }
 
   body {
@@ -180,7 +181,8 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     letter-spacing: 0;
-    overflow-x: clip;
+    overflow-x: visible;
+    position: relative;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
@@ -192,8 +194,10 @@
   ::selection { background: var(--brand-gold); color: var(--forest); }
 }
 
-/* Ensure sticky navigation bar sticks reliably across all browsers */
-header.sticky {
+/* Ensure sticky navigation bar sticks reliably across all browsers without overflow clipping */
+header,
+header.sticky,
+.sticky-nav-wrapper {
   position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
@@ -232,6 +236,7 @@ header.sticky {
 main {
   margin: 0 !important;
   padding: 0 !important;
+  overflow-x: clip;
 }
 
 main > section,

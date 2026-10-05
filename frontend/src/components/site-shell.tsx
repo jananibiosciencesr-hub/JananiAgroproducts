@@ -143,7 +143,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             ? "border-b border-[#0B6B35]/30 bg-white/98 shadow-md backdrop-blur-xl"
             : "border-b border-[#0B6B35]/20 bg-white/95 backdrop-blur-xl shadow-xs"
         }`}
-        style={{ position: "-webkit-sticky", position: "sticky", top: 0 }}
+        style={{ top: 0 }}
         onMouseLeave={() => setIsMegaMenuOpen(false)}
       >
         <div className="mx-auto grid h-16 sm:h-18 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
