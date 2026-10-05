@@ -1624,19 +1624,19 @@ export function AuthenticationPage() {
                     Welcome to the Janani Family!
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    We've credited your welcome harvest bonus directly to your wallet.
+                    Your Janani Agro member account has been successfully verified.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-brand-gold/30 bg-gradient-to-r from-amber-500/10 via-brand-gold/20 to-amber-500/10 p-4 text-center">
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-brand-gold">
-                    Instant Wallet Balance
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center">
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                    Verified Member Account
                   </span>
-                  <div className="font-display text-3xl font-extrabold text-foreground mt-0.5">
-                    ₹{user?.walletBalance || 150}
+                  <div className="font-display text-lg font-bold text-foreground mt-1">
+                    Direct Farmer & Dealer Access
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    Redeemable on your first cold-pressed oil, ghee, or millet purchase.
+                    Enjoy direct manufacturer pricing on certified bio-fertilizers and crop solutions.
                   </p>
                 </div>
 

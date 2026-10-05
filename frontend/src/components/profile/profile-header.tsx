@@ -3,7 +3,6 @@ import {
   Camera,
   LogOut,
   Sparkles,
-  Wallet,
   ShieldCheck,
   Upload,
   Trash2,
@@ -130,29 +129,11 @@ export function ProfileHeader() {
             <p className="text-xs text-primary-foreground/75">
               {email} · {phone}
             </p>
-
-            {/* Wallet Quick Pill */}
-            <div className="pt-1 flex items-center justify-center sm:justify-start gap-3">
-              <Link
-                to="/wallet"
-                className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 transition px-3 py-1 text-xs backdrop-blur-sm border border-white/10 text-white"
-                title="View Wallet & Referrals"
-              >
-                <Wallet className="size-3.5 text-brand-gold" />
-                <span>Farm Wallet: <strong className="text-brand-gold">₹{walletBalance}</strong> &bull; Refer & Earn &rarr;</span>
-              </Link>
-            </div>
           </div>
         </div>
 
         {/* Right: Quick Action Controls */}
         <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 self-center md:self-auto">
-          <Button asChild variant="glass" size="sm" className="rounded-full text-xs font-bold gap-1.5 shadow-sm text-white">
-            <Link to="/wallet">
-              <Wallet className="size-4 text-brand-gold" /> Farm Wallet
-            </Link>
-          </Button>
-
           <Button asChild variant="gold" size="sm" className="rounded-full text-xs font-bold gap-1.5 shadow-sm">
             <Link to="/orders">
               <ShoppingBag className="size-4" /> My Orders Hub

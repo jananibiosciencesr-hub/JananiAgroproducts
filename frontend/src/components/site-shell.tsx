@@ -267,7 +267,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{user.name}</h4>
-                    <p className="text-[11px] text-emerald-600 font-semibold">₹{user.walletBalance} Wallet Balance</p>
+                    <p className="text-[11px] text-muted-foreground">{user.email || user.phone}</p>
                   </div>
                 </div>
                 <Button asChild size="sm" variant="outline" className="text-xs h-8">
@@ -277,7 +277,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             )}
 
             <nav className="mt-6 grid gap-1">
-              {[...links, ["Farm Wallet & Rewards", "/wallet"] as const, ["My Orders", "/orders"] as const, ["Profile Settings", "/profile"] as const, ["Track Order", "/track-order"] as const].map(([label, to]) => (
+              {[...links, ["My Orders", "/orders"] as const, ["Profile Settings", "/profile"] as const, ["Track Order", "/track-order"] as const].map(([label, to]) => (
                 <Link
                   key={label}
                   to={to}

@@ -55,7 +55,7 @@ export function ProfilePage() {
             Sign In to Access Your Profile
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
-            Please sign in with your Email OTP to manage your personal details, saved delivery addresses, and farm wallet.
+            Please sign in with your Email OTP to manage your personal details and saved delivery addresses.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">

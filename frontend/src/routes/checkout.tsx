@@ -36,7 +36,6 @@ import {
   calculateCouponDiscount,
   type CouponRule,
 } from "@/components/checkout/coupon-selector-modal";
-import { WalletToggleCard } from "@/components/checkout/wallet-toggle-card";
 import { GiftCardCard, type AppliedGiftCard } from "@/components/checkout/gift-card-card";
 import { OrderNotesCard } from "@/components/checkout/order-notes-card";
 import { PaymentSummaryCard } from "@/components/checkout/payment-summary-card";
@@ -96,10 +95,7 @@ export function CheckoutPage() {
   // 3. Coupon State
   const [appliedCoupon, setAppliedCoupon] = useState<CouponRule | null>(null);
 
-  // 4. Wallet State
-  const [isWalletEnabled, setIsWalletEnabled] = useState(false);
-
-  // 5. Gift Card State
+  // 4. Gift Card State
   const [appliedGiftCard, setAppliedGiftCard] = useState<AppliedGiftCard | null>(null);
 
   // 6. Order Notes State
@@ -253,16 +249,10 @@ export function CheckoutPage() {
     standardShippingFee
   );
 
-  // Net before wallet & gift card
+  // Net before gift card
   const grossPayable = Math.max(0, subtotal + totalShippingCharges - couponDiscount);
-
-  // Wallet deduction
-  const userWalletBalance = user?.walletBalance ?? 250;
-  const walletDeduction = isWalletEnabled
-    ? Math.min(userWalletBalance, grossPayable)
-    : 0;
-
-  const payableAfterWallet = Math.max(0, grossPayable - walletDeduction);
+  const walletDeduction = 0;
+  const payableAfterWallet = grossPayable;
 
   // Gift card deduction
   const giftCardDeduction = appliedGiftCard
@@ -711,14 +701,6 @@ export function CheckoutPage() {
                 shippingFee={standardShippingFee}
               />
 
-              {/* Wallet Toggle */}
-              <WalletToggleCard
-                walletBalance={userWalletBalance}
-                isWalletEnabled={isWalletEnabled}
-                onToggleWallet={(enabled) => setIsWalletEnabled(enabled)}
-                maxDeductible={grossPayable}
-              />
-
               {/* Gift Card */}
               <GiftCardCard
                 appliedGiftCard={appliedGiftCard}
@@ -855,8 +837,8 @@ export function CheckoutPage() {
             slotFee={slotFee}
             coupon={appliedCoupon}
             couponDiscount={couponDiscount}
-            isWalletEnabled={isWalletEnabled}
-            walletDeduction={walletDeduction}
+            isWalletEnabled={false}
+            walletDeduction={0}
             appliedGiftCard={appliedGiftCard}
             finalTotal={finalTotal}
             totalSavings={totalSavings}
