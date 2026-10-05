@@ -50,7 +50,7 @@ const CROPS: CropItem[] = [
     id: "wheat",
     name: "Wheat",
     queryParam: "wheat",
-    image: "/products/category-rice.jpg"
+    image: "/images/categories/wheat.webp"
   },
   {
     id: "chilli",

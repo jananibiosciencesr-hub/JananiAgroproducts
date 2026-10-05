@@ -399,6 +399,12 @@ export function HomePage() {
       </section>
 
       {/* ========================================================================= */}
+      {/* 2.5 SHOP BY CROP & DISEASE (Customized for Crops & Pest Protection)        */}
+      {/* ========================================================================= */}
+      <ShopByCrop />
+      <ShopByDisease />
+
+      {/* ========================================================================= */}
       {/* 3. FEATURED PRODUCTS SECTION                                              */}
       {/* ========================================================================= */}
       <section className="py-4 sm:py-5 px-4 sm:px-6 lg:px-8 bg-white relative">
@@ -808,11 +814,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 7. INTERACTIVE CROP & DISEASE CLINIC (For Farmers)                         */}
-      {/* ========================================================================= */}
-      <ShopByCrop />
-      <ShopByDisease />
 
       {/* Quick View Modal */}
       <ProductQuickViewModal
