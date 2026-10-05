@@ -119,6 +119,7 @@ export function HomePage() {
       id: "bio-fertilizers",
       title: "Bio Fertilizers",
       icon: Sprout,
+      image: "/images/categories/bio-fertilizers.jpg",
       link: "/categories/bio-fertilizers",
       description: "Rhizobium, PSB & bio-inoculants for soil enrichment",
       color: "text-emerald-700 bg-emerald-50",
@@ -127,6 +128,7 @@ export function HomePage() {
       id: "bio-pesticides",
       title: "Bio Pesticides",
       icon: ShieldAlert,
+      image: "/images/categories/bio-pesticides.jpg",
       link: "/categories/bio-pesticides",
       description: "Biological pest control & natural neem formulations",
       color: "text-emerald-700 bg-emerald-50",
@@ -135,6 +137,7 @@ export function HomePage() {
       id: "bio-fungicides",
       title: "Bio Fungicides",
       icon: ShieldCheck,
+      image: "/images/categories/bio-fungicides.jpg",
       link: "/categories/bio-fungicides",
       description: "Trichoderma viride & organic fungal defenses",
       color: "text-emerald-700 bg-emerald-50",
@@ -143,6 +146,7 @@ export function HomePage() {
       id: "bio-stimulants",
       title: "Bio Stimulants",
       icon: TrendingUp,
+      image: "/images/categories/bio-stimulants.jpg",
       link: "/categories/bio-stimulants",
       description: "Humic, fulvic & seaweed vegetative growth boosters",
       color: "text-amber-700 bg-amber-50",
@@ -151,6 +155,7 @@ export function HomePage() {
       id: "micro-nutrients",
       title: "Micro Nutrients",
       icon: Wheat,
+      image: "/images/categories/micro-nutrients.jpg",
       link: "/categories/micro-nutrients",
       description: "Zinc, Boron & trace minerals for balanced nutrition",
       color: "text-emerald-700 bg-emerald-50",
@@ -159,6 +164,7 @@ export function HomePage() {
       id: "insecticides",
       title: "Insecticides",
       icon: Bug,
+      image: "/images/categories/insecticides.jpg",
       link: "/categories/insecticides",
       description: "Targeted crop insect & pest protection",
       color: "text-amber-700 bg-amber-50",
@@ -167,6 +173,7 @@ export function HomePage() {
       id: "fungicides",
       title: "Fungicides",
       icon: Shield,
+      image: "/images/categories/fungicides.jpg",
       link: "/categories/fungicides",
       description: "Protective & curative fungal disease treatments",
       color: "text-emerald-700 bg-emerald-50",
@@ -175,6 +182,7 @@ export function HomePage() {
       id: "botanical-extracts",
       title: "Botanical Extracts",
       icon: Leaf,
+      image: "/images/categories/botanical-extracts.jpg",
       link: "/categories/botanical-extracts",
       description: "Herbal extracts & natural plant-derived bio-actives",
       color: "text-emerald-700 bg-emerald-50",
@@ -183,6 +191,7 @@ export function HomePage() {
       id: "water-solubles",
       title: "Water Solubles",
       icon: Droplets,
+      image: "/images/categories/water-solubles.jpg",
       link: "/categories/water-solubles",
       description: "100% soluble drip & foliar spray formulations",
       color: "text-blue-700 bg-blue-50",
@@ -191,6 +200,7 @@ export function HomePage() {
       id: "agri-inputs",
       title: "Agri Inputs",
       icon: Layers,
+      image: "/images/categories/agri-inputs.jpg",
       link: "/categories/agri-inputs",
       description: "Wetting agents, spreaders & soil enhancers",
       color: "text-emerald-700 bg-emerald-50",
@@ -199,6 +209,7 @@ export function HomePage() {
       id: "others",
       title: "Others",
       icon: Sparkles,
+      image: "/images/categories/others.jpg",
       link: "/categories/others",
       description: "Speciality formulations & custom farm solutions",
       color: "text-amber-700 bg-amber-50",
@@ -360,26 +371,28 @@ export function HomePage() {
               ref={categoriesScrollRef}
               className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 px-2 scrollbar-none snap-x snap-mandatory"
             >
-              {categoryCards.map((cat) => {
-                const IconComponent = cat.icon;
-                return (
-                  <Link
-                    key={cat.id}
-                    to={cat.link}
-                    className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1.5 group"
-                  >
-                    <div className="size-16 rounded-2xl bg-[#4FAE2A]/10 text-[#4FAE2A] flex items-center justify-center mb-3.5 group-hover:scale-110 group-hover:bg-[#075B32] group-hover:text-white transition-all duration-300">
-                      <IconComponent className="size-8" />
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors line-clamp-1">
-                      {cat.title}
-                    </h3>
-                    <p className="mt-1 text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                      {cat.description}
-                    </p>
-                  </Link>
-                );
-              })}
+              {categoryCards.map((cat) => (
+                <Link
+                  key={cat.id}
+                  to={cat.link}
+                  className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1.5 group"
+                >
+                  <div className="size-20 sm:size-24 rounded-2xl overflow-hidden mb-3.5 shadow-sm border border-emerald-100/80 bg-white group-hover:border-[#4FAE2A]/50 group-hover:shadow-md transition-all duration-300 relative">
+                    <img
+                      src={cat.image}
+                      alt={cat.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  </div>
+                  <h3 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors line-clamp-1">
+                    {cat.title}
+                  </h3>
+                  <p className="mt-1 text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                    {cat.description}
+                  </p>
+                </Link>
+              ))}
             </div>
           </div>
         </div>

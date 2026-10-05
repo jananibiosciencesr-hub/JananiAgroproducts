@@ -12,39 +12,39 @@ export function getCategoryImage(nameOrSlug: string = "", customImage?: string):
   }
   const s = (nameOrSlug || "").toLowerCase();
   if (s.includes("fertilizer") || s.includes("bio-fertilizer")) {
-    return "/products/dharani.jpg";
+    return "/images/categories/bio-fertilizers.jpg";
   }
   if (s.includes("bio-pesticide") || s.includes("suraksha")) {
-    return "/products/suraksha.jpg";
+    return "/images/categories/bio-pesticides.jpg";
   }
   if (s.includes("bio-fungicide") || s.includes("harit") || s.includes("trichoderma") || s.includes("viride")) {
-    return "/products/harit.jpg";
+    return "/images/categories/bio-fungicides.jpg";
   }
   if (s.includes("stimulant") || s.includes("bio-stimulant") || s.includes("pushkal") || s.includes("vigor")) {
-    return "/products/pushkal.jpg";
+    return "/images/categories/bio-stimulants.jpg";
   }
   if (s.includes("micro-nutrient") || s.includes("nutrient") || s.includes("annada") || s.includes("green-power")) {
-    return "/products/annada.jpg";
+    return "/images/categories/micro-nutrients.jpg";
   }
   if (s.includes("insecticide") || s.includes("shield")) {
-    return "/products/balavan.jpg";
+    return "/images/categories/insecticides.jpg";
   }
   if (s.includes("fungicide") || s.includes("care")) {
-    return "/products/suraksha.jpg";
+    return "/images/categories/fungicides.jpg";
   }
   if (s.includes("botanical") || s.includes("neem")) {
-    return "/products/neem-oil.jpg";
+    return "/images/categories/botanical-extracts.jpg";
   }
   if (s.includes("soluble") || s.includes("water-soluble") || s.includes("foliar")) {
-    return "/products/dhanya.jpg";
+    return "/images/categories/water-solubles.jpg";
   }
   if (s.includes("input") || s.includes("agri-input") || s.includes("bhumi") || s.includes("soil")) {
-    return "/products/bhumi-shakti.jpg";
+    return "/images/categories/agri-inputs.jpg";
   }
   if (s.includes("other") || s.includes("stick")) {
-    return "/products/balavan-bottle.jpg";
+    return "/images/categories/others.jpg";
   }
-  return "/products/harit.jpg";
+  return "/images/categories/bio-fertilizers.jpg";
 }
 
 // Smart Product Image Resolver
