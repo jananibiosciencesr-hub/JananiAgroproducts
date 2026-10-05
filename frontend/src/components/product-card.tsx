@@ -1,5 +1,5 @@
 import React from "react";
-import { Heart, ShoppingBag, Star, Eye, MapPin, Sparkles } from "lucide-react";
+import { Heart, ShoppingBag, Star, Eye, MapPin, Sparkles, Minus, Plus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
@@ -13,7 +13,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, list = false, onQuickView }: ProductCardProps) {
-  const { wishlist, toggleWishlist, addToCart } = useStore();
+  const { cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart } = useStore();
+  const cartQty = cart[product.id] || 0;
   const isWishlisted = wishlist.includes(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -27,6 +28,24 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
     toast.success(`Added ${product.name} to cart!`, {
       description: `₹${product.price} • ${product.unit}`,
     });
+  };
+
+  const handleIncrement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!product.inStock) return;
+    addToCart(product.id, 1);
+  };
+
+  const handleDecrement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (cartQty <= 1) {
+      removeFromCart(product.id);
+      toast.info(`Removed ${product.name} from cart`);
+    } else {
+      updateQuantity(product.id, cartQty - 1);
+    }
   };
 
   const handleWishlist = (e: React.MouseEvent) => {
@@ -200,16 +219,40 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
           </div>
         </div>
 
-        {/* Full-width Rectangular Add to Cart Button - Exact match to mockup */}
+        {/* Full-width Rectangular Add to Cart / Quantity Stepper Button */}
         <div className="mt-2.5 pt-2">
-          <button
-            onClick={handleAddToCart}
-            disabled={!product.inStock}
-            className="w-full bg-[#075B32] hover:bg-[#064A29] disabled:bg-gray-300 text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
-          >
-            <ShoppingBag className="size-3.5 sm:size-4" />
-            <span>{product.inStock ? "ADD TO CART" : "OUT OF STOCK"}</span>
-          </button>
+          {cartQty > 0 ? (
+            <div className="w-full bg-[#075B32] text-white text-[11px] sm:text-xs font-bold py-1 sm:py-1.5 rounded-none transition shadow-xs flex items-center justify-between px-2">
+              <button
+                type="button"
+                onClick={handleDecrement}
+                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-sm transition active:scale-90 cursor-pointer"
+                aria-label="Decrease quantity"
+              >
+                <Minus className="size-3.5" />
+              </button>
+              <span className="font-mono font-bold text-xs select-none">
+                {cartQty} IN BASKET
+              </span>
+              <button
+                type="button"
+                onClick={handleIncrement}
+                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-sm transition active:scale-90 cursor-pointer"
+                aria-label="Increase quantity"
+              >
+                <Plus className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              disabled={!product.inStock}
+              className="w-full bg-[#075B32] hover:bg-[#064A29] disabled:bg-gray-300 text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+            >
+              <ShoppingBag className="size-3.5 sm:size-4" />
+              <span>{product.inStock ? "ADD TO CART" : "OUT OF STOCK"}</span>
+            </button>
+          )}
         </div>
       </div>
     </article>

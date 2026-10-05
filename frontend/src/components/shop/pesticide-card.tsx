@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag, Check, ShieldCheck, Sparkles } from "lucide-react";
+import { Heart, ShoppingBag, Check, ShieldCheck, Sparkles, Minus, Plus } from "lucide-react";
 import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import { toast } from "sonner";
 import { type CropProtectionProduct } from "@/lib/crop-protection-data";
@@ -11,8 +11,8 @@ interface PesticideCardProps {
 }
 
 export function PesticideCard({ product }: PesticideCardProps) {
-  const { addToCart, wishlist, toggleWishlist } = useStore();
-  const [isAdded, setIsAdded] = useState(false);
+  const { cart, addToCart, updateQuantity, removeFromCart, wishlist, toggleWishlist } = useStore();
+  const quantity = cart[product.catalogId] || 0;
   const isWishlisted = wishlist.includes(product.catalogId);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -23,11 +23,34 @@ export function PesticideCard({ product }: PesticideCardProps) {
     } catch {
       // fallback
     }
-    setIsAdded(true);
     toast.success(`${product.title} added to cart!`, {
       description: `Technical: ${product.technicalName}`,
     });
-    setTimeout(() => setIsAdded(false), 1800);
+  };
+
+  const handleIncrement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      addToCart(product.catalogId, 1);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleDecrement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      if (quantity <= 1) {
+        removeFromCart(product.catalogId);
+        toast.info(`Removed ${product.title} from cart`);
+      } else {
+        updateQuantity(product.catalogId, quantity - 1);
+      }
+    } catch {
+      // fallback
+    }
   };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
@@ -46,8 +69,9 @@ export function PesticideCard({ product }: PesticideCardProps) {
   const handleWhatsAppOrder = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const qtyText = quantity > 0 ? ` (Qty: ${quantity})` : "";
     const msg = encodeURIComponent(
-      `Hello Janani Agro, I am interested in ordering: ${product.title} (${product.technicalName}) at ₹${product.price}. Please provide stock availability and expert application dosage for my crops.`
+      `Hello Janani Agro, I am interested in ordering: ${product.title}${qtyText} (${product.technicalName}) at ₹${product.price}. Please provide stock availability and expert application dosage for my crops.`
     );
     window.open(`https://wa.me/919426989470?text=${msg}`, "_blank");
   };
@@ -133,33 +157,44 @@ export function PesticideCard({ product }: PesticideCardProps) {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-bold transition-all shadow-xs ${
-              isAdded
-                ? "bg-emerald-700 text-white"
-                : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95"
-            }`}
-          >
-            {isAdded ? (
-              <>
-                <Check className="size-3.5" />
-                <span>Added</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="size-3.5" />
-                <span>Add to Cart</span>
-              </>
-            )}
-          </button>
+          {quantity > 0 ? (
+            <div className="flex items-center justify-between rounded-xl bg-emerald-700 text-white p-1 shadow-xs h-9">
+              <button
+                type="button"
+                onClick={handleDecrement}
+                aria-label="Decrease quantity"
+                className="size-7 rounded-lg flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition active:scale-90 cursor-pointer"
+              >
+                <Minus className="size-3.5" />
+              </button>
+              <span className="font-bold text-xs sm:text-sm font-mono px-1 select-none">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={handleIncrement}
+                aria-label="Increase quantity"
+                className="size-7 rounded-lg flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition active:scale-90 cursor-pointer"
+              >
+                <Plus className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 py-2 px-2 text-xs font-bold transition-all shadow-xs h-9 cursor-pointer"
+            >
+              <ShoppingBag className="size-3.5" />
+              <span>Add to Cart</span>
+            </button>
+          )}
 
           <button
             type="button"
             onClick={handleWhatsAppOrder}
             title="Chat & order on WhatsApp"
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50/80 py-2 px-2.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 active:scale-95"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50/80 py-2 px-2.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 active:scale-95 h-9 cursor-pointer"
           >
             <WhatsAppIcon className="size-3.5 text-[#25D366]" />
             <span>Order</span>
