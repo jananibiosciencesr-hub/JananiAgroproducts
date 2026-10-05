@@ -42,10 +42,16 @@ export function AdminNavbar({
   const [profileOpen, setProfileOpen] = useState(false);
 
   // Dynamic user details
-  const currentAdmin = adminUser || (() => {
+  const currentAdmin = (() => {
+    if (adminUser && typeof adminUser === "object") return adminUser;
     try {
-      const stored = localStorage.getItem("janani_auth_user");
-      if (stored) return JSON.parse(stored);
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("janani_auth_user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === "object") return parsed;
+        }
+      }
     } catch (e) {}
     return { name: "Janani Admin", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
   })();
