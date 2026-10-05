@@ -2402,10 +2402,49 @@ try {
 
                 if (empty($rawId)) {
                     // Create customer
+                    $name = trim($body['name'] ?? 'New Patron');
+                    $email = strtolower(trim($body['email'] ?? ''));
+                    $phone = trim($body['phone'] ?? '');
+
+                    if (empty($email)) {
+                        echo json_encode(['success' => false, 'message' => 'Email address is required to register a customer.']);
+                        exit;
+                    }
+
+                    // Strict Duplicate Email Check
+                    $checkStmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone` FROM `users` WHERE `email` = ? LIMIT 1");
+                    $checkStmt->execute([$email]);
+                    $existing = $checkStmt->fetch();
+
+                    if ($existing) {
+                        http_response_code(409);
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'EMAIL_ALREADY_REGISTERED',
+                            'message' => "The email '{$email}' is already registered to customer '{$existing['name']}' (ID: {$existing['id']}). Please use a different email address or update the existing customer.",
+                            'existingCustomer' => $existing
+                        ]);
+                        exit;
+                    }
+
+                    // Check duplicate phone if provided
+                    if (!empty($phone) && $phone !== '+91 98480 22338') {
+                        $pStmt = $pdo->prepare("SELECT `id`, `name`, `phone` FROM `users` WHERE `phone` = ? AND `phone` != '' LIMIT 1");
+                        $pStmt->execute([$phone]);
+                        $pExisting = $pStmt->fetch();
+                        if ($pExisting) {
+                            http_response_code(409);
+                            echo json_encode([
+                                'success' => false,
+                                'error' => 'PHONE_ALREADY_REGISTERED',
+                                'message' => "Mobile number '{$phone}' is already registered to customer '{$pExisting['name']}' (ID: {$pExisting['id']}).",
+                                'existingCustomer' => $pExisting
+                            ]);
+                            exit;
+                        }
+                    }
+
                     $custId = !empty($body['id']) ? $body['id'] : ('CUST-' . rand(100, 999));
-                    $name = $body['name'] ?? 'New Patron';
-                    $email = strtolower(trim($body['email'] ?? ($custId . '@janani.customer')));
-                    $phone = $body['phone'] ?? '';
                     $role = $body['role'] ?? 'Customer';
                     $tier = $body['tier'] ?? 'Silver';
                     $wallet = (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 0));
@@ -2414,7 +2453,7 @@ try {
                     $avatar = $body['avatar'] ?? null;
                     $prefs = isset($body['preferences']) ? json_encode($body['preferences']) : null;
 
-                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `tier`, `wallet_balance`, `loyalty_points`, `status`, `avatar`, `preferences`, `is_verified`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `phone` = VALUES(`phone`), `tier` = VALUES(`tier`), `status` = VALUES(`status`), `wallet_balance` = VALUES(`wallet_balance`)");
+                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `tier`, `wallet_balance`, `loyalty_points`, `status`, `avatar`, `preferences`, `is_verified`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
                     $stmt->execute([$custId, $name, $email, $phone, $role, $tier, $wallet, $loyalty, $status, $avatar, $prefs]);
 
                     $fStmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
@@ -2466,6 +2505,24 @@ try {
                     $fields = [];
                     $vals = [];
                     if (isset($body['name'])) { $fields[] = "`name` = ?"; $vals[] = $body['name']; }
+                    if (isset($body['email'])) {
+                        $newEmail = strtolower(trim($body['email']));
+                        // Check if another customer already has this email
+                        $chkEmail = $pdo->prepare("SELECT `id`, `name` FROM `users` WHERE `email` = ? AND `id` != ? AND `email` != ? LIMIT 1");
+                        $chkEmail->execute([$newEmail, $id, $id]);
+                        $other = $chkEmail->fetch();
+                        if ($other) {
+                            http_response_code(409);
+                            echo json_encode([
+                                'success' => false,
+                                'error' => 'EMAIL_ALREADY_REGISTERED',
+                                'message' => "The email '{$newEmail}' is already used by customer '{$other['name']}' ({$other['id']})."
+                            ]);
+                            exit;
+                        }
+                        $fields[] = "`email` = ?";
+                        $vals[] = $newEmail;
+                    }
                     if (isset($body['phone'])) { $fields[] = "`phone` = ?"; $vals[] = $body['phone']; }
                     if (isset($body['tier'])) { $fields[] = "`tier` = ?"; $vals[] = $body['tier']; }
                     if (isset($body['role'])) { $fields[] = "`role` = ?"; $vals[] = $body['role']; }

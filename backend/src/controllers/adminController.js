@@ -2090,6 +2090,16 @@ export const createAdminCustomer = (req, res) => {
     return res.status(400).json({ success: false, message: "Name, email, and phone number are required." });
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+  const existingCustomer = adminCustomers.find(c => c.email && c.email.toLowerCase() === normalizedEmail);
+  if (existingCustomer) {
+    return res.status(409).json({
+      success: false,
+      error: 'EMAIL_ALREADY_REGISTERED',
+      message: `The email '${email}' is already registered to customer '${existingCustomer.name}' (${existingCustomer.id}). Please use a different email address or edit the existing customer profile.`
+    });
+  }
+
   const newId = `CUST-${String(adminCustomers.length + 1).padStart(3, '0')}`;
   const newCustomer = {
     id: newId,

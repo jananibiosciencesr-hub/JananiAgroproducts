@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import { products as initialProducts, categories as initialCategories, type Product } from "@/lib/catalog";
-import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories } from "@/lib/api";
+import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories, updateUserProfileApi } from "@/lib/api";
 
 type StoreContextValue = {
   products: Product[];
@@ -252,7 +252,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUserProfile = (updates: Partial<AuthUser>) => {
-    setUser((current) => (current ? { ...current, ...updates } : null));
+    setUser((current) => {
+      const updated = current ? { ...current, ...updates } : null;
+      if (updated?.id || updated?.email) {
+        const idOrEmail = updated.id || updated.email;
+        updateUserProfileApi(idOrEmail, updates).catch((err) => {
+          console.warn("Could not sync profile update to server:", err);
+        });
+      }
+      return updated;
+    });
     toast.success("Profile details saved successfully.");
   };
 

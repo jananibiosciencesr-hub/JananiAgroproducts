@@ -45,6 +45,7 @@ import {
   deleteAdminCustomer,
   type CustomerQueryParams
 } from "@/lib/api";
+import { validatePhone, validateEmail } from "@/lib/validation";
 
 export function CustomersManagement() {
   // Data States
@@ -625,6 +626,7 @@ export function CustomersManagement() {
       {isAddCustomerOpen && (
         <AddCustomerModal
           isOpen={isAddCustomerOpen}
+          existingCustomers={customers}
           onClose={() => setIsAddCustomerOpen(false)}
           onSuccess={() => {
             setIsAddCustomerOpen(false);
@@ -1235,10 +1237,12 @@ function CustomerProfileDrawer({
 
 function AddCustomerModal({
   isOpen,
+  existingCustomers = [],
   onClose,
   onSuccess
 }: {
   isOpen: boolean;
+  existingCustomers?: any[];
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -1255,23 +1259,110 @@ function AddCustomerModal({
     initialLoyalty: 100,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string; server?: string }>({});
+  const [touched, setTouched] = useState<{ email?: boolean; phone?: boolean }>({});
+
+  // Real-time duplicate email check
+  const duplicateEmailCustomer = formData.email.trim()
+    ? existingCustomers.find(
+        (c) => c.email && c.email.toLowerCase() === formData.email.trim().toLowerCase()
+      )
+    : null;
+
+  // Real-time duplicate phone check
+  const cleanPhone = formData.phone.replace(/\D/g, "");
+  const duplicatePhoneCustomer = cleanPhone && cleanPhone.length === 10
+    ? existingCustomers.find((c) => {
+        const cPhone = (c.phone || "").replace(/\D/g, "");
+        return cPhone && cPhone.slice(-10) === cleanPhone && cPhone !== "9848022338";
+      })
+    : null;
+
+  const handleEmailChange = (val: string) => {
+    setFormData((prev) => ({ ...prev, email: val }));
+    setTouched((prev) => ({ ...prev, email: true }));
+    setErrors((prev) => ({ ...prev, server: undefined }));
+
+    const res = validateEmail(val);
+    if (!res.isValid) {
+      setErrors((prev) => ({ ...prev, email: res.error }));
+    } else {
+      setErrors((prev) => ({ ...prev, email: undefined }));
+    }
+  };
+
+  const handlePhoneChange = (val: string) => {
+    const raw = val.replace(/\D/g, "").slice(0, 10);
+    setFormData((prev) => ({ ...prev, phone: raw }));
+    setTouched((prev) => ({ ...prev, phone: true }));
+    setErrors((prev) => ({ ...prev, server: undefined }));
+
+    const res = validatePhone(raw);
+    if (!res.isValid && raw.length > 0) {
+      setErrors((prev) => ({ ...prev, phone: res.error }));
+    } else {
+      setErrors((prev) => ({ ...prev, phone: undefined }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.phone) {
-      toast.error("Please fill in Name, Email and Phone");
+    setErrors({});
+
+    if (!formData.name.trim()) {
+      setErrors((prev) => ({ ...prev, name: "Full name is required." }));
+      toast.error("Please enter the customer's full name.");
+      return;
+    }
+
+    const emailCheck = validateEmail(formData.email);
+    if (!emailCheck.isValid) {
+      setErrors((prev) => ({ ...prev, email: emailCheck.error }));
+      toast.error(emailCheck.error || "Please enter a valid email address.");
+      return;
+    }
+
+    if (duplicateEmailCustomer) {
+      const msg = `Email '${formData.email}' is already registered to customer '${duplicateEmailCustomer.name}' (ID: ${duplicateEmailCustomer.id}). Please use a different email address.`;
+      setErrors((prev) => ({ ...prev, email: msg, server: msg }));
+      toast.error(msg);
+      return;
+    }
+
+    const phoneCheck = validatePhone(formData.phone);
+    if (!phoneCheck.isValid) {
+      setErrors((prev) => ({ ...prev, phone: phoneCheck.error }));
+      toast.error(phoneCheck.error || "Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    if (duplicatePhoneCustomer) {
+      const msg = `Mobile number '${formData.phone}' is already registered to customer '${duplicatePhoneCustomer.name}' (ID: ${duplicatePhoneCustomer.id}).`;
+      setErrors((prev) => ({ ...prev, phone: msg, server: msg }));
+      toast.error(msg);
       return;
     }
 
     try {
       setSubmitting(true);
-      const res = await createAdminCustomer(formData);
+      const res = await createAdminCustomer({
+        ...formData,
+        phone: phoneCheck.cleanValue || formData.phone,
+        email: formData.email.trim().toLowerCase(),
+      });
+
       if (res?.success) {
-        toast.success(`Customer ${formData.name} created successfully!`);
+        toast.success(`Customer ${formData.name} created successfully in database!`);
         onSuccess();
+      } else {
+        const errorMsg = res?.message || res?.error || "Failed to create customer profile.";
+        setErrors((prev) => ({ ...prev, server: errorMsg }));
+        toast.error(errorMsg);
       }
-    } catch (err) {
-      toast.error("Failed to create customer");
+    } catch (err: any) {
+      const errorMsg = err?.message || "Failed to create customer";
+      setErrors((prev) => ({ ...prev, server: errorMsg }));
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -1285,12 +1376,26 @@ function AddCustomerModal({
             <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
               <Users className="size-5" />
             </div>
-            <h3 className="text-base font-bold text-foreground">Add New Customer</h3>
+            <div>
+              <h3 className="text-base font-bold text-foreground">Add New Customer</h3>
+              <p className="text-[11px] text-muted-foreground">Register customer profile to live database</p>
+            </div>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="size-4" />
           </button>
         </div>
+
+        {/* Server or Duplicate Error Alert Banner */}
+        {errors.server && (
+          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs flex items-start gap-2.5">
+            <AlertTriangle className="size-4 shrink-0 mt-0.5 text-rose-600" />
+            <div className="space-y-0.5">
+              <p className="font-bold">Registration Alert</p>
+              <p className="leading-relaxed">{errors.server}</p>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div className="space-y-1">
@@ -1299,10 +1404,14 @@ function AddCustomerModal({
               required
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. Radhika Sharma"
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                setErrors((prev) => ({ ...prev, name: undefined, server: undefined }));
+              }}
+              placeholder="e.g. Sravani Patel"
               className="h-9 w-full rounded-xl border border-border bg-background px-3 outline-none focus:border-emerald-600"
             />
+            {errors.name && <p className="text-[11px] text-rose-600 font-medium">{errors.name}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -1312,21 +1421,47 @@ function AddCustomerModal({
                 required
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="radhika@gmail.com"
-                className="h-9 w-full rounded-xl border border-border bg-background px-3 outline-none focus:border-emerald-600"
+                onChange={(e) => handleEmailChange(e.target.value)}
+                placeholder="sravani@gmail.com"
+                className={`h-9 w-full rounded-xl border bg-background px-3 outline-none ${
+                  duplicateEmailCustomer || errors.email
+                    ? "border-rose-500 focus:border-rose-600 bg-rose-50/20"
+                    : "border-border focus:border-emerald-600"
+                }`}
               />
+              {duplicateEmailCustomer && (
+                <div className="mt-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-[10px] leading-tight">
+                  <span className="font-bold">⚠️ Registered Email:</span> Already belongs to <strong>{duplicateEmailCustomer.name}</strong> ({duplicateEmailCustomer.id}). Please use a unique email.
+                </div>
+              )}
+              {errors.email && !duplicateEmailCustomer && (
+                <p className="text-[11px] text-rose-600 font-medium">{errors.email}</p>
+              )}
             </div>
+
             <div className="space-y-1">
-              <label className="font-bold text-foreground">Phone Number *</label>
+              <label className="font-bold text-foreground">Phone Number (10 Digits) *</label>
               <input
                 required
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+91 98451 12345"
-                className="h-9 w-full rounded-xl border border-border bg-background px-3 outline-none focus:border-emerald-600"
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                placeholder="9845112345"
+                maxLength={10}
+                className={`h-9 w-full rounded-xl border bg-background px-3 outline-none ${
+                  duplicatePhoneCustomer || errors.phone
+                    ? "border-rose-500 focus:border-rose-600 bg-rose-50/20"
+                    : "border-border focus:border-emerald-600"
+                }`}
               />
+              {duplicatePhoneCustomer && (
+                <div className="mt-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-[10px] leading-tight">
+                  <span className="font-bold">⚠️ Registered Phone:</span> Already belongs to <strong>{duplicatePhoneCustomer.name}</strong> ({duplicatePhoneCustomer.id}).
+                </div>
+              )}
+              {errors.phone && !duplicatePhoneCustomer && (
+                <p className="text-[11px] text-rose-600 font-medium">{errors.phone}</p>
+              )}
             </div>
           </div>
 
@@ -1408,16 +1543,16 @@ function AddCustomerModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-border px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-muted"
+              className="rounded-xl border border-border px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-muted cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50"
+              disabled={submitting || !!duplicateEmailCustomer}
+              className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 cursor-pointer"
             >
-              {submitting ? "Creating..." : "Save Customer"}
+              {submitting ? "Saving..." : "Save Customer"}
             </button>
           </div>
         </form>

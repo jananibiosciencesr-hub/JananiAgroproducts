@@ -44,17 +44,20 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
     });
 
     const isJson = res.headers.get("content-type")?.includes("application/json");
-    if (res.ok && isJson) {
+    if (isJson) {
       try {
         const data = await res.json();
-        return data as T;
+        // Return valid JSON objects even on 4xx status (e.g. 409 Conflict, 400 Bad Request) so caller receives exact error message
+        if (data !== null && typeof data === "object") {
+          return data as T;
+        }
       } catch (err) {
         console.error("JSON parse error:", err);
       }
     }
 
     // If request fails (non-2xx) or returns non-JSON HTML:
-    if (!res.ok || !isJson) {
+    if (!res.ok) {
       // 1. If /api/* rewrite fails, try direct /api.php endpoint
       if (!endpoint.startsWith("http") && !endpoint.includes("api.php") && !endpoint.includes("db_init.php")) {
         const clean = endpoint.replace(/^\//, "").replace(/^api\//, "");
@@ -1608,27 +1611,45 @@ export async function getAdminCustomerById(id: string) {
 }
 
 export async function createAdminCustomer(customerData: any) {
-  let res = await fetchJson<{ success: boolean; message: string; data: any }>(`/api.php?action=customers`, {
+  let res = await fetchJson<{ success: boolean; message: string; error?: string; data?: any }>(`/api.php?action=customers`, {
     method: "POST",
     body: JSON.stringify(customerData)
   });
-  if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/customers`, {
-      method: "POST",
-      body: JSON.stringify(customerData)
-    });
+
+  if (res && typeof res === "object") {
+    if (res.success) return res;
+    if (res.message || res.error) return res;
   }
-  if (res?.success) return res;
+
+  res = await fetchJson<{ success: boolean; message: string; error?: string; data?: any }>(`/admin/customers`, {
+    method: "POST",
+    body: JSON.stringify(customerData)
+  });
+
+  if (res && typeof res === "object") {
+    if (res.success) return res;
+    if (res.message || res.error) return res;
+  }
 
   const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
+  const normalizedEmail = (customerData.email || "").trim().toLowerCase();
+  const existing = stored.find(c => c.email && c.email.toLowerCase() === normalizedEmail);
+  if (existing) {
+    return {
+      success: false,
+      error: "EMAIL_ALREADY_REGISTERED",
+      message: `The email '${customerData.email}' is already registered to customer '${existing.name}' (${existing.id}). Please use a different email address or edit the existing customer profile.`
+    };
+  }
+
   const newCustomer = {
     id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
     joinedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
     ordersCount: 0,
     ltv: 0,
-    walletBalance: 0,
-    loyaltyPoints: 50,
-    tier: "Silver",
+    walletBalance: Number(customerData.initialWallet || 0),
+    loyaltyPoints: Number(customerData.initialLoyalty || 50),
+    tier: customerData.tier || "Silver",
     status: "Active",
     ...customerData
   };
@@ -1637,22 +1658,44 @@ export async function createAdminCustomer(customerData: any) {
 }
 
 export async function updateAdminCustomer(id: string, customerData: any) {
-  let res = await fetchJson<{ success: boolean; message: string; data: any }>(`/api.php?action=customers&id=${encodeURIComponent(id)}`, {
+  let res = await fetchJson<{ success: boolean; message: string; error?: string; data?: any }>(`/api.php?action=customers&id=${encodeURIComponent(id)}`, {
     method: "POST",
     body: JSON.stringify(customerData)
   });
-  if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data: any }>(`/admin/customers/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(customerData)
-    });
+
+  if (res && typeof res === "object") {
+    if (res.success) return res;
+    if (res.message || res.error) return res;
   }
-  if (res?.success) return res;
+
+  res = await fetchJson<{ success: boolean; message: string; error?: string; data?: any }>(`/admin/customers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(customerData)
+  });
+
+  if (res && typeof res === "object") {
+    if (res.success) return res;
+    if (res.message || res.error) return res;
+  }
 
   const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
   const updated = stored.map((c) => (c.id === id ? { ...c, ...customerData } : c));
   setStored(STORAGE_KEYS.CUSTOMERS, updated);
   return { success: true, message: "Customer updated successfully", data: { id, ...customerData } };
+}
+
+export async function updateUserProfileApi(userIdOrEmail: string, updates: any) {
+  let res = await fetchJson<{ success: boolean; message: string; data?: any }>(`/api.php?action=customers&id=${encodeURIComponent(userIdOrEmail)}`, {
+    method: "POST",
+    body: JSON.stringify(updates)
+  });
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string; data?: any }>(`/api.php?action=users&id=${encodeURIComponent(userIdOrEmail)}`, {
+      method: "POST",
+      body: JSON.stringify(updates)
+    });
+  }
+  return res;
 }
 
 export async function toggleCustomerStatus(id: string, status?: string, reason?: string) {
