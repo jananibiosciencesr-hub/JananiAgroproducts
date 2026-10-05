@@ -321,7 +321,7 @@ export function HomePage() {
       <section className="py-4 sm:py-5 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className="mx-auto max-w-7xl">
           {/* Section Header */}
-          <div className="text-center max-w-2xl mx-auto mb-3 sm:mb-4">
+          <div className="mb-3 sm:mb-4 text-left">
             <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
               AGRI PRODUCTS
             </p>
@@ -642,8 +642,11 @@ export function HomePage() {
       <section className="py-4 sm:py-6 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
-          <div className="text-center max-w-2xl mx-auto mb-3 sm:mb-4">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
+          <div className="mb-3 sm:mb-4 text-left">
+            <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
+              FARMER STORIES
+            </p>
+            <h2 className="mt-0.5 text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
               WHAT OUR <span className="text-[#D99A12]">FARMERS SAY</span>
             </h2>
             <p className="mt-0.5 text-xs sm:text-sm text-slate-600">
