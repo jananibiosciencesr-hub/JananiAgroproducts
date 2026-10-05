@@ -30,7 +30,8 @@ import {
   MessageSquare,
   MapPin,
   Navigation,
-  Compass
+  Compass,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
@@ -44,6 +45,7 @@ import {
   resetPassword,
   saveOnboardingPreferences
 } from "@/lib/api";
+import { validatePhone, validateEmail } from "@/lib/validation";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -75,6 +77,81 @@ export function AuthenticationPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(true);
+
+  // Validation State for Phone & Email
+  const [formErrors, setFormErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
+  const [formTouched, setFormTouched] = useState<{ phone: boolean; email: boolean }>({ phone: false, email: false });
+
+  const handlePhoneChange = (val: string) => {
+    const digitsOnly = val.replace(/\D/g, "").slice(0, 10);
+    setPhone(digitsOnly);
+    setFormTouched((prev) => ({ ...prev, phone: true }));
+
+    if (!digitsOnly) {
+      setFormErrors((prev) => ({ ...prev, phone: "Mobile number is required." }));
+      return;
+    }
+
+    const res = validatePhone(digitsOnly);
+    setFormErrors((prev) => ({ ...prev, phone: res.isValid ? undefined : res.error }));
+  };
+
+  const handlePhoneBlur = () => {
+    setFormTouched((prev) => ({ ...prev, phone: true }));
+    const res = validatePhone(phone);
+    setFormErrors((prev) => ({ ...prev, phone: res.isValid ? undefined : res.error }));
+  };
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    if (formTouched.email || val.includes("@") || val.length > 3) {
+      setFormTouched((prev) => ({ ...prev, email: true }));
+      const res = validateEmail(val);
+      setFormErrors((prev) => ({
+        ...prev,
+        email: res.isValid ? undefined : res.error,
+        emailSuggestion: res.suggestion,
+      }));
+    } else {
+      setFormErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
+    }
+  };
+
+  const handleEmailBlur = () => {
+    setFormTouched((prev) => ({ ...prev, email: true }));
+    const res = validateEmail(email);
+    setFormErrors((prev) => ({
+      ...prev,
+      email: res.isValid ? undefined : res.error,
+      emailSuggestion: res.suggestion,
+    }));
+  };
+
+  const handleApplyEmailSuggestion = () => {
+    const atIndex = email.indexOf("@");
+    if (atIndex !== -1) {
+      const username = email.slice(0, atIndex);
+      let targetDomain = "@gmail.com";
+      if (formErrors.emailSuggestion?.includes("@yahoo.com")) targetDomain = "@yahoo.com";
+      else if (formErrors.emailSuggestion?.includes("@outlook.com")) targetDomain = "@outlook.com";
+      else if (formErrors.emailSuggestion?.includes("@hotmail.com")) targetDomain = "@hotmail.com";
+      else if (formErrors.emailSuggestion?.includes(".com")) {
+        const parts = email.split("@");
+        const domainParts = parts[1]?.split(".") || [];
+        domainParts[domainParts.length - 1] = "com";
+        const corrected = `${parts[0]}@${domainParts.join(".")}`;
+        setEmail(corrected);
+        setFormErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
+        return;
+      }
+      const corrected = `${username}${targetDomain}`;
+      setEmail(corrected);
+      setFormErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
+    }
+  };
+
+  const isPhoneValid = phone.length === 10 && /^[6-9][0-9]{9}$/.test(phone);
+  const isEmailValid = Boolean(email && !formErrors.email && !formErrors.emailSuggestion && validateEmail(email).isValid);
 
   // Address & Current Location State
   const [houseFlat, setHouseFlat] = useState("");
@@ -449,13 +526,21 @@ export function AuthenticationPage() {
       toast.error("Please enter your full name.");
       return;
     }
-    const cleanPhone = phone.replace(/\D/g, "");
-    if (!cleanPhone || cleanPhone.length < 10) {
-      toast.error("Please enter a valid 10-digit mobile number.");
-      return;
-    }
-    if (!email.trim() || !email.includes("@")) {
-      toast.error("Please enter a valid email address.");
+    const phoneRes = validatePhone(phone);
+    const emailRes = validateEmail(email);
+
+    if (!phoneRes.isValid || !emailRes.isValid) {
+      setFormTouched({ phone: true, email: true });
+      setFormErrors({
+        phone: phoneRes.error,
+        email: emailRes.error,
+        emailSuggestion: emailRes.suggestion,
+      });
+      if (!phoneRes.isValid) {
+        toast.error(phoneRes.error || "Please enter a valid 10-digit Indian mobile number.");
+      } else {
+        toast.error(emailRes.error || "Please enter a valid email address.");
+      }
       return;
     }
     if (!street.trim() && !houseFlat.trim()) {
@@ -991,23 +1076,41 @@ export function AuthenticationPage() {
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                           <span>Mobile Number *</span>
-                          <span className="text-[10px] text-muted-foreground">Quick SMS Verification</span>
+                          {isPhoneValid ? (
+                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="size-3" /> Valid Indian Mobile
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">Quick SMS Verification</span>
+                          )}
                         </label>
                         <div className="relative flex items-center rounded-2xl border border-input bg-background/90 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                          <span className="flex items-center gap-1.5 border-r border-border/70 px-3.5 py-2.5 text-xs font-semibold text-muted-foreground">
+                          <span className="flex items-center gap-1.5 border-r border-border/70 px-3.5 py-2.5 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
                             🇮🇳 +91
                           </span>
                           <input
                             type="tel"
                             inputMode="numeric"
+                            pattern="[6-9][0-9]{9}"
                             maxLength={10}
                             required
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                            placeholder="e.g. 93114 16225"
-                            className="h-11 w-full rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm font-medium outline-none font-mono"
+                            onChange={(e) => handlePhoneChange(e.target.value)}
+                            onBlur={handlePhoneBlur}
+                            placeholder="93114 16225"
+                            className={`h-11 w-full rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm font-medium outline-none font-mono ${
+                              formTouched.phone && formErrors.phone ? "text-destructive" : ""
+                            }`}
                           />
+                          {isPhoneValid && (
+                            <CheckCircle2 className="absolute right-3 top-3.5 size-4 text-emerald-600 pointer-events-none" />
+                          )}
                         </div>
+                        {formTouched.phone && formErrors.phone && (
+                          <p className="text-[11px] text-destructive flex items-center gap-1 font-medium mt-0.5">
+                            <AlertCircle className="size-3 shrink-0" /> {formErrors.phone}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between text-xs pt-1">
@@ -1038,7 +1141,13 @@ export function AuthenticationPage() {
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                           <span>Email Address *</span>
-                          <span className="text-[10px] text-emerald-600 font-semibold">Real Gmail OTP Delivery</span>
+                          {isEmailValid ? (
+                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="size-3" /> Valid Email
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-emerald-600 font-semibold">Real Gmail OTP Delivery</span>
+                          )}
                         </label>
                         <div className="relative">
                           <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
@@ -1046,11 +1155,37 @@ export function AuthenticationPage() {
                             type="email"
                             required
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => handleEmailChange(e.target.value)}
+                            onBlur={handleEmailBlur}
                             placeholder="e.g. jananibiosciences.r@gmail.com"
-                            className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-4 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${
+                              formTouched.email && formErrors.email
+                                ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
+                                : isEmailValid
+                                ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                                : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            }`}
                           />
+                          {isEmailValid && (
+                            <CheckCircle2 className="absolute right-3.5 top-3.5 size-4 text-emerald-600 pointer-events-none" />
+                          )}
                         </div>
+                        {formTouched.email && formErrors.email && (
+                          <div className="mt-0.5 space-y-1">
+                            <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
+                              <AlertCircle className="size-3 shrink-0" /> {formErrors.email}
+                            </p>
+                            {formErrors.emailSuggestion && (
+                              <button
+                                type="button"
+                                onClick={handleApplyEmailSuggestion}
+                                className="text-[11px] text-brand-leaf hover:underline font-semibold flex items-center gap-1 text-left"
+                              >
+                                💡 {formErrors.emailSuggestion} (Click to apply)
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <p className="text-[11px] text-muted-foreground">
                           A real 6-digit verification code will be sent to your Gmail inbox.
                         </p>
@@ -1070,18 +1205,51 @@ export function AuthenticationPage() {
                     /* Email & Password Login Form */
                     <form onSubmit={handleEmailLogin} className="space-y-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground">Email Address *</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-foreground">Email Address *</label>
+                          {isEmailValid && (
+                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="size-3" /> Valid Email
+                            </span>
+                          )}
+                        </div>
                         <div className="relative">
                           <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                           <input
                             type="email"
                             required
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => handleEmailChange(e.target.value)}
+                            onBlur={handleEmailBlur}
                             placeholder="e.g. jananibiosciences.r@gmail.com"
-                            className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-4 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${
+                              formTouched.email && formErrors.email
+                                ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
+                                : isEmailValid
+                                ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                                : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            }`}
                           />
+                          {isEmailValid && (
+                            <CheckCircle2 className="absolute right-3.5 top-3.5 size-4 text-emerald-600 pointer-events-none" />
+                          )}
                         </div>
+                        {formTouched.email && formErrors.email && (
+                          <div className="mt-0.5 space-y-1">
+                            <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
+                              <AlertCircle className="size-3 shrink-0" /> {formErrors.email}
+                            </p>
+                            {formErrors.emailSuggestion && (
+                              <button
+                                type="button"
+                                onClick={handleApplyEmailSuggestion}
+                                className="text-[11px] text-brand-leaf hover:underline font-semibold flex items-center gap-1 text-left"
+                              >
+                                💡 {formErrors.emailSuggestion} (Click to apply)
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-1.5">
@@ -1164,37 +1332,97 @@ export function AuthenticationPage() {
                       </div>
                     </div>
 
+                    {/* Mobile Number Field with real-time validation */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground">Mobile Number *</label>
-                      <div className="relative">
-                        <Phone className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-foreground">Mobile Number *</label>
+                        {isPhoneValid && (
+                          <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                            <CheckCircle2 className="size-3" /> Valid Indian Mobile
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative flex items-center rounded-2xl border border-input bg-background/90 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                        <span className="flex items-center gap-1 border-r border-border/70 px-3 py-2.5 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
+                          🇮🇳 +91
+                        </span>
                         <input
                           type="tel"
                           inputMode="numeric"
+                          pattern="[6-9][0-9]{9}"
                           maxLength={10}
                           required
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                          placeholder="10-digit mobile number"
-                          className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-3 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono"
+                          onChange={(e) => handlePhoneChange(e.target.value)}
+                          onBlur={handlePhoneBlur}
+                          placeholder="93114 16225"
+                          className={`h-11 w-full rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm font-medium outline-none font-mono ${
+                            formTouched.phone && formErrors.phone ? "text-destructive" : ""
+                          }`}
                         />
+                        {isPhoneValid && (
+                          <CheckCircle2 className="absolute right-3 top-3.5 size-4 text-emerald-600 pointer-events-none" />
+                        )}
                       </div>
+                      {formTouched.phone && formErrors.phone ? (
+                        <p className="text-[11px] text-destructive flex items-center gap-1 font-medium mt-0.5">
+                          <AlertCircle className="size-3 shrink-0" /> {formErrors.phone}
+                        </p>
+                      ) : phone.length > 0 && phone.length < 10 ? (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Enter 10-digit mobile number ({phone.length}/10 digits)
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
+                  {/* Email Address / Gmail Field with real-time validation */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground">Email Address *</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-foreground">Email Address *</label>
+                      {isEmailValid && (
+                        <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                          <CheckCircle2 className="size-3" /> Valid Email
+                        </span>
+                      )}
+                    </div>
                     <div className="relative">
                       <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                       <input
                         type="email"
                         required
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="name@example.com"
-                        className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-4 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        onChange={(e) => handleEmailChange(e.target.value)}
+                        onBlur={handleEmailBlur}
+                        placeholder="kameswarip98@gmail.com"
+                        className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${
+                          formTouched.email && formErrors.email
+                            ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
+                            : isEmailValid
+                            ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                            : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        }`}
                       />
+                      {isEmailValid && (
+                        <CheckCircle2 className="absolute right-3.5 top-3.5 size-4 text-emerald-600 pointer-events-none" />
+                      )}
                     </div>
+                    {formTouched.email && formErrors.email && (
+                      <div className="mt-0.5 space-y-1">
+                        <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
+                          <AlertCircle className="size-3 shrink-0" /> {formErrors.email}
+                        </p>
+                        {formErrors.emailSuggestion && (
+                          <button
+                            type="button"
+                            onClick={handleApplyEmailSuggestion}
+                            className="text-[11px] text-brand-leaf hover:underline font-semibold flex items-center gap-1 text-left"
+                          >
+                            💡 {formErrors.emailSuggestion} (Click to apply)
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <p className="text-[11px] text-muted-foreground">
                       A 6-digit verification code will be sent to your Gmail/Email to verify your account.
                     </p>

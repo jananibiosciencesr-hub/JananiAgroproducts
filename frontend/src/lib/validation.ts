@@ -43,8 +43,8 @@ const KNOWN_GMAIL_TYPOS = new Set([
   "gmil.co", "gamil.co", "gmai.co", "gmil.in", "gamil.in", "gmai.in",
   "gmail.in", "gmail.cim", "gmail.cok", "gmail.col", "gmail.vom", "g-mail.com",
   "gemail.com", "gmaill.co", "gmaill.con", "gmali.com", "gmaild.com", "gmaol.com",
-  "gmaile.com", "gmila.com", "gmaiil.com", "gmiil.com",
-  "emil.com", "email.com", "e-mail.com", "emil.co", "emai.com", "emial.com"
+  "gmaile.com", "gmila.com", "gmaiil.com", "gmiil.com", "gmall.com", "gmall.in",
+  "gml.com", "gml.in", "emil.com", "email.com", "e-mail.com", "emil.co", "emai.com", "emial.com"
 ]);
 
 // Known common typos for Yahoo
