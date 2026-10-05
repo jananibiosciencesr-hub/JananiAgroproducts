@@ -25,6 +25,7 @@ export const STORAGE_KEYS = {
   BACKUPS: "janani_admin_backups",
   AUDIT_LOGS: "janani_admin_audit_logs",
   LOGIN_SESSIONS: "janani_admin_login_sessions",
+  INQUIRIES: "janani_admin_inquiries",
   USERS: "janani_registered_users",
   CART: "janani_cart",
   WISHLIST: "janani_wishlist"
@@ -885,5 +886,72 @@ export const DEFAULT_BACKUPS = [
     createdBy: "System Cron",
     checksum: "SHA256: 3a1c9e81df4a...",
     downloadUrl: "#"
+  }
+];
+
+export const DEFAULT_INQUIRIES = [
+  {
+    id: 1,
+    name: "Dr. Meenakshi Rao",
+    businessName: "AIIMS Nutrition & Research Lab",
+    business_name: "AIIMS Nutrition & Research Lab",
+    service: "Bulk Commercial Supply",
+    subject: "Bulk Commercial Supply",
+    email: "dr.m.rao@aiims.edu",
+    phone: "+91 98490 22338",
+    quantity: "500 kg Bulk Requirement",
+    message: "Requesting certified laboratory COA documents and pricing for bulk monthly supply of Harit Bio Fertilizers and Organic Micronutrients.",
+    status: "New",
+    createdAt: "2026-10-04 10:30 AM",
+    created_at: "2026-10-04 10:30:00",
+    priority: "High"
+  },
+  {
+    id: 2,
+    name: "Kishore Patel",
+    businessName: "Patel Kisan Agro Agency",
+    business_name: "Patel Kisan Agro Agency",
+    service: "Dealership & Distributorship (Tier 1)",
+    subject: "Dealership & Distributorship (Tier 1)",
+    email: "kishore.patel@agroagency.in",
+    phone: "+91 98250 11982",
+    quantity: "₹3,00,000 Initial Stock",
+    message: "We operate 3 retail agro input stores in Anand & Vadodara districts. Looking to secure exclusive regional distribution for Janani Bio Pesticides and Botanical Extracts.",
+    status: "In Progress",
+    createdAt: "2026-10-03 04:15 PM",
+    created_at: "2026-10-03 16:15:00",
+    priority: "High"
+  },
+  {
+    id: 3,
+    name: "Suresh Reddy",
+    businessName: "Sri Sai Organic Orchards",
+    business_name: "Sri Sai Organic Orchards",
+    service: "Crop Solution Advisory",
+    subject: "Crop Solution Advisory",
+    email: "suresh.reddy@srisaifarms.com",
+    phone: "+91 94401 55678",
+    quantity: "50 Acres Farm Coverage",
+    message: "Experiencing early fungal blight in chilli crop. Need Janani technical agronomist consultation on bio-fungicide dosage schedule.",
+    status: "Contacted",
+    createdAt: "2026-10-02 11:20 AM",
+    created_at: "2026-10-02 11:20:00",
+    priority: "Medium"
+  },
+  {
+    id: 4,
+    name: "Ananya Deshmukh",
+    businessName: "Green Earth Export Consortium",
+    business_name: "Green Earth Export Consortium",
+    service: "Contract Farming & Private Label",
+    subject: "Contract Farming & Private Label",
+    email: "ananya@greenearthconsortium.com",
+    phone: "+91 97660 33411",
+    quantity: "Export Grade FPO",
+    message: "Inquiring about certified residue-free bio-stimulants for export table grapes with EU compliance documentation.",
+    status: "Resolved",
+    createdAt: "2026-09-28 02:40 PM",
+    created_at: "2026-09-28 14:40:00",
+    priority: "Medium"
   }
 ];

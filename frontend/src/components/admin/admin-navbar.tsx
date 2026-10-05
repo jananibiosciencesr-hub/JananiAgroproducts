@@ -74,7 +74,7 @@ export function AdminNavbar({
   const notifications = [
     { id: 1, title: "New Order #ORD-94812", desc: "₹4,040 via PhonePe UPI (2 items)", time: "2 min ago", icon: ShoppingBag, color: "text-emerald-500 bg-emerald-500/10", tab: "orders" as AdminTab },
     { id: 2, title: "Critical Low Stock Alert", desc: "A2 Vedic Gir Cow Ghee is 0 in stock", time: "18 min ago", icon: AlertTriangle, color: "text-rose-500 bg-rose-500/10", tab: "inventory" as AdminTab },
-    { id: 3, title: "New Dealership Application", desc: "Apex Agro Traders (Hyderabad, 10L+ tier)", time: "1 hour ago", icon: UserCheck, color: "text-blue-500 bg-blue-500/10", tab: "customers" as AdminTab },
+    { id: 3, title: "New Dealership Application", desc: "Apex Agro Traders (Hyderabad, 10L+ tier)", time: "1 hour ago", icon: UserCheck, color: "text-blue-500 bg-blue-500/10", tab: "inquiries" as AdminTab },
     { id: 4, title: "Product Review Pending", desc: "Divya Nair rated Wild Forest Honey ★★★★★", time: "3 hours ago", icon: CheckCircle2, color: "text-amber-500 bg-amber-500/10", tab: "reviews" as AdminTab },
   ];
 
@@ -169,7 +169,7 @@ export function AdminNavbar({
                 <button
                   onClick={() => {
                     setMessagesOpen(false);
-                    onNavigateTab("customers");
+                    onNavigateTab("inquiries");
                   }}
                   className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
@@ -183,7 +183,7 @@ export function AdminNavbar({
                     key={m.id}
                     onClick={() => {
                       setMessagesOpen(false);
-                      onNavigateTab("customers");
+                      onNavigateTab("inquiries");
                     }}
                     className="flex flex-col p-3 rounded-2xl bg-muted/40 hover:bg-emerald-500/10 cursor-pointer transition-colors border border-border/40"
                   >

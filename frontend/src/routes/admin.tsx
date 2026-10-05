@@ -24,6 +24,7 @@ import { AdminOverview } from "@/components/admin/admin-overview";
 import { CategoriesManagement } from "@/components/admin/admin-categories";
 import { ProductsManagement } from "@/components/admin/admin-products";
 import { CustomersManagement } from "@/components/admin/admin-customers";
+import { InquiriesManagement } from "@/components/admin/admin-inquiries";
 import { OrdersManagement } from "@/components/admin/admin-orders";
 import { ShippingManagement } from "@/components/admin/admin-shipping";
 import { PaymentsManagement } from "@/components/admin/admin-payments";
@@ -768,6 +769,8 @@ function AdminDashboardPage() {
           {activeTab === "orders" && <OrdersManagement />}
 
           {activeTab === "customers" && <CustomersManagement />}
+
+          {activeTab === "inquiries" && <InquiriesManagement />}
 
           {activeTab === "inventory" && (
             <InventoryView

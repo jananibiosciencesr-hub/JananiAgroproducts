@@ -22,7 +22,8 @@ import {
   ChevronRight,
   Leaf,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  MessageSquareText
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
@@ -32,6 +33,7 @@ export type AdminTab =
   | "products"
   | "orders"
   | "customers"
+  | "inquiries"
   | "inventory"
   | "payments"
   | "coupons"
@@ -59,6 +61,7 @@ interface AdminSidebarProps {
     inventory?: number;
     returns?: number;
     reviews?: number;
+    inquiries?: number;
   };
 }
 
@@ -66,7 +69,7 @@ const menuItems: Array<{
   id: AdminTab;
   label: string;
   icon: React.ElementType;
-  badgeKey?: "orders" | "inventory" | "returns" | "reviews";
+  badgeKey?: "orders" | "inventory" | "returns" | "reviews" | "inquiries";
   badgeColor?: string;
   group?: string;
 }> = [
@@ -75,6 +78,7 @@ const menuItems: Array<{
   { id: "products", label: "Products", icon: Package, group: "Catalog" },
   { id: "orders", label: "Orders", icon: ShoppingBag, badgeKey: "orders", badgeColor: "bg-emerald-500", group: "Sales" },
   { id: "customers", label: "Customers", icon: Users, group: "Sales" },
+  { id: "inquiries", label: "Inquiries", icon: MessageSquareText, badgeKey: "inquiries", badgeColor: "bg-blue-500", group: "Sales" },
   { id: "inventory", label: "Inventory", icon: Warehouse, badgeKey: "inventory", badgeColor: "bg-amber-500", group: "Operations" },
   { id: "payments", label: "Payments", icon: CreditCard, group: "Operations" },
   { id: "coupons", label: "Coupons", icon: TicketPercent, group: "Marketing" },
@@ -98,7 +102,7 @@ export function AdminSidebar({
   setMobileOpen,
   onLogout,
   adminUser,
-  badgeCounts = { orders: 9, inventory: 4, returns: 3, reviews: 1 },
+  badgeCounts = { orders: 9, inventory: 4, returns: 3, reviews: 1, inquiries: 4 },
 }: AdminSidebarProps) {
   const currentAdmin = adminUser || (() => {
     try {

@@ -23,7 +23,8 @@ import {
   Star,
   Layers,
   Sparkles,
-  BarChart3
+  BarChart3,
+  MessageSquareText
 } from "lucide-react";
 import {
   AreaChart,
@@ -167,6 +168,7 @@ export function AdminOverview({
     { title: "Cancelled Orders", value: `${cancelledOrdersCount}`, trend: totalOrdersCount > 0 ? `${Math.round((cancelledOrdersCount / Math.max(1, totalOrdersCount)) * 100)}% Rate` : "0% Rate", icon: XCircle, color: "from-rose-500 to-red-700", tab: "orders" as AdminTab },
     { title: "Refund Requests", value: `${refundRequestsCount}`, trend: refundRequestsCount > 0 ? "Action Required" : "No Pending", icon: RotateCcw, color: "from-purple-500 to-pink-600", tab: "returns" as AdminTab },
     { title: "Active Users", value: `${activePatronsCount.toLocaleString('en-IN')}`, trend: "Active Patrons", icon: Users, color: "from-cyan-600 to-blue-700", tab: "customers" as AdminTab },
+    { title: "Customer Inquiries", value: "4 New", trend: "B2B & Retail", icon: MessageSquareText, color: "from-blue-600 to-cyan-600", tab: "inquiries" as AdminTab },
     { title: "Out of Stock", value: `${outOfStockCount}`, trend: outOfStockCount > 0 ? "Immediate Restock" : "Full Stock", icon: AlertOctagon, color: "from-red-600 to-rose-700", tab: "inventory" as AdminTab },
     { title: "Low Stock Products", value: `${lowStockCount}`, trend: lowStockCount > 0 ? "< 10 units left" : "Optimal Stock", icon: AlertTriangle, color: "from-yellow-500 to-amber-600", tab: "inventory" as AdminTab },
     { title: "Coupons Used Today", value: `${couponsUsedCount}`, trend: couponsUsedCount > 0 ? "Active Codes" : "No Coupons", icon: TicketPercent, color: "from-indigo-500 to-purple-600", tab: "coupons" as AdminTab },

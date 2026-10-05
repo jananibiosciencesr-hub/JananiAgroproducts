@@ -3650,6 +3650,84 @@ try {
             ], JSON_PRETTY_PRINT);
             exit;
 
+        case 'inquiries':
+            if ($method === 'POST') {
+                $body = getJsonBody();
+                $stmt = $pdo->prepare("INSERT INTO `inquiries` (`name`, `business_name`, `service`, `email`, `phone`, `quantity`, `message`, `status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $body['name'] ?? '',
+                    $body['business_name'] ?? ($body['businessName'] ?? ''),
+                    $body['service'] ?? ($body['subject'] ?? 'General Inquiry'),
+                    $body['email'] ?? '',
+                    $body['phone'] ?? '',
+                    $body['quantity'] ?? '',
+                    $body['message'] ?? '',
+                    $body['status'] ?? 'New'
+                ]);
+                $newId = (int)$pdo->lastInsertId();
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Inquiry submitted successfully',
+                    'id' => $newId,
+                    'inquiry' => [
+                        'id' => $newId,
+                        'name' => $body['name'] ?? '',
+                        'business_name' => $body['business_name'] ?? ($body['businessName'] ?? ''),
+                        'service' => $body['service'] ?? ($body['subject'] ?? 'General Inquiry'),
+                        'email' => $body['email'] ?? '',
+                        'phone' => $body['phone'] ?? '',
+                        'quantity' => $body['quantity'] ?? '',
+                        'message' => $body['message'] ?? '',
+                        'status' => $body['status'] ?? 'New',
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]
+                ]);
+                exit;
+            } elseif ($method === 'PUT' || $method === 'PATCH') {
+                $body = getJsonBody();
+                $id = (int)($body['id'] ?? ($_GET['id'] ?? 0));
+                $status = $body['status'] ?? 'Contacted';
+                if ($id > 0) {
+                    $stmt = $pdo->prepare("UPDATE `inquiries` SET `status` = ? WHERE `id` = ?");
+                    $stmt->execute([$status, $id]);
+                }
+                echo json_encode(['success' => true, 'message' => 'Inquiry updated successfully']);
+                exit;
+            } elseif ($method === 'DELETE') {
+                $id = (int)($_GET['id'] ?? (getJsonBody()['id'] ?? 0));
+                if ($id > 0) {
+                    $stmt = $pdo->prepare("DELETE FROM `inquiries` WHERE `id` = ?");
+                    $stmt->execute([$id]);
+                }
+                echo json_encode(['success' => true, 'message' => 'Inquiry deleted successfully']);
+                exit;
+            } else {
+                $statusFilter = $_GET['status'] ?? '';
+                if (!empty($statusFilter) && $statusFilter !== 'all') {
+                    $stmt = $pdo->prepare("SELECT * FROM `inquiries` WHERE `status` = ? ORDER BY `id` DESC");
+                    $stmt->execute([$statusFilter]);
+                } else {
+                    $stmt = $pdo->query("SELECT * FROM `inquiries` ORDER BY `id` DESC");
+                }
+                $inquiries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                echo json_encode([
+                    'success' => true,
+                    'inquiries' => $inquiries,
+                    'count' => count($inquiries)
+                ]);
+                exit;
+            }
+
+        case 'newsletter':
+            if ($method === 'POST') {
+                $body = getJsonBody();
+                $stmt = $pdo->prepare("INSERT IGNORE INTO `newsletter_subscribers` (`email`, `source`) VALUES (?, ?)");
+                $stmt->execute([$body['email'] ?? '', $body['source'] ?? 'website']);
+                echo json_encode(['success' => true, 'message' => 'Subscribed successfully in MySQL']);
+                exit;
+            }
+            break;
+
         case 'init':
             require_once __DIR__ . '/db_init.php';
             exit;

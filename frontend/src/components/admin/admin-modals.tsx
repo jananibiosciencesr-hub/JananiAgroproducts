@@ -561,8 +561,8 @@ export function GlobalSearchModal({
   const quickNavs = [
     { label: "Products Catalog", tab: "products" as AdminTab, icon: Package },
     { label: "Orders Manager", tab: "orders" as AdminTab, icon: Truck },
+    { label: "Customer Inquiries & Dealership", tab: "inquiries" as AdminTab, icon: Sparkles },
     { label: "Warehouse Inventory", tab: "inventory" as AdminTab, icon: Package },
-    { label: "Customer Inquiries & Dealership", tab: "customers" as AdminTab, icon: Sparkles },
     { label: "Discount Coupons & Offers", tab: "coupons" as AdminTab, icon: Sparkles },
   ];
 

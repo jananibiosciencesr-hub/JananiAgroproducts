@@ -14,7 +14,8 @@ import {
   DEFAULT_CMS,
   DEFAULT_PAYMENTS,
   DEFAULT_AUDIT_LOGS,
-  DEFAULT_BACKUPS
+  DEFAULT_BACKUPS,
+  DEFAULT_INQUIRIES
 } from "./mock-storage";
 
 const API_BASE_URL = typeof window !== "undefined" && window.location.hostname === "localhost"
@@ -6234,6 +6235,178 @@ export function getBackupDownloadUrl(id: string) {
     ? "http://localhost:5000/api"
     : "/api";
   return `${base}/admin/backups/download/${id}`;
+}
+
+// ==========================================
+// ADMIN INQUIRIES & B2B MANAGEMENT API
+// ==========================================
+
+export interface AdminInquiry {
+  id: string | number;
+  name: string;
+  businessName?: string;
+  business_name?: string;
+  service?: string;
+  subject?: string;
+  email: string;
+  phone: string;
+  quantity?: string;
+  message: string;
+  status: "New" | "Contacted" | "In Progress" | "Resolved" | "Closed";
+  createdAt?: string;
+  created_at?: string;
+  priority?: "High" | "Medium" | "Low";
+  internalNotes?: string;
+}
+
+export async function getAdminInquiries(): Promise<AdminInquiry[]> {
+  try {
+    const phpRes = await fetch("/api.php?action=inquiries", {
+      headers: { "Content-Type": "application/json" }
+    });
+    if (phpRes.ok) {
+      const phpData = await phpRes.json();
+      if (phpData?.success && Array.isArray(phpData.inquiries)) {
+        const formatted: AdminInquiry[] = phpData.inquiries.map((inq: any) => ({
+          id: inq.id,
+          name: inq.name || "Anonymous Inquirer",
+          businessName: inq.business_name || inq.businessName || "",
+          business_name: inq.business_name || inq.businessName || "",
+          service: inq.service || inq.subject || "General Inquiry",
+          subject: inq.service || inq.subject || "General Inquiry",
+          email: inq.email || "",
+          phone: inq.phone || "",
+          quantity: inq.quantity || "",
+          message: inq.message || "",
+          status: (inq.status || "New") as any,
+          createdAt: inq.created_at || inq.createdAt || new Date().toISOString(),
+          created_at: inq.created_at || inq.createdAt || new Date().toISOString(),
+          priority: inq.priority || "Medium",
+          internalNotes: inq.internal_notes || inq.internalNotes || ""
+        }));
+        setStored(STORAGE_KEYS.INQUIRIES, formatted);
+        return formatted;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to fetch inquiries from /api.php:", e);
+  }
+
+  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+  return stored;
+}
+
+export async function updateAdminInquiryStatus(
+  id: string | number,
+  status: "New" | "Contacted" | "In Progress" | "Resolved" | "Closed",
+  internalNotes?: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const phpRes = await fetch(`/api.php?action=inquiries&id=${encodeURIComponent(id)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-HTTP-Method-Override": "PUT" },
+      body: JSON.stringify({ id, status, internalNotes })
+    });
+    if (phpRes.ok) {
+      const phpData = await phpRes.json();
+      if (phpData?.success) {
+        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+        const updated = stored.map((inq) =>
+          String(inq.id) === String(id) ? { ...inq, status, internalNotes: internalNotes ?? inq.internalNotes } : inq
+        );
+        setStored(STORAGE_KEYS.INQUIRIES, updated);
+        return { success: true, message: phpData.message || "Inquiry updated in MySQL" };
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to update inquiry via /api.php:", e);
+  }
+
+  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+  const updated = stored.map((inq) =>
+    String(inq.id) === String(id) ? { ...inq, status, internalNotes: internalNotes ?? inq.internalNotes } : inq
+  );
+  setStored(STORAGE_KEYS.INQUIRIES, updated);
+  return { success: true, message: "Inquiry status updated successfully" };
+}
+
+export async function deleteAdminInquiry(id: string | number): Promise<{ success: boolean; message: string }> {
+  try {
+    const phpRes = await fetch(`/api.php?action=inquiries&id=${encodeURIComponent(id)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-HTTP-Method-Override": "DELETE" }
+    });
+    if (phpRes.ok) {
+      const phpData = await phpRes.json();
+      if (phpData?.success) {
+        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+        const filtered = stored.filter((inq) => String(inq.id) !== String(id));
+        setStored(STORAGE_KEYS.INQUIRIES, filtered);
+        return { success: true, message: phpData.message || "Inquiry deleted from MySQL" };
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to delete inquiry via /api.php:", e);
+  }
+
+  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+  const filtered = stored.filter((inq) => String(inq.id) !== String(id));
+  setStored(STORAGE_KEYS.INQUIRIES, filtered);
+  return { success: true, message: "Inquiry deleted successfully" };
+}
+
+export async function createAdminInquiry(payload: Partial<AdminInquiry>): Promise<{ success: boolean; message: string; inquiry?: AdminInquiry }> {
+  try {
+    const phpRes = await fetch("/api.php?action=inquiries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (phpRes.ok) {
+      const phpData = await phpRes.json();
+      if (phpData?.success) {
+        const newInq: AdminInquiry = phpData.inquiry || {
+          id: phpData.id || Date.now(),
+          name: payload.name || "New Inquirer",
+          businessName: payload.businessName || payload.business_name || "",
+          business_name: payload.business_name || payload.businessName || "",
+          service: payload.service || payload.subject || "General Inquiry",
+          subject: payload.subject || payload.service || "General Inquiry",
+          email: payload.email || "",
+          phone: payload.phone || "",
+          quantity: payload.quantity || "",
+          message: payload.message || "",
+          status: (payload.status || "New") as any,
+          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          priority: payload.priority || "Medium"
+        };
+        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+        setStored(STORAGE_KEYS.INQUIRIES, [newInq, ...stored]);
+        return { success: true, message: "Inquiry recorded in MySQL", inquiry: newInq };
+      }
+    }
+  } catch (e) {}
+
+  const newInq: AdminInquiry = {
+    id: `INQ-${Date.now()}`,
+    name: payload.name || "New Inquirer",
+    businessName: payload.businessName || payload.business_name || "",
+    business_name: payload.business_name || payload.businessName || "",
+    service: payload.service || payload.subject || "General Inquiry",
+    subject: payload.subject || payload.service || "General Inquiry",
+    email: payload.email || "",
+    phone: payload.phone || "",
+    quantity: payload.quantity || "",
+    message: payload.message || "",
+    status: (payload.status || "New") as any,
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    priority: payload.priority || "Medium"
+  };
+  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+  setStored(STORAGE_KEYS.INQUIRIES, [newInq, ...stored]);
+  return { success: true, message: "Inquiry saved successfully", inquiry: newInq };
 }
 
 // ==========================================
