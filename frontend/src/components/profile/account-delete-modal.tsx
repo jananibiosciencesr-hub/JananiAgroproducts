@@ -32,7 +32,13 @@ export function AccountDeleteModal({ isOpen, onClose }: AccountDeleteModalProps)
       // Clear all user persistent keys
       if (typeof window !== "undefined") {
         localStorage.removeItem("janani_user");
+        localStorage.removeItem("janani_auth_user");
         localStorage.removeItem("janani_token");
+        localStorage.removeItem("janani_auth_token");
+        if (user?.email || user?.id) {
+          const clean = (user.email || user.id).toLowerCase().trim().replace(/[^a-z0-9_@.-]/g, "_");
+          localStorage.removeItem(`janani_saved_addresses_${clean}`);
+        }
         localStorage.removeItem("janani_saved_addresses");
         localStorage.removeItem("janani_saved_cards");
         localStorage.removeItem("janani_saved_upis");

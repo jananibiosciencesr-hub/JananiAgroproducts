@@ -128,7 +128,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setCart({});
         }
 
-        const legacyKeys = ["janani_saved_addresses", "janani_customer_orders", "janani_latest_order", "janani_pending_checkout"];
+        // Always purge legacy un-scoped shared addresses to prevent cross-account pollution
+        localStorage.removeItem("janani_saved_addresses");
+
+        const legacyKeys = ["janani_customer_orders", "janani_latest_order", "janani_pending_checkout"];
         legacyKeys.forEach((key) => {
           const item = localStorage.getItem(key);
           if (item && (item.toLowerCase().includes("neha") || item.toLowerCase().includes("example.com") || item.includes("9311416225"))) {

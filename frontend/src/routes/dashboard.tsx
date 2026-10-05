@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { loadCustomerOrders } from "@/components/orders/orders-seed";
 import { CustomerOrder } from "@/components/orders/types";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
+import { loadUserSavedAddresses } from "@/lib/api";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -76,22 +77,9 @@ function DashboardPage() {
   });
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<CustomerOrder | null>(null);
 
-  // Saved addresses state
+  // Saved addresses state scoped strictly to the current logged-in user
   const [savedAddresses, setSavedAddresses] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("janani_saved_addresses");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            return parsed.filter((a) => a && typeof a === "object");
-          }
-        }
-      } catch (e) {
-        console.warn("Failed to parse saved addresses:", e);
-      }
-    }
-    return [];
+    return loadUserSavedAddresses(user?.email || user?.id);
   });
 
   // Profile Form State
@@ -99,7 +87,7 @@ function DashboardPage() {
   const [profilePhone, setProfilePhone] = useState(user?.phone || "");
   const [profileEmail, setProfileEmail] = useState(user?.email || "");
 
-  // Refresh orders when component mounts or updates
+  // Refresh orders and addresses when user changes or component mounts
   useEffect(() => {
     try {
       const list = loadCustomerOrders();
@@ -114,6 +102,7 @@ function DashboardPage() {
       setProfileName(user.name || "");
       setProfilePhone(user.phone || "");
       setProfileEmail(user.email || "");
+      setSavedAddresses(loadUserSavedAddresses(user.email || user.id));
 
       // Live fetch from MySQL server
       const fetchLiveOrders = async () => {

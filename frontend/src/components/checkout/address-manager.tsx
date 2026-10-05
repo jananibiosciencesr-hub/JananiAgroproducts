@@ -16,6 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { validatePhone } from "@/lib/validation";
+import { useStore } from "@/components/store-provider";
+import { loadUserSavedAddresses, saveUserSavedAddresses } from "@/lib/api";
 
 export interface ShippingAddress {
   id: string;
@@ -51,27 +53,24 @@ interface AddressManagerProps {
 }
 
 export function AddressManager({ selectedAddressId, onSelectAddress }: AddressManagerProps) {
+  const { user } = useStore();
   const [isLocating, setIsLocating] = useState(false);
 
   const [addresses, setAddresses] = useState<ShippingAddress[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("janani_saved_addresses");
-        if (stored) return JSON.parse(stored);
-      } catch (e) {
-        console.error("Failed to load addresses", e);
-      }
-    }
-    return [];
+    return loadUserSavedAddresses(user?.email || user?.id);
   });
+
+  useEffect(() => {
+    setAddresses(loadUserSavedAddresses(user?.email || user?.id));
+  }, [user]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<ShippingAddress | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<Omit<ShippingAddress, "id">>({
-    fullName: "",
-    phone: "",
+    fullName: user?.name || "",
+    phone: user?.phone || "",
     alternatePhone: "",
     houseFlat: "",
     street: "",
@@ -139,12 +138,10 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
     );
   };
 
-  // Sync to localStorage
+  // Sync to user-scoped localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("janani_saved_addresses", JSON.stringify(addresses));
-    }
-  }, [addresses]);
+    saveUserSavedAddresses(user?.email || user?.id, addresses);
+  }, [addresses, user]);
 
   // Ensure an address is always selected
   useEffect(() => {
@@ -173,8 +170,8 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
   const openAddModal = () => {
     setEditingAddress(null);
     setFormData({
-      fullName: "",
-      phone: "",
+      fullName: user?.name || "",
+      phone: user?.phone || "",
       alternatePhone: "",
       houseFlat: "",
       street: "",

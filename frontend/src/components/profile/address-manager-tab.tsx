@@ -18,22 +18,19 @@ import { toast } from "sonner";
 import { SavedAddress } from "./types";
 import { useStore } from "@/components/store-provider";
 import { validatePhone } from "@/lib/validation";
+import { loadUserSavedAddresses, saveUserSavedAddresses } from "@/lib/api";
 
 export function AddressManagerTab() {
   const { user } = useStore();
   const [isLocating, setIsLocating] = useState(false);
 
   const [addresses, setAddresses] = useState<SavedAddress[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("janani_saved_addresses");
-        if (stored) return JSON.parse(stored);
-      } catch (e) {
-        console.error("Failed to load saved addresses", e);
-      }
-    }
-    return [];
+    return loadUserSavedAddresses(user?.email || user?.id);
   });
+
+  React.useEffect(() => {
+    setAddresses(loadUserSavedAddresses(user?.email || user?.id));
+  }, [user]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<SavedAddress | null>(null);
@@ -53,9 +50,7 @@ export function AddressManagerTab() {
 
   const saveToStorage = (newList: SavedAddress[]) => {
     setAddresses(newList);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("janani_saved_addresses", JSON.stringify(newList));
-    }
+    saveUserSavedAddresses(user?.email || user?.id, newList);
   };
 
   const handleUseCurrentLocation = () => {

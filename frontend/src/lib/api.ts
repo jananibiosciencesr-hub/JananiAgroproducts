@@ -6447,6 +6447,84 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
   };
 }
 
+export function getUserAddressKey(userEmailOrId?: string | null): string {
+  if (!userEmailOrId) return "janani_saved_addresses_guest";
+  const clean = userEmailOrId.toLowerCase().trim().replace(/[^a-z0-9_@.-]/g, "_");
+  return `janani_saved_addresses_${clean}`;
+}
+
+export function loadUserSavedAddresses(userEmailOrId?: string | null): any[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const key = getUserAddressKey(userEmailOrId);
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter((a) => a && typeof a === "object");
+      }
+    }
+
+    // Check if user object in localStorage has specific preferences or registered address
+    const userStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+    if (userStr && userEmailOrId) {
+      const u = JSON.parse(userStr);
+      const isMatch = u && (
+        (u.email && u.email.toLowerCase() === userEmailOrId.toLowerCase()) ||
+        (u.id && u.id.toLowerCase() === userEmailOrId.toLowerCase())
+      );
+      if (isMatch) {
+        if (Array.isArray(u.preferences?.addresses) && u.preferences.addresses.length > 0) {
+          localStorage.setItem(key, JSON.stringify(u.preferences.addresses));
+          return u.preferences.addresses;
+        }
+        if (u.houseFlat || u.street || u.address || u.city || u.pincode) {
+          const defaultAddr = {
+            id: "addr-" + (u.id || Date.now()),
+            name: u.name || "Default Customer",
+            fullName: u.name || "Default Customer",
+            phone: u.phone || "",
+            houseFlat: u.houseFlat || "",
+            street: u.street || u.address || "",
+            landmark: "",
+            city: u.city || "Ahmedabad",
+            state: u.state || "Gujarat",
+            pincode: u.pincode || "380054",
+            isDefault: true,
+            type: "home",
+            userEmail: (u.email || userEmailOrId).toLowerCase()
+          };
+          localStorage.setItem(key, JSON.stringify([defaultAddr]));
+          return [defaultAddr];
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to load user saved addresses:", e);
+  }
+  return [];
+}
+
+export function saveUserSavedAddresses(userEmailOrId: string | null | undefined, addresses: any[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const key = getUserAddressKey(userEmailOrId);
+    const cleanList = Array.isArray(addresses) ? addresses.filter(Boolean) : [];
+    localStorage.setItem(key, JSON.stringify(cleanList));
+
+    // Remove legacy un-scoped addresses to avoid cross-user pollution
+    localStorage.removeItem("janani_saved_addresses");
+
+    if (userEmailOrId && userEmailOrId !== "guest") {
+      updateUserProfileApi(userEmailOrId, {
+        preferences: { addresses: cleanList }
+      }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn("Failed to save user addresses:", e);
+  }
+}
+
 export async function signupCustomer(payload: {
   name: string;
   email: string;
@@ -6505,9 +6583,8 @@ export async function signupCustomer(payload: {
     localStorage.setItem("janani_auth_user", JSON.stringify(user));
     localStorage.setItem("janani_user", JSON.stringify(user));
 
-    // Save newly entered address to user's saved addresses list
+    // Save newly entered address to user's scoped saved addresses list
     if (payload.street || payload.houseFlat || payload.city || payload.pincode) {
-      const existingAddresses = JSON.parse(localStorage.getItem("janani_saved_addresses") || "[]");
       const newSavedAddr = {
         id: "addr-" + Date.now(),
         name: payload.name,
@@ -6520,9 +6597,12 @@ export async function signupCustomer(payload: {
         state: payload.state || "Gujarat",
         pincode: payload.pincode || "380054",
         isDefault: true,
-        type: "home"
+        type: "home",
+        userEmail: payload.email.toLowerCase()
       };
-      localStorage.setItem("janani_saved_addresses", JSON.stringify([newSavedAddr, ...existingAddresses.filter((a: any) => a.id !== newSavedAddr.id)]));
+      saveUserSavedAddresses(payload.email, [newSavedAddr]);
+    } else {
+      saveUserSavedAddresses(payload.email, []);
     }
 
     // Also register in customer database
