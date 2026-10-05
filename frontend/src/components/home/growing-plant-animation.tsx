@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
-import { RotateCcw, Sparkles, Sprout, Play, Pause } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
 interface GrowthStage {
   id: number;
   key: string;
   name: string;
-  badge: string;
   image: string;
   desc: string;
 }
@@ -15,7 +13,6 @@ const GROWTH_STAGES: GrowthStage[] = [
     id: 0,
     key: "soil",
     name: "Fertile Soil",
-    badge: "1. Living Soil",
     image: "/images/soil_base.jpg",
     desc: "Bio-active soil bed rich in organic carbon and beneficial microbes",
   },
@@ -23,7 +20,6 @@ const GROWTH_STAGES: GrowthStage[] = [
     id: 1,
     key: "germination",
     name: "Germination",
-    badge: "2. Seed Crack",
     image: "/images/sprout_stage1.jpg",
     desc: "Radicle root penetrates downward while shoot cracks the soil surface",
   },
@@ -31,7 +27,6 @@ const GROWTH_STAGES: GrowthStage[] = [
     id: 2,
     key: "seedling",
     name: "Young Sprout",
-    badge: "3. Shoot Rising",
     image: "/images/sprout_stage2.jpg",
     desc: "Stem lengthens upward and cotyledons unfurl towards sunlight",
   },
@@ -39,7 +34,6 @@ const GROWTH_STAGES: GrowthStage[] = [
     id: 3,
     key: "flourishing",
     name: "Full Growth",
-    badge: "4. Deep Root Network",
     image: "/images/sprout_roots_circle.jpg",
     desc: "Flourishing plant with deep lateral root hairs and lush green leaves",
   },
@@ -47,35 +41,35 @@ const GROWTH_STAGES: GrowthStage[] = [
 
 export function GrowingPlantAnimation() {
   const [currentStage, setCurrentStage] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [cycleKey, setCycleKey] = useState<number>(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Growth sequence controller
+  // Seamless continuous natural growth sequence
   useEffect(() => {
-    if (!isPlaying) return;
+    let s1: NodeJS.Timeout;
+    let s2: NodeJS.Timeout;
+    let s3: NodeJS.Timeout;
+    let sLoop: NodeJS.Timeout;
 
     setCurrentStage(0);
 
-    const s1 = setTimeout(() => setCurrentStage(1), 900);
-    const s2 = setTimeout(() => setCurrentStage(2), 2400);
-    const s3 = setTimeout(() => setCurrentStage(3), 4200);
+    s1 = setTimeout(() => setCurrentStage(1), 1400);
+    s2 = setTimeout(() => setCurrentStage(2), 2800);
+    s3 = setTimeout(() => setCurrentStage(3), 4400);
+    sLoop = setTimeout(() => {
+      setCycleKey((prev) => prev + 1);
+    }, 8000);
 
     return () => {
       clearTimeout(s1);
       clearTimeout(s2);
       clearTimeout(s3);
+      clearTimeout(sLoop);
     };
-  }, [cycleKey, isPlaying]);
-
-  const handleReplay = () => {
-    setIsPlaying(true);
-    setCycleKey((prev) => prev + 1);
-  };
+  }, [cycleKey]);
 
   const handleSelectStage = (idx: number) => {
-    setIsPlaying(false);
     setCurrentStage(idx);
+    setCycleKey((prev) => prev + 1);
   };
 
   return (
@@ -87,8 +81,8 @@ export function GrowingPlantAnimation() {
         {/* Circular Growing Plant Container */}
         <div
           className="relative size-60 sm:size-72 md:size-80 rounded-full overflow-hidden shadow-2xl shadow-[#064A29]/30 bg-[#0e0a07] select-none cursor-pointer"
-          onClick={handleReplay}
-          title="Click to replay natural plant growth"
+          onClick={() => setCycleKey((prev) => prev + 1)}
+          title="Natural plant growth cycle"
         >
           {/* Layered Photorealistic Growth Stages */}
           {GROWTH_STAGES.map((stg) => {
@@ -172,80 +166,25 @@ export function GrowingPlantAnimation() {
               </g>
             </svg>
           )}
-
-          {/* Top-Right Growth Stage Pill */}
-          <div className="absolute top-3.5 right-3.5 z-30 pointer-events-none">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-black tracking-wider uppercase bg-[#075B32]/95 text-white backdrop-blur-md shadow-sm">
-              <Sparkles className="size-3 text-[#E7A91A] animate-pulse" />
-              {GROWTH_STAGES[currentStage].badge}
-            </span>
-          </div>
-
-          {/* Bottom Root Health Technology Pill */}
-          <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none whitespace-nowrap">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-black/70 text-white/95 backdrop-blur-md border border-white/10 shadow-sm">
-              <Sprout className="size-3.5 text-[#7FBE25]" />
-              <span>Bio-Active Root Technology</span>
-            </span>
-          </div>
         </div>
       </div>
 
-      {/* Interactive Growth Controls & Stage Scrubbers */}
-      <div className="mt-3.5 flex flex-col items-center gap-2">
-        {/* Stage Timeline Buttons */}
-        <div className="flex items-center gap-1.5 bg-[#f4f7f2] p-1 rounded-full shadow-xs">
-          {GROWTH_STAGES.map((stg) => (
-            <button
-              key={stg.id}
-              type="button"
-              onClick={() => handleSelectStage(stg.id)}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                currentStage === stg.id
-                  ? "bg-[#075B32] text-white shadow-xs"
-                  : "text-slate-600 hover:text-[#075B32] hover:bg-[#ebf3e7]"
-              }`}
-            >
-              {stg.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Action Controls: Replay Growth */}
-        <div className="flex items-center gap-2">
+      {/* Stage Timeline Buttons */}
+      <div className="mt-3.5 flex items-center gap-1.5 bg-[#f4f7f2] p-1 rounded-full shadow-xs">
+        {GROWTH_STAGES.map((stg) => (
           <button
+            key={stg.id}
             type="button"
-            onClick={handleReplay}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold text-[#075B32] bg-[#f4f7f2] hover:bg-[#ebf3e7] hover:scale-105 active:scale-95 transition-all shadow-xs cursor-pointer"
+            onClick={() => handleSelectStage(stg.id)}
+            className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+              currentStage === stg.id
+                ? "bg-[#075B32] text-white shadow-xs"
+                : "text-slate-600 hover:text-[#075B32] hover:bg-[#ebf3e7]"
+            }`}
           >
-            <RotateCcw className="size-3.5 text-[#4FAE2A]" />
-            <span>Replay Growth</span>
+            {stg.name}
           </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (isPlaying) {
-                setIsPlaying(false);
-              } else {
-                handleReplay();
-              }
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-600 bg-white hover:bg-slate-50 transition-all shadow-xs cursor-pointer"
-          >
-            {isPlaying ? (
-              <>
-                <Pause className="size-3 text-slate-400" />
-                <span>Pause</span>
-              </>
-            ) : (
-              <>
-                <Play className="size-3 text-[#4FAE2A]" />
-                <span>Auto Grow</span>
-              </>
-            )}
-          </button>
-        </div>
+        ))}
       </div>
     </div>
   );
