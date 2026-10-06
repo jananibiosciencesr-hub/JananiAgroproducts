@@ -43,9 +43,9 @@ import {
 
 const links = [
   ["Home", "/"],
-  ["About Us", "/about"],
-  ["Products", "/products"],
   ["Categories", "/categories"],
+  ["Products", "/products"],
+  ["About Us", "/about"],
   ["Contact Us", "/contact"]
 ] as const;
 
