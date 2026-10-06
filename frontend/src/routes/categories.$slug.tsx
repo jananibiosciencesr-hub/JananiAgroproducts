@@ -315,24 +315,24 @@ function CategoryDetailPage() {
         </div>
 
         {/* Other Categories Carousel Strip */}
-        <section className="mt-20 border-t border-border pt-12">
-          <div className="flex items-center justify-between mb-6">
+        <section className="mt-16 sm:mt-20 border-t border-border/80 pt-10 sm:pt-12 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
-              <h3 className="text-2xl font-bold font-display text-foreground">
+              <h3 className="text-xl sm:text-2xl font-bold font-display text-foreground">
                 Explore Other Bio-Input Categories
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
                 Discover biological crop protection, soil biostimulants, and organic plant nutrients.
               </p>
             </div>
-            <Button asChild variant="ghost" className="text-xs font-bold text-primary">
+            <Button asChild variant="ghost" className="text-xs font-bold text-[#075B32] hover:text-[#0B6B35] self-start sm:self-auto">
               <Link to="/categories">
                 View All Categories <ChevronRight className="size-3.5 ml-1" />
               </Link>
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 max-w-xl mx-auto gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4 w-full">
             {categories
               .filter((c) => c.slug !== category.slug)
               .map((c) => (
@@ -340,18 +340,18 @@ function CategoryDetailPage() {
                   key={c.slug}
                   to="/categories/$slug"
                   params={{ slug: c.slug }}
-                  className="group flex items-center gap-4 p-4 rounded-2xl border border-border bg-card shadow-soft hover:shadow-md hover:-translate-y-1 transition duration-300"
+                  className="group flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                 >
                   <img
                     src={c.image}
                     alt={c.name}
-                    className="size-16 rounded-xl object-cover group-hover:scale-105 transition duration-500 shrink-0"
+                    className="size-14 sm:size-16 rounded-2xl object-cover group-hover:scale-105 transition duration-300 shrink-0 border border-slate-100"
                   />
-                  <div>
-                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-[#075B32] transition-colors truncate">
                       {c.name}
                     </h4>
-                    <span className="text-[11px] text-brand-leaf font-semibold mt-0.5 block">
+                    <span className="text-[11px] text-[#0B6B35] font-semibold mt-0.5 block">
                       {c.count} formulations
                     </span>
                   </div>
