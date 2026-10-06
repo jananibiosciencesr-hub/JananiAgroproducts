@@ -331,10 +331,10 @@ export function CategoriesManagement() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="rounded-3xl border border-border bg-card p-4 shadow-soft space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="rounded-3xl border border-border bg-card p-3.5 sm:p-4 shadow-soft space-y-3 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative flex-1 min-w-0 w-full">
             <Search className="absolute left-3.5 top-2.5 size-4 text-muted-foreground" />
             <input
               value={search}
@@ -343,40 +343,42 @@ export function CategoriesManagement() {
                 setCurrentPage(1);
               }}
               placeholder="Search by category name, slug, SEO tags..."
-              className="h-10 w-full rounded-2xl border border-border bg-background pl-10 pr-4 text-xs outline-none focus:border-emerald-600 shadow-sm"
+              className="h-10 w-full rounded-2xl border border-border bg-background pl-10 pr-4 text-xs outline-none focus:border-emerald-600 shadow-sm font-medium"
             />
           </div>
 
-          {/* Level Filter Tabs */}
-          <div className="flex rounded-2xl border border-border bg-muted/40 p-1 text-xs font-semibold">
-            {(["all", "root", "sub", "child"] as const).map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => {
-                  setLevelFilter(lvl);
-                  setCurrentPage(1);
-                }}
-                className={`rounded-xl px-3 py-1 capitalize transition-colors ${
-                  levelFilter === lvl
-                    ? "bg-card text-foreground shadow-sm font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {lvl === "all" ? "All Tiers" : `${lvl} Tier`}
-              </button>
-            ))}
-          </div>
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 max-w-full">
+            {/* Level Filter Tabs */}
+            <div className="flex items-center rounded-2xl border border-border bg-muted/40 p-1 text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
+              {(["all", "root", "sub", "child"] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => {
+                    setLevelFilter(lvl);
+                    setCurrentPage(1);
+                  }}
+                  className={`rounded-xl px-3 py-1 capitalize transition-colors text-[11px] shrink-0 ${
+                    levelFilter === lvl
+                      ? "bg-card text-foreground shadow-sm font-bold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {lvl === "all" ? "All Tiers" : `${lvl} Tier`}
+                </button>
+              ))}
+            </div>
 
-          {/* Visibility Filter */}
-          <select
-            value={visibilityFilter}
-            onChange={(e) => setVisibilityFilter(e.target.value as any)}
-            className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600"
-          >
-            <option value="all">All Visibility</option>
-            <option value="featured">Featured on Homepage</option>
-            <option value="trending">Trending Harvest</option>
-          </select>
+            {/* Visibility Filter */}
+            <select
+              value={visibilityFilter}
+              onChange={(e) => setVisibilityFilter(e.target.value as any)}
+              className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600 shrink-0"
+            >
+              <option value="all">All Visibility</option>
+              <option value="featured">Featured on Homepage</option>
+              <option value="trending">Trending Harvest</option>
+            </select>
+          </div>
         </div>
 
         {/* Bulk Action Bar (When 1+ rows selected) */}

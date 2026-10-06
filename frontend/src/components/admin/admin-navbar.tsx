@@ -190,12 +190,13 @@ export function AdminNavbar({
   ];
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between border-b border-border/70 bg-card/85 px-4 lg:px-8 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex h-16 sm:h-20 w-full max-w-full items-center justify-between border-b border-border/70 bg-card/85 px-3 sm:px-4 lg:px-8 backdrop-blur-xl">
       {/* Left Area: Mobile Menu & Search */}
-      <div className="flex items-center gap-3 md:gap-4 flex-1 max-w-2xl">
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 max-w-2xl min-w-0 mr-2">
         <button
           onClick={onOpenMobileSidebar}
-          className="lg:hidden flex size-10 items-center justify-center rounded-2xl border border-border bg-background text-foreground hover:bg-accent"
+          className="lg:hidden flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border bg-background text-foreground hover:bg-accent shrink-0 cursor-pointer"
+          aria-label="Open Sidebar Menu"
         >
           <Menu className="size-5" />
         </button>
@@ -203,19 +204,19 @@ export function AdminNavbar({
         {/* Global Instant Search Bar */}
         <div
           onClick={onOpenSearchModal}
-          className="group relative flex w-full max-w-md cursor-pointer items-center gap-3 rounded-2xl border border-border/80 bg-background/80 px-4 py-2.5 text-xs text-muted-foreground shadow-sm transition-all hover:border-emerald-500/50 hover:bg-background hover:shadow-md"
+          className="group relative flex w-full max-w-md cursor-pointer items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-border/80 bg-background/80 px-3 sm:px-4 py-2 sm:py-2.5 text-xs text-muted-foreground shadow-sm transition-all hover:border-emerald-500/50 hover:bg-background hover:shadow-md min-w-0"
         >
-          <Search className="size-4 text-muted-foreground group-hover:text-emerald-600 transition-colors" />
-          <span className="truncate flex-1">Search products, SKU, orders, customers (e.g. Basmati, ORD-94812)...</span>
-          <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-foreground">
+          <Search className="size-4 text-muted-foreground group-hover:text-emerald-600 transition-colors shrink-0" />
+          <span className="truncate flex-1 text-xs">Search orders, SKU, products...</span>
+          <div className="hidden md:flex items-center gap-1 rounded-lg border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-foreground shrink-0">
             <Command className="size-3" /> K
           </div>
         </div>
       </div>
 
       {/* Right Controls Area */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Database Auto-Sync & Status */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        {/* Database Auto-Sync & Status (Visible on sm+ screens) */}
         <button
           onClick={async () => {
             const toastId = toast.loading("Checking & auto-migrating MySQL tables and columns...");
@@ -233,7 +234,7 @@ export function AdminNavbar({
               toast.error("Database sync failed: " + e.message, { id: toastId });
             }
           }}
-          className="hidden sm:flex items-center gap-1.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-sm cursor-pointer"
+          className="hidden md:flex items-center gap-1.5 rounded-xl sm:rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-sm cursor-pointer"
           title="Auto-create and sync MySQL database schema and columns"
         >
           <Database className="size-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -243,10 +244,10 @@ export function AdminNavbar({
         {/* Dark/Light Toggle */}
         <button
           onClick={toggleTheme}
-          className="flex size-10 items-center justify-center rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm"
+          className="flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer"
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
         >
-          {theme === "light" ? <Moon className="size-4.5 text-amber-600" /> : <Sun className="size-4.5 text-amber-400" />}
+          {theme === "light" ? <Moon className="size-4 text-amber-600" /> : <Sun className="size-4 text-amber-400" />}
         </button>
 
         {/* Messages Dropdown */}
@@ -257,10 +258,10 @@ export function AdminNavbar({
               setNotificationsOpen(false);
               setProfileOpen(false);
             }}
-            className="relative flex size-10 items-center justify-center rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm"
+            className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer"
             title="Customer Inquiries & Messages"
           >
-            <MessageSquare className="size-4.5" />
+            <MessageSquare className="size-4 sm:size-4.5" />
             {unreadMessagesCount > 0 && (
               <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow">
                 {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
@@ -269,7 +270,7 @@ export function AdminNavbar({
           </button>
 
           {messagesOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-3xl border border-border bg-card p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 mt-3 w-72 sm:w-96 rounded-2xl sm:rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Customer Inquiries</h3>
@@ -303,7 +304,7 @@ export function AdminNavbar({
                         setMessagesOpen(false);
                         onNavigateTab("inquiries");
                       }}
-                      className="flex flex-col p-3 rounded-2xl bg-muted/40 hover:bg-emerald-500/10 cursor-pointer transition-colors border border-border/40"
+                      className="flex flex-col p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-muted/40 hover:bg-emerald-500/10 cursor-pointer transition-colors border border-border/40"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 min-w-0">
@@ -328,7 +329,7 @@ export function AdminNavbar({
                         </p>
                       )}
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">
-                        <span className="truncate max-w-[170px]">{m.email}</span>
+                        <span className="truncate max-w-[140px] sm:max-w-[170px]">{m.email}</span>
                         {m.phone && <span className="font-mono">{m.phone}</span>}
                       </div>
                     </div>
@@ -347,17 +348,17 @@ export function AdminNavbar({
               setMessagesOpen(false);
               setProfileOpen(false);
             }}
-            className="relative flex size-10 items-center justify-center rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm"
+            className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer"
             title="Notifications"
           >
-            <Bell className="size-4.5" />
+            <Bell className="size-4 sm:size-4.5" />
             <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow">
               {dynamicNotifications.length}
             </span>
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-3xl border border-border bg-card p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 mt-3 w-72 sm:w-96 rounded-2xl sm:rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Notifications</h3>
@@ -381,15 +382,15 @@ export function AdminNavbar({
                         setNotificationsOpen(false);
                         onNavigateTab(n.tab);
                       }}
-                      className="flex items-start gap-3 p-3 rounded-2xl bg-muted/40 hover:bg-accent cursor-pointer transition-colors border border-border/40"
+                      className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-muted/40 hover:bg-accent cursor-pointer transition-colors border border-border/40"
                     >
-                      <div className={`p-2.5 rounded-xl shrink-0 ${n.color}`}>
+                      <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl shrink-0 ${n.color}`}>
                         <Icon className="size-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="text-xs font-bold text-foreground truncate">{n.title}</p>
-                          <span className="text-[10px] text-muted-foreground">{n.time}</span>
+                          <span className="text-[10px] text-muted-foreground shrink-0">{n.time}</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{n.desc}</p>
                       </div>
@@ -409,22 +410,22 @@ export function AdminNavbar({
               setNotificationsOpen(false);
               setMessagesOpen(false);
             }}
-            className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/80 p-1.5 pr-3 hover:bg-accent transition-all shadow-sm"
+            className="flex items-center gap-1.5 sm:gap-2.5 rounded-xl sm:rounded-2xl border border-border/80 bg-background/80 p-1 sm:p-1.5 sm:pr-3 hover:bg-accent transition-all shadow-sm cursor-pointer"
           >
-            <div className="size-8 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white font-bold text-xs flex items-center justify-center shadow">
+            <div className="size-7 sm:size-8 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white font-bold text-xs flex items-center justify-center shadow">
               {(currentAdmin.name || "Admin").substring(0, 2).toUpperCase()}
             </div>
-            <div className="hidden sm:flex flex-col text-left">
+            <div className="hidden md:flex flex-col text-left">
               <span className="text-xs font-bold text-foreground leading-tight">{currentAdmin.name || "Janani Admin"}</span>
               <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">{currentAdmin.role || "Super Admin"}</span>
             </div>
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 mt-3 w-64 rounded-3xl border border-border bg-card p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 mt-3 w-64 rounded-2xl sm:rounded-3xl border border-border bg-card p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95">
               <div className="p-3 border-b border-border">
                 <p className="text-xs font-bold text-foreground">{currentAdmin.name || "Janani Admin"}</p>
-                <p className="text-[11px] text-muted-foreground">{currentAdmin.email || "jananibiosciences.r@gmail.com"}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{currentAdmin.email || "jananibiosciences.r@gmail.com"}</p>
                 <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
                   <Sparkles className="size-3" /> Full Root Access
                 </div>

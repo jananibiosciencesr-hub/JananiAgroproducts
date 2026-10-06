@@ -412,7 +412,7 @@ export function CustomersView({ customers }: { customers: any[] }) {
 // Inventory View
 export function InventoryView({ inventory, onOpenRestockModal }: { inventory: any[]; onOpenRestockModal: (item: any) => void }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0 max-w-full">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-foreground">Stock & Warehouse Inventory</h2>
@@ -420,43 +420,45 @@ export function InventoryView({ inventory, onOpenRestockModal }: { inventory: an
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
-            <tr>
-              <th className="px-6 py-4">Product Name</th>
-              <th className="px-6 py-4">SKU</th>
-              <th className="px-6 py-4">Category</th>
-              <th className="px-6 py-4">Current Stock</th>
-              <th className="px-6 py-4">Min Threshold</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {inventory.map((item) => (
-              <tr key={item.id} className="hover:bg-accent/40 transition-colors">
-                <td className="px-6 py-4 font-bold text-foreground">{item.name}</td>
-                <td className="px-6 py-4 font-mono text-[11px] text-muted-foreground">{item.sku}</td>
-                <td className="px-6 py-4">{item.category}</td>
-                <td className="px-6 py-4 font-extrabold text-foreground">{item.stock} units</td>
-                <td className="px-6 py-4 text-muted-foreground">{item.threshold || 20} units</td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                    item.stock === 0 ? "bg-rose-500/10 text-rose-600" : item.stock < 20 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
-                  }`}>
-                    {item.stock === 0 ? "Out of Stock" : item.stock < 20 ? "Low Stock Alert" : "Healthy Stock"}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <Button onClick={() => onOpenRestockModal(item)} size="sm" className="rounded-xl bg-emerald-600 text-white font-bold text-xs h-7">
-                    Restock
-                  </Button>
-                </td>
+      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden min-w-0">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-xs min-w-[600px]">
+            <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+              <tr>
+                <th className="px-6 py-4">Product Name</th>
+                <th className="px-6 py-4">SKU</th>
+                <th className="px-6 py-4">Category</th>
+                <th className="px-6 py-4">Current Stock</th>
+                <th className="px-6 py-4">Min Threshold</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {inventory.map((item) => (
+                <tr key={item.id} className="hover:bg-accent/40 transition-colors">
+                  <td className="px-6 py-4 font-bold text-foreground">{item.name}</td>
+                  <td className="px-6 py-4 font-mono text-[11px] text-muted-foreground">{item.sku}</td>
+                  <td className="px-6 py-4">{item.category}</td>
+                  <td className="px-6 py-4 font-extrabold text-foreground">{item.stock} units</td>
+                  <td className="px-6 py-4 text-muted-foreground">{item.threshold || 20} units</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                      item.stock === 0 ? "bg-rose-500/10 text-rose-600" : item.stock < 20 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
+                    }`}>
+                      {item.stock === 0 ? "Out of Stock" : item.stock < 20 ? "Low Stock Alert" : "Healthy Stock"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <Button onClick={() => onOpenRestockModal(item)} size="sm" className="rounded-xl bg-emerald-600 text-white font-bold text-xs h-7">
+                      Restock
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

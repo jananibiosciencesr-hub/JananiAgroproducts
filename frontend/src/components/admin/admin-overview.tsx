@@ -215,28 +215,28 @@ export function AdminOverview({
   ];
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 sm:space-y-8 pb-12 min-w-0 max-w-full overflow-x-hidden">
       {/* Top Banner & Quick Controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl border border-border/80 bg-gradient-to-r from-emerald-900/90 via-emerald-950 to-background p-6 sm:p-8 text-white shadow-luxe relative overflow-hidden">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl border border-border/80 bg-gradient-to-r from-emerald-900/90 via-emerald-950 to-background p-4 sm:p-6 lg:p-8 text-white shadow-luxe relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none flex items-center pr-8">
           <Sparkles className="size-64 text-amber-300" />
         </div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 min-w-0">
           <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-500/30 mb-2">
             <span className="size-2 rounded-full bg-emerald-400 animate-ping"></span> Live Database Analytics
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">E-Commerce Command Center</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">E-Commerce Command Center</h1>
           <p className="text-xs sm:text-sm text-emerald-200/80 mt-1 max-w-xl">
             Real-time MySQL overview for Janani Agro Products. Track live revenues, fulfill Shiprocket shipments, and monitor organic inventory.
           </p>
         </div>
 
-        <div className="relative z-10 flex flex-wrap items-center gap-3">
+        <div className="relative z-10 flex flex-wrap items-center gap-2.5 sm:gap-3">
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="rounded-2xl border border-white/20 bg-black/40 px-4 py-2.5 text-xs font-semibold text-white outline-none focus:border-amber-400 backdrop-blur-md"
+            className="rounded-2xl border border-white/20 bg-black/40 px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold text-white outline-none focus:border-amber-400 backdrop-blur-md"
           >
             <option value="today" className="bg-card text-foreground">Today (Live)</option>
             <option value="7d" className="bg-card text-foreground">Last 7 Days</option>
@@ -254,37 +254,37 @@ export function AdminOverview({
       </div>
 
       {/* 12 Luxury KPI Cards Grid */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+      <section className="min-w-0">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h2 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
             <Layers className="size-4 text-emerald-600" /> Core Performance Metrics
           </h2>
-          <span className="text-xs font-medium text-muted-foreground">Live Database Sync</span>
+          <span className="text-[11px] sm:text-xs font-medium text-muted-foreground">Live Database Sync</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4 xl:grid-cols-6">
           {kpiCards.map((card, idx) => {
             const Icon = card.icon;
             return (
               <div
                 key={idx}
                 onClick={() => onNavigateTab(card.tab)}
-                className="group relative cursor-pointer overflow-hidden rounded-3xl border border-border/80 bg-card p-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-luxe"
+                className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 bg-card p-3 sm:p-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-luxe min-w-0"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-muted-foreground truncate">{card.title}</span>
-                  <div className={`grid size-8 place-items-center rounded-xl bg-gradient-to-br ${card.color} text-white shadow-sm transition-transform group-hover:scale-110`}>
-                    <Icon className="size-4" />
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground truncate">{card.title}</span>
+                  <div className={`grid size-7 sm:size-8 place-items-center rounded-xl bg-gradient-to-br ${card.color} text-white shadow-sm shrink-0 transition-transform group-hover:scale-110`}>
+                    <Icon className="size-3.5 sm:size-4" />
                   </div>
                 </div>
 
-                <div className="mt-3">
-                  <span className="text-lg sm:text-xl font-extrabold text-foreground tracking-tight">{card.value}</span>
+                <div className="mt-2 sm:mt-3">
+                  <span className="text-base sm:text-lg lg:text-xl font-extrabold text-foreground tracking-tight truncate block">{card.value}</span>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                <div className="mt-1.5 sm:mt-2 flex items-center justify-between text-[9px] sm:text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                   <span className="truncate">{card.trend}</span>
-                  <ArrowUpRight className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ArrowUpRight className="size-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                 </div>
               </div>
             );
@@ -579,22 +579,22 @@ export function AdminOverview({
       {/* 4 Real-Time Tables Section */}
       <section className="space-y-6">
         {/* Table 1: Latest Orders */}
-        <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-          <div className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between border-b border-border">
-            <div>
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <ShoppingBag className="size-4.5 text-emerald-600" /> Latest Customer Orders
+        <div className="rounded-2xl sm:rounded-3xl border border-border bg-card shadow-soft overflow-hidden min-w-0">
+          <div className="flex flex-col gap-3 p-4 sm:p-6 sm:flex-row sm:items-center sm:justify-between border-b border-border">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                <ShoppingBag className="size-4 sm:size-4.5 text-emerald-600 shrink-0" /> Latest Customer Orders
               </h3>
-              <p className="text-xs text-muted-foreground">Real-time order feed with Shiprocket dispatch actions</p>
+              <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Real-time order feed with Shiprocket dispatch actions</p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex rounded-2xl border border-border bg-muted/40 p-1 text-xs font-semibold">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 max-w-full">
+              <div className="flex items-center rounded-2xl border border-border bg-muted/40 p-1 text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
                 {["all", "pending", "processing", "shipped", "delivered"].map((status) => (
                   <button
                     key={status}
                     onClick={() => setTableFilter(status)}
-                    className={`rounded-xl px-3 py-1 capitalize transition-colors ${
+                    className={`rounded-xl px-2.5 sm:px-3 py-1 capitalize transition-colors text-[11px] shrink-0 ${
                       tableFilter === status ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -606,9 +606,9 @@ export function AdminOverview({
                 onClick={() => onNavigateTab("orders")}
                 variant="outline"
                 size="sm"
-                className="rounded-2xl text-xs font-bold"
+                className="rounded-2xl text-[11px] sm:text-xs font-bold shrink-0"
               >
-                View Full Orders Manager
+                View Orders
               </Button>
             </div>
           </div>

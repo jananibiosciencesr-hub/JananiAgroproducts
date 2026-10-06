@@ -440,136 +440,136 @@ export function OrdersManagement() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
       {/* 1. Header & Summary Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-3 border-b border-border">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-foreground">
               Orders Management
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
               Live Fulfillment
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Track customer orders, generate GST tax invoices, dispatch with Shiprocket logistics, and manage returns & refunds.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <button
             onClick={loadOrders}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg border border-input bg-card hover:bg-muted text-foreground transition-colors shadow-sm"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors shadow-sm cursor-pointer"
             title="Refresh order directory"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-primary" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${loading ? "animate-spin text-primary" : ""}`} />
             <span>Refresh</span>
           </button>
 
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
+            className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all truncate cursor-pointer"
           >
-            <Download className="h-4 w-4" />
-            <span>Export Orders ({selectedOrderIds.length > 0 ? selectedOrderIds.length : "All"})</span>
+            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span className="truncate">Export Orders ({selectedOrderIds.length > 0 ? selectedOrderIds.length : "All"})</span>
           </button>
         </div>
       </div>
 
       {/* 2. Key Metrics Ribbon */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5">
-        <div className="bg-card border border-border/80 rounded-xl p-3.5 shadow-sm hover:shadow transition-shadow">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3.5">
+        <div className="bg-card border border-border/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm hover:shadow transition-shadow">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Orders</span>
-            <ShoppingBag className="h-4 w-4 text-primary" />
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Total Orders</span>
+            <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
           </div>
-          <div className="text-2xl font-black text-foreground mt-1.5">
+          <div className="text-xl sm:text-2xl font-black text-foreground mt-1">
             {stats.total || orders.length}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Lifetime orders placed</p>
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Lifetime orders placed</p>
         </div>
 
-        <div className="bg-card border border-amber-200 dark:border-amber-900/60 rounded-xl p-3.5 shadow-sm bg-gradient-to-br from-amber-500/5 to-transparent">
+        <div className="bg-card border border-amber-200 dark:border-amber-900/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-amber-500/5 to-transparent">
           <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Pending</span>
-            <Clock className="h-4 w-4" />
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Pending</span>
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
           </div>
-          <div className="text-2xl font-black text-amber-700 dark:text-amber-300 mt-1.5">
+          <div className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-300 mt-1">
             {stats.pending}
           </div>
-          <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5 flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping inline-block"></span>
+          <p className="text-[10px] sm:text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5 flex items-center gap-1 truncate">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping inline-block shrink-0"></span>
             Needs warehouse dispatch
           </p>
         </div>
 
-        <div className="bg-card border border-blue-200 dark:border-blue-900/60 rounded-xl p-3.5 shadow-sm bg-gradient-to-br from-blue-500/5 to-transparent">
+        <div className="bg-card border border-blue-200 dark:border-blue-900/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-blue-500/5 to-transparent">
           <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">In Transit / Shipped</span>
-            <Truck className="h-4 w-4" />
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">In Transit</span>
+            <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
           </div>
-          <div className="text-2xl font-black text-blue-700 dark:text-blue-300 mt-1.5">
+          <div className="text-xl sm:text-2xl font-black text-blue-700 dark:text-blue-300 mt-1">
             {stats.shipped}
           </div>
-          <p className="text-[11px] text-blue-600/80 dark:text-blue-400/80 mt-0.5">Shiprocket tracking active</p>
+          <p className="text-[10px] sm:text-[11px] text-blue-600/80 dark:text-blue-400/80 mt-0.5 truncate">Shiprocket active</p>
         </div>
 
-        <div className="bg-card border border-emerald-200 dark:border-emerald-900/60 rounded-xl p-3.5 shadow-sm bg-gradient-to-br from-emerald-500/5 to-transparent">
+        <div className="bg-card border border-emerald-200 dark:border-emerald-900/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-emerald-500/5 to-transparent">
           <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Delivered</span>
-            <CheckCircle2 className="h-4 w-4" />
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Delivered</span>
+            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
           </div>
-          <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1.5">
+          <div className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
             {stats.delivered}
           </div>
-          <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">99.2% success rate</p>
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">99.2% success rate</p>
         </div>
 
-        <div className="bg-card border border-rose-200 dark:border-rose-900/60 rounded-xl p-3.5 shadow-sm bg-gradient-to-br from-rose-500/5 to-transparent">
+        <div className="bg-card border border-rose-200 dark:border-rose-900/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-rose-500/5 to-transparent">
           <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Cancelled / Returns</span>
-            <Ban className="h-4 w-4" />
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Cancelled</span>
+            <Ban className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
           </div>
-          <div className="text-2xl font-black text-rose-700 dark:text-rose-300 mt-1.5">
+          <div className="text-xl sm:text-2xl font-black text-rose-700 dark:text-rose-300 mt-1">
             {stats.cancelled + stats.returned}
           </div>
-          <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">
+          <p className="text-[10px] sm:text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5 truncate">
             {stats.cancelled} Can. / {stats.returned} Ret.
           </p>
         </div>
 
-        <div className="bg-card border border-emerald-300/80 dark:border-emerald-700/60 rounded-xl p-3.5 shadow-sm bg-gradient-to-br from-primary/10 via-emerald-500/5 to-transparent">
+        <div className="bg-card border border-emerald-300/80 dark:border-emerald-700/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-primary/10 via-emerald-500/5 to-transparent">
           <div className="flex items-center justify-between text-primary">
-            <span className="text-xs font-semibold uppercase tracking-wider">Gross Sales</span>
-            <TrendingUp className="h-4 w-4" />
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Gross Sales</span>
+            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
           </div>
-          <div className="text-2xl font-black text-foreground mt-1.5">
+          <div className="text-xl sm:text-2xl font-black text-foreground mt-1 truncate">
             ₹{stats.grossRevenue.toLocaleString("en-IN")}
           </div>
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">All active orders</p>
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium truncate">All active orders</p>
         </div>
       </div>
 
       {/* 3. Filter Navigation Tabs & Toolbar */}
-      <div className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-4">
+      <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm space-y-3 sm:space-y-4 max-w-full overflow-hidden">
         {/* Status Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 pb-1 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-b border-border/60">
+        <div className="flex items-center gap-1.5 pb-2 overflow-x-auto flex-nowrap min-w-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-b border-border/60">
           {[
             { id: "all", label: "All Orders", count: stats.total },
-            { id: "Pending", label: "Pending Fulfillment", count: stats.pending, badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" },
-            { id: "Processing", label: "Processing & Packed", count: stats.processing, badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300" },
-            { id: "Shipped", label: "Shipped (In Transit)", count: stats.shipped, badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
+            { id: "Pending", label: "Pending", count: stats.pending, badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" },
+            { id: "Processing", label: "Processing", count: stats.processing, badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300" },
+            { id: "Shipped", label: "Shipped", count: stats.shipped, badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
             { id: "Delivered", label: "Delivered", count: stats.delivered, badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" },
             { id: "Cancelled", label: "Cancelled", count: stats.cancelled, badgeColor: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" },
-            { id: "Returned", label: "Returns / Reverse", count: stats.returned, badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300" }
+            { id: "Returned", label: "Returns", count: stats.returned, badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300" }
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
@@ -578,7 +578,7 @@ export function OrdersManagement() {
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
                   <span
-                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                       isActive
                         ? "bg-white/20 text-white"
                         : tab.badgeColor || "bg-muted text-muted-foreground"
@@ -593,32 +593,32 @@ export function OrdersManagement() {
         </div>
 
         {/* Search & Secondary Filter Dropdowns */}
-        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full md:max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col lg:flex-row gap-2.5 sm:gap-3 items-stretch lg:items-center justify-between">
+          <div className="relative w-full lg:max-w-md min-w-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
             <input
               type="text"
-              placeholder="Search by Order ID, Customer Name, Phone, Email or Shiprocket AWB..."
+              placeholder="Search ID, Customer, Phone, Shiprocket AWB..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary placeholder:text-muted-foreground/60 transition-all"
+              className="w-full pl-9 pr-8 py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary placeholder:text-muted-foreground/60 transition-all"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground rounded"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground rounded cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto flex-wrap justify-end">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-row gap-2 w-full lg:w-auto">
             {/* Payment Filter */}
             <select
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
-              className="px-3 py-2 bg-background border border-input rounded-lg text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium"
+              className="px-2.5 py-1.5 sm:py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium truncate"
             >
               <option value="all">Payment: All</option>
               <option value="Paid">Paid</option>
@@ -630,24 +630,24 @@ export function OrdersManagement() {
             <select
               value={warehouseFilter}
               onChange={(e) => setWarehouseFilter(e.target.value)}
-              className="px-3 py-2 bg-background border border-input rounded-lg text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium"
+              className="px-2.5 py-1.5 sm:py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium truncate"
             >
-              <option value="all">Warehouse: All Hubs</option>
-              <option value="WH-BLR-01">Bengaluru Central Hub</option>
-              <option value="WH-HYD-01">Hyderabad Agro-Logistics</option>
-              <option value="WH-DEL-02">Delhi NCR Hub</option>
-              <option value="WH-MUM-01">Mumbai Western Hub</option>
+              <option value="all">Warehouse: All</option>
+              <option value="WH-BLR-01">Bengaluru Hub</option>
+              <option value="WH-HYD-01">Hyderabad Hub</option>
+              <option value="WH-DEL-02">Delhi Hub</option>
+              <option value="WH-MUM-01">Mumbai Hub</option>
             </select>
 
             {/* Courier Filter */}
             <select
               value={courierFilter}
               onChange={(e) => setCourierFilter(e.target.value)}
-              className="px-3 py-2 bg-background border border-input rounded-lg text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium"
+              className="px-2.5 py-1.5 sm:py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium truncate"
             >
               <option value="all">Courier: All</option>
-              <option value="Shiprocket (Bluedart Air)">Bluedart Air</option>
-              <option value="Shiprocket (Delhivery Surface)">Delhivery Express</option>
+              <option value="Shiprocket (Bluedart Air)">Bluedart</option>
+              <option value="Shiprocket (Delhivery Surface)">Delhivery</option>
               <option value="Shiprocket (Ekart Logistics)">Ekart</option>
               <option value="Shadowfax">Shadowfax</option>
               <option value="XpressBees">XpressBees</option>
@@ -657,7 +657,7 @@ export function OrdersManagement() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 bg-background border border-input rounded-lg text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium"
+              className="px-2.5 py-1.5 sm:py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium truncate"
             >
               <option value="date_desc">Newest First</option>
               <option value="date_asc">Oldest First</option>
@@ -669,41 +669,233 @@ export function OrdersManagement() {
 
         {/* Bulk Actions Floating Bar */}
         {selectedOrderIds.length > 0 && (
-          <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20 animate-in fade-in slide-in-from-top-1">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2.5 sm:p-3 rounded-xl bg-primary/10 border border-primary/20 animate-in fade-in slide-in-from-top-1">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary" />
+              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
               <span className="text-xs sm:text-sm font-semibold text-foreground">
                 {selectedOrderIds.length} orders selected
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setIsBulkStatusModalOpen(true)}
-                className="px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+                className="flex-1 sm:flex-none px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
               >
                 Update Status
               </button>
               <button
                 onClick={handleExportCSV}
-                className="px-3 py-1.5 text-xs font-medium rounded-md bg-background border border-input text-foreground hover:bg-muted transition-colors shadow-sm"
+                className="flex-1 sm:flex-none px-3 py-1.5 text-xs font-medium rounded-lg bg-background border border-input text-foreground hover:bg-muted transition-colors shadow-sm cursor-pointer"
               >
-                Export Selected
+                Export
               </button>
               <button
                 onClick={() => setSelectedOrderIds([])}
-                className="p-1 text-muted-foreground hover:text-foreground rounded"
+                className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg border border-input bg-card cursor-pointer shrink-0"
                 title="Deselect all"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* 4. Orders Table */}
-      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* 4. Orders Mobile Cards View (Visible on screens < 1024px) */}
+      <div className="block lg:hidden space-y-3">
+        {loading ? (
+          <div className="bg-card border border-border rounded-2xl p-12 text-center">
+            <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">Loading Janani Agro orders...</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="bg-card border border-border rounded-2xl p-12 text-center max-w-md mx-auto">
+            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground mx-auto mb-3">
+              <ShoppingBag className="h-6 w-6" />
+            </div>
+            <p className="text-base font-semibold text-foreground">No orders found</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Try adjusting your search criteria, warehouse filters, or status tab.
+            </p>
+          </div>
+        ) : (
+          orders.map((order) => {
+            const isSelected = selectedOrderIds.includes(order.id);
+            const itemCount = order.items?.length || 0;
+            const warehouseDisplay = getWarehouseName(order.warehouse);
+            const cust = getOrderCustomer(order);
+
+            return (
+              <div
+                key={order.id}
+                className={`bg-card border rounded-2xl p-3.5 shadow-sm transition-all space-y-3 ${
+                  isSelected ? "border-primary/50 bg-primary/5 ring-1 ring-primary/30" : "border-border/80 hover:border-emerald-500/40"
+                }`}
+              >
+                {/* Header Row: Checkbox, Order ID, Date, Status */}
+                <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-border/60">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleToggleSelectOrder(order.id)}
+                      className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <button
+                        onClick={() => handleOpenDrawer(order)}
+                        className="text-left font-bold text-sm text-primary hover:underline truncate block"
+                      >
+                        {order.id}
+                      </button>
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Calendar className="h-3 w-3 shrink-0" />
+                        {order.date}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Status Dropdown Badge */}
+                  <select
+                    value={order.orderStatus}
+                    onChange={(e) => handleQuickStatusChange(order.id, e.target.value)}
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full border shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40 shrink-0 ${getStatusBadgeStyle(
+                      order.orderStatus
+                    )}`}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Returned">Returned</option>
+                    <option value="Exchanged">Exchanged</option>
+                  </select>
+                </div>
+
+                {/* Customer Info */}
+                <div className="flex items-center gap-2.5 bg-muted/30 p-2.5 rounded-xl border border-border/40">
+                  <div className="size-8 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-500/20">
+                    {cust.initial}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="font-semibold text-xs text-foreground truncate">{cust.name}</p>
+                      <span className="text-[10px] text-muted-foreground font-mono truncate">{cust.phone}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate">{cust.email || `${cust.city || "India"}`}</p>
+                  </div>
+                </div>
+
+                {/* Items & Financials Breakdown */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex -space-x-2 overflow-hidden shrink-0">
+                      {order.items?.slice(0, 3).map((item: any, idx: number) => (
+                        <img
+                          key={idx}
+                          src={item.image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=100&auto=format&fit=crop&q=80"}
+                          alt={getItemTitle(item)}
+                          className="inline-block h-8 w-8 rounded-lg ring-2 ring-card object-cover bg-muted"
+                          title={`${getItemTitle(item)} (x${item.qty || 1})`}
+                        />
+                      ))}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate max-w-[130px]">
+                        {order.items?.[0] ? getItemTitle(order.items[0]) : "Item"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {itemCount > 1 ? `+${itemCount - 1} more (${itemCount} total)` : `Qty: ${order.items?.[0]?.qty || 1}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="font-black text-sm text-foreground">
+                      ₹{order.total?.toLocaleString("en-IN")}
+                    </span>
+                    <div className="flex items-center justify-end gap-1 mt-0.5">
+                      <PaymentBadge status={order.paymentStatus} />
+                      <span className="text-[9px] text-muted-foreground uppercase font-bold">
+                        {order.paymentMethod}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Logistics Info Bar */}
+                <div className="flex items-center justify-between gap-2 text-xs bg-muted/40 p-2 rounded-xl border border-border/40">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
+                    <Building2 className="size-3 shrink-0" />
+                    <span className="truncate">{warehouseDisplay}</span>
+                  </div>
+                  {order.trackingId ? (
+                    <div className="flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 font-mono shrink-0">
+                      <Truck className="size-3 shrink-0" />
+                      <span className="truncate max-w-[110px]">{order.trackingId}</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShiprocketModalOrder(order)}
+                      className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <Plus className="size-3" /> Assign AWB
+                    </button>
+                  )}
+                </div>
+
+                {/* Action Buttons Toolbar */}
+                <div className="grid grid-cols-4 gap-1.5 pt-1">
+                  <button
+                    onClick={() => handleOpenDrawer(order)}
+                    className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
+                    title="View 360° Order Details"
+                  >
+                    <Eye className="size-3.5 text-primary" />
+                    <span className="text-[11px]">View</span>
+                  </button>
+
+                  <button
+                    onClick={() => setInvoiceOrder(order)}
+                    className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
+                    title="Print GST Tax Invoice"
+                  >
+                    <FileText className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[11px]">Invoice</span>
+                  </button>
+
+                  <button
+                    onClick={() => setPackingSlipOrder(order)}
+                    className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
+                    title="Print Packing Slip"
+                  >
+                    <Package className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span className="text-[11px]">Slip</span>
+                  </button>
+
+                  <div className="flex items-center justify-center">
+                    <OrderRowActionMenu
+                      order={order}
+                      onAssignWarehouse={() => setWarehouseModalOrder(order)}
+                      onAssignShiprocket={() => setShiprocketModalOrder(order)}
+                      onCancel={() => setCancelModalOrder(order)}
+                      onRefund={() => setRefundModalOrder(order)}
+                      onReturn={() => setReturnModalOrder(order)}
+                      onExchange={() => setExchangeModalOrder(order)}
+                      onAddNote={() => setNoteModalOrder(order)}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* 5. Orders Desktop Table (Visible on screens >= 1024px) */}
+      <div className="hidden lg:block bg-card border border-border rounded-2xl shadow-sm overflow-hidden max-w-full">
+        <div className="overflow-x-auto min-w-0 w-full">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -778,7 +970,7 @@ export function OrdersManagement() {
                         <div className="flex flex-col">
                           <button
                             onClick={() => handleOpenDrawer(order)}
-                            className="text-left font-bold text-sm text-primary hover:underline flex items-center gap-1.5"
+                            className="text-left font-bold text-sm text-primary hover:underline flex items-center gap-1.5 cursor-pointer"
                           >
                             <span>{order.id}</span>
                           </button>
@@ -893,7 +1085,7 @@ export function OrdersManagement() {
                           ) : (
                             <button
                               onClick={() => setShiprocketModalOrder(order)}
-                              className="text-[11px] text-primary hover:underline flex items-center gap-1"
+                              className="text-[11px] text-primary hover:underline flex items-center gap-1 cursor-pointer"
                             >
                               <Plus className="h-2.5 w-2.5" />
                               <span>Assign AWB</span>
@@ -926,7 +1118,7 @@ export function OrdersManagement() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleOpenDrawer(order)}
-                            className="p-1.5 rounded-lg border border-input bg-card hover:bg-muted text-foreground transition-colors"
+                            className="p-1.5 rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
                             title="View 360° Order Details"
                           >
                             <Eye className="h-4 w-4" />
@@ -934,7 +1126,7 @@ export function OrdersManagement() {
 
                           <button
                             onClick={() => setInvoiceOrder(order)}
-                            className="p-1.5 rounded-lg border border-input bg-card hover:bg-muted text-foreground transition-colors"
+                            className="p-1.5 rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
                             title="Print GST Tax Invoice"
                           >
                             <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -942,7 +1134,7 @@ export function OrdersManagement() {
 
                           <button
                             onClick={() => setPackingSlipOrder(order)}
-                            className="p-1.5 rounded-lg border border-input bg-card hover:bg-muted text-foreground transition-colors"
+                            className="p-1.5 rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
                             title="Print Warehouse Packing Slip"
                           >
                             <Package className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
@@ -950,7 +1142,7 @@ export function OrdersManagement() {
 
                           <button
                             onClick={() => setShippingLabelOrder(order)}
-                            className="p-1.5 rounded-lg border border-input bg-card hover:bg-muted text-foreground transition-colors"
+                            className="p-1.5 rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
                             title="Print Shiprocket Shipping Label"
                           >
                             <Truck className="h-4 w-4 text-blue-600 dark:text-blue-400" />

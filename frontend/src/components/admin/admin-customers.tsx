@@ -322,8 +322,8 @@ export function CustomersManagement() {
       </div>
 
       {/* 3. Filter Bar & Search */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-3.5">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4 shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar max-w-full pb-0.5">
           {/* Status Tabs */}
           {[
             { id: "all", label: "All Patrons", count: stats.total },
@@ -334,7 +334,7 @@ export function CustomersManagement() {
             <button
               key={t.id}
               onClick={() => setStatusFilter(t.id)}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
                 statusFilter === t.id
                   ? "bg-emerald-600 text-white shadow-xs"
                   : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -350,9 +350,9 @@ export function CustomersManagement() {
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 min-w-0">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[220px]">
+          <div className="relative flex-1 min-w-0 w-full sm:min-w-[180px]">
             <Search className="absolute left-3 top-2.5 size-3.5 text-muted-foreground" />
             <input
               type="text"
@@ -372,7 +372,7 @@ export function CustomersManagement() {
           <select
             value={tierFilter}
             onChange={(e) => setTierFilter(e.target.value)}
-            className="h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-emerald-600"
+            className="h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-emerald-600 shrink-0"
           >
             <option value="all">All Tiers</option>
             <option value="VIP Patron">👑 VIP Patron</option>
