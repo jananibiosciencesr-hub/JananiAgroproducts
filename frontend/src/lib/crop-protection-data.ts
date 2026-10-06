@@ -49,7 +49,7 @@ export interface CropProtectionProduct {
 export const ALL_PESTICIDES: CropProtectionProduct[] = [
   {
     id: "balavan-bacillus",
-    catalogId: 2,
+    catalogId: 13,
     slug: "balavan-bacillus-subtilis-5l",
     title: "BALAVAN - Bacillus Subtilis (5L)",
     brand: "Janani Agro Products",
@@ -70,7 +70,7 @@ export const ALL_PESTICIDES: CropProtectionProduct[] = [
   },
   {
     id: "suraksha-pseudomonas",
-    catalogId: 4,
+    catalogId: 14,
     slug: "suraksha-pseudomonas-fluorescens-5l",
     title: "SURAKSHA - Pseudomonas Fluorescens (5L)",
     brand: "Janani Agro Products",
@@ -91,8 +91,8 @@ export const ALL_PESTICIDES: CropProtectionProduct[] = [
   },
   {
     id: "harit-trichoderma",
-    catalogId: 7,
-    slug: "harit-trichoderma-viride-liquid-biofungal-formulation-1l",
+    catalogId: 1,
+    slug: "harit",
     title: "HARIT - Trichoderma Viride (1L)",
     brand: "Janani Agro Products",
     price: 950,
@@ -112,8 +112,8 @@ export const ALL_PESTICIDES: CropProtectionProduct[] = [
   },
   {
     id: "neem-oil-1000",
-    catalogId: 8,
-    slug: "neem-oil-1000-ppm-azadirachtin-1l",
+    catalogId: 3,
+    slug: "neem-oil-1000-ppm",
     title: "NEEM OIL 1000 PPM - Botanical Insecticide (1L)",
     brand: "Janani Agro Products",
     price: 599,
@@ -133,7 +133,7 @@ export const ALL_PESTICIDES: CropProtectionProduct[] = [
   },
   {
     id: "annada-amino",
-    catalogId: 1,
+    catalogId: 17,
     slug: "annada-fish-amino-acid-5l",
     title: "ANNADA - Fish Amino Acid (5L)",
     brand: "Janani Agro Products",
@@ -154,7 +154,7 @@ export const ALL_PESTICIDES: CropProtectionProduct[] = [
   },
   {
     id: "pushkal-biostimulant",
-    catalogId: 6,
+    catalogId: 16,
     slug: "pushkal-flowering-fruit-set-biostimulant-1l",
     title: "PUSHKAL - Flowering & Fruit Set Biostimulant (1L)",
     brand: "Janani Agro Products",
@@ -175,8 +175,8 @@ export const ALL_PESTICIDES: CropProtectionProduct[] = [
   },
   {
     id: "bhumi-shakti",
-    catalogId: 3,
-    slug: "bhumi-shakti-humic-fulvic-biostimulant-5l",
+    catalogId: 2,
+    slug: "bhumi-shakti",
     title: "BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)",
     brand: "Janani Agro Products",
     price: 3900,
@@ -196,7 +196,7 @@ export const ALL_PESTICIDES: CropProtectionProduct[] = [
   },
   {
     id: "dharani-kmb",
-    catalogId: 5,
+    catalogId: 15,
     slug: "dharani-kmb-potassium-mobilizing-biofertilizer-5l",
     title: "DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)",
     brand: "Janani Agro Products",
