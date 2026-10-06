@@ -127,6 +127,48 @@ export const sendOtp = async (req, res) => {
       });
     }
 
+    const normalizedEmail = email ? email.trim().toLowerCase() : (identifier.includes("@") ? identifier : "");
+    const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail === (process.env.ADMIN_EMAIL || "").toLowerCase();
+
+    // Check if user exists in customersDatabase or MySQL users table
+    let userExists = isAdmin;
+    if (!userExists) {
+      const custMatch = customersDatabase.some((c) => (c.email && c.email.toLowerCase() === identifier) || (c.phone && c.phone === identifier));
+      if (custMatch) {
+        userExists = true;
+      } else {
+        try {
+          const [rows] = await pool.query(
+            "SELECT id, name, email, phone FROM users WHERE (email = ? AND email != '') OR (phone = ? AND phone != '') LIMIT 1",
+            [normalizedEmail || identifier, identifier]
+          );
+          if (rows && rows.length > 0) {
+            userExists = true;
+          }
+        } catch (dbErr) {}
+      }
+    }
+
+    // If logging in but user is NOT registered
+    if ((purpose === "login" || purpose === "checkout_login" || purpose === "checkout") && !userExists) {
+      return res.status(200).json({
+        success: false,
+        notRegistered: true,
+        not_registered: true,
+        message: "This email is not registered yet. Only registered patrons can log in. Please create an account to continue."
+      });
+    }
+
+    // If signing up but user ALREADY exists
+    if ((purpose === "signup" || purpose === "checkout_signup") && userExists && !isAdmin) {
+      return res.status(200).json({
+        success: false,
+        alreadyRegistered: true,
+        already_registered: true,
+        message: "An account with this email address already exists. Please switch to Sign In."
+      });
+    }
+
     // Generate random 6-digit OTP code
     const isStandardDemo = identifier.endsWith("16225") || identifier.endsWith("43210");
     const otpCode = isStandardDemo ? "123456" : String(Math.floor(100000 + Math.random() * 900000));
@@ -615,5 +657,47 @@ export const savePreferences = async (req, res) => {
   } catch (error) {
     console.error("Save Preferences Error:", error);
     return res.status(500).json({ success: false, message: "Failed to save preferences." });
+  }
+};
+
+/**
+ * 10. Check User Registration Status
+ * GET/POST /api/auth/check-user
+ */
+export const checkUser = async (req, res) => {
+  try {
+    const target = (req.query.target || req.query.email || req.body?.email || req.body?.phone || req.body?.target || "").trim().toLowerCase();
+    if (!target) {
+      return res.status(400).json({ success: false, message: "Target email or phone is required." });
+    }
+    const isAdmin = target === "jananibiosciences.r@gmail.com" || target.includes("admin@jananiagro.com");
+    if (isAdmin) {
+      return res.status(200).json({ success: true, exists: true, isAdmin: true });
+    }
+
+    let customer = customersDatabase.find(
+      (c) => (c.email && c.email.toLowerCase() === target) || (c.phone && c.phone.replace(/\D/g, "") === target.replace(/\D/g, ""))
+    );
+
+    if (!customer) {
+      try {
+        const [rows] = await pool.query(
+          "SELECT id, name, email, phone, role FROM users WHERE (email = ? AND email != '') OR (phone = ? AND phone != '') LIMIT 1",
+          [target, target]
+        );
+        if (rows && rows.length > 0) {
+          customer = rows[0];
+        }
+      } catch (dbErr) {}
+    }
+
+    return res.status(200).json({
+      success: true,
+      exists: !!customer,
+      user: customer || null
+    });
+  } catch (error) {
+    console.error("Check User Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to check user." });
   }
 };

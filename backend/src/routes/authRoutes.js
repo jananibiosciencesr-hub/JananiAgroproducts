@@ -8,7 +8,8 @@ import {
   forgotPassword,
   resetPassword,
   getMe,
-  savePreferences
+  savePreferences,
+  checkUser
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -22,5 +23,6 @@ router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.get("/me", getMe);
 router.post("/preferences", savePreferences);
+router.all("/check-user", checkUser);
 
 export default router;

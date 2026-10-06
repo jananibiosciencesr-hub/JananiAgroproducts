@@ -6695,11 +6695,71 @@ export interface AuthResponse {
 
 export interface OtpSendResponse {
   success: boolean;
+  notRegistered?: boolean;
+  not_registered?: boolean;
+  alreadyRegistered?: boolean;
+  already_registered?: boolean;
   message: string;
   demoOtpCode?: string;
   otp?: string;
   emailSent?: boolean | { success: boolean; method?: string; error?: string };
   resendCooldownSeconds?: number;
+}
+
+export async function checkCustomerExists(emailOrPhone: string): Promise<{ exists: boolean; isAdmin?: boolean; user?: Partial<AuthUser> | null }> {
+  const cleanTarget = (emailOrPhone || "").trim().toLowerCase();
+  if (!cleanTarget) return { exists: false };
+
+  const isAdmin = cleanTarget === "jananibiosciences.r@gmail.com" || cleanTarget.includes("admin@jananiagro.com") || cleanTarget === "admin";
+  if (isAdmin) {
+    return { exists: true, isAdmin: true };
+  }
+
+  // 1. Check PHP API
+  try {
+    const phpRes = await fetch(`/api.php?action=check-user&target=${encodeURIComponent(cleanTarget)}`);
+    if (phpRes.ok) {
+      const data = await phpRes.json();
+      if (data && typeof data === "object" && typeof data.exists === "boolean") {
+        return data;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Check Node API
+  try {
+    const nodeRes = await fetchJson<{ success: boolean; exists: boolean; isAdmin?: boolean; user?: any }>(`/auth/check-user?target=${encodeURIComponent(cleanTarget)}`);
+    if (nodeRes && typeof nodeRes.exists === "boolean") {
+      return nodeRes;
+    }
+  } catch (e) {}
+
+  // 3. Local fallback check
+  if (typeof window !== "undefined") {
+    try {
+      const customers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
+      const isFoundInCustomers = customers.some(
+        (c) => (c.email && c.email.toLowerCase() === cleanTarget) || (c.phone && c.phone.replace(/\D/g, "") === cleanTarget.replace(/\D/g, ""))
+      );
+      if (isFoundInCustomers) return { exists: true };
+
+      const users = getStored<any[]>(STORAGE_KEYS.USERS, []);
+      const isFoundInUsers = users.some(
+        (u) => (u.email && u.email.toLowerCase() === cleanTarget) || (u.phone && u.phone.replace(/\D/g, "") === cleanTarget.replace(/\D/g, ""))
+      );
+      if (isFoundInUsers) return { exists: true };
+
+      const curUserStr = localStorage.getItem("janani_auth_user") || localStorage.getItem("janani_user");
+      if (curUserStr) {
+        const curUser = JSON.parse(curUserStr);
+        if (curUser && (curUser.email?.toLowerCase() === cleanTarget || curUser.phone?.replace(/\D/g, "") === cleanTarget.replace(/\D/g, ""))) {
+          return { exists: true, user: curUser };
+        }
+      }
+    } catch (e) {}
+  }
+
+  return { exists: false };
 }
 
 export async function loginWithEmail(payload: { email: string; password: string; rememberMe?: boolean }): Promise<AuthResponse> {
@@ -6747,8 +6807,14 @@ export async function sendAuthOtp(payload: { phone?: string; email?: string; pur
       const text = await phpRes.text();
       try {
         const phpData = JSON.parse(text);
-        if (phpData && typeof phpData === "object" && phpData.success) {
-          return phpData;
+        if (phpData && typeof phpData === "object") {
+          // Pass through notRegistered or alreadyRegistered messages directly
+          if (phpData.notRegistered || phpData.not_registered || phpData.alreadyRegistered || phpData.already_registered || phpData.success === false) {
+            return phpData;
+          }
+          if (phpData.success) {
+            return phpData;
+          }
         }
       } catch (jsonErr) {
         console.error("api.php response was not JSON:", text);
@@ -6764,10 +6830,43 @@ export async function sendAuthOtp(payload: { phone?: string; email?: string; pur
       method: "POST",
       body: JSON.stringify(payload)
     });
-    if (res && typeof res === "object" && res.success) {
-      return res;
+    if (res && typeof res === "object") {
+      if (res.notRegistered || (res as any).not_registered || res.alreadyRegistered || (res as any).already_registered || res.success === false) {
+        return res;
+      }
+      if (res.success) {
+        return res;
+      }
     }
   } catch (e) {}
+
+  // 3. Local fallback check for purpose === "login" vs "signup"
+  const target = (payload.email || payload.phone || "").trim().toLowerCase();
+  const isAdmin = target === "jananibiosciences.r@gmail.com" || target.includes("admin@jananiagro.com") || target === "admin";
+
+  if ((payload.purpose === "login" || payload.purpose === "checkout_login" || payload.purpose === "checkout") && !isAdmin) {
+    const check = await checkCustomerExists(target);
+    if (!check.exists) {
+      return {
+        success: false,
+        notRegistered: true,
+        not_registered: true,
+        message: `This email (${target}) is not registered yet. Only registered patrons can sign in. Please create an account / register first.`
+      };
+    }
+  }
+
+  if ((payload.purpose === "signup" || payload.purpose === "checkout_signup") && !isAdmin) {
+    const check = await checkCustomerExists(target);
+    if (check.exists) {
+      return {
+        success: false,
+        alreadyRegistered: true,
+        already_registered: true,
+        message: `An account with this email (${target}) already exists. Please switch to Sign In.`
+      };
+    }
+  }
 
   return {
     success: true,
@@ -6953,6 +7052,27 @@ export async function signupCustomer(payload: {
   latitude?: number;
   longitude?: number;
 }): Promise<AuthResponse> {
+  // 1. Try PHP API
+  try {
+    const phpRes = await fetch("/api.php?action=signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (phpRes.ok) {
+      const data = await phpRes.json();
+      if (data?.success && data.user) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("janani_auth_token", data.token || "jap_jwt_" + Date.now());
+          localStorage.setItem("janani_auth_user", JSON.stringify(data.user));
+          localStorage.setItem("janani_user", JSON.stringify(data.user));
+        }
+        return data;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Try Node API
   const res = await fetchJson<AuthResponse>("/auth/signup", {
     method: "POST",
     body: JSON.stringify(payload)

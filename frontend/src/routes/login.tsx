@@ -77,6 +77,8 @@ export function AuthenticationPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(true);
+  const [loginUnregisteredWarn, setLoginUnregisteredWarn] = useState<string | null>(null);
+  const [signupAlreadyExistsWarn, setSignupAlreadyExistsWarn] = useState<string | null>(null);
 
   // Validation State for Phone & Email
   const [formErrors, setFormErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
@@ -378,6 +380,9 @@ export function AuthenticationPage() {
   // 2. Handle Send OTP (Phone)
   const handleRequestOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setLoginUnregisteredWarn(null);
+    setSignupAlreadyExistsWarn(null);
+
     const target = phone.replace(/\D/g, "").slice(0, 10);
     if (!target || target.length !== 10 || !/^[6-9]/.test(target)) {
       if (target.length > 0 && !/^[6-9]/.test(target)) {
@@ -391,6 +396,11 @@ export function AuthenticationPage() {
     setLoading(true);
     try {
       const res = await sendAuthOtp({ phone: target, purpose: "login" });
+      if (res?.notRegistered || (res as any)?.not_registered) {
+        setLoginUnregisteredWarn(target);
+        toast.error(res.message || `Mobile number +91 ${target} is not registered yet. Please create an account first.`);
+        return;
+      }
       if (res?.success) {
         const otpCode = res.demoOtpCode || res.otp || "";
         setReceivedDemoOtp(otpCode);
@@ -417,6 +427,9 @@ export function AuthenticationPage() {
   // 2b. Handle Send OTP to Email (Real Gmail OTP)
   const handleRequestEmailOtp = async (targetEmail?: string, e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setLoginUnregisteredWarn(null);
+    setSignupAlreadyExistsWarn(null);
+
     const emailToSend = (targetEmail || email).trim().toLowerCase();
     if (!emailToSend || !emailToSend.includes("@")) {
       toast.error("Please enter a valid email address.");
@@ -426,6 +439,11 @@ export function AuthenticationPage() {
     setLoading(true);
     try {
       const res = await sendAuthOtp({ email: emailToSend, purpose: "login" });
+      if (res?.notRegistered || (res as any)?.not_registered) {
+        setLoginUnregisteredWarn(emailToSend);
+        toast.error(res.message || `Email ${emailToSend} is not registered yet. Please create an account first.`);
+        return;
+      }
       if (res?.success) {
         const otpCode = res.demoOtpCode || res.otp || "";
         setReceivedDemoOtp(otpCode);
@@ -566,9 +584,16 @@ export function AuthenticationPage() {
 
     // Send verification OTP to the user's email
     setLoading(true);
+    setLoginUnregisteredWarn(null);
+    setSignupAlreadyExistsWarn(null);
     try {
       const emailToSend = email.trim().toLowerCase();
       const res = await sendAuthOtp({ email: emailToSend, purpose: "signup" });
+      if (res?.alreadyRegistered || (res as any)?.already_registered) {
+        setSignupAlreadyExistsWarn(emailToSend);
+        toast.error(res.message || `An account with ${emailToSend} already exists. Please sign in instead.`);
+        return;
+      }
       if (res?.success) {
         const otpCode = res.demoOtpCode || res.otp || "123456";
         setReceivedDemoOtp(otpCode);
@@ -1125,6 +1150,34 @@ export function AuthenticationPage() {
                         </label>
                       </div>
 
+                      {loginUnregisteredWarn && (
+                        <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-xs space-y-2 animate-in fade-in">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-bold text-foreground">Account Not Found / Not Registered!</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                                <strong className="text-foreground">{loginUnregisteredWarn}</strong> is not registered. Only registered patrons can log in.
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="gold"
+                            size="sm"
+                            onClick={() => {
+                              setAuthMode("signup");
+                              setPhone(loginUnregisteredWarn);
+                              setLoginUnregisteredWarn(null);
+                            }}
+                            className="rounded-xl text-xs font-bold px-3.5 h-8.5 shadow-xs w-full"
+                          >
+                            <UserPlus className="size-3.5 mr-1.5" />
+                            Create New Account with +91 {loginUnregisteredWarn}
+                          </Button>
+                        </div>
+                      )}
+
                       <Button
                         type="submit"
                         size="lg"
@@ -1155,7 +1208,10 @@ export function AuthenticationPage() {
                             type="email"
                             required
                             value={email}
-                            onChange={(e) => handleEmailChange(e.target.value)}
+                            onChange={(e) => {
+                              handleEmailChange(e.target.value);
+                              setLoginUnregisteredWarn(null);
+                            }}
                             onBlur={handleEmailBlur}
                             placeholder="e.g. jananibiosciences.r@gmail.com"
                             className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${
@@ -1190,6 +1246,34 @@ export function AuthenticationPage() {
                           A real 6-digit verification code will be sent to your Gmail inbox.
                         </p>
                       </div>
+
+                      {loginUnregisteredWarn && (
+                        <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-xs space-y-2 animate-in fade-in">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-bold text-foreground">Account Not Found / Not Registered!</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                                <strong className="text-foreground">{loginUnregisteredWarn}</strong> is not registered. Only registered patrons can log in.
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="gold"
+                            size="sm"
+                            onClick={() => {
+                              setAuthMode("signup");
+                              setEmail(loginUnregisteredWarn);
+                              setLoginUnregisteredWarn(null);
+                            }}
+                            className="rounded-xl text-xs font-bold px-3.5 h-8.5 shadow-xs w-full"
+                          >
+                            <UserPlus className="size-3.5 mr-1.5" />
+                            Create New Account with {loginUnregisteredWarn}
+                          </Button>
+                        </div>
+                      )}
 
                       <Button
                         type="submit"
@@ -1652,6 +1736,34 @@ export function AuthenticationPage() {
                       .
                     </label>
                   </div>
+
+                  {signupAlreadyExistsWarn && (
+                    <div className="p-3.5 rounded-2xl bg-blue-500/15 border border-blue-500/40 text-xs space-y-2 animate-in fade-in">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="size-4 text-blue-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-foreground">Account Already Exists!</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            An account with <strong className="text-foreground">{signupAlreadyExistsWarn}</strong> is already registered. Please sign in instead.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="gold"
+                        size="sm"
+                        onClick={() => {
+                          setAuthMode("login");
+                          setEmail(signupAlreadyExistsWarn);
+                          setSignupAlreadyExistsWarn(null);
+                        }}
+                        className="rounded-xl text-xs font-bold px-3.5 h-8.5 shadow-xs w-full"
+                      >
+                        <Lock className="size-3.5 mr-1.5" />
+                        Switch to Sign In with this Email
+                      </Button>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"

@@ -17,7 +17,10 @@ import {
   Check,
   Info,
   Calendar,
-  Phone
+  Phone,
+  AlertCircle,
+  UserPlus,
+  UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
@@ -70,9 +73,12 @@ export function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Email OTP Checkout Auth State
+  const [checkoutAuthMode, setCheckoutAuthMode] = useState<"login" | "register">("login");
   const [checkoutEmail, setCheckoutEmail] = useState("");
   const [checkoutName, setCheckoutName] = useState("");
   const [checkoutPhone, setCheckoutPhone] = useState("");
+  const [notRegisteredWarn, setNotRegisteredWarn] = useState(false);
+  const [alreadyRegisteredWarn, setAlreadyRegisteredWarn] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
   const [receivedCheckoutOtp, setReceivedCheckoutOtp] = useState("123456");
@@ -118,15 +124,47 @@ export function CheckoutPage() {
   // Handle Send Realtime OTP to Email
   const handleSendCheckoutOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setNotRegisteredWarn(false);
+    setAlreadyRegisteredWarn(false);
+
     const emailToUse = checkoutEmail.trim().toLowerCase();
     if (!emailToUse || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToUse)) {
-      toast.error("Please enter a valid email address to receive your OTP.");
+      toast.error("Please enter a valid email address.");
       return;
+    }
+
+    if (checkoutAuthMode === "register") {
+      if (!checkoutName.trim()) {
+        toast.error("Please enter your full name to register.");
+        return;
+      }
+      const cleanPhone = checkoutPhone.replace(/\D/g, "");
+      if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]/.test(cleanPhone)) {
+        toast.error("Please enter a valid 10-digit Indian mobile number.");
+        return;
+      }
     }
 
     setIsSendingOtp(true);
     try {
-      const res = await sendAuthOtp({ email: emailToUse, purpose: "checkout" });
+      const res = await sendAuthOtp({
+        email: emailToUse,
+        phone: checkoutPhone.trim() || undefined,
+        purpose: checkoutAuthMode === "register" ? "signup" : "login"
+      });
+
+      if (res.notRegistered || (res as any).not_registered) {
+        setNotRegisteredWarn(true);
+        toast.error(res.message || "This email is not registered yet. Please create an account first.");
+        return;
+      }
+
+      if (res.alreadyRegistered || (res as any).already_registered) {
+        setAlreadyRegisteredWarn(true);
+        toast.error(res.message || "An account with this email already exists. Please switch to Sign In.");
+        return;
+      }
+
       if (res.success) {
         const otpCodeVal = res.demoOtpCode || res.otp || "";
         setReceivedCheckoutOtp(otpCodeVal);
@@ -190,16 +228,29 @@ export function CheckoutPage() {
 
     setIsVerifyingOtp(true);
     try {
-      const res = await verifyAuthOtp({ email: checkoutEmail.trim().toLowerCase(), otp: code });
+      const emailToUse = checkoutEmail.trim().toLowerCase();
+      const res = await verifyAuthOtp({ email: emailToUse, otp: code });
       if (res.success && res.user) {
-        // If customer provided a custom name/phone during checkout auth, merge it
-        const updatedUser = {
-          ...res.user,
-          name: checkoutName.trim() || res.user.name || "Valued Patron",
-          phone: checkoutPhone.trim() || res.user.phone || "",
-        };
-        loginUser(updatedUser);
-        toast.success(`Welcome ${updatedUser.name}! Signed in successfully. Your cart items are preserved.`);
+        if (checkoutAuthMode === "register") {
+          const signupRes = await signupCustomer({
+            name: checkoutName.trim() || "Valued Patron",
+            email: emailToUse,
+            phone: checkoutPhone.trim() || "+91 93114 16225",
+            agreeTerms: true
+          });
+          const activeUser = signupRes.user || res.user;
+          loginUser(activeUser);
+          toast.success(`Welcome ${activeUser.name}! Account registered & signed in. Your cart items are preserved.`);
+        } else {
+          // If customer provided a custom name/phone during checkout auth, merge it
+          const updatedUser = {
+            ...res.user,
+            name: checkoutName.trim() || res.user.name || "Valued Patron",
+            phone: checkoutPhone.trim() || res.user.phone || "",
+          };
+          loginUser(updatedUser);
+          toast.success(`Welcome back, ${updatedUser.name}! Signed in successfully. Your cart items are preserved.`);
+        }
       } else {
         toast.error(res.message || "Invalid or expired OTP. Please check and try again.");
       }
@@ -443,70 +494,213 @@ export function CheckoutPage() {
           {/* USER AUTH & REALTIME EMAIL OTP SECTION */}
           {!user ? (
             <section className="rounded-3xl border-2 border-brand-gold/40 bg-gradient-to-br from-brand-gold/10 via-card to-background p-5 sm:p-7 shadow-soft space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/70 pb-3">
+              {/* Mode Switcher Tabs */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-2xl bg-brand-gold text-forest text-sm font-bold shadow-sm">
-                    🔐
+                  <span className="grid size-9 place-items-center rounded-2xl bg-brand-gold text-forest text-base font-bold shadow-sm">
+                    {checkoutAuthMode === "register" ? "✨" : "🔐"}
                   </span>
                   <div>
                     <h2 className="font-display text-lg font-bold text-foreground">
-                      Customer Sign In / Quick OTP Verification
+                      {checkoutAuthMode === "register"
+                        ? "New Customer Registration"
+                        : "Customer Sign In (Registered Patrons)"}
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      Enter your email to receive a real-time OTP via Gmail. Basket items are 100% saved.
+                      {checkoutAuthMode === "register"
+                        ? "Create an account with Janani Agro to complete checkout & save your details."
+                        : "Only registered patrons can sign in. Enter your email to receive a real-time OTP."}
                     </p>
                   </div>
                 </div>
-                <span className="text-[11px] font-bold text-brand-gold bg-brand-gold/15 px-2.5 py-1 rounded-full self-start sm:self-auto">
-                  ⚡ Fast Login
-                </span>
+
+                {/* Mode Selector Toggle */}
+                <div className="flex items-center gap-1.5 p-1 bg-secondary/80 rounded-2xl border border-border self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCheckoutAuthMode("login");
+                      setNotRegisteredWarn(false);
+                      setAlreadyRegisteredWarn(false);
+                      setIsOtpSent(false);
+                    }}
+                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                      checkoutAuthMode === "login"
+                        ? "bg-brand-gold text-forest shadow-xs font-bold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Lock className="size-3.5" />
+                    <span>Sign In</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCheckoutAuthMode("register");
+                      setNotRegisteredWarn(false);
+                      setAlreadyRegisteredWarn(false);
+                      setIsOtpSent(false);
+                    }}
+                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                      checkoutAuthMode === "register"
+                        ? "bg-brand-gold text-forest shadow-xs font-bold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <UserPlus className="size-3.5" />
+                    <span>New Register</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Not Registered Warning Alert (When trying to log in with un-registered email) */}
+              {notRegisteredWarn && (
+                <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-xs space-y-2.5 animate-in fade-in">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-sm text-foreground">Account Not Found / Not Registered!</p>
+                      <p className="mt-0.5 text-muted-foreground">
+                        <strong className="text-foreground font-semibold">{checkoutEmail}</strong> is not registered yet. Only registered patrons can sign in. Please create an account first.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-1 flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="gold"
+                      size="sm"
+                      onClick={() => {
+                        setCheckoutAuthMode("register");
+                        setNotRegisteredWarn(false);
+                      }}
+                      className="rounded-xl text-xs font-bold px-4 h-9 shadow-sm"
+                    >
+                      <UserPlus className="size-3.5 mr-1.5" />
+                      Create New Account with {checkoutEmail}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Already Registered Info Alert (When trying to register with an existing email) */}
+              {alreadyRegisteredWarn && (
+                <div className="p-4 rounded-2xl bg-blue-500/15 border border-blue-500/40 text-xs space-y-2.5 animate-in fade-in">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="size-5 text-blue-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-sm text-foreground">Account Already Exists!</p>
+                      <p className="mt-0.5 text-muted-foreground">
+                        An account with <strong className="text-foreground font-semibold">{checkoutEmail}</strong> is already registered. Please sign in instead.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-1 flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="gold"
+                      size="sm"
+                      onClick={() => {
+                        setCheckoutAuthMode("login");
+                        setAlreadyRegisteredWarn(false);
+                      }}
+                      className="rounded-xl text-xs font-bold px-4 h-9 shadow-sm"
+                    >
+                      <Lock className="size-3.5 mr-1.5" />
+                      Switch to Sign In
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {!isOtpSent ? (
                 <form onSubmit={handleSendCheckoutOtp} className="space-y-4 pt-1">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <label className="text-xs font-semibold text-foreground mb-1 block">
-                        Full Name (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Rahul Sharma"
-                        value={checkoutName}
-                        onChange={(e) => setCheckoutName(e.target.value)}
-                        className="w-full h-11 px-3.5 rounded-2xl border border-input bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
-                      />
+                  {checkoutAuthMode === "register" ? (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <label className="text-xs font-semibold text-foreground mb-1 block">
+                          Full Name <span className="text-destructive">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Rahul Sharma"
+                          value={checkoutName}
+                          onChange={(e) => setCheckoutName(e.target.value)}
+                          className="w-full h-11 px-3.5 rounded-2xl border border-input bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-foreground mb-1 block">
+                          Mobile Number <span className="text-destructive">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="+91 98480 22338"
+                          value={checkoutPhone}
+                          onChange={(e) => setCheckoutPhone(e.target.value)}
+                          className="w-full h-11 px-3.5 rounded-2xl border border-input bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-foreground mb-1 block">
+                          Email Address <span className="text-destructive">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="youremail@gmail.com"
+                          value={checkoutEmail}
+                          onChange={(e) => {
+                            setCheckoutEmail(e.target.value);
+                            setNotRegisteredWarn(false);
+                            setAlreadyRegisteredWarn(false);
+                          }}
+                          className="w-full h-11 px-3.5 rounded-2xl border border-brand-gold/50 bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-foreground mb-1 block">
-                        Mobile Number
-                      </label>
-                      <input
-                        type="tel"
-                        placeholder="+91 98480 22338"
-                        value={checkoutPhone}
-                        onChange={(e) => setCheckoutPhone(e.target.value)}
-                        className="w-full h-11 px-3.5 rounded-2xl border border-input bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
-                      />
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="text-xs font-semibold text-foreground mb-1 block">
+                          Registered Email Address <span className="text-destructive">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="youremail@gmail.com"
+                          value={checkoutEmail}
+                          onChange={(e) => {
+                            setCheckoutEmail(e.target.value);
+                            setNotRegisteredWarn(false);
+                            setAlreadyRegisteredWarn(false);
+                          }}
+                          className="w-full h-11 px-3.5 rounded-2xl border border-brand-gold/50 bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-end">
+                        <p className="text-[11px] text-muted-foreground pb-2">
+                          Not registered yet?{" "}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCheckoutAuthMode("register");
+                              setNotRegisteredWarn(false);
+                            }}
+                            className="text-brand-leaf font-bold hover:underline cursor-pointer"
+                          >
+                            Click here to Register New Account →
+                          </button>
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-foreground mb-1 block">
-                        Email Address <span className="text-destructive">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        placeholder="youremail@gmail.com"
-                        value={checkoutEmail}
-                        onChange={(e) => setCheckoutEmail(e.target.value)}
-                        className="w-full h-11 px-3.5 rounded-2xl border border-brand-gold/50 bg-card text-xs text-foreground focus:border-brand-leaf outline-none"
-                      />
-                    </div>
-                  </div>
+                  )}
 
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                     <p className="text-[11px] text-muted-foreground">
-                      💡 A 6-digit verification code will be sent to your Gmail inbox instantly.
+                      💡 A 6-digit verification code will be dispatched to your Gmail inbox in real-time.
                     </p>
                     <Button
                       type="submit"
@@ -515,7 +709,11 @@ export function CheckoutPage() {
                       size="sm"
                       className="rounded-2xl px-5 font-bold text-xs h-10 shadow-sm"
                     >
-                      {isSendingOtp ? "Sending Code..." : "Send Realtime OTP to Email ✉️"}
+                      {isSendingOtp
+                        ? "Sending Code..."
+                        : checkoutAuthMode === "register"
+                        ? "Register & Send Verification OTP ✨"
+                        : "Send Sign In OTP to Email ✉️"}
                     </Button>
                   </div>
                 </form>
@@ -525,13 +723,16 @@ export function CheckoutPage() {
                     <div>
                       <span className="text-muted-foreground">Verification code sent to: </span>
                       <strong className="text-foreground font-semibold">{checkoutEmail}</strong>
+                      <span className="ml-2 text-[11px] font-bold text-brand-gold bg-brand-gold/15 px-2 py-0.5 rounded-full">
+                        {checkoutAuthMode === "register" ? "Registration" : "Sign In"}
+                      </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setIsOtpSent(false)}
                       className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto text-xs"
                     >
-                      Change Email
+                      Change Email / Mode
                     </button>
                   </div>
 
@@ -592,7 +793,11 @@ export function CheckoutPage() {
                       size="sm"
                       className="rounded-2xl px-6 font-bold text-xs h-10 shadow-sm"
                     >
-                      {isVerifyingOtp ? "Verifying..." : "Verify OTP & Continue ✨"}
+                      {isVerifyingOtp
+                        ? "Verifying..."
+                        : checkoutAuthMode === "register"
+                        ? "Verify OTP & Complete Registration ✨"
+                        : "Verify OTP & Continue ✨"}
                     </Button>
                   </div>
                 </div>

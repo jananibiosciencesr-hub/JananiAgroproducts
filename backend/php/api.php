@@ -460,15 +460,169 @@ try {
             require_once __DIR__ . '/db_init.php';
             exit;
 
+        case 'check-user':
+            $body = getJsonBody();
+            $email = strtolower(trim($_GET['email'] ?? $_GET['target'] ?? $body['email'] ?? $body['target'] ?? ''));
+            $phone = trim($_GET['phone'] ?? $body['phone'] ?? '');
+            $target = $email ?: $phone;
+
+            if (!$target) {
+                echo json_encode(['success' => false, 'message' => 'Please provide an email or mobile number to check.']);
+                exit;
+            }
+
+            $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
+            if ($isAdmin) {
+                echo json_encode([
+                    'success' => true,
+                    'exists' => true,
+                    'isAdmin' => true,
+                    'user' => [
+                        'id' => 'ADMIN-ROOT',
+                        'name' => 'Janani Admin (Root)',
+                        'email' => $email ?: 'jananibiosciences.r@gmail.com',
+                        'role' => 'Super Admin'
+                    ]
+                ]);
+                exit;
+            }
+
+            $foundUser = null;
+            try {
+                $stmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier` FROM `users` WHERE (`email` = ? AND `email` != '') OR (`phone` = ? AND `phone` != '' AND `phone` != '+91 98480 22338') LIMIT 1");
+                $stmt->execute([$email ?: '__none__', $phone ?: '__none__']);
+                $foundUser = $stmt->fetch();
+            } catch (Exception $e) {}
+
+            echo json_encode([
+                'success' => true,
+                'exists' => !!$foundUser,
+                'user' => $foundUser ?: null
+            ]);
+            exit;
+
+        case 'signup':
+        case 'register-customer':
+            if ($method === 'POST') {
+                $body = getJsonBody();
+                $name = trim($body['name'] ?? '');
+                $email = strtolower(trim($body['email'] ?? ''));
+                $phone = trim($body['phone'] ?? '');
+                $password = trim($body['password'] ?? '');
+                $referralCode = trim($body['referralCode'] ?? $body['referral_code'] ?? '');
+                $houseFlat = trim($body['houseFlat'] ?? $body['house_flat'] ?? '');
+                $street = trim($body['street'] ?? $body['address'] ?? '');
+                $city = trim($body['city'] ?? '');
+                $state = trim($body['state'] ?? '');
+                $pincode = trim($body['pincode'] ?? '');
+
+                if (!$name || !$email) {
+                    echo json_encode(['success' => false, 'message' => 'Full name and email address are required to register.']);
+                    exit;
+                }
+
+                // Check if user already exists
+                try {
+                    $chkStmt = $pdo->prepare("SELECT id FROM `users` WHERE `email` = ? LIMIT 1");
+                    $chkStmt->execute([$email]);
+                    if ($chkStmt->fetch()) {
+                        echo json_encode([
+                            'success' => false,
+                            'alreadyRegistered' => true,
+                            'already_registered' => true,
+                            'message' => 'An account with this email address already exists. Please switch to Sign In.'
+                        ]);
+                        exit;
+                    }
+                } catch (Exception $e) {}
+
+                $userId = 'CUST-' . rand(100, 999);
+                $fullAddr = implode(', ', array_filter([$houseFlat, $street, $city, $state, $pincode]));
+
+                $user = [
+                    'id' => $userId,
+                    'name' => $name,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'role' => 'Customer',
+                    'walletBalance' => !empty($referralCode) ? 100 : 50,
+                    'referralCode' => 'JANANI' . rand(1000, 9999),
+                    'isVerified' => true,
+                    'tier' => 'Silver',
+                    'address' => $fullAddr ?: null
+                ];
+
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
+                        VALUES (?, ?, ?, ?, ?, 'Customer', ?, 'Silver', 'Active', 1, ?) 
+                        ON DUPLICATE KEY UPDATE 
+                            `name` = VALUES(`name`), 
+                            `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
+                            `status` = 'Active'");
+                    $stmt->execute([$userId, $name, $email, $phone, $password, $user['walletBalance'], $user['referralCode']]);
+                } catch (Exception $e) {}
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Account created successfully! Welcome to Janani Agro.',
+                    'isNewUser' => true,
+                    'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
+                    'user' => $user
+                ]);
+                exit;
+            }
+            break;
+
         case 'send-otp':
             if ($method === 'POST') {
                 $body = getJsonBody();
                 $email = strtolower(trim($body['email'] ?? ''));
                 $phone = trim($body['phone'] ?? '');
+                $purpose = trim($body['purpose'] ?? 'login');
                 $target = $email ?: $phone;
 
                 if (!$target) {
                     echo json_encode(['success' => false, 'message' => 'Please provide an email or mobile number.']);
+                    exit;
+                }
+
+                $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
+
+                // Look up if user already exists in DB
+                $userExists = false;
+                $existingUserRow = null;
+                if ($isAdmin) {
+                    $userExists = true;
+                } else {
+                    try {
+                        $stmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone`, `role` FROM `users` WHERE (`email` = ? AND `email` != '') OR (`phone` = ? AND `phone` != '' AND `phone` != '+91 98480 22338') LIMIT 1");
+                        $stmt->execute([$email ?: '__none__', $phone ?: '__none__']);
+                        $existingUserRow = $stmt->fetch();
+                        if ($existingUserRow) {
+                            $userExists = true;
+                        }
+                    } catch (Exception $e) {}
+                }
+
+                // If logging in but user is NOT registered
+                if (($purpose === 'login' || $purpose === 'checkout_login' || $purpose === 'checkout') && !$userExists) {
+                    echo json_encode([
+                        'success' => false,
+                        'notRegistered' => true,
+                        'not_registered' => true,
+                        'message' => 'This email is not registered yet. Only registered patrons can sign in. Please create an account to continue.'
+                    ]);
+                    exit;
+                }
+
+                // If signing up but user ALREADY exists
+                if (($purpose === 'signup' || $purpose === 'checkout_signup') && $userExists && !$isAdmin) {
+                    echo json_encode([
+                        'success' => false,
+                        'alreadyRegistered' => true,
+                        'already_registered' => true,
+                        'message' => 'An account with this email address already exists. Please switch to Sign In.'
+                    ]);
                     exit;
                 }
 
@@ -478,6 +632,7 @@ try {
                 $otpData = json_encode([
                     'code' => (string)$otp,
                     'target' => $target,
+                    'purpose' => $purpose,
                     'expires_at' => $expiresAt,
                     'created_at' => time()
                 ]);
