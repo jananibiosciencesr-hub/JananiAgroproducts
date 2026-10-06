@@ -51,8 +51,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [wishlist, setWishlist] = useState<number[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("janani_wishlist");
-        if (stored) return JSON.parse(stored);
+        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+        if (storedUser) {
+          const stored = localStorage.getItem("janani_wishlist");
+          if (stored) return JSON.parse(stored);
+        }
       } catch (e) {
         console.error("Failed to parse stored wishlist", e);
       }
@@ -158,6 +161,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("janani_auth_user");
         localStorage.removeItem("janani_token");
         localStorage.removeItem("janani_auth_token");
+        localStorage.removeItem("janani_wishlist");
+        setWishlist([]);
       }
     }
   }, [user]);
@@ -218,6 +223,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const logoutUser = () => {
     setUser(null);
     setCart({});
+    setWishlist([]);
     if (typeof window !== "undefined") {
       localStorage.removeItem("janani_token");
       localStorage.removeItem("janani_auth_token");
@@ -226,6 +232,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("janani_cart");
       localStorage.removeItem("janani_saved_for_later");
       localStorage.removeItem("janani_pending_checkout");
+      localStorage.removeItem("janani_wishlist");
     }
     toast.info("You have been signed out.");
   };
@@ -306,7 +313,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         )
       );
     },
-    toggleWishlist: (id: number) => setWishlist((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]),
+    toggleWishlist: (id: number) => {
+      if (!user) {
+        toast.error("Please Sign In or Register to use Wishlist!", {
+          description: "Wishlist is only available for registered patrons. Please sign in or register to save favourite crop solutions.",
+          action: {
+            label: "Sign In / Register",
+            onClick: () => {
+              window.location.href = "/login";
+            },
+          },
+          duration: 5000,
+        });
+        return;
+      }
+      setWishlist((current) => {
+        const isPresent = current.includes(id);
+        if (isPresent) {
+          toast.info("Removed from your saved wishlist");
+          return current.filter((item) => item !== id);
+        } else {
+          toast.success("Saved to your wishlist!");
+          return [...current, id];
+        }
+      });
+    },
     clearWishlist: () => {
       setWishlist([]);
       toast.info("Wishlist cleared");

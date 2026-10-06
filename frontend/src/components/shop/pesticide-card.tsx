@@ -56,14 +56,7 @@ export function PesticideCard({ product }: PesticideCardProps) {
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    try {
-      toggleWishlist(product.catalogId);
-    } catch {
-      // fallback
-    }
-    toast.info(isWishlisted ? "Removed from Wishlist" : "Saved to Wishlist", {
-      description: product.title,
-    });
+    toggleWishlist(product.catalogId);
   };
 
   const handleWhatsAppOrder = (e: React.MouseEvent) => {

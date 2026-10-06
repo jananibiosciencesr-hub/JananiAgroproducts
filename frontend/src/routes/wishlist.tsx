@@ -43,7 +43,7 @@ export const Route = createFileRoute("/wishlist")({
 type SortOption = "recent" | "price_asc" | "price_desc" | "discount" | "in_stock";
 
 export function WishlistPage() {
-  const { wishlist, toggleWishlist, addToCart, clearWishlist, moveToCart, products: storeProducts } = useStore();
+  const { user, wishlist, toggleWishlist, addToCart, clearWishlist, moveToCart, products: storeProducts } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   const [sort, setSort] = useState<SortOption>("recent");
@@ -54,6 +54,33 @@ export function WishlistPage() {
     6: true, // groundnut oil price alert active by default
     10: true, // foxtail millet
   });
+
+  // If patron is not signed in, show clean Sign In prompt
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6 animate-in fade-in duration-300">
+        <div className="size-20 mx-auto rounded-3xl bg-red-500/10 text-red-500 grid place-items-center shadow-inner">
+          <Heart className="size-10 fill-red-500/20 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+            Sign In to Access Your Wishlist
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+            Wishlist is only available for registered patrons. Please sign in or register with your email OTP to save and track your favourite crop solutions.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
+            <Link to="/login">Sign In / Register with OTP</Link>
+          </Button>
+          <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
+            <Link to="/products">Explore Products</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch product objects corresponding to wishlist IDs
   const rawSavedProducts = useMemo(() => {
