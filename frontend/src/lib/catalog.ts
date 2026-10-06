@@ -105,7 +105,7 @@ export const slugs = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/
 // The 11 Core Agri Products Categories (from client specification)
 export const categories: { id: number; name: string; slug: string; count: number; image: string; description?: string }[] = [
   { id: 1, name: "Bio Fertilizers", slug: "bio-fertilizers", count: 2, image: "/products/dharani.jpg", description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
-  { id: 2, name: "Bio Pesticides", slug: "bio-pesticides", count: 2, image: "/products/suraksha.jpg", description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
+  { id: 2, name: "Bio Pesticides", slug: "bio-pesticides", count: 1, image: "/products/suraksha.jpg", description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
   { id: 3, name: "Bio Fungicides", slug: "bio-fungicides", count: 2, image: "/products/harit.jpg", description: "Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens." },
   { id: 4, name: "Bio Stimulants", slug: "bio-stimulants", count: 4, image: "/products/pushkal.jpg", description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
   { id: 5, name: "Micro Nutrients", slug: "micro-nutrients", count: 2, image: "/products/annada.jpg", description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },

@@ -116,19 +116,14 @@ function getCategoryIcon(name: string) {
 }
 
 function ProductsPage() {
-  const { products: storeProducts, addToCart, wishlist, toggleWishlist } = useStore();
-  // Ensure we consistently use the canonical agro products with modern categories
-  const activeProductList = useMemo(() => {
-    if (storeProducts && storeProducts.length >= 12 && storeProducts.some((p) => p.category === "Bio Fertilizers" || p.category === "Bio fertilizers")) {
-      return storeProducts;
-    }
-    return products;
-  }, [storeProducts]);
+  const { addToCart, wishlist, toggleWishlist } = useStore();
+  // Strictly use our authentic Janani Agro products from catalog (all 18 genuine items)
+  const activeProductList = products;
 
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sliderPrice, setSliderPrice] = useState<number>(2000);
-  const [appliedMaxPrice, setAppliedMaxPrice] = useState<number>(2000);
+  const [sliderPrice, setSliderPrice] = useState<number>(6000);
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState<number>(6000);
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
   const [selectedBenefits, setSelectedBenefits] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -138,6 +133,39 @@ function ProductsPage() {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   const itemsPerPage = 12;
+
+  // Read initial category from URL query parameters (e.g. from navbar / categories links)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlCat = params.get("category");
+      if (urlCat) {
+        const urlNorm = urlCat.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const matched = categories.find(
+          (c) =>
+            c.name.toLowerCase().replace(/[^a-z0-9]/g, "") === urlNorm ||
+            c.slug.toLowerCase().replace(/[^a-z0-9]/g, "") === urlNorm
+        );
+        if (matched) {
+          setSelectedCategory(matched.name);
+        }
+      }
+    }
+  }, []);
+
+  const handleSelectCategory = (catName: string | null) => {
+    setSelectedCategory(catName);
+    setCurrentPage(1);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (catName) {
+        url.searchParams.set("category", catName);
+      } else {
+        url.searchParams.delete("category");
+      }
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
 
   // Handle Crop Toggle
   const toggleCrop = (crop: string) => {
@@ -155,9 +183,9 @@ function ProductsPage() {
 
   // Clear all filters
   const handleClearFilters = () => {
-    setSelectedCategory(null);
-    setSliderPrice(2000);
-    setAppliedMaxPrice(2000);
+    handleSelectCategory(null);
+    setSliderPrice(6000);
+    setAppliedMaxPrice(6000);
     setSelectedCrops([]);
     setSelectedBenefits([]);
     setSearchQuery("");
@@ -178,12 +206,11 @@ function ProductsPage() {
       if (selectedCategory) {
         const selNorm = selectedCategory.toLowerCase().replace(/[^a-z0-9]/g, "");
         const pNorm = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        const matchesCat = p.category.toLowerCase() === selectedCategory.toLowerCase() || pNorm === selNorm || pNorm.includes(selNorm) || selNorm.includes(pNorm);
-        if (!matchesCat) return false;
+        if (pNorm !== selNorm) return false;
       }
 
-      // 2. Price
-      if (p.price > appliedMaxPrice) {
+      // 2. Price (only filter if user set appliedMaxPrice below catalog maximum of 6000)
+      if (appliedMaxPrice < 6000 && p.price > appliedMaxPrice) {
         return false;
       }
 
@@ -270,8 +297,8 @@ function ProductsPage() {
         <div className="space-y-1">
           {/* All Products */}
           <button
-            onClick={() => setSelectedCategory(null)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition text-left ${
+            onClick={() => handleSelectCategory(null)}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition text-left cursor-pointer ${
               selectedCategory === null
                 ? "bg-[#075B32]/10 text-[#075B32] font-bold"
                 : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -294,16 +321,18 @@ function ProductsPage() {
 
           {/* Individual Categories */}
           {categories.map((cat) => {
-            const count = activeProductList.filter(
-              (p) => p.category.toLowerCase() === cat.name.toLowerCase()
-            ).length;
-            const isSelected = selectedCategory?.toLowerCase() === cat.name.toLowerCase();
+            const count = activeProductList.filter((p) => {
+              const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+              const cName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+              return pCat === cName;
+            }).length;
+            const isSelected = selectedCategory?.toLowerCase().replace(/[^a-z0-9]/g, "") === cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
 
             return (
               <button
                 key={cat.id || cat.slug}
-                onClick={() => setSelectedCategory(isSelected ? null : cat.name)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition text-left ${
+                onClick={() => handleSelectCategory(isSelected ? null : cat.name)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition text-left cursor-pointer ${
                   isSelected
                     ? "bg-[#075B32]/10 text-[#075B32] font-bold"
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -337,8 +366,8 @@ function ProductsPage() {
           <input
             type="range"
             min={0}
-            max={2000}
-            step={50}
+            max={6000}
+            step={100}
             value={sliderPrice}
             onChange={(e) => setSliderPrice(Number(e.target.value))}
             className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#075B32]"
@@ -346,14 +375,14 @@ function ProductsPage() {
           <div className="flex items-center justify-between text-xs text-gray-600 mt-2 font-medium">
             <span>₹ 0</span>
             <span className="font-semibold text-[#075B32]">₹ {sliderPrice}</span>
-            <span>₹ 2000</span>
+            <span>₹ 6000</span>
           </div>
         </div>
         <button
           onClick={handleApplyPrice}
-          className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-xs font-bold py-2 px-4 rounded-xl transition shadow-xs"
+          className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-xs font-bold py-2 px-4 rounded-xl transition shadow-xs cursor-pointer"
         >
-          Apply
+          Apply Price Filter
         </button>
       </div>
 
@@ -454,7 +483,7 @@ function ProductsPage() {
                 >
                   <Filter className="size-3.5 text-[#075B32]" />
                   Filters
-                  {(selectedCategory || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 2000) && (
+                  {(selectedCategory || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 6000) && (
                     <span className="size-2 rounded-full bg-[#075B32]" />
                   )}
                 </button>
@@ -514,7 +543,7 @@ function ProductsPage() {
             </div>
 
             {/* Active Filters Pills */}
-            {(selectedCategory || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 2000 || searchQuery) && (
+            {(selectedCategory || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
                 <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                   Filters:
@@ -522,15 +551,15 @@ function ProductsPage() {
                 {selectedCategory && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
                     {selectedCategory}
-                    <button onClick={() => setSelectedCategory(null)} className="hover:text-red-600">
+                    <button onClick={() => handleSelectCategory(null)} className="hover:text-red-600">
                       <X className="size-3" />
                     </button>
                   </span>
                 )}
-                {appliedMaxPrice < 2000 && (
+                {appliedMaxPrice < 6000 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
                     Under ₹{appliedMaxPrice}
-                    <button onClick={() => { setSliderPrice(2000); setAppliedMaxPrice(2000); }} className="hover:text-red-600">
+                    <button onClick={() => { setSliderPrice(6000); setAppliedMaxPrice(6000); }} className="hover:text-red-600">
                       <X className="size-3" />
                     </button>
                   </span>
