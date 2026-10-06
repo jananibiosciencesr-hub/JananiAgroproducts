@@ -45,8 +45,7 @@ const links = [
   ["Home", "/"],
   ["About Us", "/about"],
   ["Products", "/products"],
-  ["Crop Solutions", "/crops"],
-  ["Gallery", "/about"],
+  ["Categories", "/categories"],
   ["Contact Us", "/contact"]
 ] as const;
 
@@ -152,14 +151,14 @@ function Shell({ children }: { children: React.ReactNode }) {
           
           <nav className="hidden items-center justify-center gap-6 xl:flex" aria-label="Main navigation">
             {links.map(([label, to]) => {
-              const hasDropdown = label === "Products" || label === "Crop Solutions";
+              const hasDropdown = label === "Products" || label === "Categories";
 
               return (
                 <div
                   key={label}
                   className="relative py-2"
                   onMouseEnter={() => {
-                    if (label === "Products") {
+                    if (label === "Products" || label === "Categories") {
                       setIsMegaMenuOpen(true);
                     } else {
                       setIsMegaMenuOpen(false);
@@ -364,8 +363,7 @@ function Footer() {
     ["Home", "/"],
     ["About Us", "/about"],
     ["Products", "/products"],
-    ["Crop Solutions", "/crops"],
-    ["Gallery", "/about"],
+    ["Categories", "/categories"],
     ["Contact Us", "/contact"]
   ];
 
