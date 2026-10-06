@@ -213,7 +213,7 @@ function CategoriesIndexPage() {
                       src={catImg}
                       alt={cat.name}
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/products/balavan.jpg";
+                        (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
                       }}
                       className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                     />
