@@ -1451,7 +1451,7 @@ export async function createAdminProduct(productData: any) {
     sku: productData.sku || `JAP-${Math.floor(1000 + Math.random() * 9000)}`,
     unit: productData.unit || "1 L",
     badge: productData.badge || "",
-    image: productData.image || "/products/dharani.jpg",
+    image: productData.image || (Array.isArray(productData.gallery) && productData.gallery[0]) || "",
     description: productData.description || "",
     origin: productData.origin || productData.harvestOrigin || "Lodhika GIDC, Gujarat",
     certification: certVal || "Certified Organic & NPOP Verified",

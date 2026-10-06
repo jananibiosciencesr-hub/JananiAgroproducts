@@ -47,7 +47,9 @@ import {
   bulkUpdateProductPrice,
   bulkUpdateProductStock,
   bulkDeleteAdminProducts,
-  importAdminProducts
+  importAdminProducts,
+  getAdminFullCategories,
+  getCategories
 } from "@/lib/api";
 
 export interface ProductVariant {
@@ -138,6 +140,59 @@ export function ProductsManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Dynamic Categories from DB / API
+  const [categoriesList, setCategoriesList] = useState<string[]>(JANANI_DEFAULT_CATEGORIES);
+
+  const loadCategories = async () => {
+    try {
+      const res = await getAdminFullCategories({ status: "active" });
+      const namesFromApi: string[] = [];
+      if (res?.success && Array.isArray(res.data)) {
+        res.data.forEach((c: any) => {
+          if (c.name && typeof c.name === "string" && c.name.trim()) {
+            namesFromApi.push(c.name.trim());
+          }
+        });
+      }
+
+      if (typeof window !== "undefined") {
+        try {
+          const stored = localStorage.getItem("janani_admin_categories");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              parsed.forEach((c: any) => {
+                if (c.name && typeof c.name === "string" && c.name.trim()) {
+                  namesFromApi.push(c.name.trim());
+                }
+              });
+            }
+          }
+        } catch (e) {}
+      }
+
+      const combined = Array.from(new Set([...namesFromApi, ...JANANI_DEFAULT_CATEGORIES])).filter(Boolean);
+      setCategoriesList(combined);
+    } catch (e) {
+      console.warn("Could not load categories in ProductsManagement:", e);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+
+    const handleCategoryUpdate = () => {
+      loadCategories();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("janani-categories-updated", handleCategoryUpdate);
+      return () => {
+        window.removeEventListener("janani-categories-updated", handleCategoryUpdate);
+      };
+    }
+  }, []);
+
   // Modals & Drawers
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<AdminProductItem | null>(null);
@@ -172,6 +227,12 @@ export function ProductsManagement() {
   useEffect(() => {
     loadProducts();
   }, [statusFilter, categoryFilter, brandFilter, stockFilter]);
+
+  // Combined available categories for filters and forms
+  const availableCategories = useMemo(() => {
+    const fromProds = products.map((p) => p.category).filter(Boolean);
+    return Array.from(new Set([...categoriesList, ...fromProds])).filter(Boolean);
+  }, [categoriesList, products]);
 
   // Client-side Filter
   const filteredProducts = useMemo(() => {
@@ -414,7 +475,7 @@ export function ProductsManagement() {
             className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600"
           >
             <option value="all">All Categories</option>
-            {JANANI_DEFAULT_CATEGORIES.map((cat) => (
+            {availableCategories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
@@ -833,6 +894,7 @@ export function ProductsManagement() {
       {/* Add / Edit Product 6-Tab Modal */}
       <ProductFormModal
         isOpen={isFormModalOpen}
+        categories={availableCategories}
         onClose={() => {
           setIsFormModalOpen(false);
           setEditingProduct(null);
@@ -1061,20 +1123,25 @@ function ProductFormModal({
   isOpen,
   onClose,
   initialData,
+  categories = JANANI_DEFAULT_CATEGORIES,
   onSave
 }: {
   isOpen: boolean;
   onClose: () => void;
   initialData: AdminProductItem | null;
+  categories?: string[];
   onSave: (data: any) => void;
 }) {
+  const activeCategories = (categories && categories.length > 0) ? categories : JANANI_DEFAULT_CATEGORIES;
+  const defaultCategory = activeCategories[0] || "Bio Fertilizers";
+
   const [activeTab, setActiveTab] = useState<"general" | "pricing" | "variants" | "gallery" | "seo" | "toggles">("general");
 
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     sku: "",
-    category: "Bio Fertilizers",
+    category: defaultCategory,
     brand: "Janani Agro Products",
     price: "450",
     originalPrice: "520",
@@ -1085,8 +1152,8 @@ function ProductFormModal({
     badge: "100% Organic",
     description: "",
     harvestOrigin: "Janani Bio Sciences Cluster, Gujarat",
-    image: "/products/dharani.jpg",
-    gallery: ["/products/dharani.jpg"] as string[],
+    image: "",
+    gallery: [] as string[],
     variants: [] as ProductVariant[],
     organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
     seo: {
@@ -1110,7 +1177,7 @@ function ProductFormModal({
         name: initialData.name || "",
         slug: initialData.slug || "",
         sku: initialData.sku || "",
-        category: initialData.category || "Bio Fertilizers",
+        category: initialData.category || defaultCategory,
         brand: initialData.brand || "Janani Agro Products",
         price: String(initialData.price || 450),
         originalPrice: String(initialData.originalPrice || 520),
@@ -1121,8 +1188,10 @@ function ProductFormModal({
         badge: initialData.badge || "100% Organic",
         description: initialData.description || "",
         harvestOrigin: initialData.harvestOrigin || "Janani Bio Sciences Cluster, Gujarat",
-        image: initialData.image || "/products/dharani.jpg",
-        gallery: (initialData.gallery && initialData.gallery.length > 0) ? initialData.gallery : [initialData.image || "/products/dharani.jpg"],
+        image: initialData.image || "",
+        gallery: (initialData.gallery && initialData.gallery.length > 0)
+          ? initialData.gallery
+          : (initialData.image ? [initialData.image] : []),
         variants: initialData.variants || [],
         organicCertifications: initialData.organicCertifications || ["NPOP Certified Organic"],
         seo: {
@@ -1142,7 +1211,7 @@ function ProductFormModal({
         name: "",
         slug: "",
         sku: `JAP-${Math.floor(1000 + Math.random() * 9000)}`,
-        category: "Bio Fertilizers",
+        category: defaultCategory,
         brand: "Janani Agro Products",
         price: "450",
         originalPrice: "520",
@@ -1153,8 +1222,8 @@ function ProductFormModal({
         badge: "100% Organic",
         description: "",
         harvestOrigin: "Janani Bio Sciences Cluster, Gujarat",
-        image: "/products/dharani.jpg",
-        gallery: ["/products/dharani.jpg"],
+        image: "",
+        gallery: [],
         variants: [
           { id: `VAR-1`, name: "500 ml Pack", sku: `JAP-500ML`, price: 250, originalPrice: 290, stock: 25 },
           { id: `VAR-2`, name: "1 L Standard", sku: `JAP-1L`, price: 450, originalPrice: 520, stock: 25 }
@@ -1173,7 +1242,7 @@ function ProductFormModal({
         isNewArrival: true
       });
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, defaultCategory]);
 
   const handleTitleChange = (name: string) => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -1217,14 +1286,18 @@ function ProductFormModal({
   const handleAddGalleryImage = (urlToAdd?: string) => {
     const target = (typeof urlToAdd === "string" ? urlToAdd : newGalleryUrl).trim();
     if (!target) {
-      toast.error("Please enter or paste an image URL, or select from catalog presets.");
+      toast.error("Please enter or paste an image URL, or upload from your device.");
       return;
     }
-    setFormData((prev) => ({
-      ...prev,
-      image: prev.image || target,
-      gallery: [...prev.gallery, target]
-    }));
+    setFormData((prev) => {
+      const alreadyExists = prev.gallery.includes(target);
+      const updatedGallery = alreadyExists ? prev.gallery : [...prev.gallery, target];
+      return {
+        ...prev,
+        image: prev.image || target,
+        gallery: updatedGallery
+      };
+    });
     setNewGalleryUrl("");
     toast.success("Image added to product gallery!");
   };
@@ -1238,11 +1311,14 @@ function ProductFormModal({
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
         if (dataUrl) {
-          setFormData((prev) => ({
-            ...prev,
-            image: prev.image || dataUrl,
-            gallery: [...prev.gallery, dataUrl]
-          }));
+          setFormData((prev) => {
+            const updatedGallery = prev.gallery.includes(dataUrl) ? prev.gallery : [...prev.gallery, dataUrl];
+            return {
+              ...prev,
+              image: prev.image || dataUrl,
+              gallery: updatedGallery
+            };
+          });
           toast.success(`Uploaded ${file.name} to gallery!`);
         }
       };
@@ -1336,7 +1412,7 @@ function ProductFormModal({
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
                   >
-                    {JANANI_DEFAULT_CATEGORIES.map((cat) => (
+                    {activeCategories.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
@@ -1526,24 +1602,31 @@ function ProductFormModal({
           {activeTab === "gallery" && (
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Primary Thumbnail Image URL *</label>
+                <label className="text-xs font-bold text-foreground block mb-1">Primary Thumbnail Image URL</label>
                 <div className="flex gap-2">
                   <input
                     value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    placeholder="e.g. /images/categories/rice.webp or https://..."
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        image: val,
+                        gallery: val && !prev.gallery.includes(val) ? [val, ...prev.gallery] : prev.gallery
+                      }));
+                    }}
+                    placeholder="Enter image URL or upload below (e.g. /products/dharani.jpg)"
                     className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono"
                   />
-                  {formData.image && (
+                  {formData.image ? (
                     <div className="size-10 rounded-xl border border-border bg-muted overflow-hidden shrink-0">
                       <img
                         src={formData.image}
                         alt="Primary thumbnail"
                         className="size-full object-cover"
-                        onError={(e) => { e.currentTarget.src = "/images/categories/rice.webp"; }}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                       />
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -1623,7 +1706,7 @@ function ProductFormModal({
                   {formData.gallery.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, gallery: [] })}
+                      onClick={() => setFormData({ ...formData, gallery: [], image: "" })}
                       className="text-[11px] text-rose-500 hover:underline font-medium"
                     >
                       Clear All
@@ -1634,8 +1717,8 @@ function ProductFormModal({
                 {formData.gallery.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
                     <ImageIcon className="size-8 mx-auto text-muted-foreground/50 mb-2" />
-                    <p className="text-xs font-medium text-muted-foreground">No gallery images added yet</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Type an image URL above, upload from your PC, or click a catalog preset.</p>
+                    <p className="text-xs font-bold text-foreground">No gallery images added yet</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Click "Upload File" above, paste an image link, or pick from presets.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -1652,7 +1735,7 @@ function ProductFormModal({
                             src={img}
                             alt={`Gallery ${i + 1}`}
                             className="size-full object-cover"
-                            onError={(e) => { e.currentTarget.src = "/images/categories/rice.webp"; }}
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/products/dharani.jpg"; }}
                           />
                           {isPrimary && (
                             <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow">
@@ -1663,7 +1746,11 @@ function ProductFormModal({
                             <div className="flex justify-end">
                               <button
                                 type="button"
-                                onClick={() => setFormData({ ...formData, gallery: formData.gallery.filter((_, idx) => idx !== i) })}
+                                onClick={() => {
+                                  const updated = formData.gallery.filter((_, idx) => idx !== i);
+                                  const nextPrimary = isPrimary ? (updated[0] || "") : formData.image;
+                                  setFormData({ ...formData, gallery: updated, image: nextPrimary });
+                                }}
                                 className="size-6 rounded-full bg-rose-600 text-white flex items-center justify-center hover:bg-rose-700 transition"
                                 title="Remove image"
                               >
