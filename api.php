@@ -54,11 +54,11 @@ $raw_db   = trim(getenv('DB_NAME') ?: 'u409810820_Jananiagro');
 $raw_user = trim(getenv('DB_USER') ?: 'u409810820_Jananiagropro');
 $raw_pass = trim(getenv('DB_PASSWORD') ?: 'Jananiagro@123');
 
-// On Hostinger Linux/CageFS, MySQL MUST connect via unix domain socket (lowercase 'localhost').
-$hosts  = ['localhost'];
-$dbs    = array_values(array_unique([$raw_db, 'u409810820_Jananiagro', 'u409810820_jananiagro', strtolower($raw_db)]));
-$users  = array_values(array_unique([$raw_user, 'u409810820_Jananiagropro', 'u409810820_jananiagropro', strtolower($raw_user)]));
-$passes = array_values(array_unique([$raw_pass, 'Jananiagro@123', 'JANANIAGRO@123']));
+// On Hostinger Linux/CageFS, MySQL connects via unix socket ('localhost') or TCP ('127.0.0.1').
+$hosts  = array_values(array_unique(['localhost', '127.0.0.1', $raw_host]));
+$dbs    = array_values(array_unique([$raw_db, 'u409810820_Jananiagro', 'u409810820_jananiagro', strtolower($raw_db), 'janani_agro']));
+$users  = array_values(array_unique(['u409810820_Jananiagropro', 'u409810820_jananiagro', $raw_user, 'root']));
+$passes = array_values(array_unique(['Jananiagro@123', 'JANANIAGRO@123', $raw_pass, '']));
 
 $pdo = null;
 $connectedDb = $raw_db;
@@ -72,7 +72,8 @@ foreach ($hosts as $h) {
                     $pdo = new PDO("mysql:host={$h};dbname={$db};charset=utf8mb4", $u, $p, [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                        PDO::ATTR_EMULATE_PREPARES => false
+                        PDO::ATTR_EMULATE_PREPARES => false,
+                        PDO::ATTR_TIMEOUT => 3
                     ]);
                     $connectedDb = $db;
                     break 4;
@@ -338,7 +339,6 @@ function ensureCategoriesTableSchema($pdo) {
             }
         } catch (Exception $e) {}
 
-        // Alter image and description to MEDIUMTEXT so long image URLs / data URLs never fail
         if (isset($existingCols['image']) && strpos($existingCols['image'], 'varchar') !== false) {
             try { $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `image` MEDIUMTEXT NULL"); } catch (Exception $e) {}
         }
@@ -374,12 +374,158 @@ function ensureCategoriesTableSchema($pdo) {
     } catch (Exception $e) {}
 }
 
+function ensureProductsTableSchema($pdo) {
+    static $schemaChecked = false;
+    if ($schemaChecked) return;
+    $schemaChecked = true;
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `products` (
+            `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            `slug` VARCHAR(255) NOT NULL UNIQUE,
+            `name` VARCHAR(255) NOT NULL,
+            `category_name` VARCHAR(255) NOT NULL,
+            `category_id` VARCHAR(64) DEFAULT NULL,
+            `price` DECIMAL(10,2) NOT NULL,
+            `old_price` DECIMAL(10,2) DEFAULT NULL,
+            `unit` VARCHAR(50) DEFAULT '1 kg',
+            `stock` INT(11) DEFAULT 50,
+            `rating` DECIMAL(2,1) DEFAULT 4.8,
+            `reviews_count` INT(11) DEFAULT 0,
+            `badge` VARCHAR(100) DEFAULT NULL,
+            `image` MEDIUMTEXT DEFAULT NULL,
+            `description` MEDIUMTEXT DEFAULT NULL,
+            `origin` VARCHAR(255) DEFAULT 'Lodhika GIDC, Gujarat',
+            `certification` VARCHAR(255) DEFAULT 'Certified Organic & NPOP Verified',
+            `active` TINYINT(1) DEFAULT 1,
+            `status` VARCHAR(50) DEFAULT 'Active',
+            `sku` VARCHAR(100) DEFAULT NULL,
+            `low_stock_threshold` INT(11) DEFAULT 20,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $existingCols = [];
+        try {
+            $colStmt = $pdo->query("SHOW COLUMNS FROM `products`");
+            while ($col = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+                $existingCols[strtolower($col['Field'])] = true;
+            }
+        } catch (Exception $e) {}
+
+        if (isset($existingCols['image'])) {
+            try { $pdo->exec("ALTER TABLE `products` MODIFY COLUMN `image` MEDIUMTEXT NULL"); } catch (Exception $e) {}
+        }
+        if (isset($existingCols['description'])) {
+            try { $pdo->exec("ALTER TABLE `products` MODIFY COLUMN `description` MEDIUMTEXT NULL"); } catch (Exception $e) {}
+        }
+
+        $needed = [
+            'category_id' => 'VARCHAR(64) NULL',
+            'old_price' => 'DECIMAL(10,2) NULL',
+            'unit' => "VARCHAR(50) DEFAULT '1 kg'",
+            'stock' => 'INT(11) DEFAULT 50',
+            'rating' => 'DECIMAL(2,1) DEFAULT 4.8',
+            'reviews_count' => 'INT(11) DEFAULT 0',
+            'badge' => 'VARCHAR(100) NULL',
+            'image' => 'MEDIUMTEXT NULL',
+            'description' => 'MEDIUMTEXT NULL',
+            'origin' => "VARCHAR(255) DEFAULT 'Lodhika GIDC, Gujarat'",
+            'certification' => "VARCHAR(255) DEFAULT 'Certified Organic & NPOP Verified'",
+            'active' => 'TINYINT(1) DEFAULT 1',
+            'status' => "VARCHAR(50) DEFAULT 'Active'",
+            'sku' => 'VARCHAR(100) NULL',
+            'low_stock_threshold' => 'INT(11) DEFAULT 20'
+        ];
+        foreach ($needed as $colName => $colDef) {
+            if (!isset($existingCols[strtolower($colName)])) {
+                try {
+                    $pdo->exec("ALTER TABLE `products` ADD COLUMN `{$colName}` {$colDef}");
+                } catch (Exception $e) {}
+            }
+        }
+    } catch (Exception $e) {}
+}
+
+function ensureUsersTableSchema($pdo) {
+    static $schemaChecked = false;
+    if ($schemaChecked) return;
+    $schemaChecked = true;
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `users` (
+            `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+            `name` VARCHAR(255) NOT NULL,
+            `email` VARCHAR(255) NOT NULL UNIQUE,
+            `phone` VARCHAR(50) DEFAULT NULL,
+            `password` VARCHAR(255) DEFAULT NULL,
+            `password_hash` VARCHAR(255) DEFAULT NULL,
+            `role` VARCHAR(50) DEFAULT 'Customer',
+            `wallet_balance` DECIMAL(10,2) DEFAULT '0.00',
+            `loyalty_points` INT(11) DEFAULT 0,
+            `tier` VARCHAR(50) DEFAULT 'Silver',
+            `status` VARCHAR(50) DEFAULT 'Active',
+            `referral_code` VARCHAR(50) DEFAULT NULL,
+            `is_verified` TINYINT(1) DEFAULT 1,
+            `preferences` JSON DEFAULT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (Exception $e) {}
+}
+
+function ensureOrdersTableSchema($pdo) {
+    static $schemaChecked = false;
+    if ($schemaChecked) return;
+    $schemaChecked = true;
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `orders` (
+            `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+            `number` VARCHAR(64) NOT NULL UNIQUE,
+            `customer_id` VARCHAR(64) DEFAULT NULL,
+            `customer_name` VARCHAR(255) NOT NULL,
+            `customer_email` VARCHAR(255) DEFAULT NULL,
+            `customer_phone` VARCHAR(50) DEFAULT NULL,
+            `status` VARCHAR(50) DEFAULT 'Processing',
+            `payment_status` VARCHAR(50) DEFAULT 'Pending',
+            `payment_method` VARCHAR(50) DEFAULT 'COD',
+            `subtotal` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+            `discount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+            `shipping_fee` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+            `tax` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+            `total` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+            `shipping_address` JSON DEFAULT NULL,
+            `billing_address` JSON DEFAULT NULL,
+            `notes` TEXT DEFAULT NULL,
+            `tracking_number` VARCHAR(100) DEFAULT NULL,
+            `courier` VARCHAR(100) DEFAULT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `order_items` (
+            `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            `order_id` VARCHAR(64) NOT NULL,
+            `product_id` VARCHAR(64) NOT NULL,
+            `product_name` VARCHAR(255) NOT NULL,
+            `product_image` VARCHAR(500) DEFAULT NULL,
+            `sku` VARCHAR(100) DEFAULT NULL,
+            `unit` VARCHAR(50) DEFAULT '1 kg',
+            `price` DECIMAL(10,2) NOT NULL,
+            `quantity` INT(11) NOT NULL DEFAULT 1,
+            `total` DECIMAL(10,2) NOT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (Exception $e) {}
+}
+
 function ensureJananiCatalogSynced($pdo) {
     static $synced = false;
     if ($synced) return;
     $synced = true;
     try {
         ensureCategoriesTableSchema($pdo);
+        ensureProductsTableSchema($pdo);
+        ensureUsersTableSchema($pdo);
+        ensureOrdersTableSchema($pdo);
 
         // Delete legacy demo grocery categories if any
         $checkOld = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices')")->fetchColumn();

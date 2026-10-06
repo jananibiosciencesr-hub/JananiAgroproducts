@@ -48,7 +48,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
     if (isJson) {
       try {
         const data = await res.json();
-        // Return valid JSON objects even on 4xx status (e.g. 409 Conflict, 400 Bad Request) so caller receives exact error message
+        // Return valid JSON objects even on non-2xx status (e.g. 400, 404, 409, 500) so caller receives structured data
         if (data !== null && typeof data === "object") {
           return data as T;
         }
@@ -57,10 +57,10 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       }
     }
 
-    // If request fails (non-2xx) or returns non-JSON HTML:
+    // If request fails (non-2xx) and did not return JSON:
     if (!res.ok) {
-      // 1. If /api/* rewrite fails, try direct /api.php endpoint
-      if (!endpoint.startsWith("http") && !endpoint.includes("api.php") && !endpoint.includes("db_init.php")) {
+      // If /api/* rewrite returned 404 or HTML, try direct /api.php endpoint once
+      if (res.status === 404 && !endpoint.startsWith("http") && !endpoint.includes("api.php") && !endpoint.includes("db_init.php")) {
         const clean = endpoint.replace(/^\//, "").replace(/^api\//, "");
         const [path, qs] = clean.split("?");
         const parts = path.split("/");
@@ -76,43 +76,18 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
             },
             ...options,
           });
-          if (retryRes.ok && retryRes.headers.get("content-type")?.includes("application/json")) {
+          if (retryRes.headers.get("content-type")?.includes("application/json")) {
             return (await retryRes.json()) as T;
           }
         } catch {}
       }
 
-      // 2. If direct /api.php fails (e.g. running on localhost without PHP/Apache), fallback to Node /api endpoint
-      if (endpoint.includes("api.php")) {
-        const queryParams = new URLSearchParams(endpoint.split("?")[1] || "");
-        const action = queryParams.get("action");
-        const id = queryParams.get("id");
-        queryParams.delete("action");
-        queryParams.delete("id");
-        const rest = queryParams.toString() ? `?${queryParams.toString()}` : "";
-        if (action) {
-          const nodeFallback = `${API_BASE_URL}/admin/${action}${id ? `/${id}` : ""}${rest}`;
-          try {
-            const retryRes = await fetch(nodeFallback, {
-              headers: {
-                "Content-Type": "application/json",
-                ...(options?.headers || {}),
-              },
-              ...options,
-            });
-            if (retryRes.ok && retryRes.headers.get("content-type")?.includes("application/json")) {
-              return (await retryRes.json()) as T;
-            }
-          } catch {}
-        }
-      }
-
-      throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      return null;
     }
 
-    return (await res.json()) as T;
+    return null;
   } catch (error) {
-    console.warn(`[API fetchJson] Network request failed for ${endpoint}:`, error);
+    console.warn(`[API fetchJson] Request failed for ${endpoint}:`, error);
     return null;
   }
 }
