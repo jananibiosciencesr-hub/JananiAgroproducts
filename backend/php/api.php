@@ -598,11 +598,24 @@ try {
                     exit;
                 }
 
+                $custPhone = ($foundUser['phone'] && $foundUser['phone'] !== '+91 98480 22338') ? $foundUser['phone'] : '';
+                if (empty($custPhone) && !empty($foundUser['email'])) {
+                    try {
+                        $oStmt = $pdo->prepare("SELECT `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
+                        $oStmt->execute([$foundUser['email'], '%' . explode('@', $foundUser['email'])[0] . '%']);
+                        $foundOrdPhone = $oStmt->fetchColumn();
+                        if ($foundOrdPhone) {
+                            $custPhone = $foundOrdPhone;
+                            $pdo->prepare("UPDATE `users` SET `phone` = ? WHERE `id` = ? OR `email` = ?")->execute([$custPhone, $foundUser['id'], $foundUser['email']]);
+                        }
+                    } catch (Exception $e) {}
+                }
+
                 $user = [
                     'id' => $foundUser['id'],
                     'name' => $foundUser['name'] ?: explode('@', $email)[0],
                     'email' => $foundUser['email'],
-                    'phone' => ($foundUser['phone'] && $foundUser['phone'] !== '+91 98480 22338') ? $foundUser['phone'] : '',
+                    'phone' => $custPhone,
                     'role' => $foundUser['role'] ?: 'Customer',
                     'walletBalance' => (float)($foundUser['wallet_balance'] ?? 150),
                     'referralCode' => $foundUser['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
@@ -887,6 +900,18 @@ try {
                     $userPhone = '+91 98480 22338';
                 } else {
                     $userPhone = '';
+                }
+
+                // If customer phone still empty, check if orders table has phone for this customer
+                if (empty($userPhone) && !$isAdmin && !empty($userEmail)) {
+                    try {
+                        $oStmt = $pdo->prepare("SELECT `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
+                        $oStmt->execute([$userEmail, '%' . explode('@', $userEmail)[0] . '%']);
+                        $foundOrdPhone = $oStmt->fetchColumn();
+                        if ($foundOrdPhone) {
+                            $userPhone = $foundOrdPhone;
+                        }
+                    } catch (Exception $e) {}
                 }
 
                 $userRole = $existingUser && !empty($existingUser['role']) ? $existingUser['role'] : ($isAdmin ? 'Super Admin' : 'Customer');
@@ -2852,10 +2877,23 @@ try {
             if ($method === 'GET') {
                 $id = $_GET['id'] ?? ($_GET['userId'] ?? ($_GET['email'] ?? null));
                 if ($id) {
-                    $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
-                    $stmt->execute([$id, $id]);
+                    $cleanId = trim($id);
+                    $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? OR `phone` = ? LIMIT 1");
+                    $stmt->execute([$cleanId, $cleanId, $cleanId]);
                     $user = $stmt->fetch();
                     if ($user) {
+                        // If phone is empty, check orders table to backfill
+                        if (empty($user['phone']) && !empty($user['email'])) {
+                            try {
+                                $oStmt = $pdo->prepare("SELECT `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
+                                $oStmt->execute([$user['email'], '%' . explode('@', $user['email'])[0] . '%']);
+                                $ordPhone = $oStmt->fetchColumn();
+                                if ($ordPhone) {
+                                    $user['phone'] = $ordPhone;
+                                    $pdo->prepare("UPDATE `users` SET `phone` = ? WHERE `id` = ? OR `email` = ?")->execute([$ordPhone, $user['id'], $user['email']]);
+                                }
+                            } catch (Exception $e) {}
+                        }
                         $user['walletBalance'] = (float)($user['wallet_balance'] ?? 0);
                         $user['loyaltyPoints'] = (int)($user['loyalty_points'] ?? 0);
                         $user['isVerified'] = (bool)($user['is_verified'] ?? 1);
@@ -3044,10 +3082,26 @@ try {
                     }
 
                     if (!empty($fields)) {
-                        $vals[] = $searchId;
-                        $vals[] = $searchEmail;
-                        $stmt = $pdo->prepare("UPDATE `users` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `email` = ?");
-                        $stmt->execute($vals);
+                        if (!$existingUser) {
+                            $newId = !empty($searchId) && !strpos($searchId, '@') ? $searchId : ('CUST-' . rand(100, 999));
+                            $newName = trim($body['name'] ?? ($body['fullName'] ?? 'Valued Patron'));
+                            $newEmail = $searchEmail ?: ($newId . '@janani.customer');
+                            $newPhone = $formattedPhone ?? trim($body['phone'] ?? '');
+                            $newRole = $body['role'] ?? 'Customer';
+                            $newTier = $body['tier'] ?? 'Silver';
+                            $newWallet = (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 150.00));
+                            $jsonPrefs = !empty($prefs) ? json_encode($prefs) : null;
+
+                            try {
+                                $insStmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `tier`, `wallet_balance`, `status`, `is_verified`, `preferences`) VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', 1, ?) ON DUPLICATE KEY UPDATE `phone` = VALUES(`phone`), `name` = VALUES(`name`), `preferences` = VALUES(`preferences`)");
+                                $insStmt->execute([$newId, $newName, $newEmail, $newPhone, $newRole, $newTier, $newWallet, $jsonPrefs]);
+                            } catch (Exception $e) {}
+                        } else {
+                            $vals[] = $existingUser['id'];
+                            $vals[] = $existingUser['email'];
+                            $stmt = $pdo->prepare("UPDATE `users` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `email` = ?");
+                            $stmt->execute($vals);
+                        }
 
                         $fStmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
                         $fStmt->execute([$searchId, $searchEmail]);
