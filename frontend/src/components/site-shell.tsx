@@ -151,7 +151,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           
           <nav className="hidden items-center justify-center gap-6 lg:flex" aria-label="Main navigation">
             {links.map(([label, to]) => {
-              const hasDropdown = label === "Products" || label === "Categories";
+              const hasDropdown = label === "Products";
               const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
 
               return (
@@ -159,7 +159,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                   key={label}
                   className="relative py-2"
                   onMouseEnter={() => {
-                    if (label === "Products" || label === "Categories") {
+                    if (label === "Products") {
                       setIsMegaMenuOpen(true);
                     } else {
                       setIsMegaMenuOpen(false);
