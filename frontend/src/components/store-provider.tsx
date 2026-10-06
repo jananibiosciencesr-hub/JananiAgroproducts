@@ -311,7 +311,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const numId = Number(id);
       if (isNaN(numId) || quantity <= 0) return;
       setCart((current) => ({ ...current, [numId]: (current[numId] ?? 0) + quantity }));
-      toast.success("Added to your cart");
     },
     updateQuantity: (id: number, quantity: number) => {
       const numId = Number(id);

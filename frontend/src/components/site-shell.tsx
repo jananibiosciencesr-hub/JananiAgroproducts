@@ -28,7 +28,8 @@ import { Brand } from "@/components/brand";
 import jananiLogo from "@/assets/janani-agro-logo.png";
 import { StoreProvider, useStore } from "@/components/store-provider";
 import { categories } from "@/lib/catalog";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { subscribeNewsletter } from "@/lib/api";
 import { HomeMegaMenu } from "@/components/home-mega-menu";
 import { GlobalSearchModal } from "@/components/search/global-search-modal";
@@ -53,7 +54,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <StoreProvider>
       <Shell>{children}</Shell>
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors closeButton duration={3500} />
     </StoreProvider>
   );
 }
