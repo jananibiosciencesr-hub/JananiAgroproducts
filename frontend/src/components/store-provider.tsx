@@ -34,17 +34,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Record<number, number>>(() => {
     if (typeof window !== "undefined") {
       try {
-        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
-        const guestCleaned = localStorage.getItem("janani_guest_cart_purged_v3");
-        // If visitor is not logged in / registered, purge any leftover stale demo cart from localStorage
-        if (!storedUser && !guestCleaned) {
-          localStorage.removeItem("janani_cart");
-          localStorage.removeItem("janani_saved_for_later");
-          localStorage.setItem("janani_guest_cart_purged_v3", "true");
-          return {};
-        }
         const stored = localStorage.getItem("janani_cart");
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            return parsed;
+          }
+        }
       } catch (e) {
         console.error("Failed to parse stored cart", e);
       }
@@ -80,8 +76,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem("janani_auth_user");
             localStorage.removeItem("janani_token");
             localStorage.removeItem("janani_auth_token");
-            localStorage.removeItem("janani_cart");
-            localStorage.removeItem("janani_saved_for_later");
             return null;
           }
           return parsed;
@@ -126,15 +120,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.addEventListener("storage", handleSync);
 
       try {
-        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
-        const guestCleaned = localStorage.getItem("janani_guest_cart_purged_v3");
-        if (!storedUser && !guestCleaned) {
-          localStorage.removeItem("janani_cart");
-          localStorage.removeItem("janani_saved_for_later");
-          localStorage.setItem("janani_guest_cart_purged_v3", "true");
-          setCart({});
-        }
-
         // Always purge legacy un-scoped shared addresses to prevent cross-account pollution
         localStorage.removeItem("janani_saved_addresses");
 
@@ -177,29 +162,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  // Sync cart to localStorage
+  // Sync cart to localStorage reliably
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("janani_cart", JSON.stringify(cart));
     }
   }, [cart]);
-
-  // Auto-prune any orphan or invalid cart items that do not exist in the active product catalog
-  useEffect(() => {
-    if (liveProducts && liveProducts.length > 0 && Object.keys(cart).length > 0) {
-      const validEntries = Object.entries(cart).filter(([id, qty]) => {
-        const numId = Number(id);
-        return !isNaN(numId) && qty > 0 && liveProducts.some((p) => p.id === numId);
-      });
-      if (validEntries.length !== Object.keys(cart).length) {
-        const sanitized = Object.fromEntries(validEntries);
-        setCart(sanitized);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("janani_cart", JSON.stringify(sanitized));
-        }
-      }
-    }
-  }, [liveProducts, cart]);
 
   // Sync wishlist to localStorage
   useEffect(() => {
@@ -300,11 +268,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     cart,
     wishlist,
     cartCount: Object.entries(cart).reduce((sum, [id, qty]) => {
-      const numId = Number(id);
-      const exists = liveProducts.some((p) => p.id === numId);
-      return exists && qty > 0 ? sum + qty : sum;
+      const q = Number(qty);
+      return !isNaN(q) && q > 0 ? sum + q : sum;
     }, 0),
-    subtotal: Object.entries(cart).reduce((sum, [id, qty]) => sum + (liveProducts.find((p) => p.id === Number(id))?.price ?? 0) * qty, 0),
+    subtotal: Object.entries(cart).reduce((sum, [id, qty]) => {
+      const q = Number(qty);
+      if (isNaN(q) || q <= 0) return sum;
+      const numId = Number(id);
+      const prod = liveProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id))
+        || initialProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id));
+      return sum + (prod?.price ?? 0) * q;
+    }, 0),
     user,
     isAuthenticated: !!user,
     addToCart: (id: number, quantity = 1) => {

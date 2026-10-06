@@ -214,12 +214,13 @@ export function CheckoutPage() {
   const cartItems = useMemo(() => {
     return Object.entries(cart)
       .map(([idStr, qty]) => {
-        const product = allProducts.find((p) => p.id === Number(idStr));
-        return { product, qty };
+        const product = allProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr))
+          || products.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr));
+        return { product, qty: Number(qty) || 1 };
       })
       .filter(
         (item): item is { product: NonNullable<typeof item.product>; qty: number } =>
-          item.product !== undefined
+          item.product !== undefined && item.qty > 0
       );
   }, [cart, allProducts]);
 
