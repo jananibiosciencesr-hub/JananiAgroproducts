@@ -59,26 +59,32 @@ function CategoryDetailPage() {
 
   // Products matching this category
   const categoryProducts = useMemo(() => {
-    let items = allProds.filter(
-      (p) => p.category.toLowerCase() === category.name.toLowerCase()
-    );
-    if (items.length === 0) {
-      items = allProds.filter(
-        (p) =>
-          p.category.toLowerCase().includes(category.name.toLowerCase()) ||
-          category.name.toLowerCase().includes(p.category.toLowerCase())
+    const catName = category.name.toLowerCase().trim();
+    const catSlug = (category.slug || "").toLowerCase().trim();
+    const catNorm = catName.replace(/[^a-z0-9]/g, "");
+    const slugNorm = catSlug.replace(/[^a-z0-9]/g, "");
+
+    let items = allProds.filter((p) => {
+      const pCat = (p.category || "").toLowerCase().trim();
+      const pCatNorm = pCat.replace(/[^a-z0-9]/g, "");
+      return (
+        pCat === catName ||
+        pCatNorm === catNorm ||
+        pCatNorm === slugNorm ||
+        pCat.includes(catName) ||
+        catName.includes(pCat) ||
+        (slugNorm && pCatNorm.includes(slugNorm))
       );
-    }
-    if (items.length === 0) {
-      items = allProds.slice(0, 6);
-    }
+    });
 
     // Search inside category
     if (query.trim()) {
+      const q = query.toLowerCase().trim();
       items = items.filter(
         (p) =>
-          p.name.toLowerCase().includes(query.toLowerCase()) ||
-          p.description.toLowerCase().includes(query.toLowerCase())
+          p.name.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          p.slug.toLowerCase().includes(q)
       );
     }
 

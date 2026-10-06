@@ -381,59 +381,70 @@ function ensureJananiCatalogSynced($pdo) {
     try {
         ensureCategoriesTableSchema($pdo);
 
+        // Delete legacy demo grocery categories if any
         $checkOld = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices')")->fetchColumn();
-        $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories`")->fetchColumn();
-
-        if ($checkOld > 0 || $catCount === 0) {
-            // Auto-clean legacy demo grocery categories
+        if ($checkOld > 0) {
             $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
-            
-            $categories = [
-                ['cat-bio-fertilizers', 'Bio Fertilizers', 'bio-fertilizers', 1, null, null, '/products/dharani.jpg', '/products/dharani.jpg', '🌾', 2, 1, 1, 1, 1, 'Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour.'],
-                ['cat-bio-pesticides', 'Bio Pesticides', 'bio-pesticides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🛡️', 2, 1, 1, 1, 2, 'Targeted biological and microbial pest management formulations for organic insect and borer control.'],
-                ['cat-bio-fungicides', 'Bio Fungicides', 'bio-fungicides', 1, null, null, '/products/harit.jpg', '/products/harit.jpg', '🍄', 2, 1, 1, 1, 3, 'Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens.'],
-                ['cat-bio-stimulants', 'Bio Stimulants', 'bio-stimulants', 1, null, null, '/products/pushkal.jpg', '/products/pushkal.jpg', '⚡', 4, 1, 1, 1, 4, 'Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield.'],
-                ['cat-micro-nutrients', 'Micro Nutrients', 'micro-nutrients', 1, null, null, '/products/annada.jpg', '/products/annada.jpg', '🌱', 2, 1, 1, 1, 5, 'Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health.'],
-                ['cat-insecticides', 'Insecticides', 'insecticides', 1, null, null, '/products/balavan.jpg', '/products/balavan.jpg', '🦗', 1, 1, 1, 0, 6, 'Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers.'],
-                ['cat-fungicides', 'Fungicides', 'fungicides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🍃', 1, 1, 1, 0, 7, 'Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots.'],
-                ['cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, null, null, '/products/neem-oil.jpg', '/products/neem-oil.jpg', '🌿', 1, 1, 1, 0, 8, 'Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection.'],
-                ['cat-water-solubles', 'Water Solubles', 'water-solubles', 1, null, null, '/products/dhanya.jpg', '/products/dhanya.jpg', '💧', 1, 1, 1, 0, 9, '100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery.'],
-                ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', '/products/bhumi-shakti.jpg', '🚜', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.'],
-                ['cat-others', 'Others', 'others', 1, null, null, '/products/balavan-bottle.jpg', '/products/balavan-bottle.jpg', '📦', 1, 1, 0, 0, 11, 'Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants.']
-            ];
-            $stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `image`=VALUES(`image`), `banner_image`=VALUES(`banner_image`), `product_count`=VALUES(`product_count`), `active`=1, `description`=VALUES(`description`)");
-            foreach ($categories as $cat) { 
-                try { $stmtCat->execute($cat); } catch (Exception $e) {} 
-            }
-
-            $validProductSlugs = [
-                'balavan-bacillus-subtilis-5l',
-                'suraksha-pseudomonas-fluorescens-5l',
-                'harit-trichoderma-viride-liquid-biofungal-formulation-1l',
-                'neem-oil-1000-ppm-azadirachtin-1l',
-                'annada-fish-amino-acid-5l',
-                'pushkal-flowering-fruit-set-biostimulant-1l',
-                'bhumi-shakti-humic-fulvic-biostimulant-5l',
-                'dharani-kmb-potassium-mobilizing-biofertilizer-5l'
-            ];
-            $inProds = "'" . implode("','", $validProductSlugs) . "'";
-            $pdo->exec("DELETE FROM `products` WHERE `slug` NOT IN ({$inProds})");
-
-            $products = [
-                ['balavan-bacillus-subtilis-5l', 'BALAVAN - Bacillus Subtilis (5L)', 'Biological Crop Protection', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Flagship Bio-Shield', '/products/balavan.jpg', 'Beneficial Bacillus subtilis liquid biological formulation for blight control, fungal disease suppression, and systemic acquired resistance across all commercial crops.', 'JAP-SKU-BALAVAN'],
-                ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA - Pseudomonas Fluorescens (5L)', 'Biological Crop Protection', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'High-potency Pseudomonas fluorescens liquid bio-fungal formulation for soil-borne pathogen control, root wilt prevention, and rhizosphere colonization.', 'JAP-SKU-SURAKSHA'],
-                ['harit-trichoderma-viride-liquid-biofungal-formulation-1l', 'HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)', 'Bio Fungicides', 950.00, 1100.00, '1 L', 120, 5.0, 39, 'Bio-Fungal Shield', '/products/harit.jpg', 'Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off, root rot, collar rot, and rhizosphere diseases.', 'JAP-SKU-HARIT'],
-                ['neem-oil-1000-ppm-azadirachtin-1l', 'NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)', 'Botanical Extracts', 599.00, 699.00, '1 L', 140, 4.9, 44, 'Botanical IPM', '/products/neem-oil.jpg', 'Cold-pressed neem-oil-based botanical formulation containing standardized Azadirachtin 1000 PPM for organic management of aphids, whiteflies, thrips, caterpillars, and mites.', 'JAP-SKU-NEEM1000'],
-                ['annada-fish-amino-acid-5l', 'ANNADA - Fish Amino Acid (5L)', 'Micro Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'Naturally derived cold-hydrolysed Fish Amino Acid formulation rich in natural L-amino acids and peptides for vigorous vegetative growth, chlorophyll synthesis, and stress tolerance.', 'JAP-SKU-ANNADA'],
-                ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL - Flowering & Fruit Set Biostimulant (1L)', 'Bio Stimulants', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering & Fruit Set', '/products/pushkal.jpg', 'Concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, Fulvic Acid, Boron, and Zinc to support flower initiation, prevent flower drop, and boost fruit set.', 'JAP-SKU-PUSHKAL'],
-                ['bhumi-shakti-humic-fulvic-biostimulant-5l', 'BHUMI SHAKTI - Humic & Fulvic Biostimulant (5L)', 'Agri Inputs', 3900.00, 4400.00, '5 L', 120, 4.9, 58, 'Soil Rejuvenator', '/products/bhumi-shakti.jpg', 'High-purity potassium humate and fulvic acid complex for improving soil structure, cation exchange capacity, microbial life, and root nutrient absorption.', 'JAP-SKU-BHUMISHAKTI'],
-                ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB - Potassium Mobilizing Biofertilizer (5L)', 'Bio Fertilizers', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'Liquid biofertilizer containing beneficial Potassium Mobilizing Bacteria (Frateuria aurantia) to solubilize and unlock fixed soil potassium into plant-available form.', 'JAP-SKU-DHARANI']
-            ];
-            $stmtProd = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active') ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `category_name`=VALUES(`category_name`), `price`=VALUES(`price`), `old_price`=VALUES(`old_price`), `unit`=VALUES(`unit`), `image`=VALUES(`image`), `description`=VALUES(`description`), `badge`=VALUES(`badge`), `active`=1, `status`='Active'");
-            foreach ($products as $prod) { 
-                try { $stmtProd->execute($prod); } catch (Exception $e) {} 
-            }
         }
+
+        // 11 Core Janani Agro Taxonomy Categories
+        $categories = [
+            ['cat-bio-fertilizers', 'Bio Fertilizers', 'bio-fertilizers', 1, null, null, '/products/dharani.jpg', '/products/dharani.jpg', '🌾', 2, 1, 1, 1, 1, 'Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour.'],
+            ['cat-bio-pesticides', 'Bio Pesticides', 'bio-pesticides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🛡️', 2, 1, 1, 1, 2, 'Targeted biological and microbial pest management formulations for organic insect and borer control.'],
+            ['cat-bio-fungicides', 'Bio Fungicides', 'bio-fungicides', 1, null, null, '/products/harit.jpg', '/products/harit.jpg', '🍄', 2, 1, 1, 1, 3, 'Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens.'],
+            ['cat-bio-stimulants', 'Bio Stimulants', 'bio-stimulants', 1, null, null, '/products/pushkal.jpg', '/products/pushkal.jpg', '⚡', 4, 1, 1, 1, 4, 'Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield.'],
+            ['cat-micro-nutrients', 'Micro Nutrients', 'micro-nutrients', 1, null, null, '/products/annada.jpg', '/products/annada.jpg', '🌱', 2, 1, 1, 1, 5, 'Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health.'],
+            ['cat-insecticides', 'Insecticides', 'insecticides', 1, null, null, '/products/balavan.jpg', '/products/balavan.jpg', '🦗', 1, 1, 1, 0, 6, 'Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers.'],
+            ['cat-fungicides', 'Fungicides', 'fungicides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🍃', 1, 1, 1, 0, 7, 'Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots.'],
+            ['cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, null, null, '/products/neem-oil.jpg', '/products/neem-oil.jpg', '🌿', 1, 1, 1, 0, 8, 'Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection.'],
+            ['cat-water-solubles', 'Water Solubles', 'water-solubles', 1, null, null, '/products/dhanya.jpg', '/products/dhanya.jpg', '💧', 1, 1, 1, 0, 9, '100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery.'],
+            ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', '/products/bhumi-shakti.jpg', '🚜', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.'],
+            ['cat-others', 'Others', 'others', 1, null, null, '/products/balavan-bottle.jpg', '/products/balavan-bottle.jpg', '📦', 1, 1, 0, 0, 11, 'Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants.']
+        ];
+        $stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `image`=VALUES(`image`), `banner_image`=VALUES(`banner_image`), `active`=1, `description`=VALUES(`description`)");
+        foreach ($categories as $cat) { 
+            try { $stmtCat->execute($cat); } catch (Exception $e) {} 
+        }
+
+        // All 18 Janani Agro Flagship Products (including ROOT PLUS under Bio Fertilizers)
+        $products = [
+            ['harit', 'HARIT', 'Bio Fungicides', 450.00, 520.00, '1 L', 150, 4.8, 142, 'Best Seller', '/products/harit.jpg', 'HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases.', 'JAP-SKU-HARIT'],
+            ['bhumi-shakti', 'BHUMI SHAKTI', 'Bio Stimulants', 380.00, 450.00, '1 L', 120, 4.7, 98, 'New', '/products/bhumi-shakti.jpg', 'BHUMI SHAKTI is a humic and fulvic based formulation designed to support soil health, improve nutrient availability and promote efficient nutrient utilization by plants. Its organic carbon-rich components help support favourable soil conditions and contribute to better root-zone development.', 'JAP-SKU-BHUMISHAKTI'],
+            ['neem-oil-1000-ppm', 'NEEM OIL 1000 PPM', 'Botanical Extracts', 550.00, 650.00, '1 L', 140, 4.6, 86, 'Popular', '/products/neem-oil.jpg', 'NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized azadirachtin (0.10% w/w minimum / 1000 ppm). It is intended for use as part of an Integrated Pest Management (IPM) programme for management of susceptible insect pests.', 'JAP-SKU-NEEM1000'],
+            ['nano-gold', 'NANO GOLD', 'Bio Stimulants', 600.00, 720.00, '1 L', 95, 4.5, 74, null, '/products/pushkal.jpg', 'NANO GOLD is an advanced bio-nanotechnology plant growth promoter formulated with bioactive peptides, micronutrients and organic stimulants to enhance metabolic activity, chlorophyll synthesis and photosynthesis efficiency.', 'JAP-SKU-NANOGOLD'],
+            ['vermi-boost', 'VERMI BOOST', 'Agri Inputs', 420.00, 490.00, '1 L', 110, 4.6, 65, null, '/products/annada.jpg', 'VERMI BOOST is an enzymatic liquid extract rich in vermi-wash metabolites, organic acids, and beneficial soil microbe stimulants designed to enrich soil ecology and accelerate root aeration and nutrient assimilation.', 'JAP-SKU-VERMIBOOST'],
+            ['root-plus', 'ROOT PLUS', 'Bio Fertilizers', 390.00, 460.00, '1 L', 85, 4.4, 53, 'Bestseller', '/products/dharani.jpg', 'ROOT PLUS is a specialised rooting stimulant formulation containing natural auxin precursors, seaweed biostimulants, and phosphonate carriers to develop dense lateral feeder roots and white roots for superior water and nutrient uptake.', 'JAP-SKU-ROOTPLUS'],
+            ['crop-shield', 'CROP SHIELD', 'Insecticides', 480.00, 560.00, '1 L', 90, 4.5, 61, null, '/products/balavan.jpg', 'CROP SHIELD is a multi-action botanical crop protector synthesized from herbal extracts including Pongamia, Karanj and Castor oils with natural botanical alkaloids that repel chewing and sucking pests and inhibit fungal spore germination.', 'JAP-SKU-CROPSHIELD'],
+            ['foliar-nutri', 'FOLIAR NUTRI', 'Water Solubles', 520.00, 600.00, '1 L', 75, 4.3, 49, null, '/products/dhanya.jpg', 'FOLIAR NUTRI is an EDTA-chelated balanced liquid micronutrient formulation containing Zinc, Iron, Manganese, Copper, Boron and Molybdenum to remedy hidden hunger and deficiency chlorosis in demanding crops.', 'JAP-SKU-FOLIARNUTRI'],
+            ['bio-care', 'BIO CARE', 'Fungicides', 410.00, 480.00, '1 L', 130, 4.4, 58, null, '/products/suraksha.jpg', 'BIO CARE is a broad-spectrum biological fungicide powered by beneficial antagonistic microorganisms that effectively protect roots and aerial plant foliage from blight, leaf spots, downy mildew and anthracnose.', 'JAP-SKU-BIOCARE'],
+            ['plant-vigor', 'PLANT VIGOR', 'Bio Stimulants', 495.00, 580.00, '1 L', 95, 4.5, 72, null, '/products/pushkal-bottle.jpg', 'PLANT VIGOR is an innovative speciality physiological activator designed to combat stress from drought, salinity, and heat. It enhances branching, vegetative shoots and overall vigour in critical development windows.', 'JAP-SKU-PLANTVIGOR'],
+            ['soil-sure', 'SOIL SURE', 'Agri Inputs', 460.00, 530.00, '1 L', 80, 4.3, 40, null, '/products/balavan-bottle.jpg', 'SOIL SURE is a natural soil buffering conditioner that corrects soil pH, reduces compaction, improves water holding capacity, and restores depleted beneficial soil microflora in intensive agricultural soils.', 'JAP-SKU-SOILSURE'],
+            ['green-power', 'GREEN POWER', 'Micro Nutrients', 575.00, 670.00, '1 L', 115, 4.6, 83, null, '/products/annada-bottle.jpg', 'GREEN POWER is a powerful organic crop booster and bioprotectant formulated with sea-kelp minerals, organic plant extracts and microbial metabolites to provide deep green foliage and rapid recovery from fungal stress.', 'JAP-SKU-GREENPOWER'],
+            ['balavan-bacillus-subtilis-5l', 'BALAVAN', 'Bio Fungicides', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Bio Defense', '/products/balavan.jpg', 'BALAVAN contains high-potency Bacillus subtilis bacteria that actively colonize plant surfaces and rhizosphere, producing lipopeptide antibiotics that prevent bacterial blights and fungal blast.', 'JAP-SKU-BALAVAN'],
+            ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA', 'Bio Pesticides', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'SURAKSHA is a potent liquid bio-pesticide and bio-protective formulation containing Pseudomonas fluorescens. It induces systemic resistance in crops and produces siderophores to suppress soil pathogens.', 'JAP-SKU-SURAKSHA'],
+            ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB', 'Bio Fertilizers', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'DHARANI KMB contains living cultures of Potassium Mobilizing Bacteria that solubilize and convert insoluble soil potassium into readily plant-absorbable ionic forms, maximizing crop size and sugar content.', 'JAP-SKU-DHARANI'],
+            ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL', 'Bio Stimulants', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering Booster', '/products/pushkal.jpg', 'PUSHKAL is a premium crop biostimulant formulated with 10% Free L-Amino Acids, 10% Seaweed Ascophyllum Nodosum extract, Fulvic Acid, Zinc and Boron for dramatic flower retention and fruit enlargement.', 'JAP-SKU-PUSHKAL'],
+            ['annada-fish-amino-acid-5l', 'ANNADA', 'Micro Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'ANNADA is a cold-fermented Fish Amino Acid formulation rich in natural organic peptides, macro and micro minerals that rapidly stimulate chlorophyll formation, crop canopy development, and stress relief.', 'JAP-SKU-ANNADA'],
+            ['agri-stick-silicone-spreader-activator', 'AGRI STICK', 'Others', 350.00, 420.00, '250 ml', 120, 4.8, 38, 'Specialty Aid', '/products/balavan-bottle.jpg', 'AGRI STICK is a premium non-ionic organosilicone super-spreader and adjuvant that significantly lowers the surface tension of spray solutions, ensuring uniform droplet spreading, rainfastness and rapid cuticle penetration.', 'JAP-SKU-AGRISTICK']
+        ];
+
+        // Seed with INSERT IGNORE / ON DUPLICATE KEY UPDATE - NEVER DELETE USER PRODUCTS!
+        $stmtProd = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active') 
+            ON DUPLICATE KEY UPDATE 
+                `category_name`=VALUES(`category_name`), 
+                `unit`=VALUES(`unit`), 
+                `image`=VALUES(`image`), 
+                `description`=VALUES(`description`), 
+                `sku`=VALUES(`sku`)");
+        foreach ($products as $prod) { 
+            try { $stmtProd->execute($prod); } catch (Exception $e) {} 
+        }
+
+        // Update category product counts dynamically
+        try {
+            $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE p.active = 1 AND p.status != 'Trash' AND (p.category_name = c.name OR p.category_id = c.id OR LOWER(p.category_name) = LOWER(c.name)))");
+        } catch (Exception $e) {}
 
         // Auto-clean any duplicated store support numbers from customer rows in users table
         try {
@@ -1196,6 +1207,58 @@ try {
                     exit;
                 }
                 echo json_encode(['success' => false, 'message' => 'Product ID required for deletion']);
+                exit;
+            }
+            break;
+
+        case 'inventory':
+            ensureJananiCatalogSynced($pdo);
+            if ($method === 'GET') {
+                $stmt = $pdo->query("SELECT `id`, `name`, `slug`, `sku`, `category_name`, `price`, `stock`, `low_stock_threshold`, `image` FROM `products` WHERE `active` = 1 AND `status` != 'Trash' ORDER BY `id` ASC");
+                $items = $stmt->fetchAll();
+                $inventory = array_map(function($p) {
+                    $stk = (int)($p['stock'] ?? 0);
+                    $threshold = (int)($p['low_stock_threshold'] ?? 20);
+                    return [
+                        'id' => (string)$p['id'],
+                        'sku' => !empty($p['sku']) ? $p['sku'] : ('JAP-SKU-' . $p['id']),
+                        'name' => $p['name'],
+                        'slug' => $p['slug'] ?? '',
+                        'category' => $p['category_name'] ?? 'Bio Fertilizers',
+                        'image' => $p['image'] ?? '/products/dharani.jpg',
+                        'price' => (float)$p['price'],
+                        'stock' => $stk,
+                        'lowStockThreshold' => $threshold,
+                        'status' => ($stk <= 0) ? 'Out of Stock' : (($stk <= $threshold) ? 'Low Stock' : 'In Stock'),
+                        'warehouse' => 'Lodhika GIDC Central Facility',
+                        'incoming' => 50,
+                        'lastRestocked' => date('d M Y')
+                    ];
+                }, $items);
+
+                echo json_encode([
+                    'success' => true,
+                    'data' => $inventory,
+                    'total' => count($inventory)
+                ]);
+                exit;
+            } elseif ($method === 'POST') {
+                $body = getJsonBody();
+                $targetId = $body['id'] ?? ($_GET['id'] ?? null);
+                $qty = (int)($body['quantity'] ?? 0);
+
+                if ($targetId && $qty > 0) {
+                    if (is_numeric($targetId)) {
+                        $up = $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ?");
+                        $up->execute([$qty, (int)$targetId]);
+                    } else {
+                        $up = $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `slug` = ?");
+                        $up->execute([$qty, $targetId]);
+                    }
+                    echo json_encode(['success' => true, 'message' => "Successfully restocked {$qty} units in MySQL", 'data' => ['id' => $targetId, 'quantity' => $qty]]);
+                    exit;
+                }
+                echo json_encode(['success' => false, 'message' => 'Product ID and restock quantity required']);
                 exit;
             }
             break;

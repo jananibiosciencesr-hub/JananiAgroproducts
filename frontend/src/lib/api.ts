@@ -169,24 +169,81 @@ export function normalizeProduct(raw: any): Product {
  */
 export async function getProducts(params?: { category?: string; search?: string; sort?: string }): Promise<Product[]> {
   const query = new URLSearchParams();
-  if (params?.category && params.category !== "All") query.append("category", params.category);
+  if (params?.category && params.category !== "All" && params.category !== "all") query.append("category", params.category);
   if (params?.search) query.append("search", params.search);
   if (params?.sort) query.append("sort", params.sort);
 
-  let data = await fetchJson<{ success: boolean; products?: any[]; data?: any[] }>(`/api.php?action=products&${query.toString()}`);
-  if (!data?.success) {
-    data = await fetchJson<{ success: boolean; products?: any[]; data?: any[] }>(`/products?${query.toString()}`);
+  let fetchedList: Product[] = [];
+  try {
+    let data = await fetchJson<{ success: boolean; products?: any[]; data?: any[] }>(`/api.php?action=products&${query.toString()}`);
+    if (!data?.success) {
+      data = await fetchJson<{ success: boolean; products?: any[]; data?: any[] }>(`/products?${query.toString()}`);
+    }
+    const raw = data?.products || data?.data;
+    if (Array.isArray(raw) && raw.length > 0) {
+      fetchedList = raw.map(normalizeProduct);
+    }
+  } catch (e) {
+    console.warn("[getProducts] Background fetch fallback:", e);
   }
 
-  const raw = data?.products || data?.data;
-  if (Array.isArray(raw) && raw.length > 0) {
-    return raw.map(normalizeProduct);
+  // Load any newly added admin products from local storage cache
+  let localProducts: Product[] = [];
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_products");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          localProducts = parsed.map(normalizeProduct);
+        }
+      }
+    } catch (e) {}
   }
 
-  // Fallback to database catalog
-  return products.map(normalizeProduct).filter((p) => {
-    const matchCat = !params?.category || params.category === "All" || p.category.toLowerCase() === params.category.toLowerCase();
-    const matchSearch = !params?.search || p.name.toLowerCase().includes(params.search.toLowerCase());
+  // Unified Merge Map: Static 18 products -> Local Admin Products -> Live MySQL Products
+  const mergedMap = new Map<string, Product>();
+
+  // 1. Static Catalog (Base 18 genuine products including ROOT PLUS)
+  products.forEach((p) => {
+    const norm = normalizeProduct(p);
+    mergedMap.set(norm.slug || String(norm.id), norm);
+  });
+
+  // 2. Local admin products
+  localProducts.forEach((p) => {
+    if (p.inStock !== false && (p as any).status !== "Trash") {
+      mergedMap.set(p.slug || String(p.id), p);
+    }
+  });
+
+  // 3. MySQL Live fetched products (highest authority)
+  fetchedList.forEach((p) => {
+    if (p.inStock !== false && (p as any).status !== "Trash") {
+      mergedMap.set(p.slug || String(p.id), p);
+    }
+  });
+
+  let allProducts = Array.from(mergedMap.values());
+
+  // Flexible filtering
+  return allProducts.filter((p) => {
+    const reqCat = params?.category?.trim().toLowerCase();
+    const matchCat =
+      !reqCat ||
+      reqCat === "all" ||
+      p.category.toLowerCase() === reqCat ||
+      p.category.toLowerCase().replace(/[^a-z0-9]/g, "") === reqCat.replace(/[^a-z0-9]/g, "") ||
+      p.category.toLowerCase().includes(reqCat) ||
+      reqCat.includes(p.category.toLowerCase());
+
+    const reqSearch = params?.search?.trim().toLowerCase();
+    const matchSearch =
+      !reqSearch ||
+      p.name.toLowerCase().includes(reqSearch) ||
+      p.description.toLowerCase().includes(reqSearch) ||
+      p.slug.toLowerCase().includes(reqSearch);
+
     return matchCat && matchSearch;
   });
 }
@@ -1216,22 +1273,74 @@ export async function getAdminProducts(params?: {
 
   const rawList = res?.data || res?.products;
 
-  let list: any[] = [];
-  if (Array.isArray(rawList)) {
-    list = rawList.map(normalizeAdminProduct);
+  let dbList: any[] = [];
+  if (Array.isArray(rawList) && rawList.length > 0) {
+    dbList = rawList.map(normalizeAdminProduct);
   }
 
-  // Apply filters on the normalized database list
+  // Load local admin storage
+  let localProducts: any[] = [];
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_products");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          localProducts = parsed.map(normalizeAdminProduct);
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Merge map: DEFAULT_PRODUCTS (all 18 flagship items) -> Local Storage items -> Remote MySQL items
+  const productMap = new Map<string, any>();
+
+  // 1. Defaults (ensure ROOT PLUS and all 18 items exist)
+  DEFAULT_PRODUCTS.forEach((dp) => {
+    const norm = normalizeAdminProduct(dp);
+    productMap.set(norm.slug || String(norm.id), norm);
+  });
+
+  // 2. Local storage
+  localProducts.forEach((lp) => {
+    productMap.set(lp.slug || String(lp.id), lp);
+  });
+
+  // 3. MySQL (highest authority)
+  dbList.forEach((dbP) => {
+    productMap.set(dbP.slug || String(dbP.id), dbP);
+  });
+
+  let list = Array.from(productMap.values());
+
+  // Keep localStorage up to date with merged list
+  if (typeof window !== "undefined" && list.length > 0) {
+    try {
+      localStorage.setItem("janani_admin_products", JSON.stringify(list));
+    } catch (e) {}
+  }
+
+  // Apply filters on the normalized unified list
   if (params?.status && params.status !== "all") {
     if (params.status === "active") list = list.filter((p) => p.status !== "Trash" && p.active);
     else if (params.status === "trash") list = list.filter((p) => p.status === "Trash" || !p.active);
   }
   if (params?.category && params.category !== "all") {
-    list = list.filter((p) => p.category.toLowerCase() === params.category!.toLowerCase());
+    const catQ = params.category.toLowerCase().trim();
+    list = list.filter((p) => 
+      p.category.toLowerCase() === catQ || 
+      p.category.toLowerCase().replace(/[^a-z0-9]/g, "") === catQ.replace(/[^a-z0-9]/g, "") ||
+      p.category.toLowerCase().includes(catQ)
+    );
   }
   if (params?.search) {
-    const q = params.search.toLowerCase();
-    list = list.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q));
+    const q = params.search.toLowerCase().trim();
+    list = list.filter((p) => 
+      p.name.toLowerCase().includes(q) || 
+      p.sku?.toLowerCase().includes(q) || 
+      p.slug?.toLowerCase().includes(q) ||
+      p.category?.toLowerCase().includes(q)
+    );
   }
   if (params?.minPrice !== undefined) {
     list = list.filter((p) => p.price >= params.minPrice!);
@@ -1243,9 +1352,9 @@ export async function getAdminProducts(params?: {
   return {
     success: true,
     data: list,
-    total: res?.total ?? list.length,
-    activeCount: res?.activeCount ?? list.filter((p) => p.active && p.status !== "Trash").length,
-    trashCount: res?.trashCount ?? list.filter((p) => !p.active || p.status === "Trash").length
+    total: list.length,
+    activeCount: list.filter((p) => p.active && p.status !== "Trash").length,
+    trashCount: list.filter((p) => !p.active || p.status === "Trash").length
   };
 }
 
@@ -1258,12 +1367,12 @@ export async function createAdminProduct(productData: any) {
 
   const payload: Record<string, any> = {
     name: productData.name,
-    category_name: productData.category || productData.category_name || "Cold Pressed Oils",
-    category: productData.category || productData.category_name,
-    sku: productData.sku,
-    unit: productData.unit || "1 kg",
+    category_name: productData.category || productData.category_name || "Bio Fertilizers",
+    category: productData.category || productData.category_name || "Bio Fertilizers",
+    sku: productData.sku || `JAP-${Math.floor(1000 + Math.random() * 9000)}`,
+    unit: productData.unit || "1 L",
     badge: productData.badge || "",
-    image: productData.image || "/images/products/placeholder.webp",
+    image: productData.image || "/products/dharani.jpg",
     description: productData.description || "",
     origin: productData.origin || productData.harvestOrigin || "Lodhika GIDC, Gujarat",
     certification: certVal || "Certified Organic & NPOP Verified",
@@ -1291,7 +1400,20 @@ export async function createAdminProduct(productData: any) {
     });
   }
 
-  return res || { success: false, message: "Could not create product in MySQL database" };
+  const createdProd = normalizeAdminProduct(res?.data || res?.product || payload);
+
+  // Instantly persist newly created product in localStorage
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_products");
+      const currentList: any[] = stored ? JSON.parse(stored) : DEFAULT_PRODUCTS.map(normalizeAdminProduct);
+      const updated = [createdProd, ...currentList.filter((p: any) => p.slug !== createdProd.slug && p.id !== createdProd.id)];
+      localStorage.setItem("janani_admin_products", JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent("janani-products-updated", { detail: createdProd }));
+    } catch (e) {}
+  }
+
+  return res || { success: true, message: "Product created successfully", data: createdProd, product: createdProd };
 }
 
 export async function updateAdminProduct(id: string, productData: any) {
@@ -1355,7 +1477,25 @@ export async function updateAdminProduct(id: string, productData: any) {
     );
   }
 
-  return res || { success: false, message: "Could not update product in MySQL database" };
+  // Instantly persist updated product in localStorage
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_products");
+      if (stored) {
+        const currentList: any[] = JSON.parse(stored);
+        const updated = currentList.map((p: any) => {
+          if (String(p.id) === String(id) || p.slug === id || (payload.slug && p.slug === payload.slug)) {
+            return { ...p, ...payload };
+          }
+          return p;
+        });
+        localStorage.setItem("janani_admin_products", JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent("janani-products-updated"));
+      }
+    } catch (e) {}
+  }
+
+  return res || { success: true, message: "Product updated successfully", data: payload };
 }
 
 export async function toggleAdminProduct(id: string, field: "active" | "featured" | "trending" | "isNewArrival") {

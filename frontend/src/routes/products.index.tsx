@@ -175,8 +175,11 @@ function ProductsPage() {
   const filteredProducts = useMemo(() => {
     return activeProductList.filter((p) => {
       // 1. Category
-      if (selectedCategory && p.category.toLowerCase() !== selectedCategory.toLowerCase()) {
-        return false;
+      if (selectedCategory) {
+        const selNorm = selectedCategory.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const pNorm = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const matchesCat = p.category.toLowerCase() === selectedCategory.toLowerCase() || pNorm === selNorm || pNorm.includes(selNorm) || selNorm.includes(pNorm);
+        if (!matchesCat) return false;
       }
 
       // 2. Price

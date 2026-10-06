@@ -102,10 +102,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         getProducts(),
         getCategories()
       ]);
-      if (fetchedProds && fetchedProds.length >= 12 && fetchedProds.some((p: any) => p.category === "Bio Fertilizers" || p.category === "Bio fertilizers")) {
+      if (Array.isArray(fetchedProds) && fetchedProds.length > 0) {
         setLiveProducts(fetchedProds);
       }
-      if (fetchedCats && fetchedCats.length >= 6 && fetchedCats.some((c: any) => c.name === "Bio Fertilizers" || c.name === "Bio fertilizers")) {
+      if (Array.isArray(fetchedCats) && fetchedCats.length > 0) {
         setLiveCategories(fetchedCats);
       }
     } catch (e) {
@@ -116,8 +116,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshProducts();
 
-    // Auto-purge any stale legacy demo data from customer's browser localStorage
+    const handleProductsUpdated = () => {
+      refreshProducts();
+    };
+
     if (typeof window !== "undefined") {
+      window.addEventListener("janani-products-updated", handleProductsUpdated);
+      window.addEventListener("storage", handleProductsUpdated);
+
       try {
         const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
         const guestCleaned = localStorage.getItem("janani_guest_cart_purged_v3");
@@ -139,18 +145,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
         });
 
-        // Ensure fresh catalog loads with all flagship agri products and the new 11 taxonomy categories
+        // Clean obsolete demo grocery products if present
         const storedProducts = localStorage.getItem("janani_admin_products");
-        if (storedProducts && (!storedProducts.includes("HARIT") || !storedProducts.includes("Bio Fertilizers") || storedProducts.includes("Biological Crop Protection") || storedProducts.includes("Biofungicides"))) {
+        if (storedProducts && (storedProducts.includes("unpolished-toor-dal") || storedProducts.includes("lakadong-turmeric"))) {
           localStorage.removeItem("janani_admin_products");
           localStorage.removeItem("janani_admin_categories");
         }
-
-        const storedCategories = localStorage.getItem("janani_admin_categories");
-        if (storedCategories && (!storedCategories.includes("Bio Fertilizers") || storedCategories.includes("Biological Crop Protection") || storedCategories.includes("Biofungicides"))) {
-          localStorage.removeItem("janani_admin_categories");
-        }
       } catch (e) {}
+
+      return () => {
+        window.removeEventListener("janani-products-updated", handleProductsUpdated);
+        window.removeEventListener("storage", handleProductsUpdated);
+      };
     }
   }, []);
 
