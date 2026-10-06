@@ -7,6 +7,7 @@ type StoreContextValue = {
   products: Product[];
   categories: any[];
   refreshProducts: () => Promise<void>;
+  refreshUserProfile: (targetUser?: AuthUser | null) => Promise<void>;
   cart: Record<number, number>;
   wishlist: number[];
   cartCount: number;
@@ -118,17 +119,68 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUserProfile = async (currentUser?: AuthUser | null) => {
+    let target = currentUser || user;
+    if (!target && typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+        if (stored) target = JSON.parse(stored);
+      } catch (e) {}
+    }
+    const identifier = target?.email || target?.id;
+    if (!identifier) return;
+
+    try {
+      const res = await fetch(`/api.php?action=customers&id=${encodeURIComponent(identifier)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const serverUser = data?.customer || data?.user || data?.data;
+        if (serverUser && serverUser.id) {
+          setUser((prev) => {
+            const base = prev || target;
+            if (!base) return null;
+            const updated: AuthUser = {
+              ...base,
+              id: serverUser.id || base.id,
+              name: serverUser.name || base.name,
+              email: serverUser.email || base.email,
+              phone: serverUser.phone !== undefined && serverUser.phone !== null && serverUser.phone !== "" ? serverUser.phone : base.phone,
+              gender: serverUser.gender || base.gender,
+              dob: serverUser.dob || base.dob,
+              bio: serverUser.bio || base.bio,
+              walletBalance: Number(serverUser.walletBalance ?? serverUser.wallet_balance ?? base.walletBalance ?? 0),
+              loyaltyPoints: Number(serverUser.loyaltyPoints ?? serverUser.loyalty_points ?? base.loyaltyPoints ?? 0),
+              tier: serverUser.tier || base.tier,
+              status: serverUser.status || base.status,
+              preferences: serverUser.preferences || base.preferences,
+            };
+            if (typeof window !== "undefined") {
+              localStorage.setItem("janani_user", JSON.stringify(updated));
+              localStorage.setItem("janani_auth_user", JSON.stringify(updated));
+            }
+            return updated;
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("[StoreProvider] Background user profile sync note:", e);
+    }
+  };
+
   useEffect(() => {
     refreshProducts();
+    refreshUserProfile();
 
     const handleSync = () => {
       refreshProducts();
+      refreshUserProfile();
     };
 
     if (typeof window !== "undefined") {
       window.addEventListener("janani-products-updated", handleSync);
       window.addEventListener("janani-categories-updated", handleSync);
       window.addEventListener("storage", handleSync);
+      window.addEventListener("focus", handleSync);
 
       try {
         // Always purge legacy un-scoped shared orders and addresses to prevent cross-account pollution
@@ -171,6 +223,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         window.removeEventListener("janani-products-updated", handleSync);
         window.removeEventListener("janani-categories-updated", handleSync);
         window.removeEventListener("storage", handleSync);
+        window.removeEventListener("focus", handleSync);
       };
     }
   }, []);
@@ -379,6 +432,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     products: liveProducts,
     categories: liveCategories,
     refreshProducts,
+    refreshUserProfile,
     cart,
     wishlist,
     cartCount: Object.entries(cart).reduce((sum, [id, qty]) => {

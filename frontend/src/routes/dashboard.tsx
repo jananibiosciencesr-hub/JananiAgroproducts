@@ -62,7 +62,7 @@ function DashboardErrorFallback({ error, reset }: { error: any; reset: () => voi
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { wishlist, addToCart, user, logoutUser, updateUserProfile } = useStore();
+  const { wishlist, addToCart, user, logoutUser, updateUserProfile, refreshUserProfile } = useStore();
   const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
 
   // Real-time dynamic customer orders list strictly scoped to current user
@@ -103,6 +103,27 @@ function DashboardPage() {
       setProfilePhone(user.phone || "");
       setProfileEmail(user.email || "");
       setSavedAddresses(loadUserSavedAddresses(user.email || user.id));
+
+      // Live fetch fresh profile from MySQL backend to guarantee phone & name sync
+      const fetchLiveProfile = async () => {
+        try {
+          const identifier = user.email || user.id;
+          if (!identifier) return;
+          const res = await fetch(`/api.php?action=customers&id=${encodeURIComponent(identifier)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const serverUser = data?.customer || data?.user || data?.data;
+            if (serverUser) {
+              if (serverUser.phone) setProfilePhone(serverUser.phone);
+              if (serverUser.name) setProfileName(serverUser.name);
+              if (serverUser.email) setProfileEmail(serverUser.email);
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to fetch customer profile in dashboard:", e);
+        }
+      };
+      fetchLiveProfile();
 
       if (user.email || user.phone) {
         // Live fetch from MySQL server for this specific user
