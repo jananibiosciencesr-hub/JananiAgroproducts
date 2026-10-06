@@ -318,6 +318,15 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
+    // Clean & standardize phone format (+91 XXXXX XXXXX)
+    let formattedPhone = phone ? phone.trim() : "";
+    const cleanDigits = formattedPhone.replace(/\D/g, "");
+    if (cleanDigits.length === 10) {
+      formattedPhone = `+91 ${cleanDigits.slice(0, 5)} ${cleanDigits.slice(5)}`;
+    } else if (cleanDigits.length === 12 && cleanDigits.startsWith("91")) {
+      formattedPhone = `+91 ${cleanDigits.slice(2, 7)} ${cleanDigits.slice(7)}`;
+    }
+
     // Check if customer exists or create new quick profile
     let customer = customersDatabase.find((c) => (phone && c.phone === identifier) || (email && c.email.toLowerCase() === identifier));
 
@@ -329,7 +338,7 @@ export const verifyOtp = async (req, res) => {
         id: newId,
         name: phone ? `Janani Patron (${identifier.slice(-4)})` : identifier.split("@")[0],
         email: email || `${identifier}@janani.customer`,
-        phone: phone ? identifier : "9311416225",
+        phone: formattedPhone || (phone ? identifier : ""),
         passwordHash: "demo1234",
         avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`,
         role: "customer",
@@ -347,7 +356,21 @@ export const verifyOtp = async (req, res) => {
         addresses: []
       };
       customersDatabase.push(customer);
+    } else if (formattedPhone && !customer.phone) {
+      customer.phone = formattedPhone;
     }
+
+    // Persist/Update customer in MySQL users table
+    try {
+      await pool.query(
+        `INSERT INTO users (id, name, email, phone, role, wallet_balance, tier, status, is_verified) 
+         VALUES (?, ?, ?, ?, 'Customer', ?, ?, 'Active', 1) 
+         ON DUPLICATE KEY UPDATE 
+           phone = IF(? != '', ?, phone),
+           status = 'Active'`,
+        [customer.id, customer.name, customer.email, formattedPhone, customer.walletBalance, customer.tier, formattedPhone, formattedPhone]
+      );
+    } catch (dbErr) {}
 
     const token = `janani_jwt_${customer.id}_${Date.now()}`;
 
@@ -432,12 +455,19 @@ export const signupCustomer = async (req, res) => {
       }
     }
 
+    let formattedPhone = cleanPhone;
+    if (cleanPhone.length === 10) {
+      formattedPhone = `+91 ${cleanPhone.slice(0, 5)} ${cleanPhone.slice(5)}`;
+    } else if (cleanPhone.length === 12 && cleanPhone.startsWith("91")) {
+      formattedPhone = `+91 ${cleanPhone.slice(2, 7)} ${cleanPhone.slice(7)}`;
+    }
+
     const newId = `cust-${Date.now().toString().slice(-4)}`;
     const newCustomer = {
       id: newId,
       name: name.trim(),
       email: normalizedEmail,
-      phone: cleanPhone,
+      phone: formattedPhone,
       passwordHash: password,
       avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
       role: "customer",
@@ -456,6 +486,21 @@ export const signupCustomer = async (req, res) => {
     };
 
     customersDatabase.push(newCustomer);
+
+    // Persist to MySQL users table
+    try {
+      await pool.query(
+        `INSERT INTO users (id, name, email, phone, password, role, wallet_balance, tier, status, is_verified, referral_code)
+         VALUES (?, ?, ?, ?, ?, 'Customer', ?, 'Silver', 'Active', 1, ?)
+         ON DUPLICATE KEY UPDATE 
+           name = VALUES(name),
+           phone = IF(? != '', ?, phone),
+           password = IF(? != '', ?, password),
+           status = 'Active'`,
+        [newCustomer.id, newCustomer.name, newCustomer.email, formattedPhone, password, newCustomer.walletBalance, newCustomer.referralCode, formattedPhone, formattedPhone, password, password]
+      );
+    } catch (dbErr) {}
+
     const token = `janani_jwt_${newCustomer.id}_${Date.now()}`;
 
     return res.status(201).json({

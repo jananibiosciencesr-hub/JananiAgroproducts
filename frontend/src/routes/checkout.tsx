@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { products, getProductImage, pantryImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
-import { createOrder, sendAuthOtp, verifyAuthOtp, signupCustomer } from "@/lib/api";
+import { createOrder, sendAuthOtp, verifyAuthOtp, signupCustomer, updateUserProfileApi } from "@/lib/api";
 
 import { AddressManager, type ShippingAddress } from "@/components/checkout/address-manager";
 import {
@@ -232,13 +232,22 @@ export function CheckoutPage() {
     setIsVerifyingOtp(true);
     try {
       const emailToUse = checkoutEmail.trim().toLowerCase();
-      const res = await verifyAuthOtp({ email: emailToUse, otp: code });
+      const rawDigits = checkoutPhone.replace(/\D/g, "");
+      let formattedPhone = checkoutPhone.trim();
+      if (rawDigits.length === 10) {
+        formattedPhone = `+91 ${rawDigits.slice(0, 5)} ${rawDigits.slice(5)}`;
+      } else if (rawDigits.length === 12 && rawDigits.startsWith("91")) {
+        const d10 = rawDigits.slice(2);
+        formattedPhone = `+91 ${d10.slice(0, 5)} ${d10.slice(5)}`;
+      }
+
+      const res = await verifyAuthOtp({ email: emailToUse, otp: code, phone: formattedPhone });
       if (res.success && res.user) {
         if (checkoutAuthMode === "register") {
           const signupRes = await signupCustomer({
             name: checkoutName.trim() || "Valued Patron",
             email: emailToUse,
-            phone: checkoutPhone.trim() || res.user.phone || "",
+            phone: formattedPhone || res.user.phone || "",
             agreeTerms: true
           });
           const activeUser = signupRes.user || res.user;
@@ -249,8 +258,11 @@ export function CheckoutPage() {
           const updatedUser = {
             ...res.user,
             name: checkoutName.trim() || res.user.name || "Valued Patron",
-            phone: checkoutPhone.trim() || res.user.phone || "",
+            phone: formattedPhone || res.user.phone || "",
           };
+          if (formattedPhone && (!res.user.phone || res.user.phone !== formattedPhone)) {
+            updateUserProfileApi(emailToUse, { phone: formattedPhone }).catch(() => {});
+          }
           loginUser(updatedUser);
           toast.success(`Welcome back, ${updatedUser.name}! Signed in successfully. Your cart items are preserved.`);
         }

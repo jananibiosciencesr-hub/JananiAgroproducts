@@ -405,7 +405,7 @@ export function CustomersManagement() {
                 <th className="py-3.5 pl-6 pr-3">Patron Details</th>
                 <th className="px-3 py-3.5">Location</th>
                 <th className="px-3 py-3.5">Tier & Rewards</th>
-                <th className="px-3 py-3.5">Wallet Balance</th>
+                <th className="px-3 py-3.5">Phone Number</th>
                 <th className="px-3 py-3.5">Lifetime Spend</th>
                 <th className="px-3 py-3.5">Account Status</th>
                 <th className="py-3.5 pl-3 pr-6 text-right">Actions</th>
@@ -506,24 +506,18 @@ export function CustomersManagement() {
                         </div>
                       </td>
 
-                      {/* Wallet Balance */}
+                      {/* Phone Number */}
                       <td className="px-3 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="rounded-xl bg-emerald-500/10 px-2.5 py-1 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs">
-                            ₹{(c.walletBalance || 0).toLocaleString('en-IN')}
+                        {c.phone ? (
+                          <div className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 font-bold text-xs text-emerald-800 dark:text-emerald-300 shadow-2xs">
+                            <Phone className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span className="font-mono tracking-tight">{c.phone}</span>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setWalletTargetCustomer(c);
-                              setIsWalletModalOpen(true);
-                            }}
-                            title="Adjust wallet balance"
-                            className="size-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-emerald-600 hover:border-emerald-600 transition-colors shadow-2xs"
-                          >
-                            <Plus className="size-3.5" />
-                          </button>
-                        </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-muted/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground italic">
+                            Not registered
+                          </span>
+                        )}
                       </td>
 
                       {/* Spend & Orders */}
@@ -567,6 +561,18 @@ export function CustomersManagement() {
                             className="size-8 rounded-xl border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-emerald-600 hover:border-emerald-600 transition-colors shadow-2xs"
                           >
                             <Eye className="size-3.5" />
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setWalletTargetCustomer(c);
+                              setIsWalletModalOpen(true);
+                            }}
+                            title={`Adjust wallet balance (Current: ₹${(c.walletBalance || 0).toLocaleString('en-IN')})`}
+                            className="size-8 rounded-xl border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-emerald-600 hover:border-emerald-600 transition-colors shadow-2xs"
+                          >
+                            <Wallet className="size-3.5" />
                           </button>
 
                           <button

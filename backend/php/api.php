@@ -653,29 +653,70 @@ try {
                     exit;
                 }
 
-                // Check if user already exists
-                try {
-                    $chkStmt = $pdo->prepare("SELECT id FROM `users` WHERE `email` = ? LIMIT 1");
-                    $chkStmt->execute([$email]);
-                    if ($chkStmt->fetch()) {
-                        echo json_encode([
-                            'success' => false,
-                            'alreadyRegistered' => true,
-                            'already_registered' => true,
-                            'message' => 'An account with this email address already exists. Please switch to Sign In.'
-                        ]);
-                        exit;
+                // Standardize Indian phone number (+91 XXXXX XXXXX)
+                $formattedPhone = $phone;
+                if (!empty($phone)) {
+                    $digits = preg_replace('/\D/', '', $phone);
+                    if (strlen($digits) === 10) {
+                        $formattedPhone = '+91 ' . substr($digits, 0, 5) . ' ' . substr($digits, 5);
+                    } elseif (strlen($digits) === 12 && substr($digits, 0, 2) === '91') {
+                        $formattedPhone = '+91 ' . substr($digits, 2, 5) . ' ' . substr($digits, 7);
                     }
-                } catch (Exception $e) {}
+                }
 
-                $userId = 'CUST-' . rand(100, 999);
                 $fullAddr = implode(', ', array_filter([$houseFlat, $street, $city, $state, $pincode]));
 
+                // Check if user already exists in MySQL
+                $existingUser = null;
+                try {
+                    $chkStmt = $pdo->prepare("SELECT `id`, `name`, `phone`, `password`, `wallet_balance`, `tier`, `referral_code` FROM `users` WHERE `email` = ? LIMIT 1");
+                    $chkStmt->execute([$email]);
+                    $existingUser = $chkStmt->fetch();
+                } catch (Exception $e) {}
+
+                if ($existingUser) {
+                    // User row was pre-created during verify-otp or partial registration.
+                    // ALWAYS update phone number, name, and password!
+                    try {
+                        $upStmt = $pdo->prepare("UPDATE `users` SET 
+                            `name` = IF(? != '', ?, `name`),
+                            `phone` = IF(? != '', ?, `phone`),
+                            `password` = IF(? != '', ?, `password`),
+                            `status` = 'Active'
+                            WHERE `email` = ?");
+                        $upStmt->execute([$name, $name, $formattedPhone, $formattedPhone, $password, $password, $email]);
+                    } catch (Exception $e) {}
+
+                    $user = [
+                        'id' => $existingUser['id'],
+                        'name' => $name ?: $existingUser['name'],
+                        'email' => $email,
+                        'phone' => $formattedPhone ?: ($existingUser['phone'] ?? ''),
+                        'role' => 'Customer',
+                        'walletBalance' => (float)($existingUser['wallet_balance'] ?? 150),
+                        'referralCode' => $existingUser['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
+                        'isVerified' => true,
+                        'tier' => $existingUser['tier'] ?? 'Silver',
+                        'address' => $fullAddr ?: null
+                    ];
+
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Account registration completed successfully! Welcome to Janani Agro.',
+                        'isNewUser' => true,
+                        'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
+                        'user' => $user
+                    ]);
+                    exit;
+                }
+
+                // New User Registration
+                $userId = 'CUST-' . rand(100, 999);
                 $user = [
                     'id' => $userId,
                     'name' => $name,
                     'email' => $email,
-                    'phone' => $phone,
+                    'phone' => $formattedPhone,
                     'role' => 'Customer',
                     'walletBalance' => !empty($referralCode) ? 100 : 50,
                     'referralCode' => 'JANANI' . rand(1000, 9999),
@@ -690,8 +731,9 @@ try {
                         ON DUPLICATE KEY UPDATE 
                             `name` = VALUES(`name`), 
                             `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
+                            `password` = IF(VALUES(`password`) != '' AND VALUES(`password`) IS NOT NULL, VALUES(`password`), `password`),
                             `status` = 'Active'");
-                    $stmt->execute([$userId, $name, $email, $phone, $password, $user['walletBalance'], $user['referralCode']]);
+                    $stmt->execute([$userId, $name, $email, $formattedPhone, $password, $user['walletBalance'], $user['referralCode']]);
                 } catch (Exception $e) {}
 
                 echo json_encode([
@@ -912,6 +954,16 @@ try {
                             $userPhone = $foundOrdPhone;
                         }
                     } catch (Exception $e) {}
+                }
+
+                // Standardize phone number format (+91 XXXXX XXXXX)
+                if (!empty($userPhone)) {
+                    $digits = preg_replace('/\D/', '', $userPhone);
+                    if (strlen($digits) === 10) {
+                        $userPhone = '+91 ' . substr($digits, 0, 5) . ' ' . substr($digits, 5);
+                    } elseif (strlen($digits) === 12 && substr($digits, 0, 2) === '91') {
+                        $userPhone = '+91 ' . substr($digits, 2, 5) . ' ' . substr($digits, 7);
+                    }
                 }
 
                 $userRole = $existingUser && !empty($existingUser['role']) ? $existingUser['role'] : ($isAdmin ? 'Super Admin' : 'Customer');

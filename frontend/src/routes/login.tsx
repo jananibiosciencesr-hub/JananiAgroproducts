@@ -484,8 +484,13 @@ export function AuthenticationPage() {
     setLoading(true);
     try {
       const isEmail = otpTarget.includes("@");
+      const cleanDigits = phone.replace(/\D/g, "");
+      const formattedPhone = cleanDigits.length === 10
+        ? `+91 ${cleanDigits.slice(0, 5)} ${cleanDigits.slice(5)}`
+        : (cleanDigits ? `+91 ${cleanDigits}` : (isEmail ? undefined : otpTarget));
+
       const res = await verifyAuthOtp({
-        phone: isEmail ? undefined : otpTarget,
+        phone: formattedPhone,
         email: isEmail ? otpTarget : undefined,
         otp: fullOtp
       });
@@ -493,11 +498,10 @@ export function AuthenticationPage() {
       if (res?.success) {
         if (otpPurpose === "signup") {
           // Complete registration with user address and location
-          const cleanPhone = phone.replace(/\D/g, "");
           const signupRes = await signupCustomer({
             name,
             email: otpTarget,
-            phone: cleanPhone || "+91 93114 16225",
+            phone: formattedPhone || "+91 93114 16225",
             password,
             referralCode,
             agreeTerms,
