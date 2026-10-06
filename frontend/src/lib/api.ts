@@ -6674,6 +6674,9 @@ export interface AuthUser {
   referralCode: string;
   isVerified: boolean;
   tier?: string;
+  gender?: string;
+  dob?: string;
+  bio?: string;
   address?: string;
   houseFlat?: string;
   street?: string;

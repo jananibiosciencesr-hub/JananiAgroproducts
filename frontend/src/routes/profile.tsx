@@ -94,7 +94,7 @@ export function ProfilePage() {
         {/* Left: Navigation Tabs */}
         <aside className="space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft">
           {[
-            { id: "edit", label: "Personal Information", icon: User, desc: "Name, email & bio" },
+            { id: "edit", label: "Personal Information", icon: User, desc: "View & edit details" },
             { id: "addresses", label: "Saved Addresses", icon: MapPin, desc: "Shipping locations" },
             { id: "payments", label: "Saved Payment Methods", icon: CreditCard, desc: "Cards & UPI IDs" },
             { id: "saved", label: "Saved Products", icon: Bookmark, desc: "Wishlist & favourites", count: wishlist?.length },
