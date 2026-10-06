@@ -428,6 +428,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Auto purge orphan/invalid product IDs & merge duplicate string/number keys in cart
+  useEffect(() => {
+    if (!liveProducts || liveProducts.length === 0) return;
+    setCart((current) => {
+      const entries = Object.entries(current);
+      let changed = false;
+      const cleaned: Record<number, number> = {};
+      
+      for (const [idStr, qty] of entries) {
+        const q = Number(qty);
+        if (isNaN(q) || q <= 0) {
+          changed = true;
+          continue;
+        }
+        const prod =
+          liveProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === idStr || p.slug === idStr) ||
+          initialProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === idStr || p.slug === idStr);
+        
+        if (prod) {
+          const canonicalId = Number(prod.id);
+          if (canonicalId !== Number(idStr) || cleaned[canonicalId] !== undefined) {
+            changed = true;
+          }
+          cleaned[canonicalId] = (cleaned[canonicalId] || 0) + q;
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? cleaned : current;
+    });
+  }, [liveProducts]);
+
   const value = useMemo(() => ({
     products: liveProducts,
     categories: liveCategories,
@@ -437,42 +469,70 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     wishlist,
     cartCount: Object.entries(cart).reduce((sum, [id, qty]) => {
       const q = Number(qty);
-      return !isNaN(q) && q > 0 ? sum + q : sum;
+      if (isNaN(q) || q <= 0) return sum;
+      const numId = Number(id);
+      const prod =
+        liveProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id) || p.slug === String(id)) ||
+        initialProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id) || p.slug === String(id));
+      return prod ? sum + q : sum;
     }, 0),
     subtotal: Object.entries(cart).reduce((sum, [id, qty]) => {
       const q = Number(qty);
       if (isNaN(q) || q <= 0) return sum;
       const numId = Number(id);
-      const prod = liveProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id))
-        || initialProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id));
-      return sum + (prod?.price ?? 0) * q;
+      const prod =
+        liveProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id) || p.slug === String(id)) ||
+        initialProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id) || p.slug === String(id));
+      return prod ? sum + (prod?.price ?? 0) * q : sum;
     }, 0),
     user,
     isAuthenticated: !!user,
-    addToCart: (id: number, quantity = 1) => {
-      const numId = Number(id);
-      if (isNaN(numId) || quantity <= 0) return;
-      setCart((current) => ({ ...current, [numId]: (current[numId] ?? 0) + quantity }));
+    addToCart: (id: number | string, quantity = 1) => {
+      const prod =
+        liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
+        initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
+      
+      const targetId = prod ? Number(prod.id) : Number(id);
+      if (isNaN(targetId) || quantity <= 0) return;
+
+      setCart((current) => ({
+        ...current,
+        [targetId]: (current[targetId] ?? 0) + quantity,
+      }));
     },
-    updateQuantity: (id: number, quantity: number) => {
-      const numId = Number(id);
-      if (isNaN(numId)) return;
-      setCart((current) =>
-        quantity <= 0
-          ? Object.fromEntries(Object.entries(current).filter(([key]) => Number(key) !== numId))
-          : { ...current, [numId]: quantity }
-      );
+    updateQuantity: (id: number | string, quantity: number) => {
+      const prod =
+        liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
+        initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
+      
+      const targetId = prod ? Number(prod.id) : Number(id);
+      const strId = String(id);
+
+      setCart((current) => {
+        const next = { ...current };
+        if (!isNaN(targetId)) delete next[targetId];
+        delete (next as any)[strId];
+        
+        if (quantity > 0 && !isNaN(targetId)) {
+          next[targetId] = quantity;
+        }
+        return next;
+      });
     },
-    removeFromCart: (id: number) => {
-      const numId = Number(id);
-      setCart((current) =>
-        Object.fromEntries(
-          Object.entries(current).filter(([key]) => {
-            const k = Number(key);
-            return isNaN(k) ? false : k !== numId;
-          })
-        )
-      );
+    removeFromCart: (id: number | string) => {
+      const prod =
+        liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
+        initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
+      
+      const targetId = prod ? Number(prod.id) : Number(id);
+      const strId = String(id);
+
+      setCart((current) => {
+        const next = { ...current };
+        if (!isNaN(targetId)) delete next[targetId];
+        delete (next as any)[strId];
+        return next;
+      });
     },
     toggleWishlist: (id: number) => {
       if (!user) {

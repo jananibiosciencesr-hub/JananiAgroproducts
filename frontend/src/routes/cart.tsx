@@ -59,10 +59,6 @@ export function CartPage() {
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
-  // Gift Wrap State
-  const [isGiftWrap, setIsGiftWrap] = useState(false);
-  const [giftRecipient, setGiftRecipient] = useState("");
-  const [giftMessage, setGiftMessage] = useState("");
 
   // Save for Later State (Persisted in localStorage)
   const [savedForLater, setSavedForLater] = useState<number[]>(() => {
@@ -84,16 +80,39 @@ export function CartPage() {
   }, [savedForLater]);
 
   const cartItems = useMemo(() => {
-    return Object.entries(cart)
-      .map(([idStr, qty]) => {
-        const product = allProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr))
-          || products.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr));
-        return { product, qty: Number(qty) || 1 };
-      })
-      .filter(
-        (item): item is { product: NonNullable<typeof item.product>; qty: number } =>
-          item.product !== undefined && item.qty > 0
-      );
+    const itemMap = new Map<number, { product: Product; qty: number }>();
+
+    for (const [idStr, qtyRaw] of Object.entries(cart)) {
+      const q = Number(qtyRaw) || 1;
+      if (q <= 0) continue;
+
+      let matchedProduct =
+        allProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr) || p.slug === idStr) ||
+        products.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr) || p.slug === idStr);
+
+      if (!matchedProduct) {
+        const pesticide = ALL_PESTICIDES.find(
+          (p) => p.id === idStr || String(p.catalogId) === idStr || p.slug === idStr
+        );
+        if (pesticide) {
+          matchedProduct =
+            allProducts.find((p) => Number(p.id) === Number(pesticide.catalogId) || p.slug === pesticide.slug) ||
+            products.find((p) => Number(p.id) === Number(pesticide.catalogId) || p.slug === pesticide.slug);
+        }
+      }
+
+      if (matchedProduct) {
+        const prodId = Number(matchedProduct.id);
+        const existing = itemMap.get(prodId);
+        if (existing) {
+          existing.qty += q;
+        } else {
+          itemMap.set(prodId, { product: matchedProduct, qty: q });
+        }
+      }
+    }
+
+    return Array.from(itemMap.values());
   }, [cart, allProducts]);
 
   // Actual total quantity of verified items in the basket
@@ -153,7 +172,6 @@ export function CartPage() {
   const isFreeDeliveryCoupon = appliedCoupon?.includes("FREEDEL");
   const shippingFee =
     subtotal >= freeShippingThreshold || subtotal === 0 || isFreeDeliveryCoupon ? 0 : 60;
-  const giftWrapFee = isGiftWrap ? 49 : 0;
 
   // Coupon Engine
   const availableCoupons = [
@@ -224,7 +242,7 @@ export function CartPage() {
     toast.info(productName ? `Removed ${productName} from saved list.` : "Item removed from saved list.");
   };
 
-  const finalTotal = Math.max(0, subtotal - discount + shippingFee + giftWrapFee);
+  const finalTotal = Math.max(0, subtotal - discount + shippingFee);
   const totalSavings = cartItems.reduce(
     (sum, { product, qty }) => sum + (product.oldPrice - product.price) * qty,
     0
@@ -354,58 +372,6 @@ export function CartPage() {
               ))}
             </div>
 
-            {/* Eco-Friendly Gift Wrap Box */}
-            <div className="rounded-[2rem] border border-border bg-card p-5 shadow-soft space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isGiftWrap}
-                  onChange={(e) => setIsGiftWrap(e.target.checked)}
-                  className="mt-1 size-4 accent-primary rounded cursor-pointer"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5">
-                      <Gift className="size-4 text-brand-gold" /> Eco-Friendly Jute Gift Wrap & Hand-Written Card
-                    </span>
-                    <span className="text-xs font-mono font-bold text-primary">+ ₹49</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Thoughtfully wrapped in biodegradable unbleached jute with an artisanal farm greeting note.
-                  </p>
-                </div>
-              </label>
-
-              {/* Gift Wrap Note Input (when checked) */}
-              {isGiftWrap && (
-                <div className="pt-3 border-t border-border space-y-2.5">
-                  <div>
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                      Recipient Name
-                    </label>
-                    <input
-                      type="text"
-                      value={giftRecipient}
-                      onChange={(e) => setGiftRecipient(e.target.value)}
-                      placeholder="e.g. Grandma, Dr. Ramesh Sharma"
-                      className="w-full h-9 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                      Custom Greeting Note (Handwritten)
-                    </label>
-                    <textarea
-                      value={giftMessage}
-                      onChange={(e) => setGiftMessage(e.target.value)}
-                      rows={2}
-                      placeholder="e.g. Wishing you health, pure nutrition and wellness from Janani Agro!"
-                      className="w-full rounded-xl border border-input bg-background p-2.5 text-xs outline-none focus:border-primary resize-none"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Saved For Later Section */}
             {savedForLaterProducts.length > 0 && (
@@ -496,12 +462,6 @@ export function CartPage() {
                   </span>
                 </div>
 
-                {isGiftWrap && (
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Eco Jute Gift Wrap</span>
-                    <span className="font-mono font-bold text-foreground">+ ₹49</span>
-                  </div>
-                )}
 
                 {discount > 0 && (
                   <div className="flex justify-between text-emerald-700 font-semibold">

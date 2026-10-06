@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import { products, getProductImage, pantryImage } from "@/lib/catalog";
+import { products, getProductImage, pantryImage, type Product } from "@/lib/catalog";
+import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
 import { toast } from "sonner";
 
 interface CartDrawerProps {
@@ -26,17 +27,41 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { cart, updateQuantity, removeFromCart, subtotal, cartCount, products: storeProducts } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
-  const cartItems = Object.entries(cart)
-    .map(([idStr, qty]) => {
-      const product =
-        allProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr)) ||
-        products.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr));
-      return { product, qty: Number(qty) || 1 };
-    })
-    .filter(
-      (item): item is { product: NonNullable<typeof item.product>; qty: number } =>
-        item.product !== undefined && item.qty > 0
-    );
+  const cartItems = React.useMemo(() => {
+    const itemMap = new Map<number, { product: Product; qty: number }>();
+
+    for (const [idStr, qtyRaw] of Object.entries(cart)) {
+      const q = Number(qtyRaw) || 1;
+      if (q <= 0) continue;
+
+      let matchedProduct =
+        allProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr) || p.slug === idStr) ||
+        products.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr) || p.slug === idStr);
+
+      if (!matchedProduct) {
+        const pesticide = ALL_PESTICIDES.find(
+          (p) => p.id === idStr || String(p.catalogId) === idStr || p.slug === idStr
+        );
+        if (pesticide) {
+          matchedProduct =
+            allProducts.find((p) => Number(p.id) === Number(pesticide.catalogId) || p.slug === pesticide.slug) ||
+            products.find((p) => Number(p.id) === Number(pesticide.catalogId) || p.slug === pesticide.slug);
+        }
+      }
+
+      if (matchedProduct) {
+        const prodId = Number(matchedProduct.id);
+        const existing = itemMap.get(prodId);
+        if (existing) {
+          existing.qty += q;
+        } else {
+          itemMap.set(prodId, { product: matchedProduct, qty: q });
+        }
+      }
+    }
+
+    return Array.from(itemMap.values());
+  }, [cart, allProducts]);
 
   const actualCartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
 
