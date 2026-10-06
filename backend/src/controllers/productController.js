@@ -220,10 +220,44 @@ export const getCategories = async (req, res) => {
 
 // @desc    Get single category with its products
 // @route   GET /api/categories/:slug
-export const getCategoryBySlug = (req, res) => {
+export const getCategoryBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
-    const category = mockCategories.find((c) => c.slug === slug);
+
+    if (isDbConnected()) {
+      try {
+        const catRows = await query(
+          "SELECT * FROM categories WHERE slug = ? OR id = ? OR LOWER(name) = LOWER(?) LIMIT 1",
+          [slug, slug, slug]
+        );
+        if (catRows && catRows.length > 0) {
+          const category = catRows[0];
+          const prodRows = await query(
+            "SELECT * FROM products WHERE (LOWER(category_name) = LOWER(?) OR LOWER(category_name) LIKE ?) AND active = 1",
+            [category.name, `%${category.name}%`]
+          );
+          return res.status(200).json({
+            success: true,
+            category: {
+              id: category.id,
+              name: category.name,
+              slug: category.slug,
+              description: category.description,
+              image: category.image,
+              bannerImage: category.banner_image || category.image,
+              icon: category.icon,
+            },
+            count: (prodRows || []).length,
+            products: (prodRows || []).map(formatProduct),
+            source: "mysql"
+          });
+        }
+      } catch (dbErr) {
+        console.warn("⚠️ [CategoryBySlug] DB error:", dbErr.message);
+      }
+    }
+
+    const category = mockCategories.find((c) => c.slug === slug || c.name.toLowerCase() === slug.toLowerCase());
 
     if (!category) {
       return res.status(404).json({
@@ -243,6 +277,7 @@ export const getCategoryBySlug = (req, res) => {
       category,
       count: categoryProducts.length,
       products: categoryProducts,
+      source: "mock"
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

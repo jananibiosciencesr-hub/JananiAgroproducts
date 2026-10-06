@@ -260,21 +260,100 @@ export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | 
 export async function getCategories() {
   let data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/api.php?action=categories`);
   if (!data?.success) {
+    data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/api/categories`);
+  }
+  if (!data?.success) {
     data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/products/categories`);
   }
   if (!data?.success) {
     data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/categories`);
   }
+  if (!data?.success) {
+    data = await fetchJson<{ success: boolean; categories?: any[]; data?: any[] }>(`/admin/categories`);
+  }
+
+  let backendList: any[] = [];
   const rawList = data?.categories || data?.data;
   if (data?.success && Array.isArray(rawList) && rawList.length > 0) {
-    return rawList.map((c) => ({
-      name: c.name,
-      slug: c.slug,
-      count: Number(c.product_count || c.count) || 0,
-      image: getCategoryImage(c.slug || c.name, c.image)
-    }));
+    backendList = rawList;
   }
-  return categories;
+
+  // Also read stored categories from localStorage for real-time reactivity
+  let storedList: any[] = [];
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_categories") || localStorage.getItem("janani_admin_categories_v3");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          storedList = parsed;
+        }
+      }
+    } catch (e) {}
+  }
+
+  const map = new Map<string, any>();
+  // 1. Initial base categories
+  for (const cat of categories) {
+    const slug = (cat.slug || cat.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")).toLowerCase();
+    map.set(slug, {
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      count: cat.count || 2,
+      image: getCategoryImage(cat.slug || cat.name, cat.image),
+      description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
+      icon: "🌾",
+      active: true
+    });
+  }
+
+  // 2. Merge backend categories
+  for (const cat of backendList) {
+    if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false) {
+      const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
+      if (slug) map.delete(slug);
+      continue;
+    }
+    const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
+    if (!slug) continue;
+    const existing = map.get(slug);
+    map.set(slug, {
+      id: cat.id || existing?.id || `cat-${slug}`,
+      name: cat.name || existing?.name || slug,
+      slug: cat.slug || slug,
+      count: Number(cat.product_count || cat.productsCount || cat.count) || existing?.count || 0,
+      image: getCategoryImage(cat.slug || cat.name, cat.image || cat.bannerImage || cat.banner_image || existing?.image),
+      description: cat.description || existing?.description || "Natural and certified organic bio-inputs for sustainable farming.",
+      icon: cat.icon || existing?.icon || "🌾",
+      active: true
+    });
+  }
+
+  // 3. Merge stored / local categories
+  for (const cat of storedList) {
+    if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false) {
+      const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
+      if (slug) map.delete(slug);
+      continue;
+    }
+    const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
+    if (!slug) continue;
+    const existing = map.get(slug);
+    map.set(slug, {
+      id: cat.id || existing?.id || `cat-${slug}`,
+      name: cat.name || existing?.name || slug,
+      slug: cat.slug || slug,
+      count: Number(cat.product_count || cat.productsCount || cat.count) || existing?.count || 0,
+      image: getCategoryImage(cat.slug || cat.name, cat.image || cat.bannerImage || cat.banner_image || existing?.image),
+      description: cat.description || existing?.description || "Natural and certified organic bio-inputs for sustainable farming.",
+      icon: cat.icon || existing?.icon || "🌾",
+      active: true
+    });
+  }
+
+  const result = Array.from(map.values());
+  return result.length > 0 ? result : categories;
 }
 
 /**
@@ -2452,6 +2531,10 @@ export async function createAdminCategory(payload: any) {
       const filtered = stored.filter((c: any) => c.id !== cat.id && c.slug !== cat.slug);
       setStored(STORAGE_KEYS.CATEGORIES, [cat, ...filtered]);
     } catch {}
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
+    }
     return { success: true, message: res.message || "Category created successfully in database", data: cat };
   }
 
@@ -2467,6 +2550,10 @@ export async function createAdminCategory(payload: any) {
     };
     const updated = [newCat, ...stored.filter((c: any) => c.id !== newCat.id && c.slug !== newCat.slug)];
     setStored(STORAGE_KEYS.CATEGORIES, updated);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
+    }
     return { success: true, message: "Category created (saved locally)", data: normalizeAdminCategory(newCat) };
   } catch {}
 
@@ -2528,12 +2615,20 @@ export async function updateAdminCategory(id: string, payload: any) {
       if (idx !== -1) {
         stored[idx] = { ...stored[idx], ...reqBody };
         setStored(STORAGE_KEYS.CATEGORIES, stored);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+          window.dispatchEvent(new CustomEvent("janani-products-updated"));
+        }
         return { success: true, message: "Category updated successfully", data: normalizeAdminCategory(stored[idx]) };
       }
     } catch {}
   }
 
   if (res?.success && (res.data || res.category)) {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
+    }
     return {
       success: true,
       message: res.message || "Category updated successfully",
@@ -2562,6 +2657,11 @@ export async function toggleAdminCategory(id: string, field: "active" | "feature
         body: JSON.stringify({ field })
       }
     );
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+    window.dispatchEvent(new CustomEvent("janani-products-updated"));
   }
 
   return res || { success: true, message: `Toggled category ${field}` };

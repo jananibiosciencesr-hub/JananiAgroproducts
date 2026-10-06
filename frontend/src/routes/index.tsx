@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import {
   ArrowRight,
   ChevronLeft,
@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, type Product } from "@/lib/catalog";
+import { products, categories, getCategoryImage, slugs, type Product } from "@/lib/catalog";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { HeroBannerCarousel } from "@/components/home/hero-banner-carousel";
@@ -54,8 +54,9 @@ export const Route = createFileRoute("/")({
 });
 
 export function HomePage() {
-  const { products: storeProducts, addToCart, wishlist, toggleWishlist } = useStore();
+  const { products: storeProducts, categories: storeCats, addToCart, wishlist, toggleWishlist } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
+  const allCategories = storeCats && storeCats.length > 0 ? storeCats : categories;
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   // Categories Carousel Ref for Smooth Scrolling
@@ -113,108 +114,23 @@ export function HomePage() {
     }
   };
 
-  // 11 Agri Products Categories (From user taxonomy)
-  const categoryCards = [
-    {
-      id: "bio-fertilizers",
-      title: "Bio Fertilizers",
-      icon: Sprout,
-      image: "/images/categories/bio-fertilizers.jpg",
-      link: "/categories/bio-fertilizers",
-      description: "Rhizobium, PSB & bio-inoculants for soil enrichment",
-      color: "text-emerald-700 bg-emerald-50",
-    },
-    {
-      id: "bio-pesticides",
-      title: "Bio Pesticides",
-      icon: ShieldAlert,
-      image: "/images/categories/bio-pesticides.jpg",
-      link: "/categories/bio-pesticides",
-      description: "Biological pest control & natural neem formulations",
-      color: "text-emerald-700 bg-emerald-50",
-    },
-    {
-      id: "bio-fungicides",
-      title: "Bio Fungicides",
-      icon: ShieldCheck,
-      image: "/images/categories/bio-fungicides.jpg",
-      link: "/categories/bio-fungicides",
-      description: "Trichoderma viride & organic fungal defenses",
-      color: "text-emerald-700 bg-emerald-50",
-    },
-    {
-      id: "bio-stimulants",
-      title: "Bio Stimulants",
-      icon: TrendingUp,
-      image: "/images/categories/bio-stimulants.jpg",
-      link: "/categories/bio-stimulants",
-      description: "Humic, fulvic & seaweed vegetative growth boosters",
-      color: "text-amber-700 bg-amber-50",
-    },
-    {
-      id: "micro-nutrients",
-      title: "Micro Nutrients",
-      icon: Wheat,
-      image: "/images/categories/micro-nutrients.jpg",
-      link: "/categories/micro-nutrients",
-      description: "Zinc, Boron & trace minerals for balanced nutrition",
-      color: "text-emerald-700 bg-emerald-50",
-    },
-    {
-      id: "insecticides",
-      title: "Insecticides",
-      icon: Bug,
-      image: "/images/categories/insecticides.jpg",
-      link: "/categories/insecticides",
-      description: "Targeted crop insect & pest protection",
-      color: "text-amber-700 bg-amber-50",
-    },
-    {
-      id: "fungicides",
-      title: "Fungicides",
-      icon: Shield,
-      image: "/images/categories/fungicides.jpg",
-      link: "/categories/fungicides",
-      description: "Protective & curative fungal disease treatments",
-      color: "text-emerald-700 bg-emerald-50",
-    },
-    {
-      id: "botanical-extracts",
-      title: "Botanical Extracts",
-      icon: Leaf,
-      image: "/images/categories/botanical-extracts.jpg",
-      link: "/categories/botanical-extracts",
-      description: "Herbal extracts & natural plant-derived bio-actives",
-      color: "text-emerald-700 bg-emerald-50",
-    },
-    {
-      id: "water-solubles",
-      title: "Water Solubles",
-      icon: Droplets,
-      image: "/images/categories/water-solubles.jpg",
-      link: "/categories/water-solubles",
-      description: "100% soluble drip & foliar spray formulations",
-      color: "text-blue-700 bg-blue-50",
-    },
-    {
-      id: "agri-inputs",
-      title: "Agri Inputs",
-      icon: Layers,
-      image: "/images/categories/agri-inputs.jpg",
-      link: "/categories/agri-inputs",
-      description: "Wetting agents, spreaders & soil enhancers",
-      color: "text-emerald-700 bg-emerald-50",
-    },
-    {
-      id: "others",
-      title: "Others",
-      icon: Sparkles,
-      image: "/images/categories/others.jpg",
-      link: "/categories/others",
-      description: "Speciality formulations & custom farm solutions",
-      color: "text-amber-700 bg-amber-50",
-    },
-  ];
+  // Dynamic Agri Products Categories (from database & store)
+  const categoryCards = useMemo(() => {
+    return allCategories.map((cat: any) => {
+      const slug = cat.slug || slugs(cat.name || "");
+      const title = cat.name || cat.title || "Category";
+      const image = getCategoryImage(slug || title, cat.image || cat.bannerImage || cat.banner_image);
+      const link = `/categories/${slug}`;
+      const description = cat.description || "Natural, biological, and effective solutions for every stage of crop growth.";
+      return {
+        id: cat.id || slug,
+        title,
+        image,
+        link,
+        description,
+      };
+    });
+  }, [allCategories]);
 
   // 5 Featured Products (From Mockup)
   const featuredProductsList = [
@@ -331,37 +247,74 @@ export function HomePage() {
       {/* ========================================================================= */}
       <section className="py-4 sm:py-5 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className="mx-auto max-w-7xl">
-          {/* Section Header */}
-          <div className="mb-3 sm:mb-4 text-left">
-            <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
-              AGRI PRODUCTS
-            </p>
-            <h2 className="mt-0.5 text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
-              PRODUCT <span className="text-[#D99A12]">CATEGORIES</span>
-            </h2>
-            <p className="mt-1 text-xs sm:text-sm text-slate-600">
-              Natural, biological, and effective solutions for every stage of crop growth.
-            </p>
+          {/* Section Header with Left Text & Right Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-3 sm:mb-4 text-left">
+            <div>
+              <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
+                AGRI PRODUCTS
+              </p>
+              <h2 className="mt-0.5 text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
+                PRODUCT <span className="text-[#D99A12]">CATEGORIES</span>
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm text-slate-600">
+                Natural, biological, and effective solutions for every stage of crop growth.
+              </p>
+            </div>
+
+            {/* Top-Right Controls: Left & Right Navigation Arrows + View All Categories Button */}
+            <div className="flex items-center gap-2 sm:gap-3 self-start sm:self-auto">
+              {/* Carousel Arrows */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => scrollCategories("left")}
+                  aria-label="Previous Categories"
+                  className="size-9 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] hover:text-[#4FAE2A] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs border border-slate-200/70"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollCategories("right")}
+                  aria-label="Next Categories"
+                  className="size-9 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] hover:text-[#4FAE2A] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs border border-slate-200/70"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+
+              {/* View All Categories Link Button */}
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="rounded-full font-bold text-xs border-0 bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] h-9 px-3.5 shadow-xs"
+              >
+                <Link to="/categories">
+                  View All Categories <ArrowRight className="size-3.5 ml-1 text-[#4FAE2A]" />
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Carousel Controls & Cards Strip */}
           <div className="relative">
-            {/* Left Nav Arrow */}
+            {/* Side Floating Nav Arrow Left (Desktop helper) */}
             <button
               type="button"
               onClick={() => scrollCategories("left")}
               aria-label="Previous Categories"
-              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+              className="hidden lg:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-emerald-100"
             >
               <ChevronLeft className="size-5" />
             </button>
 
-            {/* Right Nav Arrow */}
+            {/* Side Floating Nav Arrow Right (Desktop helper) */}
             <button
               type="button"
               onClick={() => scrollCategories("right")}
               aria-label="Next Categories"
-              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+              className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-emerald-100"
             >
               <ChevronRight className="size-5" />
             </button>

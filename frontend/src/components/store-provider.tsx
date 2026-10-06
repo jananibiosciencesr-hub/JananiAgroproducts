@@ -116,13 +116,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshProducts();
 
-    const handleProductsUpdated = () => {
+    const handleSync = () => {
       refreshProducts();
     };
 
     if (typeof window !== "undefined") {
-      window.addEventListener("janani-products-updated", handleProductsUpdated);
-      window.addEventListener("storage", handleProductsUpdated);
+      window.addEventListener("janani-products-updated", handleSync);
+      window.addEventListener("janani-categories-updated", handleSync);
+      window.addEventListener("storage", handleSync);
 
       try {
         const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
@@ -154,8 +155,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       } catch (e) {}
 
       return () => {
-        window.removeEventListener("janani-products-updated", handleProductsUpdated);
-        window.removeEventListener("storage", handleProductsUpdated);
+        window.removeEventListener("janani-products-updated", handleSync);
+        window.removeEventListener("janani-categories-updated", handleSync);
+        window.removeEventListener("storage", handleSync);
       };
     }
   }, []);
