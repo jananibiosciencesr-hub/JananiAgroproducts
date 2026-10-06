@@ -103,7 +103,38 @@ export function PaymentsManagement() {
   });
   const [settlements, setSettlements] = useState<SettlementReport[]>([]);
   const [failedRetries, setFailedRetries] = useState<FailedPaymentRetry[]>([]);
-  const [gatewayConfigs, setGatewayConfigs] = useState<GatewayConfigState>({});
+  const [gatewayConfigs, setGatewayConfigs] = useState<GatewayConfigState>({
+    razorpay: {
+      keyId: "rzp_test_SwedUUn1KgRMs0",
+      keySecret: "xdW2Ry7T67sUK4zMKb3oOsZh",
+      webhookSecret: "whsec_janani_agro_rzp",
+      instantUpi: true,
+      instantSettlement: true,
+      status: "Active",
+      lastTested: "Realtime Connected"
+    },
+    stripe: {
+      publishableKey: "pk_test_51MzJananiAgroLiveKey",
+      secretKey: "sk_test_51MzJananiAgroLiveSecretKey",
+      webhookSecret: "whsec_stripe_live_janani",
+      multiCurrency: true,
+      status: "Active"
+    },
+    upiDirect: {
+      vpa: "jananiagro@hdfcbank",
+      merchantName: "Janani Agro Products Pvt Ltd",
+      qrCodeDisplay: true,
+      autoUtrVerification: true,
+      status: "Active"
+    },
+    codRules: {
+      maxOrderLimit: 15000,
+      extraFee: 0,
+      requireOtpVerification: true,
+      disableForHighRto: true,
+      status: "Active"
+    }
+  });
   
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState("");

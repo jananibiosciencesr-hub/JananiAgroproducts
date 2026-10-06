@@ -155,6 +155,9 @@ export function OrderInvoiceModal({
               <p className="text-[11px] text-slate-500">Invoice Date: <strong>{resolvedInvoiceDate}</strong></p>
               <p className="text-[11px] text-slate-500">Order ID: <strong className="font-mono">{resolvedOrderNumber}</strong></p>
               <p className="text-[11px] text-slate-500">Payment: <strong>{resolvedPaymentMethod}</strong></p>
+              {(order?.transactionId || order?.transaction_id) && (
+                <p className="text-[11px] text-slate-500 font-mono">Razorpay Txn: <strong className="text-slate-900">{order.transactionId || order.transaction_id}</strong></p>
+              )}
             </div>
           </div>
 

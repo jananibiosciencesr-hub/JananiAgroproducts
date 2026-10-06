@@ -854,6 +854,23 @@ export function OrdersManagement() {
                               {order.paymentMethod}
                             </span>
                           </div>
+                          {(order.transactionId || order.transaction_id) && (
+                            <div className="flex items-center gap-1 mt-1 text-[10px] font-mono text-muted-foreground">
+                              <span className="truncate max-w-[110px] text-blue-600 dark:text-blue-400 font-semibold" title={order.transactionId || order.transaction_id}>
+                                {order.transactionId || order.transaction_id}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(order.transactionId || order.transaction_id, "Razorpay Payment ID");
+                                }}
+                                className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                                title="Copy Razorpay Payment ID"
+                              >
+                                <Copy className="h-2.5 w-2.5" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
 
@@ -1409,8 +1426,8 @@ function OrderDetailDrawer({
           {/* TAB 1: OVERVIEW & ITEMS */}
           {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* Customer & Address Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Customer, Address & Razorpay Payment Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Customer Details */}
                 {(() => {
                   const cust = getOrderCustomer(order);
@@ -1455,7 +1472,7 @@ function OrderDetailDrawer({
                           "Address"
                         )
                       }
-                      className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1"
+                      className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
                     >
                       <Copy className="h-3 w-3" />
                       <span>Copy</span>
@@ -1470,7 +1487,51 @@ function OrderDetailDrawer({
                       {order.shippingAddress?.city}, {order.shippingAddress?.state} —{" "}
                       <strong className="text-foreground">{order.shippingAddress?.pincode}</strong>
                     </p>
-                    <p className="text-[11px] text-muted-foreground/80">India</p>
+                    <p className="text-[11px] text-muted-foreground/80">
+                      Slot: <span className="text-primary font-medium">{order.deliverySlot || "Standard Window"}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Razorpay & Payment Gateway Verification Card */}
+                <div className="p-4 rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-950/20 via-card to-card shadow-sm space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-border">
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                      <CreditCard className="h-4 w-4" />
+                      Razorpay Gateway
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      {order.paymentStatus || "Paid"}
+                    </span>
+                  </div>
+
+                  <div className="text-xs space-y-2">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Payment / Txn ID</span>
+                      <div className="flex items-center justify-between font-mono font-bold text-foreground text-xs bg-muted/40 p-1.5 rounded border border-border mt-0.5">
+                        <span className="truncate max-w-[150px] text-blue-600 dark:text-blue-400">
+                          {order.transactionId || order.transaction_id || `pay_rzp_${(order.id || "").slice(-8)}`}
+                        </span>
+                        <button
+                          onClick={() => copyToClipboard(order.transactionId || order.transaction_id || `pay_rzp_${(order.id || "").slice(-8)}`, "Payment ID")}
+                          className="p-1 hover:text-primary transition cursor-pointer"
+                          title="Copy Payment ID"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Payment Mode:</span>
+                      <span className="font-semibold text-foreground">{order.paymentMethod || "Razorpay (Online)"}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Razorpay Test Key:</span>
+                      <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">rzp_test_SwedUUn...</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2044,6 +2105,10 @@ function PrintableTaxInvoiceModal({
               <p className="font-bold text-sm text-neutral-900 mt-2 font-mono">Invoice #{order.id.replace("ORD", "INV-2026")}</p>
               <p className="text-neutral-600">Date: {order.date}</p>
               <p className="text-neutral-600">Place of Supply: {order.shippingAddress?.state || "Karnataka"} (29)</p>
+              <p className="text-neutral-600">Payment: <strong className="text-neutral-900">{order.paymentMethod || "Razorpay (Online)"}</strong> ({order.paymentStatus || "Paid"})</p>
+              {(order.transactionId || order.transaction_id) && (
+                <p className="text-neutral-600 font-mono text-[10px]">Txn ID: <strong className="text-neutral-900">{order.transactionId || order.transaction_id}</strong></p>
+              )}
             </div>
           </div>
 
