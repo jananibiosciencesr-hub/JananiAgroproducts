@@ -176,10 +176,11 @@ export function PesticideCard({ product }: PesticideCardProps) {
             <button
               type="button"
               onClick={handleAddToCart}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 py-2 px-2 text-xs font-bold transition-all shadow-xs h-9 cursor-pointer"
+              aria-label="Add to Cart"
+              title="Add to Cart"
+              className="flex items-center justify-center rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 py-2 px-2 transition-all shadow-xs h-9 cursor-pointer"
             >
-              <ShoppingBag className="size-3.5" />
-              <span>Add to Cart</span>
+              <ShoppingBag className="size-4" />
             </button>
           )}
 
