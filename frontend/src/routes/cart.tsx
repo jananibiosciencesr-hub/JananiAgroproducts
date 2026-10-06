@@ -261,35 +261,8 @@ export function CartPage() {
 
       {actualCartCount > 0 ? (
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_400px] items-start">
-          {/* Left Column: Free Shipping Bar, Cart Items List, Gift Wrap, Save for Later */}
+          {/* Left Column: Cart Items List, Gift Wrap, Save for Later */}
           <div className="space-y-6">
-            {/* Free Shipping Progress Bar */}
-            <div className="rounded-3xl border border-primary/20 bg-primary/5 p-5 shadow-xs">
-              <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-foreground">
-                <span className="flex items-center gap-2">
-                  <Truck className="size-4 text-brand-leaf" />
-                  {amountToFreeShipping > 0 && !isFreeDeliveryCoupon ? (
-                    <>
-                      Add <strong className="text-primary font-mono font-bold">₹{amountToFreeShipping}</strong> more for <strong>FREE Farm Delivery!</strong>
-                    </>
-                  ) : (
-                    <span className="text-emerald-700 font-bold">
-                      🎉 Congratulations! You have unlocked FREE Express Delivery!
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs font-bold text-muted-foreground font-mono">
-                  {isFreeDeliveryCoupon ? 100 : progressPercent}%
-                </span>
-              </div>
-              <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-secondary">
-                <div
-                  className="h-full bg-brand-leaf transition-all duration-500 rounded-full"
-                  style={{ width: `${isFreeDeliveryCoupon ? 100 : progressPercent}%` }}
-                />
-              </div>
-            </div>
-
             {/* Cart Items List */}
             <div className="divide-y divide-border rounded-[2rem] border border-border bg-card shadow-soft overflow-hidden">
               {cartItems.map(({ product, qty }) => (

@@ -40,10 +40,6 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   const actualCartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
 
-  const freeShippingThreshold = 799;
-  const amountToFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
-  const progressPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
-
   if (!isOpen) return null;
 
   return (
@@ -73,33 +69,8 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           </button>
         </div>
 
-        {/* Free Shipping Progress Bar */}
-        <div className="py-3 px-3 rounded-2xl bg-primary/5 border border-primary/20 my-3">
-          <div className="flex items-center justify-between text-xs font-semibold text-foreground">
-            <span className="flex items-center gap-1.5">
-              <Truck className="size-3.5 text-brand-leaf" />
-              {amountToFreeShipping > 0 ? (
-                <>
-                  Add <strong className="text-primary font-mono">₹{amountToFreeShipping}</strong> for FREE Delivery!
-                </>
-              ) : (
-                <span className="text-emerald-700 font-bold">🎉 FREE Farm Delivery Unlocked!</span>
-              )}
-            </span>
-            <span className="text-[10px] text-muted-foreground font-bold font-mono">
-              {progressPercent}%
-            </span>
-          </div>
-          <div className="mt-2 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-            <div
-              className="h-full rounded-full bg-brand-leaf transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
-
         {/* Cart Items List */}
-        <div className="flex-1 overflow-y-auto space-y-3 pr-1 py-2 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1 py-3 scrollbar-thin">
           {cartItems.length > 0 ? (
             cartItems.map(({ product, qty }) => (
               <div

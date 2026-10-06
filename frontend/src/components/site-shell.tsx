@@ -399,21 +399,42 @@ function Count({ value }: { value: number }) {
 }
 
 function Footer() {
+  const { categories: storeCategories } = useStore();
+  const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
+
   const quickLinks: [string, string][] = [
     ["Home", "/"],
-    ["About Us", "/about"],
-    ["Products", "/products"],
     ["Categories", "/categories"],
+    ["Products", "/products"],
+    ["About Us", "/about"],
     ["Contact Us", "/contact"]
   ];
 
-  const productLinks: [string, string][] = [
-    ["HARIT", "/products/harit-trichoderma-viride-liquid-biofungal-formulation-1l"],
-    ["Bhumi Shakti", "/products/bhumi-shakti-humic-fulvic-biostimulant-5l"],
-    ["Neem Oil", "/products/neem-oil-1000-ppm-azadirachtin-1l"],
-    ["Plant Growth Promoters", "/categories/organic-plant-nutrients"],
-    ["Soil Conditioners", "/categories/soil-conditioners-biostimulants"],
-    ["All Products", "/products"]
+  const socialLinks = [
+    {
+      name: "Facebook",
+      href: "https://facebook.com",
+      Icon: FacebookIcon,
+      bgClass: "bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-md hover:scale-110",
+    },
+    {
+      name: "Instagram",
+      href: "https://instagram.com",
+      Icon: InstagramIcon,
+      bgClass: "bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white shadow-md hover:scale-110",
+    },
+    {
+      name: "YouTube",
+      href: "https://youtube.com",
+      Icon: YouTubeIcon,
+      bgClass: "bg-[#FF0000] text-white hover:bg-[#e60000] shadow-md hover:scale-110",
+    },
+    {
+      name: "WhatsApp",
+      href: "https://wa.me/919311416225",
+      Icon: WhatsAppIcon,
+      bgClass: "bg-[#25D366] text-white hover:bg-[#20bd5a] shadow-md hover:scale-110",
+    }
   ];
 
   return (
@@ -451,23 +472,18 @@ function Footer() {
             <p className="text-xs sm:text-[13px] leading-relaxed text-emerald-100/80 max-w-sm">
               Providing high-quality, natural and effective agro products for sustainable farming and a healthier tomorrow.
             </p>
-            {/* Social Icons */}
+            {/* Social Icons with Authentic Brand Colors */}
             <div className="flex items-center gap-2.5 pt-2">
-              {[
-                { name: "Facebook", href: "https://facebook.com", Icon: FacebookIcon, hoverClass: "hover:bg-[#1877F2] hover:border-[#1877F2]" },
-                { name: "Instagram", href: "https://instagram.com", Icon: InstagramIcon, hoverClass: "hover:bg-[#E4405F] hover:border-[#E4405F]" },
-                { name: "YouTube", href: "https://youtube.com", Icon: YouTubeIcon, hoverClass: "hover:bg-[#FF0000] hover:border-[#FF0000]" },
-                { name: "WhatsApp", href: "https://wa.me/919311416225", Icon: WhatsAppIcon, hoverClass: "hover:bg-[#25D366] hover:border-[#25D366]" }
-              ].map(({ name, href, Icon, hoverClass }) => (
+              {socialLinks.map(({ name, href, Icon, bgClass }) => (
                 <a
                   key={name}
                   href={href}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={name}
-                  className={`size-8 rounded-full bg-[#075B32] border border-[#0B6B35] text-emerald-100 hover:text-white flex items-center justify-center transition-all hover:scale-110 shadow-xs ${hoverClass}`}
+                  className={`size-8.5 rounded-full flex items-center justify-center transition-all duration-200 ${bgClass}`}
                 >
-                  <Icon className="size-4" />
+                  <Icon className="size-4.5" />
                 </a>
               ))}
             </div>
@@ -493,23 +509,32 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Column 3: Our Products */}
+          {/* Column 3: Categories (Dynamic from Admin) */}
           <div>
             <h3 className="text-sm font-bold text-[#E7A91A] uppercase tracking-wider mb-4">
-              Our Products
+              Categories
             </h3>
             <ul className="space-y-2.5">
-              {productLinks.map(([label, to]) => (
-                <li key={label}>
+              {allCategories.slice(0, 6).map((cat) => (
+                <li key={cat.id || cat.slug}>
                   <Link
-                    to={to}
+                    to="/categories/$slug"
+                    params={{ slug: cat.slug }}
                     className="text-xs sm:text-[13px] text-emerald-100/80 hover:text-[#E7A91A] transition-colors flex items-center gap-1.5 group"
                   >
                     <span className="size-1 rounded-full bg-[#4FAE2A] group-hover:bg-[#E7A91A] transition-colors" />
-                    {label}
+                    {cat.name}
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link
+                  to="/categories"
+                  className="text-xs sm:text-[13px] font-bold text-[#E7A91A] hover:underline flex items-center gap-1.5 pt-1"
+                >
+                  <span>View All Categories ({allCategories.length}) →</span>
+                </Link>
+              </li>
             </ul>
           </div>
 
