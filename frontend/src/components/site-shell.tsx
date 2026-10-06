@@ -98,41 +98,43 @@ function Shell({ children }: { children: React.ReactNode }) {
             <span className="inline-flex items-center gap-1.5">
               <span className="flex items-center gap-1 text-[#E7A91A] font-bold">
                 <Sparkles className="size-3 fill-current" />
-                KHARIF & RABI BIO-CARE:
+                PURE SOIL TO SOUL:
               </span>
-              <span>Flat ₹250 OFF with code <strong className="text-[#E7A91A] font-bold">ORGANIC250</strong></span>
+              <span>"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
             </span>
             <span className="text-[#E7A91A]/60">•</span>
-            <span className="text-white/90">Free Farm Delivery Above ₹999</span>
+            <span className="text-white/90">100% Certified Biological Formulations</span>
             <span className="text-[#E7A91A]/60">•</span>
-            <span className="text-white/90">100% Genuine Biological Inputs</span>
+            <span className="text-white/90">Direct Farm Support Across India</span>
             <span className="text-[#E7A91A]/60">•</span>
 
             {/* Seamless duplicate loop for infinite single-line scroll */}
             <span className="inline-flex items-center gap-1.5">
               <span className="flex items-center gap-1 text-[#E7A91A] font-bold">
                 <Sparkles className="size-3 fill-current" />
-                KHARIF & RABI BIO-CARE:
+                PURE SOIL TO SOUL:
               </span>
-              <span>Flat ₹250 OFF with code <strong className="text-[#E7A91A] font-bold">ORGANIC250</strong></span>
+              <span>"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
             </span>
             <span className="text-[#E7A91A]/60">•</span>
-            <span className="text-white/90">Free Farm Delivery Above ₹999</span>
+            <span className="text-white/90">100% Certified Biological Formulations</span>
             <span className="text-[#E7A91A]/60">•</span>
-            <span className="text-white/90">100% Genuine Biological Inputs</span>
+            <span className="text-white/90">Direct Farm Support Across India</span>
             <span className="text-[#E7A91A]/60">•</span>
           </div>
         </div>
 
         {/* Desktop View: Centered Static Single Line */}
-        <div className="hidden md:flex w-full items-center justify-center gap-2 px-4 text-xs font-medium text-white whitespace-nowrap overflow-hidden">
-          <span className="flex items-center gap-1 text-[#E7A91A] font-bold">
+        <div className="hidden md:flex w-full items-center justify-center gap-3 px-4 text-xs font-medium text-white whitespace-nowrap overflow-hidden">
+          <span className="flex items-center gap-1.5 text-[#E7A91A] font-black uppercase tracking-wider">
             <Sparkles className="size-3.5 fill-current" />
-            KHARIF & RABI BIO-CARE:
+            PURE SOIL TO SOUL:
           </span>
-          <span>Flat ₹250 OFF on Certified Biological Crop Protection & Bio-Nutrients with code <strong className="text-[#E7A91A]">ORGANIC250</strong></span>
-          <span className="text-[#E7A91A]/60">•</span>
-          <span className="text-white/90">Complimentary direct farm delivery on orders above ₹999</span>
+          <span className="text-white/95 font-medium">
+            "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture for a Healthier Tomorrow."
+          </span>
+          <span className="text-[#E7A91A]/70">•</span>
+          <span className="text-emerald-100 font-semibold">100% Certified Biological Formulations</span>
         </div>
       </div>
 
