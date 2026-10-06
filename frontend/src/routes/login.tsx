@@ -361,11 +361,15 @@ export function AuthenticationPage() {
     try {
       const res = await loginWithEmail({ email, password, rememberMe });
       if (res?.success && res.user) {
-        loginUser(res.user, res.token);
-        if (res.user.role === "Super Admin" || res.user.role === "admin") {
+        const isAdmin = res.user.role === "Super Admin" || res.user.role === "Admin" || (typeof res.user.email === "string" && res.user.email.toLowerCase() === "jananibiosciences.r@gmail.com");
+        if (isAdmin) {
+          localStorage.setItem("janani_admin_session", "true");
+          localStorage.setItem("janani_admin_user", JSON.stringify(res.user));
+          if (res.token) localStorage.setItem("janani_admin_token", res.token);
           toast.success("Welcome Super Admin! Redirecting to Command Center...");
           navigate({ to: "/admin" });
         } else {
+          loginUser(res.user, res.token);
           navigate({ to: "/dashboard" });
         }
       } else {
@@ -516,15 +520,25 @@ export function AuthenticationPage() {
         } else {
           // Login Flow
           if (res.user) {
-            loginUser(res.user, res.token);
-            if (res.user.role === "Super Admin" || res.user.role === "admin") {
+            const isAdmin =
+              res.user.role === "Super Admin" ||
+              res.user.role === "Admin" ||
+              (typeof res.user.email === "string" && res.user.email.toLowerCase() === "jananibiosciences.r@gmail.com");
+
+            if (isAdmin) {
+              localStorage.setItem("janani_admin_session", "true");
+              localStorage.setItem("janani_admin_user", JSON.stringify(res.user));
+              if (res.token) localStorage.setItem("janani_admin_token", res.token);
               toast.success("Welcome Super Admin! Redirecting to Command Center...");
               navigate({ to: "/admin" });
-            } else if (res.isNewUser) {
-              setIsOnboardingOpen(true);
             } else {
-              toast.success(`Welcome back, ${res.user.name}!`);
-              navigate({ to: "/dashboard" });
+              loginUser(res.user, res.token);
+              if (res.isNewUser) {
+                setIsOnboardingOpen(true);
+              } else {
+                toast.success(`Welcome back, ${res.user.name}!`);
+                navigate({ to: "/dashboard" });
+              }
             }
           }
         }

@@ -6842,6 +6842,66 @@ export async function checkCustomerExists(emailOrPhone: string): Promise<{ exist
   return { exists: false };
 }
 
+/**
+ * Strictly isolate Admin session from Customer session:
+ * Admin logins write ONLY to janani_admin_user / janani_admin_session / janani_admin_token.
+ * Customer logins write ONLY to janani_user / janani_auth_user / janani_token / janani_auth_token.
+ * Neither session ever overwrites or conflicts with the other!
+ */
+export function persistAuthSession(user: AuthUser, token?: string) {
+  if (typeof window === "undefined" || !user) return;
+  const isAdmin =
+    user.role === "Super Admin" ||
+    user.role === "Admin" ||
+    (typeof user.email === "string" &&
+      (user.email.toLowerCase() === "jananibiosciences.r@gmail.com" ||
+        user.email.toLowerCase().includes("admin@jananiagro.com")));
+
+  if (isAdmin) {
+    localStorage.setItem("janani_admin_user", JSON.stringify(user));
+    localStorage.setItem("janani_admin_session", "true");
+    if (token) localStorage.setItem("janani_admin_token", token);
+    // Note: NEVER touch or overwrite customer session (janani_user / janani_cart)
+  } else {
+    localStorage.setItem("janani_user", JSON.stringify(user));
+    localStorage.setItem("janani_auth_user", JSON.stringify(user));
+    if (token) {
+      localStorage.setItem("janani_token", token);
+      localStorage.setItem("janani_auth_token", token);
+    }
+    // Note: NEVER touch or overwrite admin session (janani_admin_user / janani_admin_session)
+  }
+}
+
+export function getCurrentUser(): AuthUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const userStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+    if (userStr) {
+      const parsed = JSON.parse(userStr);
+      if (parsed?.role === "Super Admin" || parsed?.role === "Admin" || parsed?.email?.toLowerCase() === "jananibiosciences.r@gmail.com") {
+        return null;
+      }
+      return parsed;
+    }
+  } catch (e) {}
+  return null;
+}
+
+export function getAdminUser(): any | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const adminStr = localStorage.getItem("janani_admin_user");
+    if (adminStr) {
+      const parsed = JSON.parse(adminStr);
+      if (parsed && typeof parsed === "object" && parsed.role !== "Customer") {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
 export async function loginWithEmail(payload: { email: string; password: string; rememberMe?: boolean }): Promise<AuthResponse> {
   const normalizedEmail = (payload.email || "").trim().toLowerCase();
   const rawPassword = payload.password || "";
@@ -6868,11 +6928,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
         const phpData = JSON.parse(text);
         if (phpData && typeof phpData === "object") {
           if (phpData.success && phpData.user) {
-            if (typeof window !== "undefined") {
-              localStorage.setItem("janani_auth_token", phpData.token || "jap_jwt_" + Date.now());
-              localStorage.setItem("janani_auth_user", JSON.stringify(phpData.user));
-              localStorage.setItem("janani_user", JSON.stringify(phpData.user));
-            }
+            persistAuthSession(phpData.user, phpData.token);
             return phpData;
           }
           if (phpData.success === false) {
@@ -6895,11 +6951,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
     });
     if (res && typeof res === "object") {
       if (res.success && res.user) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("janani_auth_token", res.token);
-          localStorage.setItem("janani_auth_user", JSON.stringify(res.user));
-          localStorage.setItem("janani_user", JSON.stringify(res.user));
-        }
+        persistAuthSession(res.user, res.token);
         return res;
       }
       if (res.success === false) {
@@ -6930,11 +6982,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
         token: "jap_jwt_admin_" + Date.now(),
         user: adminUser
       };
-      if (typeof window !== "undefined") {
-        localStorage.setItem("janani_auth_token", authData.token);
-        localStorage.setItem("janani_auth_user", JSON.stringify(adminUser));
-        localStorage.setItem("janani_user", JSON.stringify(adminUser));
-      }
+      persistAuthSession(adminUser, authData.token);
       return authData;
     } else {
       return {
@@ -6996,11 +7044,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
     token: "jap_jwt_" + Date.now(),
     user
   };
-  if (typeof window !== "undefined") {
-    localStorage.setItem("janani_auth_token", authData.token);
-    localStorage.setItem("janani_auth_user", JSON.stringify(user));
-    localStorage.setItem("janani_user", JSON.stringify(user));
-  }
+  persistAuthSession(user, authData.token);
   return authData;
 }
 
@@ -7100,11 +7144,7 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
         const phpData = JSON.parse(text);
         if (phpData && typeof phpData === "object") {
           if (phpData.success && phpData.user) {
-            if (typeof window !== "undefined") {
-              localStorage.setItem("janani_auth_token", phpData.token || "jap_jwt_" + Date.now());
-              localStorage.setItem("janani_auth_user", JSON.stringify(phpData.user));
-              localStorage.setItem("janani_user", JSON.stringify(phpData.user));
-            }
+            persistAuthSession(phpData.user, phpData.token);
             return phpData;
           }
           if (phpData.success === false) {
@@ -7127,11 +7167,7 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
     });
     if (res && typeof res === "object") {
       if (res.success && res.user) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("janani_auth_token", res.token);
-          localStorage.setItem("janani_auth_user", JSON.stringify(res.user));
-          localStorage.setItem("janani_user", JSON.stringify(res.user));
-        }
+        persistAuthSession(res.user, res.token);
         return res;
       }
       if (res.success === false) {
@@ -7160,13 +7196,10 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
     const authData: AuthResponse = {
       success: true,
       message: isAdmin ? "Welcome Super Admin! Signed in successfully." : "Verification successful! Welcome to Janani Agro.",
-      token: "jap_jwt_" + Date.now(),
+      token: (isAdmin ? "jap_jwt_admin_" : "jap_jwt_") + Date.now(),
       user
     };
-    if (typeof window !== "undefined") {
-      localStorage.setItem("janani_auth_token", authData.token);
-      localStorage.setItem("janani_auth_user", JSON.stringify(user));
-    }
+    persistAuthSession(user, authData.token);
     return authData;
   }
 

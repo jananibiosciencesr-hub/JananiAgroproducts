@@ -66,9 +66,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+        const stored = localStorage.getItem("janani_user");
         if (stored) {
           const parsed = JSON.parse(stored);
+          // Strictly prevent admin credentials from polluting customer storefront
+          if (
+            parsed?.role === "Super Admin" ||
+            parsed?.role === "Admin" ||
+            (typeof parsed?.email === "string" && parsed.email.toLowerCase() === "jananibiosciences.r@gmail.com")
+          ) {
+            return null;
+          }
           if (
             parsed?.email?.toLowerCase().includes("neha.patel") ||
             parsed?.email?.toLowerCase().includes("example.com") ||
@@ -150,13 +158,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Sync user changes to localStorage
+  // Sync customer user changes to localStorage (Customer only)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      if (user) {
+      if (user && user.role !== "Super Admin" && user.role !== "Admin") {
         localStorage.setItem("janani_user", JSON.stringify(user));
         localStorage.setItem("janani_auth_user", JSON.stringify(user));
-      } else {
+      } else if (!user) {
         localStorage.removeItem("janani_user");
         localStorage.removeItem("janani_auth_user");
         localStorage.removeItem("janani_token");
@@ -208,6 +216,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginUser = (newUser: AuthUser, token?: string) => {
+    const isAdmin =
+      newUser?.role === "Super Admin" ||
+      newUser?.role === "Admin" ||
+      (typeof newUser?.email === "string" &&
+        (newUser.email.toLowerCase() === "jananibiosciences.r@gmail.com" ||
+          newUser.email.toLowerCase().includes("admin@jananiagro.com")));
+
+    if (isAdmin) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("janani_admin_user", JSON.stringify(newUser));
+        localStorage.setItem("janani_admin_session", "true");
+        if (token) localStorage.setItem("janani_admin_token", token);
+      }
+      return;
+    }
+
     setUser(newUser);
     if (typeof window !== "undefined") {
       localStorage.setItem("janani_user", JSON.stringify(newUser));
@@ -225,6 +249,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCart({});
     setWishlist([]);
     if (typeof window !== "undefined") {
+      // Clear ONLY customer keys - preserve admin session untouched!
       localStorage.removeItem("janani_token");
       localStorage.removeItem("janani_auth_token");
       localStorage.removeItem("janani_user");

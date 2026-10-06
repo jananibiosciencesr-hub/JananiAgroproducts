@@ -126,13 +126,6 @@ function AdminDashboardPage() {
           const parsed = JSON.parse(storedAdmin);
           if (parsed && typeof parsed === "object" && parsed.role !== "Customer") return parsed;
         }
-        const authUser = localStorage.getItem("janani_auth_user");
-        if (authUser) {
-          const u = JSON.parse(authUser);
-          if (u && (u.role === "Super Admin" || u.role === "Admin" || (typeof u.email === "string" && u.email.toLowerCase() === "jananibiosciences.r@gmail.com"))) {
-            return u;
-          }
-        }
       } catch (e) {}
     }
     return { name: "Janani Admin (Root)", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
@@ -142,23 +135,13 @@ function AdminDashboardPage() {
     if (typeof window !== "undefined") {
       try {
         const adminStored = localStorage.getItem("janani_admin_user");
-        if (adminStored) {
-          const u = JSON.parse(adminStored);
-          if (u && u.role !== "Customer" && (u.role === "Super Admin" || u.role === "Admin" || (typeof u.email === "string" && u.email.toLowerCase() === "jananibiosciences.r@gmail.com"))) {
-            return true;
-          }
-        }
         const adminSession = localStorage.getItem("janani_admin_session");
-        const authUser = localStorage.getItem("janani_auth_user");
-        if (authUser) {
-          const u = JSON.parse(authUser);
-          // Strictly reject regular customers from masquerading as admin
-          if (u && u.role !== "Customer" && (u.role === "Super Admin" || u.role === "Admin" || (typeof u.email === "string" && u.email.toLowerCase() === "jananibiosciences.r@gmail.com"))) {
-            return true;
+        if (adminSession === "true" || adminStored) {
+          if (adminStored) {
+            const u = JSON.parse(adminStored);
+            if (u && u.role !== "Customer") return true;
           }
-        }
-        if (adminSession === "true") {
-          return true;
+          if (adminSession === "true") return true;
         }
       } catch (e) {
         console.warn("Failed checking admin session:", e);
@@ -306,7 +289,7 @@ function AdminDashboardPage() {
       const res = await verifyAuthOtp({ email: adminEmail.trim(), otp: code });
       if (res?.success && res.user) {
         localStorage.setItem("janani_admin_session", "true");
-        if (res.token) localStorage.setItem("janani_auth_token", res.token);
+        if (res.token) localStorage.setItem("janani_admin_token", res.token);
         localStorage.setItem("janani_admin_user", JSON.stringify(res.user));
         setAdminUser(res.user);
         setIsAuthenticated(true);
@@ -324,6 +307,7 @@ function AdminDashboardPage() {
           };
           localStorage.setItem("janani_admin_session", "true");
           localStorage.setItem("janani_admin_user", JSON.stringify(rootAdmin));
+          localStorage.setItem("janani_admin_token", "jap_jwt_admin_" + Date.now());
           setAdminUser(rootAdmin);
           setIsAuthenticated(true);
           toast.success("Welcome Super Admin! Access granted.");
@@ -349,6 +333,7 @@ function AdminDashboardPage() {
     };
     localStorage.setItem("janani_admin_session", "true");
     localStorage.setItem("janani_admin_user", JSON.stringify(rootAdmin));
+    localStorage.setItem("janani_admin_token", "jap_jwt_admin_" + Date.now());
     setAdminUser(rootAdmin);
     setIsAuthenticated(true);
     toast.success("Signed in as Super Administrator");
@@ -359,7 +344,7 @@ function AdminDashboardPage() {
     try {
       localStorage.removeItem("janani_admin_session");
       localStorage.removeItem("janani_admin_user");
-      localStorage.removeItem("janani_auth_token");
+      localStorage.removeItem("janani_admin_token");
     } catch (e) {}
     setAdminUser({ name: "Janani Admin (Root)", email: "jananibiosciences.r@gmail.com", role: "Super Admin" });
     setIsAuthenticated(false);

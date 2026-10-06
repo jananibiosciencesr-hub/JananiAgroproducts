@@ -113,13 +113,6 @@ export function AdminSidebar({
           const parsed = JSON.parse(adminStored);
           if (parsed && typeof parsed === "object" && parsed.role !== "Customer") return parsed;
         }
-        const authStored = localStorage.getItem("janani_auth_user");
-        if (authStored) {
-          const parsed = JSON.parse(authStored);
-          if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || (typeof parsed.email === "string" && parsed.email.toLowerCase() === "jananibiosciences.r@gmail.com"))) {
-            return parsed;
-          }
-        }
       }
     } catch (e) {}
     return { name: "Janani Admin (Root)", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
@@ -259,7 +252,8 @@ export function AdminSidebar({
                     onLogout();
                   } else {
                     localStorage.removeItem("janani_admin_session");
-                    localStorage.removeItem("janani_auth_token");
+                    localStorage.removeItem("janani_admin_user");
+                    localStorage.removeItem("janani_admin_token");
                     window.location.reload();
                   }
                 }}
