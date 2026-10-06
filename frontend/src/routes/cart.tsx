@@ -153,9 +153,6 @@ export function CartPage() {
   const isFreeDeliveryCoupon = appliedCoupon?.includes("FREEDEL");
   const shippingFee =
     subtotal >= freeShippingThreshold || subtotal === 0 || isFreeDeliveryCoupon ? 0 : 60;
-  const amountToFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
-  const progressPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
-
   const giftWrapFee = isGiftWrap ? 49 : 0;
 
   // Coupon Engine

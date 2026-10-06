@@ -26,6 +26,7 @@ export const STORAGE_KEYS = {
   AUDIT_LOGS: "janani_admin_audit_logs",
   LOGIN_SESSIONS: "janani_admin_login_sessions",
   INQUIRIES: "janani_admin_inquiries",
+  SUBSCRIBERS: "janani_admin_subscribers",
   USERS: "janani_registered_users",
   CART: "janani_cart",
   WISHLIST: "janani_wishlist"

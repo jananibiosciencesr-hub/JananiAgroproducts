@@ -784,11 +784,58 @@ export async function sendContactMessage(contactData: {
 }
 
 export async function subscribeNewsletter(email: string) {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail || !cleanEmail.includes("@")) {
+    return { success: false, message: "Please enter a valid email address." };
+  }
+
+  // 1. Store in local Mock storage for immediate client persistence
+  const subscribers = getStored<any[]>(STORAGE_KEYS.SUBSCRIBERS, []);
+  const exists = subscribers.some((s) => s.email?.toLowerCase() === cleanEmail);
+  if (!exists) {
+    const newSub = {
+      id: `SUB-${Date.now()}`,
+      email: cleanEmail,
+      source: "Website Footer",
+      status: "Active",
+      subscribedAt: new Date().toISOString(),
+    };
+    setStored(STORAGE_KEYS.SUBSCRIBERS, [newSub, ...subscribers]);
+  }
+
+  // 2. Also register in Admin Inquiries so it appears in Admin Inquiries & Leads dashboard
+  const inquiries = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
+  const inqExists = inquiries.some((i) => i.email?.toLowerCase() === cleanEmail && i.service?.toLowerCase().includes("newsletter"));
+  if (!inqExists) {
+    const newInq: AdminInquiry = {
+      id: `INQ-NEWS-${Date.now()}`,
+      name: cleanEmail.split("@")[0] || "Subscriber",
+      businessName: "Janani Newsletter Subscriber",
+      phone: "+91 -",
+      email: cleanEmail,
+      service: "Newsletter Subscription",
+      quantity: "Direct Subscriber",
+      message: `User subscribed to Janani Agro newsletters and farming updates via website footer.`,
+      status: "New",
+      priority: "Low",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setStored(STORAGE_KEYS.INQUIRIES, [newInq, ...inquiries]);
+  }
+
+  // 3. Dispatch global browser events for live dashboard reactivity
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("janani-subscribers-updated", { detail: { email: cleanEmail } }));
+    window.dispatchEvent(new CustomEvent("janani-inquiries-updated", { detail: { email: cleanEmail } }));
+  }
+
+  // 4. Send to PHP backend MySQL table (newsletter_subscribers and customer_inquiries)
   try {
     const phpRes = await fetch("/api.php?action=newsletter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source: "website_footer" })
+      body: JSON.stringify({ email: cleanEmail, source: "website_footer" })
     });
     if (phpRes.ok) {
       const phpData = await phpRes.json();
@@ -796,10 +843,15 @@ export async function subscribeNewsletter(email: string) {
     }
   } catch (e) {}
 
-  return await fetchJson<{ success: boolean; message: string }>(`/contact/newsletter`, {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
+  // 5. Send to Node backend API if available
+  try {
+    return await fetchJson<{ success: boolean; message: string }>(`/contact/newsletter`, {
+      method: "POST",
+      body: JSON.stringify({ email: cleanEmail }),
+    });
+  } catch (e) {
+    return { success: true, message: "Thank you for subscribing! Your email has been registered." };
+  }
 }
 
 /**
@@ -1316,11 +1368,11 @@ export function normalizeAdminProduct(raw: any) {
     name: raw.name || "Organic Product",
     slug: raw.slug || `product-${raw.id}`,
     sku: raw.sku || `JAP-SKU-${raw.id}`,
-    category: raw.category_name || raw.category || "Cold Pressed Oils",
-    brand: raw.brand || "Janani Pure Harvest",
+    category: raw.category_name || raw.category || "Bio Fertilizers",
+    brand: raw.brand || "Janani Agro Products",
     price: price,
     originalPrice: originalPrice,
-    unit: raw.unit || "1 kg",
+    unit: raw.unit || "1 L",
     warehouseStock: stock,
     reservedStock: 0,
     stock: stock,
@@ -1332,13 +1384,25 @@ export function normalizeAdminProduct(raw: any) {
     isNewArrival: Boolean(raw.isNewArrival || raw.is_new),
     badge: raw.badge || "",
     rating: Number(raw.rating) || 4.8,
-    reviewsCount: Number(raw.reviews_count || raw.reviewsCount) || 35,
+    reviewsCount: Number(raw.reviews_count || raw.reviewsCount || raw.reviews) || 35,
     image: raw.image || `/images/products/${raw.slug}.webp`,
     gallery: Array.isArray(raw.gallery) ? raw.gallery : [],
     variants: raw.variants || [],
     description: raw.description || "",
-    harvestOrigin: raw.origin || "Lodhika GIDC, Gujarat",
-    organicCertifications: ["Certified Organic & NPOP Verified"],
+    harvestOrigin: raw.origin || raw.harvestOrigin || "Janani Bio Sciences, Gujarat",
+    organicCertifications: raw.organicCertifications || ["Certified Organic & NPOP Verified"],
+    subtitle: raw.subtitle || "",
+    crops: Array.isArray(raw.crops) ? raw.crops : typeof raw.crops === "string" ? raw.crops.split(",").map((s: string) => s.trim()) : undefined,
+    benefits: Array.isArray(raw.benefits) ? raw.benefits : typeof raw.benefits === "string" ? raw.benefits.split("\n").map((s: string) => s.trim()).filter(Boolean) : undefined,
+    specifications: typeof raw.specifications === "object" ? raw.specifications : undefined,
+    recommendedCrops: raw.recommendedCrops || "",
+    dosage: raw.dosage || "",
+    methodOfApplication: raw.methodOfApplication || "",
+    compatibility: raw.compatibility || "",
+    storageNotice: raw.storageNotice || "",
+    netContent: raw.netContent || "",
+    targetDiseases: raw.targetDiseases || "",
+    faqs: Array.isArray(raw.faqs) ? raw.faqs : undefined,
     seo: raw.seo || {
       metaTitle: raw.name,
       metaDescription: raw.description,
@@ -1483,7 +1547,19 @@ export async function createAdminProduct(productData: any) {
     old_price: oldPriceVal !== undefined ? Number(oldPriceVal) : undefined,
     stock: stockVal !== undefined ? Number(stockVal) : 50,
     active: productData.active !== undefined ? (productData.active ? 1 : 0) : 1,
-    status: productData.status || (productData.active !== false ? "Active" : "Draft")
+    status: productData.status || (productData.active !== false ? "Active" : "Draft"),
+    subtitle: productData.subtitle || "",
+    crops: productData.crops,
+    benefits: productData.benefits,
+    specifications: productData.specifications,
+    recommendedCrops: productData.recommendedCrops || "",
+    dosage: productData.dosage || "",
+    methodOfApplication: productData.methodOfApplication || "",
+    compatibility: productData.compatibility || "",
+    storageNotice: productData.storageNotice || "",
+    netContent: productData.netContent || "",
+    targetDiseases: productData.targetDiseases || "",
+    faqs: productData.faqs
   };
   if (productData.slug) payload.slug = productData.slug;
   if (productData.brand) payload.brand = productData.brand;
@@ -1503,7 +1579,7 @@ export async function createAdminProduct(productData: any) {
     });
   }
 
-  const createdProd = normalizeAdminProduct(res?.data || res?.product || payload);
+  const createdProd = normalizeAdminProduct({ ...payload, ...(res?.data || res?.product || {}) });
 
   // Instantly persist newly created product in localStorage
   if (typeof window !== "undefined") {
@@ -1544,7 +1620,19 @@ export async function updateAdminProduct(id: string, productData: any) {
     stock: stockVal !== undefined ? Number(stockVal) : undefined,
     warehouseStock: stockVal !== undefined ? Number(stockVal) : undefined,
     active: productData.active !== undefined ? (productData.active ? 1 : 0) : undefined,
-    status: productData.status || (productData.active ? "Active" : "Draft")
+    status: productData.status || (productData.active ? "Active" : "Draft"),
+    subtitle: productData.subtitle,
+    crops: productData.crops,
+    benefits: productData.benefits,
+    specifications: productData.specifications,
+    recommendedCrops: productData.recommendedCrops,
+    dosage: productData.dosage,
+    methodOfApplication: productData.methodOfApplication,
+    compatibility: productData.compatibility,
+    storageNotice: productData.storageNotice,
+    netContent: productData.netContent,
+    targetDiseases: productData.targetDiseases,
+    faqs: productData.faqs
   };
   if (productData.slug) payload.slug = productData.slug;
   if (productData.brand) payload.brand = productData.brand;
@@ -1569,36 +1657,24 @@ export async function updateAdminProduct(id: string, productData: any) {
     );
   }
 
-  // Fallback 2: PUT to /admin/products/:id
-  if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data?: any; product?: any }>(
-      `/admin/products/${encodeURIComponent(id)}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(payload)
-      }
-    );
-  }
-
-  // Instantly persist updated product in localStorage
+  // Update in localStorage
   if (typeof window !== "undefined") {
     try {
       const stored = localStorage.getItem("janani_admin_products");
       if (stored) {
         const currentList: any[] = JSON.parse(stored);
-        const updated = currentList.map((p: any) => {
-          if (String(p.id) === String(id) || p.slug === id || (payload.slug && p.slug === payload.slug)) {
-            return { ...p, ...payload };
-          }
-          return p;
-        });
+        const updated = currentList.map((p: any) =>
+          String(p.id) === String(id) || p.slug === payload.slug
+            ? normalizeAdminProduct({ ...p, ...payload })
+            : p
+        );
         localStorage.setItem("janani_admin_products", JSON.stringify(updated));
-        window.dispatchEvent(new CustomEvent("janani-products-updated"));
+        window.dispatchEvent(new CustomEvent("janani-products-updated", { detail: payload }));
       }
     } catch (e) {}
   }
 
-  return res || { success: true, message: "Product updated successfully", data: payload };
+  return res || { success: true, message: "Product updated successfully in database", data: payload };
 }
 
 export async function toggleAdminProduct(id: string, field: "active" | "featured" | "trending" | "isNewArrival") {

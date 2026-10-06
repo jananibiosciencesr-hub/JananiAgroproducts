@@ -1156,6 +1156,15 @@ function ProductFormModal({
     gallery: [] as string[],
     variants: [] as ProductVariant[],
     organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
+    subtitle: "",
+    benefits: "",
+    dosage: "",
+    methodOfApplication: "",
+    recommendedCrops: "",
+    activeOrganism: "",
+    targetDiseases: "",
+    compatibility: "",
+    shelfLife: "18–24 Months",
     seo: {
       metaTitle: "",
       metaDescription: "",
@@ -1173,6 +1182,7 @@ function ProductFormModal({
 
   useEffect(() => {
     if (initialData) {
+      const rawData = initialData as any;
       setFormData({
         name: initialData.name || "",
         slug: initialData.slug || "",
@@ -1194,6 +1204,15 @@ function ProductFormModal({
           : (initialData.image ? [initialData.image] : []),
         variants: initialData.variants || [],
         organicCertifications: initialData.organicCertifications || ["NPOP Certified Organic"],
+        subtitle: rawData.subtitle || "",
+        benefits: Array.isArray(rawData.benefits) ? rawData.benefits.join("\n") : (rawData.benefits || ""),
+        dosage: rawData.dosage || "",
+        methodOfApplication: rawData.methodOfApplication || "",
+        recommendedCrops: rawData.recommendedCrops || (Array.isArray(rawData.crops) ? rawData.crops.join(", ") : ""),
+        activeOrganism: rawData.specifications?.["Active Organism"] || rawData.specifications?.["Technical Composition"] || "",
+        targetDiseases: rawData.targetDiseases || rawData.specifications?.["Targeted Diseases"] || rawData.specifications?.["Targeted Diseases / Pests"] || "",
+        compatibility: rawData.compatibility || rawData.specifications?.["Compatibility"] || "",
+        shelfLife: rawData.specifications?.["Shelf Life"] || "18–24 Months",
         seo: {
           metaTitle: initialData.seo?.metaTitle || "",
           metaDescription: initialData.seo?.metaDescription || "",
@@ -1229,6 +1248,15 @@ function ProductFormModal({
           { id: `VAR-2`, name: "1 L Standard", sku: `JAP-1L`, price: 450, originalPrice: 520, stock: 25 }
         ],
         organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
+        subtitle: "",
+        benefits: "Controls soil-borne fungal pathogens and root diseases\nImproves rhizosphere microbial biodiversity\nStimulates robust root system and feeder hair growth\nEnhances nutrient mobilization and moisture absorption",
+        dosage: "Foliar Spray: 2–3 ml/L | Drip Fertigation: 1 L/acre | Seed Treatment: 5–10 ml/kg",
+        methodOfApplication: "Soil Application, Drip Fertigation, Seed Treatment, and Foliar Spray",
+        recommendedCrops: "Paddy, Cotton, Chilli, Tomato, Brinjal, Sugarcane, Banana, Mango, Groundnut, Pulses, Wheat",
+        activeOrganism: "Trichoderma viride 1.5% W.P (2x10^6 CFU/ml)",
+        targetDiseases: "Wilt, Damping-off, Root rot, Collar rot, Leaf spots",
+        compatibility: "Compatible with biofertilizers, seaweed, and organic manures",
+        shelfLife: "18–24 Months",
         seo: {
           metaTitle: "",
           metaDescription: "",
@@ -1338,7 +1366,7 @@ function ProductFormModal({
             <h3 className="text-lg font-bold text-foreground">
               {initialData ? `Edit Product: ${initialData.name}` : "Create New Product Listing"}
             </h3>
-            <p className="text-xs text-muted-foreground">Variants, multi-image gallery, inventory & SEO suite</p>
+            <p className="text-xs text-muted-foreground">Variants, agro specifications, tab descriptions & SEO suite</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-accent text-muted-foreground"><X className="size-4" /></button>
         </div>
@@ -1350,8 +1378,9 @@ function ProductFormModal({
             { id: "pricing", label: "2. Pricing & Stock" },
             { id: "variants", label: "3. Variants" },
             { id: "gallery", label: "4. Gallery" },
-            { id: "seo", label: "5. SEO" },
-            { id: "toggles", label: "6. Toggles" }
+            { id: "specs", label: "5. Agro Specs & Tabs" },
+            { id: "seo", label: "6. SEO" },
+            { id: "toggles", label: "7. Toggles" }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1779,7 +1808,124 @@ function ProductFormModal({
             </div>
           )}
 
-          {/* TAB 5: SEO Meta Suite */}
+          {/* TAB 5: Agro Specifications & Product Tabs */}
+          {activeTab === "specs" && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Product Subtitle / Technical Formulation Line
+                </label>
+                <input
+                  value={formData.subtitle}
+                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                  placeholder="e.g. Trichoderma Viride Liquid Biofungal Formulation"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Active Organism / Ingredient
+                  </label>
+                  <input
+                    value={formData.activeOrganism}
+                    onChange={(e) => setFormData({ ...formData, activeOrganism: e.target.value })}
+                    placeholder="e.g. Trichoderma viride 1.5% W.P (2x10^6 CFU/ml)"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Targeted Diseases / Pests
+                  </label>
+                  <input
+                    value={formData.targetDiseases}
+                    onChange={(e) => setFormData({ ...formData, targetDiseases: e.target.value })}
+                    placeholder="e.g. Root rot, Wilt, Damping-off, Collar rot"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Key Agricultural Benefits (1 per line for tab display)
+                </label>
+                <textarea
+                  rows={4}
+                  value={formData.benefits}
+                  onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                  placeholder={"Controls soil-borne fungal pathogens\nImproves rhizosphere soil biodiversity\nPromotes strong root mass and feeder roots\nEnhances nutrient assimilation & crop yield"}
+                  className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none font-sans leading-relaxed"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Dosage Guidelines
+                  </label>
+                  <input
+                    value={formData.dosage}
+                    onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
+                    placeholder="e.g. Foliar: 2–3 ml/L | Drip: 1 L/acre | Seed: 5–10 ml/kg"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Methods of Application
+                  </label>
+                  <input
+                    value={formData.methodOfApplication}
+                    onChange={(e) => setFormData({ ...formData, methodOfApplication: e.target.value })}
+                    placeholder="e.g. Soil application, Seed treatment, Foliar spray"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Recommended Crops (Comma-separated for badges)
+                </label>
+                <input
+                  value={formData.recommendedCrops}
+                  onChange={(e) => setFormData({ ...formData, recommendedCrops: e.target.value })}
+                  placeholder="e.g. Paddy, Cotton, Chilli, Tomato, Brinjal, Sugarcane, Banana, Mango, Groundnut, Pulses"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Compatibility Notice
+                  </label>
+                  <input
+                    value={formData.compatibility}
+                    onChange={(e) => setFormData({ ...formData, compatibility: e.target.value })}
+                    placeholder="e.g. Compatible with biofertilizers and organic manures"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Shelf Life
+                  </label>
+                  <input
+                    value={formData.shelfLife}
+                    onChange={(e) => setFormData({ ...formData, shelfLife: e.target.value })}
+                    placeholder="e.g. 18–24 Months"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: SEO Meta Suite */}
           {activeTab === "seo" && (
             <div className="space-y-4">
               <div>
@@ -1810,7 +1956,7 @@ function ProductFormModal({
             </div>
           )}
 
-          {/* TAB 6: Storefront Toggles */}
+          {/* TAB 7: Storefront Toggles */}
           {activeTab === "toggles" && (
             <div className="space-y-4">
               <div className="rounded-2xl border border-border bg-muted/40 p-4 space-y-4">
@@ -1886,7 +2032,28 @@ function ProductFormModal({
             Cancel
           </Button>
           <Button
-            onClick={() => onSave(formData)}
+            onClick={() => {
+              const payload = {
+                ...formData,
+                subtitle: formData.subtitle,
+                benefits: formData.benefits ? formData.benefits.split("\n").map((b: string) => b.trim()).filter(Boolean) : undefined,
+                dosage: formData.dosage,
+                methodOfApplication: formData.methodOfApplication,
+                recommendedCrops: formData.recommendedCrops,
+                crops: formData.recommendedCrops ? formData.recommendedCrops.split(",").map((c: string) => c.trim()).filter(Boolean) : undefined,
+                targetDiseases: formData.targetDiseases,
+                compatibility: formData.compatibility,
+                specifications: {
+                  "Active Organism": formData.activeOrganism || formData.name,
+                  "Targeted Diseases / Pests": formData.targetDiseases || "Broad Spectrum Crop Protection",
+                  "Compatibility": formData.compatibility || "Compatible with biofertilizers & organic manures",
+                  "Shelf Life": formData.shelfLife || "18–24 Months",
+                  "Dosage": formData.dosage || "2–3 ml / Litre",
+                  "Formulation": formData.unit?.toLowerCase().includes("l") || formData.unit?.toLowerCase().includes("ml") ? "Liquid Biological Formulation" : "Granular / Water Soluble Inoculant"
+                }
+              };
+              onSave(payload);
+            }}
             disabled={!formData.name || !formData.sku}
             className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow"
           >

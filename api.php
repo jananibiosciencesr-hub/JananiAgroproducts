@@ -5094,9 +5094,25 @@ try {
         case 'newsletter':
             if ($method === 'POST') {
                 $body = getJsonBody();
-                $stmt = $pdo->prepare("INSERT IGNORE INTO `newsletter_subscribers` (`email`, `source`) VALUES (?, ?)");
-                $stmt->execute([$body['email'] ?? '', $body['source'] ?? 'website']);
-                echo json_encode(['success' => true, 'message' => 'Subscribed successfully in MySQL']);
+                $email = trim($body['email'] ?? '');
+                $source = $body['source'] ?? 'website_footer';
+                if (!empty($email)) {
+                    $stmt = $pdo->prepare("INSERT IGNORE INTO `newsletter_subscribers` (`email`, `source`) VALUES (?, ?)");
+                    $stmt->execute([$email, $source]);
+                    
+                    try {
+                        $name = explode('@', $email)[0] ?: 'Subscriber';
+                        $inqStmt = $pdo->prepare("INSERT INTO `customer_inquiries` (`name`, `business_name`, `email`, `phone`, `service`, `quantity`, `message`, `status`, `priority`) VALUES (?, ?, ?, ?, ?, ?, ?, 'New', 'Low')");
+                        $inqStmt->execute([$name, 'Janani Newsletter Subscriber', $email, '+91 -', 'Newsletter Subscription', 'Direct Subscriber', 'Subscribed to Janani Agro newsletter via website footer.']);
+                    } catch (Exception $e) {}
+                }
+                echo json_encode(['success' => true, 'message' => 'Subscribed successfully in MySQL database']);
+                exit;
+            }
+            if ($method === 'GET') {
+                $stmt = $pdo->query("SELECT * FROM `newsletter_subscribers` ORDER BY `id` DESC");
+                $subs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                echo json_encode(['success' => true, 'subscribers' => $subs]);
                 exit;
             }
             break;

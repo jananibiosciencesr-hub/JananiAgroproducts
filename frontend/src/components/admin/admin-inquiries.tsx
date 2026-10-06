@@ -69,6 +69,13 @@ export function InquiriesManagement() {
 
   useEffect(() => {
     loadData();
+    const handleUpdate = () => loadData();
+    window.addEventListener("janani-inquiries-updated", handleUpdate);
+    window.addEventListener("janani-subscribers-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("janani-inquiries-updated", handleUpdate);
+      window.removeEventListener("janani-subscribers-updated", handleUpdate);
+    };
   }, []);
 
   // Stats calculation
@@ -83,10 +90,14 @@ export function InquiriesManagement() {
       (i.service || "").toLowerCase().includes("bulk") ||
       (i.service || "").toLowerCase().includes("commercial")
     ).length;
+    const newsletterCount = inquiries.filter((i) =>
+      (i.service || "").toLowerCase().includes("newsletter") ||
+      (i.service || "").toLowerCase().includes("subscri")
+    ).length;
     const resolvedCount = inquiries.filter((i) => i.status === "Resolved" || i.status === "Closed").length;
     const resolutionRate = total > 0 ? Math.round((resolvedCount / total) * 100) : 100;
 
-    return { total, newCount, dealershipCount, commercialCount, resolvedCount, resolutionRate };
+    return { total, newCount, dealershipCount, commercialCount, newsletterCount, resolvedCount, resolutionRate };
   }, [inquiries]);
 
   // Filtered List
@@ -114,6 +125,8 @@ export function InquiriesManagement() {
         matchesType = (item.service || "").toLowerCase().includes("crop") || (item.service || "").toLowerCase().includes("solution") || (item.service || "").toLowerCase().includes("advisory");
       } else if (activeTypeFilter === "contact") {
         matchesType = (item.service || "").toLowerCase().includes("contact") || (item.service || "").toLowerCase().includes("general");
+      } else if (activeTypeFilter === "newsletter") {
+        matchesType = (item.service || "").toLowerCase().includes("newsletter") || (item.service || "").toLowerCase().includes("subscri");
       }
 
       return matchesSearch && matchesStatus && matchesType;
@@ -360,6 +373,7 @@ export function InquiriesManagement() {
               { id: "all", label: "All Leads", count: inquiries.length },
               { id: "dealers", label: "Dealerships", count: stats.dealershipCount },
               { id: "bulk", label: "Bulk Commercial", count: stats.commercialCount },
+              { id: "newsletter", label: "Newsletter Subscribers", count: stats.newsletterCount },
               { id: "advisory", label: "Crop Advisory", count: inquiries.filter((i) => (i.service || "").toLowerCase().includes("crop") || (i.service || "").toLowerCase().includes("solution")).length },
               { id: "contact", label: "Contact Form", count: inquiries.filter((i) => (i.service || "").toLowerCase().includes("contact") || (i.service || "").toLowerCase().includes("general")).length }
             ].map((tab) => (

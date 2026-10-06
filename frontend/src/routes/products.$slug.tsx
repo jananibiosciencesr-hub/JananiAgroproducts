@@ -102,7 +102,6 @@ function ProductDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState<boolean>(false);
-  const [newsletterEmail, setNewsletterEmail] = useState<string>("");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Sync selected variant when product slug changes
@@ -166,46 +165,151 @@ function ProductDetailPage() {
     setActiveImageIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
   };
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail || !newsletterEmail.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    toast.success("Thank you for subscribing to Janani Agro updates!");
-    setNewsletterEmail("");
-  };
-
   // Recommended products (excluding current)
   const recommendedProducts = useMemo(() => {
     return allProducts.filter((p) => p.id !== product.id).slice(0, 5);
   }, [allProducts, product.id]);
 
+  // Dynamic Benefits resolver
+  const dynamicBenefits = useMemo(() => {
+    if (product.benefits && product.benefits.length > 0) {
+      return product.benefits;
+    }
+    const cat = (product.category || "").toLowerCase();
+    if (cat.includes("fungicide")) {
+      return [
+        "Controls and suppresses soil-borne fungal pathogens and root rot",
+        "Reduces damping-off, wilt, and collar rot in seedlings and mature crops",
+        "Improves rhizosphere beneficial microbial biodiversity",
+        "Enhances plant immunity against recurring environmental stress",
+        "Promotes strong lateral root development and feeder hairs",
+        "100% Residue-free and safe for certified organic farming"
+      ];
+    }
+    if (cat.includes("fertilizer") || cat.includes("nutrient")) {
+      return [
+        "Accelerates nutrient mobilization and essential mineral absorption",
+        "Replenishes soil micronutrient balance and promotes root growth",
+        "Enhances chlorophyll synthesis and photosynthetic efficiency",
+        "Improves soil aeration and water retention capacity",
+        "Increases vegetative vigour and crop biomass",
+        "Fully compatible with drip irrigation and organic composting"
+      ];
+    }
+    if (cat.includes("stimulant")) {
+      return [
+        "Stimulates vigorous flowering, reduces flower/fruit drop",
+        "Improves fruit size, uniformity, colour, and market quality",
+        "Enhances vegetative growth and metabolic enzyme activity",
+        "Increases root nutrient absorption capacity by up to 35%",
+        "Builds resilience against drought, salinity, and heat stress",
+        "Delivers higher yield returns across all harvest cycles"
+      ];
+    }
+    if (cat.includes("pesticide") || cat.includes("insecticide") || cat.includes("botanical")) {
+      return [
+        "Provides broad-spectrum bio-control against sucking and chewing pests",
+        "Controls caterpillars, borers, whiteflies, thrips, and mites",
+        "Disrupts pest feeding, egg-laying, and reproductive cycles",
+        "Zero toxic residues, safe for honeybees and natural predators",
+        "Effective as preventive and curative agricultural protection",
+        "Ideal for Integrated Pest Management (IPM) systems"
+      ];
+    }
+    return [
+      "Enhances overall soil fertility and rhizosphere health",
+      "Promotes rapid root proliferation and vigorous plant establishment",
+      "Corrects nutritional deficiencies and prevents crop stress",
+      "Improves yield quantity, crop grade, and post-harvest shelf life",
+      "Eco-friendly, chemical-free, and safe for continuous use",
+      "Suitable for all agricultural and horticultural cropping systems"
+    ];
+  }, [product]);
+
+  // Dynamic Crop List resolver
+  const cropList = useMemo(() => {
+    if (product.crops && product.crops.length > 0) {
+      return product.crops;
+    }
+    if (product.recommendedCrops) {
+      return product.recommendedCrops.split(",").map((c) => c.trim()).filter(Boolean);
+    }
+    return [
+      "Paddy / Rice",
+      "Cotton",
+      "Chilli",
+      "Tomato",
+      "Brinjal",
+      "Sugarcane",
+      "Banana",
+      "Pomegranate",
+      "Mango",
+      "Wheat",
+      "Groundnut",
+      "Soyabean",
+      "Pulses",
+      "Turmeric & Ginger"
+    ];
+  }, [product]);
+
+  // Dynamic Specifications resolver
+  const dynamicSpecifications = useMemo(() => {
+    const base: Record<string, string> = {
+      "Product Name": product.name,
+      "Category": product.category,
+      "Brand": product.brand || "Janani Agro Products",
+      "Formulation Type": product.unit?.toLowerCase().includes("l") || product.unit?.toLowerCase().includes("ml") ? "Liquid Biological Formulation" : "Water Soluble Inoculant / Granules",
+      "Origin": product.origin || "Janani Bio Sciences, Gujarat",
+      "Certifications": product.certifications?.join(", ") || "100% Certified Organic & NPOP Verified",
+      "Shelf Life": product.specifications?.["Shelf Life"] || "18–24 Months from manufacturing date",
+      ...(product.specifications || {})
+    };
+    if (product.subtitle && !base["Technical Formulation"]) {
+      base["Technical Formulation"] = product.subtitle;
+    }
+    if (product.dosage && !base["Dosage"]) {
+      base["Recommended Dosage"] = product.dosage;
+    }
+    if (product.targetDiseases && !base["Targeted Diseases / Pests"]) {
+      base["Targeted Diseases / Pests"] = product.targetDiseases;
+    }
+    if (product.compatibility && !base["Compatibility"]) {
+      base["Compatibility"] = product.compatibility;
+    }
+    return base;
+  }, [product]);
+
   // Dynamic FAQs
-  const productFaqs = [
-    {
-      q: `What is ${product.name} and what are its key agricultural benefits?`,
-      a: `${product.name} (${product.subtitle || "Janani Agro formulation"}) is specially formulated to promote healthy root development, protect against pathogens, enhance nutrient mobilization, and build sustained crop resilience.`,
-    },
-    {
-      q: `What is the recommended application dosage and schedule?`,
-      a:
-        product.dosage ||
-        "Foliar Spray: 2–3 ml per litre of water | Drip / Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre during early vegetative and root development stages.",
-    },
-    {
-      q: `Which crops can ${product.name} be safely applied to?`,
-      a:
-        product.recommendedCrops ||
-        "Suitable for all vegetables (chilli, tomato, brinjal), fruits (mango, pomegranate, grapes, banana), cereals (paddy, wheat, maize), pulses, oilseeds, cotton, and sugarcane.",
-    },
-    {
-      q: `What is the shelf life, compatibility, and storage conditions?`,
-      a:
-        product.storageNotice ||
-        "Shelf life is 18 to 24 months from date of manufacturing. Store in a cool, dry place away from direct sunlight. Compatible with organic inputs and biostimulants.",
-    },
-  ];
+  const productFaqs = useMemo(() => {
+    if (product.faqs && product.faqs.length > 0) {
+      return product.faqs;
+    }
+    return [
+      {
+        q: `What is ${product.name} and what are its key agricultural benefits?`,
+        a: `${product.name} (${product.subtitle || product.category}) is formulated by Janani Agro Products to promote vigorous root development, protect against crop stress and pathogens, enhance nutrient mobilization, and build sustained agricultural resilience.`,
+      },
+      {
+        q: `What is the recommended application dosage and schedule?`,
+        a:
+          product.dosage ||
+          "Foliar Spray: 2–3 ml per litre of water | Drip Fertigation: 500 ml–1 litre per acre | Soil Application: 1–2 litres per acre during early vegetative and root development stages.",
+      },
+      {
+        q: `Which crops can ${product.name} be safely applied to?`,
+        a:
+          product.recommendedCrops ||
+          "Suitable for all vegetables (chilli, tomato, brinjal), fruits (mango, pomegranate, grapes, banana), cereals (paddy, wheat, maize), pulses, oilseeds, cotton, and sugarcane.",
+      },
+      {
+        q: `What is the shelf life, compatibility, and storage conditions?`,
+        a:
+          product.storageNotice ||
+          product.compatibility ||
+          "Shelf life is 18 to 24 months from date of manufacturing. Store in a cool, dry place away from direct sunlight. Compatible with organic biofertilizers and compost manures.",
+      },
+    ];
+  }, [product]);
 
   return (
     <div className="bg-white min-h-screen text-gray-900">
@@ -327,9 +431,9 @@ function ProductDetailPage() {
                   ))}
                 </div>
                 <span className="font-bold text-gray-800">({product.rating.toFixed(1)})</span>
-                <span>28 Reviews</span>
+                <span>{product.reviews || 28} Reviews</span>
                 <span>|</span>
-                <span className="text-[#075B32] font-semibold">124 Sold</span>
+                <span className="text-[#075B32] font-semibold">{product.stockCount || 124} Sold</span>
               </div>
 
               {/* Price Row */}
@@ -429,52 +533,7 @@ function ProductDetailPage() {
           </div>
         </div>
 
-        {/* 3. Middle 4 Value Propositions Bar */}
-        <section className="mt-14 bg-white border border-gray-200 rounded-2xl p-6 sm:p-7 shadow-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3.5">
-              <div className="size-11 rounded-full bg-[#075B32] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Leaf className="size-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-gray-900 leading-snug">100% Organic & Safe</h4>
-                <p className="text-xs text-gray-500">Eco-friendly formulation</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="size-11 rounded-full bg-[#075B32] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Wheat className="size-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-gray-900 leading-snug">Improves Soil Health</h4>
-                <p className="text-xs text-gray-500">Enhances soil fertility</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="size-11 rounded-full bg-[#075B32] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Sprout className="size-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-gray-900 leading-snug">Suitable for All Crops</h4>
-                <p className="text-xs text-gray-500">Fruits, vegetables & grains</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="size-11 rounded-full bg-[#075B32] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Users className="size-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-gray-900 leading-snug">Farmers Trusted</h4>
-                <p className="text-xs text-gray-500">Used by thousands</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 4. Tabbed Content Section */}
+        {/* Tabbed Content Section */}
         <section className="mt-12">
           {/* Tab Headers */}
           <div className="flex items-center gap-2 overflow-x-auto border-b border-gray-200 pb-px scrollbar-none">
@@ -484,7 +543,7 @@ function ProductDetailPage() {
               { id: "how-to-use", label: "How to Use" },
               { id: "suitable-crops", label: "Suitable Crops" },
               { id: "technical", label: "Technical Details" },
-              { id: "reviews", label: "Reviews (28)" },
+              { id: "reviews", label: `Reviews (${product.reviews || 28})` },
               { id: "faqs", label: "FAQs" },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
@@ -515,26 +574,26 @@ function ProductDetailPage() {
                   {/* Left Column: Rich Text Explanation */}
                   <div className="lg:col-span-7 space-y-4 text-xs sm:text-sm text-gray-600 leading-relaxed text-justify">
                     <p>
-                      {product.name} contains beneficial{" "}
+                      <strong>{product.name}</strong>{" "}
+                      {product.subtitle ? `(${product.subtitle})` : ""}{" "}
+                      is a scientifically formulated agricultural product from Janani Agro Products. It contains high-potency{" "}
                       <strong>
                         {product.specifications?.["Active Organism"] ||
                           product.specifications?.["Technical Composition"] ||
-                          "Trichoderma viride"}
+                          product.category}
                       </strong>
-                      , a naturally occurring beneficial fungus/microbe used in agricultural and
-                      horticultural production. It helps establish a healthy rhizosphere where and
-                      supports favourable soil and root-zone conditions.
+                      , carefully formulated to improve rhizosphere soil conditions, enhance microbial activity, and protect crops.
                     </p>
                     <p>
-                      {product.name} helps suppress harmful soil-borne fungal pathogens associated with wilt,
-                      damping-off, root rot, collar rot and other root-zone diseases. It supports
-                      healthy root development, crop establishment and plant vigour as part of an
-                      integrated crop-management program.
+                      {product.description}
                     </p>
+                    {product.targetDiseases && (
+                      <p>
+                        <strong>Target Protection:</strong> {product.name} is particularly effective against {product.targetDiseases}, suppressing disease development and encouraging vigorous vegetative growth.
+                      </p>
+                    )}
                     <p>
-                      {product.name} is suitable for seamless integration with organic inputs,
-                      biofertilizers and sustainable crop-management practices across all stages of
-                      cultivation.
+                      {product.name} integrates seamlessly with sustainable agricultural practices, organic inputs, biofertilizers, and drip fertigation systems across all crop cycles.
                     </p>
                   </div>
 
@@ -557,66 +616,6 @@ function ProductDetailPage() {
                   </div>
                 </div>
               </div>
-
-              {/* Key Benefits (matching mockup) */}
-              <div className="pt-4">
-                <h3 className="text-xl font-bold text-gray-900 mb-5 font-display">Key Benefits</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
-                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
-                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
-                      <ShieldCheck className="size-5" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-800 leading-snug">
-                      Controls soil-borne fungal diseases
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
-                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
-                      <Wheat className="size-5" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-800 leading-snug">
-                      Reduces damping-off and root rot
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
-                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
-                      <Droplets className="size-5" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-800 leading-snug">
-                      Improves soil microbial activity
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
-                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
-                      <Leaf className="size-5" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-800 leading-snug">
-                      Enhances nutrient uptake
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
-                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
-                      <Sprout className="size-5" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-800 leading-snug">
-                      Promotes healthy root development
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-gray-200 bg-white text-center flex flex-col items-center">
-                    <div className="size-10 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center mb-2.5">
-                      <CheckCircle2 className="size-5" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-800 leading-snug">
-                      Suitable for organic farming
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
@@ -625,35 +624,20 @@ function ProductDetailPage() {
             <div className="py-8 space-y-6">
               <h3 className="text-xl font-bold text-gray-900 font-display">Key Agricultural Benefits</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-5 rounded-2xl border border-gray-200 bg-[#EAF5E9]/40 space-y-2">
-                  <h4 className="text-sm font-bold text-[#075B32] flex items-center gap-2">
-                    <ShieldCheck className="size-4" /> Comprehensive Disease Suppression
-                  </h4>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Suppresses Fusarium, Rhizoctonia, Pythium, and Sclerotium pathogens by producing
-                    antagonistic chitinase enzymes and competitively colonizing infection sites.
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl border border-gray-200 bg-[#EAF5E9]/40 space-y-2">
-                  <h4 className="text-sm font-bold text-[#075B32] flex items-center gap-2">
-                    <Sprout className="size-4" /> Explosive Root Mass Growth
-                  </h4>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Stimulates lateral feeder root development, secondary root branch hairs, and increases
-                    overall root volume for maximized water and nutrient assimilation.
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl border border-gray-200 bg-[#EAF5E9]/40 space-y-2">
-                  <h4 className="text-sm font-bold text-[#075B32] flex items-center gap-2">
-                    <CheckCircle2 className="size-4" /> 100% Residue-Free
-                  </h4>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Safe for beneficial earthworms, pollinating bees, and soil microbiome with zero
-                    synthetic chemical residues or harvest withholding periods.
-                  </p>
-                </div>
+                {dynamicBenefits.map((benefit, i) => {
+                  const icons = [ShieldCheck, Sprout, CheckCircle2, Leaf, Wheat, Droplets];
+                  const IconComponent = icons[i % icons.length]!;
+                  return (
+                    <div key={i} className="p-5 rounded-2xl border border-gray-200 bg-[#EAF5E9]/40 space-y-2">
+                      <h4 className="text-sm font-bold text-[#075B32] flex items-center gap-2">
+                        <IconComponent className="size-4 shrink-0" /> Feature #{i + 1}
+                      </h4>
+                      <p className="text-xs text-gray-700 leading-relaxed text-justify">
+                        {benefit}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -661,17 +645,24 @@ function ProductDetailPage() {
           {/* Tab Body: How to Use */}
           {activeTab === "how-to-use" && (
             <div className="py-8 space-y-6">
-              <h3 className="text-xl font-bold text-gray-900 font-display">
-                How to Use & Dosage Guidelines
-              </h3>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 font-display">
+                  How to Use & Dosage Guidelines
+                </h3>
+                {product.dosage && (
+                  <div className="mt-2 p-4 rounded-xl bg-[#EAF5E9] border border-[#075B32]/20 text-xs text-[#075B32] font-semibold">
+                    <strong>Recommended General Dosage:</strong> {product.dosage}
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-[#075B32]">
                     Method 1: Soil Application & Drip
                   </span>
                   <p className="text-xs text-gray-700 leading-relaxed">
-                    <strong>Dosage:</strong> 500 ml – 1 Litre per acre mixed with 100 kg of well-rotted
-                    FYM/compost, or injected directly through drip fertigation during early vegetative stages.
+                    <strong>Dosage:</strong> {product.dosage?.includes("Drip") ? product.dosage : "500 ml – 1 Litre per acre mixed with 100 kg of well-rotted FYM/compost, or injected directly through drip fertigation during early vegetative stages."}
                   </p>
                 </div>
 
@@ -680,8 +671,7 @@ function ProductDetailPage() {
                     Method 2: Seed Treatment
                   </span>
                   <p className="text-xs text-gray-700 leading-relaxed">
-                    <strong>Dosage:</strong> 5–10 ml per kg of seed. Mix with water and coat seeds evenly. Shade
-                    dry for 20–30 minutes before sowing in the field.
+                    <strong>Dosage:</strong> {product.dosage?.includes("Seed") ? product.dosage : "5–10 ml per kg of seed. Mix with water and coat seeds evenly. Shade dry for 20–30 minutes before sowing in the field."}
                   </p>
                 </div>
 
@@ -690,8 +680,7 @@ function ProductDetailPage() {
                     Method 3: Seedling Root Dip
                   </span>
                   <p className="text-xs text-gray-700 leading-relaxed">
-                    <strong>Dosage:</strong> 5–10 ml per litre of water. Dip nursery roots for 15–20 minutes
-                    prior to transplanting in mainline soil.
+                    <strong>Dosage:</strong> 5–10 ml per litre of water. Dip nursery roots for 15–20 minutes prior to transplanting in mainline soil.
                   </p>
                 </div>
 
@@ -700,11 +689,16 @@ function ProductDetailPage() {
                     Method 4: Foliar Spray
                   </span>
                   <p className="text-xs text-gray-700 leading-relaxed">
-                    <strong>Dosage:</strong> 2–3 ml per litre of water. Spray during early morning or late
-                    afternoon for thorough foliage coverage.
+                    <strong>Dosage:</strong> {product.dosage?.includes("Foliar") ? product.dosage : "2–3 ml per litre of water. Spray during early morning or late afternoon for thorough foliage coverage."}
                   </p>
                 </div>
               </div>
+
+              {product.methodOfApplication && (
+                <p className="text-xs text-gray-600 italic">
+                  * Note: {product.methodOfApplication}
+                </p>
+              )}
             </div>
           )}
 
@@ -717,22 +711,7 @@ function ProductDetailPage() {
                   "Suitable for all Agricultural, Horticultural, Vegetable, Fruit, Plantation, Spice, Flower and Commercial Cash Crops."}
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
-                {[
-                  "Paddy / Rice",
-                  "Cotton",
-                  "Chilli",
-                  "Tomato",
-                  "Brinjal",
-                  "Sugarcane",
-                  "Banana",
-                  "Pomegranate",
-                  "Mango",
-                  "Wheat",
-                  "Groundnut",
-                  "Soyabean",
-                  "Pulses",
-                  "Ginger & Turmeric",
-                ].map((c) => (
+                {cropList.map((c) => (
                   <span
                     key={c}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#EAF5E9] text-[#075B32]"
@@ -749,26 +728,13 @@ function ProductDetailPage() {
           {activeTab === "technical" && (
             <div className="py-8 space-y-4">
               <h3 className="text-xl font-bold text-gray-900 font-display">Technical Particulars</h3>
-              <div className="rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100 max-w-2xl">
-                {product.specifications ? (
-                  Object.entries(product.specifications).map(([key, val]) => (
-                    <div key={key} className="p-3.5 flex items-center justify-between text-xs sm:text-sm">
-                      <span className="font-medium text-gray-600">{key}</span>
-                      <span className="font-bold text-gray-900">{val}</span>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="p-3.5 flex items-center justify-between text-xs sm:text-sm">
-                      <span className="font-medium text-gray-600">Formulation</span>
-                      <span className="font-bold text-gray-900">Liquid Biological Inoculant</span>
-                    </div>
-                    <div className="p-3.5 flex items-center justify-between text-xs sm:text-sm">
-                      <span className="font-medium text-gray-600">Shelf Life</span>
-                      <span className="font-bold text-gray-900">18–24 Months</span>
-                    </div>
-                  </>
-                )}
+              <div className="rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100 max-w-2xl bg-white">
+                {Object.entries(dynamicSpecifications).map(([key, val]) => (
+                  <div key={key} className="p-3.5 flex items-center justify-between text-xs sm:text-sm">
+                    <span className="font-medium text-gray-600">{key}</span>
+                    <span className="font-bold text-gray-900 text-right">{val}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -779,11 +745,11 @@ function ProductDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 font-display">Farmer Reviews</h3>
-                  <p className="text-xs text-gray-500">Based on 28 verified customer experiences</p>
+                  <p className="text-xs text-gray-500">Based on {product.reviews || 28} verified customer experiences</p>
                 </div>
                 <div className="flex items-center gap-1 text-[#E7A91A]">
                   <Star className="size-4 fill-current" />
-                  <span className="text-sm font-bold text-gray-900">{product.rating} / 5.0</span>
+                  <span className="text-sm font-bold text-gray-900">{product.rating.toFixed(1)} / 5.0</span>
                 </div>
               </div>
 
@@ -798,8 +764,8 @@ function ProductDetailPage() {
                       <Star key={i} className="size-3 fill-current" />
                     ))}
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Used for my chilli crop drip application. Excellent root development and zero wilt
+                  <p className="text-xs text-gray-600 leading-relaxed text-justify">
+                    Used for my chilli and cotton crop drip application. Excellent root development and zero wilt
                     problems observed during the heavy monsoon season. Highly recommended!
                   </p>
                 </div>
@@ -816,8 +782,8 @@ function ProductDetailPage() {
                       <Star key={i} className="size-3 fill-current" />
                     ))}
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Very reliable formulation with genuine CFU count. Applied as seed treatment for cotton,
+                  <p className="text-xs text-gray-600 leading-relaxed text-justify">
+                    Very reliable formulation with genuine CFU count and high purity. Applied as seed treatment for paddy,
                     germination percentage was noticeably higher than previous seasons.
                   </p>
                 </div>
@@ -850,7 +816,7 @@ function ProductDetailPage() {
                       )}
                     </button>
                     {isOpen && (
-                      <p className="mt-2 text-xs leading-relaxed text-gray-600 pt-2 border-t border-gray-100">
+                      <p className="mt-2 text-xs leading-relaxed text-gray-600 pt-2 border-t border-gray-100 text-justify">
                         {faq.a}
                       </p>
                     )}
@@ -879,35 +845,6 @@ function ProductDetailPage() {
               <ProductCard key={rp.id} product={rp} />
             ))}
           </div>
-        </section>
-
-        {/* 6. Newsletter Subscription Strip */}
-        <section className="mt-16 mb-8 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3.5">
-            <div className="size-11 rounded-full bg-[#EAF5E9] text-[#075B32] flex items-center justify-center shrink-0 shadow-xs">
-              <Mail className="size-5" />
-            </div>
-            <div>
-              <h4 className="text-base font-bold text-gray-900">Subscribe to Our Newsletter</h4>
-              <p className="text-xs text-gray-500">Get latest updates, new products and farming tips.</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleNewsletterSubmit} className="flex items-center gap-2 w-full md:w-auto">
-            <input
-              type="email"
-              value={newsletterEmail}
-              onChange={(e) => setNewsletterEmail(e.target.value)}
-              placeholder="Enter your email address"
-              className="w-full sm:w-72 h-10 px-3.5 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-[#075B32] transition"
-            />
-            <button
-              type="submit"
-              className="bg-[#075B32] hover:bg-[#064A29] text-white text-xs font-bold px-5 h-10 rounded-xl transition shrink-0 shadow-xs"
-            >
-              Subscribe
-            </button>
-          </form>
         </section>
       </div>
 
