@@ -453,8 +453,9 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                 <div className="grid gap-1.5">
                   <span className="text-foreground">Primary Mobile Number *</span>
                   <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf">
-                    <span className="flex items-center gap-1 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
-                      🇮🇳 +91
+                    <span className="inline-flex items-center gap-1.5 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
+                      <span className="text-sm leading-none shrink-0">🇮🇳</span>
+                      <span className="shrink-0 font-semibold">+91</span>
                     </span>
                     <input
                       required
@@ -464,15 +465,16 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                       placeholder="93114 16225"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                      className="h-10 w-full rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
+                      className="h-10 w-full min-w-0 rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
                     />
                   </div>
                 </div>
                 <div className="grid gap-1.5">
                   <span className="text-muted-foreground">Alternate Phone (Optional)</span>
                   <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf">
-                    <span className="flex items-center gap-1 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
-                      🇮🇳 +91
+                    <span className="inline-flex items-center gap-1.5 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
+                      <span className="text-sm leading-none shrink-0">🇮🇳</span>
+                      <span className="shrink-0 font-semibold">+91</span>
                     </span>
                     <input
                       type="tel"
@@ -481,7 +483,7 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                       placeholder="Backup mobile"
                       value={formData.alternatePhone || ""}
                       onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                      className="h-10 w-full rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
+                      className="h-10 w-full min-w-0 rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
                     />
                   </div>
                 </div>

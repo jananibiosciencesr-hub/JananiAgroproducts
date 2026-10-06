@@ -576,8 +576,9 @@ export function EditProfileTab() {
               ? "border-emerald-500/70 focus-within:border-emerald-600 bg-emerald-50/10"
               : "border-input focus-within:border-brand-leaf"
           }`}>
-            <span className="flex items-center gap-1 border-r border-border/70 px-3 py-2.5 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
-              🇮🇳 +91
+            <span className="inline-flex items-center gap-1.5 border-r border-border/70 px-3 py-2.5 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
+              <span className="text-sm leading-none shrink-0">🇮🇳</span>
+              <span className="shrink-0 font-semibold">+91</span>
             </span>
             <input
               required
@@ -588,7 +589,7 @@ export function EditProfileTab() {
               value={formData.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
               onBlur={handlePhoneBlur}
-              className="w-full h-11 rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm text-foreground outline-none font-mono font-semibold"
+              className="w-full min-w-0 h-11 rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm text-foreground outline-none font-mono font-semibold"
             />
             {isPhoneValid && (
               <CheckCircle2 className="mr-3 size-4 text-emerald-600 pointer-events-none shrink-0" />

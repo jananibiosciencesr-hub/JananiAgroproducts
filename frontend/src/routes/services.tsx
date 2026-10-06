@@ -320,9 +320,9 @@ function ServicesPage() {
                 )}
               </div>
               <div className="relative flex items-center">
-                <div className="absolute left-3 flex items-center gap-1 text-xs text-muted-foreground font-semibold pointer-events-none select-none border-r border-border pr-2.5">
-                  <span>🇮🇳</span>
-                  <span>+91</span>
+                <div className="absolute left-3 flex items-center gap-1.5 text-xs text-muted-foreground font-semibold pointer-events-none select-none border-r border-border pr-2.5 whitespace-nowrap shrink-0">
+                  <span className="text-sm leading-none shrink-0">🇮🇳</span>
+                  <span className="shrink-0 font-semibold">+91</span>
                 </div>
                 <input
                   required

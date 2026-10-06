@@ -221,8 +221,8 @@ function Shell({ children }: { children: React.ReactNode }) {
                 </div>
               </Link>
             ) : (
-              <Button asChild variant="gold" className="ml-2 hidden lg:inline-flex rounded-xl font-semibold text-xs h-9">
-                <Link to="/login">Sign In / Register</Link>
+              <Button asChild variant="gold" className="ml-2 hidden lg:inline-flex rounded-xl font-semibold text-xs h-9 whitespace-nowrap shrink-0">
+                <Link to="/login" className="whitespace-nowrap">Sign In / Register</Link>
               </Button>
             )}
 
