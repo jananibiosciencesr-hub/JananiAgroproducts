@@ -70,6 +70,7 @@ import {
   getAdminRoles,
   getAdminSettings,
   getCategories,
+  getAdminInquiries,
   sendAuthOtp,
   verifyAuthOtp
 } from "@/lib/api";
@@ -180,6 +181,7 @@ function AdminDashboardPage() {
   const [returns, setReturns] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({});
+  const [inquiries, setInquiries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal States
@@ -370,7 +372,8 @@ function AdminDashboardPage() {
         reviewsData,
         returnsData,
         rolesData,
-        settingsData
+        settingsData,
+        inquiriesData
       ] = await Promise.all([
         getAdminStats().catch(() => null),
         getAdminCharts().catch(() => null),
@@ -384,7 +387,8 @@ function AdminDashboardPage() {
         getAdminReviews().catch(() => ({ data: [] })),
         getAdminReturns().catch(() => []),
         getAdminRoles().catch(() => []),
-        getAdminSettings().catch(() => ({}))
+        getAdminSettings().catch(() => ({})),
+        getAdminInquiries().catch(() => [])
       ]);
 
       setStats(statsData || null);
@@ -400,6 +404,7 @@ function AdminDashboardPage() {
       setReturns(Array.isArray(returnsData) ? returnsData : (returnsData?.data || []));
       setRoles(Array.isArray(rolesData) ? rolesData : (rolesData?.data || []));
       setSettings(settingsData || {});
+      setInquiries(Array.isArray(inquiriesData) ? inquiriesData : (inquiriesData?.inquiries || inquiriesData?.data || []));
     } catch (err) {
       console.error("Failed to load admin data:", err);
     } finally {
@@ -746,6 +751,7 @@ function AdminDashboardPage() {
           inventory: safeInventory.filter((i) => i && (i.stock ?? 45) < 20).length || 4,
           returns: safeReturns.filter((r) => r && r.status === "Under Review").length || 3,
           reviews: safeReviews.filter((r) => r && r.status === "Pending").length || 1,
+          inquiries: inquiries.filter((i) => (i?.status || "").toLowerCase() === "new").length || inquiries.length || 0,
         }}
       />
 
@@ -758,6 +764,9 @@ function AdminDashboardPage() {
           onNavigateTab={setActiveTab}
           onLogout={handleLogout}
           adminUser={adminUser}
+          inquiries={inquiries}
+          orders={safeOrders}
+          inventory={safeInventory}
         />
 
         {/* Dynamic View Body */}

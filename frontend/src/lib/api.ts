@@ -6578,7 +6578,8 @@ export interface AdminInquiry {
 
 export async function getAdminInquiries(): Promise<AdminInquiry[]> {
   try {
-    const phpRes = await fetch("/api.php?action=inquiries", {
+    const phpRes = await fetch(`/api.php?action=inquiries&_t=${Date.now()}`, {
+      cache: "no-store",
       headers: { "Content-Type": "application/json" }
     });
     if (phpRes.ok) {
@@ -6609,7 +6610,19 @@ export async function getAdminInquiries(): Promise<AdminInquiry[]> {
     console.warn("Failed to fetch inquiries from /api.php:", e);
   }
 
-  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+  // Node fallback if php api is offline
+  try {
+    const nodeRes = await fetch(`/api/inquiries?_t=${Date.now()}`, { cache: "no-store" });
+    if (nodeRes.ok) {
+      const nodeData = await nodeRes.json();
+      if (nodeData?.success && Array.isArray(nodeData.inquiries)) {
+        setStored(STORAGE_KEYS.INQUIRIES, nodeData.inquiries);
+        return nodeData.inquiries;
+      }
+    }
+  } catch (e) {}
+
+  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
   return stored;
 }
 
@@ -6627,7 +6640,7 @@ export async function updateAdminInquiryStatus(
     if (phpRes.ok) {
       const phpData = await phpRes.json();
       if (phpData?.success) {
-        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
         const updated = stored.map((inq) =>
           String(inq.id) === String(id) ? { ...inq, status, internalNotes: internalNotes ?? inq.internalNotes } : inq
         );
@@ -6639,7 +6652,7 @@ export async function updateAdminInquiryStatus(
     console.warn("Failed to update inquiry via /api.php:", e);
   }
 
-  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
   const updated = stored.map((inq) =>
     String(inq.id) === String(id) ? { ...inq, status, internalNotes: internalNotes ?? inq.internalNotes } : inq
   );
@@ -6656,7 +6669,7 @@ export async function deleteAdminInquiry(id: string | number): Promise<{ success
     if (phpRes.ok) {
       const phpData = await phpRes.json();
       if (phpData?.success) {
-        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
         const filtered = stored.filter((inq) => String(inq.id) !== String(id));
         setStored(STORAGE_KEYS.INQUIRIES, filtered);
         return { success: true, message: phpData.message || "Inquiry deleted from MySQL" };
@@ -6666,7 +6679,7 @@ export async function deleteAdminInquiry(id: string | number): Promise<{ success
     console.warn("Failed to delete inquiry via /api.php:", e);
   }
 
-  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
   const filtered = stored.filter((inq) => String(inq.id) !== String(id));
   setStored(STORAGE_KEYS.INQUIRIES, filtered);
   return { success: true, message: "Inquiry deleted successfully" };
@@ -6698,7 +6711,7 @@ export async function createAdminInquiry(payload: Partial<AdminInquiry>): Promis
           created_at: new Date().toISOString(),
           priority: payload.priority || "Medium"
         };
-        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+        const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
         setStored(STORAGE_KEYS.INQUIRIES, [newInq, ...stored]);
         return { success: true, message: "Inquiry recorded in MySQL", inquiry: newInq };
       }
@@ -6721,7 +6734,7 @@ export async function createAdminInquiry(payload: Partial<AdminInquiry>): Promis
     created_at: new Date().toISOString(),
     priority: payload.priority || "Medium"
   };
-  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, DEFAULT_INQUIRIES as AdminInquiry[]);
+  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
   setStored(STORAGE_KEYS.INQUIRIES, [newInq, ...stored]);
   return { success: true, message: "Inquiry saved successfully", inquiry: newInq };
 }

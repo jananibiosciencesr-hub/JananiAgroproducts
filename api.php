@@ -4566,19 +4566,180 @@ try {
             exit;
 
         case 'inquiries':
-            if ($method === 'POST') {
-                $body = getJsonBody();
-                $stmt = $pdo->prepare("INSERT INTO `inquiries` (`name`, `business_name`, `service`, `email`, `phone`, `quantity`, `message`) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([
-                    $body['name'] ?? '',
-                    $body['business_name'] ?? '',
-                    $body['service'] ?? 'General',
-                    $body['email'] ?? '',
-                    $body['phone'] ?? '',
-                    $body['quantity'] ?? '',
-                    $body['message'] ?? ''
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS `inquiries` (
+                    `id` INT(11) NOT NULL AUTO_INCREMENT,
+                    `name` VARCHAR(255) NOT NULL,
+                    `business_name` VARCHAR(255) DEFAULT NULL,
+                    `service` VARCHAR(100) DEFAULT NULL,
+                    `email` VARCHAR(255) NOT NULL,
+                    `phone` VARCHAR(50) NOT NULL,
+                    `quantity` VARCHAR(100) DEFAULT NULL,
+                    `message` TEXT DEFAULT NULL,
+                    `status` VARCHAR(50) DEFAULT 'New',
+                    `priority` VARCHAR(50) DEFAULT 'Medium',
+                    `internal_notes` TEXT DEFAULT NULL,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                $pdo->exec("ALTER TABLE `inquiries` ADD COLUMN IF NOT EXISTS `priority` VARCHAR(50) DEFAULT 'Medium'");
+                $pdo->exec("ALTER TABLE `inquiries` ADD COLUMN IF NOT EXISTS `internal_notes` TEXT DEFAULT NULL");
+            } catch (Exception $e) {}
+
+            if ($method === 'GET') {
+                $id = $_GET['id'] ?? null;
+                if ($id) {
+                    $stmt = $pdo->prepare("SELECT * FROM `inquiries` WHERE `id` = ? LIMIT 1");
+                    $stmt->execute([$id]);
+                    $inq = $stmt->fetch();
+                    if ($inq) {
+                        $inq['businessName'] = $inq['business_name'] ?? '';
+                        $inq['internalNotes'] = $inq['internal_notes'] ?? '';
+                        $inq['createdAt'] = $inq['created_at'];
+                    }
+                    echo json_encode(['success' => true, 'inquiry' => $inq ?: null, 'data' => $inq ?: null]);
+                    exit;
+                }
+
+                $status = $_GET['status'] ?? null;
+                $search = trim($_GET['search'] ?? '');
+                $query = "SELECT * FROM `inquiries` WHERE 1=1";
+                $params = [];
+
+                if ($status && $status !== 'all') {
+                    $query .= " AND `status` = ?";
+                    $params[] = $status;
+                }
+                if ($search) {
+                    $query .= " AND (`name` LIKE ? OR `email` LIKE ? OR `phone` LIKE ? OR `business_name` LIKE ? OR `service` LIKE ? OR `message` LIKE ?)";
+                    $params[] = "%{$search}%";
+                    $params[] = "%{$search}%";
+                    $params[] = "%{$search}%";
+                    $params[] = "%{$search}%";
+                    $params[] = "%{$search}%";
+                    $params[] = "%{$search}%";
+                }
+
+                $query .= " ORDER BY `id` DESC";
+                $stmt = $pdo->prepare($query);
+                $stmt->execute($params);
+                $inquiries = $stmt->fetchAll();
+
+                $newCount = 0;
+                foreach ($inquiries as &$inq) {
+                    $inq['businessName'] = $inq['business_name'] ?? '';
+                    $inq['internalNotes'] = $inq['internal_notes'] ?? '';
+                    $inq['createdAt'] = $inq['created_at'];
+                    if (strcasecmp($inq['status'] ?? '', 'New') === 0) {
+                        $newCount++;
+                    }
+                }
+                unset($inq);
+
+                echo json_encode([
+                    'success' => true,
+                    'count' => count($inquiries),
+                    'total' => count($inquiries),
+                    'newCount' => $newCount,
+                    'unreadCount' => $newCount,
+                    'inquiries' => $inquiries,
+                    'data' => $inquiries
                 ]);
-                echo json_encode(['success' => true, 'message' => 'Inquiry submitted successfully in MySQL']);
+                exit;
+            } elseif ($method === 'POST') {
+                $body = getJsonBody();
+                $id = $_GET['id'] ?? ($body['id'] ?? null);
+                $methodOverride = strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '');
+
+                // Check if delete action
+                if ($methodOverride === 'DELETE' || ($body['action'] ?? '') === 'delete') {
+                    if (!empty($id)) {
+                        $pdo->prepare("DELETE FROM `inquiries` WHERE `id` = ?")->execute([$id]);
+                        echo json_encode(['success' => true, 'message' => "Inquiry #{$id} deleted successfully from MySQL"]);
+                        exit;
+                    }
+                }
+
+                // Check if update action
+                if ($methodOverride === 'PUT' || $methodOverride === 'PATCH' || (!empty($id) && (isset($body['status']) || isset($body['internalNotes']) || isset($body['internal_notes']) || isset($body['priority'])))) {
+                    $status = $body['status'] ?? null;
+                    $notes = $body['internalNotes'] ?? ($body['internal_notes'] ?? null);
+                    $priority = $body['priority'] ?? null;
+                    $fields = [];
+                    $params = [];
+                    if ($status !== null) { $fields[] = "`status` = ?"; $params[] = $status; }
+                    if ($notes !== null) { $fields[] = "`internal_notes` = ?"; $params[] = $notes; }
+                    if ($priority !== null) { $fields[] = "`priority` = ?"; $params[] = $priority; }
+                    if (!empty($fields) && !empty($id)) {
+                        $params[] = $id;
+                        $pdo->prepare("UPDATE `inquiries` SET " . implode(', ', $fields) . " WHERE `id` = ?")->execute($params);
+                        echo json_encode(['success' => true, 'message' => "Inquiry #{$id} updated successfully in MySQL"]);
+                        exit;
+                    }
+                }
+
+                // New inquiry submission
+                $name = trim($body['name'] ?? '');
+                $bizName = trim($body['business_name'] ?? ($body['businessName'] ?? ''));
+                $service = trim($body['service'] ?? ($body['subject'] ?? 'General Inquiry'));
+                $email = strtolower(trim($body['email'] ?? ''));
+                $phone = trim($body['phone'] ?? '');
+                $quantity = trim($body['quantity'] ?? ($body['investment'] ?? ''));
+                $message = trim($body['message'] ?? '');
+                $status = $body['status'] ?? 'New';
+                $priority = $body['priority'] ?? 'Medium';
+
+                $stmt = $pdo->prepare("INSERT INTO `inquiries` (`name`, `business_name`, `service`, `email`, `phone`, `quantity`, `message`, `status`, `priority`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $bizName, $service, $email, $phone, $quantity, $message, $status, $priority]);
+                $createdId = $pdo->lastInsertId();
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Inquiry submitted successfully in MySQL',
+                    'id' => $createdId,
+                    'inquiry' => [
+                        'id' => $createdId,
+                        'name' => $name,
+                        'business_name' => $bizName,
+                        'businessName' => $bizName,
+                        'service' => $service,
+                        'email' => $email,
+                        'phone' => $phone,
+                        'quantity' => $quantity,
+                        'message' => $message,
+                        'status' => $status,
+                        'priority' => $priority,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]
+                ]);
+                exit;
+            } elseif ($method === 'PUT' || $method === 'PATCH') {
+                $body = getJsonBody();
+                $id = $_GET['id'] ?? ($body['id'] ?? null);
+                $status = $body['status'] ?? null;
+                $notes = $body['internalNotes'] ?? ($body['internal_notes'] ?? null);
+                $priority = $body['priority'] ?? null;
+                $fields = [];
+                $params = [];
+                if ($status !== null) { $fields[] = "`status` = ?"; $params[] = $status; }
+                if ($notes !== null) { $fields[] = "`internal_notes` = ?"; $params[] = $notes; }
+                if ($priority !== null) { $fields[] = "`priority` = ?"; $params[] = $priority; }
+                if (!empty($fields) && !empty($id)) {
+                    $params[] = $id;
+                    $pdo->prepare("UPDATE `inquiries` SET " . implode(', ', $fields) . " WHERE `id` = ?")->execute($params);
+                    echo json_encode(['success' => true, 'message' => "Inquiry #{$id} updated in MySQL"]);
+                    exit;
+                }
+                echo json_encode(['success' => false, 'message' => 'Missing ID or fields for inquiry update']);
+                exit;
+            } elseif ($method === 'DELETE') {
+                $id = $_GET['id'] ?? null;
+                if (!empty($id)) {
+                    $pdo->prepare("DELETE FROM `inquiries` WHERE `id` = ?")->execute([$id]);
+                    echo json_encode(['success' => true, 'message' => "Inquiry #{$id} deleted from MySQL"]);
+                    exit;
+                }
+                echo json_encode(['success' => false, 'message' => 'Missing ID for inquiry deletion']);
                 exit;
             }
             break;
