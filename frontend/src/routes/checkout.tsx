@@ -241,7 +241,12 @@ export function CheckoutPage() {
         formattedPhone = `+91 ${d10.slice(0, 5)} ${d10.slice(5)}`;
       }
 
-      const res = await verifyAuthOtp({ email: emailToUse, otp: code, phone: formattedPhone });
+      const res = await verifyAuthOtp({
+        email: emailToUse,
+        otp: code,
+        phone: formattedPhone,
+        name: checkoutName.trim() || undefined
+      });
       if (res.success && res.user) {
         if (checkoutAuthMode === "register") {
           const signupRes = await signupCustomer({

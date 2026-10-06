@@ -654,22 +654,51 @@ try {
                 }
 
                 // Check if user already exists
+                $existingUserRow = null;
                 try {
-                    $chkStmt = $pdo->prepare("SELECT id FROM `users` WHERE `email` = ? LIMIT 1");
+                    $chkStmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
                     $chkStmt->execute([$email]);
-                    if ($chkStmt->fetch()) {
-                        echo json_encode([
-                            'success' => false,
-                            'alreadyRegistered' => true,
-                            'already_registered' => true,
-                            'message' => 'An account with this email address already exists. Please switch to Sign In.'
-                        ]);
-                        exit;
-                    }
+                    $existingUserRow = $chkStmt->fetch();
                 } catch (Exception $e) {}
 
-                $userId = 'CUST-' . rand(100, 999);
                 $fullAddr = implode(', ', array_filter([$houseFlat, $street, $city, $state, $pincode]));
+
+                if ($existingUserRow) {
+                    $userId = $existingUserRow['id'];
+                    $user = [
+                        'id' => $userId,
+                        'name' => $name,
+                        'email' => $email,
+                        'phone' => $phone ?: ($existingUserRow['phone'] ?? ''),
+                        'role' => $existingUserRow['role'] ?: 'Customer',
+                        'walletBalance' => (float)($existingUserRow['wallet_balance'] ?? (!empty($referralCode) ? 100 : 50)),
+                        'referralCode' => $existingUserRow['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
+                        'isVerified' => true,
+                        'tier' => $existingUserRow['tier'] ?? 'Silver',
+                        'address' => $fullAddr ?: null
+                    ];
+
+                    try {
+                        $upStmt = $pdo->prepare("UPDATE `users` SET 
+                            `name` = ?, 
+                            `phone` = IF(? != '' AND ? IS NOT NULL, ?, `phone`),
+                            `password` = IF(? != '', ?, `password`),
+                            `status` = 'Active'
+                            WHERE `id` = ? OR `email` = ?");
+                        $upStmt->execute([$name, $phone, $phone, $phone, $password, $password, $userId, $email]);
+                    } catch (Exception $e) {}
+
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Account created and verified successfully! Welcome to Janani Agro.',
+                        'isNewUser' => false,
+                        'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
+                        'user' => $user
+                    ]);
+                    exit;
+                }
+
+                $userId = 'CUST-' . rand(100, 999);
 
                 $user = [
                     'id' => $userId,
@@ -885,7 +914,12 @@ try {
                 $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false || ($existingUser && in_array($existingUser['role'], ['Super Admin', 'Admin', 'Staff'])));
 
                 $userId = $existingUser ? $existingUser['id'] : ($isAdmin ? 'ADMIN-ROOT' : 'CUST-' . rand(100, 999));
-                $userName = ($existingUser && !empty($existingUser['name']) && $existingUser['name'] !== 'Customer') ? $existingUser['name'] : ($isAdmin ? 'Janani Admin (Root)' : ($email ? explode('@', $email)[0] : 'Patron'));
+                $inputName = trim($body['name'] ?? '');
+                $userName = !empty($inputName) 
+                    ? $inputName 
+                    : (($existingUser && !empty($existingUser['name']) && $existingUser['name'] !== 'Customer') 
+                        ? $existingUser['name'] 
+                        : ($isAdmin ? 'Janani Admin (Root)' : ($email ? explode('@', $email)[0] : 'Patron')));
                 $userEmail = $email ?: ($existingUser ? $existingUser['email'] : ($phone ? ($phone . '@janani.customer') : 'patron@jananiagro.com'));
 
                 // Phone logic:
@@ -902,14 +936,41 @@ try {
                     $userPhone = '';
                 }
 
+                // If customer phone or real name is still empty, check existing preferences addresses
+                if ($existingUser && !empty($existingUser['preferences'])) {
+                    $prefs = is_string($existingUser['preferences']) ? json_decode($existingUser['preferences'], true) : $existingUser['preferences'];
+                    if (!empty($prefs['addresses']) && is_array($prefs['addresses'])) {
+                        foreach ($prefs['addresses'] as $addr) {
+                            if (empty($userPhone) && !empty($addr['phone'])) {
+                                $c10 = preg_replace('/\D/', '', $addr['phone']);
+                                if (strlen($c10) === 10) {
+                                    $userPhone = '+91 ' . substr($c10, 0, 5) . ' ' . substr($c10, 5);
+                                } elseif (!empty($addr['phone']) && $addr['phone'] !== '+91 98480 22338') {
+                                    $userPhone = trim($addr['phone']);
+                                }
+                            }
+                            $isGeneric = empty($userName) || $userName === 'Customer' || $userName === 'Valued Patron' || (strlen($email) > 3 && strtolower($userName) === strtolower(explode('@', $email)[0]));
+                            if ($isGeneric && (!empty($addr['fullName']) || !empty($addr['name']))) {
+                                $userName = trim($addr['fullName'] ?? $addr['name']);
+                            }
+                        }
+                    }
+                }
+
                 // If customer phone still empty, check if orders table has phone for this customer
                 if (empty($userPhone) && !$isAdmin && !empty($userEmail)) {
                     try {
-                        $oStmt = $pdo->prepare("SELECT `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
+                        $oStmt = $pdo->prepare("SELECT `customer_name`, `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
                         $oStmt->execute([$userEmail, '%' . explode('@', $userEmail)[0] . '%']);
-                        $foundOrdPhone = $oStmt->fetchColumn();
-                        if ($foundOrdPhone) {
-                            $userPhone = $foundOrdPhone;
+                        $ord = $oStmt->fetch();
+                        if ($ord) {
+                            if (!empty($ord['customer_phone'])) {
+                                $userPhone = $ord['customer_phone'];
+                            }
+                            $isGeneric = empty($userName) || $userName === 'Customer' || (strlen($email) > 3 && strtolower($userName) === strtolower(explode('@', $email)[0]));
+                            if ($isGeneric && !empty($ord['customer_name'])) {
+                                $userName = $ord['customer_name'];
+                            }
                         }
                     } catch (Exception $e) {}
                 }
@@ -940,7 +1001,7 @@ try {
                             `status` = 'Active', 
                             `tier` = VALUES(`tier`),
                             `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
-                            `name` = IF(VALUES(`name`) != '' AND (`name` IS NULL OR `name` = 'Customer'), VALUES(`name`), `name`)");
+                            `name` = IF(VALUES(`name`) != '' AND VALUES(`name`) != 'Customer' AND VALUES(`name`) != SUBSTRING_INDEX(VALUES(`email`), '@', 1), VALUES(`name`), `name`)");
                     $stmt->execute([$user['id'], $user['name'], $user['email'], $user['phone'], $user['role'], $user['walletBalance'], $user['tier'], $user['referralCode']]);
                 } catch (Exception $e) {}
 
@@ -2881,22 +2942,52 @@ try {
                     $stmt->execute([$cleanId, $cleanId, $cleanId]);
                     $user = $stmt->fetch();
                     if ($user) {
-                        // If phone is empty, check orders table to backfill
+                        $user['preferences'] = is_string($user['preferences']) ? json_decode($user['preferences'], true) : $user['preferences'];
+                        
+                        // Check preferences addresses first for phone and real name
+                        if (empty($user['phone']) && !empty($user['preferences']['addresses']) && is_array($user['preferences']['addresses'])) {
+                            foreach ($user['preferences']['addresses'] as $addr) {
+                                if (!empty($addr['phone'])) {
+                                    $c10 = preg_replace('/\D/', '', $addr['phone']);
+                                    $user['phone'] = strlen($c10) === 10 ? ('+91 ' . substr($c10, 0, 5) . ' ' . substr($c10, 5)) : trim($addr['phone']);
+                                    try { $pdo->prepare("UPDATE `users` SET `phone` = ? WHERE `id` = ? OR `email` = ?")->execute([$user['phone'], $user['id'], $user['email']]); } catch (Exception $e) {}
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Check orders table to backfill phone and name
                         if (empty($user['phone']) && !empty($user['email'])) {
                             try {
-                                $oStmt = $pdo->prepare("SELECT `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
+                                $oStmt = $pdo->prepare("SELECT `customer_name`, `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
                                 $oStmt->execute([$user['email'], '%' . explode('@', $user['email'])[0] . '%']);
-                                $ordPhone = $oStmt->fetchColumn();
-                                if ($ordPhone) {
-                                    $user['phone'] = $ordPhone;
-                                    $pdo->prepare("UPDATE `users` SET `phone` = ? WHERE `id` = ? OR `email` = ?")->execute([$ordPhone, $user['id'], $user['email']]);
+                                $ord = $oStmt->fetch();
+                                if ($ord && !empty($ord['customer_phone'])) {
+                                    $user['phone'] = $ord['customer_phone'];
+                                    $pdo->prepare("UPDATE `users` SET `phone` = ? WHERE `id` = ? OR `email` = ?")->execute([$ord['customer_phone'], $user['id'], $user['email']]);
                                 }
                             } catch (Exception $e) {}
                         }
+
+                        // Attach order history and order stats
+                        try {
+                            $uOrdersStmt = $pdo->prepare("SELECT * FROM `orders` WHERE `customer_email` = ? OR `customer_id` = ? ORDER BY `created_at` DESC LIMIT 50");
+                            $uOrdersStmt->execute([$user['email'], $user['id']]);
+                            $uOrders = $uOrdersStmt->fetchAll();
+                            $spentSum = 0;
+                            foreach ($uOrders as $ordRow) {
+                                $spentSum += (float)($ordRow['total'] ?? 0);
+                            }
+                            $user['orderHistory'] = $uOrders;
+                            $user['totalOrders'] = count($uOrders);
+                            $user['ordersCount'] = count($uOrders);
+                            $user['totalSpent'] = $spentSum;
+                            $user['avgOrderValue'] = count($uOrders) > 0 ? round($spentSum / count($uOrders), 2) : 0;
+                        } catch (Exception $e) {}
+
                         $user['walletBalance'] = (float)($user['wallet_balance'] ?? 0);
                         $user['loyaltyPoints'] = (int)($user['loyalty_points'] ?? 0);
                         $user['isVerified'] = (bool)($user['is_verified'] ?? 1);
-                        $user['preferences'] = is_string($user['preferences']) ? json_decode($user['preferences'], true) : $user['preferences'];
                     }
                     echo json_encode(['success' => true, 'customer' => $user ?: null, 'data' => $user ?: null, 'user' => $user ?: null]);
                     exit;
@@ -2929,6 +3020,18 @@ try {
                 $stmt->execute($params);
                 $users = $stmt->fetchAll();
 
+                // Pre-aggregate order stats for all customers
+                $orderStats = [];
+                try {
+                    $oAgg = $pdo->query("SELECT `customer_email`, COUNT(*) as ord_cnt, COALESCE(SUM(`total`), 0) as ord_sum FROM `orders` WHERE `customer_email` != '' GROUP BY `customer_email`")->fetchAll();
+                    foreach ($oAgg as $oa) {
+                        $orderStats[strtolower(trim($oa['customer_email']))] = [
+                            'totalOrders' => (int)$oa['ord_cnt'],
+                            'totalSpent' => (float)$oa['ord_sum']
+                        ];
+                    }
+                } catch (Exception $e) {}
+
                 $totalLtv = 0;
                 $totalWallet = 0;
                 $totalLoyalty = 0;
@@ -2937,8 +3040,80 @@ try {
                     $u['loyaltyPoints'] = (int)($u['loyalty_points'] ?? 0);
                     $u['isVerified'] = (bool)($u['is_verified'] ?? 1);
                     $u['preferences'] = is_string($u['preferences']) ? json_decode($u['preferences'], true) : $u['preferences'];
+
+                    // Auto-backfill phone and name if empty from preferences addresses or orders
+                    $needsUpdate = false;
+                    $phoneToSet = trim($u['phone'] ?? '');
+                    $nameToSet = trim($u['name'] ?? '');
+                    $emailPrefix = !empty($u['email']) ? explode('@', $u['email'])[0] : '';
+                    $isGenericName = empty($nameToSet) || $nameToSet === 'Customer' || $nameToSet === 'Valued Patron' || (strlen($emailPrefix) > 2 && strtolower($nameToSet) === strtolower($emailPrefix));
+
+                    // 1. Check preferences addresses
+                    if (!empty($u['preferences']['addresses']) && is_array($u['preferences']['addresses'])) {
+                        foreach ($u['preferences']['addresses'] as $addr) {
+                            if (empty($phoneToSet) && !empty($addr['phone'])) {
+                                $rawPh = trim($addr['phone']);
+                                $cleanPh = preg_replace('/\D/', '', $rawPh);
+                                if (strlen($cleanPh) === 10) {
+                                    $phoneToSet = '+91 ' . substr($cleanPh, 0, 5) . ' ' . substr($cleanPh, 5);
+                                    $needsUpdate = true;
+                                } elseif (strlen($cleanPh) === 12 && str_starts_with($cleanPh, '91')) {
+                                    $phoneToSet = '+91 ' . substr($cleanPh, 2, 5) . ' ' . substr($cleanPh, 7);
+                                    $needsUpdate = true;
+                                } elseif (!empty($rawPh) && $rawPh !== '+91 98480 22338') {
+                                    $phoneToSet = $rawPh;
+                                    $needsUpdate = true;
+                                }
+                            }
+                            if ($isGenericName && (!empty($addr['fullName']) || !empty($addr['name']))) {
+                                $realName = trim($addr['fullName'] ?? $addr['name']);
+                                if (!empty($realName) && strlen($realName) > 1 && $realName !== $emailPrefix) {
+                                    $nameToSet = $realName;
+                                    $isGenericName = false;
+                                    $needsUpdate = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Check orders if phone or name still empty
+                    if ((empty($phoneToSet) || $isGenericName) && !empty($u['email'])) {
+                        try {
+                            $oStmt = $pdo->prepare("SELECT `customer_name`, `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND (`customer_phone` != '' OR `customer_name` != '') ORDER BY `created_at` DESC LIMIT 1");
+                            $oStmt->execute([$u['email'], '%' . $emailPrefix . '%']);
+                            $ord = $oStmt->fetch();
+                            if ($ord) {
+                                if (empty($phoneToSet) && !empty($ord['customer_phone']) && $ord['customer_phone'] !== '+91 98480 22338') {
+                                    $phoneToSet = $ord['customer_phone'];
+                                    $needsUpdate = true;
+                                }
+                                if ($isGenericName && !empty($ord['customer_name']) && $ord['customer_name'] !== $emailPrefix && $ord['customer_name'] !== 'Customer') {
+                                    $nameToSet = $ord['customer_name'];
+                                    $needsUpdate = true;
+                                }
+                            }
+                        } catch (Exception $e) {}
+                    }
+
+                    if ($needsUpdate) {
+                        $u['phone'] = $phoneToSet;
+                        $u['name'] = $nameToSet;
+                        try {
+                            $pdo->prepare("UPDATE `users` SET `phone` = ?, `name` = ? WHERE `id` = ?")->execute([$phoneToSet, $nameToSet, $u['id']]);
+                        } catch (Exception $e) {}
+                    }
+
+                    // Attach real aggregate stats from orders
+                    $eKey = strtolower(trim($u['email'] ?? ''));
+                    $stats = $orderStats[$eKey] ?? ['totalOrders' => 0, 'totalSpent' => 0];
+                    $u['totalOrders'] = $stats['totalOrders'];
+                    $u['ordersCount'] = $stats['totalOrders'];
+                    $u['totalSpent'] = $stats['totalSpent'];
+                    $u['avgOrderValue'] = $u['totalOrders'] > 0 ? round($u['totalSpent'] / $u['totalOrders'], 2) : 0;
+
                     $totalWallet += $u['walletBalance'];
                     $totalLoyalty += $u['loyaltyPoints'];
+                    $totalLtv += $u['totalSpent'];
                 }
                 unset($u);
 
@@ -3074,6 +3249,30 @@ try {
                     if (isset($body['dob'])) $prefs['dob'] = $body['dob'];
                     if (isset($body['bio'])) $prefs['bio'] = $body['bio'];
                     if (isset($body['address'])) $prefs['address'] = $body['address'];
+
+                    if (!isset($body['phone']) && !empty($prefs['addresses']) && is_array($prefs['addresses'])) {
+                        foreach ($prefs['addresses'] as $addr) {
+                            if (!empty($addr['phone'])) {
+                                $c10 = preg_replace('/\D/', '', $addr['phone']);
+                                $fmt = strlen($c10) === 10 ? ('+91 ' . substr($c10, 0, 5) . ' ' . substr($c10, 5)) : trim($addr['phone']);
+                                if (empty($existingUser['phone']) || $existingUser['phone'] === '+91 98480 22338') {
+                                    $fields[] = "`phone` = ?";
+                                    $vals[] = $fmt;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!isset($body['name']) && !empty($prefs['addresses']) && is_array($prefs['addresses'])) {
+                        foreach ($prefs['addresses'] as $addr) {
+                            $addrName = trim($addr['fullName'] ?? ($addr['name'] ?? ''));
+                            if (!empty($addrName) && (empty($existingUser['name']) || strpos($existingUser['name'], '@') !== false || $existingUser['name'] === 'Customer' || $existingUser['name'] === 'Valued Patron')) {
+                                $fields[] = "`name` = ?";
+                                $vals[] = $addrName;
+                                break;
+                            }
+                        }
+                    }
 
                     if (!empty($prefs)) {
                         $fields[] = "`preferences` = ?";

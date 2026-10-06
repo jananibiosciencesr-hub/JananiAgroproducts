@@ -175,6 +175,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  // Authoritative server reconciliation: sync real customer ID, name, phone, and wallet from MySQL
+  useEffect(() => {
+    if (!user?.email || typeof window === "undefined") return;
+    const targetEmail = user.email.toLowerCase().trim();
+    if (targetEmail === "jananibiosciences.r@gmail.com" || targetEmail.includes("admin")) return;
+
+    let isMounted = true;
+    fetch(`/api.php?action=customers&id=${encodeURIComponent(targetEmail)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted || !data?.success) return;
+        const srv = data.customer || data.data || data.user;
+        if (!srv) return;
+
+        setUser((prev) => {
+          if (!prev) return null;
+          const merged: AuthUser = {
+            ...prev,
+            id: srv.id || prev.id,
+            name: (srv.name && !srv.name.includes("@") && srv.name !== "Valued Patron" && srv.name !== "Customer") ? srv.name : (prev.name || srv.name),
+            phone: srv.phone || prev.phone,
+            walletBalance: srv.walletBalance !== undefined ? Number(srv.walletBalance) : (srv.wallet_balance !== undefined ? Number(srv.wallet_balance) : prev.walletBalance),
+            loyaltyPoints: srv.loyaltyPoints !== undefined ? Number(srv.loyaltyPoints) : (srv.loyalty_points !== undefined ? Number(srv.loyalty_points) : prev.loyaltyPoints),
+          };
+          localStorage.setItem("janani_user", JSON.stringify(merged));
+          localStorage.setItem("janani_auth_user", JSON.stringify(merged));
+          return merged;
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.email]);
+
   // Sync cart to localStorage reliably
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -272,14 +308,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("janani_auth_user", JSON.stringify(updated));
     }
 
-    const idOrEmail = updated?.id || current?.id || updated?.email || current?.email;
+    const idOrEmail = updated?.email || current?.email || updated?.id || current?.id;
     if (idOrEmail) {
       try {
-        await updateUserProfileApi(idOrEmail, {
+        const res = await updateUserProfileApi(idOrEmail, {
           ...updates,
           id: updated?.id || current?.id,
           email: updated?.email || current?.email
         });
+        if (res?.success && (res.customer || res.user || res.data)) {
+          const srv = res.customer || res.user || res.data;
+          setUser((prev) => {
+            if (!prev) return null;
+            const synced: AuthUser = {
+              ...prev,
+              id: srv.id || prev.id,
+              name: srv.name || prev.name,
+              phone: srv.phone || prev.phone
+            };
+            if (typeof window !== "undefined") {
+              localStorage.setItem("janani_user", JSON.stringify(synced));
+              localStorage.setItem("janani_auth_user", JSON.stringify(synced));
+            }
+            return synced;
+          });
+        }
       } catch (err) {
         console.warn("Could not sync profile update to server:", err);
       }

@@ -492,6 +492,7 @@ export function AuthenticationPage() {
       const res = await verifyAuthOtp({
         phone: formattedPhone,
         email: isEmail ? otpTarget : undefined,
+        name: (name || "").trim() || undefined,
         otp: fullOtp
       });
 

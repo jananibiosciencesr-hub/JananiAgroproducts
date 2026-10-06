@@ -465,9 +465,11 @@ export function CustomersManagement() {
                             <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
                               <span className="flex items-center gap-1"><Mail className="size-3 text-muted-foreground/80" /> {c.email}</span>
                             </div>
-                            <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <Phone className="size-3 text-muted-foreground/80" /> {c.phone}
-                            </div>
+                            {c.phone ? (
+                              <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <Phone className="size-3 text-muted-foreground/80" /> {c.phone}
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       </td>

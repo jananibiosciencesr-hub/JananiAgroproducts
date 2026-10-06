@@ -7143,7 +7143,7 @@ export async function sendAuthOtp(payload: { phone?: string; email?: string; pur
   };
 }
 
-export async function verifyAuthOtp(payload: { phone?: string; email?: string; otp: string }): Promise<AuthResponse> {
+export async function verifyAuthOtp(payload: { phone?: string; email?: string; otp: string; name?: string }): Promise<AuthResponse> {
   // 1. Prioritize Hostinger PHP API verification against database settings table
   try {
     const phpRes = await fetch("/api.php?action=verify-otp", {
@@ -7197,7 +7197,7 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
 
     const user: AuthUser = {
       id: isAdmin ? "ADMIN-ROOT" : `CUST-${Math.floor(100 + Math.random() * 900)}`,
-      name: isAdmin ? "Janani Admin (Root)" : (payload.phone ? `Customer (${payload.phone.slice(-4)})` : (payload.email?.split("@")[0] || "Valued Patron")),
+      name: isAdmin ? "Janani Admin (Root)" : (payload.name?.trim() || (payload.phone ? `Customer (${payload.phone.slice(-4)})` : (payload.email?.split("@")[0] || "Valued Patron"))),
       email: payload.email || (payload.phone ? `${payload.phone}@janani.customer` : "patron@jananiagro.com"),
       phone: payload.phone || (isAdmin ? "+91 98480 22338" : ""),
       role: isAdmin ? "Super Admin" : "Customer",
@@ -7293,8 +7293,35 @@ export function saveUserSavedAddresses(userEmailOrId: string | null | undefined,
     localStorage.removeItem("janani_saved_addresses");
 
     if (userEmailOrId && userEmailOrId !== "guest") {
-      updateUserProfileApi(userEmailOrId, {
+      const defaultAddr = cleanList.find((a: any) => a.isDefault) || cleanList[0];
+      const extraProfile: any = {
         preferences: { addresses: cleanList }
+      };
+      if (defaultAddr?.phone) {
+        extraProfile.phone = defaultAddr.phone;
+      }
+      if (defaultAddr?.fullName || defaultAddr?.name) {
+        extraProfile.name = defaultAddr.fullName || defaultAddr.name;
+      }
+
+      updateUserProfileApi(userEmailOrId, extraProfile).then((res) => {
+        if (res?.success && (res.customer || res.user || res.data)) {
+          const srv = res.customer || res.user || res.data;
+          try {
+            const raw = localStorage.getItem("janani_user");
+            if (raw) {
+              const u = JSON.parse(raw);
+              let changed = false;
+              if (srv.phone && !u.phone) { u.phone = srv.phone; changed = true; }
+              if (srv.name && (!u.name || u.name.includes("@"))) { u.name = srv.name; changed = true; }
+              if (srv.id && u.id !== srv.id) { u.id = srv.id; changed = true; }
+              if (changed) {
+                localStorage.setItem("janani_user", JSON.stringify(u));
+                localStorage.setItem("janani_auth_user", JSON.stringify(u));
+              }
+            }
+          } catch (err) {}
+        }
       }).catch(() => {});
     }
   } catch (e) {
