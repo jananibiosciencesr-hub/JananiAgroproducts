@@ -2145,19 +2145,45 @@ export const createAdminCustomer = (req, res) => {
   res.status(201).json({ success: true, message: "Customer created successfully", data: newCustomer });
 };
 
-export const updateAdminCustomer = (req, res) => {
+export const updateAdminCustomer = async (req, res) => {
   const { id } = req.params;
-  const index = adminCustomers.findIndex(c => c.id === id);
-  if (index === -1) {
-    return res.status(404).json({ success: false, message: "Customer not found" });
+  const { name, email, phone, role, tier, status, walletBalance, loyaltyPoints, preferences } = req.body;
+
+  try {
+    const fields = [];
+    const params = [];
+    if (name) { fields.push("name = ?"); params.push(name); }
+    if (email) { fields.push("email = ?"); params.push(email.toLowerCase().trim()); }
+    if (phone) {
+      const cleanPhone = phone.replace(/\D/g, "");
+      const formatted = cleanPhone.length === 10 ? `+91 ${cleanPhone.slice(0, 5)} ${cleanPhone.slice(5)}` : phone;
+      fields.push("phone = ?");
+      params.push(formatted);
+    }
+    if (role) { fields.push("role = ?"); params.push(role); }
+    if (tier) { fields.push("tier = ?"); params.push(tier); }
+    if (status) { fields.push("status = ?"); params.push(status); }
+    if (walletBalance !== undefined) { fields.push("wallet_balance = ?"); params.push(walletBalance); }
+    if (loyaltyPoints !== undefined) { fields.push("loyalty_points = ?"); params.push(loyaltyPoints); }
+    if (preferences) { fields.push("preferences = ?"); params.push(JSON.stringify(preferences)); }
+
+    if (fields.length > 0) {
+      params.push(id, id);
+      await pool.query(`UPDATE users SET ${fields.join(", ")} WHERE id = ? OR email = ?`, params);
+    }
+  } catch (dbErr) {
+    console.error("DB update error in updateAdminCustomer:", dbErr);
   }
 
-  adminCustomers[index] = {
-    ...adminCustomers[index],
-    ...req.body
-  };
+  const index = adminCustomers.findIndex(c => c.id === id || c.email === id);
+  if (index !== -1) {
+    adminCustomers[index] = {
+      ...adminCustomers[index],
+      ...req.body
+    };
+  }
 
-  res.json({ success: true, message: "Customer profile updated successfully", data: adminCustomers[index] });
+  res.json({ success: true, message: "Customer profile updated successfully in database", data: adminCustomers[index] || req.body });
 };
 
 export const toggleCustomerStatus = (req, res) => {

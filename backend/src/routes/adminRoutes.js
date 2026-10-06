@@ -240,6 +240,8 @@ router.get('/customers', getAdminCustomers);
 router.get('/customers/:id', getAdminCustomerById);
 router.post('/customers', createAdminCustomer);
 router.put('/customers/:id', updateAdminCustomer);
+router.patch('/customers/:id', updateAdminCustomer);
+router.post('/customers/:id', updateAdminCustomer);
 router.patch('/customers/:id/status', toggleCustomerStatus);
 router.post('/customers/:id/wallet', adjustCustomerWallet);
 router.delete('/customers/:id', deleteAdminCustomer);

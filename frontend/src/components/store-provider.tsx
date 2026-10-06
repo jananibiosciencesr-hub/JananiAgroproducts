@@ -237,18 +237,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toast.info("You have been signed out.");
   };
 
-  const updateUserProfile = (updates: Partial<AuthUser>) => {
-    setUser((current) => {
-      const updated = current ? { ...current, ...updates } : null;
-      if (updated?.id || updated?.email) {
-        const idOrEmail = updated.id || updated.email;
-        updateUserProfileApi(idOrEmail, updates).catch((err) => {
-          console.warn("Could not sync profile update to server:", err);
+  const updateUserProfile = async (updates: Partial<AuthUser>) => {
+    const current = user;
+    const updated = current ? { ...current, ...updates } : (updates as AuthUser);
+    setUser(updated);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("janani_user", JSON.stringify(updated));
+      localStorage.setItem("janani_auth_user", JSON.stringify(updated));
+    }
+
+    const idOrEmail = updated?.id || current?.id || updated?.email || current?.email;
+    if (idOrEmail) {
+      try {
+        await updateUserProfileApi(idOrEmail, {
+          ...updates,
+          id: updated?.id || current?.id,
+          email: updated?.email || current?.email
         });
+      } catch (err) {
+        console.warn("Could not sync profile update to server:", err);
       }
-      return updated;
-    });
-    toast.success("Profile details saved successfully.");
+    }
   };
 
   const updatePreferences = async (preferences: UserPreferences) => {

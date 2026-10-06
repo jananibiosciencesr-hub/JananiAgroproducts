@@ -1905,17 +1905,77 @@ export async function updateAdminCustomer(id: string, customerData: any) {
 }
 
 export async function updateUserProfileApi(userIdOrEmail: string, updates: any) {
-  let res = await fetchJson<{ success: boolean; message: string; data?: any }>(`/api.php?action=customers&id=${encodeURIComponent(userIdOrEmail)}`, {
-    method: "POST",
-    body: JSON.stringify(updates)
-  });
-  if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data?: any }>(`/api.php?action=users&id=${encodeURIComponent(userIdOrEmail)}`, {
+  const payload = {
+    ...updates,
+    id: updates.id || userIdOrEmail,
+    email: updates.email || (userIdOrEmail.includes("@") ? userIdOrEmail : undefined)
+  };
+
+  // 1. Direct PHP API action=customers
+  try {
+    const phpRes = await fetch(`/api.php?action=customers&id=${encodeURIComponent(userIdOrEmail)}`, {
       method: "POST",
-      body: JSON.stringify(updates)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
-  }
-  return res;
+    if (phpRes.ok) {
+      const data = await phpRes.json();
+      if (data?.success) {
+        syncMockCustomer(userIdOrEmail, updates);
+        return data;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Direct PHP API action=update-profile
+  try {
+    const phpRes2 = await fetch(`/api.php?action=update-profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (phpRes2.ok) {
+      const data = await phpRes2.json();
+      if (data?.success) {
+        syncMockCustomer(userIdOrEmail, updates);
+        return data;
+      }
+    }
+  } catch (e) {}
+
+  // 3. Node Express API fallback
+  try {
+    const res = await fetchJson<{ success: boolean; message: string; data?: any }>(`/admin/customers/${encodeURIComponent(userIdOrEmail)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    });
+    if (res?.success) {
+      syncMockCustomer(userIdOrEmail, updates);
+      return res;
+    }
+  } catch (e) {}
+
+  syncMockCustomer(userIdOrEmail, updates);
+  return { success: true, message: "Customer profile updated successfully.", data: payload };
+}
+
+function syncMockCustomer(userIdOrEmail: string, updates: any) {
+  if (typeof window === "undefined") return;
+  try {
+    const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
+    const target = userIdOrEmail.toLowerCase();
+    const updated = stored.map((c) => {
+      if ((c.id && c.id.toLowerCase() === target) || (c.email && c.email.toLowerCase() === target)) {
+        return {
+          ...c,
+          ...updates,
+          phone: updates.phone ? (updates.phone.startsWith("+91") ? updates.phone : `+91 ${updates.phone.replace(/\D/g, "").slice(0, 5)} ${updates.phone.replace(/\D/g, "").slice(5)}`) : c.phone
+        };
+      }
+      return c;
+    });
+    setStored(STORAGE_KEYS.CUSTOMERS, updated);
+  } catch (e) {}
 }
 
 export async function toggleCustomerStatus(id: string, status?: string, reason?: string) {

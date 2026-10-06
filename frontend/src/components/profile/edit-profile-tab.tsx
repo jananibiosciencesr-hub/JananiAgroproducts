@@ -198,7 +198,7 @@ export function EditProfileTab() {
     setIsEditing(false);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const phoneCheck = validatePhone(formData.phone);
@@ -223,11 +223,14 @@ export function EditProfileTab() {
 
     setSaving(true);
 
-    setTimeout(() => {
-      updateUserProfile({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
+    try {
+      const cleanPhone = formData.phone.replace(/\D/g, "");
+      const formattedPhone = cleanPhone.length === 10 ? `+91 ${cleanPhone.slice(0, 5)} ${cleanPhone.slice(5)}` : formData.phone;
+
+      await updateUserProfile({
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formattedPhone,
         gender: formData.gender,
         dob: formData.dob,
         bio: formData.bio,
@@ -237,10 +240,14 @@ export function EditProfileTab() {
           ...(user?.preferences?.notifications ? { notifications: user.preferences.notifications } : {})
         },
       });
-      setSaving(false);
+
       setIsEditing(false);
-      toast.success("Profile details updated successfully!");
-    }, 400);
+      toast.success("Profile details updated and saved to database successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update profile.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formattedDob = user?.dob

@@ -2812,10 +2812,12 @@ try {
             }
             break;
 
+        case 'update-profile':
+        case 'profile':
         case 'users':
         case 'customers':
             if ($method === 'GET') {
-                $id = $_GET['id'] ?? null;
+                $id = $_GET['id'] ?? ($_GET['userId'] ?? ($_GET['email'] ?? null));
                 if ($id) {
                     $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
                     $stmt->execute([$id, $id]);
@@ -2826,7 +2828,7 @@ try {
                         $user['isVerified'] = (bool)($user['is_verified'] ?? 1);
                         $user['preferences'] = is_string($user['preferences']) ? json_decode($user['preferences'], true) : $user['preferences'];
                     }
-                    echo json_encode(['success' => true, 'customer' => $user ?: null, 'data' => $user ?: null]);
+                    echo json_encode(['success' => true, 'customer' => $user ?: null, 'data' => $user ?: null, 'user' => $user ?: null]);
                     exit;
                 }
 
@@ -2890,9 +2892,9 @@ try {
                 exit;
             } elseif ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
                 $body = getJsonBody();
-                $rawId = $_GET['id'] ?? ($body['id'] ?? null);
+                $rawId = $_GET['id'] ?? ($body['id'] ?? ($body['userId'] ?? ($body['email'] ?? null)));
 
-                if (empty($rawId)) {
+                if (empty($rawId) && empty($body['email']) && empty($body['name'])) {
                     // Create customer
                     $custId = !empty($body['id']) ? $body['id'] : ('CUST-' . rand(100, 999));
                     $name = $body['name'] ?? 'New Patron';
@@ -2912,11 +2914,11 @@ try {
                     $fStmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
                     $fStmt->execute([$custId, $email]);
                     $created = $fStmt->fetch();
-                    echo json_encode(['success' => true, 'message' => 'Customer profile saved in MySQL', 'data' => $created, 'customer' => $created]);
+                    echo json_encode(['success' => true, 'message' => 'Customer profile saved in MySQL', 'data' => $created, 'customer' => $created, 'user' => $created]);
                     exit;
                 } else {
-                    $parts = explode('/', trim($rawId, '/'));
-                    $id = $parts[0];
+                    $parts = explode('/', trim((string)$rawId, '/'));
+                    $id = $parts[0] ?: ($body['id'] ?? ($body['email'] ?? ''));
                     $sub = $parts[1] ?? '';
 
                     if ($sub === 'status') {
@@ -2957,26 +2959,73 @@ try {
 
                     $fields = [];
                     $vals = [];
-                    if (isset($body['name'])) { $fields[] = "`name` = ?"; $vals[] = $body['name']; }
-                    if (isset($body['phone'])) { $fields[] = "`phone` = ?"; $vals[] = $body['phone']; }
+                    if (isset($body['name']) && $body['name'] !== '') {
+                        $fields[] = "`name` = ?";
+                        $vals[] = trim($body['name']);
+                    }
+                    if (isset($body['email']) && $body['email'] !== '') {
+                        $fields[] = "`email` = ?";
+                        $vals[] = strtolower(trim($body['email']));
+                    }
+                    if (isset($body['phone'])) {
+                        $cleanPhone = preg_replace('/\D/', '', $body['phone']);
+                        $formattedPhone = trim($body['phone']);
+                        if (strlen($cleanPhone) === 10) {
+                            $formattedPhone = '+91 ' . substr($cleanPhone, 0, 5) . ' ' . substr($cleanPhone, 5);
+                        }
+                        $fields[] = "`phone` = ?";
+                        $vals[] = $formattedPhone;
+                    }
                     if (isset($body['tier'])) { $fields[] = "`tier` = ?"; $vals[] = $body['tier']; }
                     if (isset($body['role'])) { $fields[] = "`role` = ?"; $vals[] = $body['role']; }
                     if (isset($body['status'])) { $fields[] = "`status` = ?"; $vals[] = $body['status']; }
                     if (isset($body['avatar'])) { $fields[] = "`avatar` = ?"; $vals[] = $body['avatar']; }
                     if (isset($body['walletBalance']) || isset($body['wallet_balance'])) { $fields[] = "`wallet_balance` = ?"; $vals[] = (float)($body['walletBalance'] ?? $body['wallet_balance']); }
                     if (isset($body['loyaltyPoints']) || isset($body['loyalty_points'])) { $fields[] = "`loyalty_points` = ?"; $vals[] = (int)($body['loyaltyPoints'] ?? $body['loyalty_points']); }
-                    if (isset($body['preferences'])) { $fields[] = "`preferences` = ?"; $vals[] = json_encode($body['preferences']); }
+
+                    // Fetch existing user preferences if available to merge
+                    $searchId = $id ?: ($body['id'] ?? '');
+                    $searchEmail = strtolower(trim($body['email'] ?? ($body['identifier'] ?? $id)));
+                    $existingUser = null;
+                    try {
+                        $chk = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
+                        $chk->execute([$searchId, $searchEmail]);
+                        $existingUser = $chk->fetch();
+                    } catch (Exception $e) {}
+
+                    $prefs = [];
+                    if ($existingUser && !empty($existingUser['preferences'])) {
+                        $prefs = is_string($existingUser['preferences']) ? (json_decode($existingUser['preferences'], true) ?: []) : $existingUser['preferences'];
+                    }
+                    if (isset($body['preferences']) && is_array($body['preferences'])) {
+                        $prefs = array_merge($prefs, $body['preferences']);
+                    }
+                    if (isset($body['gender'])) $prefs['gender'] = $body['gender'];
+                    if (isset($body['dob'])) $prefs['dob'] = $body['dob'];
+                    if (isset($body['bio'])) $prefs['bio'] = $body['bio'];
+                    if (isset($body['address'])) $prefs['address'] = $body['address'];
+
+                    if (!empty($prefs)) {
+                        $fields[] = "`preferences` = ?";
+                        $vals[] = json_encode($prefs);
+                    }
 
                     if (!empty($fields)) {
-                        $vals[] = $id;
-                        $vals[] = $id;
+                        $vals[] = $searchId;
+                        $vals[] = $searchEmail;
                         $stmt = $pdo->prepare("UPDATE `users` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `email` = ?");
                         $stmt->execute($vals);
 
                         $fStmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
-                        $fStmt->execute([$id, $id]);
+                        $fStmt->execute([$searchId, $searchEmail]);
                         $updated = $fStmt->fetch();
-                        echo json_encode(['success' => true, 'message' => 'Customer profile updated in MySQL', 'data' => $updated, 'customer' => $updated]);
+                        if ($updated) {
+                            $updated['walletBalance'] = (float)($updated['wallet_balance'] ?? 0);
+                            $updated['loyaltyPoints'] = (int)($updated['loyalty_points'] ?? 0);
+                            $updated['isVerified'] = (bool)($updated['is_verified'] ?? 1);
+                            $updated['preferences'] = is_string($updated['preferences']) ? json_decode($updated['preferences'], true) : $updated['preferences'];
+                        }
+                        echo json_encode(['success' => true, 'message' => 'Customer profile updated in MySQL successfully', 'data' => $updated, 'customer' => $updated, 'user' => $updated]);
                         exit;
                     }
                     echo json_encode(['success' => false, 'message' => 'No valid fields provided for customer update']);
