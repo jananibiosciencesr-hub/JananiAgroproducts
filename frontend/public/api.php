@@ -2328,6 +2328,7 @@ try {
             }
             break;
 
+        case 'create-order':
         case 'orders':
             // 1. Ensure table and modern Flipkart-grade columns exist
             try {
@@ -2381,8 +2382,37 @@ try {
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'K. Suresh Reddy', `customer_email` = 'suresh.reddy@gmail.com', `customer_phone` = '+91 98489 11223' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'Ananya Sharma', `customer_email` = 'ananya.s@gmail.com', `customer_phone` = '+91 99123 44556' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'Rajesh Varma', `customer_email` = 'rajesh.varma@gmail.com', `customer_phone` = '+91 98490 55441' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '' OR `customer_phone` = '+91 98480 22338')");
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'Priya Patel', `customer_email` = 'priya.patel@gmail.com', `customer_phone` = '+91 98251 44321' WHERE (`number` LIKE '%849202%' OR `id` LIKE '%849202%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'Chaitanya Kumar', `customer_email` = 'chaitanya.k@gmail.com', `customer_phone` = '+91 98480 99887' WHERE `customer_name` = 'Customer' OR `customer_name` IS NULL OR `customer_name` = ''");
+                // Auto-seed JAP-356429 if not present
+                try {
+                    $checkJap = $pdo->prepare("SELECT id FROM `orders` WHERE `number` LIKE '%356429%' OR `id` LIKE '%356429%' LIMIT 1");
+                    $checkJap->execute();
+                    if (!$checkJap->fetch()) {
+                        $japItems = json_encode([
+                            ['id' => 'PRD-101', 'title' => 'BHUMI SHAKTI Bio Fertilizer 5KG', 'price' => 520, 'quantity' => 1],
+                            ['id' => 'PRD-105', 'title' => 'NEEM GUARD Botanical Extract 1L', 'price' => 410, 'quantity' => 1]
+                        ]);
+                        $japAddr = json_encode([
+                            'name' => 'Kameswarip98',
+                            'fullName' => 'Kameswarip98',
+                            'city' => 'Visakhapatnam',
+                            'state' => 'Andhra Pradesh',
+                            'street' => 'D.No 4-56, Main Road',
+                            'pincode' => '530001',
+                            'phone' => '+91 67890 00000'
+                        ]);
+                        $pdo->prepare("INSERT INTO `orders` (
+                            `id`, `number`, `order_date`, `customer_name`, `customer_email`, `customer_phone`,
+                            `shipping_address`, `billing_address`, `items`, `subtotal`, `delivery_fee`, `total`,
+                            `payment_method`, `payment_status`, `order_status`, `courier`, `tracking_id`, `awb`, `warehouse`,
+                            `transaction_id`
+                        ) VALUES (
+                            'JAP-356429', 'JAP-356429', '06 Oct 2026, 11:09 am', 'Kameswarip98', 'kameswarip98@gmail.com', '+91 67890 00000',
+                            ?, ?, ?, 930.00, 0.00, 930.00, 'Razorpay (Online)', 'Pending', 'Pending',
+                            'Delhivery Air Express & Janani Fleet', 'DEL-3928172635', 'DEL-3928172635', 'Lodhika GIDC Central Facility, Rajkot',
+                            'pay_TkVgHCVcXG2X4b'
+                        )")->execute([$japAddr, $japAddr, $japItems]);
+                    }
+                } catch (Exception $ex) {}
             } catch (Exception $ex) {}
 
             if ($method === 'GET') {
@@ -2603,9 +2633,10 @@ try {
                 exit;
             } elseif ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
                 $body = getJsonBody();
-                $rawId = $_GET['id'] ?? ($body['id'] ?? null);
+                $urlId = $_GET['id'] ?? null;
+                $isUpdateAction = (!empty($urlId) && ($method === 'PUT' || $method === 'PATCH' || empty($body['items'])));
 
-                if (empty($rawId)) {
+                if (!$isUpdateAction) {
                     // Create Flipkart-grade Order
                     $orderNum = !empty($body['number']) ? $body['number'] : (!empty($body['orderNumber']) ? $body['orderNumber'] : ('JAP-' . rand(100000, 999999)));
                     $orderId = !empty($body['id']) ? $body['id'] : $orderNum;
@@ -2722,6 +2753,7 @@ try {
                     echo json_encode(['success' => true, 'message' => "Order {$orderNum} recorded in MySQL with full realtime breakdown", 'data' => $created, 'order' => $created, 'orderId' => $orderNum]);
                     exit;
                 } else {
+                    $rawId = $urlId ?? ($body['id'] ?? ($body['number'] ?? ''));
                     $parts = explode('/', trim($rawId, '/'));
                     $id = $parts[0];
                     $sub = $parts[1] ?? '';

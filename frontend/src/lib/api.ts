@@ -1021,6 +1021,23 @@ export async function getAdminOrders(params?: OrderQueryParams) {
   }
 
   if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+    // Proactively backfill any local orders to MySQL if missing
+    try {
+      if (typeof window !== "undefined") {
+        const localOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
+        const serverNumbers = new Set(res.data.map((o: any) => o.number || o.id));
+        for (const locOrd of localOrders) {
+          const num = locOrd?.number || locOrd?.id;
+          if (num && !serverNumbers.has(num)) {
+            fetch("/api.php?action=orders", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(locOrd)
+            }).catch(() => {});
+          }
+        }
+      }
+    } catch (e) {}
     return res;
   }
 

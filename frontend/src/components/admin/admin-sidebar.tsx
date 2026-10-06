@@ -104,12 +104,25 @@ export function AdminSidebar({
   adminUser,
   badgeCounts = { orders: 9, inventory: 4, returns: 3, reviews: 1, inquiries: 4 },
 }: AdminSidebarProps) {
-  const currentAdmin = adminUser || (() => {
+  const currentAdmin = (() => {
+    if (adminUser && typeof adminUser === "object" && adminUser.role !== "Customer") return adminUser;
     try {
-      const stored = localStorage.getItem("janani_auth_user");
-      if (stored) return JSON.parse(stored);
+      if (typeof window !== "undefined") {
+        const adminStored = localStorage.getItem("janani_admin_user");
+        if (adminStored) {
+          const parsed = JSON.parse(adminStored);
+          if (parsed && typeof parsed === "object" && parsed.role !== "Customer") return parsed;
+        }
+        const authStored = localStorage.getItem("janani_auth_user");
+        if (authStored) {
+          const parsed = JSON.parse(authStored);
+          if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || (typeof parsed.email === "string" && parsed.email.toLowerCase() === "jananibiosciences.r@gmail.com"))) {
+            return parsed;
+          }
+        }
+      }
     } catch (e) {}
-    return { name: "Janani Admin", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
+    return { name: "Janani Admin (Root)", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
   })();
   return (
     <>

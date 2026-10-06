@@ -41,19 +41,26 @@ export function AdminNavbar({
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // Dynamic user details
+  // Dynamic admin details (strictly separated from storefront customer session)
   const currentAdmin = (() => {
-    if (adminUser && typeof adminUser === "object") return adminUser;
+    if (adminUser && typeof adminUser === "object" && adminUser.role !== "Customer") return adminUser;
     try {
       if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("janani_auth_user");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && typeof parsed === "object") return parsed;
+        const adminStored = localStorage.getItem("janani_admin_user");
+        if (adminStored) {
+          const parsed = JSON.parse(adminStored);
+          if (parsed && typeof parsed === "object" && parsed.role !== "Customer") return parsed;
+        }
+        const authStored = localStorage.getItem("janani_auth_user");
+        if (authStored) {
+          const parsed = JSON.parse(authStored);
+          if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || (typeof parsed.email === "string" && parsed.email.toLowerCase() === "jananibiosciences.r@gmail.com"))) {
+            return parsed;
+          }
         }
       }
     } catch (e) {}
-    return { name: "Janani Admin", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
+    return { name: "Janani Admin (Root)", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
   })();
 
   useEffect(() => {
