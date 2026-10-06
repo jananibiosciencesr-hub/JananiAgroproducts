@@ -1028,41 +1028,6 @@ export function AuthenticationPage() {
                 /* VIEW 2: SIGN IN (Phone OTP, Email OTP, or Password)       */
                 /* ========================================================= */
                 <div>
-                  {/* ADMIN GMAIL QUICK ACCESS CARD */}
-                  <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-transparent p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="size-9 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shadow shrink-0">
-                        🛡️
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-foreground">Admin Fast Login via Gmail</span>
-                          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-bold text-emerald-800 dark:text-emerald-300">Root Access</span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground font-mono truncate">jananibiosciences.r@gmail.com</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <a
-                        href="/admin"
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-600/40 bg-background/90 hover:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 px-3 py-2 text-xs font-semibold transition shadow-xs"
-                        title="Go directly to restricted /admin portal"
-                      >
-                        <ShieldCheck className="size-3.5 text-emerald-600" />
-                        <span>/admin Portal</span>
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => handleRequestEmailOtp("jananibiosciences.r@gmail.com")}
-                        disabled={loading}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
-                      >
-                        <Sparkles className="size-3.5 text-amber-300" />
-                        <span>{loading ? "Sending..." : "Send Real OTP"}</span>
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Switch between Phone OTP, Email OTP, and Password */}
                   <div className="mb-5 grid grid-cols-3 rounded-xl bg-secondary/80 p-1 border border-border/50">
                     <button
