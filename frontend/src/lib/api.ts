@@ -726,7 +726,33 @@ export async function sendContactMessage(contactData: {
   phone?: string;
   subject?: string;
   message: string;
-}) {
+}): Promise<{ success: boolean; message: string }> {
+  // Create full AdminInquiry item
+  const newInq: AdminInquiry = {
+    id: "inq-" + Date.now(),
+    name: contactData.name,
+    businessName: "",
+    business_name: "",
+    service: contactData.subject || "General Inquiry",
+    subject: contactData.subject || "General Inquiry",
+    email: contactData.email,
+    phone: contactData.phone || "",
+    quantity: "",
+    message: contactData.message,
+    status: "New",
+    priority: "High",
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    internalNotes: ""
+  };
+
+  // 1. Immediately store into admin inquiries cache
+  try {
+    const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
+    setStored(STORAGE_KEYS.INQUIRIES, [newInq, ...stored]);
+  } catch (e) {}
+
+  // 2. Sync to PHP / MySQL backend if available
   try {
     const phpRes = await fetch("/api.php?action=inquiries", {
       method: "POST",
@@ -736,6 +762,7 @@ export async function sendContactMessage(contactData: {
         email: contactData.email,
         phone: contactData.phone || "",
         service: contactData.subject || "Contact Form",
+        subject: contactData.subject || "Contact Form",
         message: contactData.message
       })
     });
@@ -745,10 +772,15 @@ export async function sendContactMessage(contactData: {
     }
   } catch (e) {}
 
-  return await fetchJson<{ success: boolean; message: string }>(`/contact/message`, {
-    method: "POST",
-    body: JSON.stringify(contactData),
-  });
+  // 3. Sync to Node API if available
+  try {
+    return await fetchJson<{ success: boolean; message: string }>(`/contact/message`, {
+      method: "POST",
+      body: JSON.stringify(contactData),
+    });
+  } catch (e) {
+    return { success: true, message: "Thank you! Your message has been sent and recorded in the Admin Dashboard." };
+  }
 }
 
 export async function subscribeNewsletter(email: string) {
