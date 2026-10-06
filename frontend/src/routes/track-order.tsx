@@ -48,7 +48,7 @@ export function LiveTrackingPage() {
   const [loading, setLoading] = useState(false);
 
   // Load known orders from orders-seed / customer orders
-  const allOrders = loadCustomerOrders();
+  const allOrders = loadCustomerOrders(user?.email || user?.phone);
   const initialSelectedOrder = allOrders.find((o) => ["Shipped", "Processing", "Placed", "Out for Delivery"].includes(o.status)) || allOrders[0];
 
   const [orderQuery, setOrderQuery] = useState(initialSelectedOrder?.number || "JAP-260811");

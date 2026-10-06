@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useStore } from "@/components/store-provider";
 import { Button } from "@/components/ui/button";
-import { loadCustomerOrders } from "@/components/orders/orders-seed";
+import { loadCustomerOrders, saveCustomerOrders } from "@/components/orders/orders-seed";
 import { CustomerOrder } from "@/components/orders/types";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
 import { loadUserSavedAddresses } from "@/lib/api";
@@ -65,10 +65,10 @@ function DashboardPage() {
   const { wishlist, addToCart, user, logoutUser, updateUserProfile } = useStore();
   const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
 
-  // Real-time dynamic customer orders list
+  // Real-time dynamic customer orders list strictly scoped to current user
   const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>(() => {
     try {
-      const list = loadCustomerOrders();
+      const list = loadCustomerOrders(user?.email || user?.phone);
       return Array.isArray(list) ? list.filter((o) => o && typeof o === "object") : [];
     } catch (e) {
       console.warn("Failed to load initial customer orders:", e);
@@ -90,7 +90,7 @@ function DashboardPage() {
   // Refresh orders and addresses when user changes or component mounts
   useEffect(() => {
     try {
-      const list = loadCustomerOrders();
+      const list = loadCustomerOrders(user?.email || user?.phone);
       if (Array.isArray(list)) {
         setCustomerOrders(list.filter((o) => o && typeof o === "object"));
       }
@@ -104,64 +104,69 @@ function DashboardPage() {
       setProfileEmail(user.email || "");
       setSavedAddresses(loadUserSavedAddresses(user.email || user.id));
 
-      // Live fetch from MySQL server
-      const fetchLiveOrders = async () => {
-        try {
-          const qs = new URLSearchParams();
-          if (user.email) qs.append("email", user.email);
-          if (user.phone) qs.append("phone", user.phone);
-          const res = await fetch(`/api.php?action=orders${qs.toString() ? `&${qs.toString()}` : ""}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data?.success && Array.isArray(data.orders) && data.orders.length > 0) {
-              const serverOrders: CustomerOrder[] = data.orders.map((o: any) => ({
-                id: o?.id || `ord-${o?.number || Date.now()}`,
-                number: o?.number || o?.orderNumber || "ORD-000",
-                orderNumber: o?.number || o?.orderNumber || "ORD-000",
-                date: o?.order_date || o?.date || "Recent",
-                isoDate: o?.created_at ? o.created_at.split(" ")[0] : new Date().toISOString().split("T")[0]!,
-                status: (o?.order_status || o?.status || "Processing") as any,
-                courier: o?.courier || "Delhivery Air Express & Janani Direct",
-                awb: o?.awb || o?.tracking_id || `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-                expectedDelivery: o?.expected_delivery || o?.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
-                deliverySlot: o?.delivery_slot || o?.deliverySlot,
-                subtotal: Number(o?.subtotal) || 0,
-                discount: Number(o?.discount) || 0,
-                couponCode: o?.coupon_code || o?.couponCode,
-                couponDiscount: Number(o?.coupon_discount || o?.couponDiscount || 0),
-                walletDeduction: Number(o?.wallet_deduction || o?.walletDeduction || 0),
-                deliveryFee: Number(o?.delivery_fee || o?.deliveryFee || 0),
-                total: Number(o?.total || o?.finalTotal || 0),
-                finalTotal: Number(o?.total || o?.finalTotal || 0),
-                paymentMethod: o?.payment_method || o?.paymentMethod || "Razorpay (Online)",
-                paymentStatus: o?.payment_status || o?.paymentStatus || "Paid",
-                transactionId: o?.transaction_id || o?.transactionId || "pay_rzp_verified",
-                address: {
-                  fullName: o?.shippingAddress?.fullName || o?.shippingAddress?.name || o?.customer_name || user?.name || "Valued Patron",
-                  phone: o?.shippingAddress?.phone || o?.customer_phone || user?.phone || "",
-                  streetAddress: o?.shippingAddress?.streetAddress || o?.shippingAddress?.street || "Registered Delivery Address",
-                  city: o?.shippingAddress?.city || "Ahmedabad",
-                  state: o?.shippingAddress?.state || "Gujarat",
-                  pincode: o?.shippingAddress?.pincode || "380054",
-                },
-                items: Array.isArray(o?.items) ? o.items.map((it: any) => ({
-                  productId: it?.productId || it?.id || 1,
-                  name: it?.title || it?.name || "Single-Origin Organic Harvest",
-                  variant: it?.variant || "Standard Pack",
-                  quantity: it?.quantity || it?.qty || 1,
-                  price: Number(it?.price) || 399,
-                  image: it?.image || "",
-                })) : [],
-                timeline: Array.isArray(o?.timeline) ? o.timeline : []
-              }));
-              setCustomerOrders(serverOrders);
+      if (user.email || user.phone) {
+        // Live fetch from MySQL server for this specific user
+        const fetchLiveOrders = async () => {
+          try {
+            const qs = new URLSearchParams();
+            if (user.email) qs.append("email", user.email);
+            if (user.phone) qs.append("phone", user.phone);
+            const res = await fetch(`/api.php?action=orders${qs.toString() ? `&${qs.toString()}` : ""}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data?.success && Array.isArray(data.orders)) {
+                const serverOrders: CustomerOrder[] = data.orders.map((o: any) => ({
+                  id: o?.id || `ord-${o?.number || Date.now()}`,
+                  number: o?.number || o?.orderNumber || "ORD-000",
+                  orderNumber: o?.number || o?.orderNumber || "ORD-000",
+                  customerEmail: o?.customer_email || o?.customerEmail || "",
+                  customerPhone: o?.customer_phone || o?.customerPhone || "",
+                  date: o?.order_date || o?.date || "Recent",
+                  isoDate: o?.created_at ? o.created_at.split(" ")[0] : new Date().toISOString().split("T")[0]!,
+                  status: (o?.order_status || o?.status || "Processing") as any,
+                  courier: o?.courier || "Delhivery Air Express & Janani Direct",
+                  awb: o?.awb || o?.tracking_id || `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+                  expectedDelivery: o?.expected_delivery || o?.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
+                  deliverySlot: o?.delivery_slot || o?.deliverySlot,
+                  subtotal: Number(o?.subtotal) || 0,
+                  discount: Number(o?.discount) || 0,
+                  couponCode: o?.coupon_code || o?.couponCode,
+                  couponDiscount: Number(o?.coupon_discount || o?.couponDiscount || 0),
+                  walletDeduction: Number(o?.wallet_deduction || o?.walletDeduction || 0),
+                  deliveryFee: Number(o?.delivery_fee || o?.deliveryFee || 0),
+                  total: Number(o?.total || o?.finalTotal || 0),
+                  finalTotal: Number(o?.total || o?.finalTotal || 0),
+                  paymentMethod: o?.payment_method || o?.paymentMethod || "Razorpay (Online)",
+                  paymentStatus: o?.payment_status || o?.paymentStatus || "Paid",
+                  transactionId: o?.transaction_id || o?.transactionId || "pay_rzp_verified",
+                  address: {
+                    fullName: o?.shippingAddress?.fullName || o?.shippingAddress?.name || o?.customer_name || user?.name || "Valued Patron",
+                    phone: o?.shippingAddress?.phone || o?.customer_phone || user?.phone || "",
+                    streetAddress: o?.shippingAddress?.streetAddress || o?.shippingAddress?.street || "Registered Delivery Address",
+                    city: o?.shippingAddress?.city || "Ahmedabad",
+                    state: o?.shippingAddress?.state || "Gujarat",
+                    pincode: o?.shippingAddress?.pincode || "380054",
+                  },
+                  items: Array.isArray(o?.items) ? o.items.map((it: any) => ({
+                    productId: it?.productId || it?.id || 1,
+                    name: it?.title || it?.name || "Single-Origin Organic Harvest",
+                    variant: it?.variant || "Standard Pack",
+                    quantity: it?.quantity || it?.qty || 1,
+                    price: Number(it?.price) || 399,
+                    image: it?.image || "",
+                  })) : [],
+                  timeline: Array.isArray(o?.timeline) ? o.timeline : []
+                }));
+                setCustomerOrders(serverOrders);
+                saveCustomerOrders(serverOrders, user.email || user.phone);
+              }
             }
+          } catch (e) {
+            console.warn("Failed to fetch dashboard orders from server:", e);
           }
-        } catch (e) {
-          console.warn("Failed to fetch dashboard orders from server:", e);
-        }
-      };
-      fetchLiveOrders();
+        };
+        fetchLiveOrders();
+      }
     }
   }, [user]);
 

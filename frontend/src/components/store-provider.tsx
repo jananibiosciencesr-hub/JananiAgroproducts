@@ -131,10 +131,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.addEventListener("storage", handleSync);
 
       try {
-        // Always purge legacy un-scoped shared addresses to prevent cross-account pollution
+        // Always purge legacy un-scoped shared orders and addresses to prevent cross-account pollution
         localStorage.removeItem("janani_saved_addresses");
+        localStorage.removeItem("janani_customer_orders");
 
-        const legacyKeys = ["janani_customer_orders", "janani_latest_order", "janani_pending_checkout"];
+        const latestOrderRaw = localStorage.getItem("janani_latest_order");
+        if (latestOrderRaw) {
+          try {
+            const latest = JSON.parse(latestOrderRaw);
+            const currentUserStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+            const parsedUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+            const currentEmail = (parsedUser?.email || "").toLowerCase().trim();
+            const orderEmail = (latest?.customerEmail || "").toLowerCase().trim();
+            if (currentEmail && orderEmail && currentEmail !== orderEmail) {
+              localStorage.removeItem("janani_latest_order");
+            }
+          } catch (e) {
+            localStorage.removeItem("janani_latest_order");
+          }
+        }
+
+        const legacyKeys = ["janani_pending_checkout"];
         legacyKeys.forEach((key) => {
           const item = localStorage.getItem(key);
           if (item && (item.toLowerCase().includes("neha") || item.toLowerCase().includes("example.com") || item.includes("9311416225"))) {
@@ -294,6 +311,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("janani_saved_for_later");
       localStorage.removeItem("janani_pending_checkout");
       localStorage.removeItem("janani_wishlist");
+      localStorage.removeItem("janani_latest_order");
+      localStorage.removeItem("janani_customer_orders");
     }
     toast.info("You have been signed out.");
   };

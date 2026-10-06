@@ -23,19 +23,6 @@ import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { validateEmail, validatePhone } from "@/lib/validation";
 
-const AGRI_INTEREST_TAGS = [
-  "Bio Fertilizers",
-  "Bio Pesticides",
-  "Bio Fungicides",
-  "Bio Stimulants",
-  "Micro Nutrients",
-  "Insecticides",
-  "Botanical Extracts",
-  "Water Solubles",
-  "Agri Inputs",
-  "Plant Growth Promoters"
-];
-
 const GENDER_OPTIONS = [
   { id: "female", label: "Female" },
   { id: "male", label: "Male" },
@@ -59,16 +46,6 @@ export function EditProfileTab() {
   const [errors, setErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
   const [touched, setTouched] = useState<{ phone?: boolean; email?: boolean }>({});
 
-  const getCleanAgriInterests = (tags?: string[]) => {
-    if (!tags || !Array.isArray(tags)) return ["Bio Fertilizers", "Bio Stimulants"];
-    const valid = tags.filter((t) => AGRI_INTEREST_TAGS.includes(t));
-    return valid.length > 0 ? valid : ["Bio Fertilizers", "Bio Stimulants"];
-  };
-
-  const [selectedDietary, setSelectedDietary] = useState<string[]>(() =>
-    getCleanAgriInterests(user?.preferences?.dietary)
-  );
-
   const resetFormToUser = () => {
     if (user) {
       setFormData({
@@ -79,9 +56,6 @@ export function EditProfileTab() {
         dob: user.dob || "",
         bio: user.bio || "",
       });
-      if (user.preferences?.dietary) {
-        setSelectedDietary(getCleanAgriInterests(user.preferences.dietary));
-      }
     }
     setErrors({});
     setTouched({});
@@ -187,12 +161,6 @@ export function EditProfileTab() {
   const isPhoneValid = formData.phone.length === 10 && /^[6-9]\d{9}$/.test(formData.phone);
   const isEmailValid = Boolean(formData.email && validateEmail(formData.email).isValid);
 
-  const toggleDietary = (tag: string) => {
-    setSelectedDietary((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
-
   const handleCancelEdit = () => {
     resetFormToUser();
     setIsEditing(false);
@@ -235,9 +203,8 @@ export function EditProfileTab() {
         dob: formData.dob,
         bio: formData.bio,
         preferences: {
-          dietary: selectedDietary,
+          ...(user?.preferences || {}),
           pinCode: user?.preferences?.pinCode || "380054",
-          ...(user?.preferences?.notifications ? { notifications: user.preferences.notifications } : {})
         },
       });
 
@@ -407,33 +374,7 @@ export function EditProfileTab() {
           )}
         </div>
 
-        {/* Selected Agro Interests */}
-        <div className="rounded-2xl border border-border/80 bg-background/50 p-5 space-y-3 hover:border-brand-leaf/40 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Heart className="size-3.5 text-brand-gold" /> Agro Product Interests & Crop Solutions
-            </span>
-            <span className="text-[10px] font-semibold text-muted-foreground">
-              {selectedDietary.length} Selected
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedDietary.length > 0 ? (
-              selectedDietary.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-brand-leaf/10 text-brand-leaf border border-brand-leaf/25 px-3 py-1 text-xs font-semibold"
-                >
-                  <Check className="size-3" /> {tag}
-                </span>
-              ))
-            ) : (
-              <p className="text-xs text-muted-foreground italic">
-                No agro interests selected yet.
-              </p>
-            )}
-          </div>
-        </div>
+
 
         {/* Bottom Edit Trigger */}
         <div className="pt-2 flex items-center justify-end">
@@ -663,36 +604,7 @@ export function EditProfileTab() {
         </div>
       </div>
 
-      {/* Agriculture Interests */}
-      <div className="pt-4 border-t border-border space-y-3">
-        <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <Heart className="size-3.5 text-brand-gold" /> Agro Product Interests & Crop Solutions
-        </label>
-        <p className="text-xs text-muted-foreground">
-          Select agricultural solutions you frequently use. We tailor seasonal organic dosage schedules and product advisories to these categories.
-        </p>
 
-        <div className="flex flex-wrap gap-2 pt-1">
-          {AGRI_INTEREST_TAGS.map((tag) => {
-            const isSelected = selectedDietary.includes(tag);
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => toggleDietary(tag)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                  isSelected
-                    ? "bg-brand-leaf text-white shadow-xs"
-                    : "bg-secondary text-foreground hover:bg-secondary/80 border border-border"
-                }`}
-              >
-                {isSelected && <Check className="size-3" />}
-                <span>{tag}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Footer Save & Cancel Buttons */}
       <div className="pt-4 border-t border-border flex flex-wrap items-center justify-end gap-3">

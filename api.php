@@ -2592,11 +2592,14 @@ try {
                 $query = "SELECT * FROM `orders` WHERE 1=1";
                 $params = [];
 
-                if ($customerEmail) {
+                if ($customerEmail && $customerPhone) {
+                    $query .= " AND (`customer_email` = ? OR `customer_phone` = ?)";
+                    $params[] = strtolower(trim($customerEmail));
+                    $params[] = trim($customerPhone);
+                } elseif ($customerEmail) {
                     $query .= " AND `customer_email` = ?";
                     $params[] = strtolower(trim($customerEmail));
-                }
-                if ($customerPhone) {
+                } elseif ($customerPhone) {
                     $query .= " AND `customer_phone` = ?";
                     $params[] = trim($customerPhone);
                 }

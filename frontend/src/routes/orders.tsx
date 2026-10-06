@@ -51,8 +51,8 @@ export function MyOrdersPage() {
   const navigate = useNavigate();
   const { user } = useStore();
 
-  // Orders state
-  const [ordersList, setOrdersList] = useState<CustomerOrder[]>(() => loadCustomerOrders());
+  // Orders state scoped to current user
+  const [ordersList, setOrdersList] = useState<CustomerOrder[]>(() => loadCustomerOrders(user?.email || user?.phone));
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,11 +70,20 @@ export function MyOrdersPage() {
   // Sync back to localStorage when ordersList changes
   const updateOrdersState = (newList: CustomerOrder[]) => {
     setOrdersList(newList);
-    saveCustomerOrders(newList);
+    saveCustomerOrders(newList, user?.email || user?.phone);
   };
 
-  // Real-time server sync from MySQL backend
+  // Real-time server sync from MySQL backend strictly scoped to current user
   useEffect(() => {
+    // Immediately load cached orders for this specific customer
+    const userScopedOrders = loadCustomerOrders(user?.email || user?.phone);
+    setOrdersList(userScopedOrders);
+
+    // If guest (not logged in), never query backend for all store orders
+    if (!user?.email && !user?.phone) {
+      return;
+    }
+
     const fetchServerOrders = async () => {
       try {
         const queryParams = new URLSearchParams();
@@ -85,11 +94,13 @@ export function MyOrdersPage() {
         const res = await fetch(`/api.php?action=orders${qs ? `&${qs}` : ""}`);
         if (res.ok) {
           const data = await res.json();
-          if (data?.success && Array.isArray(data.orders) && data.orders.length > 0) {
+          if (data?.success && Array.isArray(data.orders)) {
             const serverOrders: CustomerOrder[] = data.orders.map((o: any) => ({
               id: o.id || `ord-${o.number}`,
               number: o.number || o.orderNumber,
               orderNumber: o.number || o.orderNumber,
+              customerEmail: o.customer_email || o.customerEmail || "",
+              customerPhone: o.customer_phone || o.customerPhone || "",
               date: o.order_date || o.date || "Recent",
               isoDate: o.created_at ? o.created_at.split(" ")[0] : new Date().toISOString().split("T")[0]!,
               status: (o.order_status || o.status || "Processing") as OrderStatus,
@@ -159,17 +170,21 @@ export function MyOrdersPage() {
               ]
             }));
 
-            // Merge server orders with local storage orders
-            setOrdersList((prev) => {
-              const merged = [...serverOrders];
-              prev.forEach((local) => {
-                if (!merged.some((s) => s.number === local.number)) {
+            // Merge server orders with local storage orders strictly belonging to this user
+            const localUserOrders = loadCustomerOrders(user?.email || user?.phone);
+            const currentEmail = (user?.email || "").toLowerCase().trim();
+            const merged = [...serverOrders];
+            localUserOrders.forEach((local) => {
+              const localEmail = (local.customerEmail || "").toLowerCase().trim();
+              if (!merged.some((s) => s.number === local.number)) {
+                if (!localEmail || localEmail === currentEmail) {
                   merged.push(local);
                 }
-              });
-              saveCustomerOrders(merged);
-              return merged;
+              }
             });
+
+            setOrdersList(merged);
+            saveCustomerOrders(merged, user?.email || user?.phone);
           }
         }
       } catch (e) {

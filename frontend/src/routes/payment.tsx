@@ -29,10 +29,8 @@ import {
   RAZORPAY_KEY_ID
 } from "@/lib/razorpay";
 import { PaymentRazorpayModal } from "@/components/payment/payment-razorpay-modal";
-import {
-  PaymentSuccessView,
-  PaymentFailureView,
-} from "@/components/payment/payment-status-views";
+import { PaymentSuccessView, PaymentFailureView } from "@/components/payment/payment-status-views";
+import { saveCustomerOrders, loadCustomerOrders } from "@/components/orders/orders-seed";
 
 export const Route = createFileRoute("/payment")({
   head: () => ({
@@ -181,6 +179,8 @@ export function PaymentPage() {
       id: `ord-${Date.now()}`,
       number: effectiveOrderNumber,
       orderNumber: effectiveOrderNumber,
+      customerEmail: user?.email || customerEmail || "",
+      customerPhone: user?.phone || customerPhone || "",
       date: nowFormatted,
       isoDate: new Date().toISOString().split("T")[0]!,
       status: "Processing" as const,
@@ -256,14 +256,21 @@ export function PaymentPage() {
       ],
     };
 
-    // 1. Save latest order & customer orders in localStorage
+    // 1. Save latest order & customer orders strictly scoped to current user
     try {
-      localStorage.setItem("janani_latest_order", JSON.stringify(confirmedOrder));
+      localStorage.setItem("janani_latest_order", JSON.stringify({
+        ...confirmedOrder,
+        customerEmail: user?.email || customerEmail || "",
+        customerPhone: user?.phone || customerPhone || "",
+      }));
 
-      const existingOrdersRaw = localStorage.getItem("janani_customer_orders");
-      const existingOrders = existingOrdersRaw ? JSON.parse(existingOrdersRaw) : [];
-      const updatedOrders = [newCustomerOrder, ...existingOrders.filter((o: any) => o.number !== effectiveOrderNumber && o.id !== newCustomerOrder.id)];
-      localStorage.setItem("janani_customer_orders", JSON.stringify(updatedOrders));
+      const userIdentifier = user?.email || customerEmail || user?.phone;
+      const existingUserOrders = loadCustomerOrders(userIdentifier);
+      const updatedOrders = [newCustomerOrder, ...existingUserOrders.filter((o: any) => o.number !== effectiveOrderNumber && o.id !== newCustomerOrder.id)];
+      saveCustomerOrders(updatedOrders, userIdentifier);
+
+      // Clean un-scoped legacy key to avoid cross-user bleed
+      localStorage.removeItem("janani_customer_orders");
     } catch (e) {
       console.error("Failed to save order to localStorage", e);
     }

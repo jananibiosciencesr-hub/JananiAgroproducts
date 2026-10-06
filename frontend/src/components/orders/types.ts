@@ -37,6 +37,8 @@ export interface CustomerOrder {
   id: string;
   number: string;
   orderNumber?: string;
+  customerEmail?: string;
+  customerPhone?: string;
   date: string;
   isoDate: string;
   status: OrderStatus;
