@@ -54,37 +54,40 @@ export function loadCustomerOrders(userEmailOrPhone?: string | null): CustomerOr
       }
     }
 
-    // Filter out any order that has an explicit customerEmail/customerPhone belonging to another customer
+    // Filter out any order that does not belong to the current customer
     if (effectiveUser) {
       const cleanUser = effectiveUser.toLowerCase().trim();
       const phoneDigits = effectiveUser.replace(/\D/g, "");
       ordersList = ordersList.filter((o: any) => {
         const orderEmail = (o.customerEmail || o.email || "").toLowerCase().trim();
         const orderPhone = (o.customerPhone || o.phone || o.address?.phone || "").replace(/\D/g, "");
-        if (orderEmail && cleanUser.includes("@")) {
+        if (cleanUser.includes("@")) {
           return orderEmail === cleanUser;
         }
-        if (orderPhone && phoneDigits.length >= 10) {
+        if (phoneDigits.length >= 10 && orderPhone.length >= 10) {
           return orderPhone.endsWith(phoneDigits.slice(-10));
         }
-        return true;
+        return false;
       });
     }
 
     // Check if there is a recently placed order in janani_latest_order
     const latestRaw = localStorage.getItem("janani_latest_order");
-    if (latestRaw) {
+    if (latestRaw && effectiveUser) {
       try {
         const latest = JSON.parse(latestRaw);
         if (latest && typeof latest === "object" && latest.orderNumber) {
-          const latestEmail = (latest.customerEmail || "").toLowerCase().trim();
-          const latestPhone = (latest.customerPhone || "").replace(/\D/g, "");
+          const latestEmail = (latest.customerEmail || latest.email || "").toLowerCase().trim();
+          const latestPhone = (latest.customerPhone || latest.phone || latest.address?.phone || "").replace(/\D/g, "");
           const currentEmail = (effectiveUser || "").toLowerCase().trim();
           const currentPhone = (effectiveUser || "").replace(/\D/g, "");
 
-          const belongsToUser = !effectiveUser ||
-            (currentEmail && latestEmail && currentEmail === latestEmail) ||
-            (currentPhone && latestPhone && currentPhone.endsWith(latestPhone.slice(-10)));
+          let belongsToUser = false;
+          if (currentEmail.includes("@") && latestEmail) {
+            belongsToUser = (currentEmail === latestEmail);
+          } else if (currentPhone.length >= 10 && latestPhone.length >= 10) {
+            belongsToUser = currentPhone.endsWith(latestPhone.slice(-10));
+          }
 
           if (belongsToUser) {
             const exists = ordersList.some((o) => o && (o.number === latest.orderNumber || o.orderNumber === latest.orderNumber));

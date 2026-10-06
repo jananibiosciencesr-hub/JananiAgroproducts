@@ -170,21 +170,9 @@ export function MyOrdersPage() {
               ]
             }));
 
-            // Merge server orders with local storage orders strictly belonging to this user
-            const localUserOrders = loadCustomerOrders(user?.email || user?.phone);
-            const currentEmail = (user?.email || "").toLowerCase().trim();
-            const merged = [...serverOrders];
-            localUserOrders.forEach((local) => {
-              const localEmail = (local.customerEmail || "").toLowerCase().trim();
-              if (!merged.some((s) => s.number === local.number)) {
-                if (!localEmail || localEmail === currentEmail) {
-                  merged.push(local);
-                }
-              }
-            });
-
-            setOrdersList(merged);
-            saveCustomerOrders(merged, user?.email || user?.phone);
+            // Authoritative server state directly sets user's order list
+            setOrdersList(serverOrders);
+            saveCustomerOrders(serverOrders, user?.email || user?.phone);
           }
         }
       } catch (e) {
