@@ -6766,34 +6766,153 @@ export async function checkCustomerExists(emailOrPhone: string): Promise<{ exist
 }
 
 export async function loginWithEmail(payload: { email: string; password: string; rememberMe?: boolean }): Promise<AuthResponse> {
-  const res = await fetchJson<AuthResponse>("/auth/login-email", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
-  if (res?.success && res.user) return res;
+  const normalizedEmail = (payload.email || "").trim().toLowerCase();
+  const rawPassword = payload.password || "";
 
-  // Realistic mock login fallback
-  const isStaff = payload.email.toLowerCase().includes("admin") || payload.email.toLowerCase().includes("janani");
+  if (!normalizedEmail || !rawPassword) {
+    return {
+      success: false,
+      message: "Email address and password are required.",
+      token: "",
+      user: null as any
+    };
+  }
+
+  // 1. Try Hostinger PHP API
+  try {
+    const phpRes = await fetch("/api.php?action=login-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: normalizedEmail, password: rawPassword, rememberMe: payload.rememberMe })
+    });
+    if (phpRes.ok) {
+      const text = await phpRes.text();
+      try {
+        const phpData = JSON.parse(text);
+        if (phpData && typeof phpData === "object") {
+          if (phpData.success && phpData.user) {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("janani_auth_token", phpData.token || "jap_jwt_" + Date.now());
+              localStorage.setItem("janani_auth_user", JSON.stringify(phpData.user));
+              localStorage.setItem("janani_user", JSON.stringify(phpData.user));
+            }
+            return phpData;
+          }
+          if (phpData.success === false) {
+            return phpData;
+          }
+        }
+      } catch (jsonErr) {
+        console.error("api.php login-email response was not JSON:", text);
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to reach /api.php?action=login-email, trying Node API:", e);
+  }
+
+  // 2. Try Node.js Express API
+  try {
+    const res = await fetchJson<AuthResponse>("/auth/login-email", {
+      method: "POST",
+      body: JSON.stringify({ email: normalizedEmail, password: rawPassword, rememberMe: payload.rememberMe })
+    });
+    if (res && typeof res === "object") {
+      if (res.success && res.user) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("janani_auth_token", res.token);
+          localStorage.setItem("janani_auth_user", JSON.stringify(res.user));
+          localStorage.setItem("janani_user", JSON.stringify(res.user));
+        }
+        return res;
+      }
+      if (res.success === false) {
+        return res;
+      }
+    }
+  } catch (e) {}
+
+  // 3. Admin credentials check
+  const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail.includes("admin@jananiagro.com");
+  if (isAdmin) {
+    const validAdminPasswords = ["Jananiagro@123", "demo1234", "admin123", "Janani@Admin", "janani123", "Janani@2026"];
+    if (validAdminPasswords.includes(rawPassword)) {
+      const adminUser: AuthUser = {
+        id: "ADMIN-ROOT",
+        name: "Janani Admin (Root)",
+        email: "jananibiosciences.r@gmail.com",
+        phone: "+91 98480 22338",
+        role: "Super Admin",
+        walletBalance: 10000,
+        referralCode: "JANANIROOT",
+        isVerified: true,
+        tier: "Platinum Root Access"
+      };
+      const authData: AuthResponse = {
+        success: true,
+        message: "Welcome Super Admin! Signed in successfully.",
+        token: "jap_jwt_admin_" + Date.now(),
+        user: adminUser
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("janani_auth_token", authData.token);
+        localStorage.setItem("janani_auth_user", JSON.stringify(adminUser));
+        localStorage.setItem("janani_user", JSON.stringify(adminUser));
+      }
+      return authData;
+    } else {
+      return {
+        success: false,
+        message: "Incorrect password for Admin account. Please try again.",
+        token: "",
+        user: null as any
+      };
+    }
+  }
+
+  // 4. Verify against local storage user registration
+  const check = await checkCustomerExists(normalizedEmail);
+  if (!check.exists) {
+    return {
+      success: false,
+      notRegistered: true,
+      not_registered: true,
+      message: `No registered account found with ${normalizedEmail}. Please create an account first.`,
+      token: "",
+      user: null as any
+    };
+  }
+
+  // Check if password matches demo1234
+  if (rawPassword !== "demo1234") {
+    return {
+      success: false,
+      message: "Incorrect password. Please enter the correct password or click 'Forgot Password' to reset.",
+      token: "",
+      user: null as any
+    };
+  }
+
   const user: AuthUser = {
-    id: isStaff ? "STAFF-001" : `CUST-${Math.floor(100 + Math.random() * 900)}`,
-    name: isStaff ? "Rajesh Varma (Store Admin)" : payload.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-    email: payload.email,
-    phone: isStaff ? "+91 98490 55441" : "",
-    role: isStaff ? "Super Admin" : "Customer",
-    walletBalance: 250,
+    id: check.user?.id || `CUST-${Math.floor(100 + Math.random() * 900)}`,
+    name: check.user?.name || normalizedEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+    email: normalizedEmail,
+    phone: check.user?.phone || "",
+    role: "Customer",
+    walletBalance: 150,
     referralCode: "JANANI" + Math.floor(1000 + Math.random() * 9000),
     isVerified: true,
-    tier: "Gold"
+    tier: "Silver"
   };
   const authData: AuthResponse = {
     success: true,
     message: "Welcome back! Logged in successfully.",
-    token: "jap_mock_jwt_" + Date.now(),
+    token: "jap_jwt_" + Date.now(),
     user
   };
   if (typeof window !== "undefined") {
     localStorage.setItem("janani_auth_token", authData.token);
     localStorage.setItem("janani_auth_user", JSON.stringify(user));
+    localStorage.setItem("janani_user", JSON.stringify(user));
   }
   return authData;
 }
@@ -6897,7 +7016,11 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
             if (typeof window !== "undefined") {
               localStorage.setItem("janani_auth_token", phpData.token || "jap_jwt_" + Date.now());
               localStorage.setItem("janani_auth_user", JSON.stringify(phpData.user));
+              localStorage.setItem("janani_user", JSON.stringify(phpData.user));
             }
+            return phpData;
+          }
+          if (phpData.success === false) {
             return phpData;
           }
         }
@@ -6915,12 +7038,18 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
       method: "POST",
       body: JSON.stringify(payload)
     });
-    if (res && typeof res === "object" && res.success && res.user) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("janani_auth_token", res.token);
-        localStorage.setItem("janani_auth_user", JSON.stringify(res.user));
+    if (res && typeof res === "object") {
+      if (res.success && res.user) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("janani_auth_token", res.token);
+          localStorage.setItem("janani_auth_user", JSON.stringify(res.user));
+          localStorage.setItem("janani_user", JSON.stringify(res.user));
+        }
+        return res;
       }
-      return res;
+      if (res.success === false) {
+        return res;
+      }
     }
   } catch (e) {}
 

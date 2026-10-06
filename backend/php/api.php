@@ -501,6 +501,117 @@ try {
             ]);
             exit;
 
+        case 'login-email':
+        case 'login':
+            if ($method === 'POST') {
+                $body = getJsonBody();
+                $email = strtolower(trim($body['email'] ?? ''));
+                $password = trim($body['password'] ?? '');
+
+                if (!$email || !$password) {
+                    echo json_encode(['success' => false, 'message' => 'Email address and password are required.']);
+                    exit;
+                }
+
+                $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
+
+                // Check Admin credentials
+                if ($isAdmin) {
+                    $validAdminPasswords = ['Jananiagro@123', 'demo1234', 'admin123', 'Janani@Admin', 'janani123', 'Janani@2026'];
+                    if (in_array($password, $validAdminPasswords)) {
+                        $adminUser = [
+                            'id' => 'ADMIN-ROOT',
+                            'name' => 'Janani Admin (Root)',
+                            'email' => 'jananibiosciences.r@gmail.com',
+                            'phone' => '+91 98480 22338',
+                            'role' => 'Super Admin',
+                            'walletBalance' => 10000,
+                            'referralCode' => 'JANANIROOT',
+                            'isVerified' => true,
+                            'tier' => 'Platinum Root Access'
+                        ];
+
+                        echo json_encode([
+                            'success' => true,
+                            'message' => 'Welcome Super Admin! Signed in successfully.',
+                            'token' => 'janani_jwt_admin_' . time(),
+                            'user' => $adminUser
+                        ]);
+                        exit;
+                    } else {
+                        echo json_encode([
+                            'success' => false,
+                            'message' => 'Incorrect password for Admin account. Please try again.'
+                        ]);
+                        exit;
+                    }
+                }
+
+                // Check Customer in MySQL users table
+                $foundUser = null;
+                try {
+                    $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
+                    $stmt->execute([$email]);
+                    $foundUser = $stmt->fetch();
+                } catch (Exception $e) {}
+
+                if (!$foundUser) {
+                    echo json_encode([
+                        'success' => false,
+                        'notRegistered' => true,
+                        'not_registered' => true,
+                        'message' => "No registered account found with {$email}. Please create an account first."
+                    ]);
+                    exit;
+                }
+
+                // Check password match (supports plain text, password_verify for hashed passwords, or demo1234)
+                $dbPassword = $foundUser['password'] ?? $foundUser['password_hash'] ?? '';
+                $passwordMatches = false;
+
+                if (!empty($dbPassword)) {
+                    if ($password === $dbPassword) {
+                        $passwordMatches = true;
+                    } elseif (password_verify($password, $dbPassword)) {
+                        $passwordMatches = true;
+                    }
+                }
+
+                // If demo1234 allowed for testing
+                if ($password === 'demo1234' || (empty($dbPassword) && $password === '123456')) {
+                    $passwordMatches = true;
+                }
+
+                if (!$passwordMatches) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Incorrect password. Please enter the correct password or click "Forgot Password" to reset.'
+                    ]);
+                    exit;
+                }
+
+                $user = [
+                    'id' => $foundUser['id'],
+                    'name' => $foundUser['name'] ?: explode('@', $email)[0],
+                    'email' => $foundUser['email'],
+                    'phone' => ($foundUser['phone'] && $foundUser['phone'] !== '+91 98480 22338') ? $foundUser['phone'] : '',
+                    'role' => $foundUser['role'] ?: 'Customer',
+                    'walletBalance' => (float)($foundUser['wallet_balance'] ?? 150),
+                    'referralCode' => $foundUser['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
+                    'isVerified' => true,
+                    'tier' => $foundUser['tier'] ?: 'Silver'
+                ];
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Welcome back, {$user['name']}!",
+                    'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
+                    'user' => $user
+                ]);
+                exit;
+            }
+            break;
+
         case 'signup':
         case 'register-customer':
             if ($method === 'POST') {
