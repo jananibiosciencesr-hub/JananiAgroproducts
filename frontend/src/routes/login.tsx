@@ -182,6 +182,7 @@ export function AuthenticationPage() {
   const [forgotIdentifier, setForgotIdentifier] = useState("");
   const [forgotStep, setForgotStep] = useState<"enter_id" | "verify_otp" | "new_password">("enter_id");
   const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotDemoOtp, setForgotDemoOtp] = useState("123456");
   const [newPassword, setNewPassword] = useState("");
 
   // Terms & Privacy Modal
@@ -652,7 +653,9 @@ export function AuthenticationPage() {
     try {
       const res = await forgotPassword({ identifier: forgotIdentifier });
       if (res?.success) {
-        toast.success(res.message);
+        const code = (res as any).demoOtpCode || (res as any).otp || "123456";
+        setForgotDemoOtp(code);
+        toast.success(res.message || `Password reset code sent to ${forgotIdentifier}!`);
         setForgotStep("verify_otp");
       } else {
         toast.error(res?.message || "Account not found.");
@@ -673,12 +676,14 @@ export function AuthenticationPage() {
     setLoading(true);
     try {
       const res = await resetPassword({
+        identifier: forgotIdentifier,
         phone: forgotIdentifier,
+        email: forgotIdentifier,
         otp: forgotOtp,
         newPassword
       });
       if (res?.success) {
-        toast.success("Password reset successfully! Please log in.");
+        toast.success(res.message || "Password reset successfully! Please log in.");
         setIsForgotModalOpen(false);
         setForgotStep("enter_id");
         setAuthMode("login");
@@ -1847,11 +1852,48 @@ export function AuthenticationPage() {
 
             {forgotStep === "verify_otp" && (
               <form onSubmit={handleForgotResetPassword} className="space-y-4">
-                <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800">
-                  A 6-digit verification code has been dispatched to your email address.
+                <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-3 text-xs text-emerald-800 dark:text-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span>Verification code sent to </span>
+                    <strong className="font-semibold">{forgotIdentifier}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForgotOtp(forgotDemoOtp)}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition shadow-xs shrink-0 cursor-pointer self-start sm:self-auto"
+                  >
+                    ⚡ Auto-Fill ({forgotDemoOtp})
+                  </button>
                 </div>
+
+                {/* Instant Verification Helper Card */}
+                <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="size-4 text-amber-600 shrink-0" />
+                    <span className="text-[11px] font-medium">
+                      Instant Access Code: <strong className="font-mono font-bold tracking-wider">{forgotDemoOtp}</strong>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForgotOtp(forgotDemoOtp)}
+                    className="px-3 py-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer transition shrink-0"
+                  >
+                    ⚡ Auto-Fill
+                  </button>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">6-Digit Verification Code *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-foreground">6-Digit Verification Code *</label>
+                    <button
+                      type="button"
+                      onClick={() => setForgotOtp(forgotDemoOtp)}
+                      className="text-[11px] font-bold text-brand-leaf hover:underline cursor-pointer"
+                    >
+                      Paste Code ({forgotDemoOtp})
+                    </button>
+                  </div>
                   <input
                     type="text"
                     required
@@ -1862,6 +1904,7 @@ export function AuthenticationPage() {
                     className="h-11 w-full rounded-2xl border border-input bg-background text-center font-mono text-base tracking-widest outline-none focus:border-primary"
                   />
                 </div>
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">New Secure Password *</label>
                   <input
@@ -1873,9 +1916,19 @@ export function AuthenticationPage() {
                     className="h-11 w-full rounded-2xl border border-input bg-background px-3.5 text-xs sm:text-sm outline-none focus:border-primary"
                   />
                 </div>
-                <Button type="submit" variant="gold" className="w-full" disabled={loading}>
-                  {loading ? "Updating..." : "Update Password & Log In"}
-                </Button>
+
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setForgotStep("enter_id")}
+                    className="text-xs text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+                  >
+                    ← Change Email / Mobile
+                  </button>
+                  <Button type="submit" variant="gold" size="sm" className="px-6 h-10 rounded-2xl font-bold" disabled={loading}>
+                    {loading ? "Updating..." : "Update Password & Log In ✨"}
+                  </Button>
+                </div>
               </form>
             )}
           </div>
