@@ -228,9 +228,9 @@ function ProductDetailPage() {
         </nav>
 
         {/* 2. Top Hero Product Grid (Left: Gallery, Right: Details) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
           {/* LEFT: Product Gallery with Left Vertical Thumbnails */}
-          <div className="lg:col-span-6 flex flex-col-reverse sm:flex-row gap-4 items-start">
+          <div className="lg:col-span-6 flex flex-col-reverse sm:flex-row gap-4 h-full">
             {/* Vertical Thumbnail Strip */}
             <div className="flex sm:flex-col gap-2.5 overflow-x-auto sm:overflow-y-auto max-h-[500px] w-full sm:w-20 shrink-0 scrollbar-none pb-2 sm:pb-0">
               {galleryImages.map((img, idx) => {
@@ -264,11 +264,11 @@ function ProductDetailPage() {
             </div>
 
             {/* Main Big Image Viewport */}
-            <div className="relative flex-1 w-full aspect-square sm:aspect-[4/4.2] rounded-2xl border border-gray-200 bg-white p-4 flex items-center justify-center overflow-hidden group shadow-xs">
+            <div className="relative flex-1 w-full h-full min-h-[440px] rounded-2xl border border-gray-200 bg-white p-4 flex items-center justify-center overflow-hidden group shadow-xs">
               <img
                 src={galleryImages[activeImageIndex]?.src || product.image}
                 alt={product.name}
-                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full max-h-[460px] object-contain transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* Prev Arrow */}
@@ -301,179 +301,129 @@ function ProductDetailPage() {
           </div>
 
           {/* RIGHT: Product Purchasing Information */}
-          <div className="lg:col-span-6 space-y-4">
-            {/* Title & In Stock Badge */}
-            <div className="flex items-center justify-between gap-3">
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-[#075B32] tracking-tight uppercase font-display">
-                {product.name}
-              </h1>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#EAF5E9] text-[#075B32] border border-[#075B32]/20">
-                <Leaf className="size-3.5 fill-current" />
-                In Stock
-              </span>
-            </div>
-
-            {/* Subtitle / Technical formulation info */}
-            <p className="text-sm font-medium text-gray-600 leading-snug">
-              {product.subtitle || "Trichoderma Viride Liquid Biofungal Formulation"}
-            </p>
-
-            {/* Ratings & Social Proof */}
-            <div className="flex items-center gap-2 pt-1 text-xs text-gray-500 font-medium">
-              <div className="flex items-center text-[#E7A91A]">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="size-3.5 fill-current" />
-                ))}
-              </div>
-              <span className="font-bold text-gray-800">({product.rating.toFixed(1)})</span>
-              <span>28 Reviews</span>
-              <span>|</span>
-              <span className="text-[#075B32] font-semibold">124 Sold</span>
-            </div>
-
-            {/* Price Row */}
-            <div className="flex items-baseline gap-3 pt-2">
-              <span className="text-3xl sm:text-4xl font-bold text-gray-900">
-                ₹ {selectedVariant.price.toFixed(2)}
-              </span>
-              <span className="text-base text-gray-400 line-through font-medium">
-                ₹ {selectedVariant.oldPrice.toFixed(2)}
-              </span>
-              <span className="bg-[#4FAE2A] text-white text-xs font-bold px-2.5 py-0.5 rounded-md shadow-xs">
-                {discountPercent}% OFF
-              </span>
-            </div>
-
-            {/* Short Paragraph Description */}
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed pt-1">
-              {product.description}
-            </p>
-
-            {/* 4 Feature Badges (Horizontal Row with light green circles) */}
-            <div className="grid grid-cols-4 gap-2 pt-3 pb-2 text-center border-y border-gray-100">
-              <div className="flex flex-col items-center">
-                <div className="size-11 rounded-full bg-[#EAF5E9] flex items-center justify-center text-[#075B32] mb-1.5 shadow-xs">
-                  <Sprout className="size-5" />
-                </div>
-                <span className="text-[11px] font-bold text-gray-800 leading-tight">
-                  Healthy Soil
+          <div className="lg:col-span-6 flex flex-col justify-between h-full space-y-4">
+            <div className="space-y-3">
+              {/* Title & In Stock Badge */}
+              <div className="flex items-center justify-between gap-3">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#075B32] tracking-tight uppercase font-display">
+                  {product.name}
+                </h1>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#EAF5E9] text-[#075B32] border border-[#075B32]/20 shrink-0">
+                  <Leaf className="size-3.5 fill-current" />
+                  In Stock
                 </span>
               </div>
 
-              <div className="flex flex-col items-center">
-                <div className="size-11 rounded-full bg-[#EAF5E9] flex items-center justify-center text-[#075B32] mb-1.5 shadow-xs">
-                  <Wheat className="size-5" />
+              {/* Subtitle / Technical formulation info */}
+              <p className="text-sm font-medium text-gray-600 leading-snug">
+                {product.subtitle || "Trichoderma Viride Liquid Biofungal Formulation"}
+              </p>
+
+              {/* Ratings & Social Proof */}
+              <div className="flex items-center gap-2 pt-0.5 text-xs text-gray-500 font-medium">
+                <div className="flex items-center text-[#E7A91A]">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="size-3.5 fill-current" />
+                  ))}
                 </div>
-                <span className="text-[11px] font-bold text-gray-800 leading-tight">
-                  Strong Roots
+                <span className="font-bold text-gray-800">({product.rating.toFixed(1)})</span>
+                <span>28 Reviews</span>
+                <span>|</span>
+                <span className="text-[#075B32] font-semibold">124 Sold</span>
+              </div>
+
+              {/* Price Row */}
+              <div className="flex items-baseline gap-3 pt-1">
+                <span className="text-3xl sm:text-4xl font-bold text-gray-900">
+                  ₹ {selectedVariant.price.toFixed(2)}
+                </span>
+                <span className="text-base text-gray-400 line-through font-medium">
+                  ₹ {selectedVariant.oldPrice.toFixed(2)}
+                </span>
+                <span className="bg-[#4FAE2A] text-white text-xs font-bold px-2.5 py-0.5 rounded-md shadow-xs">
+                  {discountPercent}% OFF
                 </span>
               </div>
 
-              <div className="flex flex-col items-center">
-                <div className="size-11 rounded-full bg-[#EAF5E9] flex items-center justify-center text-[#075B32] mb-1.5 shadow-xs">
-                  <ShieldCheck className="size-5" />
-                </div>
-                <span className="text-[11px] font-bold text-gray-800 leading-tight">
-                  Damping-Off Control
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <div className="size-11 rounded-full bg-[#EAF5E9] flex items-center justify-center text-[#075B32] mb-1.5 shadow-xs">
-                  <Award className="size-5" />
-                </div>
-                <span className="text-[11px] font-bold text-gray-800 leading-tight">
-                  Better Crop Yield
-                </span>
-              </div>
+              {/* Short Paragraph Description (Text Justified) */}
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed pt-1 text-justify">
+                {product.description}
+              </p>
             </div>
 
-            {/* Pack Size Selector */}
-            <div className="space-y-2 pt-1">
-              <label className="text-xs font-bold text-gray-900 block">Pack Size</label>
-              <div className="grid grid-cols-4 gap-2.5">
-                {product.variants.map((v) => {
-                  const isSelected = selectedVariant.id === v.id;
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => setSelectedVariant(v)}
-                      className={`p-2 sm:p-2.5 rounded-xl border text-center transition flex flex-col justify-center items-center ${
-                        isSelected
-                          ? "border-2 border-[#075B32] bg-[#EAF5E9] text-[#075B32] shadow-xs"
-                          : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"
-                      }`}
-                    >
-                      <span className="text-xs font-bold leading-tight">{v.label}</span>
-                      <span
-                        className={`text-[11px] mt-0.5 font-medium ${
-                          isSelected ? "text-[#075B32]" : "text-gray-500"
+            {/* Bottom Controls: Pack Size, Quantity, Action Buttons */}
+            <div className="space-y-4 pt-2">
+              {/* Pack Size Selector */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-900 block">Pack Size</label>
+                <div className="grid grid-cols-4 gap-2.5">
+                  {product.variants.map((v) => {
+                    const isSelected = selectedVariant.id === v.id;
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => setSelectedVariant(v)}
+                        className={`p-2 sm:p-2.5 rounded-xl border text-center transition flex flex-col justify-center items-center ${
+                          isSelected
+                            ? "border-2 border-[#075B32] bg-[#EAF5E9] text-[#075B32] shadow-xs"
+                            : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"
                         }`}
                       >
-                        ₹ {v.price}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span className="text-xs font-bold leading-tight">{v.label}</span>
+                        <span
+                          className={`text-[11px] mt-0.5 font-medium ${
+                            isSelected ? "text-[#075B32]" : "text-gray-500"
+                          }`}
+                        >
+                          ₹ {v.price}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Quantity Selector */}
-            <div className="space-y-1.5 pt-1">
-              <label className="text-xs font-bold text-gray-900 block">Quantity</label>
-              <div className="inline-flex items-center rounded-xl border border-gray-200 bg-white p-1">
+              {/* Quantity Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-900 block">Quantity</label>
+                <div className="inline-flex items-center rounded-xl border border-gray-200 bg-white p-1">
+                  <button
+                    onClick={() => setQty((prev) => Math.max(1, prev - 1))}
+                    className="size-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="size-3.5" />
+                  </button>
+                  <span className="w-10 text-center font-bold text-xs text-gray-900 font-mono">
+                    {qty}
+                  </span>
+                  <button
+                    onClick={() => setQty((prev) => prev + 1)}
+                    className="size-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons: [Add to Cart] & [Buy Now] */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <button
-                  onClick={() => setQty((prev) => Math.max(1, prev - 1))}
-                  className="size-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
-                  aria-label="Decrease quantity"
+                  onClick={handleAddToCart}
+                  className="w-full bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
                 >
-                  <Minus className="size-3.5" />
+                  <ShoppingBag className="size-4" />
+                  Add to Cart
                 </button>
-                <span className="w-10 text-center font-bold text-xs text-gray-900 font-mono">
-                  {qty}
-                </span>
+
                 <button
-                  onClick={() => setQty((prev) => prev + 1)}
-                  className="size-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
-                  aria-label="Increase quantity"
+                  onClick={handleBuyNow}
+                  className="w-full bg-[#E7A91A] hover:bg-[#d99a12] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
                 >
-                  <Plus className="size-3.5" />
+                  <Zap className="size-4 fill-white" />
+                  Buy Now
                 </button>
-              </div>
-            </div>
-
-            {/* Action Buttons: [Add to Cart] & [Buy Now] */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
-              >
-                <ShoppingBag className="size-4" />
-                Add to Cart
-              </button>
-
-              <button
-                onClick={handleBuyNow}
-                className="w-full bg-[#E7A91A] hover:bg-[#d99a12] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
-              >
-                <Zap className="size-4 fill-white" />
-                Buy Now
-              </button>
-            </div>
-
-            {/* 3 Trust Notes below buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-xs text-gray-600 font-medium border-t border-gray-100">
-              <div className="flex items-center gap-2">
-                <Truck className="size-4 text-[#075B32]" />
-                <span>Free Shipping on orders above ₹499</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="size-4 text-[#075B32]" />
-                <span>100% Secure Payments</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <RotateCcw className="size-4 text-[#075B32]" />
-                <span>Easy Returns</span>
               </div>
             </div>
           </div>
@@ -563,7 +513,7 @@ function ProductDetailPage() {
                 </h3>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                   {/* Left Column: Rich Text Explanation */}
-                  <div className="lg:col-span-7 space-y-4 text-xs sm:text-sm text-gray-600 leading-relaxed">
+                  <div className="lg:col-span-7 space-y-4 text-xs sm:text-sm text-gray-600 leading-relaxed text-justify">
                     <p>
                       {product.name} contains beneficial{" "}
                       <strong>
