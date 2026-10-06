@@ -11,7 +11,9 @@ import {
   ShieldAlert,
   Home,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  Bookmark,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
@@ -20,6 +22,7 @@ import { ProfileHeader } from "@/components/profile/profile-header";
 import { EditProfileTab } from "@/components/profile/edit-profile-tab";
 import { AddressManagerTab } from "@/components/profile/address-manager-tab";
 import { SavedPaymentsTab } from "@/components/profile/saved-payments-tab";
+import { SavedProductsTab } from "@/components/profile/saved-products-tab";
 import { PreferencesTab } from "@/components/profile/preferences-tab";
 import { AccountDeleteModal } from "@/components/profile/account-delete-modal";
 
@@ -29,19 +32,19 @@ export const Route = createFileRoute("/profile")({
       { title: "Profile & Account Settings — JANANI AGRO PRODUCTS" },
       {
         name: "description",
-        content: "Manage personal details, saved shipping addresses, payment methods, language, and account security.",
+        content: "Manage personal details, saved shipping addresses, payment methods, saved products, language, and account security.",
       },
     ],
   }),
   component: ProfilePage,
 });
 
-type ProfileTab = "edit" | "addresses" | "payments" | "preferences";
+type ProfileTab = "edit" | "addresses" | "payments" | "saved" | "preferences";
 
 export function ProfilePage() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("edit");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const { user } = useStore();
+  const { user, wishlist } = useStore();
 
   // If user is not signed in, prompt clean Sign In
   if (!user) {
@@ -55,7 +58,7 @@ export function ProfilePage() {
             Sign In to Access Your Profile
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
-            Please sign in with your Email OTP to manage your personal details and saved delivery addresses.
+            Please sign in with your Email OTP to manage your personal details, saved items, and delivery addresses.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -94,6 +97,7 @@ export function ProfilePage() {
             { id: "edit", label: "Personal Information", icon: User, desc: "Name, email & bio" },
             { id: "addresses", label: "Saved Addresses", icon: MapPin, desc: "Shipping locations" },
             { id: "payments", label: "Saved Payment Methods", icon: CreditCard, desc: "Cards & UPI IDs" },
+            { id: "saved", label: "Saved Products", icon: Bookmark, desc: "Wishlist & favourites", count: wishlist?.length },
             { id: "preferences", label: "Language & Regional", icon: Globe, desc: "Currency & alerts" },
           ].map((item) => {
             const Icon = item.icon;
@@ -103,19 +107,30 @@ export function ProfilePage() {
                 key={item.id}
                 type="button"
                 onClick={() => setActiveTab(item.id as ProfileTab)}
-                className={`flex w-full items-start gap-3 rounded-2xl p-3.5 text-left transition ${
+                className={`flex w-full items-start justify-between gap-3 rounded-2xl p-3.5 text-left transition ${
                   isActive
                     ? "bg-brand-leaf text-white shadow-sm"
                     : "text-foreground hover:bg-secondary"
                 }`}
               >
-                <Icon className={`size-4.5 mt-0.5 shrink-0 ${isActive ? "text-white" : "text-brand-leaf"}`} />
-                <div>
-                  <p className="text-xs font-bold leading-tight">{item.label}</p>
-                  <p className={`text-[10px] mt-0.5 ${isActive ? "text-white/80" : "text-muted-foreground"}`}>
-                    {item.desc}
-                  </p>
+                <div className="flex items-start gap-3 min-w-0">
+                  <Icon className={`size-4.5 mt-0.5 shrink-0 ${isActive ? "text-white" : "text-brand-leaf"}`} />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold leading-tight truncate">{item.label}</p>
+                    <p className={`text-[10px] mt-0.5 truncate ${isActive ? "text-white/80" : "text-muted-foreground"}`}>
+                      {item.desc}
+                    </p>
+                  </div>
                 </div>
+                {item.count !== undefined && item.count > 0 && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono shrink-0 ${
+                      isActive ? "bg-white text-brand-leaf" : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    {item.count}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -150,6 +165,7 @@ export function ProfilePage() {
           {activeTab === "edit" && <EditProfileTab />}
           {activeTab === "addresses" && <AddressManagerTab />}
           {activeTab === "payments" && <SavedPaymentsTab />}
+          {activeTab === "saved" && <SavedProductsTab />}
           {activeTab === "preferences" && <PreferencesTab />}
         </main>
       </div>
