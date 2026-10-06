@@ -340,7 +340,7 @@ export function ShippingManagement() {
       </div>
 
       {/* 2. Key Metrics Stats Ribbon */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5">
         <div className="bg-card border border-border/80 rounded-xl p-3.5 shadow-sm hover:shadow transition-shadow">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold uppercase tracking-wider">Total Shipments</span>
@@ -410,7 +410,7 @@ export function ShippingManagement() {
 
       {/* 3. Navigation Main Tabs */}
       <div className="border-b border-border bg-card rounded-xl p-1.5 shadow-sm">
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
+        <div className="flex flex-wrap items-center gap-1.5 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "shipments", label: "Shipments & Live Tracking", icon: Truck, count: stats.totalShipments },
             { id: "pickup_hubs", label: "Pickup Locations (Hubs)", icon: Building2, count: pickupHubs.length },
@@ -454,7 +454,7 @@ export function ShippingManagement() {
           {/* Filters Bar */}
           <div className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
             {/* Status Filter Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin border-b border-border/60">
+            <div className="flex flex-wrap items-center gap-1.5 pb-1 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-b border-border/60">
               {[
                 { id: "all", label: "All Shipments" },
                 { id: "Ready for Pickup", label: "Ready for Pickup" },

@@ -839,7 +839,7 @@ function CustomerProfileDrawer({
         </div>
 
         {/* Drawer Tabs Bar */}
-        <div className="flex border-b border-border bg-muted/10 px-6 gap-2 overflow-x-auto text-xs font-bold no-scrollbar">
+        <div className="flex flex-wrap border-b border-border bg-muted/10 px-6 gap-2 text-xs font-bold no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "overview", label: "Overview", icon: TrendingUp },
             { id: "orders", label: `Orders (${customer.orderHistory?.length || 0})`, icon: ShoppingBag },

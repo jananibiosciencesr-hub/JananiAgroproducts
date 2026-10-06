@@ -431,7 +431,7 @@ export function PaymentsManagement() {
       </div>
 
       {/* 6 High-Impact KPI Metrics Ribbon */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Gross Inflow */}
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 shadow-lg relative overflow-hidden group hover:border-emerald-500/30 transition-all">
           <div className="flex items-center justify-between text-slate-400 mb-2">
@@ -584,7 +584,7 @@ export function PaymentsManagement() {
             </form>
 
             {/* Status Tabs */}
-            <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto">
+            <div className="flex flex-wrap items-center gap-1.5 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {[
                 { id: "all", label: "All Status" },
                 { id: "captured", label: "Captured" },

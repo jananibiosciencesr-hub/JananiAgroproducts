@@ -423,8 +423,8 @@ export function ReportsManagement() {
       </div>
 
       {/* Main Navigation Sub-Tabs */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto">
-        <nav className="flex items-center space-x-2 text-xs font-medium min-w-max pb-1">
+      <div className="border-b border-zinc-200 dark:border-zinc-800 no-scrollbar scrollbar-none">
+        <nav className="flex flex-wrap items-center gap-1.5 text-xs font-medium pb-1 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "sales_revenue", label: "📊 Sales & P&L Revenue", count: null },
             { id: "orders_logistics", label: "📦 Order Lifecycle & Logistics", count: orders?.totalOrders },

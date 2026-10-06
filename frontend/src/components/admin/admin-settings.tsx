@@ -729,7 +729,7 @@ export function SettingsManagement({ defaultTab = "store_branding" }: SettingsMa
       </div>
 
       {/* Main 10-Tab Navigation Matrix */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-border/60 scrollbar-none">
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-border/60 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {[
           { id: "store_branding", label: "Store & Branding", icon: Store },
           { id: "seo", label: "SEO & Social", icon: Globe },

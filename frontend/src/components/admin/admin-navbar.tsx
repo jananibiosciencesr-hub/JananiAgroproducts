@@ -290,7 +290,7 @@ export function AdminNavbar({
                 </button>
               </div>
 
-              <div className="mt-3 space-y-2 max-h-72 overflow-y-auto">
+              <div className="mt-3 space-y-2 max-h-72 overflow-y-auto no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {liveInquiries.length === 0 ? (
                   <div className="py-8 text-center text-xs text-muted-foreground">
                     No inquiries received yet.
@@ -371,7 +371,7 @@ export function AdminNavbar({
                 </button>
               </div>
 
-              <div className="mt-3 space-y-2 max-h-80 overflow-y-auto">
+              <div className="mt-3 space-y-2 max-h-80 overflow-y-auto no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {dynamicNotifications.map((n) => {
                   const Icon = n.icon;
                   return (

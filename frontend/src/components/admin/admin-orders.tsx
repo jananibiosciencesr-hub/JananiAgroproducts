@@ -478,7 +478,7 @@ export function OrdersManagement() {
       </div>
 
       {/* 2. Key Metrics Ribbon */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5">
         <div className="bg-card border border-border/80 rounded-xl p-3.5 shadow-sm hover:shadow transition-shadow">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold uppercase tracking-wider">Total Orders</span>
@@ -554,7 +554,7 @@ export function OrdersManagement() {
       {/* 3. Filter Navigation Tabs & Toolbar */}
       <div className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-4">
         {/* Status Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin border-b border-border/60">
+        <div className="flex flex-wrap items-center gap-1.5 pb-1 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-b border-border/60">
           {[
             { id: "all", label: "All Orders", count: stats.total },
             { id: "Pending", label: "Pending Fulfillment", count: stats.pending, badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" },
@@ -1394,7 +1394,7 @@ function OrderDetailDrawer({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 px-6 pt-3 border-b border-border bg-card overflow-x-auto">
+        <div className="flex flex-wrap items-center gap-2 px-6 pt-3 border-b border-border bg-card no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "overview", label: "Overview & Items", icon: ShoppingBag },
             { id: "timeline", label: "Timeline & Tracking", icon: Clock },

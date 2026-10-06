@@ -182,7 +182,7 @@ export function AdminSidebar({
         )}
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5 scrollbar-thin scrollbar-thumb-muted-foreground/20">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;

@@ -260,7 +260,7 @@ export function ReviewsManagement() {
       </div>
 
       {/* 6 KPI Ribbon Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-medium">Average Rating</span>

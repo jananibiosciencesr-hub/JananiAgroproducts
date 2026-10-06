@@ -1009,7 +1009,7 @@ function ProductPreviewDrawer({
 
           {/* Gallery Thumbnails */}
           {product.gallery && product.gallery.length > 1 && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <div className="flex flex-wrap items-center gap-2 pb-1 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {product.gallery.map((img, i) => (
                 <button
                   key={i}
@@ -1344,7 +1344,7 @@ function ProductFormModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex rounded-2xl border border-border bg-muted/40 p-1 mt-4 text-xs font-bold overflow-x-auto shrink-0">
+        <div className="flex flex-wrap rounded-2xl border border-border bg-muted/40 p-1 mt-4 text-xs font-bold shrink-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "general", label: "1. Info" },
             { id: "pricing", label: "2. Pricing & Stock" },

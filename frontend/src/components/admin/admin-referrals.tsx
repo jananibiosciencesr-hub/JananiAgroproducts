@@ -471,7 +471,7 @@ export function ReferralsManagement() {
       </div>
 
       {/* 6 High-Impact KPI Stats Ribbon */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5">
         {/* Metric 1 */}
         <div className="bg-card p-4 rounded-xl border border-border/70 shadow-sm relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
           <div className="flex items-center justify-between text-muted-foreground mb-2">
@@ -572,7 +572,7 @@ export function ReferralsManagement() {
 
       {/* Tabs Navigation Bar */}
       <div className="flex items-center justify-between border-b border-border/80 pb-px">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <div className="flex flex-wrap items-center gap-2 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => setActiveTab("referrals")}
             className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
