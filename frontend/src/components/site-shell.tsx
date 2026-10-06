@@ -144,7 +144,6 @@ function Shell({ children }: { children: React.ReactNode }) {
             : "border-b border-[#0B6B35]/20 bg-white/95 backdrop-blur-xl shadow-xs"
         }`}
         style={{ top: 0 }}
-        onMouseLeave={() => setIsMegaMenuOpen(false)}
       >
         <div className="mx-auto grid h-16 sm:h-18 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
           <Brand />
@@ -162,6 +161,11 @@ function Shell({ children }: { children: React.ReactNode }) {
                     if (label === "Products") {
                       setIsMegaMenuOpen(true);
                     } else {
+                      setIsMegaMenuOpen(false);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (label === "Products") {
                       setIsMegaMenuOpen(false);
                     }
                   }}
@@ -192,6 +196,14 @@ function Shell({ children }: { children: React.ReactNode }) {
                       }`}
                     />
                   </Link>
+
+                  {/* Products Dropdown List */}
+                  {hasDropdown && (
+                    <HomeMegaMenu
+                      isOpen={isMegaMenuOpen}
+                      onClose={() => setIsMegaMenuOpen(false)}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -253,12 +265,6 @@ function Shell({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </div>
-
-        {/* Desktop Mega Menu */}
-        <HomeMegaMenu
-          isOpen={isMegaMenuOpen}
-          onClose={() => setIsMegaMenuOpen(false)}
-        />
       </header>
 
       {/* Mobile Drawer */}
