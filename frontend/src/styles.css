@@ -321,4 +321,42 @@ html, body {
   overflow-x: clip;
 }
 
+/* ========================================================= */
+/* ENTIRE WEBSITE CONTENT TEXT JUSTIFICATION                  */
+/* ========================================================= */
+p,
+article,
+.prose,
+.prose p,
+.text-content,
+.description,
+.card-description,
+.product-description,
+.blog-content,
+.about-content,
+.faq-content,
+.section-copy,
+.copy,
+.policy-content,
+main p,
+section p,
+article p,
+footer p,
+.lead,
+.text-justify {
+  text-align: justify !important;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+/* Ensure headings, buttons, and badges retain appropriate alignment */
+button,
+.btn,
+[role="button"],
+.badge,
+.tag {
+  text-align: inherit;
+}
+
+
 
