@@ -149,9 +149,10 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto grid h-16 sm:h-18 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
           <Brand />
           
-          <nav className="hidden items-center justify-center gap-6 xl:flex" aria-label="Main navigation">
+          <nav className="hidden items-center justify-center gap-6 lg:flex" aria-label="Main navigation">
             {links.map(([label, to]) => {
               const hasDropdown = label === "Products" || label === "Categories";
+              const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
 
               return (
                 <div
@@ -168,13 +169,28 @@ function Shell({ children }: { children: React.ReactNode }) {
                   <Link
                     to={to}
                     onClick={() => setIsMegaMenuOpen(false)}
-                    activeOptions={{ exact: to === "/" }}
-                    activeProps={{ className: "text-[#075B32] font-black" }}
-                    className="group relative flex items-center gap-1 text-xs font-bold text-[#075B32] transition hover:text-[#4FAE2A]"
+                    className={`group relative flex items-center gap-1.5 py-1 text-sm tracking-tight transition-all duration-200 ${
+                      isActive
+                        ? "text-[#075B32] font-black"
+                        : "text-[#075B32]/75 hover:text-[#075B32] font-bold"
+                    }`}
                   >
-                    {label}
-                    {hasDropdown && <ChevronDown className="size-3 text-[#0B6B35] transition group-hover:rotate-180" />}
-                    <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-[#075B32] transition-all group-hover:w-full" />
+                    <span>{label}</span>
+                    {hasDropdown && (
+                      <ChevronDown
+                        className={`size-3.5 transition-transform duration-200 group-hover:rotate-180 ${
+                          isActive ? "text-[#075B32] stroke-[2.5]" : "text-[#0B6B35]/70"
+                        }`}
+                      />
+                    )}
+                    {/* Active tab bottom indicator bar */}
+                    <span
+                      className={`absolute -bottom-1.5 left-0 h-[3px] rounded-full transition-all duration-300 ${
+                        isActive
+                          ? "w-full bg-[#075B32] shadow-sm"
+                          : "w-0 bg-[#4FAE2A] group-hover:w-full opacity-80"
+                      }`}
+                    />
                   </Link>
                 </div>
               );
@@ -276,17 +292,25 @@ function Shell({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            <nav className="mt-6 grid gap-1">
-              {[...links, ["My Orders", "/orders"] as const, ["Profile Settings", "/profile"] as const, ["Track Order", "/track-order"] as const].map(([label, to]) => (
-                <Link
-                  key={label}
-                  to={to}
-                  onClick={() => setMenu(false)}
-                  className="rounded-2xl px-4 py-3 text-sm font-semibold text-foreground hover:bg-secondary transition"
-                >
-                  {label}
-                </Link>
-              ))}
+            <nav className="mt-6 grid gap-1.5">
+              {[...links, ["My Orders", "/orders"] as const, ["Profile Settings", "/profile"] as const, ["Track Order", "/track-order"] as const].map(([label, to]) => {
+                const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
+                return (
+                  <Link
+                    key={label}
+                    to={to}
+                    onClick={() => setMenu(false)}
+                    className={`rounded-2xl px-4 py-3 text-sm font-semibold transition flex items-center justify-between ${
+                      isActive
+                        ? "bg-[#075B32] text-white font-bold shadow-md"
+                        : "text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <span>{label}</span>
+                    {isActive && <span className="size-2 rounded-full bg-[#E7A91A] shadow-xs" />}
+                  </Link>
+                );
+              })}
             </nav>
 
             <div className="mt-auto pt-6 border-t border-border">
@@ -316,23 +340,33 @@ function Shell({ children }: { children: React.ReactNode }) {
         <WhatsAppIcon className="size-6" />
       </a>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-cream/95 px-2 py-2 backdrop-blur-lg md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-white/98 px-2 py-2 backdrop-blur-lg md:hidden shadow-lg">
         {[
           { Icon: Home, label: "Home", to: "/" },
           { Icon: Grid2X2, label: "Categories", to: "/categories" },
           { Icon: Heart, label: "Wishlist", to: "/wishlist" },
           { Icon: ShoppingBag, label: "Cart", to: "/cart" },
-          { Icon: User, label: "Account", to: "/dashboard" },
-        ].map(({ Icon, label, to }) => (
-          <Link
-            key={to}
-            to={to}
-            className="flex flex-col items-center gap-1 text-[9px] font-semibold text-muted-foreground"
-          >
-            <Icon className="size-5" />
-            {label}
-          </Link>
-        ))}
+          { Icon: User, label: "Account", to: user ? "/profile" : "/login" },
+        ].map(({ Icon, label, to }) => {
+          const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={`flex flex-col items-center gap-1 text-[10px] transition-all relative py-0.5 ${
+                isActive
+                  ? "text-[#075B32] font-black"
+                  : "text-muted-foreground hover:text-foreground font-semibold"
+              }`}
+            >
+              {isActive && (
+                <span className="absolute -top-2 w-8 h-1 bg-[#075B32] rounded-full shadow-xs" />
+              )}
+              <Icon className={`size-5 transition-transform ${isActive ? "scale-110 text-[#075B32] stroke-[2.5]" : ""}`} />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Global Quick Search Omnibar Modal */}
