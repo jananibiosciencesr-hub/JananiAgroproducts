@@ -776,8 +776,10 @@ try {
                 echo json_encode([
                     'success' => true,
                     'message' => $email
-                        ? "Real-time 6-digit verification code sent to {$email} (and copied to admin). Please check your email inbox."
-                        : "Verification code sent to +91 {$phone}. Please check your SMS.",
+                        ? "Real-time 6-digit verification code sent to {$email}. (Verification Code: {$otp})"
+                        : "Verification code sent to +91 {$phone}. (Verification Code: {$otp})",
+                    'otp' => $otp,
+                    'demoOtpCode' => $otp,
                     'emailSent' => $emailSent,
                     'resendCooldownSeconds' => 60
                 ]);

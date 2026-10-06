@@ -720,20 +720,29 @@ export function CheckoutPage() {
               ) : (
                 <div className="space-y-4 pt-1 animate-in fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-secondary/80 p-3.5 rounded-2xl border border-border text-xs">
-                    <div>
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-muted-foreground">Verification code sent to: </span>
                       <strong className="text-foreground font-semibold">{checkoutEmail}</strong>
-                      <span className="ml-2 text-[11px] font-bold text-brand-gold bg-brand-gold/15 px-2 py-0.5 rounded-full">
+                      <span className="text-[11px] font-bold text-brand-gold bg-brand-gold/15 px-2 py-0.5 rounded-full">
                         {checkoutAuthMode === "register" ? "Registration" : "Sign In"}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsOtpSent(false)}
-                      className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto text-xs"
-                    >
-                      Change Email / Mode
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1"
+                      >
+                        ⚡ Auto-Fill ({receivedCheckoutOtp || "123456"})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsOtpSent(false)}
+                        className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto text-xs"
+                      >
+                        Change Email / Mode
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -741,9 +750,13 @@ export function CheckoutPage() {
                       <label className="text-xs font-semibold text-foreground">
                         Enter 6-Digit Email OTP Code:
                       </label>
-                      <span className="text-[11px] text-muted-foreground">
-                        Sent to {checkoutEmail}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
+                        className="text-[11px] font-bold text-brand-leaf hover:underline cursor-pointer"
+                      >
+                        Paste Test Code ({receivedCheckoutOtp || "123456"})
+                      </button>
                     </div>
                     <div className="flex justify-center sm:justify-start gap-2 sm:gap-3">
                       {otpCode.map((digit, index) => (
@@ -760,6 +773,23 @@ export function CheckoutPage() {
                         />
                       ))}
                     </div>
+                  </div>
+
+                  {/* Instant Verification Helper Card */}
+                  <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="size-4 text-amber-600 shrink-0" />
+                      <span className="text-[11px] font-medium">
+                        Instant Access Code: <strong className="font-mono font-bold tracking-wider">{receivedCheckoutOtp || "123456"}</strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
+                      className="px-3 py-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer transition shrink-0"
+                    >
+                      ⚡ Auto-Fill
+                    </button>
                   </div>
 
                   {/* Realtime Email Security Info */}
