@@ -6,7 +6,7 @@ interface MobileCheckoutBarProps {
   finalTotal: number;
   subtotal: number;
   shippingFee: number;
-  slotFee: number;
+  slotFee?: number;
   couponDiscount: number;
   walletDeduction: number;
   giftCardDeduction: number;
@@ -19,7 +19,7 @@ export function MobileCheckoutBar({
   finalTotal,
   subtotal,
   shippingFee,
-  slotFee,
+  slotFee = 0,
   couponDiscount,
   walletDeduction,
   giftCardDeduction,

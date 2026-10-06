@@ -27,11 +27,6 @@ import { createOrder, sendAuthOtp, verifyAuthOtp, signupCustomer } from "@/lib/a
 
 import { AddressManager, type ShippingAddress } from "@/components/checkout/address-manager";
 import {
-  DeliverySlotPicker,
-  DELIVERY_SLOTS,
-  type DeliverySlot,
-} from "@/components/checkout/delivery-slot-picker";
-import {
   CouponSelector,
   calculateCouponDiscount,
   type CouponRule,
@@ -89,19 +84,16 @@ export function CheckoutPage() {
   // 1. Address Selection State
   const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(null);
 
-  // 2. Delivery Slot State
-  const [selectedSlot, setSelectedSlot] = useState<DeliverySlot>(DELIVERY_SLOTS[1]!); // Default to Morning Fresh (FREE)
-
-  // 3. Coupon State
+  // 2. Coupon State
   const [appliedCoupon, setAppliedCoupon] = useState<CouponRule | null>(null);
 
-  // 4. Gift Card State
+  // 3. Gift Card State
   const [appliedGiftCard, setAppliedGiftCard] = useState<AppliedGiftCard | null>(null);
 
-  // 6. Order Notes State
+  // 4. Order Notes State
   const [orderNotes, setOrderNotes] = useState("");
 
-  // 7. Payment Method State
+  // 5. Payment Method State
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "cod">("upi");
 
   // Timer countdown for OTP resend
@@ -237,10 +229,8 @@ export function CheckoutPage() {
 
   // Financial Calculations
   const standardShippingFee = subtotal >= 799 || subtotal === 0 ? 0 : 60;
-  // Slot surcharge: express priority is free if subtotal >= 1200
-  const slotFee =
-    selectedSlot.id === "express_priority" && subtotal >= 1200 ? 0 : selectedSlot.fee;
-  const totalShippingCharges = standardShippingFee + slotFee;
+  const slotFee = 0;
+  const totalShippingCharges = standardShippingFee;
 
   // Coupon discount
   const couponDiscount = calculateCouponDiscount(
@@ -285,13 +275,20 @@ export function CheckoutPage() {
       customerEmail: user?.email || checkoutEmail || "patron@jananiagro.com",
       customerPhone: selectedAddress.phone || user?.phone || checkoutPhone || "",
       address: selectedAddress,
-      slot: selectedSlot,
+      deliverySlot: "Standard Delivery (2-3 Business Days)",
+      slot: {
+        id: "standard",
+        name: "Standard Delivery",
+        dateStr: "2-3 Business Days",
+        timeWindow: "9:00 AM – 7:00 PM",
+        fee: 0,
+      },
       items: cartItems,
       subtotal,
       shippingFee: standardShippingFee,
-      slotFee,
+      slotFee: 0,
       couponDiscount,
-      walletDeduction: isWalletEnabled ? walletDeduction : 0,
+      walletDeduction: 0,
       finalTotal,
       totalSavings,
       paymentMethod,
@@ -346,9 +343,11 @@ export function CheckoutPage() {
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground font-medium">Scheduled Window:</span>
+              <span className="text-muted-foreground font-medium">Estimated Delivery:</span>
               <span className="font-semibold text-brand-leaf text-right">
-                {placedOrderSummary?.slot?.dateStr} • {placedOrderSummary?.slot?.timeWindow}
+                {placedOrderSummary?.slot?.dateStr
+                  ? `${placedOrderSummary?.slot?.dateStr} • ${placedOrderSummary?.slot?.timeWindow}`
+                  : placedOrderSummary?.deliverySlot || "Standard Dispatch (2-3 Days)"}
               </span>
             </div>
 
@@ -658,34 +657,11 @@ export function CheckoutPage() {
             />
           </section>
 
-          {/* STEP 2: Delivery Slot Selection */}
-          <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold">
-                  2
-                </span>
-                <h2 className="font-display text-lg font-bold text-foreground">
-                  Choose Delivery Slot
-                </h2>
-              </div>
-              <span className="text-xs font-semibold text-muted-foreground">
-                {selectedSlot.name}
-              </span>
-            </div>
-
-            <DeliverySlotPicker
-              selectedSlotId={selectedSlot.id}
-              onSelectSlot={(slot) => setSelectedSlot(slot)}
-              subtotal={subtotal}
-            />
-          </section>
-
-          {/* STEP 3: Coupons, Wallet & Gift Card */}
+          {/* STEP 2: Coupons, Wallet & Gift Card */}
           <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-5">
             <div className="flex items-center gap-2.5 border-b border-border pb-3">
               <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold">
-                3
+                2
               </span>
               <h2 className="font-display text-lg font-bold text-foreground">
                 Promotions, Wallet & Gift Cards
@@ -710,11 +686,11 @@ export function CheckoutPage() {
             </div>
           </section>
 
-          {/* STEP 4: Order Notes & Harvest Instructions */}
+          {/* STEP 3: Order Notes & Harvest Instructions */}
           <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
             <div className="flex items-center gap-2.5 border-b border-border pb-3">
               <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold">
-                4
+                3
               </span>
               <h2 className="font-display text-lg font-bold text-foreground">
                 Special Delivery Instructions
@@ -727,11 +703,11 @@ export function CheckoutPage() {
             />
           </section>
 
-          {/* STEP 5: Payment Method Selection */}
+          {/* STEP 4: Payment Method Selection */}
           <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
             <div className="flex items-center gap-2.5 border-b border-border pb-3">
               <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold">
-                5
+                4
               </span>
               <h2 className="font-display text-lg font-bold text-foreground">
                 Payment Option
@@ -843,7 +819,6 @@ export function CheckoutPage() {
             finalTotal={finalTotal}
             totalSavings={totalSavings}
             selectedAddress={selectedAddress}
-            selectedSlot={selectedSlot}
             isSubmitting={isSubmitting}
             onPlaceOrder={handlePlaceOrder}
           />

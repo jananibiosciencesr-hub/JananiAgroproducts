@@ -21,7 +21,7 @@ interface PaymentSummaryCardProps {
   cartItemsCount: number;
   subtotal: number;
   shippingFee: number;
-  slotFee: number;
+  slotFee?: number;
   coupon: CouponRule | null;
   couponDiscount: number;
   isWalletEnabled: boolean;
@@ -30,7 +30,7 @@ interface PaymentSummaryCardProps {
   finalTotal: number;
   totalSavings: number;
   selectedAddress: ShippingAddress | null;
-  selectedSlot: DeliverySlot | null;
+  selectedSlot?: DeliverySlot | null;
   isSubmitting: boolean;
   onPlaceOrder: (e: React.FormEvent) => void;
 }
@@ -39,7 +39,7 @@ export function PaymentSummaryCard({
   cartItemsCount,
   subtotal,
   shippingFee,
-  slotFee,
+  slotFee = 0,
   coupon,
   couponDiscount,
   isWalletEnabled,
