@@ -28,9 +28,6 @@ import {
   ArrowLeft,
   Smartphone,
   MessageSquare,
-  MapPin,
-  Navigation,
-  Compass,
   AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -173,17 +170,7 @@ export function AuthenticationPage() {
   const isPhoneValid = phone.length === 10 && /^[6-9][0-9]{9}$/.test(phone);
   const isEmailValid = Boolean(email && !formErrors.email && !formErrors.emailSuggestion && validateEmail(email).isValid);
 
-  // Address & Current Location State
-  const [houseFlat, setHouseFlat] = useState("");
-  const [street, setStreet] = useState("");
-  const [city, setCity] = useState("Ahmedabad");
-  const [state, setState] = useState("Gujarat");
-  const [pincode, setPincode] = useState("380054");
-  const [latitude, setLatitude] = useState<number | null>(null);
-  const [longitude, setLongitude] = useState<number | null>(null);
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationDetected, setLocationDetected] = useState(false);
-  const [detectedAddressText, setDetectedAddressText] = useState("");
+
 
   // OTP Verification State
   const [isOtpStep, setIsOtpStep] = useState(false);
@@ -254,70 +241,7 @@ export function AuthenticationPage() {
 
   const passwordStrength = calculatePasswordStrength(password);
 
-  // Use Current Location GPS Auto-fill
-  const handleUseCurrentLocation = () => {
-    if (typeof window === "undefined" || !navigator.geolocation) {
-      toast.error("Geolocation is not supported by your device/browser.");
-      return;
-    }
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        setLatitude(lat);
-        setLongitude(lng);
 
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-            { signal: controller.signal }
-          );
-          clearTimeout(timeoutId);
-
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.address) {
-              const addr = data.address;
-              const detCity = addr.city || addr.town || addr.village || addr.county || addr.state_district || "Ahmedabad";
-              const detState = addr.state || "Gujarat";
-              const detPin = (addr.postcode || "").replace(/\s/g, "");
-              const detStreet = [addr.house_number, addr.road, addr.suburb, addr.neighbourhood].filter(Boolean).join(", ");
-
-              if (detCity) setCity(detCity);
-              if (detState) setState(detState);
-              if (detPin && detPin.length >= 5) setPincode(detPin);
-              if (detStreet) setStreet(detStreet);
-
-              setLocationDetected(true);
-              setDetectedAddressText(data.display_name?.split(",").slice(0, 3).join(",") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-              toast.success("📍 Exact location detected and address auto-filled!");
-              setIsLocating(false);
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn("Reverse geocode fallback:", err);
-        }
-
-        setLocationDetected(true);
-        setDetectedAddressText(`GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-        toast.success(`📍 GPS Coordinates captured (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
-        setIsLocating(false);
-      },
-      (err) => {
-        setIsLocating(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          toast.error("Location permission denied. Please enter your address details manually.");
-        } else {
-          toast.error("Unable to retrieve GPS coordinates. Please type address manually.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
-  };
 
   // OTP Input Individual Handling (Auto-focus, Paste distribution, Backspace)
   const handleOtpChange = (index: number, value: string) => {
@@ -516,7 +440,7 @@ export function AuthenticationPage() {
 
       if (res?.success) {
         if (otpPurpose === "signup") {
-          // Complete registration with user address and location
+          // Complete registration
           const signupRes = await signupCustomer({
             name,
             email: otpTarget,
@@ -524,13 +448,6 @@ export function AuthenticationPage() {
             password,
             referralCode,
             agreeTerms,
-            houseFlat,
-            street,
-            city,
-            state,
-            pincode,
-            latitude: latitude || undefined,
-            longitude: longitude || undefined
           });
 
           if (signupRes?.success && signupRes.user) {
@@ -597,14 +514,6 @@ export function AuthenticationPage() {
       } else {
         toast.error(emailRes.error || "Please enter a valid email address.");
       }
-      return;
-    }
-    if (!street.trim() && !houseFlat.trim()) {
-      toast.error("Please provide your delivery address or click 'Use Current Location'.");
-      return;
-    }
-    if (!pincode.trim() || pincode.length < 6) {
-      toast.error("Please enter a valid 6-digit PIN code.");
       return;
     }
     if (password.length < 6) {
@@ -1351,101 +1260,6 @@ export function AuthenticationPage() {
                     <p className="text-[11px] text-muted-foreground">
                       A 6-digit verification code will be sent to your Gmail/Email to verify your account.
                     </p>
-                  </div>
-
-                  {/* DELIVERY ADDRESS & CURRENT LOCATION CARD */}
-                  <div className="rounded-2xl border border-border/80 bg-secondary/30 p-4 space-y-3 shadow-inner">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="size-4 text-brand-leaf" />
-                        <span className="text-xs font-bold text-foreground">Delivery Address & Location</span>
-                      </div>
-                      
-                      {/* GPS AUTO-DETECT CURRENT LOCATION BUTTON */}
-                      <button
-                        type="button"
-                        onClick={handleUseCurrentLocation}
-                        disabled={isLocating}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-brand-leaf/40 bg-brand-leaf/10 hover:bg-brand-leaf/20 text-brand-leaf px-2.5 py-1 text-[11px] font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
-                        title="Auto-detect current GPS location and fill address"
-                      >
-                        <Compass className={`size-3.5 ${isLocating ? "animate-spin text-brand-gold" : "text-brand-leaf"}`} />
-                        <span>{isLocating ? "Detecting GPS..." : "📍 Use Current Location"}</span>
-                      </button>
-                    </div>
-
-                    {locationDetected && detectedAddressText && (
-                      <div className="flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-[11px] text-emerald-800 font-medium">
-                        <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
-                        <span className="truncate">Auto-detected: {detectedAddressText}</span>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          Flat / House / Building *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={houseFlat}
-                          onChange={(e) => setHouseFlat(e.target.value)}
-                          placeholder="e.g. Flat 402, Green Acres"
-                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          Street / Area / Landmark *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={street}
-                          onChange={(e) => setStreet(e.target.value)}
-                          placeholder="e.g. Judges Bungalow Road, Bodakdev"
-                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2.5">
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">City *</label>
-                        <input
-                          type="text"
-                          required
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          placeholder="e.g. Ahmedabad"
-                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">State *</label>
-                        <input
-                          type="text"
-                          required
-                          value={state}
-                          onChange={(e) => setState(e.target.value)}
-                          placeholder="e.g. Gujarat"
-                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">PIN Code *</label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={6}
-                          value={pincode}
-                          onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
-                          placeholder="380054"
-                          className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs font-mono font-bold outline-none focus:border-primary"
-                        />
-                      </div>
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

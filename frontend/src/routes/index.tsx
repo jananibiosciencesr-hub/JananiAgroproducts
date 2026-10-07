@@ -154,7 +154,7 @@ export function HomePage() {
     },
     {
       id: "bhumi-shakti",
-      numId: 3,
+      numId: 2,
       name: "BHUMI SHAKTI",
       spec: "Humic & Fulvic Based Soil Conditioner Biostimulant",
       image: "/products/bhumi-shakti.jpg",
@@ -164,7 +164,7 @@ export function HomePage() {
     },
     {
       id: "neem-oil",
-      numId: 2,
+      numId: 3,
       name: "NEEM OIL",
       spec: "Containing Azadirachtin 1000 PPM",
       image: "/products/neem-oil.jpg",
