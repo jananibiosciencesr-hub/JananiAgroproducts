@@ -90,51 +90,51 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Dynamic Announcement Bar - SINGLE LINE ON ALL SCREENS */}
-      <div className="bg-[#075B32] border-b border-[#0B6B35] h-8 sm:h-9 flex items-center overflow-hidden select-none">
-        {/* Mobile View: Continuous Marquee Scrolling Ticker in a SINGLE LINE */}
+      {/* Dynamic Announcement Bar - Pure White BG, Side Aligned */}
+      <div className="bg-white border-b border-emerald-100/90 h-8 sm:h-9 flex items-center overflow-hidden select-none">
+        {/* Mobile View: Continuous Marquee Scrolling Ticker */}
         <div className="md:hidden w-full overflow-hidden whitespace-nowrap">
-          <div className="animate-marquee flex items-center gap-6 text-[11px] font-medium text-white">
+          <div className="animate-marquee flex items-center gap-6 text-[11px] font-medium text-[#075B32]">
             <span className="inline-flex items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[#E7A91A] font-bold">
+              <span className="flex items-center gap-1 text-[#D99A12] font-bold">
                 <Sparkles className="size-3 fill-current" />
                 PURE SOIL TO SOUL:
               </span>
               <span>"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
             </span>
-            <span className="text-[#E7A91A]/60">•</span>
-            <span className="text-white/90">100% Certified Biological Formulations</span>
-            <span className="text-[#E7A91A]/60">•</span>
-            <span className="text-white/90">Direct Farm Support Across India</span>
-            <span className="text-[#E7A91A]/60">•</span>
+            <span className="text-[#D99A12]">•</span>
+            <span className="text-[#075B32]/90 font-semibold">100% Certified Biological Formulations</span>
+            <span className="text-[#D99A12]">•</span>
+            <span className="text-[#075B32]/90 font-semibold">Direct Farm Support Across India</span>
+            <span className="text-[#D99A12]">•</span>
 
             {/* Seamless duplicate loop for infinite single-line scroll */}
             <span className="inline-flex items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[#E7A91A] font-bold">
+              <span className="flex items-center gap-1 text-[#D99A12] font-bold">
                 <Sparkles className="size-3 fill-current" />
                 PURE SOIL TO SOUL:
               </span>
               <span>"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
             </span>
-            <span className="text-[#E7A91A]/60">•</span>
-            <span className="text-white/90">100% Certified Biological Formulations</span>
-            <span className="text-[#E7A91A]/60">•</span>
-            <span className="text-white/90">Direct Farm Support Across India</span>
-            <span className="text-[#E7A91A]/60">•</span>
+            <span className="text-[#D99A12]">•</span>
+            <span className="text-[#075B32]/90 font-semibold">100% Certified Biological Formulations</span>
+            <span className="text-[#D99A12]">•</span>
+            <span className="text-[#075B32]/90 font-semibold">Direct Farm Support Across India</span>
+            <span className="text-[#D99A12]">•</span>
           </div>
         </div>
 
-        {/* Desktop View: Centered Static Single Line */}
-        <div className="hidden md:flex w-full items-center justify-center gap-3 px-4 text-xs font-medium text-white whitespace-nowrap overflow-hidden">
-          <span className="flex items-center gap-1.5 text-[#E7A91A] font-black uppercase tracking-wider">
+        {/* Desktop View: Side Aligned Single Line */}
+        <div className="hidden md:flex w-full items-center justify-start gap-3 px-4 sm:px-6 max-w-7xl mx-auto text-xs font-medium text-[#075B32] whitespace-nowrap overflow-hidden">
+          <span className="flex items-center gap-1.5 text-[#D99A12] font-black uppercase tracking-wider">
             <Sparkles className="size-3.5 fill-current" />
             PURE SOIL TO SOUL:
           </span>
-          <span className="text-white/95 font-medium">
+          <span className="text-[#075B32]/90 font-medium">
             "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture for a Healthier Tomorrow."
           </span>
-          <span className="text-[#E7A91A]/70">•</span>
-          <span className="text-emerald-100 font-semibold">100% Certified Biological Formulations</span>
+          <span className="text-[#D99A12]">•</span>
+          <span className="text-[#0B6B35] font-semibold">100% Certified Biological Formulations</span>
         </div>
       </div>
 
@@ -142,15 +142,15 @@ function Shell({ children }: { children: React.ReactNode }) {
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? "border-b border-[#0B6B35]/30 bg-white/98 shadow-md backdrop-blur-xl"
-            : "border-b border-[#0B6B35]/20 bg-white/95 backdrop-blur-xl shadow-xs"
+            ? "border-b border-[#0B6B35]/20 bg-white/98 shadow-md backdrop-blur-xl"
+            : "border-b border-[#0B6B35]/15 bg-white backdrop-blur-xl shadow-2xs"
         }`}
         style={{ top: 0 }}
       >
         <div className="mx-auto grid h-16 sm:h-18 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
           <Brand />
           
-          <nav className="hidden items-center justify-center gap-6 lg:flex" aria-label="Main navigation">
+          <nav className="hidden items-center justify-start ml-6 sm:ml-8 gap-6 lg:flex" aria-label="Main navigation">
             {links.map(([label, to]) => {
               const hasDropdown = label === "Products";
               const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);

@@ -580,12 +580,12 @@ export function HomePage() {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all border border-emerald-50/80"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-white hover:bg-[#f4f7f2] transition-all border border-slate-200/90 shadow-xs hover:border-[#075B32]/30 hover:shadow-sm"
                   >
-                    <div className="size-8 sm:size-9 rounded-xl bg-white text-[#075B32] flex items-center justify-center shrink-0 shadow-2xs">
-                      <item.icon className="size-4 sm:size-4.5" />
+                    <div className="size-9 rounded-xl bg-[#f4f7f2] text-[#075B32] flex items-center justify-center shrink-0 border border-emerald-100">
+                      <item.icon className="size-4.5" />
                     </div>
-                    <div>
+                    <div className="text-left">
                       <h3 className="text-xs sm:text-sm font-bold text-[#075B32] leading-tight">
                         {item.title}
                       </h3>
