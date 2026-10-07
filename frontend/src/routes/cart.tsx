@@ -62,6 +62,7 @@ export function CartPage() {
   // Dynamic Database Coupons State
   const [availableCoupons, setAvailableCoupons] = useState<AdminCoupon[]>([]);
   const [loadingCoupons, setLoadingCoupons] = useState(true);
+  const [isAllCouponsModalOpen, setIsAllCouponsModalOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
@@ -594,7 +595,13 @@ export function CartPage() {
                       <Percent className="size-3.5 text-brand-leaf" /> Available Coupons ({availableCoupons.length})
                     </span>
                     {availableCoupons.length > 0 && (
-                      <span className="text-[10px] text-muted-foreground font-semibold">Store Offers</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsAllCouponsModalOpen(true)}
+                        className="text-[11px] text-emerald-700 hover:text-emerald-800 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        See All Offers ({availableCoupons.length}) <ArrowRight className="size-3" />
+                      </button>
                     )}
                   </div>
 
@@ -857,6 +864,184 @@ export function CartPage() {
           ))}
         </div>
       </section>
+
+      {/* All Available Coupons & Offers Modal */}
+      {isAllCouponsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl border border-border bg-card p-6 sm:p-7 shadow-2xl max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-border shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded-xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center font-bold">
+                  <Percent className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-lg text-foreground">
+                    Available Coupons ({availableCoupons.length})
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Store Offers & Verified Promotions
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAllCouponsModalOpen(false)}
+                className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Quick manual search / apply form inside modal */}
+            <div className="py-3.5 border-b border-border/60 shrink-0">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleApplyCoupon(e);
+                  setIsAllCouponsModalOpen(false);
+                }}
+                className="flex gap-2"
+              >
+                <div className="relative flex-1">
+                  <Tag className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                  <input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Enter coupon (e.g. JANANI10)"
+                    className="h-10 w-full rounded-xl border border-input bg-background pl-9 pr-3 text-xs uppercase font-mono font-semibold outline-none focus:border-primary"
+                  />
+                </div>
+                <Button type="submit" size="sm" className="h-10 text-xs font-bold px-4 rounded-xl bg-[#075B32] hover:bg-[#064B29] text-white cursor-pointer">
+                  Apply
+                </Button>
+              </form>
+            </div>
+
+            {/* Scrollable Coupons List */}
+            <div className="space-y-3 overflow-y-auto pr-1 py-4 flex-1">
+              {availableCoupons.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  No active coupons found.
+                </div>
+              ) : (
+                availableCoupons.map((c) => {
+                  const isApplied =
+                    appliedCouponObj?.code === c.code ||
+                    (appliedCoupon && appliedCoupon.toUpperCase().startsWith(c.code.toUpperCase()));
+                  const isEligible = subtotal >= (c.minCart || 0);
+                  const diffToUnlock = (c.minCart || 0) - subtotal;
+
+                  let offerTitle = c.title;
+                  if (!offerTitle || offerTitle.includes("Promo Offer") || offerTitle.includes("Special Offer")) {
+                    if (c.type === "percentage") {
+                      offerTitle = `${c.discount}% Off Storewide`;
+                    } else if (c.type === "flat") {
+                      offerTitle = `Flat ₹${c.discount} Instant Discount`;
+                    } else if (c.type === "free_shipping" || c.isFreeShipping) {
+                      offerTitle = "Free Priority Delivery";
+                    }
+                  }
+
+                  let discountBadge = "";
+                  if (c.type === "percentage") discountBadge = `${c.discount}% OFF`;
+                  else if (c.type === "flat") discountBadge = `FLAT ₹${c.discount} OFF`;
+                  else if (c.type === "free_shipping" || c.isFreeShipping) discountBadge = "0% OFF (FREE SHIPPING)";
+
+                  return (
+                    <div
+                      key={c.id || c.code}
+                      className={`p-4 rounded-2xl border transition-all relative ${
+                        isApplied
+                          ? "border-emerald-600 bg-emerald-500/10 ring-2 ring-emerald-500/20"
+                          : isEligible
+                          ? "bg-card border-border hover:border-emerald-500/50 hover:shadow-xs"
+                          : "bg-muted/20 border-border/60 opacity-80"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono font-black text-xs text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg tracking-wider">
+                              {c.code}
+                            </span>
+                            {discountBadge && (
+                              <span className="text-[10px] font-bold bg-emerald-600/10 text-emerald-700 px-2 py-0.5 rounded-md">
+                                {discountBadge}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-sm font-bold text-foreground leading-snug">
+                            {offerTitle}
+                          </h4>
+                          {c.description && (
+                            <p className="text-xs text-muted-foreground leading-snug">
+                              {c.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="shrink-0 pt-0.5">
+                          {isApplied ? (
+                            <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs">
+                              <Check className="size-3.5" /> Applied
+                            </span>
+                          ) : isEligible ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleApplyCoupon(undefined, c.code);
+                                setIsAllCouponsModalOpen(false);
+                              }}
+                              className="rounded-xl bg-emerald-600/15 text-emerald-800 hover:bg-emerald-600 hover:text-white px-4 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer border border-emerald-600/30 uppercase tracking-wider"
+                            >
+                              Apply
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled
+                              className="rounded-xl border border-border bg-muted/60 px-3 py-1.5 text-xs font-bold text-muted-foreground cursor-not-allowed"
+                            >
+                              Locked
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Terms, Minimum Purchase Requirement & Expiry Date */}
+                      <div className="mt-3 pt-2.5 border-t border-border/60 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                        <div className="flex items-center gap-1.5 font-medium">
+                          {c.minCart > 0 ? (
+                            isEligible ? (
+                              <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                                <Check className="size-3.5 text-emerald-600" /> Min Purchase ₹{c.minCart} met
+                              </span>
+                            ) : (
+                              <span className="text-amber-700 font-semibold flex items-center gap-1">
+                                <AlertCircle className="size-3.5" /> Add ₹{diffToUnlock} more to unlock (Min ₹{c.minCart})
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-emerald-700 font-medium flex items-center gap-1">
+                              <Check className="size-3.5" /> No minimum purchase required
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 text-muted-foreground font-medium">
+                          <Clock className="size-3" />
+                          <span>Expires: {c.expiryDate || "31 Dec 2026"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

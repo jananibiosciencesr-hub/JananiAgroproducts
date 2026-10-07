@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   Mail,
   Lock,
+  Shield,
   ShieldCheck,
   ArrowRight,
   ArrowLeft,
@@ -97,6 +98,21 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminErrorFallback({ error, reset }: { error: any; reset: () => void }) {
+  const handleResetSession = () => {
+    try {
+      localStorage.removeItem("janani_admin_session");
+      localStorage.removeItem("janani_admin_token");
+      localStorage.removeItem("janani_admin_user");
+      localStorage.removeItem("janani_admin_auth_time");
+      sessionStorage.clear();
+    } catch (e) {}
+    if (typeof window !== "undefined") {
+      window.location.href = "/admin";
+    } else {
+      reset();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#04160c] text-white flex flex-col items-center justify-center p-6 text-center">
       <div className="size-20 mx-auto rounded-3xl bg-amber-500/10 text-amber-400 grid place-items-center mb-6 border border-amber-500/30">
@@ -108,24 +124,20 @@ function AdminErrorFallback({ error, reset }: { error: any; reset: () => void })
           The Admin Command Center encountered a session update. Click below to refresh your authenticated session or return to the storefront.
         </p>
       </div>
-      <div className="flex flex-wrap justify-center gap-3">
-        <Button
-          onClick={() => {
-            try {
-              localStorage.removeItem("janani_admin_session");
-              localStorage.removeItem("janani_admin_token");
-              localStorage.removeItem("janani_admin_user");
-              localStorage.removeItem("janani_admin_auth_time");
-            } catch (e) {}
-            reset();
-          }}
-          className="rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 text-xs"
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={handleResetSession}
+          className="rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 text-xs shadow-lg transition-all cursor-pointer"
         >
           Reset Session & Re-Authenticate
-        </Button>
-        <Button asChild variant="outline" className="rounded-2xl border-white/20 text-white hover:bg-white/10 px-6 text-xs">
-          <Link to="/">Back to Storefront</Link>
-        </Button>
+        </button>
+        <Link
+          to="/"
+          className="rounded-2xl border border-white/20 bg-white/10 hover:bg-white/20 text-white font-semibold px-6 py-3 text-xs transition-all inline-flex items-center justify-center"
+        >
+          Back to Storefront
+        </Link>
       </div>
     </div>
   );
