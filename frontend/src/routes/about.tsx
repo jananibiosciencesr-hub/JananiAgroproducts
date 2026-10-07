@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Award,
-  BadgeCheck,
   CheckCircle2,
   Factory,
   HeartHandshake,
@@ -10,23 +9,17 @@ import {
   Sprout,
   Users,
   FlaskConical,
-  Wheat,
   Microscope,
-  Globe2,
   Sparkles,
-  ArrowRight,
   Phone,
   Mail,
-  MapPin,
-  TrendingUp,
-  Shield
+  MapPin
 } from "lucide-react";
 import { PageHero, SectionHeading } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
 import aboutHeroField from "@/assets/about_hero_field.jpg";
 import aboutSoilSprout from "@/assets/about_soil_sprout.jpg";
 import aboutLabFactory from "@/assets/about_lab_factory.jpg";
-import aboutFarmerProsperity from "@/assets/about_farmer_prosperity.jpg";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -98,20 +91,6 @@ function AboutPage() {
                 From beneficial microbial inoculants (Azotobacter, PSB, KMB, Trichoderma) and high-potency bio-stimulants to botanical pest deterrents and chelated micronutrients, every Janani formulation is rigorously tested for high active CFU counts, field efficacy, and complete environmental safety.
               </p>
             </div>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              {[
-                "100% Residue-free bio-inputs",
-                "Advanced microbial fermentation",
-                "Higher crop yield & root vigor",
-                "Eco-friendly certified formulas",
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-                  <CheckCircle2 className="size-4 text-brand-leaf" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           <div className="relative">
@@ -179,59 +158,8 @@ function AboutPage() {
         </div>
       </section>
 
-      {/* Farmer Prosperity & Impact Section */}
-      <section className="px-6 py-20">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2">
-          <div className="order-2 lg:order-1 relative">
-            <img
-              src={aboutFarmerProsperity}
-              alt="Indian farmer with bumper healthy crop harvest"
-              className="aspect-[4/3] w-full rounded-[3rem] object-cover shadow-luxe"
-            />
-            <div className="absolute -bottom-6 -right-4 max-w-72 rounded-3xl border border-border bg-cream p-5 shadow-luxe sm:right-6">
-              <div className="flex items-center gap-3">
-                <span className="grid size-12 place-items-center rounded-2xl bg-brand-gold/20 text-brand-gold">
-                  <TrendingUp className="size-6" />
-                </span>
-                <div>
-                  <h4 className="font-semibold text-foreground">25-35% Yield Boost</h4>
-                  <p className="text-xs text-muted-foreground">Proven in Multi-State Field Trials</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <SectionHeading
-              eyebrow="Farmer Prosperity"
-              title="Empowering Growers with High ROI & Sustainable Yields"
-              copy="Our mission goes beyond selling inputs — we partner with farmers to lower their cultivation costs, prevent crop losses from pests & fungi, and build fertile living soils for generations."
-              align="left"
-            />
-            <div className="mt-8 space-y-4 text-sm leading-8 text-muted-foreground">
-              <p>
-                By replacing heavy chemical regimens with targeted bio-formulations, Indian farmers achieve higher market quality, residue-free export standards, and up to 30% savings on input expenditures.
-              </p>
-            </div>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {[
-                "Field-tested on 20+ Commercial Crops",
-                "Dedicated On-Field Agronomy Support",
-                "Nationwide Distributor Network",
-                "Fast Doorstep Farm Dispatches",
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-2.5 text-xs font-semibold text-foreground">
-                  <CheckCircle2 className="size-4 text-brand-leaf shrink-0" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Pillars */}
-      <section className="bg-secondary/40 px-6 py-20 border-y border-border">
+      <section className="px-6 py-20">
         <div className="mx-auto max-w-7xl">
           <SectionHeading
             eyebrow="Our Core Values"

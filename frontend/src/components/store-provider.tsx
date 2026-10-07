@@ -32,91 +32,72 @@ type StoreContextValue = {
 const StoreContext = createContext<StoreContextValue | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Record<number, number>>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("janani_cart");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-            return parsed;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse stored cart", e);
-      }
-    }
-    return {};
-  });
-
-  const [wishlist, setWishlist] = useState<number[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
-        if (storedUser) {
-          const stored = localStorage.getItem("janani_wishlist");
-          if (stored) return JSON.parse(stored);
-        }
-      } catch (e) {
-        console.error("Failed to parse stored wishlist", e);
-      }
-    }
-    return [];
-  });
-
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("janani_user");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          // Strictly prevent admin credentials from polluting customer storefront
-          if (
-            parsed?.role === "Super Admin" ||
-            parsed?.role === "Admin" ||
-            (typeof parsed?.email === "string" && parsed.email.toLowerCase() === "jananibiosciences.r@gmail.com")
-          ) {
-            return null;
-          }
-          if (
-            parsed?.email?.toLowerCase().includes("neha.patel") ||
-            parsed?.email?.toLowerCase().includes("example.com") ||
-            parsed?.name?.toLowerCase().includes("neha patel") ||
-            parsed?.id === "cust-101"
-          ) {
-            localStorage.removeItem("janani_user");
-            localStorage.removeItem("janani_auth_user");
-            localStorage.removeItem("janani_token");
-            localStorage.removeItem("janani_auth_token");
-            return null;
-          }
-          return parsed;
-        }
-      } catch (e) {
-        console.error("Failed to parse stored user", e);
-      }
-    }
-    return null;
-  });
-
+  const [cart, setCart] = useState<Record<number, number>>({});
+  const [wishlist, setWishlist] = useState<number[]>([]);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [liveProducts, setLiveProducts] = useState<Product[]>(initialProducts);
   const [liveCategories, setLiveCategories] = useState<any[]>(initialCategories);
 
+  // Sync state from localStorage on client mount (prevents SSR React #418 hydration mismatch)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("janani_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          setCart(parsed);
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const storedWishlist = localStorage.getItem("janani_wishlist");
+      if (storedWishlist) {
+        setWishlist(JSON.parse(storedWishlist));
+      }
+    } catch (e) {}
+
+    try {
+      const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (
+          parsed?.role !== "Super Admin" &&
+          parsed?.role !== "Admin" &&
+          parsed?.email?.toLowerCase() !== "jananibiosciences.r@gmail.com" &&
+          !parsed?.email?.toLowerCase().includes("neha.patel") &&
+          !parsed?.email?.toLowerCase().includes("example.com") &&
+          !parsed?.name?.toLowerCase().includes("neha patel") &&
+          parsed?.id !== "cust-101"
+        ) {
+          setUser(parsed);
+        } else if (
+          parsed?.email?.toLowerCase().includes("neha.patel") ||
+          parsed?.email?.toLowerCase().includes("example.com") ||
+          parsed?.id === "cust-101"
+        ) {
+          localStorage.removeItem("janani_user");
+          localStorage.removeItem("janani_auth_user");
+          localStorage.removeItem("janani_token");
+          localStorage.removeItem("janani_auth_token");
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const refreshProducts = async () => {
     try {
-      const [fetchedProds, fetchedCats] = await Promise.all([
+      const [fetchedProds, fetchedCats] = await Promise.allSettled([
         getProducts(),
         getCategories()
       ]);
-      if (Array.isArray(fetchedProds) && fetchedProds.length > 0) {
-        setLiveProducts(fetchedProds);
+      if (fetchedProds.status === "fulfilled" && Array.isArray(fetchedProds.value) && fetchedProds.value.length > 0) {
+        setLiveProducts(fetchedProds.value);
       }
-      if (Array.isArray(fetchedCats) && fetchedCats.length > 0) {
-        setLiveCategories(fetchedCats);
+      if (fetchedCats.status === "fulfilled" && Array.isArray(fetchedCats.value) && fetchedCats.value.length > 0) {
+        setLiveCategories(fetchedCats.value);
       }
-    } catch (e) {
-      console.warn("[StoreProvider] Background product sync:", e);
-    }
+    } catch (e) {}
   };
 
   const refreshUserProfile = async (currentUser?: AuthUser | null) => {

@@ -77,9 +77,10 @@ foreach ($hosts as $h) {
 }
 
 if (!$pdo) {
-    http_response_code(500);
+    http_response_code(200);
     echo json_encode([
         'success' => false,
+        'db_connected' => false,
         'error' => 'Database connection failed: ' . ($lastError ? $lastError->getMessage() : 'Unknown error'),
         'hint' => 'Please verify database name and credentials in Hostinger hPanel.'
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

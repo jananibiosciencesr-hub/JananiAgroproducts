@@ -29,8 +29,6 @@ import jananiLogo from "@/assets/janani-agro-logo.png";
 import { StoreProvider, useStore } from "@/components/store-provider";
 import { categories } from "@/lib/catalog";
 import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
-import { subscribeNewsletter } from "@/lib/api";
 import { HomeMegaMenu } from "@/components/home-mega-menu";
 import { GlobalSearchModal } from "@/components/search/global-search-modal";
 import { CartDrawer } from "@/components/cart/cart-drawer";
@@ -403,31 +401,6 @@ function Count({ value }: { value: number }) {
 function Footer() {
   const { categories: storeCategories } = useStore();
   const allCategories = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [isSubscribing, setIsSubscribing] = useState(false);
-
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail || !newsletterEmail.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-
-    try {
-      setIsSubscribing(true);
-      const res = await subscribeNewsletter(newsletterEmail);
-      if (res?.success) {
-        toast.success(res.message || "Thank you for subscribing! Your email has been registered.");
-        setNewsletterEmail("");
-      } else {
-        toast.error(res?.message || "Subscription failed. Please try again.");
-      }
-    } catch (err) {
-      toast.error("An error occurred while subscribing.");
-    } finally {
-      setIsSubscribing(false);
-    }
-  };
 
   const quickLinks: [string, string][] = [
     ["Home", "/"],
@@ -465,7 +438,7 @@ function Footer() {
   ];
 
   return (
-    <footer className="relative bg-[#064A29] text-white pt-6 pb-12 md:pb-6 overflow-hidden select-none">
+    <footer className="relative bg-[#064A29] text-white pt-10 sm:pt-12 pb-12 md:pb-6 overflow-hidden select-none">
       {/* Top Graceful Wavy Ribbon Curve */}
       <div className="absolute top-0 inset-x-0 overflow-hidden leading-none pointer-events-none -translate-y-[1px]">
         <svg
@@ -485,38 +458,7 @@ function Footer() {
         </svg>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4">
-        {/* Newsletter Subscription Strip Banner */}
-        <div className="mb-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
-          <div className="flex items-center gap-4 text-left">
-            <div className="size-12 sm:size-14 rounded-2xl bg-[#EAF5E9] text-[#075B32] flex items-center justify-center shrink-0 shadow-md">
-              <Mail className="size-6 sm:size-7" />
-            </div>
-            <div>
-              <h4 className="text-lg sm:text-xl font-bold text-white font-display">Subscribe to Our Newsletter</h4>
-              <p className="text-xs sm:text-sm text-emerald-100/90 mt-0.5">Get latest farming tips, biological crop guides and exclusive seasonal offers.</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleNewsletterSubmit} className="flex items-center gap-2.5 w-full md:w-auto">
-            <input
-              type="email"
-              required
-              value={newsletterEmail}
-              onChange={(e) => setNewsletterEmail(e.target.value)}
-              placeholder="Enter your email address"
-              className="w-full sm:w-80 h-11 px-4 text-xs sm:text-sm rounded-xl border border-white/30 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E7A91A] transition shadow-xs"
-            />
-            <button
-              type="submit"
-              disabled={isSubscribing}
-              className="bg-[#E7A91A] hover:bg-[#d99a12] active:scale-95 text-[#04160c] text-xs sm:text-sm font-black px-6 h-11 rounded-xl transition shrink-0 shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
-            >
-              {isSubscribing ? "Subscribing..." : "Subscribe"}
-            </button>
-          </form>
-        </div>
-
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-6 pb-6 border-b border-[#0B6B35]/50">
           {/* Column 1: Brand & About */}
           <div className="space-y-4">
@@ -524,11 +466,13 @@ function Footer() {
               to="/"
               className="inline-flex items-center gap-3.5 bg-white rounded-2xl p-2.5 sm:p-3 pr-4 sm:pr-5 shadow-md border border-white/40 hover:shadow-lg transition-all group"
             >
-              <img
-                src={jananiLogo}
-                alt="JANANI AGRO PRODUCTS"
-                className="h-14 sm:h-16 w-auto object-contain shrink-0 transition-transform duration-300 group-hover:scale-105"
-              />
+              <div className="size-12 sm:size-14 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-emerald-50/80 border border-emerald-200/60 shadow-xs">
+                <img
+                  src={jananiLogo}
+                  alt="JANANI AGRO PRODUCTS"
+                  className="w-[125%] h-[125%] max-w-none object-cover object-top -mt-0.5 transition-transform duration-300 group-hover:scale-110"
+                />
+              </div>
               <div className="flex flex-col text-left">
                 <span className="font-display text-sm sm:text-base font-black tracking-tight text-[#075B32] leading-tight">
                   JANANI AGRO
