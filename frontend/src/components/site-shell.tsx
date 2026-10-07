@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/brand";
-import jananiLogo from "@/assets/janani-agro-logo.png";
+import jananiEmblem from "@/assets/janani-emblem.png";
 import { StoreProvider, useStore } from "@/components/store-provider";
 import { categories } from "@/lib/catalog";
 import { Toaster } from "@/components/ui/sonner";
@@ -466,13 +466,11 @@ function Footer() {
               to="/"
               className="inline-flex items-center gap-3.5 bg-white rounded-2xl p-2.5 sm:p-3 pr-4 sm:pr-5 shadow-md border border-white/40 hover:shadow-lg transition-all group"
             >
-              <div className="size-12 sm:size-14 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-emerald-50/80 border border-emerald-200/60 shadow-xs">
-                <img
-                  src={jananiLogo}
-                  alt="JANANI AGRO PRODUCTS"
-                  className="w-[125%] h-[125%] max-w-none object-cover object-top -mt-0.5 transition-transform duration-300 group-hover:scale-110"
-                />
-              </div>
+              <img
+                src={jananiEmblem}
+                alt="JANANI AGRO PRODUCTS"
+                className="size-12 sm:size-14 object-contain shrink-0 transition-transform duration-300 group-hover:scale-110"
+              />
               <div className="flex flex-col text-left">
                 <span className="font-display text-sm sm:text-base font-black tracking-tight text-[#075B32] leading-tight">
                   JANANI AGRO

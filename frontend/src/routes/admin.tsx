@@ -24,7 +24,7 @@ import {
   ShoppingBag,
   User
 } from "lucide-react";
-import jananiLogo from "@/assets/janani-agro-logo.png";
+import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import {
   AdminSidebar,
@@ -556,14 +556,8 @@ function AdminDashboardPage() {
     return (
       <div className="min-h-screen bg-[#FAF7EE] text-slate-900 flex flex-col font-sans select-none selection:bg-[#075B32]/20 selection:text-[#075B32]">
         {/* Top Storefront Navigation Header (matching reference design) */}
-        <header className="w-full bg-white border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-xs">
-          <Link to="/" className="flex items-center gap-2.5 group" aria-label="Janani Agro Home">
-            <img
-              src={jananiLogo}
-              alt="Janani Agro"
-              className="h-11 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105"
-            />
-          </Link>
+        <header className="w-full bg-white border-b border-slate-200/80 px-4 sm:px-8 py-3 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-xs">
+          <Brand />
 
           <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-semibold text-slate-700">
             <Link to="/" className="hover:text-[#075B32] transition">Home</Link>

@@ -21,7 +21,8 @@ import {
   Clock,
   Calendar,
   Percent,
-  RefreshCw
+  RefreshCw,
+  ChevronDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
@@ -68,6 +69,7 @@ export function CartPage() {
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [appliedCouponObj, setAppliedCouponObj] = useState<AdminCoupon | null>(null);
+  const [isCouponsDropdownOpen, setIsCouponsDropdownOpen] = useState(false);
 
   // Fetch active database coupons on mount
   useEffect(() => {
@@ -589,147 +591,169 @@ export function CartPage() {
                   </form>
                 )}
 
-                {/* Available Storefront Coupons from Database */}
-                <div className="space-y-2.5 pt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] uppercase tracking-wider font-extrabold text-foreground flex items-center gap-1.5">
-                      <Percent className="size-3.5 text-brand-leaf" /> Available Coupons ({availableCoupons.length})
+                {/* Available Storefront Coupons Dropdown Accordion */}
+                <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-2xs mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCouponsDropdownOpen((prev) => !prev)}
+                    className="w-full flex items-center justify-between p-3.5 text-left hover:bg-muted/40 transition cursor-pointer"
+                  >
+                    <span className="text-[12px] uppercase tracking-wider font-extrabold text-foreground flex items-center gap-2">
+                      <Percent className="size-4 text-brand-leaf" /> Available Coupons ({availableCoupons.length})
                     </span>
-                    {availableCoupons.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setIsAllCouponsModalOpen(true)}
-                        className="text-[11px] text-emerald-700 hover:text-emerald-800 font-bold hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        See All Offers ({availableCoupons.length}) <ArrowRight className="size-3" />
-                      </button>
-                    )}
-                  </div>
-
-                  {loadingCoupons ? (
-                    <div className="py-4 text-center text-xs text-muted-foreground animate-pulse">
-                      Loading available coupons...
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                        {isCouponsDropdownOpen ? "Hide Offers" : "View Offers"}
+                      </span>
+                      <ChevronDown
+                        className={`size-4 text-emerald-700 dark:text-emerald-400 transition-transform duration-200 ${
+                          isCouponsDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
                     </div>
-                  ) : availableCoupons.length === 0 ? (
-                    <div className="p-3 text-center rounded-2xl bg-muted/40 border border-border text-xs text-muted-foreground">
-                      No promo coupons active right now. Check back soon!
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-2.5">
-                      {availableCoupons.map((c) => {
-                        const isApplied =
-                          appliedCouponObj?.code === c.code ||
-                          (appliedCoupon && appliedCoupon.toUpperCase().startsWith(c.code.toUpperCase()));
-                        const isEligible = subtotal >= (c.minCart || 0);
-                        const diffToUnlock = (c.minCart || 0) - subtotal;
+                  </button>
 
-                        let offerTitle = c.title;
-                        if (!offerTitle || offerTitle.includes("Promo Offer") || offerTitle.includes("Special Offer")) {
-                          if (c.type === "percentage") {
-                            offerTitle = `${c.discount}% Instant Discount${c.maxDiscount ? ` (Up to ₹${c.maxDiscount})` : ""}`;
-                          } else if (c.type === "flat") {
-                            offerTitle = `Flat ₹${c.discount} Instant Discount`;
-                          } else if (c.type === "free_shipping" || c.isFreeShipping) {
-                            offerTitle = "Free Farm Delivery (Save ₹60)";
-                          }
-                        }
-
-                        return (
-                          <div
-                            key={c.id || c.code}
-                            className={`p-3 rounded-2xl border transition-all relative overflow-hidden ${
-                              isApplied
-                                ? "bg-emerald-500/10 border-emerald-500/40 shadow-xs"
-                                : isEligible
-                                ? "bg-card border-border hover:border-brand-leaf/50 hover:bg-brand-leaf/[0.02] shadow-xs"
-                                : "bg-muted/30 border-border/60 opacity-85"
-                            }`}
+                  {/* Dropdown Content */}
+                  {isCouponsDropdownOpen && (
+                    <div className="p-3.5 pt-0 border-t border-border/60 space-y-2.5 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-end pt-2">
+                        {availableCoupons.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setIsAllCouponsModalOpen(true)}
+                            className="text-[11px] text-emerald-700 hover:text-emerald-800 font-bold hover:underline cursor-pointer flex items-center gap-1"
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="space-y-1 min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-mono font-black text-xs text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg tracking-wider">
-                                    {c.code}
-                                  </span>
-                                  {c.type === "percentage" && (
-                                    <span className="text-[10px] font-bold bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.2 rounded">
-                                      {c.discount}% OFF
-                                    </span>
-                                  )}
-                                  {c.type === "flat" && (
-                                    <span className="text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.2 rounded">
-                                      FLAT ₹{c.discount} OFF
-                                    </span>
-                                  )}
-                                  {(c.type === "free_shipping" || c.isFreeShipping) && (
-                                    <span className="text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 px-1.5 py-0.2 rounded">
-                                      FREE SHIPPING
-                                    </span>
-                                  )}
+                            See All Offers ({availableCoupons.length}) <ArrowRight className="size-3" />
+                          </button>
+                        )}
+                      </div>
+
+                      {loadingCoupons ? (
+                        <div className="py-4 text-center text-xs text-muted-foreground animate-pulse">
+                          Loading available coupons...
+                        </div>
+                      ) : availableCoupons.length === 0 ? (
+                        <div className="p-3 text-center rounded-xl bg-muted/40 border border-border text-xs text-muted-foreground">
+                          No promo coupons active right now. Check back soon!
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2.5 max-h-72 overflow-y-auto pr-1">
+                          {availableCoupons.map((c) => {
+                            const isApplied =
+                              appliedCouponObj?.code === c.code ||
+                              (appliedCoupon && appliedCoupon.toUpperCase().startsWith(c.code.toUpperCase()));
+                            const isEligible = subtotal >= (c.minCart || 0);
+                            const diffToUnlock = (c.minCart || 0) - subtotal;
+
+                            let offerTitle = c.title;
+                            if (!offerTitle || offerTitle.includes("Promo Offer") || offerTitle.includes("Special Offer")) {
+                              if (c.type === "percentage") {
+                                offerTitle = `${c.discount}% Instant Discount${c.maxDiscount ? ` (Up to ₹${c.maxDiscount})` : ""}`;
+                              } else if (c.type === "flat") {
+                                offerTitle = `Flat ₹${c.discount} Instant Discount`;
+                              } else if (c.type === "free_shipping" || c.isFreeShipping) {
+                                offerTitle = "Free Farm Delivery (Save ₹60)";
+                              }
+                            }
+
+                            return (
+                              <div
+                                key={c.id || c.code}
+                                className={`p-3 rounded-xl border transition-all relative overflow-hidden ${
+                                  isApplied
+                                    ? "bg-emerald-500/10 border-emerald-500/40 shadow-xs"
+                                    : isEligible
+                                    ? "bg-background border-border hover:border-brand-leaf/50 hover:bg-brand-leaf/[0.02] shadow-xs"
+                                    : "bg-muted/30 border-border/60 opacity-85"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="space-y-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-mono font-black text-xs text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg tracking-wider">
+                                        {c.code}
+                                      </span>
+                                      {c.type === "percentage" && (
+                                        <span className="text-[10px] font-bold bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.2 rounded">
+                                          {c.discount}% OFF
+                                        </span>
+                                      )}
+                                      {c.type === "flat" && (
+                                        <span className="text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.2 rounded">
+                                          FLAT ₹{c.discount} OFF
+                                        </span>
+                                      )}
+                                      {(c.type === "free_shipping" || c.isFreeShipping) && (
+                                        <span className="text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 px-1.5 py-0.2 rounded">
+                                          FREE SHIPPING
+                                        </span>
+                                      )}
+                                    </div>
+                                    <h4 className="text-xs font-bold text-foreground leading-snug">
+                                      {offerTitle}
+                                    </h4>
+                                    {c.description && (
+                                      <p className="text-[11px] text-muted-foreground leading-tight">
+                                        {c.description}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div className="shrink-0 pt-0.5">
+                                    {isApplied ? (
+                                      <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold text-white shadow-xs">
+                                        <Check className="size-3" /> Applied
+                                      </span>
+                                    ) : isEligible ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleApplyCoupon(undefined, c.code)}
+                                        className="rounded-xl border border-emerald-600 bg-emerald-600/10 px-3 py-1 text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white transition uppercase tracking-wider shadow-xs cursor-pointer"
+                                      >
+                                        Apply
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        disabled
+                                        className="rounded-xl border border-border bg-muted/60 px-2.5 py-1 text-[10px] font-bold text-muted-foreground cursor-not-allowed"
+                                      >
+                                        Locked
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <h4 className="text-xs font-bold text-foreground leading-snug">
-                                  {offerTitle}
-                                </h4>
-                                {c.description && (
-                                  <p className="text-[11px] text-muted-foreground leading-tight">
-                                    {c.description}
-                                  </p>
-                                )}
-                              </div>
 
-                              <div className="shrink-0 pt-0.5">
-                                {isApplied ? (
-                                  <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold text-white shadow-xs">
-                                    <Check className="size-3" /> Applied
-                                  </span>
-                                ) : isEligible ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleApplyCoupon(undefined, c.code)}
-                                    className="rounded-xl border border-emerald-600 bg-emerald-600/10 px-3 py-1 text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white transition uppercase tracking-wider shadow-xs cursor-pointer"
-                                  >
-                                    Apply
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    disabled
-                                    className="rounded-xl border border-border bg-muted/60 px-2.5 py-1 text-[10px] font-bold text-muted-foreground cursor-not-allowed"
-                                  >
-                                    Locked
-                                  </button>
-                                )}
-                              </div>
-                            </div>
+                                {/* Terms, Minimum Spend & Expiry Date */}
+                                <div className="mt-2.5 pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-1.5 text-[10px]">
+                                  <div className="flex items-center gap-1.5 font-medium">
+                                    {c.minCart > 0 ? (
+                                      isEligible ? (
+                                        <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                          <Check className="size-3 text-emerald-600" /> Min Purchase ₹{c.minCart} met
+                                        </span>
+                                      ) : (
+                                        <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
+                                          <AlertCircle className="size-3" /> Add ₹{diffToUnlock} more (Min ₹{c.minCart})
+                                        </span>
+                                      )
+                                    ) : (
+                                      <span className="text-muted-foreground">
+                                        No minimum spend
+                                      </span>
+                                    )}
+                                  </div>
 
-                            {/* Terms, Minimum Purchase Requirement & Expiry Date */}
-                            <div className="mt-2.5 pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-1.5 text-[10px]">
-                              <div className="flex items-center gap-1.5 font-medium">
-                                {c.minCart > 0 ? (
-                                  isEligible ? (
-                                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                                      <Check className="size-3 text-emerald-600" /> Min Purchase ₹{c.minCart} met
-                                    </span>
-                                  ) : (
-                                    <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
-                                      <AlertCircle className="size-3" /> Add ₹{diffToUnlock} more (Min ₹{c.minCart})
-                                    </span>
-                                  )
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    No minimum spend
-                                  </span>
-                                )}
+                                  <div className="text-muted-foreground flex items-center gap-1 font-medium">
+                                    <Clock className="size-3 text-muted-foreground/70" />
+                                    <span>Expires: {formatCouponExpiry(c.expiryDate)}</span>
+                                  </div>
+                                </div>
                               </div>
-
-                              <div className="text-muted-foreground flex items-center gap-1 font-medium">
-                                <Clock className="size-3 text-muted-foreground/70" />
-                                <span>Expires: {formatCouponExpiry(c.expiryDate)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

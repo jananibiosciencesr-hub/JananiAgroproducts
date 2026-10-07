@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import jananiLogo from "@/assets/janani-agro-logo.png";
+import jananiEmblem from "@/assets/janani-emblem.png";
 
 export function Brand({
   compact = false,
@@ -16,14 +16,12 @@ export function Brand({
       className={`inline-flex items-center gap-2.5 sm:gap-3 group select-none ${className}`}
       aria-label="JANANI AGRO PRODUCTS home"
     >
-      {/* Circular Emblem on the Left */}
-      <div className="size-11 sm:size-12.5 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-emerald-50/80 border border-emerald-200/60 shadow-xs">
-        <img
-          src={jananiLogo}
-          alt="JANANI AGRO PRODUCTS"
-          className="w-[125%] h-[125%] max-w-none object-cover object-top -mt-0.5 transition-transform duration-300 group-hover:scale-110"
-        />
-      </div>
+      {/* Pure Circular Emblem on the Left */}
+      <img
+        src={jananiEmblem}
+        alt="JANANI AGRO PRODUCTS"
+        className="size-11 sm:size-13 object-contain shrink-0 drop-shadow-xs transition-transform duration-300 group-hover:scale-105"
+      />
 
       {/* Brand Text on the Right */}
       <div className="flex flex-col text-left leading-none">
