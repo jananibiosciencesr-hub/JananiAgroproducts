@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import { products as initialProducts, categories as initialCategories, type Product } from "@/lib/catalog";
 import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories, updateUserProfileApi } from "@/lib/api";
@@ -38,6 +38,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [liveProducts, setLiveProducts] = useState<Product[]>(initialProducts);
   const [liveCategories, setLiveCategories] = useState<any[]>(initialCategories);
 
+  const isCartHydratedRef = useRef(false);
+  const isWishlistHydratedRef = useRef(false);
+
   // Sync state from localStorage on client mount (prevents SSR React #418 hydration mismatch)
   useEffect(() => {
     try {
@@ -49,13 +52,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (e) {}
+    isCartHydratedRef.current = true;
 
     try {
       const storedWishlist = localStorage.getItem("janani_wishlist");
       if (storedWishlist) {
-        setWishlist(JSON.parse(storedWishlist));
+        const parsedW = JSON.parse(storedWishlist);
+        if (Array.isArray(parsedW)) {
+          setWishlist(parsedW);
+        }
       }
     } catch (e) {}
+    isWishlistHydratedRef.current = true;
 
     try {
       const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
@@ -268,15 +276,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.email]);
 
-  // Sync cart to localStorage reliably
+  // Sync cart to localStorage reliably (never overwrite with initial empty state before hydration)
   useEffect(() => {
+    if (!isCartHydratedRef.current) return;
     if (typeof window !== "undefined") {
       localStorage.setItem("janani_cart", JSON.stringify(cart));
     }
   }, [cart]);
 
-  // Sync wishlist to localStorage
+  // Sync wishlist to localStorage (never overwrite before hydration)
   useEffect(() => {
+    if (!isWishlistHydratedRef.current) return;
     if (typeof window !== "undefined") {
       localStorage.setItem("janani_wishlist", JSON.stringify(wishlist));
     }
@@ -417,6 +427,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Auto purge orphan/invalid product IDs & merge duplicate string/number keys in cart
   useEffect(() => {
+    if (!isCartHydratedRef.current) return;
     if (!liveProducts || liveProducts.length === 0) return;
     setCart((current) => {
       const entries = Object.entries(current);
