@@ -17,11 +17,16 @@ import {
   ArrowRight,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  TrendingUp,
+  Shield
 } from "lucide-react";
 import { PageHero, SectionHeading } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
-import { heroImage, storyImage, pantryImage } from "@/lib/catalog";
+import aboutHeroField from "@/assets/about_hero_field.jpg";
+import aboutSoilSprout from "@/assets/about_soil_sprout.jpg";
+import aboutLabFactory from "@/assets/about_lab_factory.jpg";
+import aboutFarmerProsperity from "@/assets/about_farmer_prosperity.jpg";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -46,10 +51,10 @@ function AboutPage() {
         eyebrow="Pure Soil to Soul • Agricultural Excellence"
         title="Nurturing Soil Health, Empowering Farmers, Enriching Nature."
         copy="Janani Agro Products is dedicated to revolutionizing Indian agriculture through scientific bio-fertilizers, natural biological crop protection, and sustainable plant nutrition for bumper crop yields and healthy soil ecosystems."
-        image={heroImage}
+        image={aboutHeroField}
       >
         <div className="flex flex-wrap gap-4">
-          <Button asChild variant="gold" size="lg" className="rounded-full px-7 font-bold">
+          <Button asChild variant="gold" size="lg" className="rounded-full px-7 font-bold shadow-md">
             <Link to="/products">Explore Agri Products</Link>
           </Button>
           <Button asChild variant="glass" size="lg" className="rounded-full px-7 font-bold">
@@ -111,7 +116,7 @@ function AboutPage() {
 
           <div className="relative">
             <img
-              src={storyImage}
+              src={aboutSoilSprout}
               alt="Healthy green crops supported by Janani Agro biologicals"
               className="aspect-[4/3] w-full rounded-[3rem] object-cover shadow-luxe"
             />
@@ -174,8 +179,59 @@ function AboutPage() {
         </div>
       </section>
 
-      {/* Pillars */}
+      {/* Farmer Prosperity & Impact Section */}
       <section className="px-6 py-20">
+        <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2">
+          <div className="order-2 lg:order-1 relative">
+            <img
+              src={aboutFarmerProsperity}
+              alt="Indian farmer with bumper healthy crop harvest"
+              className="aspect-[4/3] w-full rounded-[3rem] object-cover shadow-luxe"
+            />
+            <div className="absolute -bottom-6 -right-4 max-w-72 rounded-3xl border border-border bg-cream p-5 shadow-luxe sm:right-6">
+              <div className="flex items-center gap-3">
+                <span className="grid size-12 place-items-center rounded-2xl bg-brand-gold/20 text-brand-gold">
+                  <TrendingUp className="size-6" />
+                </span>
+                <div>
+                  <h4 className="font-semibold text-foreground">25-35% Yield Boost</h4>
+                  <p className="text-xs text-muted-foreground">Proven in Multi-State Field Trials</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <SectionHeading
+              eyebrow="Farmer Prosperity"
+              title="Empowering Growers with High ROI & Sustainable Yields"
+              copy="Our mission goes beyond selling inputs — we partner with farmers to lower their cultivation costs, prevent crop losses from pests & fungi, and build fertile living soils for generations."
+              align="left"
+            />
+            <div className="mt-8 space-y-4 text-sm leading-8 text-muted-foreground">
+              <p>
+                By replacing heavy chemical regimens with targeted bio-formulations, Indian farmers achieve higher market quality, residue-free export standards, and up to 30% savings on input expenditures.
+              </p>
+            </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              {[
+                "Field-tested on 20+ Commercial Crops",
+                "Dedicated On-Field Agronomy Support",
+                "Nationwide Distributor Network",
+                "Fast Doorstep Farm Dispatches",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-2.5 text-xs font-semibold text-foreground">
+                  <CheckCircle2 className="size-4 text-brand-leaf shrink-0" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pillars */}
+      <section className="bg-secondary/40 px-6 py-20 border-y border-border">
         <div className="mx-auto max-w-7xl">
           <SectionHeading
             eyebrow="Our Core Values"
@@ -252,7 +308,7 @@ function AboutPage() {
               </p>
             </div>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Button asChild variant="gold" className="rounded-full px-6 font-bold">
+              <Button asChild variant="gold" className="rounded-full px-6 font-bold shadow-md">
                 <Link to="/contact">Get in Touch</Link>
               </Button>
               <Button asChild variant="glass" className="rounded-full px-6 font-bold">
@@ -262,8 +318,8 @@ function AboutPage() {
           </div>
           <div>
             <img
-              src={pantryImage}
-              alt="Janani Agro Products biological formulations collection"
+              src={aboutLabFactory}
+              alt="Janani Agro Products state-of-the-art biotechnology laboratory and manufacturing facility"
               className="rounded-3xl object-cover shadow-luxe w-full aspect-[4/3]"
             />
           </div>
