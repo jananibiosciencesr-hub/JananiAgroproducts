@@ -53,6 +53,7 @@ export function CartPage() {
     addToCart,
     subtotal,
     cartCount,
+    user,
     products: storeProducts,
     wishlist,
     toggleWishlist,
@@ -741,7 +742,7 @@ export function CartPage() {
                 variant="gold"
                 className="w-full h-14 rounded-2xl text-sm font-bold shadow-md hover:shadow-lg transition"
               >
-                <Link to="/checkout">
+                <Link to={user ? "/checkout" : "/login"} search={user ? undefined : ({ redirect: "/checkout" } as any)}>
                   Proceed to Checkout <ArrowRight className="size-4 ml-1.5" />
                 </Link>
               </Button>

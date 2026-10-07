@@ -24,7 +24,7 @@ interface CartDrawerProps {
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const navigate = useNavigate();
-  const { cart, updateQuantity, removeFromCart, subtotal, cartCount, products: storeProducts } = useStore();
+  const { cart, updateQuantity, removeFromCart, subtotal, cartCount, user, products: storeProducts } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   const cartItems = React.useMemo(() => {
@@ -211,7 +211,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 className="rounded-xl text-xs font-bold h-11 shadow-md hover:shadow-lg"
                 onClick={onClose}
               >
-                <Link to="/checkout">
+                <Link to={user ? "/checkout" : "/login"} search={user ? undefined : ({ redirect: "/checkout" } as any)}>
                   Checkout <ArrowRight className="size-3.5 ml-1" />
                 </Link>
               </Button>

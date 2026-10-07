@@ -90,51 +90,51 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Dynamic Announcement Bar - Pure White BG, Side Aligned */}
-      <div className="bg-white border-b border-emerald-100/90 h-8 sm:h-9 flex items-center overflow-hidden select-none">
+      {/* Dynamic Announcement Bar - Deep Green BG, Side Aligned */}
+      <div className="bg-[#064A29] border-b border-[#04331B] h-8 sm:h-9 flex items-center overflow-hidden select-none">
         {/* Mobile View: Continuous Marquee Scrolling Ticker */}
         <div className="md:hidden w-full overflow-hidden whitespace-nowrap">
-          <div className="animate-marquee flex items-center gap-6 text-[11px] font-medium text-[#075B32]">
+          <div className="animate-marquee flex items-center gap-6 text-[11px] font-medium text-emerald-100">
             <span className="inline-flex items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[#D99A12] font-bold">
+              <span className="flex items-center gap-1 text-[#F5B726] font-bold">
                 <Sparkles className="size-3 fill-current" />
                 PURE SOIL TO SOUL:
               </span>
-              <span>"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
+              <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
             </span>
-            <span className="text-[#D99A12]">•</span>
-            <span className="text-[#075B32]/90 font-semibold">100% Certified Biological Formulations</span>
-            <span className="text-[#D99A12]">•</span>
-            <span className="text-[#075B32]/90 font-semibold">Direct Farm Support Across India</span>
-            <span className="text-[#D99A12]">•</span>
+            <span className="text-[#F5B726]">•</span>
+            <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
+            <span className="text-[#F5B726]">•</span>
+            <span className="text-emerald-200 font-semibold">Direct Farm Support Across India</span>
+            <span className="text-[#F5B726]">•</span>
 
             {/* Seamless duplicate loop for infinite single-line scroll */}
             <span className="inline-flex items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[#D99A12] font-bold">
+              <span className="flex items-center gap-1 text-[#F5B726] font-bold">
                 <Sparkles className="size-3 fill-current" />
                 PURE SOIL TO SOUL:
               </span>
-              <span>"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
+              <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
             </span>
-            <span className="text-[#D99A12]">•</span>
-            <span className="text-[#075B32]/90 font-semibold">100% Certified Biological Formulations</span>
-            <span className="text-[#D99A12]">•</span>
-            <span className="text-[#075B32]/90 font-semibold">Direct Farm Support Across India</span>
-            <span className="text-[#D99A12]">•</span>
+            <span className="text-[#F5B726]">•</span>
+            <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
+            <span className="text-[#F5B726]">•</span>
+            <span className="text-emerald-200 font-semibold">Direct Farm Support Across India</span>
+            <span className="text-[#F5B726]">•</span>
           </div>
         </div>
 
         {/* Desktop View: Side Aligned Single Line */}
-        <div className="hidden md:flex w-full items-center justify-start gap-3 px-4 sm:px-6 max-w-7xl mx-auto text-xs font-medium text-[#075B32] whitespace-nowrap overflow-hidden">
-          <span className="flex items-center gap-1.5 text-[#D99A12] font-black uppercase tracking-wider">
+        <div className="hidden md:flex w-full items-center justify-start gap-3 px-4 sm:px-6 max-w-7xl mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap overflow-hidden">
+          <span className="flex items-center gap-1.5 text-[#F5B726] font-black uppercase tracking-wider">
             <Sparkles className="size-3.5 fill-current" />
             PURE SOIL TO SOUL:
           </span>
-          <span className="text-[#075B32]/90 font-medium">
+          <span className="text-white/95 font-medium">
             "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture for a Healthier Tomorrow."
           </span>
-          <span className="text-[#D99A12]">•</span>
-          <span className="text-[#0B6B35] font-semibold">100% Certified Biological Formulations</span>
+          <span className="text-[#F5B726]">•</span>
+          <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
         </div>
       </div>
 
@@ -520,15 +520,29 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-6 pb-6 border-b border-[#0B6B35]/50">
           {/* Column 1: Brand & About */}
           <div className="space-y-4">
-            <Link to="/" className="inline-block group">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-3.5 bg-white rounded-2xl p-2.5 sm:p-3 pr-4 sm:pr-5 shadow-md border border-white/40 hover:shadow-lg transition-all group"
+            >
               <img
                 src={jananiLogo}
                 alt="JANANI AGRO PRODUCTS"
-                className="h-16 w-auto object-contain drop-shadow-md brightness-110"
+                className="h-14 sm:h-16 w-auto object-contain shrink-0 transition-transform duration-300 group-hover:scale-105"
               />
+              <div className="flex flex-col text-left">
+                <span className="font-display text-sm sm:text-base font-black tracking-tight text-[#075B32] leading-tight">
+                  JANANI AGRO
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest text-[#D99A12]">
+                  Products
+                </span>
+                <span className="text-[9px] sm:text-[10px] font-semibold text-[#0B6B35]/80 mt-0.5">
+                  Pure Soil to Soul
+                </span>
+              </div>
             </Link>
-            <p className="text-xs sm:text-[13px] leading-relaxed text-emerald-100/80 max-w-sm">
-              Providing high-quality, natural and effective agro products for sustainable farming and a healthier tomorrow.
+            <p className="text-xs sm:text-[13px] leading-relaxed text-emerald-100/90 max-w-sm">
+              Providing high-quality, natural and biological agro formulations for sustainable farming and a healthier tomorrow.
             </p>
             {/* Social Icons with Authentic Brand Colors */}
             <div className="flex items-center gap-2.5 pt-2">

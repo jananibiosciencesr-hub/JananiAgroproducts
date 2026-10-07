@@ -154,7 +154,11 @@ function ProductDetailPage() {
 
   const handleBuyNow = () => {
     handleAddToCart();
-    navigate({ to: "/checkout" });
+    if (user) {
+      navigate({ to: "/checkout" });
+    } else {
+      navigate({ to: "/login", search: { redirect: "/checkout" } as any });
+    }
   };
 
   const handlePrevImage = () => {

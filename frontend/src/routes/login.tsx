@@ -61,6 +61,24 @@ export function AuthenticationPage() {
   const navigate = useNavigate();
   const { user, loginUser } = useStore();
 
+  const getDestinationUrl = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      if (redirect && redirect.startsWith("/")) {
+        return redirect;
+      }
+    }
+    return "/dashboard";
+  };
+
+  useEffect(() => {
+    if (user) {
+      const dest = getDestinationUrl();
+      navigate({ to: dest as any });
+    }
+  }, [user, navigate]);
+
   // Auth Modes & Form State
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [loginMethod, setLoginMethod] = useState<"email_otp" | "phone" | "email">("email_otp");
@@ -370,7 +388,7 @@ export function AuthenticationPage() {
           navigate({ to: "/admin" });
         } else {
           loginUser(res.user, res.token);
-          navigate({ to: "/dashboard" });
+          navigate({ to: getDestinationUrl() as any });
         }
       } else {
         toast.error(res?.message || "Login failed. Please check your credentials.");
@@ -542,7 +560,7 @@ export function AuthenticationPage() {
                 setIsOnboardingOpen(true);
               } else {
                 toast.success(`Welcome back, ${res.user.name}!`);
-                navigate({ to: "/dashboard" });
+                navigate({ to: getDestinationUrl() as any });
               }
             }
           }
@@ -651,7 +669,7 @@ export function AuthenticationPage() {
         if (res.isNewUser) {
           setIsOnboardingOpen(true);
         } else {
-          navigate({ to: "/dashboard" });
+          navigate({ to: getDestinationUrl() as any });
         }
       }
     } catch (err: any) {
@@ -744,7 +762,7 @@ export function AuthenticationPage() {
     }
     setIsOnboardingOpen(false);
     toast.success("Welcome to the Janani Family! Your personalized harvest catalog is ready.");
-    navigate({ to: "/dashboard" });
+    navigate({ to: getDestinationUrl() as any });
   };
 
   return (

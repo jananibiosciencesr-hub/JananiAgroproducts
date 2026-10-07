@@ -34,7 +34,7 @@ export function ProductQuickViewModal({ product, onClose }: ProductQuickViewModa
 
 function QuickViewContent({ product, onClose }: { product: Product; onClose: () => void }) {
   const navigate = useNavigate();
-  const { wishlist, toggleWishlist, addToCart } = useStore();
+  const { user, wishlist, toggleWishlist, addToCart } = useStore();
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
     product.variants && product.variants.length > 0
@@ -69,7 +69,11 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
   const handleBuyNow = () => {
     handleAddToCart();
     onClose();
-    navigate({ to: "/checkout" });
+    if (user) {
+      navigate({ to: "/checkout" });
+    } else {
+      navigate({ to: "/login", search: { redirect: "/checkout" } as any });
+    }
   };
 
   return (
