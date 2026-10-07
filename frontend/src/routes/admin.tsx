@@ -17,10 +17,11 @@ import {
   CheckCircle2,
   Truck,
   CreditCard,
-  Shield,
-  Phone,
-  Zap,
-  Building2
+  Building2,
+  Search,
+  Heart,
+  ShoppingBag,
+  User
 } from "lucide-react";
 import jananiLogo from "@/assets/janani-agro-logo.png";
 import { Button } from "@/components/ui/button";
@@ -541,308 +542,182 @@ function AdminDashboardPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#03150b] text-white flex flex-col justify-between relative overflow-hidden font-sans select-none selection:bg-amber-400 selection:text-slate-950">
-        {/* Ambient Glowing Background Orbs */}
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[550px] bg-emerald-500/12 blur-[160px] pointer-events-none rounded-full" />
-        <div className="absolute top-1/3 -right-32 w-[600px] h-[500px] bg-amber-500/10 blur-[150px] pointer-events-none rounded-full" />
-        <div className="absolute -bottom-32 -left-32 w-[600px] h-[500px] bg-emerald-700/15 blur-[160px] pointer-events-none rounded-full" />
+      <div className="min-h-screen bg-[#FAF7EE] text-slate-900 flex flex-col font-sans select-none selection:bg-[#075B32]/20 selection:text-[#075B32]">
+        {/* Top Storefront Navigation Header (matching reference design) */}
+        <header className="w-full bg-white border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-xs">
+          <Link to="/" className="flex items-center gap-2.5 group" aria-label="Janani Agro Home">
+            <img
+              src={jananiLogo}
+              alt="Janani Agro"
+              className="h-11 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105"
+            />
+          </Link>
 
-        {/* Top Security & System Status Bar */}
-        <div className="relative z-20 bg-[#021007] border-b border-emerald-500/20 py-2 px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 text-emerald-300 font-medium">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="font-mono text-[11px] tracking-wider uppercase text-emerald-400 font-bold">
-                SECURE ADMIN GATEWAY · STRICT 2FA ENFORCED
-              </span>
-            </div>
-            <div className="hidden sm:flex items-center gap-4 text-[11px] text-emerald-200/70">
-              <span className="flex items-center gap-1.5">
-                <Shield className="size-3.5 text-amber-400" />
-                <span>ISO 9001:2015 & CIBRC Certified Biologicals</span>
-              </span>
-              <span className="text-emerald-500/40">•</span>
-              <span className="flex items-center gap-1">
-                <Phone className="size-3 text-emerald-400" />
-                <span>Admin Operations: +91 98480 22338</span>
-              </span>
-            </div>
-          </div>
-        </div>
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-semibold text-slate-700">
+            <Link to="/" className="hover:text-[#075B32] transition">Home</Link>
+            <Link to="/about" className="hover:text-[#075B32] transition">About Us</Link>
+            <Link to="/products" className="hover:text-[#075B32] transition">Products</Link>
+            <Link to="/blog" className="hover:text-[#075B32] transition">Blogs</Link>
+            <Link to="/contact" className="hover:text-[#075B32] transition">Contact Us</Link>
+          </nav>
 
-        {/* Premium Navigation Header with Brand Logo */}
-        <header className="relative z-20 border-b border-emerald-500/20 bg-[#051c10]/95 backdrop-blur-xl px-4 sm:px-6 py-3.5 shadow-xl">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-            <Link to="/" className="flex items-center gap-3.5 group" aria-label="Janani Agro Storefront">
-              <img
-                src={jananiLogo}
-                alt="JANANI AGRO PRODUCTS"
-                className="h-12 sm:h-14 w-auto object-contain shrink-0 transition-transform duration-300 group-hover:scale-105 drop-shadow-md"
-              />
-              <div className="hidden sm:flex flex-col border-l border-emerald-500/30 pl-3.5">
-                <div className="font-display font-black text-sm tracking-wide text-white flex items-center gap-1.5">
-                  JANANI AGRO <Sparkles className="size-3.5 text-amber-400 fill-amber-400" />
-                </div>
-                <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
-                  Store Administrator Portal
-                </span>
-              </div>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="hidden lg:flex items-center rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 w-60 text-xs text-slate-400">
+              <Search className="size-4 mr-2 text-slate-400 shrink-0" />
+              <span>Search products...</span>
+            </div>
+            <Link to="/search" className="lg:hidden p-2 text-slate-600 hover:text-[#075B32]">
+              <Search className="size-5" />
             </Link>
-
-            <div className="flex items-center gap-2.5 sm:gap-3">
-              <div className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/80 px-3.5 py-1 text-[11px] font-semibold text-emerald-300 shadow-inner">
-                <Lock className="size-3 text-amber-400" />
-                <span>256-Bit SSL Secured</span>
-              </div>
-              <Button
-                asChild
-                variant="outline"
-                className="rounded-xl border-emerald-500/30 bg-emerald-900/20 hover:bg-emerald-500 hover:text-slate-950 text-emerald-200 text-xs font-bold transition-all shadow-sm"
-              >
-                <Link to="/" className="flex items-center gap-1.5">
-                  <span>Storefront</span>
-                  <ExternalLink className="size-3.5" />
-                </Link>
-              </Button>
-            </div>
+            <Link to="/login" className="p-2 text-slate-600 hover:text-[#075B32]">
+              <User className="size-5" />
+            </Link>
+            <Link to="/wishlist" className="p-2 text-slate-600 hover:text-[#075B32]">
+              <Heart className="size-5" />
+            </Link>
+            <Link to="/cart" className="p-2 text-slate-600 hover:text-[#075B32]">
+              <ShoppingBag className="size-5" />
+            </Link>
           </div>
         </header>
 
-        {/* Center Interactive Hero & Login Console */}
-        <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-10 my-auto">
-          <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* Left Column: Command Center Highlights */}
-            <div className="lg:col-span-6 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-bold text-amber-300">
-                <ShieldAlert className="size-3.5" />
-                <span>RESTRICTED ACCESS · AUTHORIZED STAFF ONLY</span>
-              </div>
-
-              <div className="space-y-3">
-                <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                  Seller Admin <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-amber-300 to-emerald-400">
-                    Command Center
-                  </span>
-                </h1>
-                <p className="text-xs sm:text-sm text-emerald-100/75 leading-relaxed max-w-lg">
-                  Unified enterprise command portal for monitoring certified bio-fertilizers, incoming farmer orders, Shiprocket logistics, payments & real-time farm inventory.
-                </p>
-              </div>
-
-              {/* Security Feature Highlights */}
-              <div className="space-y-3 pt-1">
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl border border-emerald-500/20 bg-emerald-950/40 backdrop-blur-md">
-                  <div className="size-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
-                    <KeyRound className="size-4.5 text-amber-300" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wide">Multi-Factor 2FA Authentication</h4>
-                    <p className="text-[11px] text-emerald-200/70 mt-0.5">
-                      Encrypted 6-digit OTP codes dispatched directly to your registered administrator Gmail via Google SMTP.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl border border-emerald-500/20 bg-emerald-950/40 backdrop-blur-md">
-                  <div className="size-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
-                    <Truck className="size-4.5 text-emerald-400" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wide">Integrated Logistics & Warehousing</h4>
-                    <p className="text-[11px] text-emerald-200/70 mt-0.5">
-                      Instant AWB dispatch, live Shiprocket courier tracking, and multi-hub stock management across India.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl border border-emerald-500/20 bg-emerald-950/40 backdrop-blur-md">
-                  <div className="size-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
-                    <CreditCard className="size-4.5 text-amber-300" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wide">Multi-Gateway Payment Operations</h4>
-                    <p className="text-[11px] text-emerald-200/70 mt-0.5">
-                      Live Razorpay/Stripe settlement tracking, instant refunds, and automated GST compliant invoices.
-                    </p>
-                  </div>
-                </div>
-              </div>
+        {/* Center Main Body with Warm Cream Canvas and Centered White Auth Card */}
+        <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 py-12 sm:py-16">
+          <div className="w-full max-w-lg rounded-[2.2rem] bg-white p-7 sm:p-10 shadow-xl border border-slate-200/70 text-center relative animate-in fade-in zoom-in-95 duration-200">
+            {/* Top Shield Icon Badge */}
+            <div className="size-16 rounded-2xl bg-[#075B32] text-[#E0A82E] flex items-center justify-center mx-auto mb-5 shadow-lg shadow-[#075B32]/20">
+              <Shield className="size-8 text-[#E0A82E] stroke-[2.2] fill-[#E0A82E]/15" />
             </div>
 
-            {/* Right Column: High-End Security Login Card */}
-            <div className="lg:col-span-6 flex justify-center">
-              <div className="w-full max-w-md rounded-3xl border border-emerald-500/30 bg-[#071f13]/95 p-6 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.7)] backdrop-blur-2xl relative overflow-hidden">
-                {/* Glow Accent */}
-                <div className="absolute -top-24 -right-24 size-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-24 -left-24 size-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+            {/* Title & Subtitle */}
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#075B32] tracking-tight">
+              Admin Portal Login
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5 font-medium">
+              Janani Agro Secure OTP Authentication
+            </p>
 
-                {/* Card Top Pill */}
-                <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-[11px] font-bold text-amber-300 mb-4">
-                  <ShieldCheck className="size-3.5 text-amber-400" />
-                  <span>2-STEP ADMIN VERIFICATION</span>
+            {!isOtpStep ? (
+              /* STEP 1: ADMIN EMAIL INPUT */
+              <form onSubmit={handleSendOtp} className="mt-8 text-left space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    AUTHORIZED ADMIN EMAIL
+                  </label>
+                  <div className="relative flex items-center rounded-2xl border border-slate-200 bg-slate-50/70 focus-within:bg-white focus-within:border-[#075B32] focus-within:ring-2 focus-within:ring-[#075B32]/15 transition-all">
+                    <Mail className="ml-4 size-5 text-slate-400 shrink-0" />
+                    <input
+                      type="email"
+                      required
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      placeholder="jananibiosciences.r@gmail.com"
+                      className="h-13 w-full rounded-r-2xl bg-transparent px-3.5 text-sm text-slate-900 outline-none font-medium placeholder:text-slate-400"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-2">
+                    Verification OTP code will be sent to this email via Gmail SMTP.
+                  </p>
                 </div>
 
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  {isOtpStep ? "Enter 6-Digit OTP" : "Admin Authentication"}
-                </h2>
-                <p className="mt-1.5 text-xs text-emerald-100/70 leading-relaxed">
-                  {isOtpStep
-                    ? `Enter the 6-digit verification code dispatched to your registered Gmail address (${adminEmail}).`
-                    : "Sign in with your registered administrator Gmail to receive a real-time OTP code dispatched via Google SMTP."}
-                </p>
-
-                {!isOtpStep ? (
-                  /* STEP 1: ADMIN EMAIL INPUT */
-                  <form onSubmit={handleSendOtp} className="mt-6 space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-emerald-200/90 flex items-center justify-between">
-                        <span>Admin Gmail Address</span>
-                        <span className="text-[10px] text-amber-400/90 font-mono font-semibold">Real Google SMTP</span>
-                      </label>
-                      <div className="relative flex items-center rounded-2xl border border-emerald-500/30 bg-black/50 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
-                        <Mail className="ml-3.5 size-4 text-emerald-400/70 shrink-0" />
-                        <input
-                          type="email"
-                          required
-                          value={adminEmail}
-                          onChange={(e) => setAdminEmail(e.target.value)}
-                          placeholder="jananibiosciences.r@gmail.com"
-                          className="h-12 w-full rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm text-white placeholder:text-muted-foreground outline-none font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/20 text-[11px] text-emerald-200/80 flex items-start gap-2">
-                      <Lock className="size-3.5 text-amber-400 shrink-0 mt-0.5" />
-                      <span>
-                        Direct access without OTP is restricted for security. An encrypted one-time verification code will be dispatched to your Gmail.
-                      </span>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={sendingOtp || !adminEmail.trim()}
-                      className="w-full h-12 rounded-2xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all disabled:opacity-50 cursor-pointer mt-3 active:scale-[0.99]"
-                    >
-                      {sendingOtp ? (
-                        <>
-                          <RefreshCw className="size-4 animate-spin" />
-                          <span>Dispatching Real OTP via Gmail...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Send 6-Digit OTP Code</span>
-                          <ArrowRight className="size-4" />
-                        </>
-                      )}
-                    </button>
-                  </form>
-                ) : (
-                  /* STEP 2: 6-DIGIT OTP VERIFICATION */
-                  <form onSubmit={handleVerifyOtp} className="mt-6 space-y-5">
-                    <div className="p-3 rounded-2xl border border-emerald-500/20 bg-emerald-950/70 flex items-center justify-between text-xs">
-                      <div className="min-w-0 pr-2">
-                        <span className="text-[10px] text-emerald-400/80 uppercase font-mono block">OTP Dispatched to:</span>
-                        <span className="font-semibold text-white truncate block font-mono text-xs sm:text-sm">{adminEmail}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsOtpStep(false);
-                          setOtpDigits(["", "", "", "", "", ""]);
-                        }}
-                        className="text-xs font-bold text-amber-400 hover:underline shrink-0 cursor-pointer flex items-center gap-1"
-                      >
-                        <ArrowLeft className="size-3" />
-                        <span>Change</span>
-                      </button>
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold text-emerald-200/90 block mb-2">
-                        Enter 6-Digit Verification Code
-                      </label>
-                      <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
-                        {otpDigits.map((digit, idx) => (
-                          <input
-                            key={idx}
-                            ref={(el) => (otpRefs.current[idx] = el)}
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            maxLength={1}
-                            value={digit}
-                            onChange={(e) => handleDigitChange(idx, e.target.value)}
-                            onKeyDown={(e) => handleKeyDown(idx, e)}
-                            className="h-12 sm:h-14 w-full rounded-2xl border border-emerald-500/40 bg-black/50 text-center font-mono text-lg sm:text-xl font-bold text-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 outline-none transition-all shadow-inner"
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 text-xs text-emerald-200/80">
-                      <ShieldCheck className="size-4 text-amber-400 shrink-0" />
-                      <span className="text-[11px] leading-relaxed">
-                        Please check your Gmail inbox (or spam folder) for the 6-digit verification code.
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-emerald-200/60 text-[11px]">Didn't get code?</span>
-                      <button
-                        type="button"
-                        disabled={!canResend || sendingOtp}
-                        onClick={handleResendOtp}
-                        className="font-bold text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer text-xs"
-                      >
-                        {canResend ? "Resend OTP Code" : `Resend in ${resendTimer}s`}
-                      </button>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={verifyingOtp || otpDigits.join("").length !== 6}
-                      className="w-full h-12 rounded-2xl font-bold text-sm bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer active:scale-[0.99]"
-                    >
-                      {verifyingOtp ? (
-                        <>
-                          <RefreshCw className="size-4 animate-spin" />
-                          <span>Verifying Credentials...</span>
-                        </>
-                      ) : (
-                        <>
-                          <KeyRound className="size-4" />
-                          <span>Verify & Enter Command Center</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
-
-                {/* Security Badges Footer */}
-                <div className="mt-6 border-t border-emerald-500/15 pt-4 flex flex-wrap items-center justify-between gap-2 text-[10px] text-emerald-400/70 font-mono">
-                  <span className="flex items-center gap-1">
-                    <Lock className="size-3 text-amber-400" /> SSL TLS 1.3
-                  </span>
-                  <span>Google SMTP 2FA</span>
-                  <span>Hostinger Production</span>
+                <Button
+                  type="submit"
+                  disabled={sendingOtp || !adminEmail.trim()}
+                  className="w-full h-12 rounded-2xl bg-[#075B32] hover:bg-[#064B29] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-5"
+                >
+                  {sendingOtp ? (
+                    <>
+                      <RefreshCw className="size-4 animate-spin" />
+                      <span>Sending OTP Code...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send OTP Verification Code</span>
+                      <ArrowRight className="size-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            ) : (
+              /* STEP 2: 6-DIGIT OTP VERIFICATION */
+              <form onSubmit={handleVerifyOtp} className="mt-8 text-left space-y-5">
+                <div className="p-3 rounded-2xl bg-[#075B32]/5 border border-[#075B32]/20 flex items-center justify-between text-xs">
+                  <div className="min-w-0 pr-2">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Verification code sent to:</span>
+                    <strong className="text-slate-800 text-xs truncate block font-mono">{adminEmail}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOtpStep(false);
+                      setOtpDigits(["", "", "", "", "", ""]);
+                    }}
+                    className="text-xs font-bold text-[#075B32] hover:underline cursor-pointer shrink-0"
+                  >
+                    Change Email
+                  </button>
                 </div>
-              </div>
-            </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    Enter 6-Digit Verification Code
+                  </label>
+                  <div className="grid grid-cols-6 gap-2">
+                    {otpDigits.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        ref={(el) => (otpRefs.current[idx] = el)}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleDigitChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(idx, e)}
+                        className="size-11 sm:size-12 rounded-2xl border border-slate-200 bg-slate-50 text-center font-mono text-lg sm:text-xl font-bold text-slate-900 focus:border-[#075B32] focus:bg-white focus:ring-2 focus:ring-[#075B32]/15 outline-none transition-all"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <span className="text-slate-500 text-[11px]">Didn't receive code?</span>
+                  <button
+                    type="button"
+                    disabled={!canResend || sendingOtp}
+                    onClick={handleResendOtp}
+                    className="font-bold text-[#075B32] hover:underline disabled:opacity-50 cursor-pointer text-xs"
+                  >
+                    {canResend ? "Resend OTP" : `Resend in ${resendTimer}s`}
+                  </button>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={verifyingOtp || otpDigits.join("").length !== 6}
+                  className="w-full h-12 rounded-2xl bg-[#075B32] hover:bg-[#064B29] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {verifyingOtp ? (
+                    <>
+                      <RefreshCw className="size-4 animate-spin" />
+                      <span>Verifying Credentials...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="size-4" />
+                      <span>Verify & Access Admin Dashboard →</span>
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
           </div>
+
+          {/* Bottom Security / Copyright Note */}
+          <p className="mt-8 text-center text-xs text-slate-500 font-medium">
+            Janani Agro Admin Security · Powered by MySQL & JWT Session Auth
+          </p>
         </main>
-
-        {/* Bottom Footer */}
-        <footer className="relative z-10 py-4 px-4 text-center text-xs text-emerald-400/50 border-t border-emerald-500/10 bg-black/20">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px]">
-            <span>© 2026 JANANI AGRO PRODUCTS · Internal Administrator Command Center</span>
-            <span className="text-emerald-400/40 font-mono">Encrypted 2FA Session · Strict RBAC Active</span>
-          </div>
-        </footer>
       </div>
     );
   }

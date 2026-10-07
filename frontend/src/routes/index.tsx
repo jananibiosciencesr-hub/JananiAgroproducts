@@ -550,12 +550,12 @@ export function HomePage() {
                 <span className="text-[#D99A12]">AGRO PRODUCTS?</span>
               </h2>
 
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
-                We are committed to providing high-quality, eco-friendly and effective agricultural solutions for sustainable farming.
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-lg break-normal">
+                We are committed to providing high-quality, eco-friendly, and effective agricultural solutions for sustainable farming.
               </p>
 
               {/* 4 Features Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1 max-w-lg">
                 {[
                   {
                     title: "Natural Formulations",
@@ -580,16 +580,16 @@ export function HomePage() {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-colors"
+                    className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all border border-emerald-50/80"
                   >
-                    <div className="size-10 rounded-full bg-white text-[#075B32] flex items-center justify-center shrink-0 shadow-xs">
-                      <item.icon className="size-5" />
+                    <div className="size-8 sm:size-9 rounded-xl bg-white text-[#075B32] flex items-center justify-center shrink-0 shadow-2xs">
+                      <item.icon className="size-4 sm:size-4.5" />
                     </div>
                     <div>
-                      <h3 className="text-xs sm:text-sm font-bold text-[#075B32]">
+                      <h3 className="text-xs sm:text-sm font-bold text-[#075B32] leading-tight">
                         {item.title}
                       </h3>
-                      <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
+                      <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
                         {item.desc}
                       </p>
                     </div>
