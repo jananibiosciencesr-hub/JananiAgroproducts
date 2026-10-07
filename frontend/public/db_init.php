@@ -40,39 +40,35 @@ if (file_exists($envFile)) {
     }
 }
 
-$raw_host = strtolower(trim(getenv('DB_HOST') ?: 'localhost'));
+$raw_host = 'localhost';
 $raw_db   = trim(getenv('DB_NAME') ?: 'u409810820_Jananiagro');
 $raw_user = trim(getenv('DB_USER') ?: 'u409810820_Jananiagropro');
 $raw_pass = trim(getenv('DB_PASSWORD') ?: 'Jananiagro@123');
 
-// On Hostinger Linux/CageFS, MySQL MUST connect via unix domain socket (lowercase 'localhost').
-// Never use 127.0.0.1 or uppercase HOST which attempts TCP connect and throws 'Operation not permitted'.
-$hosts  = ['localhost'];
-$dbs    = array_values(array_unique([$raw_db, 'u409810820_Jananiagro', 'u409810820_jananiagro', strtolower($raw_db)]));
-$users  = array_values(array_unique([$raw_user, 'u409810820_Jananiagropro', 'u409810820_jananiagropro', strtolower($raw_user)]));
-$passes = array_values(array_unique([$raw_pass, 'Jananiagro@123', 'JANANIAGRO@123']));
-
+// On Hostinger Linux/CageFS, MySQL connects immediately via unix domain socket ('localhost').
 $pdo = null;
 $connectedDb = $raw_db;
 $lastError = null;
 
-foreach ($hosts as $h) {
-    foreach ($dbs as $db) {
-        foreach ($users as $u) {
-            foreach ($passes as $p) {
-                try {
-                    $pdo = new PDO("mysql:host={$h};dbname={$db};charset=utf8mb4", $u, $p, [
-                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                        PDO::ATTR_EMULATE_PREPARES => false
-                    ]);
-                    $connectedDb = $db;
-                    break 4;
-                } catch (PDOException $e) {
-                    $lastError = $e;
-                }
-            }
-        }
+$attempts = [
+    ['host' => 'localhost', 'db' => $raw_db, 'user' => $raw_user, 'pass' => $raw_pass],
+    ['host' => 'localhost', 'db' => 'u409810820_Jananiagro', 'user' => 'u409810820_Jananiagropro', 'pass' => 'Jananiagro@123'],
+    ['host' => 'localhost', 'db' => 'u409810820_jananiagro', 'user' => 'u409810820_jananiagropro', 'pass' => 'Jananiagro@123'],
+    ['host' => 'localhost', 'db' => 'janani_agro', 'user' => 'root', 'pass' => '']
+];
+
+foreach ($attempts as $att) {
+    try {
+        $pdo = new PDO("mysql:host={$att['host']};dbname={$att['db']};charset=utf8mb4", $att['user'], $att['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_TIMEOUT => 2
+        ]);
+        $connectedDb = $att['db'];
+        break;
+    } catch (Throwable $e) {
+        $lastError = $e;
     }
 }
 
@@ -582,7 +578,7 @@ if ($orderCount == 0) {
 
 $response['success'] = count($response['errors']) === 0;
 $response['message'] = $response['success'] 
-    ? 'All tables and columns verified & auto-migrated successfully in MySQL database ' . $db_name . '!' 
+    ? 'All tables and columns verified & auto-migrated successfully in MySQL database ' . $connectedDb . '!' 
     : 'Some errors occurred during table setup.';
 
 echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
