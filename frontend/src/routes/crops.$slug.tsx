@@ -101,7 +101,7 @@ function CropDetailPage() {
                 <p className="text-sm sm:text-base italic text-slate-500 font-medium mt-0.5">
                   {crop.subName || crop.name}
                 </p>
-                <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1.5 line-clamp-2">
+                <p className="text-xs sm:text-sm text-slate-600 max-w-none text-left lg:whitespace-nowrap hyphens-none mt-1.5">
                   {crop.tagline}
                 </p>
               </div>

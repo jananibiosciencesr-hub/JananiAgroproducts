@@ -39,7 +39,15 @@ export const Route = createFileRoute("/categories/$slug")({
 function CategoryDetailPage() {
   const { slug } = Route.useParams();
   const { categories: storeCats, products: storeProds } = useStore();
-  const allCats = storeCats && storeCats.length > 0 ? storeCats : categories;
+  const rawCats = storeCats && storeCats.length > 0 ? storeCats : categories;
+  const allCats = useMemo(() => {
+    return rawCats.filter((cat: any) => {
+      const n = (cat.name || "").toLowerCase();
+      const s = (cat.slug || "").toLowerCase();
+      if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+      return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((term) => n.includes(term) || s.includes(term));
+    });
+  }, [rawCats]);
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
   const category = allCats.find((c) => c.slug === slug) ?? allCats[0];
   const [query, setQuery] = useState("");
@@ -124,8 +132,8 @@ function CategoryDetailPage() {
           </nav>
 
           {/* Title Row + Badge + Description */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3.5">
-            <div>
+          <div className="mb-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                   {category.name}
@@ -137,18 +145,19 @@ function CategoryDetailPage() {
                   100% Certified Eco-Safe
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-3xl leading-relaxed">
-                {category.description || `Certified biological and organic ${category.name.toLowerCase()} formulated for disease protection, balanced nutrition, and high yields.`}
-              </p>
+
+              <div className="shrink-0 flex items-center gap-2">
+                <Button asChild variant="outline" size="sm" className="h-8 text-xs font-bold rounded-xl border-emerald-200 hover:bg-emerald-50">
+                  <Link to="/products">
+                    All Products <ChevronRight className="size-3 ml-0.5" />
+                  </Link>
+                </Button>
+              </div>
             </div>
 
-            <div className="shrink-0 flex items-center gap-2">
-              <Button asChild variant="outline" size="sm" className="h-8 text-xs font-bold rounded-xl border-emerald-200 hover:bg-emerald-50">
-                <Link to="/products">
-                  All Products <ChevronRight className="size-3 ml-0.5" />
-                </Link>
-              </Button>
-            </div>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 max-w-none text-left lg:whitespace-nowrap hyphens-none">
+              {category.description || `Certified biological and organic ${category.name.toLowerCase()} formulated for disease protection, balanced nutrition, and high yields.`}
+            </p>
           </div>
 
           {/* Quick Category Switcher Tabs */}

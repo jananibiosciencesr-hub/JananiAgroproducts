@@ -253,6 +253,22 @@ export async function getCategories() {
     backendList = rawList;
   }
 
+  const FORBIDDEN_GROCERY_TERMS = [
+    "rice", "grain", "grains", "pulse", "pulses", "dal", "dals", "spice", "spices",
+    "ghee", "mustard oil", "cold pressed", "oil", "basmati", "wheat", "millet", "millets",
+    "flour", "atta", "sugar", "honey", "pantry", "grocery", "edible"
+  ];
+
+  const isGroceryCategory = (cat: any): boolean => {
+    if (!cat) return false;
+    const name = (cat.name || "").toLowerCase();
+    const slug = (cat.slug || "").toLowerCase();
+    if (name.includes("neem") || slug.includes("neem") || name.includes("botanical") || slug.includes("botanical")) {
+      return false;
+    }
+    return FORBIDDEN_GROCERY_TERMS.some((term) => name.includes(term) || slug.includes(term));
+  };
+
   // Also read stored categories from localStorage for real-time reactivity
   let storedList: any[] = [];
   if (typeof window !== "undefined") {
@@ -261,15 +277,19 @@ export async function getCategories() {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          storedList = parsed;
+          storedList = parsed.filter((c) => !isGroceryCategory(c));
+          // Clean stale grocery categories from localStorage
+          localStorage.setItem("janani_admin_categories", JSON.stringify(storedList));
+          localStorage.setItem("janani_admin_categories_v3", JSON.stringify(storedList));
         }
       }
     } catch (e) {}
   }
 
   const map = new Map<string, any>();
-  // 1. Initial base categories
+  // 1. Initial base categories (Strictly authentic Janani Agro categories)
   for (const cat of categories) {
+    if (isGroceryCategory(cat)) continue;
     const slug = (cat.slug || cat.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")).toLowerCase();
     map.set(slug, {
       id: cat.id,
@@ -285,6 +305,7 @@ export async function getCategories() {
 
   // 2. Merge backend categories
   for (const cat of backendList) {
+    if (isGroceryCategory(cat)) continue;
     if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false) {
       const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
       if (slug) map.delete(slug);
@@ -307,6 +328,7 @@ export async function getCategories() {
 
   // 3. Merge stored / local categories
   for (const cat of storedList) {
+    if (isGroceryCategory(cat)) continue;
     if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false) {
       const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
       if (slug) map.delete(slug);
@@ -327,7 +349,7 @@ export async function getCategories() {
     });
   }
 
-  const result = Array.from(map.values());
+  const result = Array.from(map.values()).filter((c) => !isGroceryCategory(c));
   return result.length > 0 ? result : categories;
 }
 
@@ -1548,6 +1570,9 @@ export async function createAdminProduct(productData: any) {
     stock: stockVal !== undefined ? Number(stockVal) : 50,
     active: productData.active !== undefined ? (productData.active ? 1 : 0) : 1,
     status: productData.status || (productData.active !== false ? "Active" : "Draft"),
+    rating: productData.rating !== undefined ? Number(productData.rating) : 4.8,
+    reviewsCount: productData.reviewsCount !== undefined ? Number(productData.reviewsCount) : (productData.reviews ? Number(productData.reviews) : 53),
+    reviews: productData.reviews !== undefined ? Number(productData.reviews) : (productData.reviewsCount ? Number(productData.reviewsCount) : 53),
     subtitle: productData.subtitle || "",
     crops: productData.crops,
     benefits: productData.benefits,
@@ -1621,6 +1646,9 @@ export async function updateAdminProduct(id: string, productData: any) {
     warehouseStock: stockVal !== undefined ? Number(stockVal) : undefined,
     active: productData.active !== undefined ? (productData.active ? 1 : 0) : undefined,
     status: productData.status || (productData.active ? "Active" : "Draft"),
+    rating: productData.rating !== undefined ? Number(productData.rating) : undefined,
+    reviewsCount: productData.reviewsCount !== undefined ? Number(productData.reviewsCount) : (productData.reviews ? Number(productData.reviews) : undefined),
+    reviews: productData.reviews !== undefined ? Number(productData.reviews) : (productData.reviewsCount ? Number(productData.reviewsCount) : undefined),
     subtitle: productData.subtitle,
     crops: productData.crops,
     benefits: productData.benefits,
@@ -2244,6 +2272,7 @@ export interface AdminReview {
   productId: string;
   productName: string;
   productCategory: string;
+  location?: string;
   productImage: string;
   customerId: string;
   customerName: string;
@@ -2348,7 +2377,47 @@ export async function createAdminReview(payload: Partial<AdminReview>) {
       body: JSON.stringify(payload)
     });
   }
+  const reviewResult = res?.data || (payload as AdminReview);
+  if (typeof window !== "undefined" && reviewResult) {
+    try {
+      const stored = localStorage.getItem("janani_admin_reviews");
+      const list = stored ? JSON.parse(stored) : [];
+      const updated = [reviewResult, ...list.filter((r: any) => r.id !== reviewResult.id)];
+      localStorage.setItem("janani_admin_reviews", JSON.stringify(updated));
+    } catch (e) {}
+  }
   return res || { success: true, message: "Review created in database", data: payload as AdminReview };
+}
+
+export async function getStorefrontReviews(): Promise<AdminReview[]> {
+  try {
+    const res = await fetchJson<{ success: boolean; data: AdminReview[] }>("/reviews");
+    if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("janani_admin_reviews", JSON.stringify(res.data));
+      }
+      return res.data;
+    }
+  } catch (e) {}
+
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_reviews");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  }
+
+  try {
+    const adminRes = await getAdminReviews({ status: "Approved" });
+    if (adminRes?.data && adminRes.data.length > 0) {
+      return adminRes.data;
+    }
+  } catch (e) {}
+
+  return [];
 }
 
 export async function updateAdminReviewStatus(id: string, status: string, rejectionReason?: string) {
@@ -2465,6 +2534,15 @@ export async function deleteAdminReview(id: string) {
     res = await fetchJson<{ success: boolean; message: string; data: AdminReview }>(`/admin/reviews/${id}`, {
       method: "DELETE"
     });
+  }
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_reviews");
+      if (stored) {
+        const list = JSON.parse(stored);
+        localStorage.setItem("janani_admin_reviews", JSON.stringify(list.filter((r: any) => r.id !== id)));
+      }
+    } catch (e) {}
   }
   return res || { success: true, message: "Review deleted from database" };
 }

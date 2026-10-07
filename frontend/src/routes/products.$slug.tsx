@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { products, categories, type Product, type ProductVariant } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
+import { getStorefrontReviews } from "@/lib/api";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/product-card";
 
@@ -75,7 +76,7 @@ type TabType =
 function ProductDetailPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
-  const { addToCart, products: storeProducts } = useStore();
+  const { cart, addToCart, updateQuantity, removeFromCart, products: storeProducts } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   // Resolve active product
@@ -83,6 +84,8 @@ function ProductDetailPage() {
     allProducts.find((p) => p.slug === slug || String(p.id) === slug) ||
     allProducts.find((p) => slug.includes(p.slug) || p.slug.includes(slug)) ||
     allProducts[0]!;
+
+  const cartQty = cart[product.id] || (cart as any)[Number(product.id)] || (cart as any)[String(product.id)] || 0;
 
   // Variants setup
   const defaultVariant =
@@ -103,6 +106,26 @@ function ProductDetailPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState<boolean>(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [matchingReviews, setMatchingReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    getStorefrontReviews().then((revs) => {
+      if (!mounted) return;
+      if (revs && revs.length > 0) {
+        const forProd = revs.filter(
+          (r: any) =>
+            r.productId === String(product.id) ||
+            r.productName?.toLowerCase().includes(product.name?.toLowerCase()) ||
+            product.name?.toLowerCase().includes(r.productName?.toLowerCase())
+        );
+        setMatchingReviews(forProd.length > 0 ? forProd : revs.slice(0, 4));
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [product.id, product.name]);
 
   // Sync selected variant when product slug changes
   useEffect(() => {
@@ -286,7 +309,11 @@ function ProductDetailPage() {
   // Dynamic FAQs
   const productFaqs = useMemo(() => {
     if (product.faqs && product.faqs.length > 0) {
-      return product.faqs;
+      const mapped = product.faqs.map((f: any) => ({
+        q: f.q || f.question || "",
+        a: f.a || f.answer || ""
+      })).filter((f: any) => f.q && f.a);
+      if (mapped.length > 0) return mapped;
     }
     return [
       {
@@ -517,17 +544,52 @@ function ProductDetailPage() {
 
               {/* Action Buttons: [Add to Cart] & [Buy Now] */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <button
-                  onClick={handleAddToCart}
-                  className="w-full bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
-                >
-                  <ShoppingBag className="size-4" />
-                  Add to Cart
-                </button>
+                {cartQty > 0 ? (
+                  <div className="w-full bg-[#075B32] text-white font-bold text-sm py-2 px-3 rounded-xl transition shadow-xs flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (cartQty <= 1) {
+                          removeFromCart(product.id);
+                          removeFromCart(String(product.id));
+                          if (!isNaN(Number(product.id))) removeFromCart(Number(product.id));
+                          toast.info(`Removed ${product.name} from cart`);
+                        } else {
+                          updateQuantity(product.id, cartQty - 1);
+                        }
+                      }}
+                      className="size-8 rounded-lg flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition active:scale-90 cursor-pointer"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="size-4" />
+                    </button>
+                    <span className="font-mono font-bold text-xs sm:text-sm select-none">
+                      {cartQty} IN BASKET
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        addToCart(product.id, 1);
+                      }}
+                      className="size-8 rounded-lg flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition active:scale-90 cursor-pointer"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="size-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleAddToCart}
+                    className="w-full bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <ShoppingBag className="size-4" />
+                    Add to Cart
+                  </button>
+                )}
 
                 <button
                   onClick={handleBuyNow}
-                  className="w-full bg-[#E7A91A] hover:bg-[#d99a12] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
+                  className="w-full bg-[#E7A91A] hover:bg-[#d99a12] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Zap className="size-4 fill-white" />
                   Buy Now
@@ -703,6 +765,17 @@ function ProductDetailPage() {
                   * Note: {product.methodOfApplication}
                 </p>
               )}
+
+              {(product.compatibility || product.storageNotice) && (
+                <div className="p-4 rounded-xl bg-[#EAF5E9] border border-[#075B32]/20 text-xs text-gray-700 space-y-1.5 mt-3">
+                  {product.compatibility && (
+                    <p><strong className="text-[#075B32]">Compatibility Notice:</strong> {product.compatibility}</p>
+                  )}
+                  {product.storageNotice && (
+                    <p><strong className="text-[#075B32]">Storage & Safety:</strong> {product.storageNotice}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -758,39 +831,69 @@ function ProductDetailPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
-                  <div className="flex items-center justify-between">
-                    <strong className="text-xs font-bold text-gray-900">Ramesh Patel (Gujarat)</strong>
-                    <span className="text-[10px] text-gray-400">12 Sep 2026</span>
-                  </div>
-                  <div className="flex text-[#E7A91A]">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="size-3 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-600 leading-relaxed text-justify">
-                    Used for my chilli and cotton crop drip application. Excellent root development and zero wilt
-                    problems observed during the heavy monsoon season. Highly recommended!
-                  </p>
-                </div>
+                {matchingReviews.length > 0 ? (
+                  matchingReviews.map((rev: any) => (
+                    <div key={rev.id} className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          {rev.customerAvatar && (
+                            <img src={rev.customerAvatar} alt={rev.customerName} className="size-8 rounded-full object-cover border border-gray-200" />
+                          )}
+                          <div>
+                            <strong className="text-xs font-bold text-gray-900 block">{rev.customerName}</strong>
+                            <span className="text-[10px] text-gray-500">{rev.location || rev.productCategory || "Verified Farmer"}</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-gray-400">{rev.createdAt || "Recent"}</span>
+                      </div>
+                      <div className="flex text-[#E7A91A]">
+                        {[...Array(rev.rating || 5)].map((_, i) => (
+                          <Star key={i} className="size-3 fill-current" />
+                        ))}
+                      </div>
+                      {rev.title && <h4 className="text-xs font-bold text-gray-800">{rev.title}</h4>}
+                      <p className="text-xs text-gray-600 leading-relaxed text-justify">
+                        {rev.comment}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-xs font-bold text-gray-900">Ramesh Patel (Gujarat)</strong>
+                        <span className="text-[10px] text-gray-400">12 Sep 2026</span>
+                      </div>
+                      <div className="flex text-[#E7A91A]">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="size-3 fill-current" />
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed text-justify">
+                        Used for my chilli and cotton crop drip application. Excellent root development and zero wilt
+                        problems observed during the heavy monsoon season. Highly recommended!
+                      </p>
+                    </div>
 
-                <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
-                  <div className="flex items-center justify-between">
-                    <strong className="text-xs font-bold text-gray-900">
-                      Srinivas Rao (Andhra Pradesh)
-                    </strong>
-                    <span className="text-[10px] text-gray-400">28 Aug 2026</span>
-                  </div>
-                  <div className="flex text-[#E7A91A]">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="size-3 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-600 leading-relaxed text-justify">
-                    Very reliable formulation with genuine CFU count and high purity. Applied as seed treatment for paddy,
-                    germination percentage was noticeably higher than previous seasons.
-                  </p>
-                </div>
+                    <div className="p-5 rounded-2xl border border-gray-200 bg-white space-y-2">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-xs font-bold text-gray-900">
+                          Srinivas Rao (Andhra Pradesh)
+                        </strong>
+                        <span className="text-[10px] text-gray-400">28 Aug 2026</span>
+                      </div>
+                      <div className="flex text-[#E7A91A]">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="size-3 fill-current" />
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed text-justify">
+                        Very reliable formulation with genuine CFU count and high purity. Applied as seed treatment for paddy,
+                        germination percentage was noticeably higher than previous seasons.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

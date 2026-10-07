@@ -1,4 +1,5 @@
 import { products as mockProducts, categories as mockCategories } from "../data/mockData.js";
+import { adminProducts } from "./adminController.js";
 import { query, isDbConnected } from "../config/db.js";
 
 // Helper to map DB row to product object
@@ -79,8 +80,9 @@ export const getProducts = async (req, res) => {
       }
     }
 
-    // Fallback to local catalog
-    let filtered = [...mockProducts];
+    // Fallback to active catalog
+    const currentCatalog = (adminProducts && adminProducts.length > 0) ? adminProducts : mockProducts;
+    let filtered = [...currentCatalog];
 
     if (category && category !== "All") {
       filtered = filtered.filter(
@@ -156,7 +158,8 @@ export const getProductByIdOrSlug = async (req, res) => {
       }
     }
 
-    const product = mockProducts.find(
+    const currentCatalog = (adminProducts && adminProducts.length > 0) ? adminProducts : mockProducts;
+    const product = currentCatalog.find(
       (p) => String(p.id) === idOrSlug || p.slug === idOrSlug
     );
 
@@ -167,7 +170,7 @@ export const getProductByIdOrSlug = async (req, res) => {
       });
     }
 
-    const related = mockProducts
+    const related = currentCatalog
       .filter((p) => p.category === product.category && p.id !== product.id)
       .slice(0, 4);
 

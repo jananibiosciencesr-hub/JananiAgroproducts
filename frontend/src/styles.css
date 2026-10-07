@@ -322,31 +322,29 @@ html, body {
 }
 
 /* ========================================================= */
-/* ENTIRE WEBSITE CONTENT TEXT JUSTIFICATION                  */
+/* LONG-FORM EDITORIAL CONTENT TEXT JUSTIFICATION            */
 /* ========================================================= */
-p,
-article,
-.prose,
 .prose p,
-.text-content,
-.description,
-.card-description,
-.product-description,
-.blog-content,
-.about-content,
-.faq-content,
-.section-copy,
-.copy,
-.policy-content,
-main p,
-section p,
-article p,
-footer p,
+.blog-content p,
+.about-content p,
+.faq-content p,
+.policy-content p,
 .lead,
 .text-justify {
-  text-align: justify !important;
+  text-align: justify;
   text-justify: inter-word;
-  hyphens: auto;
+}
+
+/* Prevent unwanted word breaks and auto-hyphenation across UI headers and descriptions */
+p,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  hyphens: manual;
 }
 
 /* Ensure headings, buttons, and badges retain appropriate alignment */

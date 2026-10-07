@@ -102,7 +102,7 @@ function DiseaseDetailPage() {
                 <p className="text-sm sm:text-base italic text-slate-500 font-medium mt-0.5">
                   {disease.scientificName || disease.name}
                 </p>
-                <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1.5">
+                <p className="text-xs sm:text-sm text-slate-600 max-w-none text-left lg:whitespace-nowrap hyphens-none mt-1.5">
                   {disease.tagline}
                 </p>
               </div>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import {
   ArrowRight,
   ChevronLeft,
@@ -21,10 +21,13 @@ import {
   Wheat,
   Bug,
   Shield,
-  Droplets
+  Droplets,
+  Plus,
+  Minus
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
+import { getStorefrontReviews } from "@/lib/api";
 import { products, categories, getCategoryImage, slugs, type Product } from "@/lib/catalog";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -52,7 +55,7 @@ export const Route = createFileRoute("/")({
 });
 
 export function HomePage() {
-  const { products: storeProducts, categories: storeCats, addToCart, wishlist, toggleWishlist } = useStore();
+  const { products: storeProducts, categories: storeCats, cart, addToCart, updateQuantity, removeFromCart, wishlist, toggleWishlist } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
   const allCategories = storeCats && storeCats.length > 0 ? storeCats : categories;
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -114,7 +117,14 @@ export function HomePage() {
 
   // Dynamic Agri Products Categories (from database & store)
   const categoryCards = useMemo(() => {
-    return allCategories.map((cat: any) => {
+    return allCategories
+      .filter((cat: any) => {
+        const n = (cat.name || cat.title || "").toLowerCase();
+        const s = (cat.slug || "").toLowerCase();
+        if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+        return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((term) => n.includes(term) || s.includes(term));
+      })
+      .map((cat: any) => {
       const slug = cat.slug || slugs(cat.name || "");
       const title = cat.name || cat.title || "Category";
       const image = getCategoryImage(slug || title, cat.image || cat.bannerImage || cat.banner_image);
@@ -184,8 +194,8 @@ export function HomePage() {
     },
   ];
 
-  // 5 Real Indian Farmer Testimonials
-  const testimonials = [
+  // 5 Real Indian Farmer Testimonials (default authentic fallback)
+  const defaultTestimonials = [
     {
       id: 1,
       name: "Ramesh Kumar",
@@ -232,6 +242,29 @@ export function HomePage() {
       stars: 5,
     },
   ];
+
+  const [testimonials, setTestimonials] = useState<any[]>(defaultTestimonials);
+
+  useEffect(() => {
+    let mounted = true;
+    getStorefrontReviews().then((revs) => {
+      if (!mounted) return;
+      if (revs && revs.length > 0) {
+        const mapped = revs.map((r: any, idx: number) => ({
+          id: r.id || idx + 1,
+          name: r.customerName || "Farmer",
+          location: r.location || r.productCategory || "Organic Farmer",
+          image: r.customerAvatar || "/images/farmer_ramesh.jpg",
+          quote: r.comment || r.title || "Excellent agro inputs from Janani.",
+          stars: r.rating || 5,
+        }));
+        setTestimonials(mapped);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="bg-white text-[#075B32] overflow-hidden">
@@ -407,6 +440,7 @@ export function HomePage() {
             >
               {featuredProductsList.map((prod) => {
                 const isWishlisted = wishlist.includes(prod.numId);
+                const cartQty = cart[prod.numId] || (cart as any)[String(prod.numId)] || (cart as any)[prod.id] || 0;
                 const discountVal = prod.oldPrice
                   ? Math.round(((prod.oldPrice - prod.price) / prod.oldPrice) * 100)
                   : 12;
@@ -506,21 +540,59 @@ export function HomePage() {
                         </div>
                       </div>
 
-                      {/* Full-width Rectangular Add to Cart Button */}
+                      {/* Full-width Rectangular Add to Cart / Quantity Stepper Button */}
                       <div className="mt-2.5 pt-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            addToCart(prod.numId, 1);
-                            toast.success(`Added ${prod.name} to cart!`);
-                          }}
-                          className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
-                        >
-                          <ShoppingBag className="size-3.5 sm:size-4" />
-                          <span>ADD TO CART</span>
-                        </button>
+                        {cartQty > 0 ? (
+                          <div className="w-full bg-[#075B32] text-white text-[11px] sm:text-xs font-bold py-1 sm:py-1.5 rounded-none transition shadow-xs flex items-center justify-between px-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (cartQty <= 1) {
+                                  removeFromCart(prod.numId);
+                                  removeFromCart(prod.id);
+                                  toast.info(`Removed ${prod.name} from cart`);
+                                } else {
+                                  updateQuantity(prod.numId, cartQty - 1);
+                                }
+                              }}
+                              className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-sm transition active:scale-90 cursor-pointer"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="size-3.5" />
+                            </button>
+                            <span className="font-mono font-bold text-xs select-none">
+                              {cartQty} IN BASKET
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                addToCart(prod.numId, 1);
+                              }}
+                              className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-sm transition active:scale-90 cursor-pointer"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="size-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              addToCart(prod.numId, 1);
+                              toast.success(`Added ${prod.name} to cart!`);
+                            }}
+                            className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+                          >
+                            <ShoppingBag className="size-3.5 sm:size-4" />
+                            <span>ADD TO CART</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

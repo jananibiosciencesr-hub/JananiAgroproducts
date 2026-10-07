@@ -70,7 +70,7 @@ export type ProductVariant = {
 };
 
 export type Product = {
-  id: number;
+  id: number | string;
   slug: string;
   name: string;
   subtitle?: string;
@@ -103,6 +103,7 @@ export type Product = {
   storageNotice?: string;
   netContent?: string;
   targetDiseases?: string;
+  faqs?: { q: string; a: string; question?: string; answer?: string }[];
 };
 
 export const slugs = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");

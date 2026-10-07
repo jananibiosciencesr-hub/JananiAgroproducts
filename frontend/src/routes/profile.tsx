@@ -53,7 +53,7 @@ export function ProfilePage() {
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
             Sign In to Access Your Profile
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-none mx-auto lg:whitespace-nowrap hyphens-none">
             Please sign in with your Email OTP to manage your personal details, saved items, and delivery addresses.
           </p>
         </div>

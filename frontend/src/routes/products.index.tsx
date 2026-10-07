@@ -27,7 +27,9 @@ import {
   Sprout,
   ShieldAlert,
   TrendingUp,
-  Droplets
+  Droplets,
+  Plus,
+  Minus
 } from "lucide-react";
 import { products, categories, type Product } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
@@ -116,7 +118,7 @@ function getCategoryIcon(name: string) {
 }
 
 function ProductsPage() {
-  const { addToCart, wishlist, toggleWishlist } = useStore();
+  const { cart, addToCart, updateQuantity, removeFromCart, wishlist, toggleWishlist } = useStore();
   // Strictly use our authentic Janani Agro products from catalog (all 18 genuine items)
   const activeProductList = products;
 
@@ -602,6 +604,7 @@ function ProductsPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5">
                 {paginatedProducts.map((p) => {
                   const isWishlisted = wishlist.includes(p.id);
+                  const cartQty = cart[p.id] || (cart as any)[Number(p.id)] || (cart as any)[String(p.id)] || 0;
                   const discountVal = p.discount || Math.round(((p.oldPrice - p.price) / (p.oldPrice || p.price)) * 100) || 12;
 
                   return (
@@ -700,15 +703,54 @@ function ProductsPage() {
                           </div>
                         </div>
 
-                        {/* Full-width Rectangular Add to Cart Button - EXACTLY LIKE MOCKUP */}
+                        {/* Full-width Rectangular Add to Cart / Quantity Stepper Button */}
                         <div className="mt-2.5 pt-2">
-                          <button
-                            onClick={(e) => handleAddToCart(e, p)}
-                            className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
-                          >
-                            <ShoppingBag className="size-3.5 sm:size-4" />
-                            <span>ADD TO CART</span>
-                          </button>
+                          {cartQty > 0 ? (
+                            <div className="w-full bg-[#075B32] text-white text-[11px] sm:text-xs font-bold py-1 sm:py-1.5 rounded-none transition shadow-xs flex items-center justify-between px-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (cartQty <= 1) {
+                                    removeFromCart(p.id);
+                                    removeFromCart(String(p.id));
+                                    removeFromCart(Number(p.id));
+                                    toast.info(`Removed ${p.name} from cart`);
+                                  } else {
+                                    updateQuantity(p.id, cartQty - 1);
+                                  }
+                                }}
+                                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-sm transition active:scale-90 cursor-pointer"
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus className="size-3.5" />
+                              </button>
+                              <span className="font-mono font-bold text-xs select-none">
+                                {cartQty} IN BASKET
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  addToCart(p.id, 1);
+                                }}
+                                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-sm transition active:scale-90 cursor-pointer"
+                                aria-label="Increase quantity"
+                              >
+                                <Plus className="size-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => handleAddToCart(e, p)}
+                              className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+                            >
+                              <ShoppingBag className="size-3.5 sm:size-4" />
+                              <span>ADD TO CART</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </article>

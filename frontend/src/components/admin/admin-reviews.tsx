@@ -1620,35 +1620,72 @@ function CreateReviewModal({
 }: {
   onClose: () => void;
   onSuccess: () => void;
+  productsList?: any[];
 }) {
-  const [productName, setProductName] = useState("Organic Basmati Rice (1 kg)");
+  const farmerPresets = [
+    { name: "Ramesh Kumar", avatar: "/images/farmer_ramesh.jpg", label: "Ramesh (Mango / AP)" },
+    { name: "Srinivas Reddy", avatar: "/images/farmer_srinivas.jpg", label: "Srinivas (Veg / TS)" },
+    { name: "Mahesh Patel", avatar: "/images/farmer_mahesh.jpg", label: "Mahesh (Cotton / GJ)" },
+    { name: "Suresh Patil", avatar: "/images/farmer_suresh.jpg", label: "Suresh (Cane / MH)" },
+    { name: "Balwinder Singh", avatar: "/images/farmer_balwinder.jpg", label: "Balwinder (Paddy / PB)" },
+  ];
+
+  const agroProducts = [
+    { id: "3", name: "BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant", cat: "Soil Conditioner" },
+    { id: "1", name: "HARIT — Trichoderma Viride Liquid Biofungal Formulation", cat: "Bio Fungicide" },
+    { id: "2", name: "NEEM OIL — Containing Azadirachtin 1000 PPM", cat: "Bio Insecticide" },
+    { id: "4", name: "PUSHKAL — Flowering & Fruit Set Biostimulant", cat: "Bio Stimulant" },
+    { id: "5", name: "ANNADA — Fish Amino Acid Organic Growth Promoter", cat: "Plant Nutrients" },
+    { id: "6", name: "BACTOCARE — Pseudomonas Fluorescens Bio-Fungicide", cat: "Bio Fungicide" },
+    { id: "7", name: "NIMBO-GUARD — Pure Organic Cold-Pressed Neem Cake", cat: "Bio Organic Input" },
+    { id: "8", name: "MYCO-ROOTS — Endomycorrhiza Bio-Fertilizer Granules", cat: "Bio Fertilizer" },
+    { id: "9", name: "BIO-K-SOLUBLE — Potassium Mobilizing Biofertilizer", cat: "Water Soluble" },
+    { id: "10", name: "PHOSPHO-MAX — Phosphate Solubilizing Bio-Formulation", cat: "Bio Fertilizer" },
+    { id: "11", name: "NITRO-GRO — Azotobacter Nitrogen Fixing Biofertilizer", cat: "Bio Fertilizer" },
+    { id: "12", name: "ZINCO-CARE — Zinc Solubilizing Bio-Inoculant", cat: "Micro Nutrients" }
+  ];
+
+  const [selectedProduct, setSelectedProduct] = useState(agroProducts[0]);
   const [customerName, setCustomerName] = useState("");
+  const [location, setLocation] = useState("Mango Farmer, Andhra Pradesh");
+  const [customerAvatar, setCustomerAvatar] = useState("/images/farmer_ramesh.jpg");
+  const [customAvatarUrl, setCustomAvatarUrl] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState("");
   const [comment, setComment] = useState("");
+  const [isFeatured, setIsFeatured] = useState(true);
+  const [verifiedPurchase, setVerifiedPurchase] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !title || !comment) {
-      toast.error("Please fill in all required review fields");
+    if (!customerName.trim() || !comment.trim()) {
+      toast.error("Please enter Farmer Name and Review Comment");
       return;
     }
+
+    const finalAvatar = customAvatarUrl.trim() || customerAvatar;
 
     setSaving(true);
     try {
       const res = await createAdminReview({
-        productName,
-        customerName,
-        customerEmail,
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        productCategory: selectedProduct.cat,
+        location: location.trim() || "Organic Farmer",
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim() || `${customerName.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
+        customerAvatar: finalAvatar,
         rating,
-        title,
-        comment,
-        verifiedPurchase: true
+        title: title.trim() || `${customerName}'s Field Experience`,
+        comment: comment.trim(),
+        isFeatured,
+        verifiedPurchase,
+        status: "Approved"
       });
       if (res?.success) {
-        toast.success("Review recorded and published successfully!");
+        toast.success("Farmer review added & published to storefront!");
         onSuccess();
       }
     } catch (err) {
@@ -1659,14 +1696,17 @@ function CreateReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in">
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+      <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xl my-8">
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-brand-leaf/10 text-brand-leaf">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-600">
               <Plus className="size-4" />
             </span>
-            <h2 className="text-base font-bold text-foreground">Add Verified Customer Review</h2>
+            <div>
+              <h2 className="text-base font-bold text-foreground">Add Farmer Review / Testimonial</h2>
+              <p className="text-[11px] text-muted-foreground">This review will appear in the Admin Console & Homepage Carousel</p>
+            </div>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-muted-foreground hover:bg-muted">
             <X className="size-4" />
@@ -1674,47 +1714,87 @@ function CreateReviewModal({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
+          {/* Associated Agro Product */}
           <div>
-            <label className="text-xs font-semibold text-foreground">Select Product</label>
+            <label className="text-xs font-semibold text-foreground">Associated Agro Product *</label>
             <select
-              value={productName}
-              onChange={e => setProductName(e.target.value)}
+              value={selectedProduct.id}
+              onChange={e => {
+                const p = agroProducts.find(x => x.id === e.target.value) || agroProducts[0];
+                setSelectedProduct(p);
+              }}
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-brand-leaf focus:outline-none"
             >
-              <option value="Organic Basmati Rice (1 kg)">Organic Basmati Rice (1 kg)</option>
-              <option value="Wood-Pressed Groundnut Oil (1 L)">Wood-Pressed Groundnut Oil (1 L)</option>
-              <option value="Lakadong Turmeric Powder (200 g)">Lakadong Turmeric Powder (200 g)</option>
-              <option value="Virgin Coconut Oil (500 ml)">Virgin Coconut Oil (500 ml)</option>
-              <option value="Unpolished Toor Dal (500 g)">Unpolished Toor Dal (500 g)</option>
-              <option value="Black Pepper Whole (150 g)">Black Pepper Whole (150 g)</option>
-              <option value="Natural Jaggery Powder (500 g)">Natural Jaggery Powder (500 g)</option>
+              {agroProducts.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Farmer Name & Role/Location */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-foreground">Customer Name *</label>
+              <label className="text-xs font-semibold text-foreground">Farmer / Customer Name *</label>
               <input
                 type="text"
                 value={customerName}
                 onChange={e => setCustomerName(e.target.value)}
-                placeholder="e.g. Ramesh Babu"
+                placeholder="e.g. Ramesh Kumar"
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-brand-leaf focus:outline-none"
                 required
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-foreground">Customer Email</label>
+              <label className="text-xs font-semibold text-foreground">Farmer Crop & Location *</label>
               <input
-                type="email"
-                value={customerEmail}
-                onChange={e => setCustomerEmail(e.target.value)}
-                placeholder="ramesh@example.com"
+                type="text"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder="e.g. Mango Farmer, Andhra Pradesh"
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-brand-leaf focus:outline-none"
+                required
               />
             </div>
           </div>
 
+          {/* Farmer Photo Preset Selection */}
+          <div>
+            <label className="text-xs font-semibold text-foreground block mb-1.5">
+              Farmer Photo / Avatar (Choose Preset or Custom URL)
+            </label>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+              {farmerPresets.map(preset => {
+                const isSelected = customerAvatar === preset.avatar && !customAvatarUrl.trim();
+                return (
+                  <button
+                    key={preset.avatar}
+                    type="button"
+                    onClick={() => {
+                      setCustomerAvatar(preset.avatar);
+                      setCustomAvatarUrl("");
+                    }}
+                    className={`flex items-center gap-1.5 p-1 rounded-xl border text-[10px] font-semibold transition shrink-0 ${
+                      isSelected
+                        ? "border-[#075B32] bg-[#075B32]/10 text-[#075B32] ring-2 ring-[#075B32]/30"
+                        : "border-border bg-muted/40 hover:bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <img src={preset.avatar} alt={preset.name} className="size-6 rounded-full object-cover" />
+                    <span>{preset.name.split(" ")[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              type="text"
+              value={customAvatarUrl}
+              onChange={e => setCustomAvatarUrl(e.target.value)}
+              placeholder="Or paste custom image URL (/images/... or https://...)"
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-brand-leaf focus:outline-none font-mono"
+            />
+          </div>
+
+          {/* Star Rating */}
           <div>
             <label className="text-xs font-semibold text-foreground">Star Rating</label>
             <div className="mt-1 flex items-center gap-2">
@@ -1736,28 +1816,51 @@ function CreateReviewModal({
             </div>
           </div>
 
+          {/* Review Headline / Title */}
           <div>
-            <label className="text-xs font-semibold text-foreground">Review Headline / Title *</label>
+            <label className="text-xs font-semibold text-foreground">Review Headline / Title</label>
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. Pristine aroma and exceptional quality!"
+              placeholder="e.g. Improved soil health and bumper yield!"
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-brand-leaf focus:outline-none"
-              required
             />
           </div>
 
+          {/* Farmer Quote / Experience */}
           <div>
-            <label className="text-xs font-semibold text-foreground">Review Body / Comments *</label>
+            <label className="text-xs font-semibold text-foreground">Farmer Testimonial Quote *</label>
             <textarea
               rows={3}
               value={comment}
               onChange={e => setComment(e.target.value)}
-              placeholder="Detailed customer experience review..."
+              placeholder='e.g. "Using Janani products improved my soil health and increased my yield significantly. Highly recommended!"'
               className="mt-1 w-full rounded-lg border border-border bg-background p-3 text-xs text-foreground focus:border-brand-leaf focus:outline-none leading-relaxed"
               required
             />
+          </div>
+
+          {/* Badges / Options */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-border">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-foreground">
+              <input
+                type="checkbox"
+                checked={isFeatured}
+                onChange={e => setIsFeatured(e.target.checked)}
+                className="size-4 rounded border-border text-[#075B32] focus:ring-[#075B32]"
+              />
+              <span className="font-semibold text-emerald-700">★ Pin on Homepage Carousel</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-foreground">
+              <input
+                type="checkbox"
+                checked={verifiedPurchase}
+                onChange={e => setVerifiedPurchase(e.target.checked)}
+                className="size-4 rounded border-border text-[#075B32] focus:ring-[#075B32]"
+              />
+              <span className="font-semibold">✓ Verified Farmer Purchase</span>
+            </label>
           </div>
 
           <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
@@ -1771,9 +1874,10 @@ function CreateReviewModal({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-brand-leaf px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-leaf/90 disabled:opacity-50"
+              className="rounded-lg bg-[#075B32] hover:bg-[#064A29] px-4 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
-              {saving ? "Saving..." : "Create Review"}
+              <Plus className="size-3.5" />
+              {saving ? "Publishing..." : "Add & Publish Review"}
             </button>
           </div>
         </form>

@@ -361,7 +361,7 @@ export function MyOrdersPage() {
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mt-2">
             My Orders & Shipments
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-none text-left lg:whitespace-nowrap hyphens-none">
             Track real-time courier dispatches, download GST invoices, initiate easy returns or exchanges, and reorder favourite organic batches with 1 click.
           </p>
         </div>

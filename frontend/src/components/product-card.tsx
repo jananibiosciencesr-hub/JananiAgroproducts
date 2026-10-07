@@ -14,7 +14,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, list = false, onQuickView }: ProductCardProps) {
   const { cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart } = useStore();
-  const cartQty = cart[product.id] || 0;
+  const cartQty = cart[product.id] || (cart as any)[Number(product.id)] || (cart as any)[String(product.id)] || 0;
   const isWishlisted = wishlist.includes(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -42,6 +42,8 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
     e.stopPropagation();
     if (cartQty <= 1) {
       removeFromCart(product.id);
+      removeFromCart(String(product.id));
+      if (!isNaN(Number(product.id))) removeFromCart(Number(product.id));
       toast.info(`Removed ${product.name} from cart`);
     } else {
       updateQuantity(product.id, cartQty - 1);

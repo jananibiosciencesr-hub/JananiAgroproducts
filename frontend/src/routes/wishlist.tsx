@@ -66,7 +66,7 @@ export function WishlistPage() {
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
             Sign In to Access Your Wishlist
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-none mx-auto lg:whitespace-nowrap hyphens-none">
             Wishlist is only available for registered patrons. Please sign in or register with your email OTP to save and track your favourite crop solutions.
           </p>
         </div>

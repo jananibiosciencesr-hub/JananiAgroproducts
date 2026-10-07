@@ -33,7 +33,15 @@ export const Route = createFileRoute("/categories/")({
 
 function CategoriesIndexPage() {
   const { categories: storeCats, products: storeProds } = useStore();
-  const allCats = storeCats && storeCats.length > 0 ? storeCats : categories;
+  const rawCats = storeCats && storeCats.length > 0 ? storeCats : categories;
+  const allCats = useMemo(() => {
+    return rawCats.filter((cat: any) => {
+      const n = (cat.name || "").toLowerCase();
+      const s = (cat.slug || "").toLowerCase();
+      if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+      return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((term) => n.includes(term) || s.includes(term));
+    });
+  }, [rawCats]);
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,42 +96,45 @@ function CategoriesIndexPage() {
     <>
       {/* Compact Categories Header */}
       <div className="border-b border-border/70 bg-gradient-to-b from-[#075B32]/10 via-background to-background pt-6 pb-6 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <nav
-              className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-2"
-              aria-label="Breadcrumb"
-            >
-              <Link to="/" className="hover:text-foreground transition-colors">
-                Home
-              </Link>
-              <ChevronRight className="size-3 text-muted-foreground/60" />
-              <span className="text-[#075B32] font-bold">Categories</span>
-            </nav>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-              <span>Agri Products Categories</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#075B32]/10 text-[#075B32] font-bold font-mono">
-                {allCats.length} Collections
-              </span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-              Certified bio-inputs, organic crop protection, stimulants, micronutrients, and water solubles manufactured for sustainable Indian agriculture.
-            </p>
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <nav
+                className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-1.5"
+                aria-label="Breadcrumb"
+              >
+                <Link to="/" className="hover:text-foreground transition-colors">
+                  Home
+                </Link>
+                <ChevronRight className="size-3 text-muted-foreground/60" />
+                <span className="text-[#075B32] font-bold">Categories</span>
+              </nav>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+                <span>Agri Products Categories</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#075B32]/10 text-[#075B32] font-bold font-mono">
+                  {allCats.length} Collections
+                </span>
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="h-9 text-xs font-bold rounded-xl border-[#075B32]/30 text-[#075B32] hover:bg-[#075B32]/5 shadow-xs"
+              >
+                <Link to="/products">
+                  <span>View All Products</span>
+                  <ArrowRight className="size-3.5 ml-1.5" />
+                </Link>
+              </Button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="h-9 text-xs font-bold rounded-xl border-[#075B32]/30 text-[#075B32] hover:bg-[#075B32]/5 shadow-xs"
-            >
-              <Link to="/products">
-                <span>View All Products</span>
-                <ArrowRight className="size-3.5 ml-1.5" />
-              </Link>
-            </Button>
-          </div>
+          <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-none text-left lg:whitespace-nowrap hyphens-none">
+            Certified bio-inputs, organic crop protection, stimulants, micronutrients, and water solubles manufactured for sustainable Indian agriculture.
+          </p>
         </div>
 
         {/* Search & Filter Pill Bar */}

@@ -10,7 +10,7 @@ import contactRoutes from "./routes/contactRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import { getCategories, getCategoryBySlug } from "./controllers/productController.js";
-import { getStorefrontCoupons, validateCouponOffer } from "./controllers/adminController.js";
+import { getStorefrontCoupons, validateCouponOffer, getPublicReviews } from "./controllers/adminController.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 import { initDatabase } from "./config/initDb.js";
@@ -106,6 +106,8 @@ app.get("/api/categories", getCategories);
 app.get("/api/categories/:slug", getCategoryBySlug);
 app.get("/api/coupons", getStorefrontCoupons);
 app.post("/api/coupons/validate", validateCouponOffer);
+app.get("/api/reviews", getPublicReviews);
+app.get("/api/testimonials", getPublicReviews);
 app.use("/api/orders", orderRoutes);
 app.use("/api/inquiries", inquiryRoutes);
 app.use("/api/contact", contactRoutes);

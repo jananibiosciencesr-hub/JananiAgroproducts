@@ -241,7 +241,7 @@ export function LiveTrackingPage() {
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mt-2">
             Track Harvest Shipment
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-none text-left lg:whitespace-nowrap hyphens-none">
             Live GPS telemetry, cold-chain temperature monitoring, delivery OTP, and doorstep arrival estimations.
           </p>
         </div>

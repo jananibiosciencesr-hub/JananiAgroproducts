@@ -8,18 +8,18 @@ type StoreContextValue = {
   categories: any[];
   refreshProducts: () => Promise<void>;
   refreshUserProfile: (targetUser?: AuthUser | null) => Promise<void>;
-  cart: Record<number, number>;
-  wishlist: number[];
+  cart: Record<number | string, number>;
+  wishlist: (number | string)[];
   cartCount: number;
   subtotal: number;
   user: AuthUser | null;
   isAuthenticated: boolean;
-  addToCart: (id: number, quantity?: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  removeFromCart: (id: number) => void;
-  toggleWishlist: (id: number) => void;
+  addToCart: (id: number | string, quantity?: number) => void;
+  updateQuantity: (id: number | string, quantity: number) => void;
+  removeFromCart: (id: number | string) => void;
+  toggleWishlist: (id: number | string) => void;
   clearWishlist: () => void;
-  moveToCart: (id: number, quantity?: number) => void;
+  moveToCart: (id: number | string, quantity?: number) => void;
   clearCart: () => void;
   deductWalletBalance: (amount: number) => void;
   addWalletBalance: (amount: number) => void;
@@ -32,8 +32,8 @@ type StoreContextValue = {
 const StoreContext = createContext<StoreContextValue | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Record<number, number>>({});
-  const [wishlist, setWishlist] = useState<number[]>([]);
+  const [cart, setCart] = useState<Record<number | string, number>>({});
+  const [wishlist, setWishlist] = useState<(number | string)[]>([]);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [liveProducts, setLiveProducts] = useState<Product[]>(initialProducts);
   const [liveCategories, setLiveCategories] = useState<any[]>(initialCategories);
@@ -95,7 +95,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setLiveProducts(fetchedProds.value);
       }
       if (fetchedCats.status === "fulfilled" && Array.isArray(fetchedCats.value) && fetchedCats.value.length > 0) {
-        setLiveCategories(fetchedCats.value);
+        const cleanCats = fetchedCats.value.filter((cat: any) => {
+          const n = (cat.name || "").toLowerCase();
+          const s = (cat.slug || "").toLowerCase();
+          if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+          return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((t) => n.includes(t) || s.includes(t));
+        });
+        setLiveCategories(cleanCats.length > 0 ? cleanCats : initialCategories);
       }
     } catch (e) {}
   };
@@ -473,12 +479,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
         initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
       
-      const targetId = prod ? Number(prod.id) : Number(id);
-      if (isNaN(targetId) || quantity <= 0) return;
+      const targetId = prod ? (isNaN(Number(prod.id)) ? String(prod.id) : Number(prod.id)) : (isNaN(Number(id)) ? String(id) : Number(id));
+      if (!targetId || quantity <= 0) return;
 
       setCart((current) => ({
         ...current,
-        [targetId]: (current[targetId] ?? 0) + quantity,
+        [targetId]: (current[targetId] ?? (current as any)[String(targetId)] ?? 0) + quantity,
       }));
     },
     updateQuantity: (id: number | string, quantity: number) => {
@@ -486,15 +492,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
         initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
       
-      const targetId = prod ? Number(prod.id) : Number(id);
-      const strId = String(id);
+      const targetId = prod ? (isNaN(Number(prod.id)) ? String(prod.id) : Number(prod.id)) : (isNaN(Number(id)) ? String(id) : Number(id));
+      const strId = String(targetId);
 
       setCart((current) => {
         const next = { ...current };
-        if (!isNaN(targetId)) delete next[targetId];
+        delete (next as any)[targetId];
         delete (next as any)[strId];
+        if (!isNaN(Number(targetId))) delete (next as any)[Number(targetId)];
         
-        if (quantity > 0 && !isNaN(targetId)) {
+        if (quantity > 0) {
           next[targetId] = quantity;
         }
         return next;
@@ -505,13 +512,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
         initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
       
-      const targetId = prod ? Number(prod.id) : Number(id);
-      const strId = String(id);
+      const targetId = prod ? (isNaN(Number(prod.id)) ? String(prod.id) : Number(prod.id)) : (isNaN(Number(id)) ? String(id) : Number(id));
+      const strId = String(targetId);
 
       setCart((current) => {
         const next = { ...current };
-        if (!isNaN(targetId)) delete next[targetId];
+        delete (next as any)[targetId];
         delete (next as any)[strId];
+        if (!isNaN(Number(targetId))) delete (next as any)[Number(targetId)];
         return next;
       });
     },

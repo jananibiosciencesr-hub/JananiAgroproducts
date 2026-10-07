@@ -43,8 +43,8 @@ const links = [
   ["Home", "/"],
   ["Categories", "/categories"],
   ["Products", "/products"],
-  ["About Us", "/about"],
-  ["Contact Us", "/contact"]
+  ["About", "/about"],
+  ["Contact", "/contact"]
 ] as const;
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
@@ -88,15 +88,15 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Dynamic Announcement Bar - Deep Green BG, Side Aligned */}
-      <div className="bg-[#064A29] border-b border-[#04331B] h-8 sm:h-9 flex items-center overflow-hidden select-none">
+      {/* Dynamic Announcement Bar - Deep Gradient Forest Green with Gold Accents */}
+      <div className="bg-gradient-to-r from-[#032613] via-[#064A29] to-[#032613] border-b border-[#D99A12]/25 h-8 sm:h-9 flex items-center overflow-hidden select-none">
         {/* Mobile View: Continuous Marquee Scrolling Ticker */}
         <div className="md:hidden w-full overflow-hidden whitespace-nowrap">
           <div className="animate-marquee flex items-center gap-6 text-[11px] font-medium text-emerald-100">
             <span className="inline-flex items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[#F5B726] font-bold">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-bold text-[10px]">
                 <Sparkles className="size-3 fill-current" />
-                PURE SOIL TO SOUL:
+                PURE SOIL TO SOUL
               </span>
               <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
             </span>
@@ -108,9 +108,9 @@ function Shell({ children }: { children: React.ReactNode }) {
 
             {/* Seamless duplicate loop for infinite single-line scroll */}
             <span className="inline-flex items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[#F5B726] font-bold">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-bold text-[10px]">
                 <Sparkles className="size-3 fill-current" />
-                PURE SOIL TO SOUL:
+                PURE SOIL TO SOUL
               </span>
               <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
             </span>
@@ -122,33 +122,52 @@ function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Desktop View: Side Aligned Single Line */}
-        <div className="hidden md:flex w-full items-center justify-start gap-3 px-4 sm:px-6 max-w-7xl mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap overflow-hidden">
-          <span className="flex items-center gap-1.5 text-[#F5B726] font-black uppercase tracking-wider">
-            <Sparkles className="size-3.5 fill-current" />
-            PURE SOIL TO SOUL:
-          </span>
-          <span className="text-white/95 font-medium">
-            "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture for a Healthier Tomorrow."
-          </span>
-          <span className="text-[#F5B726]">•</span>
-          <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
+        {/* Desktop View: Side Aligned Single Line with Utility Links */}
+        <div className="hidden md:flex w-full items-center justify-between px-4 sm:px-6 max-w-7xl mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-extrabold text-[10.5px] uppercase tracking-wider">
+              <Sparkles className="size-3 fill-current" />
+              PURE SOIL TO SOUL
+            </span>
+            <span className="text-white/95 font-medium">
+              "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture"
+            </span>
+            <span className="text-[#F5B726]">•</span>
+            <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-[11px] text-emerald-200/90 font-medium">
+            <a
+              href="tel:+919311416225"
+              className="hover:text-white transition-colors flex items-center gap-1"
+            >
+              <Phone className="size-3 text-[#F5B726]" />
+              <span>Helpline: +91 93114 16225</span>
+            </a>
+            <span className="text-white/30">|</span>
+            <Link to="/track-order" className="hover:text-white transition-colors flex items-center gap-1">
+              <Truck className="size-3 text-[#F5B726]" />
+              <span>Track Order</span>
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Sticky Main Header - Pure White (#FFFFFF) */}
+      {/* Sticky Main Header - Ultra-Luxe Elevated Frosted Design */}
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? "border-b border-[#0B6B35]/20 bg-white/98 shadow-md backdrop-blur-xl"
-            : "border-b border-[#0B6B35]/15 bg-white backdrop-blur-xl shadow-2xs"
+            ? "border-b border-[#075B32]/15 bg-white/98 shadow-[0_12px_36px_-6px_rgba(7,91,50,0.12)] backdrop-blur-2xl py-2"
+            : "border-b border-[#075B32]/10 bg-white/95 shadow-[0_4px_25px_-5px_rgba(7,91,50,0.06)] backdrop-blur-xl py-2.5 sm:py-3"
         }`}
         style={{ top: 0 }}
       >
-        <div className="mx-auto grid h-16 sm:h-18 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+          {/* Brand Logo with Ambient Halo */}
           <Brand />
-          
-          <nav className="hidden items-center justify-start ml-6 sm:ml-8 gap-6 lg:flex" aria-label="Main navigation">
+
+          {/* Luxury Pill Navigation */}
+          <nav className="hidden items-center justify-center gap-1.5 lg:flex" aria-label="Main navigation">
             {links.map(([label, to]) => {
               const hasDropdown = label === "Products";
               const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -156,7 +175,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               return (
                 <div
                   key={label}
-                  className="relative py-2"
+                  className="relative py-1"
                   onMouseEnter={() => {
                     if (label === "Products") {
                       setIsMegaMenuOpen(true);
@@ -173,28 +192,23 @@ function Shell({ children }: { children: React.ReactNode }) {
                   <Link
                     to={to}
                     onClick={() => setIsMegaMenuOpen(false)}
-                    className={`group relative flex items-center gap-1.5 py-1 text-sm tracking-tight transition-all duration-200 ${
+                    className={`group relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13.5px] tracking-tight transition-all duration-200 cursor-pointer whitespace-nowrap ${
                       isActive
-                        ? "text-[#075B32] font-black"
-                        : "text-[#075B32]/75 hover:text-[#075B32] font-bold"
+                        ? "text-[#075B32] font-black bg-[#F0F7ED] shadow-[inset_0_0_0_1px_rgba(7,91,50,0.14)]"
+                        : "text-slate-700 font-bold hover:text-[#075B32] hover:bg-[#F4F8F1]"
                     }`}
                   >
+                    {isActive && (
+                      <span className="size-1.5 rounded-full bg-[#075B32] animate-pulse" />
+                    )}
                     <span>{label}</span>
                     {hasDropdown && (
                       <ChevronDown
                         className={`size-3.5 transition-transform duration-200 group-hover:rotate-180 ${
-                          isActive ? "text-[#075B32] stroke-[2.5]" : "text-[#0B6B35]/70"
+                          isActive ? "text-[#075B32] stroke-[2.5]" : "text-slate-400 group-hover:text-[#075B32]"
                         }`}
                       />
                     )}
-                    {/* Active tab bottom indicator bar */}
-                    <span
-                      className={`absolute -bottom-1.5 left-0 h-[3px] rounded-full transition-all duration-300 ${
-                        isActive
-                          ? "w-full bg-[#075B32] shadow-sm"
-                          : "w-0 bg-[#4FAE2A] group-hover:w-full opacity-80"
-                      }`}
-                    />
                   </Link>
 
                   {/* Products Dropdown List */}
@@ -209,55 +223,100 @@ function Shell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
+          {/* Right Action Terminal: Quick Search Pill, Wishlist, Cart & Luxe Auth */}
           <div className="flex items-center justify-end gap-2 sm:gap-3">
+            {/* Desktop Quick Search Pill */}
+            <button
+              type="button"
+              onClick={() => setIsGlobalSearchOpen(true)}
+              aria-label="Quick Search"
+              title="Search products..."
+              className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-[#075B32]/15 bg-[#F8FAF4] hover:bg-[#F0F7ED] hover:border-[#075B32]/35 text-slate-500 hover:text-[#075B32] transition-all duration-200 shadow-2xs group w-40 lg:w-48 text-left cursor-pointer"
+            >
+              <Search className="size-3.5 text-[#075B32]/75 group-hover:text-[#075B32] transition-colors" />
+              <span className="text-xs font-semibold text-slate-500 group-hover:text-slate-700 truncate">
+                Search products...
+              </span>
+            </button>
+
+            {/* Mobile/Compact Search Icon Button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsGlobalSearchOpen(true)}
-              aria-label="Quick Search (Ctrl+K)"
-              title="Search Products (Ctrl+K)"
-              className="text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#F8FAEE]"
+              aria-label="Quick Search"
+              title="Search Products"
+              className="md:hidden size-10 rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED]"
             >
-              <Search className="size-4" />
+              <Search className="size-4.5" />
             </Button>
             
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#F8FAEE]"
+            {/* Wishlist Button */}
+            <Link
+              to="/wishlist"
+              className="relative hidden sm:flex size-10 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-colors"
+              aria-label="Wishlist"
+              title="Wishlist"
+            >
+              <Heart className="size-4.5" />
+              {wishlist.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-[#E7A91A] px-1 text-[9px] font-black text-[#075B32] shadow-xs ring-2 ring-white">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
+
+            {/* Shopping Cart Button */}
+            <button
+              type="button"
               onClick={() => setIsCartDrawerOpen(true)}
               aria-label="Open Shopping Cart"
               title="Shopping Cart"
+              className="relative flex size-10 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-all cursor-pointer group"
             >
-              <ShoppingBag className="size-4" />
-              {cartCount > 0 && <Count value={cartCount} />}
-            </Button>
+              <ShoppingBag className="size-4.5 group-hover:scale-105 transition-transform" />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-gradient-to-r from-[#D99A12] to-[#E7A91A] px-1 text-[9px] font-black text-white shadow-xs ring-2 ring-white">
+                  {cartCount}
+                </span>
+              )}
+            </button>
 
-
-
+            {/* User Account / Sign In */}
             {user ? (
               <Link
                 to="/profile"
-                className="ml-2 hidden items-center gap-2.5 rounded-2xl border border-border/80 bg-card/80 py-1.5 pl-2 pr-3.5 shadow-sm transition hover:border-primary/40 hover:bg-card lg:inline-flex"
+                className="ml-1.5 hidden items-center gap-2.5 rounded-full border border-[#075B32]/15 bg-[#F8FAF4] hover:bg-[#F0F7ED] py-1.5 pl-2 pr-3.5 shadow-2xs transition hover:border-[#075B32]/35 lg:inline-flex"
               >
-                <div className="grid size-7 place-items-center rounded-full bg-brand-gold text-[11px] font-bold text-forest">
+                <div className="grid size-7 place-items-center rounded-full bg-gradient-to-tr from-[#D99A12] to-[#F5B726] text-[11px] font-black text-[#1E3A1E] shadow-2xs">
                   {user.name ? user.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("") : "U"}
                 </div>
                 <div className="text-left leading-tight">
-                  <span className="block text-xs font-semibold text-foreground truncate max-w-[100px]">{user.name ? user.name.split(" ")[0] : "Account"}</span>
-                  <span className="block text-[10px] font-medium text-muted-foreground">My Account</span>
+                  <span className="block text-xs font-bold text-slate-800 truncate max-w-[105px]">
+                    {user.name ? user.name.split(" ")[0] : "Account"}
+                  </span>
+                  <span className="block text-[9.5px] font-semibold text-[#075B32]">
+                    My Account
+                  </span>
                 </div>
               </Link>
             ) : (
-              <Button asChild variant="gold" className="ml-2 hidden lg:inline-flex rounded-xl font-semibold text-xs h-9 whitespace-nowrap shrink-0">
-                <Link to="/login" className="whitespace-nowrap">Sign In / Register</Link>
+              <Button
+                asChild
+                className="ml-1.5 hidden lg:inline-flex rounded-full font-black text-xs h-9.5 px-5 shadow-[0_4px_14px_rgba(217,154,18,0.35)] hover:shadow-[0_6px_20px_rgba(217,154,18,0.45)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-r from-[#D99A12] via-[#E7A91A] to-[#D99A12] hover:from-[#c98e10] hover:to-[#D99A12] text-[#1E3A1E] border border-[#FDE68A]/60 transition-all duration-200"
+              >
+                <Link to="/login" className="flex items-center gap-1.5 whitespace-nowrap">
+                  <User className="size-3.5 stroke-[2.5]" />
+                  <span>Sign In / Register</span>
+                </Link>
               </Button>
             )}
 
+            {/* Mobile Menu Trigger */}
             <Button
               variant="ghost"
               size="icon"
-              className="xl:hidden"
+              className="lg:hidden size-10 rounded-full text-[#075B32] hover:bg-[#F0F7ED]"
               onClick={() => setMenu(true)}
               aria-label="Open menu"
             >

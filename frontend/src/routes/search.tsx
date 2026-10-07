@@ -256,7 +256,7 @@ function SearchPage() {
         <h1 className="font-display text-3xl font-bold sm:text-4xl text-foreground">
           Find Certified Bio-Inputs & Crop Solutions
         </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
+        <p className="text-xs sm:text-sm text-muted-foreground max-w-none mx-auto lg:whitespace-nowrap hyphens-none">
           Search with real-time text, voice recognition, or AI crop suggestions across certified bio-fertilizers, pesticides, and biostimulants.
         </p>
 
