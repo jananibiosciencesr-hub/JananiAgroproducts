@@ -49,6 +49,14 @@ export function PaymentPage() {
   const navigate = useNavigate();
   const { cart, subtotal, user, clearCart, deductWalletBalance } = useStore();
 
+  // Redirect to checkout if not logged in
+  useEffect(() => {
+    if (!user) {
+      toast.error("Please Sign In or Register in Checkout to proceed with payment.");
+      navigate({ to: "/checkout" });
+    }
+  }, [user, navigate]);
+
   // Checkout context from localStorage or fallback
   const [checkoutData] = useState<any>(() => {
     if (typeof window !== "undefined") {
@@ -85,9 +93,9 @@ export function PaymentPage() {
   // Effective Order Values
   const effectiveAmount = checkoutData?.finalTotal || (subtotal > 0 ? subtotal : 420);
   const effectiveOrderNumber = checkoutData?.orderNumber || transactionDetails.orderNumber;
-  const customerName = checkoutData?.customerName || checkoutData?.address?.fullName || user?.name || "Valued Patron";
-  const customerPhone = checkoutData?.customerPhone || checkoutData?.address?.phone || user?.phone || "";
-  const customerEmail = checkoutData?.customerEmail || user?.email || "patron@jananiagro.com";
+  const customerName = user?.name || checkoutData?.customerName || checkoutData?.address?.fullName || "Valued Patron";
+  const customerPhone = user?.phone || checkoutData?.customerPhone || checkoutData?.address?.phone || "";
+  const customerEmail = user?.email || checkoutData?.customerEmail || "patron@jananiagro.com";
   const deliveryDate = checkoutData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
   const city = checkoutData?.address?.city || "Ahmedabad";
 
@@ -108,6 +116,26 @@ export function PaymentPage() {
       })
       .filter((item): item is { product: NonNullable<typeof item>["product"]; qty: number } => item !== null);
   }, [cart, checkoutData]);
+
+  // Auth Guard View
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-md px-6 py-24 text-center">
+        <div className="size-20 mx-auto rounded-full bg-brand-gold/15 flex items-center justify-center text-brand-gold">
+          <Lock className="size-10" />
+        </div>
+        <h2 className="mt-5 font-display text-2xl font-bold text-foreground">
+          Sign In Required for Payment
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          You must be signed in with your OTP to securely complete the transaction and link your order.
+        </p>
+        <Button asChild variant="gold" size="lg" className="mt-6 rounded-full px-8 font-bold">
+          <Link to="/checkout">Return to Checkout & Sign In</Link>
+        </Button>
+      </div>
+    );
+  }
 
   // Handle Payment Success & Order Settlement
   const handlePaymentSuccess = async (details: { method: string; transactionId: string }) => {
@@ -479,58 +507,6 @@ export function PaymentPage() {
               </div>
             </div>
 
-            {/* Supported Payment Channels Pill Showcase */}
-            <div className="mt-6 space-y-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                All Indian Payment Methods Accepted Inside Razorpay:
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* 1. UPI & QR */}
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border shadow-2xs hover:border-brand-leaf/40 transition">
-                  <span className="size-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 font-bold">
-                    <Smartphone className="size-5" />
-                  </span>
-                  <div>
-                    <strong className="text-xs font-bold text-foreground block">Instant UPI & QR Code</strong>
-                    <span className="text-[11px] text-muted-foreground">Google Pay, PhonePe, Paytm, CRED, BHIM</span>
-                  </div>
-                </div>
-
-                {/* 2. Credit & Debit Cards */}
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border shadow-2xs hover:border-brand-leaf/40 transition">
-                  <span className="size-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 font-bold">
-                    <CreditCard className="size-5" />
-                  </span>
-                  <div>
-                    <strong className="text-xs font-bold text-foreground block">Credit / Debit Cards</strong>
-                    <span className="text-[11px] text-muted-foreground">Visa, MasterCard, RuPay, Maestro</span>
-                  </div>
-                </div>
-
-                {/* 3. NetBanking */}
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border shadow-2xs hover:border-brand-leaf/40 transition">
-                  <span className="size-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 font-bold">
-                    <Building className="size-5" />
-                  </span>
-                  <div>
-                    <strong className="text-xs font-bold text-foreground block">NetBanking (50+ Banks)</strong>
-                    <span className="text-[11px] text-muted-foreground">HDFC, SBI, ICICI, Axis, Kotak & more</span>
-                  </div>
-                </div>
-
-                {/* 4. Digital Wallets */}
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border shadow-2xs hover:border-brand-leaf/40 transition">
-                  <span className="size-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-bold">
-                    <Wallet className="size-5" />
-                  </span>
-                  <div>
-                    <strong className="text-xs font-bold text-foreground block">Wallets & PayLater</strong>
-                    <span className="text-[11px] text-muted-foreground">Amazon Pay, Mobikwik, Freecharge</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Customer Billing Snapshot */}
             <div className="mt-6 rounded-2xl bg-secondary/60 p-4 border border-border text-xs space-y-2">

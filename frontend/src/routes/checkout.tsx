@@ -180,7 +180,7 @@ export function CheckoutPage() {
       setReceivedCheckoutOtp("123456");
       setIsOtpSent(true);
       setResendTimer(60);
-      toast.info("Connecting to mail server took longer than expected. You can use the instant access code to proceed.");
+      toast.error("Connecting to mail server took longer than expected. Please try again or request a new OTP.");
     } finally {
       setIsSendingOtp(false);
     }
@@ -332,6 +332,14 @@ export function CheckoutPage() {
   // Handle Order Placement
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("Please complete Step 1 (Sign In / Register with OTP) to place your order.");
+      const authEl = document.getElementById("checkout-auth-step");
+      if (authEl) {
+        authEl.scrollIntoView({ behavior: "smooth" });
+      }
+      return;
+    }
     if (!selectedAddress) {
       toast.error("Please select or add a delivery address.");
       return;
@@ -511,31 +519,44 @@ export function CheckoutPage() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_420px] items-start">
         {/* Left Column: Sequential Checkout Steps */}
         <div className="space-y-8">
-          {/* USER AUTH & REALTIME EMAIL OTP SECTION */}
+          {/* STEP 1: USER AUTH & REALTIME EMAIL OTP SECTION */}
           {!user ? (
-            <section className="rounded-3xl border-2 border-brand-gold/40 bg-gradient-to-br from-brand-gold/10 via-card to-background p-5 sm:p-7 shadow-soft space-y-4">
+            <section id="checkout-auth-step" className="rounded-3xl border-2 border-brand-gold/50 bg-gradient-to-br from-brand-gold/10 via-card to-background p-5 sm:p-7 shadow-soft space-y-4">
+              {/* Step Header */}
+              <div className="flex items-center gap-2.5 border-b border-border/70 pb-3">
+                <span className="grid size-7 place-items-center rounded-full bg-brand-gold text-forest text-xs font-black">
+                  1
+                </span>
+                <h2 className="font-display text-lg font-bold text-foreground">
+                  Step 1: Customer Identification (Sign In / Register)
+                </h2>
+                <span className="text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full ml-auto">
+                  Required
+                </span>
+              </div>
+
               {/* Mode Switcher Tabs */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="grid size-9 place-items-center rounded-2xl bg-brand-gold text-forest text-base font-bold shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/70 pb-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="grid size-10 place-items-center rounded-2xl bg-brand-gold text-forest text-base font-bold shadow-xs shrink-0">
                     {checkoutAuthMode === "register" ? "✨" : "🔐"}
                   </span>
-                  <div>
-                    <h2 className="font-display text-lg font-bold text-foreground">
+                  <div className="min-w-0">
+                    <h3 className="font-display text-base font-bold text-foreground truncate">
                       {checkoutAuthMode === "register"
                         ? "New Customer Registration"
                         : "Customer Sign In (Registered Patrons)"}
-                    </h2>
+                    </h3>
                     <p className="text-xs text-muted-foreground">
                       {checkoutAuthMode === "register"
-                        ? "Create an account with Janani Agro to complete checkout & save your details."
-                        : "Only registered patrons can sign in. Enter your email to receive a real-time OTP."}
+                        ? "Create an account to securely save your delivery addresses and track orders."
+                        : "Sign in with your email OTP to load your saved delivery addresses."}
                     </p>
                   </div>
                 </div>
 
                 {/* Mode Selector Toggle */}
-                <div className="flex items-center gap-1.5 p-1 bg-secondary/80 rounded-2xl border border-border self-start sm:self-auto">
+                <div className="inline-flex items-center p-1 bg-secondary/90 dark:bg-card rounded-2xl border border-border/80 shadow-xs shrink-0 whitespace-nowrap self-start sm:self-center">
                   <button
                     type="button"
                     onClick={() => {
@@ -544,14 +565,14 @@ export function CheckoutPage() {
                       setAlreadyRegisteredWarn(false);
                       setIsOtpSent(false);
                     }}
-                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none ${
                       checkoutAuthMode === "login"
-                        ? "bg-brand-gold text-forest shadow-xs font-bold"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-brand-gold text-forest font-extrabold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background/60"
                     }`}
                   >
-                    <Lock className="size-3.5" />
-                    <span>Sign In</span>
+                    <Lock className="size-3.5 shrink-0" />
+                    <span className="whitespace-nowrap">Sign In</span>
                   </button>
                   <button
                     type="button"
@@ -561,19 +582,19 @@ export function CheckoutPage() {
                       setAlreadyRegisteredWarn(false);
                       setIsOtpSent(false);
                     }}
-                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none ${
                       checkoutAuthMode === "register"
-                        ? "bg-brand-gold text-forest shadow-xs font-bold"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-brand-gold text-forest font-extrabold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background/60"
                     }`}
                   >
-                    <UserPlus className="size-3.5" />
-                    <span>New Register</span>
+                    <UserPlus className="size-3.5 shrink-0" />
+                    <span className="whitespace-nowrap">New Register</span>
                   </button>
                 </div>
               </div>
 
-              {/* Not Registered Warning Alert (When trying to log in with un-registered email) */}
+              {/* Not Registered Warning Alert */}
               {notRegisteredWarn && (
                 <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-xs space-y-2.5 animate-in fade-in">
                   <div className="flex items-start gap-2.5">
@@ -603,7 +624,7 @@ export function CheckoutPage() {
                 </div>
               )}
 
-              {/* Already Registered Info Alert (When trying to register with an existing email) */}
+              {/* Already Registered Info Alert */}
               {alreadyRegisteredWarn && (
                 <div className="p-4 rounded-2xl bg-blue-500/15 border border-blue-500/40 text-xs space-y-2.5 animate-in fade-in">
                   <div className="flex items-start gap-2.5">
@@ -747,22 +768,13 @@ export function CheckoutPage() {
                         {checkoutAuthMode === "register" ? "Registration" : "Sign In"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1"
-                      >
-                        ⚡ Auto-Fill ({receivedCheckoutOtp || "123456"})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsOtpSent(false)}
-                        className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto text-xs"
-                      >
-                        Change Email / Mode
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsOtpSent(false)}
+                      className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto text-xs cursor-pointer"
+                    >
+                      Change Email / Mode
+                    </button>
                   </div>
 
                   <div>
@@ -770,13 +782,6 @@ export function CheckoutPage() {
                       <label className="text-xs font-semibold text-foreground">
                         Enter 6-Digit Email OTP Code:
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
-                        className="text-[11px] font-bold text-brand-leaf hover:underline cursor-pointer"
-                      >
-                        Paste Test Code ({receivedCheckoutOtp || "123456"})
-                      </button>
                     </div>
                     <div className="flex justify-center sm:justify-start gap-2 sm:gap-3">
                       {otpCode.map((digit, index) => (
@@ -793,23 +798,6 @@ export function CheckoutPage() {
                         />
                       ))}
                     </div>
-                  </div>
-
-                  {/* Instant Verification Helper Card */}
-                  <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="size-4 text-amber-600 shrink-0" />
-                      <span className="text-[11px] font-medium">
-                        Instant Access Code: <strong className="font-mono font-bold tracking-wider">{receivedCheckoutOtp || "123456"}</strong>
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAutoFillCheckoutOtp(receivedCheckoutOtp)}
-                      className="px-3 py-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer transition shrink-0"
-                    >
-                      ⚡ Auto-Fill
-                    </button>
                   </div>
 
                   {/* Realtime Email Security Info */}
@@ -856,16 +844,17 @@ export function CheckoutPage() {
           ) : (
             <section className="rounded-3xl border border-brand-leaf/40 bg-brand-leaf/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-2xl bg-brand-leaf text-white font-bold text-base shrink-0">
+                <span className="grid size-8 place-items-center rounded-full bg-brand-leaf text-white font-bold text-sm shrink-0">
                   ✓
                 </span>
                 <div>
                   <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-muted-foreground">Step 1:</span>
                     <strong className="text-sm font-bold text-foreground">
                       {user.name || "Valued Patron"}
                     </strong>
                     <span className="text-[10px] font-bold uppercase bg-brand-leaf/20 text-brand-leaf px-2 py-0.5 rounded-full">
-                      Logged In
+                      Verified Account
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -883,63 +872,50 @@ export function CheckoutPage() {
                   }}
                   className="text-xs font-semibold text-muted-foreground hover:text-foreground transition underline"
                 >
-                  Switch / Sign Out
+                  Switch Account / Sign Out
                 </button>
               </div>
             </section>
           )}
 
-          {/* STEP 1: Delivery Address (CRUD) */}
+          {/* STEP 2: Delivery Address (CRUD) */}
           <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2.5">
-                <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold">
-                  1
+                <span className={`grid size-7 place-items-center rounded-full text-xs font-bold ${
+                  user ? "bg-brand-leaf text-white" : "bg-muted text-muted-foreground"
+                }`}>
+                  2
                 </span>
                 <h2 className="font-display text-lg font-bold text-foreground">
                   Select Delivery Location
                 </h2>
               </div>
-              {selectedAddress && (
+              {selectedAddress && user && (
                 <span className="text-xs text-brand-leaf font-bold">
                   ✓ Address Selected
                 </span>
               )}
             </div>
 
-            <AddressManager
-              selectedAddressId={selectedAddress?.id || ""}
-              onSelectAddress={(addr) => setSelectedAddress(addr)}
-            />
-          </section>
-
-          {/* STEP 2: Coupons, Wallet & Gift Card */}
-          <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-5">
-            <div className="flex items-center gap-2.5 border-b border-border pb-3">
-              <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold">
-                2
-              </span>
-              <h2 className="font-display text-lg font-bold text-foreground">
-                Promotions, Wallet & Gift Cards
-              </h2>
-            </div>
-
-            <div className="space-y-4">
-              {/* Coupon Picker */}
-              <CouponSelector
-                appliedCoupon={appliedCoupon}
-                onApplyCoupon={(coupon) => setAppliedCoupon(coupon)}
-                subtotal={subtotal}
-                shippingFee={standardShippingFee}
+            {user ? (
+              <AddressManager
+                selectedAddressId={selectedAddress?.id || ""}
+                onSelectAddress={(addr) => setSelectedAddress(addr)}
               />
-
-              {/* Gift Card */}
-              <GiftCardCard
-                appliedGiftCard={appliedGiftCard}
-                onApplyGiftCard={(card) => setAppliedGiftCard(card)}
-                maxDeductible={payableAfterWallet}
-              />
-            </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-secondary/40 border border-dashed border-border/80 text-center space-y-2.5">
+                <div className="size-10 rounded-full bg-brand-gold/15 text-brand-gold flex items-center justify-center mx-auto">
+                  <Lock className="size-5" />
+                </div>
+                <h4 className="font-bold text-foreground text-sm">
+                  Please Sign In or Register in Step 1 Above
+                </h4>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                  Your delivery addresses are securely saved to your verified account so you can manage, edit, and track dispatches easily.
+                </p>
+              </div>
+            )}
           </section>
 
           {/* STEP 3: Order Notes & Harvest Instructions */}
@@ -959,7 +935,7 @@ export function CheckoutPage() {
             />
           </section>
 
-          {/* STEP 4: Payment Method Selection */}
+          {/* STEP 4: Payment Option Selection */}
           <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
             <div className="flex items-center gap-2.5 border-b border-border pb-3">
               <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold">
@@ -1027,9 +1003,9 @@ export function CheckoutPage() {
         </div>
 
         {/* Right Column: Sticky Rail Summary */}
-        <div>
+        <div className="space-y-4">
           {/* Order Items Preview */}
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs mb-4">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
             <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex justify-between">
               <span>Items in Basket</span>
               <span className="font-mono">{actualCartCount} Total</span>
@@ -1061,6 +1037,14 @@ export function CheckoutPage() {
             </div>
           </div>
 
+          {/* Apply Promo Coupons & Vouchers (Directly Above Payment Summary) */}
+          <CouponSelector
+            appliedCoupon={appliedCoupon}
+            onApplyCoupon={(coupon) => setAppliedCoupon(coupon)}
+            subtotal={subtotal}
+            shippingFee={standardShippingFee}
+          />
+
           {/* Payment & Tax Summary Card */}
           <PaymentSummaryCard
             cartItemsCount={actualCartCount}
@@ -1077,6 +1061,13 @@ export function CheckoutPage() {
             selectedAddress={selectedAddress}
             isSubmitting={isSubmitting}
             onPlaceOrder={handlePlaceOrder}
+          />
+
+          {/* Janani Gift Card / Voucher Redemption */}
+          <GiftCardCard
+            appliedGiftCard={appliedGiftCard}
+            onApplyGiftCard={(card) => setAppliedGiftCard(card)}
+            maxDeductible={payableAfterWallet}
           />
         </div>
       </div>

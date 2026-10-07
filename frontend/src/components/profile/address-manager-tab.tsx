@@ -19,6 +19,7 @@ import { SavedAddress } from "./types";
 import { useStore } from "@/components/store-provider";
 import { validatePhone } from "@/lib/validation";
 import { loadUserSavedAddresses, saveUserSavedAddresses } from "@/lib/api";
+import { ALL_INDIAN_STATES } from "@/components/checkout/address-manager";
 
 export function AddressManagerTab() {
   const { user } = useStore();
@@ -41,9 +42,9 @@ export function AddressManagerTab() {
     phone: user?.phone || "",
     street: "",
     landmark: "",
-    city: "Ahmedabad",
-    state: "Gujarat",
-    pincode: "380054",
+    city: "",
+    state: "Andhra Pradesh",
+    pincode: "",
     isDefault: false,
     type: "home",
   });
@@ -109,6 +110,60 @@ export function AddressManagerTab() {
     );
   };
 
+  const handlePincodeChange = async (pin: string) => {
+    const cleaned = pin.replace(/\D/g, "").slice(0, 6);
+    setFormData((prev) => {
+      const next = { ...prev, pincode: cleaned };
+      if (cleaned.length >= 2) {
+        const p2 = parseInt(cleaned.slice(0, 2), 10);
+        if (p2 >= 51 && p2 <= 53) next.state = "Andhra Pradesh";
+        else if (p2 === 50) next.state = "Telangana";
+        else if (p2 >= 36 && p2 <= 39) next.state = "Gujarat";
+        else if (p2 >= 40 && p2 <= 44) next.state = "Maharashtra";
+        else if (p2 >= 56 && p2 <= 59) next.state = "Karnataka";
+        else if (p2 >= 60 && p2 <= 64) next.state = "Tamil Nadu";
+        else if (p2 >= 67 && p2 <= 69) next.state = "Kerala";
+        else if (p2 === 11) next.state = "Delhi";
+        else if (p2 >= 12 && p2 <= 13) next.state = "Haryana";
+        else if (p2 >= 14 && p2 <= 16) next.state = "Punjab";
+        else if (p2 === 17) next.state = "Himachal Pradesh";
+        else if (p2 >= 18 && p2 <= 19) next.state = "Jammu and Kashmir";
+        else if (p2 >= 20 && p2 <= 28) next.state = "Uttar Pradesh";
+        else if (p2 >= 30 && p2 <= 34) next.state = "Rajasthan";
+        else if (p2 >= 45 && p2 <= 48) next.state = "Madhya Pradesh";
+        else if (p2 === 49) next.state = "Chhattisgarh";
+        else if (p2 >= 70 && p2 <= 74) next.state = "West Bengal";
+        else if (p2 >= 75 && p2 <= 77) next.state = "Odisha";
+        else if (p2 === 78) next.state = "Assam";
+        else if (p2 >= 80 && p2 <= 83) next.state = "Bihar";
+        else if (p2 >= 84 && p2 <= 85) next.state = "Jharkhand";
+      }
+      return next;
+    });
+
+    if (cleaned.length === 6) {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice?.length > 0) {
+          const po = data[0].PostOffice[0];
+          const detectedCity = po.District || po.Name;
+          const detectedState = po.State;
+          if (detectedCity || detectedState) {
+            setFormData((prev) => ({
+              ...prev,
+              city: prev.city || detectedCity || "",
+              state: detectedState || prev.state,
+            }));
+            toast.info(`📍 Auto-detected: ${detectedCity}, ${detectedState}`);
+          }
+        }
+      } catch (e) {
+        // Fallback in place
+      }
+    }
+  };
+
   const handleOpenAdd = () => {
     setEditingAddress(null);
     setFormData({
@@ -116,9 +171,9 @@ export function AddressManagerTab() {
       phone: user?.phone || "",
       street: "",
       landmark: "",
-      city: "Ahmedabad",
-      state: "Gujarat",
-      pincode: "380054",
+      city: "",
+      state: "Andhra Pradesh",
+      pincode: "",
       isDefault: addresses.length === 0,
       type: "home",
     });
@@ -314,30 +369,31 @@ export function AddressManagerTab() {
 
       {/* Add / Edit Address Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl bg-card border border-border p-6 sm:p-8 shadow-luxe space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl rounded-3xl bg-card border border-border p-5 sm:p-7 shadow-luxe max-h-[92vh] overflow-y-auto">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+              className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition cursor-pointer"
             >
               <X className="size-5" />
             </button>
 
-            <div className="border-b border-border pb-3 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3 pr-8">
               <div>
-                <h3 className="font-display text-xl font-bold text-foreground">
-                  {editingAddress ? "Edit Delivery Address" : "Add New Delivery Address"}
+                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
+                  <Sprout className="size-3.5" />
+                  {editingAddress ? "Update Location" : "New Delivery Address"}
+                </span>
+                <h3 className="font-display text-xl sm:text-2xl font-bold text-foreground mt-0.5">
+                  {editingAddress ? "Edit Delivery Address" : "Add Delivery Address"}
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Ensure accurate pin code for express Saurashtra farm dispatch.
-                </p>
               </div>
               <button
                 type="button"
                 onClick={handleUseCurrentLocation}
                 disabled={isLocating}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-leaf/40 bg-brand-leaf/10 hover:bg-brand-leaf/20 text-brand-leaf px-2.5 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-leaf/40 bg-brand-leaf/10 hover:bg-brand-leaf/20 text-brand-leaf px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
                 title="Auto-detect current GPS location and fill address"
               >
                 <Compass className={`size-3.5 ${isLocating ? "animate-spin text-brand-gold" : "text-brand-leaf"}`} />
@@ -345,57 +401,25 @@ export function AddressManagerTab() {
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              {/* Type Pills */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground uppercase tracking-wider">
-                  Address Type
-                </label>
-                <div className="flex items-center gap-3">
-                  {[
-                    { id: "home", label: "Home", icon: Home },
-                    { id: "work", label: "Work", icon: Briefcase },
-                    { id: "farm", label: "Farm / Warehouse", icon: Sprout },
-                  ].map((t) => (
-                    <label
-                      key={t.id}
-                      className={`flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold cursor-pointer transition ${
-                        formData.type === t.id
-                          ? "border-brand-leaf bg-brand-leaf/10 text-brand-leaf"
-                          : "border-border hover:bg-secondary text-muted-foreground"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="addressType"
-                        value={t.id}
-                        checked={formData.type === t.id}
-                        onChange={() => setFormData({ ...formData, type: t.id as any })}
-                        className="sr-only"
-                      />
-                      <t.icon className="size-3.5" />
-                      <span>{t.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Name & Phone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Recipient Name</label>
+            <form onSubmit={handleFormSubmit} className="space-y-3.5 text-xs font-semibold">
+              {/* Row 1: Recipient Name, Primary Mobile, Alternate Mobile */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid gap-1">
+                  <span className="text-foreground">Recipient Name *</span>
                   <input
                     required
                     type="text"
+                    placeholder="e.g. Rahul Sharma"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full h-10 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-brand-leaf"
+                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Mobile Phone *</label>
-                  <div className="flex items-center rounded-xl border border-input bg-card shadow-xs focus-within:border-brand-leaf">
-                    <span className="inline-flex items-center gap-1.5 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
+
+                <div className="grid gap-1">
+                  <span className="text-foreground">Mobile Phone *</span>
+                  <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf">
+                    <span className="inline-flex items-center gap-1 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
                       <span className="text-sm leading-none shrink-0">🇮🇳</span>
                       <span className="shrink-0 font-semibold">+91</span>
                     </span>
@@ -407,100 +431,137 @@ export function AddressManagerTab() {
                       placeholder="93114 16225"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                      className="w-full min-w-0 h-10 rounded-r-xl bg-transparent px-3 text-xs outline-none font-mono font-medium"
+                      className="h-10 w-full min-w-0 rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
                     />
+                  </div>
+                </div>
+
+                <div className="grid gap-1">
+                  <span className="text-foreground">Flat / House / Building *</span>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. Flat 402, Green Acres"
+                    value={formData.street}
+                    onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Landmark, City, State */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid gap-1">
+                  <span className="text-muted-foreground">Landmark (Optional)</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. Near Pakwan Dining Hall"
+                    value={formData.landmark}
+                    onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
+                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
+                  />
+                </div>
+
+                <div className="grid gap-1">
+                  <span className="text-foreground">City *</span>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. Ahmedabad / Hyderabad"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
+                  />
+                </div>
+
+                <div className="grid gap-1">
+                  <span className="text-foreground">State *</span>
+                  <select
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    className="h-10 rounded-xl border border-input bg-background px-2.5 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs cursor-pointer font-medium"
+                  >
+                    <option value="">-- Select State / UT --</option>
+                    {ALL_INDIAN_STATES.map((st) => (
+                      <option key={st} value={st}>
+                        {st}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 3: Pincode, Address Type */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid gap-1">
+                  <span className="text-foreground">PIN Code *</span>
+                  <input
+                    required
+                    type="text"
+                    placeholder="6 digits (e.g. 380054)"
+                    value={formData.pincode}
+                    onChange={(e) => handlePincodeChange(e.target.value)}
+                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground font-mono shadow-xs"
+                  />
+                </div>
+
+                <div className="md:col-span-2 grid gap-1">
+                  <span className="text-foreground">Address Type</span>
+                  <div className="flex items-center gap-2">
+                    {[
+                      { id: "home", label: "Home", icon: Home },
+                      { id: "work", label: "Work", icon: Briefcase },
+                      { id: "farm", label: "Farm / Warehouse", icon: Sprout },
+                    ].map((t) => (
+                      <button
+                        type="button"
+                        key={t.id}
+                        onClick={() => setFormData({ ...formData, type: t.id as any })}
+                        className={`flex items-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold uppercase transition cursor-pointer ${
+                          formData.type === t.id
+                            ? "border-brand-leaf bg-brand-leaf text-white shadow-xs"
+                            : "border-border bg-background text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        <t.icon className="size-3.5" />
+                        <span>{t.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Street & Landmark */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground">Flat / Street / Society</label>
-                <input
-                  required
-                  type="text"
-                  value={formData.street}
-                  onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                  placeholder="e.g. Flat 402, Green Acre Heights, Bodakdev"
-                  className="w-full h-10 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-brand-leaf"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-foreground">Landmark (Optional)</label>
-                <input
-                  type="text"
-                  value={formData.landmark}
-                  onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
-                  placeholder="e.g. Near Judges Bungalow Road"
-                  className="w-full h-10 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-brand-leaf"
-                />
-              </div>
-
-              {/* City, State, Pincode */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">City</label>
+              {/* Row 4: Default toggle & Buttons */}
+              <div className="pt-3 border-t border-border/70 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer select-none">
                   <input
-                    required
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full h-10 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-brand-leaf"
+                    type="checkbox"
+                    checked={formData.isDefault}
+                    onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
+                    className="accent-brand-leaf size-4 rounded"
                   />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">State</label>
-                  <input
-                    required
-                    type="text"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="w-full h-10 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-brand-leaf"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground">Pincode</label>
-                  <input
-                    required
-                    type="text"
-                    value={formData.pincode}
-                    onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                    className="w-full h-10 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-brand-leaf font-mono"
-                  />
-                </div>
-              </div>
+                  <span>Set as Default delivery address</span>
+                </label>
 
-              {/* Default checkbox */}
-              <label className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer pt-1">
-                <input
-                  type="checkbox"
-                  checked={formData.isDefault}
-                  onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                  className="accent-brand-leaf size-4 rounded"
-                />
-                <span>Set as Default delivery address</span>
-              </label>
-
-              {/* Modal Buttons */}
-              <div className="border-t border-border pt-4 flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsModalOpen(false)}
-                  className="rounded-full text-xs"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="gold"
-                  size="sm"
-                  className="rounded-full text-xs font-bold"
-                >
-                  {editingAddress ? "Update Address" : "Save Address"}
-                </Button>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsModalOpen(false)}
+                    className="rounded-xl text-xs font-semibold px-4 h-9"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="gold"
+                    size="sm"
+                    className="rounded-xl text-xs font-bold px-6 h-9 shadow-sm"
+                  >
+                    {editingAddress ? "Update Address" : "Save Address"}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>

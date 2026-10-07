@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { Tag, Sparkles, Check, X, ArrowRight, ShieldCheck, Percent, HelpCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Tag, Sparkles, Check, X, ArrowRight, ShieldCheck, Percent, HelpCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getStorefrontCoupons, type AdminCoupon } from "@/lib/api";
 
 export interface CouponRule {
   code: string;
@@ -103,20 +104,49 @@ export function CouponSelector({
 }: CouponSelectorProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [manualCode, setManualCode] = useState("");
+  const [couponsList, setCouponsList] = useState<CouponRule[]>(AVAILABLE_COUPONS);
+
+  useEffect(() => {
+    let active = true;
+    getStorefrontCoupons().then((dbCoupons) => {
+      if (!active || !dbCoupons || dbCoupons.length === 0) return;
+      const mapped: CouponRule[] = dbCoupons.map((c) => {
+        let typeVal: "percentage" | "flat" | "free_delivery" = "percentage";
+        if (c.type === "flat") typeVal = "flat";
+        else if (c.type === "free_shipping" || c.isFreeShipping) typeVal = "free_delivery";
+
+        return {
+          code: c.code,
+          title: c.title || `${c.code} Promo`,
+          description: c.description || (c.type === "percentage" ? `${c.discount}% instant off` : `Flat ₹${c.discount} off`),
+          type: typeVal,
+          value: c.discount,
+          maxDiscount: c.maxDiscount || undefined,
+          minSubtotal: c.minCart || 0,
+          expiry: c.expiryDate || "31 Dec 2026",
+          badge: c.type === "percentage" ? `${c.discount}% OFF` : c.type === "flat" ? `FLAT ₹${c.discount}` : "FREE SHIPPING",
+        };
+      });
+      setCouponsList(mapped);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleManualApply = (e: React.FormEvent) => {
     e.preventDefault();
     const cleaned = manualCode.trim().toUpperCase();
     if (!cleaned) return;
 
-    const matched = AVAILABLE_COUPONS.find((c) => c.code === cleaned);
+    const matched = couponsList.find((c) => c.code.toUpperCase() === cleaned);
     if (!matched) {
       toast.error(`Coupon code "${cleaned}" is invalid or expired.`);
       return;
     }
 
     if (subtotal < matched.minSubtotal) {
-      toast.error(`Minimum order amount of ₹${matched.minSubtotal} required for ${matched.code}.`);
+      toast.error(`Minimum order amount of ₹${matched.minSubtotal} required for ${matched.code}. (Add ₹${matched.minSubtotal - subtotal} more)`);
       return;
     }
 
@@ -128,7 +158,7 @@ export function CouponSelector({
 
   const handleSelectCoupon = (coupon: CouponRule) => {
     if (subtotal < coupon.minSubtotal) {
-      toast.error(`Cart total must be at least ₹${coupon.minSubtotal} to use this coupon.`);
+      toast.error(`Cart total must be at least ₹${coupon.minSubtotal} to use this coupon. (Add ₹${coupon.minSubtotal - subtotal} more)`);
       return;
     }
     onApplyCoupon(coupon);
@@ -155,7 +185,7 @@ export function CouponSelector({
           onClick={() => setIsModalOpen(true)}
           className="text-xs font-bold text-brand-leaf hover:underline flex items-center gap-1"
         >
-          View Offers ({AVAILABLE_COUPONS.length}) <ArrowRight className="size-3" />
+          View Offers ({couponsList.length}) <ArrowRight className="size-3" />
         </button>
       </div>
 
@@ -215,7 +245,7 @@ export function CouponSelector({
       {/* Suggested Quick Coupon Pills */}
       {!appliedCoupon && (
         <div className="flex flex-wrap gap-1.5 pt-1">
-          {AVAILABLE_COUPONS.slice(0, 3).map((c) => (
+          {couponsList.slice(0, 4).map((c) => (
             <button
               key={c.code}
               type="button"
@@ -254,7 +284,7 @@ export function CouponSelector({
             </div>
 
             <div className="space-y-3">
-              {AVAILABLE_COUPONS.map((coupon) => {
+              {couponsList.map((coupon) => {
                 const isApplicable = subtotal >= coupon.minSubtotal;
                 const isCurrent = appliedCoupon?.code === coupon.code;
                 const potentialSavings = calculateCouponDiscount(coupon, subtotal, shippingFee);

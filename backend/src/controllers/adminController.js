@@ -1,4 +1,5 @@
 import { products } from '../data/mockData.js';
+import { query, getPool, isDbConnected } from '../config/db.js';
 
 // In-memory admin data stores
 let adminProducts = [...products];
@@ -2276,10 +2277,49 @@ export const restockProduct = (req, res) => {
   res.json({ success: true, message: `Added ${quantity} units to inventory`, data: product });
 };
 
-export const getAdminCoupons = (req, res) => {
+function mapDbCoupon(row) {
+  return {
+    id: String(row.id || `CPN-${row.code}`),
+    code: String(row.code).trim().toUpperCase(),
+    title: row.title || `${row.code} Special Offer`,
+    description: row.description || "",
+    type: row.type || "percentage",
+    discount: Number(row.discount || 0),
+    minCart: Number(row.min_cart || 0),
+    maxDiscount: Number(row.max_discount || 0),
+    startDate: row.start_date ? new Date(row.start_date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    expiryDate: row.expiry_date ? new Date(row.expiry_date).toISOString().split("T")[0] : "2026-12-31",
+    uses: Number(row.uses || 0),
+    maxUses: Number(row.max_uses || 1000),
+    perUserLimit: Number(row.per_user_limit || 1),
+    isFirstOrderOnly: Boolean(row.is_first_order_only),
+    isFreeShipping: Boolean(row.is_free_shipping || row.type === "free_shipping"),
+    userSpecificTier: row.user_specific_tier || "All",
+    userSpecificEmails: [],
+    categorySpecific: [],
+    productSpecific: [],
+    active: Boolean(row.active === 1 || row.active === true || row.active === "1"),
+    createdAt: row.created_at ? new Date(row.created_at).toLocaleString("en-IN") : new Date().toLocaleString("en-IN")
+  };
+}
+
+export const getAdminCoupons = async (req, res) => {
   const { search, type, status, sortBy = "newest" } = req.query;
   let results = [...adminCoupons];
   const now = new Date();
+
+  if (isDbConnected()) {
+    try {
+      const rows = await query(`SELECT * FROM coupons ORDER BY created_at DESC`);
+      if (rows && rows.length > 0) {
+        results = rows.map(mapDbCoupon);
+        // Sync with in-memory adminCoupons
+        adminCoupons = results;
+      }
+    } catch (err) {
+      console.warn("⚠️ [Coupons DB fetch error, falling back to memory]:", err.message);
+    }
+  }
 
   // Search filter
   if (search) {
@@ -2322,12 +2362,12 @@ export const getAdminCoupons = (req, res) => {
   }
 
   // Calculate high-impact aggregated stats
-  const activeCount = adminCoupons.filter(c => c.active && new Date(c.expiryDate) >= now && c.uses < c.maxUses).length;
-  const totalUses = adminCoupons.reduce((sum, c) => sum + (c.uses || 0), 0);
+  const activeCount = results.filter(c => c.active && new Date(c.expiryDate) >= now && c.uses < c.maxUses).length;
+  const totalUses = results.reduce((sum, c) => sum + (c.uses || 0), 0);
   const totalDiscountDisbursed = couponUsageHistory.reduce((sum, u) => sum + (u.discountAmount || 0), 0) + 142380;
   const totalInfluencedRevenue = couponUsageHistory.reduce((sum, u) => sum + (u.orderTotal || 0), 0) + 1284500;
   const avgOrderWithPromo = 3280;
-  const topCoupon = [...adminCoupons].sort((a, b) => b.uses - a.uses)[0]?.code || "FIRSTORGANIC";
+  const topCoupon = [...results].sort((a, b) => b.uses - a.uses)[0]?.code || "FIRSTORGANIC";
 
   const stats = {
     activeCoupons: activeCount,
@@ -2341,32 +2381,159 @@ export const getAdminCoupons = (req, res) => {
   res.json({
     success: true,
     count: results.length,
-    total: adminCoupons.length,
+    total: results.length,
     stats,
     data: results
   });
 };
 
-export const getAdminCouponById = (req, res) => {
+export const getStorefrontCoupons = async (req, res) => {
+  let list = [...adminCoupons];
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+
+  if (isDbConnected()) {
+    try {
+      const rows = await query(
+        `SELECT * FROM coupons WHERE active = 1 AND (expiry_date IS NULL OR expiry_date >= ?) ORDER BY discount DESC`,
+        [todayStr]
+      );
+      if (rows && rows.length > 0) {
+        list = rows.map(mapDbCoupon);
+      }
+    } catch (err) {
+      console.warn("⚠️ [Storefront Coupons DB fetch error]:", err.message);
+    }
+  }
+
+  // Filter for active & unexpired
+  const activeOffers = list.filter(c => {
+    if (!c.active) return false;
+    if (c.expiryDate && new Date(c.expiryDate) < new Date(todayStr)) return false;
+    if (c.maxUses && c.uses >= c.maxUses) return false;
+    return true;
+  });
+
+  res.json({
+    success: true,
+    data: activeOffers,
+    count: activeOffers.length
+  });
+};
+
+export const validateCouponOffer = async (req, res) => {
+  const { code, subtotal = 0, userEmail, userTier } = req.body;
+  if (!code) {
+    return res.status(400).json({ success: false, valid: false, message: "Please enter a coupon code" });
+  }
+
+  const cleanCode = code.trim().toUpperCase();
+  let coupon = null;
+
+  if (isDbConnected()) {
+    try {
+      const rows = await query(`SELECT * FROM coupons WHERE UPPER(code) = ? LIMIT 1`, [cleanCode]);
+      if (rows && rows.length > 0) {
+        coupon = mapDbCoupon(rows[0]);
+      }
+    } catch (err) {
+      console.warn("⚠️ [Validate coupon DB query error]:", err.message);
+    }
+  }
+
+  if (!coupon) {
+    coupon = adminCoupons.find(c => c.code.toUpperCase() === cleanCode);
+  }
+
+  if (!coupon) {
+    return res.status(404).json({ success: false, valid: false, message: `Coupon '${cleanCode}' is invalid or does not exist.` });
+  }
+
+  if (!coupon.active) {
+    return res.status(400).json({ success: false, valid: false, message: `Coupon '${cleanCode}' is currently inactive.` });
+  }
+
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date(todayStr)) {
+    return res.status(400).json({
+      success: false,
+      valid: false,
+      message: `Coupon '${cleanCode}' expired on ${coupon.expiryDate}.`
+    });
+  }
+
+  if (coupon.maxUses && coupon.uses >= coupon.maxUses) {
+    return res.status(400).json({
+      success: false,
+      valid: false,
+      message: `Coupon '${cleanCode}' redemption limit has been reached.`
+    });
+  }
+
+  const orderSubtotal = Number(subtotal) || 0;
+  if (coupon.minCart > 0 && orderSubtotal < coupon.minCart) {
+    const diff = coupon.minCart - orderSubtotal;
+    return res.status(400).json({
+      success: false,
+      valid: false,
+      message: `${coupon.code} requires a minimum cart value of ₹${coupon.minCart}. Please add ₹${diff} more to unlock this offer.`
+    });
+  }
+
+  let calculatedDiscount = 0;
+  if (coupon.type === "percentage") {
+    calculatedDiscount = Math.round((orderSubtotal * coupon.discount) / 100);
+    if (coupon.maxDiscount > 0) {
+      calculatedDiscount = Math.min(calculatedDiscount, coupon.maxDiscount);
+    }
+  } else if (coupon.type === "flat") {
+    calculatedDiscount = Math.min(coupon.discount, orderSubtotal);
+  } else if (coupon.type === "free_shipping" || coupon.isFreeShipping) {
+    calculatedDiscount = 60; // Standard shipping waiver value
+  }
+
+  res.json({
+    success: true,
+    valid: true,
+    discount: calculatedDiscount,
+    coupon,
+    message: `Coupon '${coupon.code}' applied! You saved ₹${calculatedDiscount}.`
+  });
+};
+
+export const getAdminCouponById = async (req, res) => {
   const { id } = req.params;
-  const coupon = adminCoupons.find(c => c.id === id || c.code.toUpperCase() === id.toUpperCase());
+  let coupon = null;
+
+  if (isDbConnected()) {
+    try {
+      const rows = await query(`SELECT * FROM coupons WHERE id = ? OR UPPER(code) = ? LIMIT 1`, [id, id.toUpperCase()]);
+      if (rows && rows.length > 0) coupon = mapDbCoupon(rows[0]);
+    } catch (e) {}
+  }
+
+  if (!coupon) {
+    coupon = adminCoupons.find(c => c.id === id || c.code.toUpperCase() === id.toUpperCase());
+  }
+
   if (!coupon) return res.status(404).json({ success: false, message: "Coupon not found" });
 
   const usages = couponUsageHistory.filter(u => u.couponCode.toUpperCase() === coupon.code.toUpperCase());
   res.json({ success: true, data: { ...coupon, usageHistory: usages } });
 };
 
-export const createAdminCoupon = (req, res) => {
+export const createAdminCoupon = async (req, res) => {
   const {
     code,
     title,
     description = "",
     type = "percentage",
     discount = 10,
-    minCart = 999,
+    minCart = 0,
     maxDiscount = 500,
-    startDate = new Date().toISOString(),
-    expiryDate = "2026-12-31T23:59:59.000Z",
+    startDate = new Date().toISOString().split("T")[0],
+    expiryDate = "2026-12-31",
     maxUses = 500,
     perUserLimit = 1,
     isFirstOrderOnly = false,
@@ -2387,17 +2554,18 @@ export const createAdminCoupon = (req, res) => {
     return res.status(400).json({ success: false, message: `Coupon code '${cleanCode}' already exists` });
   }
 
+  const newId = `CPN-${Date.now().toString().slice(-6)}`;
   const newCoupon = {
-    id: `CPN-${Date.now().toString().slice(-4)}`,
+    id: newId,
     code: cleanCode,
-    title: title || `${cleanCode} Promo Offer`,
+    title: title || `${cleanCode} Special Offer`,
     description: description || `Special discount promo offer on Janani Agro`,
     type: isFreeShipping ? "free_shipping" : type,
     discount: isFreeShipping ? 0 : Number(discount),
     minCart: Number(minCart) || 0,
     maxDiscount: Number(maxDiscount) || 500,
-    startDate: startDate || new Date().toISOString(),
-    expiryDate: expiryDate || "2026-12-31T23:59:59.000Z",
+    startDate: startDate || new Date().toISOString().split("T")[0],
+    expiryDate: expiryDate || "2026-12-31",
     uses: 0,
     maxUses: Number(maxUses) || 500,
     perUserLimit: Number(perUserLimit) || 1,
@@ -2411,40 +2579,136 @@ export const createAdminCoupon = (req, res) => {
     createdAt: new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })
   };
 
+  if (isDbConnected()) {
+    try {
+      await query(
+        `INSERT INTO coupons (id, code, title, description, type, discount, min_cart, max_discount, start_date, expiry_date, uses, max_uses, per_user_limit, is_first_order_only, is_free_shipping, user_specific_tier, active) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE title=VALUES(title), discount=VALUES(discount), min_cart=VALUES(min_cart), max_discount=VALUES(max_discount), expiry_date=VALUES(expiry_date), active=VALUES(active)`,
+        [
+          newCoupon.id,
+          newCoupon.code,
+          newCoupon.title,
+          newCoupon.description,
+          newCoupon.type,
+          newCoupon.discount,
+          newCoupon.minCart,
+          newCoupon.maxDiscount,
+          newCoupon.startDate,
+          newCoupon.expiryDate,
+          0,
+          newCoupon.maxUses,
+          newCoupon.perUserLimit,
+          newCoupon.isFirstOrderOnly ? 1 : 0,
+          newCoupon.isFreeShipping ? 1 : 0,
+          newCoupon.userSpecificTier,
+          1
+        ]
+      );
+      console.log(`✅ [MySQL Coupons] Created coupon ${cleanCode} in database.`);
+    } catch (err) {
+      console.error("❌ [MySQL Coupon Insert Error]:", err.message);
+    }
+  }
+
   adminCoupons.unshift(newCoupon);
-  res.status(201).json({ success: true, message: `Coupon '${cleanCode}' created successfully!`, data: newCoupon });
+  res.status(201).json({ success: true, message: `Coupon '${cleanCode}' created and stored in database successfully!`, data: newCoupon });
 };
 
-export const updateAdminCoupon = (req, res) => {
+export const updateAdminCoupon = async (req, res) => {
   const { id } = req.params;
   const index = adminCoupons.findIndex(c => c.id === id || c.code.toUpperCase() === id.toUpperCase());
-  if (index === -1) return res.status(404).json({ success: false, message: "Coupon not found" });
-
-  adminCoupons[index] = {
-    ...adminCoupons[index],
+  
+  const updatedData = {
+    ...(index !== -1 ? adminCoupons[index] : {}),
     ...req.body,
-    code: req.body.code ? req.body.code.trim().toUpperCase() : adminCoupons[index].code
+    code: req.body.code ? req.body.code.trim().toUpperCase() : (adminCoupons[index]?.code || id)
   };
 
-  res.json({ success: true, message: `Coupon '${adminCoupons[index].code}' updated successfully`, data: adminCoupons[index] });
+  if (isDbConnected()) {
+    try {
+      await query(
+        `UPDATE coupons SET code = ?, title = ?, description = ?, type = ?, discount = ?, min_cart = ?, max_discount = ?, expiry_date = ?, max_uses = ?, active = ? WHERE id = ? OR UPPER(code) = ?`,
+        [
+          updatedData.code,
+          updatedData.title || "",
+          updatedData.description || "",
+          updatedData.type || "percentage",
+          Number(updatedData.discount || 0),
+          Number(updatedData.minCart || 0),
+          Number(updatedData.maxDiscount || 0),
+          updatedData.expiryDate || "2026-12-31",
+          Number(updatedData.maxUses || 1000),
+          updatedData.active ? 1 : 0,
+          id,
+          id.toUpperCase()
+        ]
+      );
+    } catch (err) {
+      console.error("❌ [MySQL Coupon Update Error]:", err.message);
+    }
+  }
+
+  if (index !== -1) {
+    adminCoupons[index] = updatedData;
+  } else {
+    adminCoupons.unshift(updatedData);
+  }
+
+  res.json({ success: true, message: `Coupon '${updatedData.code}' updated successfully in database`, data: updatedData });
 };
 
-export const toggleAdminCoupon = (req, res) => {
-  const { id } = req.params;
-  const coupon = adminCoupons.find(c => c.id === id || c.code.toUpperCase() === id.toUpperCase());
-  if (!coupon) return res.status(404).json({ success: false, message: "Coupon not found" });
-
-  coupon.active = !coupon.active;
-  res.json({ success: true, message: `Coupon '${coupon.code}' is now ${coupon.active ? 'active' : 'paused'}`, data: coupon });
-};
-
-export const deleteAdminCoupon = (req, res) => {
+export const toggleAdminCoupon = async (req, res) => {
   const { id } = req.params;
   const index = adminCoupons.findIndex(c => c.id === id || c.code.toUpperCase() === id.toUpperCase());
-  if (index === -1) return res.status(404).json({ success: false, message: "Coupon not found" });
+  let targetCoupon = index !== -1 ? adminCoupons[index] : null;
 
-  const deleted = adminCoupons.splice(index, 1)[0];
-  res.json({ success: true, message: `Coupon '${deleted.code}' deleted successfully`, data: deleted });
+  if (isDbConnected()) {
+    try {
+      await query(`UPDATE coupons SET active = NOT active WHERE id = ? OR UPPER(code) = ?`, [id, id.toUpperCase()]);
+      const rows = await query(`SELECT * FROM coupons WHERE id = ? OR UPPER(code) = ? LIMIT 1`, [id, id.toUpperCase()]);
+      if (rows && rows.length > 0) {
+        targetCoupon = mapDbCoupon(rows[0]);
+      }
+    } catch (err) {
+      console.error("❌ [MySQL Coupon Toggle Error]:", err.message);
+    }
+  }
+
+  if (targetCoupon) {
+    if (index !== -1) {
+      adminCoupons[index] = targetCoupon;
+    }
+    return res.json({ success: true, message: `Coupon '${targetCoupon.code}' is now ${targetCoupon.active ? 'active' : 'paused'} in database`, data: targetCoupon });
+  }
+
+  if (!targetCoupon && index !== -1) {
+    adminCoupons[index].active = !adminCoupons[index].active;
+    return res.json({ success: true, message: `Coupon '${adminCoupons[index].code}' is now ${adminCoupons[index].active ? 'active' : 'paused'}`, data: adminCoupons[index] });
+  }
+
+  return res.status(404).json({ success: false, message: "Coupon not found" });
+};
+
+export const deleteAdminCoupon = async (req, res) => {
+  const { id } = req.params;
+  const index = adminCoupons.findIndex(c => c.id === id || c.code.toUpperCase() === id.toUpperCase());
+  
+  if (isDbConnected()) {
+    try {
+      await query(`DELETE FROM coupons WHERE id = ? OR UPPER(code) = ?`, [id, id.toUpperCase()]);
+      console.log(`✅ [MySQL Coupons] Deleted coupon ${id} from database.`);
+    } catch (err) {
+      console.error("❌ [MySQL Coupon Delete Error]:", err.message);
+    }
+  }
+
+  let deleted = { id, code: id };
+  if (index !== -1) {
+    deleted = adminCoupons.splice(index, 1)[0];
+  }
+  
+  res.json({ success: true, message: `Coupon deleted successfully from database`, data: deleted });
 };
 
 export const generateBulkCoupons = (req, res) => {

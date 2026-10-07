@@ -17,12 +17,17 @@ import {
   RotateCcw,
   AlertCircle,
   HelpCircle,
-  X
+  X,
+  Clock,
+  Calendar,
+  Percent,
+  RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
 import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
+import { getStorefrontCoupons, validateCoupon, type AdminCoupon } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
@@ -54,10 +59,32 @@ export function CartPage() {
   } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
-  // Coupon State
+  // Dynamic Database Coupons State
+  const [availableCoupons, setAvailableCoupons] = useState<AdminCoupon[]>([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCouponObj, setAppliedCouponObj] = useState<AdminCoupon | null>(null);
+
+  // Fetch active database coupons on mount
+  useEffect(() => {
+    let active = true;
+    getStorefrontCoupons()
+      .then((data) => {
+        if (active) {
+          setAvailableCoupons(data || []);
+          setLoadingCoupons(false);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load storefront coupons:", err);
+        if (active) setLoadingCoupons(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
   // Save for Later State (Persisted in localStorage)
@@ -167,53 +194,95 @@ export function CartPage() {
       .filter((p): p is Product => Boolean(p));
   }, [savedForLater, wishlist, activeCartIds, allProducts]);
 
+  // Re-calculate applied coupon discount whenever subtotal changes
+  useEffect(() => {
+    if (!appliedCouponObj) return;
+
+    if (appliedCouponObj.minCart > 0 && subtotal < appliedCouponObj.minCart) {
+      setDiscount(0);
+      setAppliedCoupon(null);
+      setAppliedCouponObj(null);
+      toast.warning(
+        `Coupon ${appliedCouponObj.code} removed because cart subtotal is below the required ₹${appliedCouponObj.minCart}.`
+      );
+      return;
+    }
+
+    if (appliedCouponObj.type === "percentage") {
+      const calculated = Math.round((subtotal * appliedCouponObj.discount) / 100);
+      const capped = appliedCouponObj.maxDiscount > 0 ? Math.min(calculated, appliedCouponObj.maxDiscount) : calculated;
+      setDiscount(capped);
+      setAppliedCoupon(`${appliedCouponObj.code} (${appliedCouponObj.discount}% Off: -₹${capped})`);
+    } else if (appliedCouponObj.type === "flat") {
+      const capped = Math.min(appliedCouponObj.discount, subtotal);
+      setDiscount(capped);
+      setAppliedCoupon(`${appliedCouponObj.code} (Flat ₹${capped} Off)`);
+    }
+  }, [subtotal, appliedCouponObj]);
+
   // Shipping Calculation
   const freeShippingThreshold = 799;
-  const isFreeDeliveryCoupon = appliedCoupon?.includes("FREEDEL");
+  const isFreeDeliveryCoupon =
+    appliedCouponObj?.type === "free_shipping" ||
+    appliedCouponObj?.isFreeShipping ||
+    appliedCoupon?.toLowerCase().includes("free delivery") ||
+    appliedCoupon?.toLowerCase().includes("free shipping") ||
+    appliedCoupon?.includes("FREEDEL") ||
+    appliedCoupon?.includes("FREESHIP");
   const shippingFee =
     subtotal >= freeShippingThreshold || subtotal === 0 || isFreeDeliveryCoupon ? 0 : 60;
 
-  // Coupon Engine
-  const availableCoupons = [
-    { code: "ORGANIC100", label: "₹100 Instant Discount (Min ₹599)", min: 599, val: 100 },
-    { code: "HARVEST20", label: "20% OFF Everything", min: 499, val: "20%" },
-    { code: "FREEDEL", label: "Free Farm Delivery (Any Order)", min: 0, val: "freedel" },
-  ];
-
-  const handleApplyCoupon = (e?: React.FormEvent, directCode?: string) => {
+  const handleApplyCoupon = async (e?: React.FormEvent, directCode?: string) => {
     if (e) e.preventDefault();
     const code = (directCode || couponCode).trim().toUpperCase();
 
-    if (code === "ORGANIC100") {
-      if (subtotal < 599) {
-        toast.error("ORGANIC100 requires a minimum cart value of ₹599.");
-        return;
-      }
-      setDiscount(100);
-      setAppliedCoupon("ORGANIC100 (₹100 Off)");
-      setCouponCode("ORGANIC100");
-      toast.success("Coupon ORGANIC100 applied! ₹100 deducted.");
-    } else if (code === "HARVEST20") {
-      const discountVal = Math.round(subtotal * 0.2);
-      setDiscount(discountVal);
-      setAppliedCoupon(`HARVEST20 (20% Off: -₹${discountVal})`);
-      setCouponCode("HARVEST20");
-      toast.success("Coupon HARVEST20 applied! 20% discount saved.");
-    } else if (code === "FREEDEL") {
+    if (!code) {
+      toast.error("Please enter a valid coupon code");
+      return;
+    }
+
+    const res = await validateCoupon(code, subtotal);
+    if (!res.valid || !res.coupon) {
+      toast.error(res.message);
+      return;
+    }
+
+    const coupon = res.coupon;
+    setAppliedCouponObj(coupon);
+    setCouponCode(coupon.code);
+
+    if (coupon.type === "free_shipping" || coupon.isFreeShipping) {
       setDiscount(0);
-      setAppliedCoupon("FREEDEL (Free Shipping)");
-      setCouponCode("FREEDEL");
-      toast.success("Coupon FREEDEL applied! Free shipping unlocked.");
+      setAppliedCoupon(`${coupon.code} (Free Farm Delivery Unlocked)`);
+      toast.success(`Coupon ${coupon.code} applied! Free delivery unlocked.`);
+    } else if (coupon.type === "percentage") {
+      setDiscount(res.discount);
+      setAppliedCoupon(`${coupon.code} (${coupon.discount}% Off: -₹${res.discount})`);
+      toast.success(`Coupon ${coupon.code} applied! ₹${res.discount} discount saved.`);
     } else {
-      toast.error("Invalid coupon code. Try ORGANIC100 or HARVEST20.");
+      setDiscount(res.discount);
+      setAppliedCoupon(`${coupon.code} (Flat ₹${res.discount} Off)`);
+      toast.success(`Coupon ${coupon.code} applied! Flat ₹${res.discount} deducted.`);
     }
   };
 
   const removeCoupon = () => {
     setDiscount(0);
     setAppliedCoupon(null);
+    setAppliedCouponObj(null);
     setCouponCode("");
     toast.info("Coupon removed.");
+  };
+
+  const formatCouponExpiry = (expiry?: string) => {
+    if (!expiry) return "No Expiry";
+    try {
+      const d = new Date(expiry);
+      if (isNaN(d.getTime())) return expiry;
+      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    } catch {
+      return expiry;
+    }
   };
 
   // Save for Later actions
@@ -481,12 +550,6 @@ export function CartPage() {
                     ₹{finalTotal}
                   </span>
                 </div>
-
-                {totalSavings > 0 && (
-                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-2.5 text-center text-xs font-bold text-emerald-700">
-                    🎉 You are saving a total of ₹{totalSavings} on this organic harvest!
-                  </div>
-                )}
               </div>
 
               {/* Coupon Code Section */}
@@ -524,21 +587,143 @@ export function CartPage() {
                   </form>
                 )}
 
-                {/* Available Quick Coupon Pills */}
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Available Coupons:</span>
-                  <div className="flex flex-col gap-1.5">
-                    {availableCoupons.map((c) => (
-                      <button
-                        key={c.code}
-                        onClick={() => handleApplyCoupon(undefined, c.code)}
-                        className="flex items-center justify-between p-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition text-left text-xs"
-                      >
-                        <span className="font-mono font-bold text-primary">{c.code}</span>
-                        <span className="text-[10px] text-muted-foreground">{c.label}</span>
-                      </button>
-                    ))}
+                {/* Available Storefront Coupons from Database */}
+                <div className="space-y-2.5 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] uppercase tracking-wider font-extrabold text-foreground flex items-center gap-1.5">
+                      <Percent className="size-3.5 text-brand-leaf" /> Available Coupons ({availableCoupons.length})
+                    </span>
+                    {availableCoupons.length > 0 && (
+                      <span className="text-[10px] text-muted-foreground font-semibold">Store Offers</span>
+                    )}
                   </div>
+
+                  {loadingCoupons ? (
+                    <div className="py-4 text-center text-xs text-muted-foreground animate-pulse">
+                      Loading available coupons...
+                    </div>
+                  ) : availableCoupons.length === 0 ? (
+                    <div className="p-3 text-center rounded-2xl bg-muted/40 border border-border text-xs text-muted-foreground">
+                      No promo coupons active right now. Check back soon!
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2.5">
+                      {availableCoupons.map((c) => {
+                        const isApplied =
+                          appliedCouponObj?.code === c.code ||
+                          (appliedCoupon && appliedCoupon.toUpperCase().startsWith(c.code.toUpperCase()));
+                        const isEligible = subtotal >= (c.minCart || 0);
+                        const diffToUnlock = (c.minCart || 0) - subtotal;
+
+                        let offerTitle = c.title;
+                        if (!offerTitle || offerTitle.includes("Promo Offer") || offerTitle.includes("Special Offer")) {
+                          if (c.type === "percentage") {
+                            offerTitle = `${c.discount}% Instant Discount${c.maxDiscount ? ` (Up to ₹${c.maxDiscount})` : ""}`;
+                          } else if (c.type === "flat") {
+                            offerTitle = `Flat ₹${c.discount} Instant Discount`;
+                          } else if (c.type === "free_shipping" || c.isFreeShipping) {
+                            offerTitle = "Free Farm Delivery (Save ₹60)";
+                          }
+                        }
+
+                        return (
+                          <div
+                            key={c.id || c.code}
+                            className={`p-3 rounded-2xl border transition-all relative overflow-hidden ${
+                              isApplied
+                                ? "bg-emerald-500/10 border-emerald-500/40 shadow-xs"
+                                : isEligible
+                                ? "bg-card border-border hover:border-brand-leaf/50 hover:bg-brand-leaf/[0.02] shadow-xs"
+                                : "bg-muted/30 border-border/60 opacity-85"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="space-y-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-mono font-black text-xs text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg tracking-wider">
+                                    {c.code}
+                                  </span>
+                                  {c.type === "percentage" && (
+                                    <span className="text-[10px] font-bold bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.2 rounded">
+                                      {c.discount}% OFF
+                                    </span>
+                                  )}
+                                  {c.type === "flat" && (
+                                    <span className="text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.2 rounded">
+                                      FLAT ₹{c.discount} OFF
+                                    </span>
+                                  )}
+                                  {(c.type === "free_shipping" || c.isFreeShipping) && (
+                                    <span className="text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 px-1.5 py-0.2 rounded">
+                                      FREE SHIPPING
+                                    </span>
+                                  )}
+                                </div>
+                                <h4 className="text-xs font-bold text-foreground leading-snug">
+                                  {offerTitle}
+                                </h4>
+                                {c.description && (
+                                  <p className="text-[11px] text-muted-foreground leading-tight">
+                                    {c.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="shrink-0 pt-0.5">
+                                {isApplied ? (
+                                  <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold text-white shadow-xs">
+                                    <Check className="size-3" /> Applied
+                                  </span>
+                                ) : isEligible ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApplyCoupon(undefined, c.code)}
+                                    className="rounded-xl border border-emerald-600 bg-emerald-600/10 px-3 py-1 text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white transition uppercase tracking-wider shadow-xs cursor-pointer"
+                                  >
+                                    Apply
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="rounded-xl border border-border bg-muted/60 px-2.5 py-1 text-[10px] font-bold text-muted-foreground cursor-not-allowed"
+                                  >
+                                    Locked
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Terms, Minimum Purchase Requirement & Expiry Date */}
+                            <div className="mt-2.5 pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-1.5 text-[10px]">
+                              <div className="flex items-center gap-1.5 font-medium">
+                                {c.minCart > 0 ? (
+                                  isEligible ? (
+                                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                      <Check className="size-3 text-emerald-600" /> Min Purchase ₹{c.minCart} met
+                                    </span>
+                                  ) : (
+                                    <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
+                                      <AlertCircle className="size-3" /> Add ₹{diffToUnlock} more (Min ₹{c.minCart})
+                                    </span>
+                                  )
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    No minimum spend
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="text-muted-foreground flex items-center gap-1 font-medium">
+                                <Clock className="size-3 text-muted-foreground/70" />
+                                <span>Expires: {formatCouponExpiry(c.expiryDate)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 

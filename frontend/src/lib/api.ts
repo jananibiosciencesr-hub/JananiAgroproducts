@@ -3677,6 +3677,100 @@ export async function getAdminCoupons(params?: CouponQueryParams) {
   };
 }
 
+export async function getStorefrontCoupons(): Promise<AdminCoupon[]> {
+  try {
+    let res = await fetchJson<{ success: boolean; data: AdminCoupon[] }>(`/coupons`);
+    if (!res?.success || !Array.isArray(res.data) || res.data.length === 0) {
+      res = await fetchJson<{ success: boolean; data: AdminCoupon[] }>(`/admin/coupons?status=active`);
+    }
+    if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+      return res.data.filter((c) => c.active);
+    }
+  } catch (e) {
+    console.warn("Could not fetch coupons from server, using local store:", e);
+  }
+
+  const stored = getStored<AdminCoupon[]>(STORAGE_KEYS.COUPONS, DEFAULT_COUPONS);
+  const todayStr = new Date().toISOString().split("T")[0]!;
+  return stored.filter((c) => {
+    if (!c.active) return false;
+    if (c.expiryDate && c.expiryDate < todayStr) return false;
+    return true;
+  });
+}
+
+export interface CouponValidationResult {
+  valid: boolean;
+  discount: number;
+  message: string;
+  coupon?: AdminCoupon;
+}
+
+export async function validateCoupon(code: string, subtotal: number): Promise<CouponValidationResult> {
+  const cleanCode = code.trim().toUpperCase();
+  if (!cleanCode) {
+    return { valid: false, discount: 0, message: "Please enter a coupon code." };
+  }
+
+  try {
+    const res = await fetchJson<{ success: boolean; valid: boolean; discount: number; coupon: AdminCoupon; message: string }>(`/coupons/validate`, {
+      method: "POST",
+      body: JSON.stringify({ code: cleanCode, subtotal })
+    });
+    if (res && res.valid !== undefined) {
+      return {
+        valid: res.valid,
+        discount: res.discount || 0,
+        message: res.message || (res.valid ? "Coupon applied successfully!" : "Invalid coupon"),
+        coupon: res.coupon
+      };
+    }
+  } catch (e) {
+    console.warn("Remote coupon validation failed, checking locally:", e);
+  }
+
+  // Local fallback validation
+  const stored = getStored<AdminCoupon[]>(STORAGE_KEYS.COUPONS, DEFAULT_COUPONS);
+  const coupon = stored.find((c) => c.code.toUpperCase() === cleanCode);
+  if (!coupon) {
+    return { valid: false, discount: 0, message: `Coupon code '${cleanCode}' is invalid.` };
+  }
+  if (!coupon.active) {
+    return { valid: false, discount: 0, message: `Coupon '${cleanCode}' is currently inactive.` };
+  }
+  const todayStr = new Date().toISOString().split("T")[0]!;
+  if (coupon.expiryDate && coupon.expiryDate < todayStr) {
+    return { valid: false, discount: 0, message: `Coupon '${cleanCode}' expired on ${coupon.expiryDate}.` };
+  }
+  if (coupon.minCart > 0 && subtotal < coupon.minCart) {
+    const diff = coupon.minCart - subtotal;
+    return {
+      valid: false,
+      discount: 0,
+      message: `${coupon.code} requires a minimum cart value of ₹${coupon.minCart}. Add ₹${diff} more to unlock.`
+    };
+  }
+
+  let discount = 0;
+  if (coupon.type === "percentage") {
+    discount = Math.round((subtotal * coupon.discount) / 100);
+    if (coupon.maxDiscount > 0) {
+      discount = Math.min(discount, coupon.maxDiscount);
+    }
+  } else if (coupon.type === "flat") {
+    discount = Math.min(coupon.discount, subtotal);
+  } else if (coupon.type === "free_shipping" || coupon.isFreeShipping) {
+    discount = 60;
+  }
+
+  return {
+    valid: true,
+    discount,
+    message: `Coupon '${coupon.code}' applied! Saved ₹${discount}.`,
+    coupon
+  };
+}
+
 export async function getAdminCouponById(id: string) {
   let res = await fetchJson<{ success: boolean; data: AdminCoupon }>(`/api.php?action=coupons&id=${encodeURIComponent(id)}`);
   if (!res?.success) {

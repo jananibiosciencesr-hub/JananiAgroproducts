@@ -891,13 +891,6 @@ export function AuthenticationPage() {
                             ? `Enter OTP sent to ${otpTarget}`
                             : `Enter OTP sent to +91 ${otpTarget}`}
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => handleAutoFillOtp(receivedDemoOtp)}
-                          className="px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition shadow-xs shrink-0 cursor-pointer"
-                        >
-                          ⚡ Auto-Fill ({receivedDemoOtp})
-                        </button>
                       </div>
                       {otpTarget.toLowerCase() === "jananibiosciences.r@gmail.com" ? (
                         <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-emerald-700 text-white px-2.5 py-0.5 text-[10px] font-bold shadow-sm">
@@ -906,8 +899,8 @@ export function AuthenticationPage() {
                       ) : (
                         <p className="text-[11px] text-emerald-700/80 mt-0.5">
                           {otpTarget.includes("@")
-                            ? "Check your Gmail inbox & spam folder, or click Auto-Fill above."
-                            : "SMS dispatched. Carrier delays? Use the instant test code above."}
+                            ? "Check your Gmail inbox & spam folder for the 6-digit code."
+                            : "SMS dispatched. Carrier delays? Please check your messages."}
                         </p>
                       )}
                     </div>
@@ -919,13 +912,6 @@ export function AuthenticationPage() {
                       <label className="text-xs font-semibold text-foreground">
                         6-Digit Authentication Code
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => handleAutoFillOtp(receivedDemoOtp)}
-                        className="text-[11px] font-bold text-brand-leaf hover:underline cursor-pointer"
-                      >
-                        Paste Test Code ({receivedDemoOtp})
-                      </button>
                     </div>
                     <div className="flex justify-between gap-2 sm:gap-3">
                       {otpValues.map((val, idx) => (
@@ -942,23 +928,6 @@ export function AuthenticationPage() {
                         />
                       ))}
                     </div>
-                  </div>
-
-                  {/* Instant Verification Helper Card */}
-                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="size-4 text-amber-600 shrink-0" />
-                      <span className="text-[11px] font-medium">
-                        Instant Access Code: <strong className="font-mono font-bold tracking-wider">{receivedDemoOtp}</strong>
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAutoFillOtp(receivedDemoOtp)}
-                      className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shadow-xs cursor-pointer transition shrink-0"
-                    >
-                      ⚡ Auto-Fill
-                    </button>
                   </div>
 
                   {/* Resend OTP Section with 60s Countdown Timer */}
@@ -1706,42 +1675,11 @@ export function AuthenticationPage() {
                     <span>Verification code sent to </span>
                     <strong className="font-semibold">{forgotIdentifier}</strong>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setForgotOtp(forgotDemoOtp)}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition shadow-xs shrink-0 cursor-pointer self-start sm:self-auto"
-                  >
-                    ⚡ Auto-Fill ({forgotDemoOtp})
-                  </button>
-                </div>
-
-                {/* Instant Verification Helper Card */}
-                <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="size-4 text-amber-600 shrink-0" />
-                    <span className="text-[11px] font-medium">
-                      Instant Access Code: <strong className="font-mono font-bold tracking-wider">{forgotDemoOtp}</strong>
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setForgotOtp(forgotDemoOtp)}
-                    className="px-3 py-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer transition shrink-0"
-                  >
-                    ⚡ Auto-Fill
-                  </button>
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-foreground">6-Digit Verification Code *</label>
-                    <button
-                      type="button"
-                      onClick={() => setForgotOtp(forgotDemoOtp)}
-                      className="text-[11px] font-bold text-brand-leaf hover:underline cursor-pointer"
-                    >
-                      Paste Code ({forgotDemoOtp})
-                    </button>
                   </div>
                   <input
                     type="text"

@@ -29,8 +29,6 @@ import { products, categories, getCategoryImage, slugs, type Product } from "@/l
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { HeroBannerCarousel } from "@/components/home/hero-banner-carousel";
-import { ShopByCrop } from "@/components/home/shop-by-crop";
-import { ShopByDisease } from "@/components/home/shop-by-disease";
 import { ProductQuickViewModal } from "@/components/shop/product-quick-view-modal";
 import { GrowingPlantAnimation } from "@/components/home/growing-plant-animation";
 
@@ -351,11 +349,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 2.5 SHOP BY CROP & DISEASE (Customized for Crops & Pest Protection)        */}
-      {/* ========================================================================= */}
-      <ShopByCrop />
-      <ShopByDisease />
 
       {/* ========================================================================= */}
       {/* 3. FEATURED PRODUCTS SECTION                                              */}
