@@ -373,12 +373,6 @@ export function MyOrdersPage() {
               <ShoppingBag className="size-4" /> Shop Fresh Harvest
             </Link>
           </Button>
-
-          <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-semibold gap-1.5">
-            <Link to="/track-order">
-              <Truck className="size-4" /> Live Tracking Map
-            </Link>
-          </Button>
         </div>
       </div>
 

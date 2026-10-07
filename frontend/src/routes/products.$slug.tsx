@@ -569,14 +569,14 @@ function ProductDetailPage() {
 
           {/* Tab Body: Product Description */}
           {activeTab === "description" && (
-            <div className="py-8 space-y-8">
+            <div className="py-6 space-y-4">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4 font-display">
+                <h3 className="text-xl font-bold text-gray-900 mb-3 font-display">
                   Product Description
                 </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                   {/* Left Column: Rich Text Explanation */}
-                  <div className="lg:col-span-7 space-y-4 text-xs sm:text-sm text-gray-600 leading-relaxed text-justify">
+                  <div className="lg:col-span-7 space-y-3.5 text-xs sm:text-sm text-gray-600 leading-relaxed text-justify">
                     <p>
                       <strong>{product.name}</strong>{" "}
                       {product.subtitle ? `(${product.subtitle})` : ""}{" "}
@@ -625,7 +625,7 @@ function ProductDetailPage() {
 
           {/* Tab Body: Key Benefits Dedicated View */}
           {activeTab === "benefits" && (
-            <div className="py-8 space-y-6">
+            <div className="py-6 space-y-4">
               <h3 className="text-xl font-bold text-gray-900 font-display">Key Agricultural Benefits</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {dynamicBenefits.map((benefit, i) => {
@@ -648,7 +648,7 @@ function ProductDetailPage() {
 
           {/* Tab Body: How to Use */}
           {activeTab === "how-to-use" && (
-            <div className="py-8 space-y-6">
+            <div className="py-6 space-y-4">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 font-display">
                   How to Use & Dosage Guidelines
@@ -708,7 +708,7 @@ function ProductDetailPage() {
 
           {/* Tab Body: Suitable Crops */}
           {activeTab === "suitable-crops" && (
-            <div className="py-8 space-y-4">
+            <div className="py-6 space-y-4">
               <h3 className="text-xl font-bold text-gray-900 font-display">Recommended Crops</h3>
               <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                 {product.recommendedCrops ||
@@ -730,7 +730,7 @@ function ProductDetailPage() {
 
           {/* Tab Body: Technical Details */}
           {activeTab === "technical" && (
-            <div className="py-8 space-y-4">
+            <div className="py-6 space-y-4">
               <h3 className="text-xl font-bold text-gray-900 font-display">Technical Particulars</h3>
               <div className="rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100 max-w-2xl bg-white">
                 {Object.entries(dynamicSpecifications).map(([key, val]) => (
@@ -745,7 +745,7 @@ function ProductDetailPage() {
 
           {/* Tab Body: Reviews */}
           {activeTab === "reviews" && (
-            <div className="py-8 space-y-6">
+            <div className="py-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 font-display">Farmer Reviews</h3>
@@ -797,8 +797,8 @@ function ProductDetailPage() {
 
           {/* Tab Body: FAQs */}
           {activeTab === "faqs" && (
-            <div className="py-8 space-y-3">
-              <h3 className="text-xl font-bold text-gray-900 font-display mb-4">
+            <div className="py-6 space-y-3">
+              <h3 className="text-xl font-bold text-gray-900 font-display mb-3">
                 Frequently Asked Questions
               </h3>
               {productFaqs.map((faq, index) => {
@@ -832,8 +832,8 @@ function ProductDetailPage() {
         </section>
 
         {/* 5. Recommended Products Carousel/Grid */}
-        <section className="mt-16 pt-12 border-t border-gray-100">
-          <div className="flex items-center justify-between mb-8">
+        <section className="mt-8 pt-6 border-t border-gray-100">
+          <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="text-2xl font-extrabold text-gray-900 font-display">
                 Recommended <span className="text-[#E7A91A]">Products</span>

@@ -3,8 +3,6 @@ import React, { useState } from "react";
 import {
   User,
   MapPin,
-  CreditCard,
-  Globe,
   Trash2,
   LogOut,
   ShoppingBag,
@@ -21,9 +19,7 @@ import { useStore } from "@/components/store-provider";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { EditProfileTab } from "@/components/profile/edit-profile-tab";
 import { AddressManagerTab } from "@/components/profile/address-manager-tab";
-import { SavedPaymentsTab } from "@/components/profile/saved-payments-tab";
 import { SavedProductsTab } from "@/components/profile/saved-products-tab";
-import { PreferencesTab } from "@/components/profile/preferences-tab";
 import { AccountDeleteModal } from "@/components/profile/account-delete-modal";
 
 export const Route = createFileRoute("/profile")({
@@ -32,14 +28,14 @@ export const Route = createFileRoute("/profile")({
       { title: "Profile & Account Settings — JANANI AGRO PRODUCTS" },
       {
         name: "description",
-        content: "Manage personal details, saved shipping addresses, payment methods, saved products, language, and account security.",
+        content: "Manage personal details, saved shipping addresses, saved products, and account security.",
       },
     ],
   }),
   component: ProfilePage,
 });
 
-type ProfileTab = "edit" | "addresses" | "payments" | "saved" | "preferences";
+type ProfileTab = "edit" | "addresses" | "saved";
 
 export function ProfilePage() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("edit");
@@ -96,9 +92,7 @@ export function ProfilePage() {
           {[
             { id: "edit", label: "Personal Information", icon: User, desc: "View & edit details" },
             { id: "addresses", label: "Saved Addresses", icon: MapPin, desc: "Shipping locations" },
-            { id: "payments", label: "Saved Payment Methods", icon: CreditCard, desc: "Cards & UPI IDs" },
             { id: "saved", label: "Saved Products", icon: Bookmark, desc: "Wishlist & favourites", count: wishlist?.length },
-            { id: "preferences", label: "Language & Regional", icon: Globe, desc: "Currency & alerts" },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -164,9 +158,7 @@ export function ProfilePage() {
         <main className="space-y-6">
           {activeTab === "edit" && <EditProfileTab />}
           {activeTab === "addresses" && <AddressManagerTab />}
-          {activeTab === "payments" && <SavedPaymentsTab />}
           {activeTab === "saved" && <SavedProductsTab />}
-          {activeTab === "preferences" && <PreferencesTab />}
         </main>
       </div>
 
