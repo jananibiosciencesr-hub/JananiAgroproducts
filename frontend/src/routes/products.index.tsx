@@ -22,6 +22,7 @@ import {
   Sparkles,
   Filter,
   Check,
+  ChevronDown,
   ShoppingBag,
   Heart,
   Sprout,
@@ -133,6 +134,21 @@ function ProductsPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState<boolean>(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState<boolean>(false);
+
+  // Close category dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target && !target.closest("[data-category-dropdown]")) {
+        setIsCategoryDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const itemsPerPage = 12;
 
@@ -186,6 +202,7 @@ function ProductsPage() {
   // Clear all filters
   const handleClearFilters = () => {
     handleSelectCategory(null);
+    setIsCategoryDropdownOpen(false);
     setSliderPrice(6000);
     setAppliedMaxPrice(6000);
     setSelectedCrops([]);
@@ -293,69 +310,142 @@ function ProductsPage() {
   // Reusable Filter Sidebar Content
   const filterSidebarContent = (
     <div className="space-y-6">
-      {/* 1. Categories Section */}
-      <div className="space-y-3">
-        <h3 className="text-base font-bold text-gray-900 tracking-tight">Categories</h3>
-        <div className="space-y-1">
-          {/* All Products */}
+      {/* 1. Categories Section Dropdown */}
+      <div className="space-y-2">
+        <label className="block text-base font-bold text-gray-900 tracking-tight">
+          Categories
+        </label>
+        <div className="relative" data-category-dropdown="true">
+          {/* Dropdown Selector Button */}
           <button
-            onClick={() => handleSelectCategory(null)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition text-left cursor-pointer ${
-              selectedCategory === null
-                ? "bg-[#075B32]/10 text-[#075B32] font-bold"
-                : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            type="button"
+            onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer border shadow-2xs ${
+              isCategoryDropdownOpen
+                ? "bg-white border-[#075B32] ring-2 ring-[#075B32]/15 text-gray-900"
+                : selectedCategory
+                ? "bg-[#075B32]/5 border-[#075B32]/40 text-[#075B32]"
+                : "bg-gray-50/80 hover:bg-gray-100/80 border-gray-200 text-gray-800"
             }`}
+            aria-expanded={isCategoryDropdownOpen}
           >
-            <div className="flex items-center gap-2.5">
-              <Boxes className="size-4 text-[#075B32]" />
-              <span>All Products</span>
+            <div className="flex items-center gap-2.5 truncate pr-2">
+              {selectedCategory ? (
+                <>
+                  <span className="shrink-0">{getCategoryIcon(selectedCategory)}</span>
+                  <span className="truncate font-bold text-[#075B32]">{selectedCategory}</span>
+                </>
+              ) : (
+                <>
+                  <Boxes className="size-4 text-[#075B32] shrink-0" />
+                  <span className="truncate font-semibold text-gray-800">All Products</span>
+                </>
+              )}
             </div>
-            <span
-              className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium ${
-                selectedCategory === null
-                  ? "bg-[#075B32] text-white"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              {activeProductList.length}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium ${
+                  selectedCategory
+                    ? "bg-[#075B32] text-white"
+                    : "bg-gray-200/80 text-gray-700"
+                }`}
+              >
+                {selectedCategory
+                  ? activeProductList.filter((p) => {
+                      const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                      const cName = selectedCategory.toLowerCase().replace(/[^a-z0-9]/g, "");
+                      return pCat === cName;
+                    }).length
+                  : activeProductList.length}
+              </span>
+              <ChevronDown
+                className={`size-4 text-gray-400 transition-transform duration-200 shrink-0 ${
+                  isCategoryDropdownOpen ? "rotate-180 text-[#075B32]" : ""
+                }`}
+              />
+            </div>
           </button>
 
-          {/* Individual Categories */}
-          {categories.map((cat) => {
-            const count = activeProductList.filter((p) => {
-              const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-              const cName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-              return pCat === cName;
-            }).length;
-            const isSelected = selectedCategory?.toLowerCase().replace(/[^a-z0-9]/g, "") === cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-            return (
+          {/* Dropdown Options List */}
+          {isCategoryDropdownOpen && (
+            <div className="absolute z-40 left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl p-1.5 max-h-72 overflow-y-auto space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+              {/* All Products Option */}
               <button
-                key={cat.id || cat.slug}
-                onClick={() => handleSelectCategory(isSelected ? null : cat.name)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition text-left cursor-pointer ${
-                  isSelected
+                type="button"
+                onClick={() => {
+                  handleSelectCategory(null);
+                  setIsCategoryDropdownOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer text-left ${
+                  selectedCategory === null
                     ? "bg-[#075B32]/10 text-[#075B32] font-bold"
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate pr-2">
-                  {getCategoryIcon(cat.name)}
-                  <span className="truncate">{cat.name}</span>
+                  <Boxes className="size-4 text-[#075B32] shrink-0" />
+                  <span className="truncate">All Products</span>
                 </div>
-                <span
-                  className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium shrink-0 ${
-                    isSelected
-                      ? "bg-[#075B32] text-white"
-                      : "bg-gray-100 text-gray-500"
-                  }`}
-                >
-                  {count}
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {selectedCategory === null && <Check className="size-3.5 text-[#075B32]" />}
+                  <span
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium ${
+                      selectedCategory === null
+                        ? "bg-[#075B32] text-white"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {activeProductList.length}
+                  </span>
+                </div>
               </button>
-            );
-          })}
+
+              {/* Individual Categories */}
+              {categories.map((cat) => {
+                const count = activeProductList.filter((p) => {
+                  const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                  const cName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+                  return pCat === cName;
+                }).length;
+                const isSelected =
+                  selectedCategory?.toLowerCase().replace(/[^a-z0-9]/g, "") ===
+                  cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+                return (
+                  <button
+                    key={cat.id || cat.slug}
+                    type="button"
+                    onClick={() => {
+                      handleSelectCategory(isSelected ? null : cat.name);
+                      setIsCategoryDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer text-left ${
+                      isSelected
+                        ? "bg-[#075B32]/10 text-[#075B32] font-bold"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 truncate pr-2">
+                      <span className="shrink-0">{getCategoryIcon(cat.name)}</span>
+                      <span className="truncate">{cat.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {isSelected && <Check className="size-3.5 text-[#075B32]" />}
+                      <span
+                        className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium ${
+                          isSelected
+                            ? "bg-[#075B32] text-white"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
