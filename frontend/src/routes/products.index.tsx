@@ -70,16 +70,6 @@ const ALL_CROPS = [
   "All Crops",
 ];
 
-const ALL_BENEFITS = [
-  "Soil Health",
-  "Root Growth",
-  "Damping Off Control",
-  "Fungal Disease Control",
-  "Plant Growth",
-  "Crop Yield",
-  "Organic Farming",
-];
-
 function getCategoryIcon(name: string) {
   const n = name.toLowerCase();
   if (n.includes("fertilizer")) {
@@ -128,7 +118,6 @@ function ProductsPage() {
   const [sliderPrice, setSliderPrice] = useState<number>(6000);
   const [appliedMaxPrice, setAppliedMaxPrice] = useState<number>(6000);
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
-  const [selectedBenefits, setSelectedBenefits] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sort, setSort] = useState<SortOption>("featured");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -212,13 +201,6 @@ function ProductsPage() {
     );
   };
 
-  // Handle Benefit Toggle
-  const toggleBenefit = (benefit: string) => {
-    setSelectedBenefits((prev) =>
-      prev.includes(benefit) ? prev.filter((b) => b !== benefit) : [...prev, benefit]
-    );
-  };
-
   // Clear all filters
   const handleClearFilters = () => {
     handleSelectAllCategories();
@@ -226,7 +208,6 @@ function ProductsPage() {
     setSliderPrice(6000);
     setAppliedMaxPrice(6000);
     setSelectedCrops([]);
-    setSelectedBenefits([]);
     setSearchQuery("");
     setSort("featured");
     setCurrentPage(1);
@@ -264,14 +245,7 @@ function ProductsPage() {
         if (!hasMatch) return false;
       }
 
-      // 4. Benefits
-      if (selectedBenefits.length > 0) {
-        const prodBenefits = p.benefits || [];
-        const hasMatch = selectedBenefits.some((b) => prodBenefits.includes(b));
-        if (!hasMatch) return false;
-      }
-
-      // 5. Search
+      // 4. Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesName = p.name.toLowerCase().includes(q);
@@ -282,7 +256,7 @@ function ProductsPage() {
 
       return true;
     });
-  }, [activeProductList, selectedCategories, appliedMaxPrice, selectedCrops, selectedBenefits, searchQuery]);
+  }, [activeProductList, selectedCategories, appliedMaxPrice, selectedCrops, searchQuery]);
 
   // Sort products
   const sortedProducts = useMemo(() => {
@@ -305,7 +279,7 @@ function ProductsPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategories, appliedMaxPrice, selectedCrops, selectedBenefits, searchQuery, sort]);
+  }, [selectedCategories, appliedMaxPrice, selectedCrops, searchQuery, sort]);
 
   // Paginated slice
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage) || 1;
@@ -572,32 +546,6 @@ function ProductsPage() {
 
       <hr className="border-gray-200" />
 
-      {/* 4. Benefits Checkboxes */}
-      <div className="space-y-3">
-        <h3 className="text-base font-bold text-gray-900 tracking-tight">Benefits</h3>
-        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-          {ALL_BENEFITS.map((benefit) => {
-            const isChecked = selectedBenefits.includes(benefit);
-            return (
-              <label
-                key={benefit}
-                className="flex items-center gap-2.5 text-xs text-gray-700 cursor-pointer select-none hover:text-[#075B32]"
-              >
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => toggleBenefit(benefit)}
-                  className="rounded border-gray-300 text-[#075B32] focus:ring-[#075B32] size-3.5"
-                />
-                <span>{benefit}</span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
-
-      <hr className="border-gray-200" />
-
       {/* Clear Filters Button */}
       <button
         onClick={handleClearFilters}
@@ -641,7 +589,7 @@ function ProductsPage() {
                 >
                   <Filter className="size-3.5 text-[#075B32]" />
                   Filters
-                  {(selectedCategories.length > 0 || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 6000) && (
+                  {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000) && (
                     <span className="size-2 rounded-full bg-[#075B32]" />
                   )}
                 </button>
@@ -701,7 +649,7 @@ function ProductsPage() {
             </div>
 
             {/* Active Filters Pills */}
-            {(selectedCategories.length > 0 || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
+            {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
                 <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                   Filters:
@@ -726,14 +674,6 @@ function ProductsPage() {
                   <span key={c} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
                     {c}
                     <button onClick={() => toggleCrop(c)} className="hover:text-red-600">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                ))}
-                {selectedBenefits.map((b) => (
-                  <span key={b} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
-                    {b}
-                    <button onClick={() => toggleBenefit(b)} className="hover:text-red-600">
                       <X className="size-3" />
                     </button>
                   </span>
