@@ -15,9 +15,8 @@ import {
   Mail,
   MapPin
 } from "lucide-react";
-import { PageHero, SectionHeading } from "@/components/page-kit";
+import { SectionHeading } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
-import aboutHeroField from "@/assets/about_hero_field.jpg";
 import aboutSoilSprout from "@/assets/about_soil_sprout.jpg";
 import aboutLabFactory from "@/assets/about_lab_factory.jpg";
 
@@ -40,41 +39,8 @@ export const Route = createFileRoute("/about")({
 function AboutPage() {
   return (
     <>
-      <PageHero
-        eyebrow="Pure Soil to Soul • Agricultural Excellence"
-        title="Nurturing Soil Health, Empowering Farmers, Enriching Nature."
-        copy="Janani Agro Products is dedicated to revolutionizing Indian agriculture through scientific bio-fertilizers, natural biological crop protection, and sustainable plant nutrition for bumper crop yields and healthy soil ecosystems."
-        image={aboutHeroField}
-      >
-        <div className="flex flex-wrap gap-4">
-          <Button asChild variant="gold" size="lg" className="rounded-full px-7 font-bold shadow-md">
-            <Link to="/products">Explore Agri Products</Link>
-          </Button>
-          <Button asChild variant="glass" size="lg" className="rounded-full px-7 font-bold">
-            <Link to="/become-distributor">Become a Distributor</Link>
-          </Button>
-        </div>
-      </PageHero>
-
-      {/* Stats bar */}
-      <section className="border-b border-border bg-card">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-10 md:grid-cols-4">
-          {[
-            ["50,000+", "Farmers Empowered"],
-            ["15+ Years", "Bio-Agronomy Legacy"],
-            ["100+", "Certified Agri Formulations"],
-            ["100% Eco-Safe", "Zero Chemical Residue"],
-          ].map(([val, label]) => (
-            <div key={label} className="text-center">
-              <strong className="font-display text-3xl text-primary md:text-4xl">{val}</strong>
-              <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Story & Roots */}
-      <section className="px-6 py-20">
+      <section className="px-6 py-14 sm:py-16">
         <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2">
           <div>
             <SectionHeading

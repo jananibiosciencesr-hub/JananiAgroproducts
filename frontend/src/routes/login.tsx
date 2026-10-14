@@ -685,67 +685,67 @@ export function AuthenticationPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] w-full bg-gradient-to-br from-cream via-cream/80 to-amber-50/40 py-4 sm:py-6 px-3 sm:px-6 lg:px-8 xl:px-12 flex items-center justify-center">
-      <div className="w-full max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1600px] mx-auto">
+    <div className="min-h-[calc(100vh-80px)] w-full bg-gradient-to-br from-cream via-cream/80 to-amber-50/40 py-2 sm:py-3 px-2 sm:px-4 lg:px-6 flex items-center justify-center">
+      <div className="w-full max-w-[98%] 2xl:max-w-[1600px] mx-auto">
         {/* Main Dual-Pane Auth Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-border/70 bg-card/60 backdrop-blur-2xl shadow-2xl transition-all w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/70 bg-card/60 backdrop-blur-2xl shadow-xl transition-all w-full">
           
-          {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 4-5 cols) */}
-          <div className="relative hidden lg:flex lg:col-span-5 xl:col-span-4 flex-col justify-between overflow-hidden bg-gradient-to-br from-forest via-[#1e3a29] to-[#0f2418] p-6 sm:p-8 xl:p-10 text-primary-foreground">
+          {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 4 cols) */}
+          <div className="relative hidden lg:flex lg:col-span-4 xl:col-span-4 flex-col justify-between overflow-hidden bg-gradient-to-br from-forest via-[#1e3a29] to-[#0f2418] p-5 sm:p-6 lg:p-7 text-primary-foreground">
             {/* Background Texture & Glow */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(217,160,54,0.18),transparent_60%)]" />
             <div className="absolute -bottom-24 -left-24 size-72 rounded-full bg-brand-leaf/20 blur-3xl pointer-events-none" />
             
             {/* Top Brand Header */}
             <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-gold backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-gold backdrop-blur-md">
                 <Sparkles className="size-3 text-brand-gold animate-pulse" />
                 Pure Soil to Soul
               </div>
-              <h2 className="mt-3 font-display text-2xl lg:text-3xl font-bold leading-snug tracking-tight text-cream">
+              <h2 className="mt-2.5 font-display text-xl lg:text-2xl font-bold leading-snug tracking-tight text-cream">
                 Nourish Your Family With Heritage Harvests.
               </h2>
-              <p className="mt-1.5 text-xs text-primary-foreground/75 leading-relaxed">
+              <p className="mt-1 text-xs text-primary-foreground/75 leading-relaxed">
                 Join 50,000+ conscious households celebrating wood-pressed oils, native millets, and Vedic churned A2 ghee.
               </p>
             </div>
 
             {/* Middle Floating Trust Badges */}
-            <div className="relative z-10 my-4 space-y-2.5">
-              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 sm:p-3 backdrop-blur-md shadow-sm transition hover:bg-white/10">
-                <div className="grid size-9 place-items-center rounded-xl bg-brand-gold/20 text-brand-gold shrink-0">
-                  <Award className="size-4.5" />
+            <div className="relative z-10 my-3 space-y-2">
+              <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md shadow-xs transition hover:bg-white/10">
+                <div className="grid size-8 place-items-center rounded-xl bg-brand-gold/20 text-brand-gold shrink-0">
+                  <Award className="size-4" />
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-white">100% Certified Organic</h4>
-                  <p className="text-[11px] text-white/60">Zero chemicals, zero palm oil, wood-pressed purity.</p>
+                  <p className="text-[10px] text-white/60">Zero chemicals, zero palm oil, wood-pressed purity.</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 sm:p-3 backdrop-blur-md shadow-sm transition hover:bg-white/10">
-                <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
-                  <Truck className="size-4.5" />
+              <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md shadow-xs transition hover:bg-white/10">
+                <div className="grid size-8 place-items-center rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+                  <Truck className="size-4" />
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-white">Farm Fresh Delivery</h4>
-                  <p className="text-[11px] text-white/60">Express dispatch directly from 450+ grower clusters.</p>
+                  <p className="text-[10px] text-white/60">Express dispatch directly from 450+ grower clusters.</p>
                 </div>
               </div>
 
             </div>
           </div>
 
-          {/* RIGHT PANE: Interactive Glassmorphism Form (7-8 cols) */}
-          <div className="lg:col-span-7 xl:col-span-8 p-5 sm:p-7 xl:p-10 flex flex-col justify-between bg-card/70 backdrop-blur-xl">
+          {/* RIGHT PANE: Interactive Glassmorphism Form (8 cols) */}
+          <div className="lg:col-span-8 xl:col-span-8 p-4 sm:p-6 lg:p-7 py-3 sm:py-4 flex flex-col justify-center bg-card/70 backdrop-blur-xl">
             
             {/* Top Navigation Mode Pill */}
             <div>
-              <div className="flex items-center justify-between gap-3 mb-3.5">
+              <div className="flex items-center justify-between gap-3 mb-2.5">
                 <div className="min-w-0 flex-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-brand-leaf">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-brand-leaf">
                     {authMode === "login" ? "Welcome Back" : "New Harvest Member"}
                   </span>
-                  <h1 className="mt-0.5 font-display text-2xl sm:text-3xl font-bold text-foreground">
+                  <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground leading-tight">
                     {isOtpStep
                       ? "Verify Security Code"
                       : authMode === "login"
@@ -1142,37 +1142,38 @@ export function AuthenticationPage() {
                 /* ========================================================= */
                 /* VIEW 3: CREATE ACCOUNT (Signup with Strength Meter)       */
                 /* ========================================================= */
-                <form onSubmit={handleSignupSubmit} className="space-y-4 animate-in fade-in duration-200">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div className="space-y-1.5">
+                <form onSubmit={handleSignupSubmit} className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
+                  {/* Row 1: Contact Information (3 Columns on Desktop) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+                    <div className="space-y-1">
                       <label className="text-xs font-semibold text-foreground">Full Name *</label>
                       <div className="relative">
-                        <User className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
+                        <User className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type="text"
                           required
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="e.g. Aarav Sharma"
-                          className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-3 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className="h-9.5 sm:h-10 w-full rounded-xl border border-input bg-background/90 pl-9 pr-3 text-xs sm:text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                         />
                       </div>
                     </div>
 
                     {/* Mobile Number Field with real-time validation */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold text-foreground">Mobile Number *</label>
                         {isPhoneValid && (
-                          <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                            <CheckCircle2 className="size-3" /> Valid Indian Mobile
+                          <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                            <CheckCircle2 className="size-3" /> Valid
                           </span>
                         )}
                       </div>
-                      <div className="relative flex items-center rounded-2xl border border-input bg-background/90 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                        <span className="inline-flex items-center gap-1.5 border-r border-border/70 px-3.5 py-2.5 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
-                          <span className="text-sm leading-none shrink-0">🇮🇳</span>
-                          <span className="shrink-0 font-semibold">+91</span>
+                      <div className="relative flex items-center rounded-xl border border-input bg-background/90 shadow-xs focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20">
+                        <span className="inline-flex items-center gap-1 border-r border-border/70 px-2.5 py-1.5 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
+                          <span className="text-xs leading-none shrink-0">🇮🇳</span>
+                          <span className="shrink-0 font-semibold text-[11px]">+91</span>
                         </span>
                         <input
                           type="tel"
@@ -1184,171 +1185,162 @@ export function AuthenticationPage() {
                           onChange={(e) => handlePhoneChange(e.target.value)}
                           onBlur={handlePhoneBlur}
                           placeholder="93114 16225"
-                          className={`h-11 w-full min-w-0 rounded-r-2xl bg-transparent px-3 text-xs sm:text-sm font-medium outline-none font-mono ${
+                          className={`h-9.5 sm:h-10 w-full min-w-0 rounded-r-xl bg-transparent px-2.5 text-xs sm:text-sm font-medium outline-none font-mono ${
                             formTouched.phone && formErrors.phone ? "text-destructive" : ""
                           }`}
                         />
                         {isPhoneValid && (
-                          <CheckCircle2 className="absolute right-3 top-3.5 size-4 text-emerald-600 pointer-events-none" />
+                          <CheckCircle2 className="absolute right-2.5 top-2.5 size-4 text-emerald-600 pointer-events-none" />
                         )}
                       </div>
                       {formTouched.phone && formErrors.phone ? (
-                        <p className="text-[11px] text-destructive flex items-center gap-1 font-medium mt-0.5">
+                        <p className="text-[10px] text-destructive flex items-center gap-1 font-medium mt-0.5">
                           <AlertCircle className="size-3 shrink-0" /> {formErrors.phone}
-                        </p>
-                      ) : phone.length > 0 && phone.length < 10 ? (
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          Enter 10-digit mobile number ({phone.length}/10 digits)
                         </p>
                       ) : null}
                     </div>
-                  </div>
 
-                  {/* Email Address / Gmail Field with real-time validation */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-foreground">Email Address *</label>
-                      {isEmailValid && (
-                        <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                          <CheckCircle2 className="size-3" /> Valid Email
-                        </span>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => handleEmailChange(e.target.value)}
-                        onBlur={handleEmailBlur}
-                        placeholder="kameswarip98@gmail.com"
-                        className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${
-                          formTouched.email && formErrors.email
-                            ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
-                            : isEmailValid
-                            ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
-                            : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
-                        }`}
-                      />
-                      {isEmailValid && (
-                        <CheckCircle2 className="absolute right-3.5 top-3.5 size-4 text-emerald-600 pointer-events-none" />
-                      )}
-                    </div>
-                    {formTouched.email && formErrors.email && (
-                      <div className="mt-0.5 space-y-1">
-                        <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
-                          <AlertCircle className="size-3 shrink-0" /> {formErrors.email}
-                        </p>
-                        {formErrors.emailSuggestion && (
-                          <button
-                            type="button"
-                            onClick={handleApplyEmailSuggestion}
-                            className="text-[11px] text-brand-leaf hover:underline font-semibold flex items-center gap-1 text-left"
-                          >
-                            💡 {formErrors.emailSuggestion} (Click to apply)
-                          </button>
+                    {/* Email Address / Gmail Field with real-time validation */}
+                    <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-foreground">Email Address *</label>
+                        {isEmailValid && (
+                          <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                            <CheckCircle2 className="size-3" /> Valid
+                          </span>
                         )}
                       </div>
-                    )}
-                    <p className="text-[11px] text-muted-foreground">
-                      A 6-digit verification code will be sent to your Gmail/Email to verify your account.
-                    </p>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => handleEmailChange(e.target.value)}
+                          onBlur={handleEmailBlur}
+                          placeholder="kameswarip98@gmail.com"
+                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none transition ${
+                            formTouched.email && formErrors.email
+                              ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
+                              : isEmailValid
+                              ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                              : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
+                          }`}
+                        />
+                        {isEmailValid && (
+                          <CheckCircle2 className="absolute right-2.5 top-2.5 size-4 text-emerald-600 pointer-events-none" />
+                        )}
+                      </div>
+                      {formTouched.email && formErrors.email && (
+                        <div className="mt-0.5 space-y-0.5">
+                          <p className="text-[10px] text-destructive flex items-center gap-1 font-medium">
+                            <AlertCircle className="size-3 shrink-0" /> {formErrors.email}
+                          </p>
+                          {formErrors.emailSuggestion && (
+                            <button
+                              type="button"
+                              onClick={handleApplyEmailSuggestion}
+                              className="text-[10px] text-brand-leaf hover:underline font-semibold flex items-center gap-1 text-left"
+                            >
+                              💡 {formErrors.emailSuggestion} (Click to apply)
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div className="space-y-1.5">
+                  {/* Row 2: Security & Password Fields (3 Columns on Desktop) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 items-start">
+                    <div className="space-y-1">
                       <label className="text-xs font-semibold text-foreground">Create Password *</label>
                       <div className="relative">
-                        <Lock className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
+                        <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type={showPassword ? "text" : "password"}
                           required
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Min 8 characters"
-                          className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className="h-9.5 sm:h-10 w-full rounded-xl border border-input bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground"
+                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
                         >
                           {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                         </button>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <label className="text-xs font-semibold text-foreground">Confirm Password *</label>
                       <div className="relative">
-                        <Lock className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
+                        <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type={showConfirmPassword ? "text" : "password"}
                           required
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Re-enter password"
-                          className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className="h-9.5 sm:h-10 w-full rounded-xl border border-input bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground"
+                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
                         >
                           {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                         </button>
                       </div>
                     </div>
-                  </div>
 
-                  {/* PASSWORD STRENGTH METER */}
-                  {password && (
-                    <div className="rounded-2xl border border-border/80 bg-secondary/40 p-3 space-y-2">
+                    {/* PASSWORD STRENGTH METER inline in Column 3 */}
+                    <div className="rounded-xl border border-border/80 bg-secondary/40 p-2 sm:p-2.5 space-y-1 sm:col-span-2 lg:col-span-1">
                       <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-muted-foreground">Password Security:</span>
+                        <span className="text-muted-foreground font-medium">Security:</span>
                         <span className={`font-bold ${passwordStrength.text}`}>
-                          {passwordStrength.label}
+                          {password ? passwordStrength.label : "Enter password"}
                         </span>
                       </div>
-                      <div className="grid grid-cols-4 gap-1.5">
+                      <div className="grid grid-cols-4 gap-1">
                         {[1, 2, 3, 4].map((step) => (
                           <div
                             key={step}
-                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                            className={`h-1 rounded-full transition-all duration-300 ${
                               passwordStrength.score >= step ? passwordStrength.color : "bg-border"
                             }`}
                           />
                         ))}
                       </div>
-                      <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground pt-1">
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-muted-foreground">
                         <span className={password.length >= 8 ? "text-emerald-600 font-semibold" : ""}>
-                          {password.length >= 8 ? "✓" : "○"} 8+ characters
+                          {password.length >= 8 ? "✓" : "○"} 8+ chars
                         </span>
                         <span className={/[A-Z]/.test(password) ? "text-emerald-600 font-semibold" : ""}>
-                          {/[A-Z]/.test(password) ? "✓" : "○"} Uppercase letter
+                          {/[A-Z]/.test(password) ? "✓" : "○"} Uppercase
                         </span>
                         <span className={/[0-9]/.test(password) ? "text-emerald-600 font-semibold" : ""}>
-                          {/[0-9]/.test(password) ? "✓" : "○"} Number (0-9)
+                          {/[0-9]/.test(password) ? "✓" : "○"} Number
                         </span>
                         <span className={/[^A-Za-z0-9]/.test(password) ? "text-emerald-600 font-semibold" : ""}>
-                          {/[^A-Za-z0-9]/.test(password) ? "✓" : "○"} Special symbol (@#$)
+                          {/[^A-Za-z0-9]/.test(password) ? "✓" : "○"} Special
                         </span>
                       </div>
                     </div>
-                  )}
-
+                  </div>
 
                   {/* Terms & Privacy Acceptance */}
-                  <div className="flex items-start gap-2.5 pt-1">
+                  <div className="flex items-center gap-2 pt-0.5">
                     <input
                       type="checkbox"
                       id="terms"
                       checked={agreeTerms}
                       onChange={(e) => setAgreeTerms(e.target.checked)}
-                      className="mt-0.5 size-4 rounded border-input text-primary focus:ring-primary"
+                      className="size-4 rounded border-input text-primary focus:ring-primary shrink-0"
                     />
-                    <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed">
+                    <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
                       I agree to Janani Agro's{" "}
                       <button
                         type="button"
@@ -1370,13 +1362,13 @@ export function AuthenticationPage() {
                   </div>
 
                   {signupAlreadyExistsWarn && (
-                    <div className="p-3.5 rounded-2xl bg-blue-500/15 border border-blue-500/40 text-xs space-y-2 animate-in fade-in">
+                    <div className="p-2.5 rounded-xl bg-blue-500/15 border border-blue-500/40 text-xs space-y-1.5 animate-in fade-in">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="size-4 text-blue-600 shrink-0 mt-0.5" />
                         <div>
                           <p className="font-bold text-foreground">Account Already Exists!</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            An account with <strong className="text-foreground">{signupAlreadyExistsWarn}</strong> is already registered. Please sign in instead.
+                          <p className="text-[11px] text-muted-foreground">
+                            <strong className="text-foreground">{signupAlreadyExistsWarn}</strong> is already registered.
                           </p>
                         </div>
                       </div>
@@ -1389,10 +1381,10 @@ export function AuthenticationPage() {
                           setEmail(signupAlreadyExistsWarn);
                           setSignupAlreadyExistsWarn(null);
                         }}
-                        className="rounded-xl text-xs font-bold px-3.5 h-8.5 shadow-xs w-full"
+                        className="rounded-lg text-xs font-bold px-3 h-7.5 shadow-xs w-full"
                       >
-                        <Lock className="size-3.5 mr-1.5" />
-                        Switch to Sign In with this Email
+                        <Lock className="size-3 mr-1" />
+                        Switch to Sign In
                       </Button>
                     </div>
                   )}
@@ -1401,7 +1393,7 @@ export function AuthenticationPage() {
                     type="submit"
                     size="lg"
                     variant="gold"
-                    className="w-full rounded-2xl font-bold text-sm shadow-md mt-2"
+                    className="w-full h-10.5 sm:h-11 rounded-xl font-bold text-xs sm:text-sm shadow-md mt-1 cursor-pointer"
                     disabled={loading}
                   >
                     {loading ? "Sending Verification Code..." : "Verify Email & Create Account"} <ArrowRight className="size-4 ml-1.5" />
