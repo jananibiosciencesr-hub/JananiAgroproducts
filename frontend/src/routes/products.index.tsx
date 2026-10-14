@@ -300,6 +300,17 @@ function ProductsPage() {
   // Reusable Filter Sidebar Content
   const filterSidebarContent = (
     <div className="space-y-6">
+      {/* Top: Clear Filters Button */}
+      <button
+        type="button"
+        onClick={handleClearFilters}
+        className="w-full border border-gray-300 hover:border-[#075B32] text-gray-700 hover:text-[#075B32] text-xs font-semibold py-2 px-4 rounded-xl transition bg-white cursor-pointer shadow-2xs"
+      >
+        Clear Filters
+      </button>
+
+      <hr className="border-gray-200" />
+
       {/* 1. Categories Section Dropdown with Checkboxes */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -535,16 +546,6 @@ function ProductsPage() {
           })}
         </div>
       </div>
-
-      <hr className="border-gray-200" />
-
-      {/* Clear Filters Button */}
-      <button
-        onClick={handleClearFilters}
-        className="w-full border border-gray-300 hover:border-[#075B32] text-gray-700 hover:text-[#075B32] text-xs font-semibold py-2 px-4 rounded-xl transition bg-white"
-      >
-        Clear Filters
-      </button>
     </div>
   );
 
