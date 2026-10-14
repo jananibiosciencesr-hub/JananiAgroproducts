@@ -48,6 +48,7 @@ function AboutPage() {
               title="Science-backed biologicals for sustainable harvest prosperity."
               copy="Founded with a vision to restore vitality to Indian soils, Janani Agro Products bridges state-of-the-art microbiology with practical farm agronomy to solve pest, disease, and nutrient challenges naturally."
               align="left"
+              titleClassName="text-xl sm:text-2xl lg:text-[1.85rem]"
             />
             <div className="mt-8 space-y-4 text-sm leading-8 text-muted-foreground">
               <p>

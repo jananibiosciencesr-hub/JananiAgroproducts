@@ -3,8 +3,14 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function SectionHeading({ eyebrow, title, copy, align = "center" }: { eyebrow: string; title: string; copy?: string; align?: "center" | "left" }) {
-  return <div className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}><p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-leaf">{eyebrow}</p><h2 className="mt-3 text-3xl font-semibold leading-tight text-foreground sm:text-4xl lg:text-5xl">{title}</h2>{copy && <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">{copy}</p>}</div>;
+export function SectionHeading({ eyebrow, title, copy, align = "center", titleClassName = "" }: { eyebrow: string; title: string; copy?: string; align?: "center" | "left"; titleClassName?: string }) {
+  return (
+    <div className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-leaf">{eyebrow}</p>
+      <h2 className={`mt-2.5 text-2xl font-bold leading-tight text-foreground sm:text-3xl lg:text-4xl ${titleClassName}`.trim()}>{title}</h2>
+      {copy && <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">{copy}</p>}
+    </div>
+  );
 }
 
 export function PageHero({ eyebrow, title, copy, image, children, titleClassName = "" }: { eyebrow: string; title: string; copy: string; image?: string; children?: ReactNode; titleClassName?: string }) {
