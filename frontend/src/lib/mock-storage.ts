@@ -293,6 +293,21 @@ export const DEFAULT_ORDERS = [
 
 export const DEFAULT_CUSTOMERS = [
   {
+    id: "CUST-KAMESWARI",
+    name: "Kameswari Pachipulusu",
+    email: "kameswarip98@gmail.com",
+    phone: "+91 98480 22338",
+    tier: "Silver Member",
+    status: "Active",
+    ordersCount: 1,
+    totalSpent: 930,
+    walletBalance: 250,
+    city: "Visakhapatnam",
+    state: "Andhra Pradesh",
+    joinedDate: "2026-10-13",
+    avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kameswari%20Pachipulusu"
+  },
+  {
     id: "CUST-001",
     name: "Ananya Sharma",
     email: "ananya.s@gmail.com",

@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { sendOtpEmail } from "../services/emailService.js";
 import pool from "../config/db.js";
 
@@ -6,8 +9,41 @@ import pool from "../config/db.js";
  * JANANI AGRO PRODUCTS - Premium Organic E-Commerce Platform
  */
 
-// Customer Auth Store
-let customersDatabase = [];
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const CUSTOMERS_FILE = path.join(__dirname, "../data/customers.json");
+
+// Helper to load customers safely from disk
+export function loadCustomersFromDisk() {
+  try {
+    if (fs.existsSync(CUSTOMERS_FILE)) {
+      const data = fs.readFileSync(CUSTOMERS_FILE, "utf-8");
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn("[AUTH] Error loading customers from disk:", err.message);
+  }
+  return [];
+}
+
+// Helper to save customers safely to disk
+export function saveCustomersToDisk() {
+  try {
+    const dir = path.dirname(CUSTOMERS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(CUSTOMERS_FILE, JSON.stringify(customersDatabase, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("[AUTH] Error saving customers to disk:", err.message);
+  }
+}
+
+// Customer Auth Store initialized from disk
+let customersDatabase = loadCustomersFromDisk();
 
 // Active OTP Store: { phoneOrEmail: { code, purpose, expiresAt, attempts } }
 const activeOtpStore = new Map();
@@ -85,6 +121,9 @@ export const loginWithEmail = async (req, res) => {
       }
     } catch (dbErr) {}
 
+    if (!customersDatabase || customersDatabase.length === 0) {
+      customersDatabase = loadCustomersFromDisk();
+    }
     const memoryCustomer = customersDatabase.find((c) => c.email.toLowerCase() === normalizedEmail);
     const customer = dbUser || memoryCustomer;
 
@@ -108,6 +147,8 @@ export const loginWithEmail = async (req, res) => {
         await pool.query("UPDATE users SET password = ?, password_hash = ? WHERE email = ?", [password, password, normalizedEmail]);
       } catch (e) {}
       customer.password = password;
+      customer.passwordHash = password;
+      saveCustomersToDisk();
     } else if (password === dbPassword || password.trim() === dbPassword.trim() || password === "demo1234" || password === "123456") {
       isPasswordCorrect = true;
     }
@@ -168,7 +209,10 @@ export const sendOtp = async (req, res) => {
     // Check if user exists in customersDatabase or MySQL users table
     let userExists = isAdmin;
     if (!userExists) {
-      const custMatch = customersDatabase.some((c) => (c.email && c.email.toLowerCase() === identifier) || (c.phone && c.phone === identifier));
+      if (!customersDatabase || customersDatabase.length === 0) {
+        customersDatabase = loadCustomersFromDisk();
+      }
+      const custMatch = customersDatabase.some((c) => (c.email && c.email.toLowerCase() === identifier) || (c.phone && c.phone.replace(/\D/g, "") === identifier.replace(/\D/g, "")));
       if (custMatch) {
         userExists = true;
       } else {
@@ -356,8 +400,10 @@ export const verifyOtp = async (req, res) => {
         addresses: []
       };
       customersDatabase.push(customer);
+      saveCustomersToDisk();
     } else if (formattedPhone && !customer.phone) {
       customer.phone = formattedPhone;
+      saveCustomersToDisk();
     }
 
     // Persist/Update customer in MySQL users table
@@ -486,6 +532,7 @@ export const signupCustomer = async (req, res) => {
     };
 
     customersDatabase.push(newCustomer);
+    saveCustomersToDisk();
 
     // Persist to MySQL users table
     try {
@@ -568,6 +615,7 @@ export const loginWithGoogle = async (req, res) => {
         addresses: []
       };
       customersDatabase.push(customer);
+      saveCustomersToDisk();
     }
 
     const jwtToken = `janani_jwt_${customer.id}_${Date.now()}`;
@@ -622,6 +670,9 @@ export const forgotPassword = async (req, res) => {
       }
     } catch (dbErr) {}
 
+    if (!customersDatabase || customersDatabase.length === 0) {
+      customersDatabase = loadCustomersFromDisk();
+    }
     const memoryCustomer = customersDatabase.find(
       (c) => c.email.toLowerCase() === clean || (c.phone && c.phone === cleanPhone)
     );
@@ -719,6 +770,7 @@ export const resetPassword = async (req, res) => {
     if (customer) {
       customer.passwordHash = newPassword;
       customer.password = newPassword;
+      saveCustomersToDisk();
     }
 
     activeOtpStore.delete(target);
@@ -779,6 +831,7 @@ export const savePreferences = async (req, res) => {
         pinCode,
         notifications: notifications || customer.preferences.notifications
       };
+      saveCustomersToDisk();
     }
 
     return res.status(200).json({
@@ -807,6 +860,9 @@ export const checkUser = async (req, res) => {
       return res.status(200).json({ success: true, exists: true, isAdmin: true });
     }
 
+    if (!customersDatabase || customersDatabase.length === 0) {
+      customersDatabase = loadCustomersFromDisk();
+    }
     let customer = customersDatabase.find(
       (c) => (c.email && c.email.toLowerCase() === target) || (c.phone && c.phone.replace(/\D/g, "") === target.replace(/\D/g, ""))
     );

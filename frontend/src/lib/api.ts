@@ -7289,7 +7289,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
   if (!isPasswordMatch) {
     return {
       success: false,
-      message: "Incorrect password. Please enter the correct password or click 'Forgot Password' to reset.",
+      message: "Incorrect password. Please enter the correct password.",
       token: "",
       user: null as any
     };

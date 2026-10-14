@@ -7,6 +7,7 @@ import {
   Mail,
   Phone,
   User,
+  UserPlus,
   ArrowRight,
   Eye,
   EyeOff,
@@ -45,6 +46,11 @@ import {
 import { validatePhone, validateEmail } from "@/lib/validation";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      redirect: typeof search["redirect"] === "string" ? search["redirect"] : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Sign In & Create Account — JANANI AGRO PRODUCTS" },
@@ -56,9 +62,13 @@ export const Route = createFileRoute("/login")({
 
 export function AuthenticationPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const { user, loginUser } = useStore();
 
   const getDestinationUrl = () => {
+    if (search.redirect && search.redirect.startsWith("/")) {
+      return search.redirect;
+    }
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get("redirect");
@@ -675,13 +685,13 @@ export function AuthenticationPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-cream via-cream/80 to-amber-50/40 py-3 sm:py-6 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="mx-auto w-full max-w-5xl">
+    <div className="min-h-[calc(100vh-80px)] w-full bg-gradient-to-br from-cream via-cream/80 to-amber-50/40 py-4 sm:py-6 px-3 sm:px-6 lg:px-8 xl:px-12 flex items-center justify-center">
+      <div className="w-full max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1600px] mx-auto">
         {/* Main Dual-Pane Auth Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-[2.5rem] border border-border/70 bg-card/60 backdrop-blur-2xl shadow-2xl transition-all">
+        <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-border/70 bg-card/60 backdrop-blur-2xl shadow-2xl transition-all w-full">
           
-          {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 5 cols) */}
-          <div className="relative hidden lg:flex lg:col-span-5 flex-col justify-between overflow-hidden bg-gradient-to-br from-forest via-[#1e3a29] to-[#0f2418] p-6 sm:p-8 text-primary-foreground">
+          {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 4-5 cols) */}
+          <div className="relative hidden lg:flex lg:col-span-5 xl:col-span-4 flex-col justify-between overflow-hidden bg-gradient-to-br from-forest via-[#1e3a29] to-[#0f2418] p-6 sm:p-8 xl:p-10 text-primary-foreground">
             {/* Background Texture & Glow */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(217,160,54,0.18),transparent_60%)]" />
             <div className="absolute -bottom-24 -left-24 size-72 rounded-full bg-brand-leaf/20 blur-3xl pointer-events-none" />
@@ -722,15 +732,6 @@ export function AuthenticationPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 sm:p-3 backdrop-blur-md shadow-sm transition hover:bg-white/10">
-                <div className="grid size-9 place-items-center rounded-xl bg-amber-500/20 text-amber-300 shrink-0">
-                  <Gift className="size-4.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-white">₹150 Instant Welcome Bonus</h4>
-                  <p className="text-[11px] text-white/60">Credited automatically upon creating your account.</p>
-                </div>
-              </div>
             </div>
 
             {/* Bottom Rating Pill */}
@@ -752,8 +753,8 @@ export function AuthenticationPage() {
             </div>
           </div>
 
-          {/* RIGHT PANE: Interactive Glassmorphism Form (7 cols) */}
-          <div className="lg:col-span-7 p-5 sm:p-7 flex flex-col justify-between bg-card/70 backdrop-blur-xl">
+          {/* RIGHT PANE: Interactive Glassmorphism Form (7-8 cols) */}
+          <div className="lg:col-span-7 xl:col-span-8 p-5 sm:p-7 xl:p-10 flex flex-col justify-between bg-card/70 backdrop-blur-xl">
             
             {/* Top Navigation Mode Pill */}
             <div>
@@ -824,11 +825,33 @@ export function AuthenticationPage() {
                           🛡️ Super Admin Root Access
                         </span>
                       ) : (
-                        <p className="text-[11px] text-emerald-700/80 mt-0.5">
-                          {otpTarget.includes("@")
-                            ? "Check your Gmail inbox & spam folder for the 6-digit code."
-                            : "SMS dispatched. Carrier delays? Please check your messages."}
-                        </p>
+                        <div className="flex flex-wrap items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-emerald-600/15">
+                          <p className="text-[11px] text-emerald-700/80">
+                            {otpTarget.includes("@")
+                              ? "Check your Gmail inbox & spam / junk folder."
+                              : "SMS dispatched. Carrier delays? Please check your messages."}
+                          </p>
+                          {receivedDemoOtp && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const digits = receivedDemoOtp.slice(0, 6).split("");
+                                setOtpValues([
+                                  digits[0] || "",
+                                  digits[1] || "",
+                                  digits[2] || "",
+                                  digits[3] || "",
+                                  digits[4] || "",
+                                  digits[5] || "",
+                                ]);
+                                toast.success(`Auto-filled verification code: ${receivedDemoOtp}`);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-700 text-white text-[11px] font-bold hover:bg-emerald-800 transition shadow-xs cursor-pointer"
+                            >
+                              ⚡ Auto-fill Code ({receivedDemoOtp})
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1087,19 +1110,8 @@ export function AuthenticationPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
+                        <div>
                           <label className="text-xs font-semibold text-foreground">Password *</label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setForgotIdentifier(email || phone);
-                              setIsForgotModalOpen(true);
-                              setForgotStep("enter_id");
-                            }}
-                            className="text-[11px] font-semibold text-brand-leaf hover:underline"
-                          >
-                            Forgot Password?
-                          </button>
                         </div>
                         <div className="relative">
                           <Lock className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
@@ -1344,23 +1356,6 @@ export function AuthenticationPage() {
                     </div>
                   )}
 
-                  {/* Referral Code with Bonus Tag */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                      <span>Referral / Invite Code (Optional)</span>
-                      <span className="text-[10px] font-bold text-brand-leaf">+₹100 Extra Harvest Credit</span>
-                    </label>
-                    <div className="relative">
-                      <Gift className="absolute left-3.5 top-3.5 size-4 text-brand-gold" />
-                      <input
-                        type="text"
-                        value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                        placeholder="e.g. HARVEST100"
-                        className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-4 font-mono text-xs uppercase tracking-wider outline-none focus:border-primary"
-                      />
-                    </div>
-                  </div>
 
                   {/* Terms & Privacy Acceptance */}
                   <div className="flex items-start gap-2.5 pt-1">

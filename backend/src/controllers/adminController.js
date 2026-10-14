@@ -419,6 +419,46 @@ export let adminOrders = [
 
 export let adminCustomers = [
   {
+    id: "CUST-KAMESWARI",
+    name: "Kameswari Pachipulusu",
+    email: "kameswarip98@gmail.com",
+    phone: "+91 98480 22338",
+    city: "Visakhapatnam",
+    state: "Andhra Pradesh",
+    pincode: "530001",
+    totalSpent: 930,
+    totalOrders: 1,
+    avgOrderValue: 930,
+    tier: "Silver Member",
+    status: "Active",
+    suspensionReason: null,
+    joinDate: "2026-10-13",
+    lastActive: "Just now",
+    walletBalance: 250,
+    loyaltyPoints: 100,
+    avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kameswari%20Pachipulusu",
+    addresses: [
+      { id: "ADDR-K1", label: "Home (Default)", street: "D.No 4-56, Main Road", city: "Visakhapatnam", state: "Andhra Pradesh", pincode: "530001", isDefault: true, phone: "+91 98480 22338" }
+    ],
+    orderHistory: [
+      { id: "JAP-356429", date: "2026-10-06 11:09 AM", itemsSummary: "BHUMI SHAKTI Bio Fertilizer 5KG x1, NEEM GUARD Botanical Extract 1L x1", itemsCount: 2, total: 930, paymentMethod: "Razorpay (Online)", paymentStatus: "Paid", orderStatus: "Pending", trackingId: "DEL-3928172635" }
+    ],
+    wishlist: [],
+    cart: [],
+    walletTransactions: [
+      { id: "TXN-K1", date: "2026-10-13", type: "credit", amount: 150, description: "Welcome bonus credited", balanceAfter: 150 },
+      { id: "TXN-K2", date: "2026-10-13", type: "credit", amount: 100, description: "Harvest festive reward credited", balanceAfter: 250 }
+    ],
+    loyaltyHistory: [],
+    referrals: {
+      code: "JANANI98",
+      count: 0,
+      totalEarned: 0,
+      friends: []
+    },
+    couponsUsed: []
+  },
+  {
     id: "CUST-001",
     name: "Ananya Sharma",
     email: "ananya.s@gmail.com",

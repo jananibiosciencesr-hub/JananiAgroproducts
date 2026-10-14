@@ -1,0 +1,123 @@
+[
+  {
+    "id": "cust-kameswari-98",
+    "name": "Kameswari Pachipulusu",
+    "email": "kameswarip98@gmail.com",
+    "phone": "+91 98480 22338",
+    "passwordHash": "demo1234",
+    "password": "demo1234",
+    "avatar": "https://api.dicebear.com/7.x/initials/svg?seed=Kameswari%20Pachipulusu",
+    "role": "customer",
+    "walletBalance": 250,
+    "referralCode": "JANANI98",
+    "referredBy": null,
+    "isVerified": true,
+    "memberSince": "2026-10-13",
+    "tier": "Silver Member",
+    "preferences": {
+      "dietary": ["Bio Fertilizers", "Bio Stimulants"],
+      "pinCode": "530001",
+      "notifications": { "email": true, "sms": true, "whatsapp": true }
+    },
+    "addresses": [
+      {
+        "id": "ADDR-K1",
+        "name": "Kameswari Pachipulusu",
+        "street": "D.No 4-56, Main Road",
+        "city": "Visakhapatnam",
+        "state": "Andhra Pradesh",
+        "pincode": "530001",
+        "phone": "+91 98480 22338",
+        "isDefault": true
+      }
+    ]
+  },
+  {
+    "id": "CUST-001",
+    "name": "Dr. Ananya Iyer",
+    "email": "dr.ananya@heritagehealth.org",
+    "phone": "+91 98450 11223",
+    "passwordHash": "demo1234",
+    "password": "demo1234",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80",
+    "role": "customer",
+    "walletBalance": 420,
+    "referralCode": "JANANI3821",
+    "referredBy": null,
+    "isVerified": true,
+    "memberSince": "2025-11-12",
+    "tier": "Gold",
+    "preferences": {
+      "dietary": [],
+      "pinCode": "560066",
+      "notifications": { "email": true, "sms": true, "whatsapp": true }
+    },
+    "addresses": []
+  },
+  {
+    "id": "CUST-002",
+    "name": "Vikramaditya Rao",
+    "email": "vikram.rao@technocorp.in",
+    "phone": "+91 99800 44556",
+    "passwordHash": "demo1234",
+    "password": "demo1234",
+    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
+    "role": "customer",
+    "walletBalance": 150,
+    "referralCode": "JANANI9104",
+    "referredBy": null,
+    "isVerified": true,
+    "memberSince": "2026-01-20",
+    "tier": "Silver",
+    "preferences": {
+      "dietary": [],
+      "pinCode": "560038",
+      "notifications": { "email": true, "sms": true, "whatsapp": true }
+    },
+    "addresses": []
+  },
+  {
+    "id": "CUST-003",
+    "name": "Ananya Sharma",
+    "email": "ananya.s@gmail.com",
+    "phone": "+91 98451 22345",
+    "passwordHash": "demo1234",
+    "password": "demo1234",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80",
+    "role": "customer",
+    "walletBalance": 1250,
+    "referralCode": "ANANYA-AGRO-77",
+    "referredBy": null,
+    "isVerified": true,
+    "memberSince": "2025-11-12",
+    "tier": "Platinum Gold",
+    "preferences": {
+      "dietary": [],
+      "pinCode": "560038",
+      "notifications": { "email": true, "sms": true, "whatsapp": true }
+    },
+    "addresses": []
+  },
+  {
+    "id": "CUST-004",
+    "name": "Rameshwar Patel",
+    "email": "ramesh.patel@gmail.com",
+    "phone": "+91 98251 10928",
+    "passwordHash": "demo1234",
+    "password": "demo1234",
+    "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
+    "role": "customer",
+    "walletBalance": 50,
+    "referralCode": "JANANI9825",
+    "referredBy": null,
+    "isVerified": true,
+    "memberSince": "2026-09-01",
+    "tier": "New Harvest Patron",
+    "preferences": {
+      "dietary": [],
+      "pinCode": "360005",
+      "notifications": { "email": true, "sms": true, "whatsapp": true }
+    },
+    "addresses": []
+  }
+]

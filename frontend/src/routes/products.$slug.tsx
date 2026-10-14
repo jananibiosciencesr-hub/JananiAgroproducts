@@ -44,7 +44,7 @@ import { ProductCard } from "@/components/product-card";
 
 export const Route = createFileRoute("/products/$slug")({
   head: ({ params }) => {
-    const p = products.find((x) => x.slug === params.slug || String(x.id) === params.slug);
+    const p = products.find((x) => x.slug === params.slug || x.aliases?.includes(params.slug) || String(x.id) === params.slug);
     const title = p
       ? `${p.name} — ${p.subtitle || "Janani Agro Products"}`
       : "Product Detail — JANANI AGRO PRODUCTS";
@@ -81,7 +81,7 @@ function ProductDetailPage() {
 
   // Resolve active product
   const product =
-    allProducts.find((p) => p.slug === slug || String(p.id) === slug) ||
+    allProducts.find((p) => p.slug === slug || p.aliases?.includes(slug) || String(p.id) === slug) ||
     allProducts.find((p) => slug.includes(p.slug) || p.slug.includes(slug)) ||
     allProducts[0]!;
 
