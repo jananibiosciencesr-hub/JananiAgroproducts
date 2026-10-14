@@ -11,9 +11,6 @@ import {
   Truck,
   Star,
   Image as ImageIcon,
-  BarChart3,
-  Settings,
-  ShieldCheck,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -82,9 +79,6 @@ const menuItems: Array<{
   { id: "shipping", label: "Shipping (Shiprocket)", icon: Truck, group: "Operations" },
   { id: "reviews", label: "Reviews", icon: Star, badgeKey: "reviews", badgeColor: "bg-blue-500", group: "Customer" },
   { id: "cms", label: "Banners & CMS", icon: ImageIcon, group: "Storefront" },
-  { id: "reports", label: "Reports", icon: BarChart3, group: "Analytics" },
-  { id: "settings", label: "Settings", icon: Settings, group: "System" },
-  { id: "roles", label: "Admins & Roles", icon: ShieldCheck, group: "System" },
 ];
 
 export function AdminSidebar({
