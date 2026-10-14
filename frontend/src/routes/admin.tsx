@@ -235,9 +235,29 @@ function AdminDashboardPage() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isAddCouponOpen, setIsAddCouponOpen] = useState(false);
   const [selectedOrderForShipping, setSelectedOrderForShipping] = useState<any>(null);
-  const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<any>(null);
-  const [selectedItemForRestock, setSelectedItemForRestock] = useState<any>(null);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+
+  // Dynamic Tab Search & Contextual Add State
+  const [adminSearch, setAdminSearch] = useState("");
+  const [addTriggerTab, setAddTriggerTab] = useState<{ tab: AdminTab; timestamp: number } | null>(null);
+
+  const handleNavigateTab = (tab: AdminTab) => {
+    setActiveTab(tab);
+    setAdminSearch("");
+  };
+
+  const handleContextualAdd = () => {
+    setAddTriggerTab({ tab: activeTab, timestamp: Date.now() });
+    if (activeTab === "categories") {
+      window.dispatchEvent(new CustomEvent("admin:add-category"));
+    } else if (activeTab === "products") {
+      window.dispatchEvent(new CustomEvent("admin:add-product"));
+    } else if (activeTab === "customers") {
+      window.dispatchEvent(new CustomEvent("admin:add-customer"));
+    } else if (activeTab === "coupons") {
+      window.dispatchEvent(new CustomEvent("admin:add-coupon"));
+    }
+  };
 
   // Countdown timer for OTP Resend
   useEffect(() => {
@@ -738,7 +758,7 @@ function AdminDashboardPage() {
       {/* Collapsible Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleNavigateTab}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         mobileOpen={mobileOpen}
@@ -760,12 +780,16 @@ function AdminDashboardPage() {
         <AdminNavbar
           onOpenMobileSidebar={() => setMobileOpen(true)}
           onOpenSearchModal={() => setIsSearchModalOpen(true)}
-          onNavigateTab={setActiveTab}
+          onNavigateTab={handleNavigateTab}
           onLogout={handleLogout}
           adminUser={adminUser}
           inquiries={inquiries}
           orders={safeOrders}
           inventory={safeInventory}
+          activeTab={activeTab}
+          searchTerm={adminSearch}
+          onSearchChange={setAdminSearch}
+          onAddAction={handleContextualAdd}
         />
 
         {/* Dynamic View Body */}
@@ -779,20 +803,35 @@ function AdminDashboardPage() {
               products={products}
               customers={customers}
               reviews={safeReviews}
-              onNavigateTab={setActiveTab}
+              onNavigateTab={handleNavigateTab}
               onOpenShiprocketModal={setSelectedOrderForShipping}
               onOpenRestockModal={setSelectedItemForRestock}
               onOpenInvoiceModal={setSelectedOrderForInvoice}
             />
           )}
 
-          {activeTab === "categories" && <CategoriesManagement />}
+          {activeTab === "categories" && (
+            <CategoriesManagement
+              searchQuery={adminSearch}
+              addTrigger={addTriggerTab?.tab === "categories" ? addTriggerTab.timestamp : 0}
+            />
+          )}
 
-          {activeTab === "products" && <ProductsManagement />}
+          {activeTab === "products" && (
+            <ProductsManagement
+              searchQuery={adminSearch}
+              addTrigger={addTriggerTab?.tab === "products" ? addTriggerTab.timestamp : 0}
+            />
+          )}
 
-          {activeTab === "orders" && <OrdersManagement />}
+          {activeTab === "orders" && <OrdersManagement searchQuery={adminSearch} />}
 
-          {activeTab === "customers" && <CustomersManagement />}
+          {activeTab === "customers" && (
+            <CustomersManagement
+              searchQuery={adminSearch}
+              addTrigger={addTriggerTab?.tab === "customers" ? addTriggerTab.timestamp : 0}
+            />
+          )}
 
           {activeTab === "inquiries" && <InquiriesManagement />}
 
@@ -805,7 +844,12 @@ function AdminDashboardPage() {
 
           {activeTab === "payments" && <PaymentsManagement />}
 
-          {activeTab === "coupons" && <CouponsManagement />}
+          {activeTab === "coupons" && (
+            <CouponsManagement
+              searchQuery={adminSearch}
+              addTrigger={addTriggerTab?.tab === "coupons" ? addTriggerTab.timestamp : 0}
+            />
+          )}
 
           {activeTab === "referrals" && <ReferralsManagement />}
 

@@ -139,13 +139,26 @@ export interface AdminProductItem {
   createdAt: string;
 }
 
-export function ProductsManagement() {
+export interface ProductsManagementProps {
+  searchQuery?: string;
+  addTrigger?: number;
+}
+
+export function ProductsManagement({ searchQuery, addTrigger }: ProductsManagementProps = {}) {
   const [products, setProducts] = useState<AdminProductItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+
+  // Synchronize search query from Top Navbar
+  useEffect(() => {
+    if (searchQuery !== undefined) {
+      setSearch(searchQuery);
+      setCurrentPage(1);
+    }
+  }, [searchQuery]);
   const [brandFilter, setBrandFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState<"all" | "in_stock" | "low_stock" | "out_of_stock">("all");
   const [statusFilter, setStatusFilter] = useState<"active" | "trash">("active");
@@ -217,8 +230,24 @@ export function ProductsManagement() {
   const [editingProduct, setEditingProduct] = useState<AdminProductItem | null>(null);
   const [previewProduct, setPreviewProduct] = useState<AdminProductItem | null>(null);
   const [isBulkPriceOpen, setIsBulkPriceOpen] = useState(false);
-  const [isBulkStockOpen, setIsBulkStockOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // Synchronize Add Product trigger from Top Navbar or custom event
+  useEffect(() => {
+    if (addTrigger && addTrigger > 0) {
+      setEditingProduct(null);
+      setIsFormModalOpen(true);
+    }
+  }, [addTrigger]);
+
+  useEffect(() => {
+    const handleAdd = () => {
+      setEditingProduct(null);
+      setIsFormModalOpen(true);
+    };
+    window.addEventListener("admin:add-product", handleAdd);
+    return () => window.removeEventListener("admin:add-product", handleAdd);
+  }, []);
 
   // Load Products
   const loadProducts = async () => {

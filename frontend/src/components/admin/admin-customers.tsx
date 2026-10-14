@@ -47,7 +47,12 @@ import {
 } from "@/lib/api";
 import { validatePhone, validateEmail } from "@/lib/validation";
 
-export function CustomersManagement() {
+export interface CustomersManagementProps {
+  searchQuery?: string;
+  addTrigger?: number;
+}
+
+export function CustomersManagement({ searchQuery, addTrigger }: CustomersManagementProps = {}) {
   // Data States
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +79,28 @@ export function CustomersManagement() {
   const [activeDrawerTab, setActiveDrawerTab] = useState<"overview" | "orders" | "wishlist" | "cart" | "addresses" | "wallet" | "referrals">("overview");
 
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+
+  // Synchronize search query from Top Navbar
+  useEffect(() => {
+    if (searchQuery !== undefined) {
+      setSearch(searchQuery);
+    }
+  }, [searchQuery]);
+
+  // Synchronize Add Customer trigger from Top Navbar or custom event
+  useEffect(() => {
+    if (addTrigger && addTrigger > 0) {
+      setIsAddCustomerOpen(true);
+    }
+  }, [addTrigger]);
+
+  useEffect(() => {
+    const handleAdd = () => {
+      setIsAddCustomerOpen(true);
+    };
+    window.addEventListener("admin:add-customer", handleAdd);
+    return () => window.removeEventListener("admin:add-customer", handleAdd);
+  }, []);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [walletTargetCustomer, setWalletTargetCustomer] = useState<any | null>(null);
 

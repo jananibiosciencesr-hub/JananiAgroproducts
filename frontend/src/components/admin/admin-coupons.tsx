@@ -51,7 +51,12 @@ import {
   BulkCouponPayload
 } from "@/lib/api";
 
-export function CouponsManagement() {
+export interface CouponsManagementProps {
+  searchQuery?: string;
+  addTrigger?: number;
+}
+
+export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: CouponsManagementProps = {}) {
   const [activeTab, setActiveTab] = useState<"all" | "generator" | "history" | "analytics">("all");
 
   // Data State
@@ -78,6 +83,34 @@ export function CouponsManagement() {
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
+  // Synchronize search query from Top Navbar
+  useEffect(() => {
+    if (propSearchQuery !== undefined) {
+      setSearchQuery(propSearchQuery);
+    }
+  }, [propSearchQuery]);
+
+  // Modals & Drawers State
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editCoupon, setEditCoupon] = useState<AdminCoupon | null>(null);
+
+  // Synchronize Add Coupon trigger from Top Navbar or custom event
+  useEffect(() => {
+    if (addTrigger && addTrigger > 0) {
+      setEditCoupon(null);
+      setCreateModalOpen(true);
+    }
+  }, [addTrigger]);
+
+  useEffect(() => {
+    const handleAdd = () => {
+      setEditCoupon(null);
+      setCreateModalOpen(true);
+    };
+    window.addEventListener("admin:add-coupon", handleAdd);
+    return () => window.removeEventListener("admin:add-coupon", handleAdd);
+  }, []);
+
   // Usage History Filters
   const [historySearch, setHistorySearch] = useState("");
   const [historyCodeFilter, setHistoryCodeFilter] = useState("all");
@@ -86,9 +119,6 @@ export function CouponsManagement() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [bulkCopied, setBulkCopied] = useState(false);
 
-  // Modals & Drawers State
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editCoupon, setEditCoupon] = useState<AdminCoupon | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [couponToDelete, setCouponToDelete] = useState<AdminCoupon | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);

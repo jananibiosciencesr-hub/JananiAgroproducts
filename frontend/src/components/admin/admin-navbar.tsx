@@ -14,7 +14,9 @@ import {
   Mail,
   UserCheck,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Plus,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
@@ -30,6 +32,52 @@ interface AdminNavbarProps {
   inquiries?: AdminInquiry[];
   orders?: any[];
   inventory?: any[];
+  activeTab?: AdminTab;
+  searchTerm?: string;
+  onSearchChange?: (val: string) => void;
+  onAddAction?: () => void;
+}
+
+function getSearchPlaceholder(tab?: AdminTab): string {
+  switch (tab) {
+    case "categories":
+      return "Search categories by name, slug, SEO tags...";
+    case "products":
+      return "Search products by name, SKU, brand, tags...";
+    case "orders":
+      return "Search orders by ID, customer, phone, status...";
+    case "customers":
+      return "Search patrons by name, phone, email, city...";
+    case "coupons":
+      return "Search coupons by promo code, discount...";
+    case "inventory":
+      return "Search inventory by product, SKU, batch...";
+    case "inquiries":
+      return "Search customer inquiries by name, phone...";
+    case "reviews":
+      return "Search reviews by customer name, product...";
+    case "returns":
+      return "Search returns by order ID, customer...";
+    case "payments":
+      return "Search payments by transaction ID, method...";
+    default:
+      return "Search orders, SKU, products... (⌘K)";
+  }
+}
+
+function getAddConfig(tab?: AdminTab): { label: string; shortLabel: string } | null {
+  switch (tab) {
+    case "categories":
+      return { label: "Add Category", shortLabel: "Category" };
+    case "products":
+      return { label: "Add Product", shortLabel: "Product" };
+    case "customers":
+      return { label: "Add Customer", shortLabel: "Customer" };
+    case "coupons":
+      return { label: "Add Coupon", shortLabel: "Coupon" };
+    default:
+      return null;
+  }
 }
 
 function formatRelativeTime(dateStr?: string): string {
@@ -57,8 +105,13 @@ export function AdminNavbar({
   adminUser,
   inquiries = [],
   orders = [],
-  inventory = []
+  inventory = [],
+  activeTab = "dashboard",
+  searchTerm = "",
+  onSearchChange,
+  onAddAction,
 }: AdminNavbarProps) {
+  const addConfig = getAddConfig(activeTab);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
@@ -190,8 +243,8 @@ export function AdminNavbar({
 
   return (
     <header className="sticky top-0 z-30 flex h-16 sm:h-20 w-full max-w-full items-center justify-between border-b border-border/70 bg-card/85 px-3 sm:px-4 lg:px-8 backdrop-blur-xl">
-      {/* Left Area: Mobile Menu & Search */}
-      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 max-w-2xl min-w-0 mr-2">
+      {/* Left Area: Mobile Menu, Dynamic Search & Contextual Add */}
+      <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-2xl min-w-0 mr-2">
         <button
           onClick={onOpenMobileSidebar}
           className="lg:hidden flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border bg-background text-foreground hover:bg-accent shrink-0 cursor-pointer"
@@ -200,17 +253,53 @@ export function AdminNavbar({
           <Menu className="size-5" />
         </button>
 
-        {/* Global Instant Search Bar */}
-        <div
-          onClick={onOpenSearchModal}
-          className="group relative flex w-full max-w-md cursor-pointer items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-border/80 bg-background/80 px-3 sm:px-4 py-2 sm:py-2.5 text-xs text-muted-foreground shadow-sm transition-all hover:border-emerald-500/50 hover:bg-background hover:shadow-md min-w-0"
-        >
-          <Search className="size-4 text-muted-foreground group-hover:text-emerald-600 transition-colors shrink-0" />
-          <span className="truncate flex-1 text-xs">Search orders, SKU, products...</span>
-          <div className="hidden md:flex items-center gap-1 rounded-lg border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-foreground shrink-0">
-            <Command className="size-3" /> K
+        {/* Dynamic Contextual Search Bar */}
+        <div className="relative flex-1 max-w-md min-w-0">
+          <div className="relative flex items-center w-full rounded-xl sm:rounded-2xl border border-border/80 bg-background/80 shadow-sm transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-background hover:border-emerald-500/40">
+            <Search className="absolute left-3 sm:left-3.5 size-4 text-muted-foreground pointer-events-none shrink-0" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              placeholder={getSearchPlaceholder(activeTab)}
+              className="w-full bg-transparent py-2 sm:py-2.5 pl-9 sm:pl-10 pr-16 sm:pr-20 text-xs text-foreground placeholder:text-muted-foreground outline-none font-medium truncate"
+            />
+            <div className="absolute right-2 flex items-center gap-1">
+              {searchTerm ? (
+                <button
+                  type="button"
+                  onClick={() => onSearchChange?.("")}
+                  className="rounded-lg p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="size-3.5" />
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={onOpenSearchModal}
+                className="hidden md:flex items-center gap-1 rounded-lg border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                title="Global Command Palette (⌘K)"
+              >
+                <Command className="size-2.5" /> K
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Dynamic Contextual Add Action Button */}
+        {addConfig && onAddAction && (
+          <button
+            type="button"
+            onClick={onAddAction}
+            className="flex items-center gap-1.5 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3 sm:px-4 py-2 sm:py-2.5 shadow-md shadow-emerald-700/20 transition-all shrink-0 cursor-pointer"
+            title={addConfig.label}
+          >
+            <Plus className="size-3.5 sm:size-4 stroke-[2.5]" />
+            <span className="hidden sm:inline">{addConfig.label}</span>
+            <span className="sm:hidden">{addConfig.shortLabel}</span>
+          </button>
+        )}
       </div>
 
       {/* Right Controls Area */}

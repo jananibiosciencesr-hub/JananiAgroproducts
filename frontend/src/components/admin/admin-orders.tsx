@@ -221,7 +221,11 @@ function PaymentBadge({ status }: { status: string }) {
 // Orders Management Main Component
 // -------------------------------------------------------------
 
-export function OrdersManagement() {
+export interface OrdersManagementProps {
+  searchQuery?: string;
+}
+
+export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagementProps = {}) {
   // Orders Data State
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,6 +247,13 @@ export function OrdersManagement() {
   const [warehouseFilter, setWarehouseFilter] = useState("all");
   const [courierFilter, setCourierFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date_desc");
+
+  // Synchronize search query from Top Navbar
+  useEffect(() => {
+    if (propSearchQuery !== undefined) {
+      setSearch(propSearchQuery);
+    }
+  }, [propSearchQuery]);
 
   // Selection
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
