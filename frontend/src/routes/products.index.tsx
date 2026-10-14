@@ -213,12 +213,6 @@ function ProductsPage() {
     setCurrentPage(1);
   };
 
-  // Apply Price Filter Button
-  const handleApplyPrice = () => {
-    setAppliedMaxPrice(sliderPrice);
-    setCurrentPage(1);
-  };
-
   // Filter products
   const filteredProducts = useMemo(() => {
     return activeProductList.filter((p) => {
@@ -501,7 +495,11 @@ function ProductsPage() {
             max={6000}
             step={100}
             value={sliderPrice}
-            onChange={(e) => setSliderPrice(Number(e.target.value))}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              setSliderPrice(val);
+              setAppliedMaxPrice(val);
+            }}
             className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#075B32]"
           />
           <div className="flex items-center justify-between text-xs text-gray-600 mt-2 font-medium">
@@ -510,12 +508,6 @@ function ProductsPage() {
             <span>₹ 6000</span>
           </div>
         </div>
-        <button
-          onClick={handleApplyPrice}
-          className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-xs font-bold py-2 px-4 rounded-xl transition shadow-xs cursor-pointer"
-        >
-          Apply Price Filter
-        </button>
       </div>
 
       <hr className="border-gray-200" />
