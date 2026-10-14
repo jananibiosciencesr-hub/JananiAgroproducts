@@ -240,40 +240,7 @@ export function CustomersManagement() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="size-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-md">
-              <Users className="size-5" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">Customer Database</h1>
-              <p className="text-xs text-muted-foreground">360° patron profiles, order timelines, wallet credits, loyalty points & CRM</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-bold text-foreground hover:bg-muted transition-all shadow-xs"
-          >
-            <Download className="size-3.5 text-muted-foreground" />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            onClick={() => setIsAddCustomerOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-teal-700 transition-all"
-          >
-            <Plus className="size-4" />
-            <span>Add Customer</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Top Stats Ribbon */}
+      {/* Top Stats Ribbon */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-soft">
           <div className="flex items-center justify-between text-muted-foreground">
@@ -393,6 +360,15 @@ export function CustomersManagement() {
             <option value="wallet_desc">Sort: Highest Wallet</option>
             <option value="newest">Sort: Newest Joined</option>
           </select>
+
+          {/* Add Customer Button */}
+          <button
+            onClick={() => setIsAddCustomerOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 transition-all shrink-0 cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            <span>Add Customer</span>
+          </button>
         </div>
       </div>
 
