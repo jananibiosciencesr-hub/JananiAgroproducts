@@ -19,10 +19,21 @@ async function syncBuild() {
     process.exit(1);
   }
 
-  // 1. Copy client assets to root assets/ and dist/assets/
+  // 1. Clean stale chunks from root assets/ to keep repository small, then copy
+  if (fs.existsSync(rootAssetsDir)) {
+    const existingRootFiles = fs.readdirSync(rootAssetsDir);
+    const activeClientSet = new Set(fs.readdirSync(clientAssetsDir));
+    for (const file of existingRootFiles) {
+      if (!activeClientSet.has(file)) {
+        try {
+          fs.rmSync(path.join(rootAssetsDir, file), { recursive: true, force: true });
+        } catch (e) {}
+      }
+    }
+  }
   fs.mkdirSync(rootAssetsDir, { recursive: true });
   fs.cpSync(clientAssetsDir, rootAssetsDir, { recursive: true });
-  console.log(`[sync-build] Copied ${fs.readdirSync(clientAssetsDir).length} files to assets/`);
+  console.log(`[sync-build] Cleaned and synchronized ${fs.readdirSync(clientAssetsDir).length} files to assets/`);
 
   if (fs.existsSync(path.join(rootDir, 'dist'))) {
     fs.mkdirSync(distAssetsDir, { recursive: true });

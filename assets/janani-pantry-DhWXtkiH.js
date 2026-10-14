@@ -1,1 +1,0 @@
-var e=`/assets/janani-story-kyJdRBXN.jpg`,t=`/assets/janani-pantry-D0B3q_KB.jpg`;export{e as n,t};
