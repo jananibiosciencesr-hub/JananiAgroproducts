@@ -300,17 +300,6 @@ function ProductsPage() {
   // Reusable Filter Sidebar Content
   const filterSidebarContent = (
     <div className="space-y-6">
-      {/* Top: Clear Filters Button */}
-      <button
-        type="button"
-        onClick={handleClearFilters}
-        className="w-full border border-gray-300 hover:border-[#075B32] text-gray-700 hover:text-[#075B32] text-xs font-semibold py-2 px-4 rounded-xl transition bg-white cursor-pointer shadow-2xs"
-      >
-        Clear Filters
-      </button>
-
-      <hr className="border-gray-200" />
-
       {/* 1. Categories Section Dropdown with Checkboxes */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -572,13 +561,13 @@ function ProductsPage() {
 
           {/* Right Main Content Area */}
           <div className="flex-1 w-full min-w-0">
-            {/* Top Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-gray-100 mb-6">
+            {/* Top Toolbar - Sticky Bar */}
+            <div className="sticky top-20 z-20 bg-white/95 backdrop-blur-md py-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-xl border border-gray-100 shadow-xs mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 transition-all">
               {/* Left: Product count & Mobile filter trigger */}
-              <div className="flex items-center justify-between sm:justify-start gap-4">
+              <div className="flex items-center justify-between sm:justify-start gap-3">
                 <button
                   onClick={() => setIsMobileFilterOpen(true)}
-                  className="lg:hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition"
+                  className="lg:hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition cursor-pointer"
                 >
                   <Filter className="size-3.5 text-[#075B32]" />
                   Filters
@@ -601,10 +590,19 @@ function ProductsPage() {
                 </p>
               </div>
 
-              {/* Right: Search + Sort Dropdown */}
-              <div className="flex items-center gap-3">
+              {/* Right: Clear Filters + Search + Sort Dropdown */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Clear Filters Button */}
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 hover:border-[#075B32] text-gray-700 hover:text-[#075B32] text-xs font-semibold transition bg-white cursor-pointer shadow-2xs"
+                >
+                  Clear Filters
+                </button>
+
                 {/* Search */}
-                <div className="relative w-44 sm:w-52">
+                <div className="relative w-40 sm:w-48">
                   <Search className="absolute left-2.5 top-2.5 size-3.5 text-gray-400" />
                   <input
                     type="text"
@@ -616,7 +614,7 @@ function ProductsPage() {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 cursor-pointer"
                     >
                       <X className="size-3.5" />
                     </button>
