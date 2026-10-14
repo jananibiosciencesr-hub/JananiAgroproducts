@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  TrendingUp,
   ShoppingBag,
   DollarSign,
   Calendar,
@@ -108,24 +107,6 @@ export function AdminOverview({
   const couponsUsedCount = stats?.couponsUsedToday ?? liveOrders.filter(o => Boolean(o.couponCode || o.coupon_code)).length;
   const referralEarningsTotal = stats?.referralEarnings ?? liveCustomers.reduce((sum, c) => sum + (Number(c.walletBalance) || 0), 0);
 
-  // Dynamic Online vs COD Breakdown
-  const onlineOrders = liveOrders.filter(o => !String(o.paymentMethod || "").toLowerCase().includes("cod") && !String(o.paymentMethod || "").toLowerCase().includes("cash"));
-  const onlineSum = widgets?.paymentSplit?.onlineTotal ?? onlineOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
-  const codSum = widgets?.paymentSplit?.codTotal ?? (totalSales - onlineSum);
-  const onlinePct = widgets?.paymentSplit?.onlinePercent ?? (totalSales > 0 ? Math.round((onlineSum / totalSales) * 100) : 100);
-  const codPct = widgets?.paymentSplit?.codPercent ?? (totalSales > 0 ? (100 - onlinePct) : 0);
-  const avgOrderValue = widgets?.averageOrderValue?.value ?? (totalOrdersCount > 0 ? Math.round(totalSales / totalOrdersCount) : 0);
-
-  // Dynamic Low Inventory alerts
-  const criticalInventoryList = (widgets?.lowInventoryAlerts && widgets.lowInventoryAlerts.length > 0)
-    ? widgets.lowInventoryAlerts
-    : liveProducts.filter(p => (Number(p.stock) || Number(p.warehouseStock) || 0) <= 10).slice(0, 4).map(p => ({
-        id: p.id,
-        name: p.name,
-        stock: Number(p.stock) || Number(p.warehouseStock) || 0,
-        threshold: 10,
-        status: (Number(p.stock) || Number(p.warehouseStock) || 0) <= 0 ? "Out of Stock" : "Low Stock"
-      }));
 
 
   const filteredOrders = liveOrders.filter(o => {
@@ -230,147 +211,7 @@ export function AdminOverview({
         </div>
       </section>
 
-      {/* 6 Live Business Widgets */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <TrendingUp className="size-4 text-emerald-600" /> Live Storefront Intelligence
-          </h2>
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Widget 1: Live Visitors */}
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-soft flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live Active Visitors</p>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-foreground">{widgets?.liveVisitors?.count ?? activePatronsCount}</span>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    <span className="relative flex size-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
-                    </span>
-                    Browsing Now
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border/60">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase">Top Regional Activity:</p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {(widgets?.liveVisitors?.locations || ["Gujarat", "Maharashtra", "Karnataka", "Telangana"]).map((loc: string, i: number) => (
-                  <span key={i} className="rounded-lg bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                    {loc}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Widget 2: Conversion Rate */}
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-soft flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Conversion Rate</p>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{widgets?.conversionRate?.change || "Active Rate"}</span>
-              </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-foreground">{widgets?.conversionRate?.rate || (totalOrdersCount > 0 ? ((totalOrdersCount / Math.max(totalOrdersCount * 8, 10)) * 100).toFixed(1) : "3.84")}%</span>
-                <span className="text-xs text-muted-foreground font-medium">Target: 4.0%</span>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border/60">
-              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                <div className="bg-gradient-to-r from-emerald-500 to-amber-500 h-2 rounded-full" style={{ width: `${Math.min(100, ((widgets?.conversionRate?.rate || 3.84) / 4.0) * 100)}%` }}></div>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-1.5 font-medium">Live checkout and cart conversion velocity</p>
-            </div>
-          </div>
-
-          {/* Widget 3: Average Order Value */}
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-soft flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Average Order Value (AOV)</p>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Per Order</span>
-              </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-foreground">₹{avgOrderValue.toLocaleString('en-IN')}</span>
-                <span className="text-xs text-muted-foreground font-medium">vs ₹2,000 baseline</span>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Free shipping threshold</span>
-              <span className="font-bold text-foreground">₹799+ orders</span>
-            </div>
-          </div>
-
-          {/* Widget 4: COD vs Online Payment Split */}
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-soft flex flex-col justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Mode Split</p>
-              <div className="mt-2 flex items-center justify-between text-xs font-bold">
-                <span className="text-emerald-600 dark:text-emerald-400">Prepaid Online: {onlinePct}%</span>
-                <span className="text-amber-600 dark:text-amber-400">COD: {codPct}%</span>
-              </div>
-              <div className="mt-2 flex h-3 w-full overflow-hidden rounded-full bg-muted">
-                <div className="bg-emerald-600" style={{ width: `${onlinePct}%` }} title="Online UPI / Cards"></div>
-                <div className="bg-amber-500" style={{ width: `${codPct}%` }} title="Cash on Delivery"></div>
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>Online: ₹{onlineSum >= 100000 ? `${(onlineSum / 100000).toFixed(2)}L` : onlineSum.toLocaleString('en-IN')}</span>
-              <span>COD: ₹{codSum >= 100000 ? `${(codSum / 100000).toFixed(2)}L` : codSum.toLocaleString('en-IN')}</span>
-            </div>
-          </div>
-
-          {/* Widget 5: Best Selling Segment */}
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-soft flex flex-col justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Best Performing Segment</p>
-              <h3 className="mt-1 text-base font-bold text-foreground">{widgets?.bestSellingBrand?.name || "Janani Heritage Reserve"}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Top product: {widgets?.bestSellingBrand?.topProduct || "A2 Vedic Gir Cow Ghee"}</p>
-            </div>
-            <div className="mt-3 pt-3 border-t border-border/60 flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Revenue contribution</span>
-              <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                100% Organic Verified
-              </span>
-            </div>
-          </div>
-
-          {/* Widget 6: Low Inventory Urgent Callout */}
-          <div className="rounded-3xl border border-rose-500/30 bg-rose-500/5 p-5 shadow-soft flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-                  <AlertTriangle className="size-3.5" /> Inventory Critical Alerts
-                </p>
-                <button onClick={() => onNavigateTab("inventory")} className="text-[11px] font-bold text-rose-600 hover:underline">
-                  View All ({criticalInventoryList.length})
-                </button>
-              </div>
-              <div className="mt-2 space-y-1.5">
-                {criticalInventoryList.slice(0, 2).map((item: any, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between text-xs rounded-xl bg-card p-2 border border-border/60">
-                    <span className="font-semibold text-foreground truncate max-w-[160px]">{item.name}</span>
-                    <button
-                      onClick={() => onOpenRestockModal(item)}
-                      className="rounded-lg bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-rose-700 shadow-sm"
-                    >
-                      Restock ({item.stock ?? 0})
-                    </button>
-                  </div>
-                ))}
-                {criticalInventoryList.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic py-1">All inventory items above threshold levels.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 6 Recharts Interactive Visualizations */}
       <section className="space-y-6">
