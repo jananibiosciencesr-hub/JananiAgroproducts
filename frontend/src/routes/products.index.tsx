@@ -124,7 +124,7 @@ function ProductsPage() {
   const activeProductList = products;
 
   // Filter States
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sliderPrice, setSliderPrice] = useState<number>(6000);
   const [appliedMaxPrice, setAppliedMaxPrice] = useState<number>(6000);
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
@@ -158,31 +158,51 @@ function ProductsPage() {
       const params = new URLSearchParams(window.location.search);
       const urlCat = params.get("category");
       if (urlCat) {
-        const urlNorm = urlCat.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const matched = categories.find(
-          (c) =>
-            c.name.toLowerCase().replace(/[^a-z0-9]/g, "") === urlNorm ||
-            c.slug.toLowerCase().replace(/[^a-z0-9]/g, "") === urlNorm
-        );
-        if (matched) {
-          setSelectedCategory(matched.name);
+        const catNorms = urlCat
+          .split(",")
+          .map((c) => c.trim().toLowerCase().replace(/[^a-z0-9]/g, ""));
+        const matched = categories
+          .filter(
+            (c) =>
+              catNorms.includes(c.name.toLowerCase().replace(/[^a-z0-9]/g, "")) ||
+              catNorms.includes(c.slug.toLowerCase().replace(/[^a-z0-9]/g, ""))
+          )
+          .map((c) => c.name);
+        if (matched.length > 0) {
+          setSelectedCategories(matched);
         }
       }
     }
   }, []);
 
-  const handleSelectCategory = (catName: string | null) => {
-    setSelectedCategory(catName);
+  const toggleCategory = (catName: string) => {
+    setSelectedCategories((prev) => {
+      const exists = prev.includes(catName);
+      const next = exists ? prev.filter((c) => c !== catName) : [...prev, catName];
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        if (next.length === 1) {
+          url.searchParams.set("category", next[0]);
+        } else if (next.length > 1) {
+          url.searchParams.set("category", next.join(","));
+        } else {
+          url.searchParams.delete("category");
+        }
+        window.history.replaceState(null, "", url.toString());
+      }
+      return next;
+    });
     setCurrentPage(1);
+  };
+
+  const handleSelectAllCategories = () => {
+    setSelectedCategories([]);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      if (catName) {
-        url.searchParams.set("category", catName);
-      } else {
-        url.searchParams.delete("category");
-      }
+      url.searchParams.delete("category");
       window.history.replaceState(null, "", url.toString());
     }
+    setCurrentPage(1);
   };
 
   // Handle Crop Toggle
@@ -201,7 +221,7 @@ function ProductsPage() {
 
   // Clear all filters
   const handleClearFilters = () => {
-    handleSelectCategory(null);
+    handleSelectAllCategories();
     setIsCategoryDropdownOpen(false);
     setSliderPrice(6000);
     setAppliedMaxPrice(6000);
@@ -222,10 +242,12 @@ function ProductsPage() {
   const filteredProducts = useMemo(() => {
     return activeProductList.filter((p) => {
       // 1. Category
-      if (selectedCategory) {
-        const selNorm = selectedCategory.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (selectedCategories.length > 0) {
+        const selNorms = selectedCategories.map((c) =>
+          c.toLowerCase().replace(/[^a-z0-9]/g, "")
+        );
         const pNorm = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        if (pNorm !== selNorm) return false;
+        if (!selNorms.includes(pNorm)) return false;
       }
 
       // 2. Price (only filter if user set appliedMaxPrice below catalog maximum of 6000)
@@ -260,7 +282,7 @@ function ProductsPage() {
 
       return true;
     });
-  }, [activeProductList, selectedCategory, appliedMaxPrice, selectedCrops, selectedBenefits, searchQuery]);
+  }, [activeProductList, selectedCategories, appliedMaxPrice, selectedCrops, selectedBenefits, searchQuery]);
 
   // Sort products
   const sortedProducts = useMemo(() => {
@@ -283,7 +305,7 @@ function ProductsPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory, appliedMaxPrice, selectedCrops, selectedBenefits, searchQuery, sort]);
+  }, [selectedCategories, appliedMaxPrice, selectedCrops, selectedBenefits, searchQuery, sort]);
 
   // Paginated slice
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage) || 1;
@@ -310,11 +332,22 @@ function ProductsPage() {
   // Reusable Filter Sidebar Content
   const filterSidebarContent = (
     <div className="space-y-6">
-      {/* 1. Categories Section Dropdown */}
+      {/* 1. Categories Section Dropdown with Checkboxes */}
       <div className="space-y-2">
-        <label className="block text-base font-bold text-gray-900 tracking-tight">
-          Categories
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="block text-base font-bold text-gray-900 tracking-tight">
+            Categories
+          </label>
+          {selectedCategories.length > 0 && (
+            <button
+              type="button"
+              onClick={handleSelectAllCategories}
+              className="text-[11px] font-semibold text-[#075B32] hover:underline cursor-pointer"
+            >
+              Reset
+            </button>
+          )}
+        </div>
         <div className="relative" data-category-dropdown="true">
           {/* Dropdown Selector Button */}
           <button
@@ -323,17 +356,24 @@ function ProductsPage() {
             className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer border shadow-2xs ${
               isCategoryDropdownOpen
                 ? "bg-white border-[#075B32] ring-2 ring-[#075B32]/15 text-gray-900"
-                : selectedCategory
+                : selectedCategories.length > 0
                 ? "bg-[#075B32]/5 border-[#075B32]/40 text-[#075B32]"
                 : "bg-gray-50/80 hover:bg-gray-100/80 border-gray-200 text-gray-800"
             }`}
             aria-expanded={isCategoryDropdownOpen}
           >
             <div className="flex items-center gap-2.5 truncate pr-2">
-              {selectedCategory ? (
+              {selectedCategories.length === 1 ? (
                 <>
-                  <span className="shrink-0">{getCategoryIcon(selectedCategory)}</span>
-                  <span className="truncate font-bold text-[#075B32]">{selectedCategory}</span>
+                  <span className="shrink-0">{getCategoryIcon(selectedCategories[0])}</span>
+                  <span className="truncate font-bold text-[#075B32]">{selectedCategories[0]}</span>
+                </>
+              ) : selectedCategories.length > 1 ? (
+                <>
+                  <Boxes className="size-4 text-[#075B32] shrink-0" />
+                  <span className="truncate font-bold text-[#075B32]">
+                    {selectedCategories.length} Categories Selected
+                  </span>
                 </>
               ) : (
                 <>
@@ -345,16 +385,24 @@ function ProductsPage() {
             <div className="flex items-center gap-2 shrink-0">
               <span
                 className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium ${
-                  selectedCategory
+                  selectedCategories.length > 0
                     ? "bg-[#075B32] text-white"
                     : "bg-gray-200/80 text-gray-700"
                 }`}
               >
-                {selectedCategory
+                {selectedCategories.length === 1
                   ? activeProductList.filter((p) => {
                       const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                      const cName = selectedCategory.toLowerCase().replace(/[^a-z0-9]/g, "");
+                      const cName = selectedCategories[0].toLowerCase().replace(/[^a-z0-9]/g, "");
                       return pCat === cName;
+                    }).length
+                  : selectedCategories.length > 1
+                  ? activeProductList.filter((p) => {
+                      const selNorms = selectedCategories.map((c) =>
+                        c.toLowerCase().replace(/[^a-z0-9]/g, "")
+                      );
+                      const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                      return selNorms.includes(pCat);
                     }).length
                   : activeProductList.length}
               </span>
@@ -366,84 +414,102 @@ function ProductsPage() {
             </div>
           </button>
 
-          {/* Dropdown Options List */}
+          {/* Dropdown Options List with Checkboxes */}
           {isCategoryDropdownOpen && (
             <div className="absolute z-40 left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl p-1.5 max-h-72 overflow-y-auto space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
-              {/* All Products Option */}
-              <button
-                type="button"
-                onClick={() => {
-                  handleSelectCategory(null);
-                  setIsCategoryDropdownOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer text-left ${
-                  selectedCategory === null
+              {/* All Products Checkbox Option */}
+              <label
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer select-none ${
+                  selectedCategories.length === 0
                     ? "bg-[#075B32]/10 text-[#075B32] font-bold"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate pr-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.length === 0}
+                    onChange={handleSelectAllCategories}
+                    className="rounded border-gray-300 text-[#075B32] focus:ring-[#075B32] size-3.5 accent-[#075B32] shrink-0 cursor-pointer"
+                  />
                   <Boxes className="size-4 text-[#075B32] shrink-0" />
                   <span className="truncate">All Products</span>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {selectedCategory === null && <Check className="size-3.5 text-[#075B32]" />}
-                  <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium ${
-                      selectedCategory === null
-                        ? "bg-[#075B32] text-white"
-                        : "bg-gray-100 text-gray-500"
-                    }`}
-                  >
-                    {activeProductList.length}
-                  </span>
-                </div>
-              </button>
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium shrink-0 ${
+                    selectedCategories.length === 0
+                      ? "bg-[#075B32] text-white"
+                      : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  {activeProductList.length}
+                </span>
+              </label>
 
-              {/* Individual Categories */}
+              {/* Individual Categories Checkbox Options */}
               {categories.map((cat) => {
                 const count = activeProductList.filter((p) => {
                   const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
                   const cName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
                   return pCat === cName;
                 }).length;
-                const isSelected =
-                  selectedCategory?.toLowerCase().replace(/[^a-z0-9]/g, "") ===
-                  cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+                const isSelected = selectedCategories.some(
+                  (sc) => sc.toLowerCase().replace(/[^a-z0-9]/g, "") === cat.name.toLowerCase().replace(/[^a-z0-9]/g, "")
+                );
 
                 return (
-                  <button
+                  <label
                     key={cat.id || cat.slug}
-                    type="button"
-                    onClick={() => {
-                      handleSelectCategory(isSelected ? null : cat.name);
-                      setIsCategoryDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer text-left ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer select-none ${
                       isSelected
                         ? "bg-[#075B32]/10 text-[#075B32] font-bold"
-                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 truncate pr-2">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleCategory(cat.name)}
+                        className="rounded border-gray-300 text-[#075B32] focus:ring-[#075B32] size-3.5 accent-[#075B32] shrink-0 cursor-pointer"
+                      />
                       <span className="shrink-0">{getCategoryIcon(cat.name)}</span>
                       <span className="truncate">{cat.name}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {isSelected && <Check className="size-3.5 text-[#075B32]" />}
-                      <span
-                        className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium ${
-                          isSelected
-                            ? "bg-[#075B32] text-white"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {count}
-                      </span>
-                    </div>
-                  </button>
+                    <span
+                      className={`text-[11px] px-2 py-0.5 rounded-full font-mono font-medium shrink-0 ${
+                        isSelected
+                          ? "bg-[#075B32] text-white"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </label>
                 );
               })}
+
+              {/* Dropdown Bottom Bar */}
+              <div className="pt-1.5 mt-1 border-t border-gray-100 flex items-center justify-between px-2 text-[11px]">
+                {selectedCategories.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleSelectAllCategories}
+                    className="text-gray-500 hover:text-red-600 font-semibold transition cursor-pointer"
+                  >
+                    Clear all
+                  </button>
+                ) : (
+                  <span className="text-gray-400">All products</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryDropdownOpen(false)}
+                  className="bg-[#075B32] hover:bg-[#064A29] text-white font-bold px-2.5 py-1 rounded-md transition cursor-pointer"
+                >
+                  Apply
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -575,7 +641,7 @@ function ProductsPage() {
                 >
                   <Filter className="size-3.5 text-[#075B32]" />
                   Filters
-                  {(selectedCategory || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 6000) && (
+                  {(selectedCategories.length > 0 || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 6000) && (
                     <span className="size-2 rounded-full bg-[#075B32]" />
                   )}
                 </button>
@@ -635,19 +701,19 @@ function ProductsPage() {
             </div>
 
             {/* Active Filters Pills */}
-            {(selectedCategory || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
+            {(selectedCategories.length > 0 || selectedCrops.length > 0 || selectedBenefits.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
                 <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                   Filters:
                 </span>
-                {selectedCategory && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
-                    {selectedCategory}
-                    <button onClick={() => handleSelectCategory(null)} className="hover:text-red-600">
+                {selectedCategories.map((cat) => (
+                  <span key={cat} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
+                    {cat}
+                    <button onClick={() => toggleCategory(cat)} className="hover:text-red-600">
                       <X className="size-3" />
                     </button>
                   </span>
-                )}
+                ))}
                 {appliedMaxPrice < 6000 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
                     Under ₹{appliedMaxPrice}
