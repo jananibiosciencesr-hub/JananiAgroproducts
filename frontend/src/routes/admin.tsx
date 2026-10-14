@@ -98,6 +98,9 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminErrorFallback({ error, reset }: { error: any; reset: () => void }) {
+  if (typeof window !== "undefined") {
+    console.error("Admin portal caught error:", error);
+  }
   const handleResetSession = () => {
     try {
       localStorage.removeItem("janani_admin_session");
@@ -235,6 +238,8 @@ function AdminDashboardPage() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isAddCouponOpen, setIsAddCouponOpen] = useState(false);
   const [selectedOrderForShipping, setSelectedOrderForShipping] = useState<any>(null);
+  const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<any>(null);
+  const [selectedItemForRestock, setSelectedItemForRestock] = useState<any>(null);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   // Dynamic Tab Search & Contextual Add State
