@@ -360,15 +360,6 @@ export function CustomersManagement() {
             <option value="wallet_desc">Sort: Highest Wallet</option>
             <option value="newest">Sort: Newest Joined</option>
           </select>
-
-          {/* Add Customer Button */}
-          <button
-            onClick={() => setIsAddCustomerOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 transition-all shrink-0 cursor-pointer"
-          >
-            <Plus className="size-3.5" />
-            <span>Add Customer</span>
-          </button>
         </div>
       </div>
 
