@@ -230,6 +230,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
   const [editingProduct, setEditingProduct] = useState<AdminProductItem | null>(null);
   const [previewProduct, setPreviewProduct] = useState<AdminProductItem | null>(null);
   const [isBulkPriceOpen, setIsBulkPriceOpen] = useState(false);
+  const [isBulkStockOpen, setIsBulkStockOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Synchronize Add Product trigger from Top Navbar or custom event
