@@ -733,24 +733,6 @@ export function AuthenticationPage() {
               </div>
 
             </div>
-
-            {/* Bottom Rating Pill */}
-            <div className="relative z-10 rounded-2xl border border-white/10 bg-black/20 p-2.5 sm:p-3 backdrop-blur-md flex items-center justify-between">
-              <div className="flex -space-x-2">
-                {["https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80",
-                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=80",
-                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=80"
-                ].map((img, i) => (
-                  <img key={i} src={img} alt="User" className="size-6 sm:size-7 rounded-full border-2 border-forest object-cover" />
-                ))}
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1 text-xs font-bold text-brand-gold">
-                  <span>★ 4.9 / 5.0</span>
-                </div>
-                <p className="text-[10px] text-white/60">from 18,400+ verified ratings</p>
-              </div>
-            </div>
           </div>
 
           {/* RIGHT PANE: Interactive Glassmorphism Form (7-8 cols) */}
@@ -1426,24 +1408,6 @@ export function AuthenticationPage() {
                   </Button>
                 </form>
               )}
-            </div>
-
-            {/* Bottom Security Trust Badges */}
-            <div className="mt-4 border-t border-border/70 pt-3">
-              <div className="grid grid-cols-3 gap-2 text-center text-[11px] text-muted-foreground">
-                <div className="flex flex-col items-center gap-0.5">
-                  <ShieldCheck className="size-3.5 text-emerald-600" />
-                  <span>256-Bit Encrypted</span>
-                </div>
-                <div className="flex flex-col items-center gap-0.5">
-                  <Truck className="size-3.5 text-brand-leaf" />
-                  <span>Farm Fresh Dispatch</span>
-                </div>
-                <div className="flex flex-col items-center gap-0.5">
-                  <Sparkles className="size-3.5 text-brand-gold" />
-                  <span>100% Single Origin</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
