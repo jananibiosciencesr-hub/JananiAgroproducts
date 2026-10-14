@@ -261,6 +261,8 @@ function AdminDashboardPage() {
       window.dispatchEvent(new CustomEvent("admin:add-customer"));
     } else if (activeTab === "coupons") {
       window.dispatchEvent(new CustomEvent("admin:add-coupon"));
+    } else if (activeTab === "inquiries") {
+      window.dispatchEvent(new CustomEvent("admin:add-inquiry"));
     }
   };
 
@@ -838,7 +840,12 @@ function AdminDashboardPage() {
             />
           )}
 
-          {activeTab === "inquiries" && <InquiriesManagement />}
+          {activeTab === "inquiries" && (
+            <InquiriesManagement
+              searchQuery={adminSearch}
+              addTrigger={addTriggerTab?.tab === "inquiries" ? addTriggerTab.timestamp : 0}
+            />
+          )}
 
           {activeTab === "inventory" && (
             <InventoryView

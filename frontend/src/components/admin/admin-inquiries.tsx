@@ -28,18 +28,46 @@ import {
   type AdminInquiry
 } from "@/lib/api";
 
-export function InquiriesManagement() {
+export interface InquiriesManagementProps {
+  searchQuery?: string;
+  addTrigger?: number;
+}
+
+export function InquiriesManagement({
+  searchQuery: externalSearch = "",
+  addTrigger = 0,
+}: InquiriesManagementProps = {}) {
   const [inquiries, setInquiries] = useState<AdminInquiry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(externalSearch);
   const [activeTypeFilter, setActiveTypeFilter] = useState<string>("all");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("all");
+
+  // Keep search query synchronized with top navbar
+  useEffect(() => {
+    setSearchQuery(externalSearch);
+  }, [externalSearch]);
 
   // Modal states
   const [selectedInquiry, setSelectedInquiry] = useState<AdminInquiry | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [internalNoteInput, setInternalNoteInput] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+
+  // Listen for contextual add trigger
+  useEffect(() => {
+    if (addTrigger > 0) {
+      setIsAddModalOpen(true);
+    }
+  }, [addTrigger]);
+
+  useEffect(() => {
+    const handleOpenAddModal = () => setIsAddModalOpen(true);
+    window.addEventListener("admin:add-inquiry", handleOpenAddModal);
+    return () => {
+      window.removeEventListener("admin:add-inquiry", handleOpenAddModal);
+    };
+  }, []);
 
   // New Inquiry form state
   const [newInquiryForm, setNewInquiryForm] = useState({
@@ -264,52 +292,7 @@ export function InquiriesManagement() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* 1. Header Banner */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Customer & B2B Inquiries
-            </h1>
-            <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-bold text-blue-600 dark:text-blue-400">
-              {stats.newCount} New Leads
-            </span>
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Manage inbound website leads, dealership & distributorship applications, commercial bulk tenders, and crop support messages.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            onClick={loadData}
-            variant="outline"
-            size="sm"
-            className="rounded-2xl gap-1.5 text-xs font-semibold"
-          >
-            <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
-          </Button>
-
-          <Button
-            onClick={handleExportCSV}
-            variant="outline"
-            size="sm"
-            className="rounded-2xl gap-1.5 text-xs font-semibold"
-          >
-            <Download className="size-3.5" /> Export CSV
-          </Button>
-
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            size="sm"
-            className="rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold gap-1.5 shadow-md shadow-emerald-900/20 text-xs"
-          >
-            <Plus className="size-4" /> Log Manual Lead
-          </Button>
-        </div>
-      </div>
-
-      {/* 2. Key Metrics Cards */}
+      {/* Key Metrics Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 shadow-soft">
           <div className="flex items-center justify-between">
@@ -361,77 +344,6 @@ export function InquiriesManagement() {
             {stats.resolutionRate}%
           </p>
           <span className="mt-1 block text-[11px] text-muted-foreground">{stats.resolvedCount} completed</span>
-        </div>
-      </div>
-
-      {/* 3. Filter Controls & Search */}
-      <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 shadow-soft space-y-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          {/* Category Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {[
-              { id: "all", label: "All Leads", count: inquiries.length },
-              { id: "dealers", label: "Dealerships", count: stats.dealershipCount },
-              { id: "bulk", label: "Bulk Commercial", count: stats.commercialCount },
-              { id: "newsletter", label: "Newsletter Subscribers", count: stats.newsletterCount },
-              { id: "advisory", label: "Crop Advisory", count: inquiries.filter((i) => (i.service || "").toLowerCase().includes("crop") || (i.service || "").toLowerCase().includes("solution")).length },
-              { id: "contact", label: "Contact Form", count: inquiries.filter((i) => (i.service || "").toLowerCase().includes("contact") || (i.service || "").toLowerCase().includes("general")).length }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTypeFilter(tab.id)}
-                className={`flex items-center gap-1.5 rounded-2xl px-3.5 py-1.5 text-xs font-semibold transition ${
-                  activeTypeFilter === tab.id
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                  activeTypeFilter === tab.id ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Status Dropdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Status:</span>
-            <select
-              value={activeStatusFilter}
-              onChange={(e) => setActiveStatusFilter(e.target.value)}
-              className="h-9 rounded-2xl border border-input bg-background px-3 text-xs font-semibold text-foreground outline-none focus:border-brand-leaf"
-            >
-              <option value="all">All Statuses</option>
-              <option value="New">New</option>
-              <option value="Contacted">Contacted</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Resolved">Resolved</option>
-              <option value="Closed">Closed</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search leads by customer name, phone (+91), email, company, crop type, or keywords..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 w-full rounded-2xl border border-input bg-background/80 pl-10 pr-4 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-brand-leaf focus:ring-1 focus:ring-brand-leaf/30"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
-            >
-              Clear
-            </button>
-          )}
         </div>
       </div>
 
