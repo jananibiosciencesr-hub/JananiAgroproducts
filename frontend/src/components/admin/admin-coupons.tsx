@@ -525,48 +525,24 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
         </div>
       )}
 
-      {/* Top Header & Master Action Ribbon */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-2xl border border-border/80 shadow-sm relative overflow-hidden">
-        <div className="absolute -right-12 -top-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
-            <Ticket className="w-3.5 h-3.5 text-primary" />
-            <span>Growth & Loyalty Engine</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-1">
-            Coupons & Promotions Management
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Architect custom discount vouchers, first-order welcome treats, automated free shipping thresholds & high-volume bulk campaigns.
-          </p>
-        </div>
+      {/* Master Action Utilities */}
+      <div className="flex items-center justify-end flex-wrap gap-2.5">
+        <button
+          onClick={exportCouponsCsv}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/60 transition-colors shadow-sm cursor-pointer"
+          title="Download CSV database of all vouchers"
+        >
+          <Download className="w-3.5 h-3.5 text-muted-foreground" />
+          <span>Export CSV</span>
+        </button>
 
-        <div className="flex items-center flex-wrap gap-2.5">
-          <button
-            onClick={exportCouponsCsv}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium bg-muted/70 hover:bg-muted text-foreground border border-border/60 transition-colors shadow-sm"
-            title="Download CSV database of all vouchers"
-          >
-            <Download className="w-4 h-4 text-muted-foreground" />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("generator")}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-800 dark:text-amber-300 border border-amber-300/40 dark:border-amber-700/50 transition-all shadow-sm"
-          >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>Bulk Generator</span>
-          </button>
-
-          <button
-            onClick={handleOpenCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-md shadow-emerald-700/20 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Coupon</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setActiveTab("generator")}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-800 dark:text-amber-300 border border-amber-300/40 dark:border-amber-700/50 transition-all shadow-sm cursor-pointer"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <span>Bulk Generator</span>
+        </button>
       </div>
 
       {/* 6 High-Impact KPI Stats Ribbon */}

@@ -435,84 +435,46 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Master Actions */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">
-            <Package className="size-3.5" /> Product Catalog & Inventory
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-            Products & Variants Manager ({products.length})
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Manage SKU listings, variant pack sizes, warehouse inventory vs reserved stock, pricing, and SEO meta tags.
-          </p>
-        </div>
+      {/* Master Action Utilities */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {/* Trash Bin Toggle */}
+        <button
+          onClick={() => {
+            setStatusFilter(statusFilter === "active" ? "trash" : "active");
+            setCurrentPage(1);
+          }}
+          className={`flex items-center gap-1.5 rounded-2xl border px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm ${
+            statusFilter === "trash"
+              ? "border-rose-500 bg-rose-500/15 text-rose-700 dark:text-rose-400"
+              : "border-border bg-card text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Trash2 className="size-3.5" />
+          {statusFilter === "trash" ? "Back to Active" : "Trash Bin"}
+        </button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Trash Bin Toggle */}
-          <button
-            onClick={() => {
-              setStatusFilter(statusFilter === "active" ? "trash" : "active");
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-xs font-bold transition-all shadow-sm ${
-              statusFilter === "trash"
-                ? "border-rose-500 bg-rose-500/15 text-rose-700 dark:text-rose-400"
-                : "border-border bg-card text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Trash2 className="size-4" />
-            {statusFilter === "trash" ? "Back to Active" : "Trash Bin"}
-          </button>
+        <Button
+          onClick={() => setIsImportModalOpen(true)}
+          variant="outline"
+          size="sm"
+          className="rounded-2xl text-xs font-bold gap-1.5 h-8"
+        >
+          <Upload className="size-3.5" /> Import CSV
+        </Button>
 
-          <Button
-            onClick={() => setIsImportModalOpen(true)}
-            variant="outline"
-            size="sm"
-            className="rounded-2xl text-xs font-bold gap-1.5"
-          >
-            <Upload className="size-3.5" /> Import CSV
-          </Button>
-
-          <Button
-            onClick={exportCSV}
-            variant="outline"
-            size="sm"
-            className="rounded-2xl text-xs font-bold gap-1.5"
-          >
-            <Download className="size-3.5" /> Export CSV
-          </Button>
-
-          <Button
-            onClick={() => {
-              setEditingProduct(null);
-              setIsFormModalOpen(true);
-            }}
-            size="sm"
-            className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-md shadow-emerald-700/20"
-          >
-            <Plus className="size-4" /> Add Product
-          </Button>
-        </div>
+        <Button
+          onClick={exportCSV}
+          variant="outline"
+          size="sm"
+          className="rounded-2xl text-xs font-bold gap-1.5 h-8"
+        >
+          <Download className="size-3.5" /> Export CSV
+        </Button>
       </div>
 
       {/* Multi-Filter Toolbar */}
       <div className="rounded-3xl border border-border bg-card p-4 shadow-soft space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {/* Search Box */}
-          <div className="relative lg:col-span-2">
-            <Search className="absolute left-3.5 top-2.5 size-4 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Search by product name, SKU, brand, tags..."
-              className="h-10 w-full rounded-2xl border border-border bg-background pl-10 pr-4 text-xs outline-none focus:border-emerald-600 shadow-sm font-medium"
-            />
-          </div>
+        <div className="grid gap-3 sm:grid-cols-3">
 
           {/* Category Filter */}
           <select

@@ -688,44 +688,23 @@ export function SettingsManagement({ defaultTab = "store_branding" }: SettingsMa
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Top Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gradient-to-r from-emerald-950/40 via-background to-emerald-950/20 border border-emerald-500/20 rounded-2xl p-6 backdrop-blur-sm">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
-              <Sliders className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                Enterprise Settings & Governance
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Production v2.4
-                </span>
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Centralized command center for store identity, payment rails, Shiprocket logistics, tax compliance, staff ACLs, and disaster recovery.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadMasterData}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-muted/60 hover:bg-muted text-foreground border border-border/80 transition-all active:scale-95"
-            title="Reload latest configuration from server"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Refresh Data
-          </button>
-          <button
-            onClick={() => setIsBackupModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/50 transition-all active:scale-95"
-          >
-            <Database className="w-3.5 h-3.5" />
-            Create Backup Snapshot
-          </button>
-        </div>
+      {/* Settings Master Actions */}
+      <div className="flex items-center justify-end gap-2.5">
+        <button
+          onClick={loadMasterData}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-card hover:bg-muted text-foreground border border-border transition-all cursor-pointer"
+          title="Reload latest configuration from server"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Refresh Data
+        </button>
+        <button
+          onClick={() => setIsBackupModalOpen(true)}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer"
+        >
+          <Database className="w-3.5 h-3.5" />
+          Create Backup Snapshot
+        </button>
       </div>
 
       {/* Main 10-Tab Navigation Matrix */}

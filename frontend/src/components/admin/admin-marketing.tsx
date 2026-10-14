@@ -225,41 +225,25 @@ export function MarketingManagement() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Top Hero Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-gradient-to-r from-emerald-950 via-zinc-900 to-emerald-900 p-6 rounded-2xl text-white shadow-xl border border-emerald-800/40">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
-              <Megaphone className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Marketing & Omnichannel Studio</h1>
-              <p className="text-sm text-emerald-300/80 mt-0.5">
-                Klaviyo + Brevo + OneSignal standard • Launch targeted Email, SMS, Web Push, and Storefront Announcement Banners.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setIsTestModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl font-medium text-sm transition-all shadow-sm"
-          >
-            <Radio className="w-4 h-4" />
-            Test Broadcast QA
-          </button>
-          <button
-            onClick={() => {
-              setEditingCampaign(null);
-              setIsBuilderOpen(true);
-            }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 rounded-xl font-semibold text-sm transition-all shadow-lg hover:shadow-emerald-500/25"
-          >
-            <Plus className="w-4 h-4" />
-            Create Campaign
-          </button>
-        </div>
+      {/* Action Utilities */}
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <button
+          onClick={() => setIsTestModalOpen(true)}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-card hover:bg-muted text-foreground border border-border rounded-xl font-medium text-xs transition-all shadow-sm cursor-pointer"
+        >
+          <Radio className="w-3.5 h-3.5 text-emerald-500" />
+          Test Broadcast QA
+        </button>
+        <button
+          onClick={() => {
+            setEditingCampaign(null);
+            setIsBuilderOpen(true);
+          }}
+          className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition-all shadow-sm cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Create Campaign
+        </button>
       </div>
 
       {/* 2. 6 KPI Ribbon Cards */}

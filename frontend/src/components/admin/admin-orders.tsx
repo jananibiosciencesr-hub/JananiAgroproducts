@@ -452,42 +452,6 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
-      {/* 1. Header & Summary Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-3 border-b border-border">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-foreground">
-              Orders Management
-            </h1>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-              Live Fulfillment
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Track customer orders, generate GST tax invoices, dispatch with Shiprocket logistics, and manage returns & refunds.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
-          <button
-            onClick={loadOrders}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors shadow-sm cursor-pointer"
-            title="Refresh order directory"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${loading ? "animate-spin text-primary" : ""}`} />
-            <span>Refresh</span>
-          </button>
-
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all truncate cursor-pointer"
-          >
-            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-            <span className="truncate">Export Orders ({selectedOrderIds.length > 0 ? selectedOrderIds.length : "All"})</span>
-          </button>
-        </div>
-      </div>
-
       {/* 2. Key Metrics Ribbon */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3.5">
         <div className="bg-card border border-border/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm hover:shadow transition-shadow">
@@ -675,6 +639,16 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
               <option value="amount_desc">Highest Value</option>
               <option value="amount_asc">Lowest Value</option>
             </select>
+
+            {/* Export CSV Button */}
+            <button
+              onClick={handleExportCSV}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all truncate cursor-pointer shrink-0"
+              title="Export Orders CSV"
+            >
+              <Download className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Export CSV</span>
+            </button>
           </div>
         </div>
 

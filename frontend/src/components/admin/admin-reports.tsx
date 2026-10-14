@@ -157,23 +157,8 @@ export function ReportsManagement() {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Header & Global Period Toolbar */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                Reports & Analytics Command Center
-              </h1>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                P&L statements, order fulfillment velocity, GSTR-1 tax compliance, and multi-dimensional growth analytics.
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Global Period & Export Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
 
         {/* Global Controls & Period Filters */}
         <div className="flex flex-wrap items-center gap-2.5">

@@ -292,51 +292,33 @@ export function ShippingManagement() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header & Quick Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-border">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Truck className="h-7 w-7 text-primary" />
-              <span>Shiprocket Shipping Management</span>
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              {config?.status === "Connected" ? "Shiprocket Live Connected" : "API Active"}
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Multi-carrier dispatch hub (Bluedart, Delhivery, Ekart, Shadowfax, Xpressbees), NDR exception desk, and live tracking.
-          </p>
-        </div>
+      {/* Quick Action Utilities */}
+      <div className="flex items-center justify-end gap-2 flex-wrap">
+        <button
+          onClick={handleTestConnection}
+          disabled={testingConnection}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+          title="Test Shiprocket API Connection"
+        >
+          <ShieldCheck className={`h-3.5 w-3.5 ${testingConnection ? "animate-spin text-primary" : "text-emerald-600"}`} />
+          <span>{testingConnection ? "Verifying..." : "Test Connection"}</span>
+        </button>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={handleTestConnection}
-            disabled={testingConnection}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg border border-input bg-card hover:bg-muted text-foreground transition-colors shadow-sm disabled:opacity-50"
-            title="Test Shiprocket API Connection"
-          >
-            <ShieldCheck className={`h-4 w-4 ${testingConnection ? "animate-spin text-primary" : "text-emerald-600"}`} />
-            <span>{testingConnection ? "Verifying..." : "Test Connection"}</span>
-          </button>
+        <button
+          onClick={() => setIsPickupModalOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all cursor-pointer"
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span>Schedule Pickup</span>
+        </button>
 
-          <button
-            onClick={() => setIsPickupModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all"
-          >
-            <Calendar className="h-4 w-4" />
-            <span>Schedule Pickup</span>
-          </button>
-
-          <button
-            onClick={handleGenerateManifest}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all"
-          >
-            <FileText className="h-4 w-4" />
-            <span>Handover Manifest</span>
-          </button>
-        </div>
+        <button
+          onClick={handleGenerateManifest}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all cursor-pointer"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          <span>Handover Manifest</span>
+        </button>
       </div>
 
       {/* 2. Key Metrics Stats Ribbon */}

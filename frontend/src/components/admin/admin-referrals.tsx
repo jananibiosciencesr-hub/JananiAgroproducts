@@ -435,39 +435,23 @@ export function ReferralsManagement() {
         </div>
       )}
 
-      {/* Top Header & Master Action Ribbon */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-2xl border border-border/80 shadow-sm relative overflow-hidden">
-        <div className="absolute -right-12 -top-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
-            <Share2 className="w-3.5 h-3.5 text-primary" />
-            <span>Advocacy & Customer Wallet Hub</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-1">
-            Refer & Earn and Wallet Management
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Supervise advocate reward approvals, referee welcome perks, fraud prevention escrow & storewide wallet balances.
-          </p>
-        </div>
+      {/* Action Utilities */}
+      <div className="flex items-center justify-end flex-wrap gap-2.5">
+        <button
+          onClick={() => setDebitModalOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/60 transition-colors shadow-sm cursor-pointer"
+        >
+          <Minus className="w-3.5 h-3.5 text-rose-500" />
+          <span>Debit Wallet</span>
+        </button>
 
-        <div className="flex items-center flex-wrap gap-2.5">
-          <button
-            onClick={() => setDebitModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/60 transition-colors shadow-sm"
-          >
-            <Minus className="w-3.5 h-3.5 text-rose-500" />
-            <span>Debit Wallet</span>
-          </button>
-
-          <button
-            onClick={() => setCreditModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-md shadow-emerald-700/20 transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Manual Wallet Credit</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setCreditModalOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-md shadow-emerald-700/20 transition-all cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Manual Wallet Credit</span>
+        </button>
       </div>
 
       {/* 6 High-Impact KPI Stats Ribbon */}

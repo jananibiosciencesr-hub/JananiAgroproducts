@@ -217,46 +217,29 @@ export function ReviewsManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner / Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
-              <Star className="size-5 fill-current" />
-            </span>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Customer Reviews & Ratings</h1>
-            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              Verified Buyer Trust
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Shopify Plus & Yotpo grade moderation desk, customer UGC photo galleries, official merchant replies, and sentiment analytics.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={fetchReviews}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-sm hover:bg-muted"
-          >
-            <RefreshCw className="size-3.5" />
-            Refresh
-          </button>
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-sm hover:bg-muted"
-          >
-            <Download className="size-3.5" />
-            Export CSV
-          </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-leaf px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-leaf/90"
-          >
-            <Plus className="size-4" />
-            Add Review
-          </button>
-        </div>
+      {/* Action Utilities */}
+      <div className="flex items-center justify-end gap-2.5">
+        <button
+          onClick={fetchReviews}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm hover:bg-muted cursor-pointer"
+        >
+          <RefreshCw className="size-3.5" />
+          Refresh
+        </button>
+        <button
+          onClick={handleExportCSV}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm hover:bg-muted cursor-pointer"
+        >
+          <Download className="size-3.5" />
+          Export CSV
+        </button>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-brand-leaf px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-leaf/90 cursor-pointer"
+        >
+          <Plus className="size-3.5" />
+          Add Review
+        </button>
       </div>
 
       {/* 6 KPI Ribbon Cards */}

@@ -415,38 +415,22 @@ export function CmsManagement() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header & Quick Actions */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-gradient-to-r from-emerald-950 via-zinc-900 to-emerald-900 p-6 rounded-2xl text-white shadow-xl border border-emerald-800/40">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
-              <Layout className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Homepage CMS & Storefront Customizer</h1>
-              <p className="text-sm text-emerald-300/80 mt-0.5">
-                Shopify Online Store 2.0 architecture • Reorder 12 dynamic sections, manage dual responsive banners, and curate organic showcases.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setIsPreviewModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl font-medium text-sm transition-all shadow-sm hover:shadow"
-          >
-            <Eye className="w-4 h-4" />
-            Live Device Preview
-          </button>
-          <button
-            onClick={handleSaveLayout}
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 rounded-xl font-semibold text-sm transition-all shadow-lg hover:shadow-emerald-500/25"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            Publish Layout
-          </button>
-        </div>
+      {/* Action Utilities */}
+      <div className="flex items-center justify-end gap-2.5 flex-wrap">
+        <button
+          onClick={() => setIsPreviewModalOpen(true)}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-card hover:bg-muted text-foreground border border-border rounded-xl font-medium text-xs transition-all shadow-sm cursor-pointer"
+        >
+          <Eye className="w-3.5 h-3.5 text-emerald-600" />
+          Live Device Preview
+        </button>
+        <button
+          onClick={handleSaveLayout}
+          className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition-all shadow-sm cursor-pointer"
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Publish Layout
+        </button>
       </div>
 
       {/* 2. KPI Ribbon Cards */}

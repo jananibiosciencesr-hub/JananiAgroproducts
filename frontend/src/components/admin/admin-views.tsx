@@ -413,12 +413,6 @@ export function CustomersView({ customers }: { customers: any[] }) {
 export function InventoryView({ inventory, onOpenRestockModal }: { inventory: any[]; onOpenRestockModal: (item: any) => void }) {
   return (
     <div className="space-y-6 min-w-0 max-w-full">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Stock & Warehouse Inventory</h2>
-          <p className="text-xs text-muted-foreground">Warehouse threshold monitoring, batch alerts, restock actions</p>
-        </div>
-      </div>
 
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden min-w-0">
         <div className="overflow-x-auto w-full">
@@ -619,10 +613,6 @@ export function ReviewsView({ reviews, onUpdateReview }: { reviews: any[]; onUpd
 export function ReturnsView({ returns, onUpdateReturn }: { returns: any[]; onUpdateReturn: (id: string, status: string) => void }) {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Returns & Refund Requests</h2>
-        <p className="text-xs text-muted-foreground">Manage refund resolutions, replacement dispatches, and return reasons</p>
-      </div>
 
       <div className="space-y-3">
         {returns.map((ret) => (
@@ -859,12 +849,8 @@ export function SettingsView({ settings }: { settings: any }) {
 export function RolesView({ roles }: { roles: any[] }) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Admins & Staff Permissions</h2>
-          <p className="text-xs text-muted-foreground">Manage administrative roles, warehouse dispatch team and support desk rights</p>
-        </div>
-        <Button size="sm" className="rounded-xl bg-emerald-600 text-white font-bold text-xs gap-1.5">
+      <div className="flex items-center justify-end">
+        <Button size="sm" className="rounded-xl bg-emerald-600 text-white font-bold text-xs gap-1.5 cursor-pointer">
           <Plus className="size-4" /> Add Staff Member
         </Button>
       </div>

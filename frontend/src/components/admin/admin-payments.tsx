@@ -383,51 +383,28 @@ export function PaymentsManagement() {
         </div>
       )}
 
-      {/* Top Banner & Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-900 border border-emerald-800/40 p-8 shadow-2xl">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-300 mb-3 tracking-wide uppercase">
-              <Zap className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              Multi-Gateway Merchant Terminal (Shopify & Razorpay Standard)
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl flex items-center gap-3">
-              Payment Management & Ledger
-              <span className="text-xs px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 font-mono font-medium border border-emerald-500/30">
-                INR (₹) / Multi-Currency
-              </span>
-            </h1>
-            <p className="mt-2 text-sm text-emerald-100/70 max-w-2xl leading-relaxed">
-              Unified payment ledger, instant gateway routing (Razorpay, Stripe, Direct UPI, COD), automated partial & full refund processing, settlement reconciliation & abandoned checkout recovery.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={handleExportCsv}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 text-sm font-medium border border-slate-700/60 shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            >
-              <Download className="w-4 h-4 text-emerald-400" />
-              Export Ledger CSV
-            </button>
-            <button
-              onClick={() => {
-                loadTransactions();
-                loadGatewayConfigData();
-                loadSettlements();
-                loadFailedRetries();
-                showToast("Payment ledger and gateway statuses refreshed", "info");
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-900/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Sync Ledger
-            </button>
-          </div>
-        </div>
+      {/* Action Utilities */}
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <button
+          onClick={handleExportCsv}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card hover:bg-muted text-foreground text-xs font-semibold border border-border shadow-sm transition-all cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5 text-emerald-500" />
+          Export Ledger CSV
+        </button>
+        <button
+          onClick={() => {
+            loadTransactions();
+            loadGatewayConfigData();
+            loadSettlements();
+            loadFailedRetries();
+            showToast("Payment ledger and gateway statuses refreshed", "info");
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Sync Ledger
+        </button>
       </div>
 
       {/* 6 High-Impact KPI Metrics Ribbon */}
