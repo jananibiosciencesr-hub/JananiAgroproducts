@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   TicketPercent,
   Share2,
-  Download,
   Filter,
   RefreshCw,
   Eye,
@@ -22,7 +21,6 @@ import {
   ShieldCheck,
   Star,
   Layers,
-  Sparkles,
   BarChart3,
   MessageSquareText
 } from "lucide-react";
@@ -74,7 +72,6 @@ export function AdminOverview({
   onOpenRestockModal,
   onOpenInvoiceModal
 }: AdminOverviewProps) {
-  const [timeRange, setTimeRange] = useState("today");
   const [tableFilter, setTableFilter] = useState("all");
 
   const liveOrders = Array.isArray(orders) ? orders : [];
@@ -130,29 +127,6 @@ export function AdminOverview({
         status: (Number(p.stock) || Number(p.warehouseStock) || 0) <= 0 ? "Out of Stock" : "Low Stock"
       }));
 
-  const exportOrdersCSV = () => {
-    const headers = ["Order ID", "Customer Name", "Phone", "Total (INR)", "Payment Method", "Order Status", "Date"];
-    const rows = liveOrders.map(o => {
-      const cust = getOrderCustomer(o);
-      return [
-        o.id || o.number,
-        `"${cust.name}"`,
-        `"${cust.phone}"`,
-        o.total,
-        `"${o.paymentMethod || ''}"`,
-        `"${o.orderStatus || ''}"`,
-        `"${o.date || ''}"`
-      ];
-    });
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Janani_Agro_Orders_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const filteredOrders = liveOrders.filter(o => {
     if (tableFilter === "all") return true;
@@ -216,42 +190,6 @@ export function AdminOverview({
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-12 min-w-0 max-w-full overflow-x-hidden">
-      {/* Top Banner & Quick Controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl border border-border/80 bg-gradient-to-r from-emerald-900/90 via-emerald-950 to-background p-4 sm:p-6 lg:p-8 text-white shadow-luxe relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none flex items-center pr-8">
-          <Sparkles className="size-64 text-amber-300" />
-        </div>
-
-        <div className="relative z-10 min-w-0">
-          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-500/30 mb-2">
-            <span className="size-2 rounded-full bg-emerald-400 animate-ping"></span> Live Database Analytics
-          </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">E-Commerce Command Center</h1>
-          <p className="text-xs sm:text-sm text-emerald-200/80 mt-1 max-w-xl">
-            Real-time MySQL overview for Janani Agro Products. Track live revenues, fulfill Shiprocket shipments, and monitor organic inventory.
-          </p>
-        </div>
-
-        <div className="relative z-10 flex flex-wrap items-center gap-2.5 sm:gap-3">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="rounded-2xl border border-white/20 bg-black/40 px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold text-white outline-none focus:border-amber-400 backdrop-blur-md"
-          >
-            <option value="today" className="bg-card text-foreground">Today (Live)</option>
-            <option value="7d" className="bg-card text-foreground">Last 7 Days</option>
-            <option value="30d" className="bg-card text-foreground">Last 30 Days</option>
-            <option value="ytd" className="bg-card text-foreground">Year to Date (2026)</option>
-          </select>
-
-          <Button
-            onClick={exportOrdersCSV}
-            className="rounded-2xl bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold text-xs gap-2 shadow-lg shadow-amber-500/20"
-          >
-            <Download className="size-3.5" /> Export CSV
-          </Button>
-        </div>
-      </div>
 
       {/* 12 Luxury KPI Cards Grid */}
       <section className="min-w-0">
