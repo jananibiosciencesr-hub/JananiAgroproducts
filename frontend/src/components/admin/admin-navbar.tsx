@@ -14,8 +14,7 @@ import {
   Mail,
   UserCheck,
   CheckCircle2,
-  ExternalLink,
-  Database
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
@@ -216,30 +215,6 @@ export function AdminNavbar({
 
       {/* Right Controls Area */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-        {/* Database Auto-Sync & Status (Visible on sm+ screens) */}
-        <button
-          onClick={async () => {
-            const toastId = toast.loading("Checking & auto-migrating MySQL tables and columns...");
-            try {
-              const res = await fetch("/db_init.php");
-              if (res.ok) {
-                const data = await res.json();
-                toast.success(data.message || "MySQL tables & columns synchronized!", { id: toastId });
-                // Also refresh live inquiries
-                getAdminInquiries().then(inqs => setLiveInquiries(inqs)).catch(() => {});
-              } else {
-                toast.error("Database sync returned status " + res.status, { id: toastId });
-              }
-            } catch (e: any) {
-              toast.error("Database sync failed: " + e.message, { id: toastId });
-            }
-          }}
-          className="hidden md:flex items-center gap-1.5 rounded-xl sm:rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-sm cursor-pointer"
-          title="Auto-create and sync MySQL database schema and columns"
-        >
-          <Database className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>Sync DB</span>
-        </button>
 
         {/* Dark/Light Toggle */}
         <button

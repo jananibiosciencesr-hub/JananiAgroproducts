@@ -4,7 +4,6 @@ import {
   Plus,
   Search,
   Filter,
-  Download,
   Upload,
   Trash2,
   Edit,
@@ -268,66 +267,18 @@ export function CategoriesManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header & Overview Stats */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">
-            <FolderTree className="size-3.5" /> 3-Tier Taxonomy System
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-            Categories & Taxonomy Manager
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Manage Root Categories, Sub Categories, Child Categories, SEO Meta Tags, and Storefront Hero Banners.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Trash Bin Toggle */}
-          <button
-            onClick={() => {
-              setStatusFilter(statusFilter === "active" ? "trash" : "active");
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-xs font-bold transition-all shadow-sm ${
-              statusFilter === "trash"
-                ? "border-rose-500 bg-rose-500/15 text-rose-700 dark:text-rose-400"
-                : "border-border bg-card text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Trash2 className="size-4" />
-            {statusFilter === "trash" ? "Back to Active" : "Trash Bin"}
-          </button>
-
-          <Button
-            onClick={() => setIsImportModalOpen(true)}
-            variant="outline"
-            size="sm"
-            className="rounded-2xl text-xs font-bold gap-1.5"
-          >
-            <Upload className="size-3.5" /> Import CSV
-          </Button>
-
-          <Button
-            onClick={exportCSV}
-            variant="outline"
-            size="sm"
-            className="rounded-2xl text-xs font-bold gap-1.5"
-          >
-            <Download className="size-3.5" /> Export CSV
-          </Button>
-
-          <Button
-            onClick={() => {
-              setEditingCategory(null);
-              setIsFormModalOpen(true);
-            }}
-            size="sm"
-            className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-md shadow-emerald-700/20"
-          >
-            <Plus className="size-4" /> Add Category
-          </Button>
-        </div>
+      {/* Top Action Bar */}
+      <div className="flex items-center justify-end">
+        <Button
+          onClick={() => {
+            setEditingCategory(null);
+            setIsFormModalOpen(true);
+          }}
+          size="sm"
+          className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-md shadow-emerald-700/20"
+        >
+          <Plus className="size-4" /> Add Category
+        </Button>
       </div>
 
       {/* Filter Toolbar */}
