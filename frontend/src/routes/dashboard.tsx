@@ -316,17 +316,32 @@ function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button asChild variant="gold" size="sm" className="rounded-full px-5 font-bold shadow-sm">
-            <Link to="/products">Shop Harvest</Link>
-          </Button>
+          <Link
+            to="/products"
+            className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-black tracking-wide text-[#05321A] bg-gradient-to-b from-[#FFE072] via-[#F5B723] to-[#D4910B] border border-[#FFF4B8]/90 shadow-[0_4px_18px_rgba(217,154,18,0.48),inset_0_1.5px_1px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(150,90,0,0.25)] hover:shadow-[0_8px_26px_rgba(245,183,35,0.65),inset_0_1.5px_1.5px_rgba(255,255,255,1)] hover:from-[#FFF099] hover:via-[#F9C33F] hover:to-[#DE9E16] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden"
+          >
+            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+            <ShoppingBag className="size-4 stroke-[2.4] text-[#05321A] group-hover:scale-110 transition-transform duration-200" />
+            <span className="relative z-10 font-black">Shop Harvest</span>
+          </Link>
+
           {user ? (
-            <Button onClick={handleLogout} variant="glass" size="sm" className="gap-1.5 rounded-full">
-              <LogOut className="size-4" /> Sign Out
-            </Button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-white/35 hover:border-rose-300/70 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] hover:shadow-[0_6px_24px_rgba(244,63,94,0.4),inset_0_1px_1.5px_rgba(255,255,255,0.6)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
+            >
+              <LogOut className="size-3.5 stroke-[2.2] text-white/90 group-hover:text-rose-200 group-hover:-translate-x-1 transition-all duration-200" />
+              <span className="group-hover:text-rose-100 transition-colors">Sign Out</span>
+            </button>
           ) : (
-            <Button asChild variant="glass" size="sm" className="rounded-full">
-              <Link to="/login">Sign In / Register</Link>
-            </Button>
+            <Link
+              to="/login"
+              className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-white/25 active:bg-white/30 border border-white/35 hover:border-white/60 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
+            >
+              <User className="size-3.5 text-white/90 group-hover:scale-110 transition-transform duration-200" />
+              <span>Sign In / Register</span>
+            </Link>
           )}
         </div>
       </div>
