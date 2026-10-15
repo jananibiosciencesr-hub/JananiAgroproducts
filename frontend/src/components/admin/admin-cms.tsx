@@ -32,7 +32,8 @@ import {
   AlertCircle,
   HelpCircle,
   Settings,
-  RefreshCw
+  RefreshCw,
+  Upload
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -1414,26 +1415,119 @@ function HeroBannerModal({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Desktop Banner Image URL (1920x800) *</label>
-              <input
-                type="url"
-                required
-                value={formData.desktopImageUrl || ""}
-                onChange={e => setFormData({ ...formData, desktopImageUrl: e.target.value })}
-                className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                placeholder="https://..."
-              />
+              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Desktop Banner Image URL (1920×800) *</label>
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  type="text"
+                  required
+                  value={formData.desktopImageUrl || ""}
+                  onChange={e => setFormData({ ...formData, desktopImageUrl: e.target.value })}
+                  className="flex-1 px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                  placeholder="https://... or upload local image"
+                />
+                <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-xs">
+                  <Upload className="size-3.5 text-emerald-600" />
+                  <span>Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = ev => {
+                        const dataUrl = ev.target?.result as string;
+                        if (dataUrl) {
+                          setFormData(prev => ({ ...prev, desktopImageUrl: dataUrl }));
+                          toast.success(`Uploaded ${file.name} for desktop banner!`);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              {formData.desktopImageUrl && (
+                <div className="mt-2 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 aspect-[1920/800] max-h-24 flex items-center justify-center group">
+                  <img
+                    src={formData.desktopImageUrl}
+                    alt="Desktop Banner Preview"
+                    className="w-full h-full object-cover"
+                    onError={e => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between px-3 text-[10px] text-white font-medium">
+                    <span>Desktop Preview (1920×800)</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, desktopImageUrl: "" }))}
+                      className="text-rose-300 hover:text-rose-100 underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
-              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Mobile Banner Image URL (750x1000)</label>
-              <input
-                type="url"
-                value={formData.mobileImageUrl || ""}
-                onChange={e => setFormData({ ...formData, mobileImageUrl: e.target.value })}
-                className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                placeholder="https://..."
-              />
+              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Mobile Banner Image URL (750×1000)</label>
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={formData.mobileImageUrl || ""}
+                  onChange={e => setFormData({ ...formData, mobileImageUrl: e.target.value })}
+                  className="flex-1 px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                  placeholder="https://... or upload local image"
+                />
+                <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-xs">
+                  <Upload className="size-3.5 text-emerald-600" />
+                  <span>Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = ev => {
+                        const dataUrl = ev.target?.result as string;
+                        if (dataUrl) {
+                          setFormData(prev => ({ ...prev, mobileImageUrl: dataUrl }));
+                          toast.success(`Uploaded ${file.name} for mobile banner!`);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              {formData.mobileImageUrl && (
+                <div className="mt-2 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 aspect-[750/1000] max-h-24 w-fit flex items-center justify-center group">
+                  <img
+                    src={formData.mobileImageUrl}
+                    alt="Mobile Banner Preview"
+                    className="h-24 w-auto object-cover rounded-lg"
+                    onError={e => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] text-white font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, mobileImageUrl: "" }))}
+                      className="text-rose-300 hover:text-rose-100 underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -1766,14 +1860,60 @@ function CategoryBannerModal({
 
           <div>
             <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Desktop Image URL *</label>
-            <input
-              type="url"
-              required
-              value={formData.desktopImageUrl || ""}
-              onChange={e => setFormData({ ...formData, desktopImageUrl: e.target.value })}
-              className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-              placeholder="https://..."
-            />
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="text"
+                required
+                value={formData.desktopImageUrl || ""}
+                onChange={e => setFormData({ ...formData, desktopImageUrl: e.target.value })}
+                className="flex-1 px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                placeholder="https://... or upload local image"
+              />
+              <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-xs">
+                <Upload className="size-3.5 text-emerald-600" />
+                <span>Upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                      const dataUrl = ev.target?.result as string;
+                      if (dataUrl) {
+                        setFormData(prev => ({ ...prev, desktopImageUrl: dataUrl }));
+                        toast.success(`Uploaded ${file.name} for category banner!`);
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {formData.desktopImageUrl && (
+              <div className="mt-2 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 h-20 w-fit flex items-center justify-center group">
+                <img
+                  src={formData.desktopImageUrl}
+                  alt="Category Banner Preview"
+                  className="h-20 w-auto object-cover rounded-lg"
+                  onError={e => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] text-white font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, desktopImageUrl: "" }))}
+                    className="text-rose-300 hover:text-rose-100 underline cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -1923,6 +2063,63 @@ function FlashSaleModal({
                 className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Campaign Banner Image URL</label>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="text"
+                value={formData.bannerImageUrl || ""}
+                onChange={e => setFormData({ ...formData, bannerImageUrl: e.target.value })}
+                className="flex-1 px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none"
+                placeholder="https://... or upload local image"
+              />
+              <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-xs">
+                <Upload className="size-3.5 text-rose-600" />
+                <span>Upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                      const dataUrl = ev.target?.result as string;
+                      if (dataUrl) {
+                        setFormData(prev => ({ ...prev, bannerImageUrl: dataUrl }));
+                        toast.success(`Uploaded ${file.name} for flash sale banner!`);
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {formData.bannerImageUrl && (
+              <div className="mt-2 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 h-20 w-fit flex items-center justify-center group">
+                <img
+                  src={formData.bannerImageUrl}
+                  alt="Flash Sale Banner Preview"
+                  className="h-20 w-auto object-cover rounded-lg"
+                  onError={e => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] text-white font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, bannerImageUrl: "" }))}
+                    className="text-rose-300 hover:text-rose-100 underline cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
