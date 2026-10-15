@@ -150,17 +150,17 @@ export function ProductsView({
       </div>
 
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] relative">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
-                <th className="px-6 py-4">Product</th>
-                <th className="px-6 py-4">SKU</th>
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Price (₹)</th>
-                <th className="px-6 py-4">Stock</th>
-                <th className="px-6 py-4">Badge</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Product</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">SKU</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Category</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Price (₹)</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Stock</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Badge</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -266,17 +266,17 @@ export function OrdersView({
       </div>
 
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] relative">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
-                <th className="px-6 py-4">Order ID & Date</th>
-                <th className="px-6 py-4">Customer & Address</th>
-                <th className="px-6 py-4">Items</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Payment</th>
-                <th className="px-6 py-4">Shipping Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Order ID & Date</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Customer & Address</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Items</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Amount</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Payment</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Shipping Status</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -415,17 +415,17 @@ export function InventoryView({ inventory, onOpenRestockModal }: { inventory: an
     <div className="space-y-6 min-w-0 max-w-full">
 
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden min-w-0">
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left text-xs min-w-[600px]">
-            <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] w-full relative">
+          <table className="w-full text-left text-xs min-w-[600px] border-collapse">
+            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
-                <th className="px-6 py-4">Product Name</th>
-                <th className="px-6 py-4">SKU</th>
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Current Stock</th>
-                <th className="px-6 py-4">Min Threshold</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Action</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Product Name</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">SKU</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Category</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Current Stock</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Min Threshold</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Status</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

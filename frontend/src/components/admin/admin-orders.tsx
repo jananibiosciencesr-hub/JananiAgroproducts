@@ -880,11 +880,11 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
 
       {/* 5. Orders Desktop Table (Visible on screens >= 1024px) */}
       <div className="hidden lg:block bg-card border border-border rounded-2xl shadow-sm overflow-hidden max-w-full">
-        <div className="overflow-x-auto min-w-0 w-full">
+        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] min-w-0 w-full relative">
           <table className="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <th className="py-3.5 px-4 w-10">
+            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md shadow-xs">
+              <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-10">
                   <input
                     type="checkbox"
                     checked={orders.length > 0 && selectedOrderIds.length === orders.length}
@@ -892,13 +892,13 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                     className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer"
                   />
                 </th>
-                <th className="py-3.5 px-4">Order Details</th>
-                <th className="py-3.5 px-4">Customer</th>
-                <th className="py-3.5 px-4">Items</th>
-                <th className="py-3.5 px-4">Financials</th>
-                <th className="py-3.5 px-4">Logistics & Hub</th>
-                <th className="py-3.5 px-4 text-center">Fulfillment Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Order Details</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Customer</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Items</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Financials</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Logistics & Hub</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-center">Fulfillment Status</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

@@ -554,11 +554,11 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
       {/* Products Data Table */}
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] relative">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
-                <th className="px-4 py-4 text-center w-10">
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4 text-center w-10">
                   <button onClick={handleSelectAll} className="text-muted-foreground hover:text-foreground">
                     {selectedIds.length > 0 && selectedIds.length === paginatedProducts.length ? (
                       <CheckSquare className="size-4 text-emerald-600" />
@@ -567,15 +567,15 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                     )}
                   </button>
                 </th>
-                <th className="px-6 py-4">Product Details</th>
-                <th className="px-4 py-4">Category & Brand</th>
-                <th className="px-4 py-4">Pricing</th>
-                <th className="px-4 py-4">Warehouse & Available</th>
-                <th className="px-3 py-4 text-center">Featured</th>
-                <th className="px-3 py-4 text-center">Trending</th>
-                <th className="px-3 py-4 text-center">New</th>
-                <th className="px-4 py-4 text-center">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Product Details</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Category & Brand</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Pricing</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Warehouse & Available</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Featured</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Trending</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">New</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4 text-center">Status</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

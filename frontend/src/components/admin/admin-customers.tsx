@@ -392,17 +392,17 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
 
       {/* 4. Customers Table */}
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] relative">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
-                <th className="py-3.5 pl-6 pr-3">Patron Details</th>
-                <th className="px-3 py-3.5">Location</th>
-                <th className="px-3 py-3.5">Tier & Rewards</th>
-                <th className="px-3 py-3.5">Phone Number</th>
-                <th className="px-3 py-3.5">Lifetime Spend</th>
-                <th className="px-3 py-3.5">Account Status</th>
-                <th className="py-3.5 pl-3 pr-6 text-right">Actions</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 pl-6 pr-3">Patron Details</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Location</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Tier & Rewards</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Phone Number</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Lifetime Spend</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Account Status</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 pl-3 pr-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
