@@ -64,6 +64,10 @@ export interface ProductVariant {
   price: number;
   originalPrice: number;
   stock: number;
+  label?: string;
+  unit?: string;
+  oldPrice?: number;
+  inStock?: boolean;
 }
 
 export const JANANI_DEFAULT_CATEGORIES = [
@@ -628,7 +632,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                               <span className="font-mono text-emerald-600 font-bold">{p.sku}</span>
                               <span>• {p.unit || "500g"}</span>
-                              {p.variants && p.variants.length > 1 && (
+                              {Array.isArray(p.variants) && p.variants.length > 1 && (
                                 <span className="rounded bg-emerald-500/10 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700">
                                   {p.variants.length} Variants
                                 </span>
@@ -958,7 +962,9 @@ function ProductPreviewDrawer({
   onEdit: () => void;
 }) {
   const [selectedImage, setSelectedImage] = useState(product.image);
-  const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null);
+  const [selectedVariant, setSelectedVariant] = useState<any>(
+    Array.isArray(product.variants) && product.variants.length > 0 ? product.variants[0] : null
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in">
@@ -1046,11 +1052,11 @@ function ProductPreviewDrawer({
           </div>
 
           {/* Variants Selector */}
-          {product.variants && product.variants.length > 0 && (
+          {Array.isArray(product.variants) && product.variants.length > 0 && (
             <div>
               <span className="text-xs font-bold text-foreground block mb-1.5">Select Pack Variant:</span>
               <div className="grid grid-cols-2 gap-2">
-                {product.variants.map((v) => (
+                {product.variants.map((v: any) => (
                   <button
                     key={v.id}
                     onClick={() => setSelectedVariant(v)}
@@ -1060,7 +1066,7 @@ function ProductPreviewDrawer({
                         : "border-border bg-card hover:bg-muted/40"
                     }`}
                   >
-                    <span className="block font-bold">{v.name}</span>
+                    <span className="block font-bold">{v.name || v.label || v.unit}</span>
                     <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">₹{v.price}</span>
                   </button>
                 ))}
@@ -1256,6 +1262,58 @@ function ProductFormModal({
         existingFaqs = FAQ_TEMPLATES;
       }
 
+      // Resolve variants safely from array or JSON string
+      let resolvedVariants: ProductVariant[] = [];
+      if (Array.isArray(initialData.variants) && initialData.variants.length > 0) {
+        resolvedVariants = initialData.variants.map((v: any, idx: number) => ({
+          id: String(v.id || `VAR-${idx + 1}`),
+          name: v.name || v.label || v.unit || `Variant ${idx + 1}`,
+          label: v.label || v.name || v.unit || `Variant ${idx + 1}`,
+          unit: v.unit || v.name || v.label || initialData.unit || "1 L",
+          sku: v.sku || `${initialData.sku || "JAP"}-${idx + 1}`,
+          price: Number(v.price) || Number(initialData.price) || 0,
+          originalPrice: Number(v.originalPrice ?? v.oldPrice) || Math.round((Number(v.price) || Number(initialData.price) || 0) * 1.2),
+          oldPrice: Number(v.oldPrice ?? v.originalPrice) || Math.round((Number(v.price) || Number(initialData.price) || 0) * 1.2),
+          stock: v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50),
+          inStock: (v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50)) > 0
+        }));
+      } else if (typeof (initialData as any).variants === "string" && (initialData as any).variants.trim()) {
+        try {
+          const parsed = JSON.parse((initialData as any).variants);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            resolvedVariants = parsed.map((v: any, idx: number) => ({
+              id: String(v.id || `VAR-${idx + 1}`),
+              name: v.name || v.label || v.unit || `Variant ${idx + 1}`,
+              label: v.label || v.name || v.unit || `Variant ${idx + 1}`,
+              unit: v.unit || v.name || v.label || initialData.unit || "1 L",
+              sku: v.sku || `${initialData.sku || "JAP"}-${idx + 1}`,
+              price: Number(v.price) || Number(initialData.price) || 0,
+              originalPrice: Number(v.originalPrice ?? v.oldPrice) || Math.round((Number(v.price) || Number(initialData.price) || 0) * 1.2),
+              oldPrice: Number(v.oldPrice ?? v.originalPrice) || Math.round((Number(v.price) || Number(initialData.price) || 0) * 1.2),
+              stock: v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50),
+              inStock: (v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50)) > 0
+            }));
+          }
+        } catch {}
+      }
+
+      if (resolvedVariants.length === 0) {
+        resolvedVariants = [
+          {
+            id: `VAR-1`,
+            name: initialData.unit || "Standard Pack",
+            label: initialData.unit || "Standard Pack",
+            unit: initialData.unit || "1 L",
+            sku: `${initialData.sku || "JAP"}-STD`,
+            price: Number(initialData.price) || 450,
+            originalPrice: Number(initialData.originalPrice) || Math.round((Number(initialData.price) || 450) * 1.2),
+            oldPrice: Number(initialData.originalPrice) || Math.round((Number(initialData.price) || 450) * 1.2),
+            stock: Number(initialData.stock || 50),
+            inStock: Number(initialData.stock || 50) > 0
+          }
+        ];
+      }
+
       setFormData({
         name: initialData.name || "",
         slug: initialData.slug || "",
@@ -1277,7 +1335,7 @@ function ProductFormModal({
         gallery: (initialData.gallery && initialData.gallery.length > 0)
           ? initialData.gallery
           : (initialData.image ? [initialData.image] : []),
-        variants: initialData.variants || [],
+        variants: resolvedVariants,
         organicCertifications: initialData.organicCertifications || ["NPOP Certified Organic"],
         subtitle: rawData.subtitle || "",
         benefits: Array.isArray(rawData.benefits) ? rawData.benefits.join("\n") : (rawData.benefits || ""),
@@ -1324,8 +1382,8 @@ function ProductFormModal({
         image: "",
         gallery: [],
         variants: [
-          { id: `VAR-1`, name: "500 ml Pack", sku: `JAP-500ML`, price: 250, originalPrice: 290, stock: 25 },
-          { id: `VAR-2`, name: "1 L Standard", sku: `JAP-1L`, price: 450, originalPrice: 520, stock: 25 }
+          { id: `VAR-1`, name: "500 ml Pack", label: "500 ml Pack", unit: "500 ml", sku: `JAP-500ML`, price: 250, originalPrice: 290, oldPrice: 290, stock: 25, inStock: true },
+          { id: `VAR-2`, name: "1 L Standard", label: "1 L Standard", unit: "1 L", sku: `JAP-1L`, price: 450, originalPrice: 520, oldPrice: 520, stock: 25, inStock: true }
         ],
         organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
         subtitle: "",
@@ -1476,17 +1534,24 @@ function ProductFormModal({
 
   // Add/Remove Variant
   const handleAddVariant = () => {
+    const curList = Array.isArray(formData.variants) ? formData.variants : [];
+    const count = curList.length + 1;
+    const basePrice = Number(formData.price) || 450;
     const newVar: ProductVariant = {
-      id: `VAR-${Date.now()}`,
-      name: "5 kg Value Pack",
-      sku: `${formData.sku}-5KG`,
-      price: Math.round(Number(formData.price) * 4.5),
-      originalPrice: Math.round(Number(formData.price) * 5.2),
-      stock: 15
+      id: `VAR-${Date.now()}-${count}`,
+      name: `${count * 2} kg Value Pack`,
+      label: `${count * 2} kg Value Pack`,
+      unit: `${count * 2} kg`,
+      sku: `${formData.sku || "JAP"}-${count * 2}KG`,
+      price: Math.round(basePrice * 1.8),
+      originalPrice: Math.round(basePrice * 2.2),
+      oldPrice: Math.round(basePrice * 2.2),
+      stock: 20,
+      inStock: true
     };
     setFormData((prev) => ({
       ...prev,
-      variants: [...prev.variants, newVar]
+      variants: [...(Array.isArray(prev.variants) ? prev.variants : []), newVar]
     }));
     toast.success("New product variant added!");
   };
@@ -1494,7 +1559,7 @@ function ProductFormModal({
   const handleRemoveVariant = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      variants: prev.variants.filter((_, i) => i !== index)
+      variants: (Array.isArray(prev.variants) ? prev.variants : []).filter((_, i) => i !== index)
     }));
   };
 
@@ -1751,7 +1816,7 @@ function ProductFormModal({
               </div>
 
               <div className="space-y-3">
-                {formData.variants.map((v, i) => (
+                {(Array.isArray(formData.variants) ? formData.variants : []).map((v, i) => (
                   <div key={v.id || i} className="rounded-2xl border border-border bg-card p-3.5 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-bold text-foreground">Variant #{i + 1}</span>
@@ -1762,12 +1827,14 @@ function ProductFormModal({
 
                     <div className="grid grid-cols-4 gap-2">
                       <div>
-                        <label className="text-[10px] font-bold text-muted-foreground block">Name</label>
+                        <label className="text-[10px] font-bold text-muted-foreground block">Name / Size</label>
                         <input
-                          value={v.name}
+                          value={v.name || v.label || ""}
+                          placeholder="e.g. 500 ml Pack"
                           onChange={(e) => {
-                            const updated = [...formData.variants];
-                            updated[i] = { ...v, name: e.target.value };
+                            const val = e.target.value;
+                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                            updated[i] = { ...v, name: val, label: val, unit: val };
                             setFormData({ ...formData, variants: updated });
                           }}
                           className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-bold outline-none"
@@ -1776,9 +1843,10 @@ function ProductFormModal({
                       <div>
                         <label className="text-[10px] font-bold text-muted-foreground block">SKU</label>
                         <input
-                          value={v.sku}
+                          value={v.sku || ""}
+                          placeholder="e.g. JAP-500ML"
                           onChange={(e) => {
-                            const updated = [...formData.variants];
+                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
                             updated[i] = { ...v, sku: e.target.value };
                             setFormData({ ...formData, variants: updated });
                           }}
@@ -1791,8 +1859,14 @@ function ProductFormModal({
                           type="number"
                           value={v.price}
                           onChange={(e) => {
-                            const updated = [...formData.variants];
-                            updated[i] = { ...v, price: Number(e.target.value) };
+                            const pVal = Number(e.target.value) || 0;
+                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                            updated[i] = {
+                              ...v,
+                              price: pVal,
+                              originalPrice: v.originalPrice || Math.round(pVal * 1.2),
+                              oldPrice: v.oldPrice || Math.round(pVal * 1.2)
+                            };
                             setFormData({ ...formData, variants: updated });
                           }}
                           className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-bold text-emerald-600 outline-none"
@@ -1804,8 +1878,9 @@ function ProductFormModal({
                           type="number"
                           value={v.stock}
                           onChange={(e) => {
-                            const updated = [...formData.variants];
-                            updated[i] = { ...v, stock: Number(e.target.value) };
+                            const sVal = Number(e.target.value) || 0;
+                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                            updated[i] = { ...v, stock: sVal, inStock: sVal > 0 };
                             setFormData({ ...formData, variants: updated });
                           }}
                           className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs outline-none"
@@ -2570,8 +2645,29 @@ function ProductFormModal({
                 }
               });
 
+              const cleanVariants = (Array.isArray(formData.variants) ? formData.variants : []).map((v: any, idx: number) => {
+                const p = Number(v.price) || Number(formData.price) || 0;
+                const op = Number(v.originalPrice ?? v.oldPrice) || Math.round(p * 1.2);
+                const st = v.stock !== undefined ? Number(v.stock) : (Number(formData.warehouseStock) || 50);
+                const n = v.name || v.label || v.unit || `Variant ${idx + 1}`;
+                const u = v.unit || v.name || v.label || formData.unit || "1 L";
+                return {
+                  id: String(v.id || `VAR-${Date.now()}-${idx + 1}`),
+                  name: n,
+                  label: n,
+                  unit: u,
+                  sku: v.sku || `${formData.sku || "JAP"}-${idx + 1}`,
+                  price: p,
+                  originalPrice: op,
+                  oldPrice: op,
+                  stock: st,
+                  inStock: st > 0
+                };
+              });
+
               const payload = {
                 ...formData,
+                variants: cleanVariants,
                 rating: Number(formData.rating) || 4.8,
                 reviewsCount: Number(formData.reviewsCount) || 53,
                 reviews: Number(formData.reviewsCount) || 53,

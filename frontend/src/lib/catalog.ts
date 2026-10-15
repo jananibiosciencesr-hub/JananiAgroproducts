@@ -62,6 +62,10 @@ export type ProductVariant = {
   price: number;
   oldPrice: number;
   inStock: boolean;
+  name?: string;
+  sku?: string;
+  originalPrice?: number;
+  stock?: number;
 };
 
 export type Product = {

@@ -88,16 +88,25 @@ function ProductDetailPage() {
   const cartQty = cart[product.id] || (cart as any)[Number(product.id)] || (cart as any)[String(product.id)] || 0;
 
   // Variants setup
-  const defaultVariant =
-    product.variants.find((v) => v.unit.toLowerCase().includes("1 l") || v.label.includes("1 Litre")) ||
-    product.variants[0] || {
+  const defaultVariant: ProductVariant = useMemo(() => {
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      const match1L = product.variants.find((v) =>
+        (v.unit || "").toLowerCase().includes("1 l") ||
+        (v.label || v.name || "").toLowerCase().includes("1 l") ||
+        (v.label || v.name || "").includes("1 Litre")
+      );
+      return match1L || product.variants[0]!;
+    }
+    return {
       id: "1l",
-      label: "1 Litre",
-      unit: "1 Litre",
+      label: product.unit || "1 Litre",
+      unit: product.unit || "1 Litre",
+      name: product.unit || "1 Litre",
       price: product.price,
       oldPrice: product.oldPrice,
       inStock: true,
     };
+  }, [product]);
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(defaultVariant);
   const [qty, setQty] = useState<number>(1);
@@ -129,16 +138,29 @@ function ProductDetailPage() {
 
   // Sync selected variant when product slug changes
   useEffect(() => {
-    if (product.variants && product.variants.length > 0) {
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
       const match1L = product.variants.find(
-        (v) => v.unit.toLowerCase().includes("1 l") || v.label.includes("1 Litre")
+        (v) =>
+          (v.unit || "").toLowerCase().includes("1 l") ||
+          (v.label || v.name || "").toLowerCase().includes("1 l") ||
+          (v.label || v.name || "").includes("1 Litre")
       );
       setSelectedVariant(match1L || product.variants[0]!);
+    } else {
+      setSelectedVariant({
+        id: "default",
+        label: product.unit || "1 Litre",
+        unit: product.unit || "1 Litre",
+        name: product.unit || "1 Litre",
+        price: product.price,
+        oldPrice: product.oldPrice,
+        inStock: true,
+      });
     }
     setQty(1);
     setActiveImageIndex(0);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [product.slug]);
+  }, [product.slug, product.variants, product.unit, product.price, product.oldPrice]);
 
   // Gallery Images List: dynamically loaded from backend product.image & product.gallery
   const galleryImages = useMemo(() => {
@@ -200,16 +222,23 @@ function ProductDetailPage() {
     return list;
   }, [product]);
 
-  const discountPercent = Math.round(
-    ((selectedVariant.oldPrice - selectedVariant.price) / selectedVariant.oldPrice) * 100
-  );
+  const variantPrice = Number(selectedVariant?.price) || Number(product.price) || 0;
+  const variantOldPrice =
+    Number(selectedVariant?.oldPrice ?? (selectedVariant as any)?.originalPrice) ||
+    Number(product.oldPrice) ||
+    Math.round(variantPrice * 1.2);
+  const discountPercent =
+    variantOldPrice > variantPrice
+      ? Math.round(((variantOldPrice - variantPrice) / variantOldPrice) * 100)
+      : 0;
 
   const handleAddToCart = () => {
     for (let i = 0; i < qty; i++) {
       addToCart(product.id);
     }
-    toast.success(`Added ${qty}x ${product.name} (${selectedVariant.label}) to cart!`, {
-      description: `₹${(selectedVariant.price * qty).toFixed(2)} • Quick checkout ready`,
+    const variantLabel = selectedVariant?.label || (selectedVariant as any)?.name || product.unit || "Standard Pack";
+    toast.success(`Added ${qty}x ${product.name} (${variantLabel}) to cart!`, {
+      description: `₹${(variantPrice * qty).toFixed(2)} • Quick checkout ready`,
     });
   };
 
@@ -503,14 +532,18 @@ function ProductDetailPage() {
               {/* Price Row */}
               <div className="flex items-baseline gap-3 pt-1">
                 <span className="text-3xl sm:text-4xl font-bold text-gray-900">
-                  ₹ {selectedVariant.price.toFixed(2)}
+                  ₹ {variantPrice.toFixed(2)}
                 </span>
-                <span className="text-base text-gray-400 line-through font-medium">
-                  ₹ {selectedVariant.oldPrice.toFixed(2)}
-                </span>
-                <span className="bg-[#4FAE2A] text-white text-xs font-bold px-2.5 py-0.5 rounded-md shadow-xs">
-                  {discountPercent}% OFF
-                </span>
+                {variantOldPrice > variantPrice && (
+                  <span className="text-base text-gray-400 line-through font-medium">
+                    ₹ {variantOldPrice.toFixed(2)}
+                  </span>
+                )}
+                {discountPercent > 0 && (
+                  <span className="bg-[#4FAE2A] text-white text-xs font-bold px-2.5 py-0.5 rounded-md shadow-xs">
+                    {discountPercent}% OFF
+                  </span>
+                )}
               </div>
 
               {/* Short Paragraph Description (Text Justified) */}
@@ -522,34 +555,38 @@ function ProductDetailPage() {
             {/* Bottom Controls: Pack Size, Quantity, Action Buttons */}
             <div className="space-y-4 pt-2">
               {/* Pack Size Selector */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-900 block">Pack Size</label>
-                <div className="grid grid-cols-4 gap-2.5">
-                  {product.variants.map((v) => {
-                    const isSelected = selectedVariant.id === v.id;
-                    return (
-                      <button
-                        key={v.id}
-                        onClick={() => setSelectedVariant(v)}
-                        className={`p-2 sm:p-2.5 rounded-xl border text-center transition flex flex-col justify-center items-center ${
-                          isSelected
-                            ? "border-2 border-[#075B32] bg-[#EAF5E9] text-[#075B32] shadow-xs"
-                            : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"
-                        }`}
-                      >
-                        <span className="text-xs font-bold leading-tight">{v.label}</span>
-                        <span
-                          className={`text-[11px] mt-0.5 font-medium ${
-                            isSelected ? "text-[#075B32]" : "text-gray-500"
+              {Array.isArray(product.variants) && product.variants.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-900 block">Pack Size</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {product.variants.map((v: any) => {
+                      const isSelected = selectedVariant.id === v.id;
+                      const displayLabel = v.label || v.name || v.unit || "Standard";
+                      const displayPrice = Number(v.price) || 0;
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => setSelectedVariant(v)}
+                          className={`p-2 sm:p-2.5 rounded-xl border text-center transition flex flex-col justify-center items-center ${
+                            isSelected
+                              ? "border-2 border-[#075B32] bg-[#EAF5E9] text-[#075B32] shadow-xs"
+                              : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"
                           }`}
                         >
-                          ₹ {v.price}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          <span className="text-xs font-bold leading-tight">{displayLabel}</span>
+                          <span
+                            className={`text-[11px] mt-0.5 font-medium ${
+                              isSelected ? "text-[#075B32]" : "text-gray-500"
+                            }`}
+                          >
+                            ₹ {displayPrice}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quantity Selector */}
               <div className="space-y-1.5">

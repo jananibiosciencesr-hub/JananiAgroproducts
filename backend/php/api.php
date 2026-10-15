@@ -1973,8 +1973,24 @@ try {
                         'compatibility', 'storageNotice', 'faqs'
                     ];
 
+                    ensureProductsTableSchema($pdo);
+                    $existingCols = [];
+                    try {
+                        $colStmt = $pdo->query("SHOW COLUMNS FROM `products`");
+                        while ($col = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+                            $existingCols[strtolower($col['Field'])] = true;
+                        }
+                    } catch (Exception $e) {}
+
+                    if (!isset($existingCols['variants'])) {
+                        try {
+                            $pdo->exec("ALTER TABLE `products` ADD COLUMN `variants` LONGTEXT NULL");
+                            $existingCols['variants'] = true;
+                        } catch (Exception $e) {}
+                    }
+
                     foreach ($allowed as $f) {
-                        if (array_key_exists($f, $body)) {
+                        if (array_key_exists($f, $body) && (empty($existingCols) || isset($existingCols[strtolower($f)]))) {
                             $fields[] = "`{$f}` = ?";
                             $vals[] = $body[$f];
                         }
@@ -2022,41 +2038,45 @@ try {
                             ]);
                             exit;
                         } else {
-                            // If product row didn't exist in MySQL, insert it so changes are never lost!
-                            $categoryName = $body['category_name'] ?? 'Cold Pressed Oils';
-                            $price = (float)($body['price'] ?? 0.0);
-                            $oldPrice = isset($body['old_price']) ? (float)$body['old_price'] : null;
-                            $stock = (int)($body['stock'] ?? 50);
-                            $origin = $body['origin'] ?? 'Lodhika GIDC, Gujarat';
-                            $cert = $body['certification'] ?? 'Certified Organic & NPOP Verified';
-                            $active = isset($body['active']) ? (int)$body['active'] : 1;
-                            $status = $body['status'] ?? ($active ? 'Active' : 'Draft');
-                            $name = $body['name'] ?? 'Organic Product';
-                            $slug = !empty($body['slug']) ? $body['slug'] : (!is_numeric($id) ? $id : 'product-' . time());
-                            $unit = $body['unit'] ?? '1 kg';
-                            $badge = $body['badge'] ?? null;
-                            $image = $body['image'] ?? '/images/products/placeholder.webp';
-                            $description = $body['description'] ?? '';
-                            $sku = $body['sku'] ?? ('JAP-' . rand(1000, 9999));
+                            // If product row didn't exist in MySQL, insert it with all provided fields
+                            if (!isset($body['slug'])) {
+                                $body['slug'] = !empty($body['name']) ? strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $body['name']), '-')) : (!is_numeric($id) ? $id : 'product-' . time());
+                            }
+                            if (!isset($body['name'])) $body['name'] = 'Organic Product';
+                            if (!isset($body['category_name'])) $body['category_name'] = $body['category'] ?? 'Bio Fertilizers';
+                            if (!isset($body['price'])) $body['price'] = 0.0;
+                            if (!isset($body['stock'])) $body['stock'] = 50;
+                            if (!isset($body['unit'])) $body['unit'] = '1 L';
+                            if (!isset($body['sku'])) $body['sku'] = 'JAP-' . rand(1000, 9999);
+                            if (!isset($body['active'])) $body['active'] = 1;
+                            if (!isset($body['status'])) $body['status'] = 'Active';
 
-                            $insStmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                            $insStmt->execute([
-                                $slug, $name, $categoryName, $price, $oldPrice, $unit,
-                                $stock, $badge, $image, $description, $origin, $cert,
-                                $active, $status, $sku
-                            ]);
-                            $newInsertId = (int)$pdo->lastInsertId();
-                            $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
-                            $fetchStmt->execute([$newInsertId]);
-                            $created = $fetchStmt->fetch();
+                            $insCols = [];
+                            $insPlaceholders = [];
+                            $insVals = [];
+                            foreach ($allowed as $f) {
+                                if (array_key_exists($f, $body) && (empty($existingCols) || isset($existingCols[strtolower($f)]))) {
+                                    $insCols[] = "`{$f}`";
+                                    $insPlaceholders[] = "?";
+                                    $insVals[] = $body[$f];
+                                }
+                            }
+                            if (!empty($insCols)) {
+                                $insStmt = $pdo->prepare("INSERT INTO `products` (" . implode(', ', $insCols) . ") VALUES (" . implode(', ', $insPlaceholders) . ")");
+                                $insStmt->execute($insVals);
+                                $newInsertId = (int)$pdo->lastInsertId();
+                                $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
+                                $fetchStmt->execute([$newInsertId]);
+                                $created = $fetchStmt->fetch();
 
-                            echo json_encode([
-                                'success' => true,
-                                'message' => 'Product saved successfully to MySQL',
-                                'data' => $created,
-                                'product' => $created
-                            ]);
-                            exit;
+                                echo json_encode([
+                                    'success' => true,
+                                    'message' => 'Product saved successfully to MySQL',
+                                    'data' => $created,
+                                    'product' => $created
+                                ]);
+                                exit;
+                            }
                         }
                     } else {
                         echo json_encode(['success' => false, 'message' => 'No valid product fields provided for update']);

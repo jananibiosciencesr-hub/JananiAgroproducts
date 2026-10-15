@@ -83,6 +83,7 @@ export const DEFAULT_PRODUCTS = catalogProducts.map((p, idx) => ({
   description: p.description,
   origin: p.origin,
   certification: "Certified Organic & NPOP Verified",
+  variants: p.variants,
   createdAt: "2026-08-15"
 }));
 

@@ -93,6 +93,74 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
 }
 
 /**
+ * Safely parses and normalizes product variants from JSON string, array, or fallback defaults.
+ * Provides consistent properties for both Admin (name, sku, price, originalPrice, stock)
+ * and Storefront (label, unit, price, oldPrice, inStock).
+ */
+export function parseProductVariants(
+  rawVariants: any,
+  fallbackPrice: number = 0,
+  fallbackUnit: string = "1 L",
+  fallbackStock: number = 50
+): any[] {
+  let list: any[] = [];
+  if (Array.isArray(rawVariants)) {
+    list = rawVariants;
+  } else if (typeof rawVariants === "string" && rawVariants.trim() !== "") {
+    try {
+      const parsed = JSON.parse(rawVariants);
+      if (Array.isArray(parsed)) {
+        list = parsed;
+      }
+    } catch {
+      // not valid JSON array
+    }
+  }
+
+  if (list.length === 0) {
+    const origPrice = Math.round(fallbackPrice * 1.2);
+    const unitLabel = fallbackUnit || "1 L";
+    return [
+      {
+        id: "default",
+        name: unitLabel,
+        label: unitLabel,
+        unit: unitLabel,
+        sku: "JAP-STD",
+        price: fallbackPrice,
+        originalPrice: origPrice,
+        oldPrice: origPrice,
+        stock: fallbackStock,
+        inStock: fallbackStock > 0
+      }
+    ];
+  }
+
+  return list.map((v: any, idx: number) => {
+    const price = Number(v.price) || fallbackPrice || 0;
+    const origPrice = Number(v.originalPrice ?? v.oldPrice ?? v.old_price) || Math.round(price * 1.2);
+    const stock = v.stock !== undefined ? Number(v.stock) : (v.stockCount !== undefined ? Number(v.stockCount) : fallbackStock);
+    const nameOrLabel = v.name || v.label || v.unit || `Variant ${idx + 1}`;
+    const unit = v.unit || v.name || v.label || fallbackUnit || "1 L";
+    const sku = v.sku || `VAR-${idx + 1}`;
+    const id = String(v.id || `VAR-${idx + 1}`);
+
+    return {
+      id,
+      name: nameOrLabel,
+      label: nameOrLabel,
+      unit,
+      sku,
+      price,
+      originalPrice: origPrice,
+      oldPrice: origPrice,
+      stock,
+      inStock: stock > 0
+    };
+  });
+}
+
+/**
  * Normalizes a raw MySQL row into the full frontend Product interface
  */
 export function normalizeProduct(raw: any): Product {
@@ -100,6 +168,7 @@ export function normalizeProduct(raw: any): Product {
   const oldPrice = Number(raw.old_price || raw.oldPrice) || Math.round(price * 1.2);
   const discount = oldPrice > price ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0;
   const stock = typeof raw.stock === "number" ? raw.stock : (Number(raw.stockCount || raw.stock) || 50);
+  const unit = raw.unit || "1 kg";
 
   return {
     id: Number(raw.id),
@@ -110,7 +179,7 @@ export function normalizeProduct(raw: any): Product {
     price: price,
     oldPrice: oldPrice,
     discount: discount,
-    unit: raw.unit || "1 kg",
+    unit: unit,
     rating: Number(raw.rating) || 4.8,
     reviews: Number(raw.reviews_count || raw.reviews) || 45,
     inStock: stock > 0 && raw.active !== 0 && raw.status !== "Trash",
@@ -123,9 +192,7 @@ export function normalizeProduct(raw: any): Product {
     certifications: ["Certified Organic & NPOP Verified", "FSSAI 10724026000048"],
     popularity: Number(raw.popularity) || (raw.badge ? 95 : 75),
     isNew: raw.isNew ?? false,
-    variants: raw.variants || [
-      { id: "500g", label: raw.unit || "1 kg", unit: raw.unit || "1 kg", price: price, oldPrice: oldPrice, inStock: stock > 0 }
-    ],
+    variants: parseProductVariants(raw.variants, price, unit, stock),
     subtitle: raw.subtitle,
     crops: raw.crops,
     benefits: raw.benefits,
@@ -1418,7 +1485,7 @@ export function normalizeAdminProduct(raw: any) {
     reviewsCount: Number(raw.reviews_count || raw.reviewsCount || raw.reviews) || 35,
     image: raw.image || `/images/products/${raw.slug}.webp`,
     gallery: Array.isArray(raw.gallery) ? raw.gallery : [],
-    variants: raw.variants || [],
+    variants: parseProductVariants(raw.variants, price, raw.unit || "1 L", stock),
     description: raw.description || "",
     harvestOrigin: raw.origin || raw.harvestOrigin || "Janani Bio Sciences, Gujarat",
     organicCertifications: raw.organicCertifications || ["Certified Organic & NPOP Verified"],
@@ -1572,7 +1639,9 @@ export async function createAdminProduct(productData: any) {
     badge: productData.badge || "",
     image: productData.image || (Array.isArray(productData.gallery) && productData.gallery[0]) || "",
     gallery: Array.isArray(productData.gallery) ? productData.gallery : (productData.gallery ? [productData.gallery] : (productData.image ? [productData.image] : [])),
-    variants: productData.variants,
+    variants: productData.variants !== undefined
+      ? parseProductVariants(productData.variants, Number(productData.price) || 0, productData.unit || "1 L", stockVal !== undefined ? Number(stockVal) : 50)
+      : undefined,
     description: productData.description || "",
     origin: productData.origin || productData.harvestOrigin || "Lodhika GIDC, Gujarat",
     certification: certVal || "Certified Organic & NPOP Verified",
@@ -1648,7 +1717,9 @@ export async function updateAdminProduct(id: string, productData: any) {
     badge: productData.badge,
     image: productData.image,
     gallery: Array.isArray(productData.gallery) ? productData.gallery : (productData.gallery ? [productData.gallery] : (productData.image ? [productData.image] : undefined)),
-    variants: productData.variants,
+    variants: productData.variants !== undefined
+      ? parseProductVariants(productData.variants, Number(productData.price) || 0, productData.unit || "1 L", stockVal !== undefined ? Number(stockVal) : 50)
+      : undefined,
     description: productData.description,
     origin: productData.origin || productData.harvestOrigin,
     harvestOrigin: productData.origin || productData.harvestOrigin,
