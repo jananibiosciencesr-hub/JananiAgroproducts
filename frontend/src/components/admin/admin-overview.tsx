@@ -19,7 +19,6 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Star,
-  Layers,
   BarChart3,
   MessageSquareText
 } from "lucide-react";
@@ -173,12 +172,7 @@ export function AdminOverview({
 
       {/* 12 Luxury KPI Cards Grid */}
       <section className="min-w-0">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h2 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Layers className="size-4 text-emerald-600" /> Core Performance Metrics
-          </h2>
-          <span className="text-[11px] sm:text-xs font-medium text-muted-foreground">Live Database Sync</span>
-        </div>
+
 
         <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4 xl:grid-cols-6">
           {kpiCards.map((card, idx) => {

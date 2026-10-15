@@ -4,7 +4,6 @@ import {
   Plus,
   Search,
   Filter,
-  Download,
   Upload,
   Trash2,
   Edit,
@@ -435,42 +434,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
   return (
     <div className="space-y-6">
-      {/* Master Action Utilities */}
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {/* Trash Bin Toggle */}
-        <button
-          onClick={() => {
-            setStatusFilter(statusFilter === "active" ? "trash" : "active");
-            setCurrentPage(1);
-          }}
-          className={`flex items-center gap-1.5 rounded-2xl border px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm ${
-            statusFilter === "trash"
-              ? "border-rose-500 bg-rose-500/15 text-rose-700 dark:text-rose-400"
-              : "border-border bg-card text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Trash2 className="size-3.5" />
-          {statusFilter === "trash" ? "Back to Active" : "Trash Bin"}
-        </button>
 
-        <Button
-          onClick={() => setIsImportModalOpen(true)}
-          variant="outline"
-          size="sm"
-          className="rounded-2xl text-xs font-bold gap-1.5 h-8"
-        >
-          <Upload className="size-3.5" /> Import CSV
-        </Button>
-
-        <Button
-          onClick={exportCSV}
-          variant="outline"
-          size="sm"
-          className="rounded-2xl text-xs font-bold gap-1.5 h-8"
-        >
-          <Download className="size-3.5" /> Export CSV
-        </Button>
-      </div>
 
       {/* Multi-Filter Toolbar */}
       <div className="rounded-3xl border border-border bg-card p-4 shadow-soft space-y-3">
