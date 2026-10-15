@@ -445,11 +445,11 @@ export function PaymentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 pb-24 lg:pb-12">
+    <div className="mx-auto max-w-7xl px-3.5 sm:px-6 py-4 sm:py-8 pb-32 lg:pb-12 w-full overflow-x-hidden">
       {/* Header & Trust Badge */}
-      <div className="border-b border-border pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="border-b border-border pb-5 sm:pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-muted-foreground">
             <Link to="/" className="hover:text-brand-leaf transition">Home</Link>
             <span>/</span>
             <Link to="/cart" className="hover:text-brand-leaf transition">Cart</Link>
@@ -458,40 +458,40 @@ export function PaymentPage() {
             <span>/</span>
             <span className="text-brand-leaf">Razorpay Payment</span>
           </div>
-          <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl text-foreground flex items-center gap-3">
+          <h1 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
             Secure Razorpay Payment
           </h1>
         </div>
 
         {/* Security / QA controls */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-full border border-brand-leaf/30 bg-brand-leaf/5 px-4 py-1.5 text-xs font-semibold text-brand-leaf">
-            <ShieldCheck className="size-4" />
+          <div className="flex items-center gap-2 rounded-full border border-brand-leaf/30 bg-brand-leaf/5 px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-brand-leaf w-fit">
+            <ShieldCheck className="size-4 shrink-0" />
             <span>Razorpay 256-Bit SSL Encrypted</span>
           </div>
         </div>
       </div>
 
       {/* Main Grid: Left Razorpay Main Card + Right Summary Rail */}
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_400px] items-start">
+      <div className="mt-6 sm:mt-8 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_400px] items-start">
         {/* Left Column: Exclusive Razorpay Gateway Card */}
         <div className="space-y-6">
-          <div className="rounded-[2rem] border-2 border-brand-leaf/40 bg-gradient-to-br from-card via-card to-brand-leaf/5 p-6 sm:p-8 shadow-luxe relative overflow-hidden">
+          <div className="rounded-[1.75rem] sm:rounded-[2rem] border-2 border-brand-leaf/40 bg-gradient-to-br from-card via-card to-brand-leaf/5 p-4 sm:p-8 shadow-luxe relative overflow-hidden">
             {/* Background glowing watermark */}
             <div className="absolute top-0 right-0 -mt-8 -mr-8 size-48 rounded-full bg-brand-leaf/10 blur-2xl pointer-events-none" />
 
             {/* Header Badge */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-3.5">
-                <div className="size-12 rounded-2xl bg-[#0c2340] text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0">
-                  <Layers className="size-6 text-emerald-400" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-4 sm:pb-5">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="size-11 sm:size-12 rounded-2xl bg-[#0c2340] text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0 mt-0.5 sm:mt-0">
+                  <Layers className="size-5 sm:size-6 text-emerald-400" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-display text-xl font-bold text-foreground">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">
                       Razorpay Checkout Gateway
                     </h2>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30">
+                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 shrink-0">
                       Official Partner
                     </span>
                   </div>
@@ -501,60 +501,65 @@ export function PaymentPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 self-start sm:self-auto bg-secondary/80 px-3 py-1.5 rounded-xl border border-border text-xs font-mono font-bold text-foreground">
-                <Lock className="size-3.5 text-brand-leaf" />
-                <span>Test Mode Key: {RAZORPAY_KEY_ID.slice(0, 12)}...</span>
+              <div className="flex items-center gap-2 self-start sm:self-auto bg-secondary/80 px-2.5 sm:px-3 py-1.5 rounded-xl border border-border text-[11px] sm:text-xs font-mono font-bold text-foreground max-w-full truncate">
+                <Lock className="size-3.5 text-brand-leaf shrink-0" />
+                <span className="truncate">Test Mode Key: {RAZORPAY_KEY_ID.slice(0, 12)}...</span>
               </div>
             </div>
 
-
             {/* Customer Billing Snapshot */}
-            <div className="mt-6 rounded-2xl bg-secondary/60 p-4 border border-border text-xs space-y-2">
-              <div className="flex justify-between items-center text-muted-foreground">
-                <span>Paying Customer:</span>
-                <strong className="text-foreground">{customerName} ({customerPhone})</strong>
+            <div className="mt-5 sm:mt-6 rounded-2xl bg-secondary/60 p-3.5 sm:p-4 border border-border text-xs space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
+                <span className="shrink-0 font-medium">Paying Customer:</span>
+                <strong className="text-foreground font-semibold break-words sm:text-right">
+                  {customerName} {customerPhone ? `(${customerPhone})` : ""}
+                </strong>
               </div>
-              <div className="flex justify-between items-center text-muted-foreground">
-                <span>Receipt Email:</span>
-                <span className="text-foreground font-mono">{customerEmail}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
+                <span className="shrink-0 font-medium">Receipt Email:</span>
+                <span className="text-foreground font-mono break-all sm:text-right">
+                  {customerEmail}
+                </span>
               </div>
-              <div className="flex justify-between items-center text-muted-foreground">
-                <span>Scheduled Delivery:</span>
-                <span className="text-brand-leaf font-semibold">{deliveryDate}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
+                <span className="shrink-0 font-medium">Scheduled Delivery:</span>
+                <span className="text-brand-leaf font-semibold sm:text-right">
+                  {deliveryDate}
+                </span>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 sm:mt-8 space-y-3">
               <Button
                 type="button"
                 onClick={handleLaunchRazorpay}
                 disabled={isProcessing}
-                className="w-full h-14 rounded-2xl bg-[#0c2340] hover:bg-[#153a66] text-white font-display text-base font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 cursor-pointer"
+                className="w-full min-h-[3.25rem] sm:h-14 py-3 px-4 rounded-2xl bg-[#0c2340] hover:bg-[#153a66] text-white font-display text-sm sm:text-base font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 sm:gap-3 cursor-pointer text-center"
               >
                 {isProcessing ? (
                   <>
-                    <div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Connecting to Razorpay...</span>
+                    <div className="size-4 sm:size-5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                    <span className="truncate">Connecting to Razorpay...</span>
                   </>
                 ) : (
                   <>
-                    <Lock className="size-5 text-emerald-400 animate-pulse" />
-                    <span>Pay ₹{effectiveAmount} with Razorpay Secure</span>
-                    <ArrowRight className="size-5" />
+                    <Lock className="size-4 sm:size-5 text-emerald-400 animate-pulse shrink-0" />
+                    <span className="break-words">Pay ₹{effectiveAmount} with Razorpay Secure</span>
+                    <ArrowRight className="size-4 sm:size-5 shrink-0 hidden xs:inline-block" />
                   </>
                 )}
               </Button>
 
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground px-2 pt-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-muted-foreground px-1 pt-1">
                 <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="size-4 text-brand-leaf" />
-                  Zero convenience fees • Instant refund guarantee
+                  <ShieldCheck className="size-4 text-brand-leaf shrink-0" />
+                  <span>Zero convenience fees • Instant refund guarantee</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsRazorpayModalOpen(true)}
-                  className="text-brand-leaf font-semibold hover:underline"
+                  className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto cursor-pointer"
                 >
                   Alternate Gateway View
                 </button>
@@ -564,24 +569,24 @@ export function PaymentPage() {
         </div>
 
         {/* Right Column: Order Summary & Security Info */}
-        <div className="space-y-5 sticky top-24">
+        <div className="space-y-5 lg:sticky lg:top-24">
           {/* Order Snapshot Card */}
-          <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-soft space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <span className="font-display text-sm font-bold text-foreground flex items-center gap-2">
+          <div className="rounded-3xl border border-border bg-card p-4 sm:p-6 shadow-soft space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3 gap-2">
+              <span className="font-display text-sm font-bold text-foreground flex items-center gap-2 shrink-0">
                 <Package className="size-4 text-brand-leaf" />
                 Order Summary
               </span>
-              <span className="font-mono text-xs font-bold text-muted-foreground">
+              <span className="font-mono text-xs font-bold text-muted-foreground truncate max-w-[150px] sm:max-w-none text-right">
                 {effectiveOrderNumber}
               </span>
             </div>
 
             {/* Recipient Snippet */}
-            <div className="text-xs text-muted-foreground space-y-1 bg-secondary/50 p-3 rounded-2xl border border-border/80">
-              <div className="flex justify-between font-semibold text-foreground">
-                <span>Deliver To:</span>
-                <span className="text-brand-leaf">{customerName}</span>
+            <div className="text-xs text-muted-foreground space-y-1.5 bg-secondary/50 p-3 sm:p-3.5 rounded-2xl border border-border/80">
+              <div className="flex justify-between font-semibold text-foreground gap-2">
+                <span className="shrink-0">Deliver To:</span>
+                <span className="text-brand-leaf truncate text-right">{customerName}</span>
               </div>
               <p className="line-clamp-1">{checkoutData?.address?.street || "Judges Bungalow Road, Bodakdev"}</p>
               <p className="font-semibold text-foreground">

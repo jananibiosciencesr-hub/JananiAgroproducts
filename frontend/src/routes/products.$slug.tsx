@@ -701,40 +701,52 @@ function ProductDetailPage() {
 
           {/* Tab Body: Product Description */}
           {activeTab === "description" && (
-            <div className="py-6 space-y-4">
+            <div className="pt-5 pb-3 space-y-4">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3 font-display">
                   Product Description
                 </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                   {/* Left Column: Rich Text Explanation */}
-                  <div className="lg:col-span-7 space-y-3.5 text-xs sm:text-sm text-gray-600 leading-relaxed text-justify">
-                    <p>
-                      <strong>{product.name}</strong>{" "}
-                      {product.subtitle ? `(${product.subtitle})` : ""}{" "}
-                      is a scientifically formulated agricultural product from Janani Agro Products. It contains high-potency{" "}
-                      <strong>
-                        {product.specifications?.["Active Organism"] ||
-                          product.specifications?.["Technical Composition"] ||
-                          product.category}
-                      </strong>
-                      , carefully formulated to improve rhizosphere soil conditions, enhance microbial activity, and protect crops.
-                    </p>
-                    <p>
-                      {product.description}
-                    </p>
-                    {product.targetDiseases && (
+                  <div className="lg:col-span-7 space-y-3.5 text-xs sm:text-sm text-gray-600 leading-relaxed text-justify flex flex-col justify-between">
+                    <div className="space-y-3">
                       <p>
-                        <strong>Target Protection:</strong> {product.name} is particularly effective against {product.targetDiseases}, suppressing disease development and encouraging vigorous vegetative growth.
+                        <strong>{product.name}</strong>{" "}
+                        {product.subtitle ? `(${product.subtitle})` : ""}{" "}
+                        is a scientifically formulated agricultural product from Janani Agro Products. It contains high-potency{" "}
+                        <strong>
+                          {product.specifications?.["Active Organism"] ||
+                            product.specifications?.["Technical Composition"] ||
+                            product.category}
+                        </strong>
+                        , carefully formulated to improve rhizosphere soil conditions, enhance microbial activity, and protect crops.
                       </p>
-                    )}
-                    <p>
-                      {product.name} integrates seamlessly with sustainable agricultural practices, organic inputs, biofertilizers, and drip fertigation systems across all crop cycles.
-                    </p>
+                      <p>
+                        {product.description}
+                      </p>
+                      {product.targetDiseases && (
+                        <p>
+                          <strong>Target Protection:</strong> {product.name} is particularly effective against {product.targetDiseases}, suppressing disease development and encouraging vigorous vegetative growth.
+                        </p>
+                      )}
+                      <p>
+                        {product.name} integrates seamlessly with sustainable agricultural practices, organic inputs, biofertilizers, and drip fertigation systems across all crop cycles.
+                      </p>
+                    </div>
+
+                    {/* Key Highlights Grid to eliminate empty void */}
+                    <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {dynamicBenefits.slice(0, 4).map((b, idx) => (
+                        <div key={idx} className="flex items-start gap-2 p-2.5 rounded-xl bg-[#EAF5E9]/60 border border-[#075B32]/15 text-xs text-gray-700">
+                          <CheckCircle2 className="size-4 text-[#075B32] shrink-0 mt-0.5" />
+                          <span className="line-clamp-2 font-medium">{b}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Right Column: Hero Visual Card with Hands, Soil & Seedling */}
-                  <div className="lg:col-span-5 relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md border border-gray-200">
+                  <div className="lg:col-span-5 relative rounded-2xl overflow-hidden aspect-[16/9] lg:aspect-auto lg:h-full min-h-[220px] shadow-md border border-gray-200">
                     <img
                       src="/images/hands-soil-sprout.jpg"
                       alt="Healthy Soil, Stronger Roots, Better Yields"

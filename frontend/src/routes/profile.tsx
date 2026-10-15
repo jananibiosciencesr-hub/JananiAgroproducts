@@ -88,7 +88,7 @@ export function ProfilePage() {
       {/* Main Content Layout: Sidebar Navigation Tabs + Tab Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 items-start">
         {/* Left: Navigation Tabs */}
-        <aside className="space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft">
+        <aside className="space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft h-fit lg:sticky lg:top-24 self-start z-10">
           {[
             { id: "edit", label: "Personal Information", icon: User, desc: "View & edit details" },
             { id: "addresses", label: "Saved Addresses", icon: MapPin, desc: "Shipping locations" },
