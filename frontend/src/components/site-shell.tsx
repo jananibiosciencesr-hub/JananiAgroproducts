@@ -380,7 +380,17 @@ function Shell({ children }: { children: React.ReactNode }) {
 
             <div className="mt-auto pt-6 border-t border-border">
               {user ? (
-                <Button onClick={() => { logoutUser(); setMenu(false); }} variant="outline" className="w-full gap-2">
+                <Button
+                  onClick={() => {
+                    logoutUser();
+                    setMenu(false);
+                    if (typeof window !== "undefined" && (pathname.startsWith("/dashboard") || pathname.startsWith("/profile") || pathname.startsWith("/orders"))) {
+                      window.location.href = "/";
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
                   <LogOut className="size-4" /> Sign Out
                 </Button>
               ) : (

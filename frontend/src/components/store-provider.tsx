@@ -115,6 +115,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshUserProfile = async (currentUser?: AuthUser | null) => {
+    // If explicitly null or no session in storage, never fetch or resurrect
+    if (currentUser === null) return;
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+      if (!stored) {
+        setUser(null);
+        return;
+      }
+    }
+
     let target = currentUser || user;
     if (!target && typeof window !== "undefined") {
       try {
@@ -132,22 +142,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const serverUser = data?.customer || data?.user || data?.data;
         if (serverUser && serverUser.id) {
           setUser((prev) => {
-            const base = prev || target;
-            if (!base) return null;
+            // CRITICAL: NEVER resurrect a user if state or localStorage is cleared
+            if (!prev) return null;
+            if (typeof window !== "undefined") {
+              const activeStored = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+              if (!activeStored) return null;
+            }
+            if (prev.email && serverUser.email && prev.email.toLowerCase() !== serverUser.email.toLowerCase()) {
+              return prev;
+            }
             const updated: AuthUser = {
-              ...base,
-              id: serverUser.id || base.id,
-              name: serverUser.name || base.name,
-              email: serverUser.email || base.email,
-              phone: serverUser.phone !== undefined && serverUser.phone !== null && serverUser.phone !== "" ? serverUser.phone : base.phone,
-              gender: serverUser.gender || base.gender,
-              dob: serverUser.dob || base.dob,
-              bio: serverUser.bio || base.bio,
-              walletBalance: Number(serverUser.walletBalance ?? serverUser.wallet_balance ?? base.walletBalance ?? 0),
-              loyaltyPoints: Number(serverUser.loyaltyPoints ?? serverUser.loyalty_points ?? base.loyaltyPoints ?? 0),
-              tier: serverUser.tier || base.tier,
-              status: serverUser.status || base.status,
-              preferences: serverUser.preferences || base.preferences,
+              ...prev,
+              id: serverUser.id || prev.id,
+              name: serverUser.name || prev.name,
+              email: serverUser.email || prev.email,
+              phone: serverUser.phone !== undefined && serverUser.phone !== null && serverUser.phone !== "" ? serverUser.phone : prev.phone,
+              gender: serverUser.gender || prev.gender,
+              dob: serverUser.dob || prev.dob,
+              bio: serverUser.bio || prev.bio,
+              walletBalance: Number(serverUser.walletBalance ?? serverUser.wallet_balance ?? prev.walletBalance ?? 0),
+              loyaltyPoints: Number(serverUser.loyaltyPoints ?? serverUser.loyalty_points ?? prev.loyaltyPoints ?? 0),
+              tier: serverUser.tier || prev.tier,
+              status: serverUser.status || prev.status,
+              preferences: serverUser.preferences || prev.preferences,
             };
             if (typeof window !== "undefined") {
               localStorage.setItem("janani_user", JSON.stringify(updated));
@@ -168,6 +185,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const handleSync = () => {
       refreshProducts();
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+        if (!stored) {
+          setUser(null);
+          return;
+        }
+      }
       refreshUserProfile();
     };
 
@@ -256,6 +280,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         setUser((prev) => {
           if (!prev) return null;
+          if (typeof window !== "undefined") {
+            const activeStored = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+            if (!activeStored) return null;
+          }
           const merged: AuthUser = {
             ...prev,
             id: srv.id || prev.id,
@@ -363,6 +391,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("janani_wishlist");
       localStorage.removeItem("janani_latest_order");
       localStorage.removeItem("janani_customer_orders");
+      sessionStorage.removeItem("janani_user");
+      sessionStorage.removeItem("janani_auth_user");
+      sessionStorage.removeItem("janani_token");
+      sessionStorage.removeItem("janani_auth_token");
+
+      try {
+        window.dispatchEvent(new Event("janani-customer-logged-out"));
+      } catch (e) {}
     }
     toast.info("You have been signed out.");
   };

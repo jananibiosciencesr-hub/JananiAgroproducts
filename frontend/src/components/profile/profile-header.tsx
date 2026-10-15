@@ -55,7 +55,11 @@ export function ProfileHeader() {
 
   const handleLogout = () => {
     logoutUser();
-    navigate({ to: "/login" });
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    } else {
+      navigate({ to: "/login" });
+    }
   };
 
   const name = user?.name || "Janani Patron";
