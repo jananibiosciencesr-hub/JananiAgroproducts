@@ -288,6 +288,32 @@ function getJsonBody() {
     return json_decode($raw, true) ?: [];
 }
 
+function getOrderCustomer($ord) {
+    if (!is_array($ord)) {
+        return [
+            'name' => 'Valued Patron',
+            'email' => 'patron@jananiagro.com',
+            'phone' => '+91 98480 22338'
+        ];
+    }
+    $cName = !empty($ord['customer_name']) && $ord['customer_name'] !== 'Customer' ? trim($ord['customer_name']) : '';
+    if (empty($cName) && !empty($ord['shipping_address'])) {
+        $addr = is_string($ord['shipping_address']) ? json_decode($ord['shipping_address'], true) : $ord['shipping_address'];
+        if (!empty($addr['name'])) $cName = trim($addr['name']);
+        elseif (!empty($addr['fullName'])) $cName = trim($addr['fullName']);
+    }
+    if (empty($cName)) $cName = 'Valued Patron';
+
+    $cEmail = !empty($ord['customer_email']) ? trim($ord['customer_email']) : 'patron@jananiagro.com';
+    $cPhone = !empty($ord['customer_phone']) && $ord['customer_phone'] !== '+91 98480 22338' ? trim($ord['customer_phone']) : '+91 98480 22338';
+
+    return [
+        'name' => $cName,
+        'email' => $cEmail,
+        'phone' => $cPhone
+    ];
+}
+
 // ---------------------------------------------------------
 // ZERO-500 RESILIENT FALLBACK HANDLER WHEN DATABASE IS OFFLINE
 // ---------------------------------------------------------

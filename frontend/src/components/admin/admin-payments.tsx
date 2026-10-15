@@ -10,7 +10,6 @@ import {
   XCircle,
   RefreshCw,
   Search,
-  Download,
   Send,
   Printer,
   ChevronRight,
@@ -179,11 +178,14 @@ export function PaymentsManagement() {
         search: searchQuery || undefined,
         sortBy
       });
-      setTransactions(res.data || []);
-      if (res.stats) setStats(res.stats);
+      if (res?.data) {
+        setTransactions(res.data);
+      }
+      if (res?.stats) {
+        setStats(res.stats);
+      }
     } catch (err) {
       console.error("Failed to load transactions", err);
-      showToast("Error loading payment ledger", "error");
     } finally {
       setLoading(false);
     }
@@ -383,29 +385,7 @@ export function PaymentsManagement() {
         </div>
       )}
 
-      {/* Action Utilities */}
-      <div className="flex flex-wrap items-center justify-end gap-2.5">
-        <button
-          onClick={handleExportCsv}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card hover:bg-muted text-foreground text-xs font-semibold border border-border shadow-sm transition-all cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5 text-emerald-500" />
-          Export Ledger CSV
-        </button>
-        <button
-          onClick={() => {
-            loadTransactions();
-            loadGatewayConfigData();
-            loadSettlements();
-            loadFailedRetries();
-            showToast("Payment ledger and gateway statuses refreshed", "info");
-          }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Sync Ledger
-        </button>
-      </div>
+
 
       {/* 6 High-Impact KPI Metrics Ribbon */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">

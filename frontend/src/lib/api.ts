@@ -3416,8 +3416,13 @@ export async function getPaymentTransactions(params?: PaymentQueryParams) {
     return res;
   }
 
-  const stored = getStored<PaymentTransaction[]>(STORAGE_KEYS.PAYMENTS, DEFAULT_PAYMENTS);
-  let list = [...stored];
+  const rawStored: any = getStored<any>(STORAGE_KEYS.PAYMENTS, DEFAULT_PAYMENTS);
+  const storedList: PaymentTransaction[] = Array.isArray(rawStored)
+    ? rawStored
+    : Array.isArray(rawStored?.transactions)
+    ? rawStored.transactions
+    : [];
+  let list = [...storedList];
 
   if (params?.status && params.status !== "all") {
     list = list.filter((t) => t.status?.toLowerCase() === params.status?.toLowerCase());
@@ -3437,9 +3442,9 @@ export async function getPaymentTransactions(params?: PaymentQueryParams) {
     );
   }
 
-  const grossInflow = stored.filter((t) => t.status === "Captured").reduce((sum, t) => sum + t.grossAmount, 0);
-  const settledToBank = stored.filter((t) => t.status === "Captured").reduce((sum, t) => sum + t.netSettledAmount, 0);
-  const totalRefunds = stored.filter((t) => t.status === "Refunded").reduce((sum, t) => sum + t.refundedAmount, 0);
+  const grossInflow = storedList.filter((t) => t.status === "Captured").reduce((sum, t) => sum + (t.grossAmount || 0), 0);
+  const settledToBank = storedList.filter((t) => t.status === "Captured").reduce((sum, t) => sum + (t.netSettledAmount || 0), 0);
+  const totalRefunds = storedList.filter((t) => t.status === "Refunded").reduce((sum, t) => sum + (t.refundedAmount || 0), 0);
 
   return {
     success: true,
@@ -3463,8 +3468,13 @@ export async function getPaymentTransactionById(id: string) {
   }
   if (res?.success && res.data) return res.data;
 
-  const stored = getStored<PaymentTransaction[]>(STORAGE_KEYS.PAYMENTS, DEFAULT_PAYMENTS);
-  return stored.find((t) => t.id === id) || null;
+  const rawStored: any = getStored<any>(STORAGE_KEYS.PAYMENTS, DEFAULT_PAYMENTS);
+  const storedList: PaymentTransaction[] = Array.isArray(rawStored)
+    ? rawStored
+    : Array.isArray(rawStored?.transactions)
+    ? rawStored.transactions
+    : [];
+  return storedList.find((t) => t.id === id) || null;
 }
 
 export async function processPaymentRefund(payload: {
@@ -3495,9 +3505,14 @@ export async function processPaymentRefund(payload: {
   }
   if (res?.success) return res;
 
-  const stored = getStored<PaymentTransaction[]>(STORAGE_KEYS.PAYMENTS, DEFAULT_PAYMENTS);
+  const rawStored: any = getStored<any>(STORAGE_KEYS.PAYMENTS, DEFAULT_PAYMENTS);
+  const storedList: PaymentTransaction[] = Array.isArray(rawStored)
+    ? rawStored
+    : Array.isArray(rawStored?.transactions)
+    ? rawStored.transactions
+    : [];
   let updatedTx: any = null;
-  const updated = stored.map((t) => {
+  const updated = storedList.map((t) => {
     if (t.id === payload.transactionId) {
       updatedTx = {
         ...t,
