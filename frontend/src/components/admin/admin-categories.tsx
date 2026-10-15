@@ -920,40 +920,14 @@ function CategoryFormModal({
           {/* TAB 2: Media & Images */}
           {activeTab === "media" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Icon / Emoji Symbol</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={formData.icon}
-                      onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                      placeholder="🌾"
-                      className="h-10 w-16 text-center text-xl rounded-2xl border border-border bg-background outline-none"
-                    />
-                    <div className="flex flex-wrap gap-1">
-                      {["🌾", "🫒", "🥣", "🌶️", "🍚", "🍯", "👑", "🟡", "🌻"].map((emoji) => (
-                        <button
-                          type="button"
-                          key={emoji}
-                          onClick={() => setFormData({ ...formData, icon: emoji })}
-                          className="p-1 rounded-lg border border-border hover:bg-accent text-sm"
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Card Thumbnail URL</label>
-                  <input
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    placeholder="/images/cat-rice.jpg"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                  />
-                </div>
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">Card Thumbnail URL</label>
+                <input
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  placeholder="/images/cat-rice.jpg"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+                />
               </div>
 
               <div>
