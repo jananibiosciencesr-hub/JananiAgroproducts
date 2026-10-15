@@ -390,45 +390,7 @@ export function ShippingManagement() {
         </div>
       </div>
 
-      {/* 3. Navigation Main Tabs */}
-      <div className="border-b border-border bg-card rounded-xl p-1.5 shadow-sm">
-        <div className="flex flex-wrap items-center gap-1.5 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {[
-            { id: "shipments", label: "Shipments & Live Tracking", icon: Truck, count: stats.totalShipments },
-            { id: "pickup_hubs", label: "Pickup Locations (Hubs)", icon: Building2, count: pickupHubs.length },
-            { id: "ndr", label: "NDR Exception Desk", icon: AlertTriangle, count: stats.ndrExceptions, badgeColor: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" },
-            { id: "calculator", label: "Rate Calculator & Couriers", icon: Calculator },
-            { id: "manifest", label: "Manifest & Handover", icon: FileText },
-            { id: "settings", label: "API Configuration", icon: Sliders }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = mainTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setMainTab(tab.id as any)}
-                className={`px-3.5 py-2.5 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-                {tab.count !== undefined && (
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      isActive ? "bg-white/20 text-white" : tab.badgeColor || "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+
 
       {/* 4. TAB 1: SHIPMENTS & LIVE TRACKING */}
       {mainTab === "shipments" && (

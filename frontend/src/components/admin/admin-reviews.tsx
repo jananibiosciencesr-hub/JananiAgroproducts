@@ -316,69 +316,7 @@ export function ReviewsManagement() {
         </div>
       </div>
 
-      {/* Main Tabs Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-1">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab("desk")}
-            className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-1 ${
-              activeTab === "desk"
-                ? "border-brand-leaf text-brand-leaf bg-brand-leaf/5"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <SlidersHorizontal className="size-4" />
-            All & Moderation Desk
-            <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-              {stats.totalReviews}
-            </span>
-          </button>
 
-          <button
-            onClick={() => setActiveTab("gallery")}
-            className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-1 ${
-              activeTab === "gallery"
-                ? "border-brand-leaf text-brand-leaf bg-brand-leaf/5"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <ImageIcon className="size-4" />
-            UGC Photo Gallery
-            <span className="ml-1 rounded-full bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-600 dark:text-purple-400">
-              {allUgcImages.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("abuse")}
-            className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-1 ${
-              activeTab === "abuse"
-                ? "border-brand-leaf text-brand-leaf bg-brand-leaf/5"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <ShieldAlert className="size-4" />
-            Abuse Shield & Quarantine
-            {stats.flaggedCount > 0 && (
-              <span className="ml-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-bold text-rose-600 dark:text-rose-400">
-                {stats.flaggedCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-1 ${
-              activeTab === "analytics"
-                ? "border-brand-leaf text-brand-leaf bg-brand-leaf/5"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <BarChart3 className="size-4" />
-            Analytics & Sentiment Radar
-          </button>
-        </div>
-      </div>
 
       {/* TAB 1: ALL & MODERATION DESK */}
       {activeTab === "desk" && (
