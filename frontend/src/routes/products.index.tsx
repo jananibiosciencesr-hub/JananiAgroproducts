@@ -32,6 +32,7 @@ import {
   Minus
 } from "lucide-react";
 import { products, categories, type Product } from "@/lib/catalog";
+import { matchesProductSearch, calculateProductRelevance } from "@/lib/search-helper";
 import { useStore } from "@/components/store-provider";
 import { ProductQuickViewModal } from "@/components/shop/product-quick-view-modal";
 import { toast } from "sonner";
@@ -140,7 +141,7 @@ function ProductsPage() {
 
   const itemsPerPage = 12;
 
-  // Read initial category from URL query parameters (e.g. from navbar / categories links)
+  // Read initial category & search query from URL query parameters (e.g. from navbar / categories links)
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -159,6 +160,10 @@ function ProductsPage() {
         if (matched.length > 0) {
           setSelectedCategories(matched);
         }
+      }
+      const urlSearch = params.get("search") || params.get("q");
+      if (urlSearch && urlSearch.trim()) {
+        setSearchQuery(urlSearch.trim());
       }
     }
   }, []);
@@ -238,20 +243,16 @@ function ProductsPage() {
         if (!hasMatch) return false;
       }
 
-      // 4. Search
+      // 4. Smart Multi-Attribute & Stemmed Search
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = p.name.toLowerCase().includes(q);
-        const matchesSub = (p.subtitle || "").toLowerCase().includes(q);
-        const matchesCat = p.category.toLowerCase().includes(q);
-        if (!matchesName && !matchesSub && !matchesCat) return false;
+        if (!matchesProductSearch(p, searchQuery)) return false;
       }
 
       return true;
     });
   }, [activeProductList, selectedCategories, appliedMaxPrice, selectedCrops, searchQuery]);
 
-  // Sort products
+  // Sort products (with search relevance weighting if searching and featured)
   const sortedProducts = useMemo(() => {
     const list = [...filteredProducts];
     switch (sort) {
@@ -262,12 +263,20 @@ function ProductsPage() {
       case "rating":
         return list.sort((a, b) => b.rating - a.rating || b.reviews - a.reviews);
       case "newest":
-        return list.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0) || b.id - a.id);
+        return list.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0) || Number(b.id) - Number(a.id));
       case "featured":
       default:
-        return list.sort((a, b) => a.id - b.id);
+        if (searchQuery.trim()) {
+          return list.sort((a, b) => {
+            const relB = calculateProductRelevance(b, searchQuery);
+            const relA = calculateProductRelevance(a, searchQuery);
+            if (relB !== relA) return relB - relA;
+            return Number(a.id) - Number(b.id);
+          });
+        }
+        return list.sort((a, b) => Number(a.id) - Number(b.id));
     }
-  }, [filteredProducts, sort]);
+  }, [filteredProducts, sort, searchQuery]);
 
   // Reset page when filters change
   useEffect(() => {

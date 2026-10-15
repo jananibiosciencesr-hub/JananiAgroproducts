@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, X, ArrowRight } from "lucide-react";
 import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
+import { matchesProductSearch, calculateProductRelevance } from "@/lib/search-helper";
 import { useStore } from "@/components/store-provider";
 
 interface GlobalSearchModalProps {
@@ -58,16 +59,17 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
     });
   };
 
-  // Filter matching products
+  // Filter matching products with stemming and relevance ranking
   const matchingProducts = useMemo(() => {
-    const q = query.toLowerCase().trim();
+    const q = query.trim();
     if (!q) return [];
     return allProducts
-      .filter((p) => {
-        const nameMatch = p.name?.toLowerCase().includes(q);
-        const catMatch = p.category?.toLowerCase().includes(q);
-        const descMatch = p.description?.toLowerCase().includes(q);
-        return nameMatch || catMatch || descMatch;
+      .filter((p) => matchesProductSearch(p, q))
+      .sort((a, b) => {
+        const relB = calculateProductRelevance(b, q);
+        const relA = calculateProductRelevance(a, q);
+        if (relB !== relA) return relB - relA;
+        return Number(a.id) - Number(b.id);
       })
       .slice(0, 6);
   }, [query, allProducts]);

@@ -1,4 +1,5 @@
 import { products, categories, orders, type Product, getCategoryImage, getProductImage } from "./catalog";
+import { matchesProductSearch } from "./search-helper";
 import {
   STORAGE_KEYS,
   getStored,
@@ -291,12 +292,10 @@ export async function getProducts(params?: { category?: string; search?: string;
       p.category.toLowerCase().includes(reqCat) ||
       reqCat.includes(p.category.toLowerCase());
 
-    const reqSearch = params?.search?.trim().toLowerCase();
+    const reqSearch = params?.search?.trim();
     const matchSearch =
       !reqSearch ||
-      p.name.toLowerCase().includes(reqSearch) ||
-      p.description.toLowerCase().includes(reqSearch) ||
-      p.slug.toLowerCase().includes(reqSearch);
+      matchesProductSearch(p, reqSearch);
 
     return matchCat && matchSearch;
   });

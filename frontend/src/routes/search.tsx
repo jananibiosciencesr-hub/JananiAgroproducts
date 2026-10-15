@@ -22,6 +22,7 @@ import {
   MapPin
 } from "lucide-react";
 import { categories, products, type Product } from "@/lib/catalog";
+import { matchesProductSearch, calculateProductRelevance } from "@/lib/search-helper";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -170,17 +171,9 @@ function SearchPage() {
   const filteredProducts = useMemo(() => {
     return allProducts
       .filter((p) => {
-        // Text search across name, category, description, brand, dietary tags, and origin
+        // Text search across all product attributes with stemming and multi-word matching
         if (query.trim()) {
-          const q = query.toLowerCase();
-          const matches =
-            p.name.toLowerCase().includes(q) ||
-            p.category.toLowerCase().includes(q) ||
-            p.brand.toLowerCase().includes(q) ||
-            p.description.toLowerCase().includes(q) ||
-            p.origin.toLowerCase().includes(q) ||
-            p.dietaryTags.some((t) => t.toLowerCase().includes(q));
-          if (!matches) return false;
+          if (!matchesProductSearch(p, query)) return false;
         }
 
         // Category Filter
@@ -224,7 +217,12 @@ function SearchPage() {
         if (sort === "rating") return b.rating - a.rating;
         if (sort === "discount") return b.discount - a.discount;
         if (sort === "newest") return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
-        return a.id - b.id;
+        if (query.trim()) {
+          const relB = calculateProductRelevance(b, query);
+          const relA = calculateProductRelevance(a, query);
+          if (relB !== relA) return relB - relA;
+        }
+        return Number(a.id) - Number(b.id);
       });
   }, [
     query,

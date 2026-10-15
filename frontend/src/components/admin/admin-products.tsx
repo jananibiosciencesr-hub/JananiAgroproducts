@@ -56,6 +56,7 @@ import {
   getAdminFullCategories,
   getCategories
 } from "@/lib/api";
+import { matchesProductSearch } from "@/lib/search-helper";
 
 export interface ProductVariant {
   id: string;
@@ -289,14 +290,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
   // Client-side Filter
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      const q = search.toLowerCase();
-      const matchSearch =
-        !search ||
-        p.name?.toLowerCase().includes(q) ||
-        p.sku?.toLowerCase().includes(q) ||
-        p.category?.toLowerCase().includes(q) ||
-        p.brand?.toLowerCase().includes(q);
-
+      const matchSearch = !search.trim() || matchesProductSearch(p, search);
       const matchMin = !minPrice || p.price >= Number(minPrice);
       const matchMax = !maxPrice || p.price <= Number(maxPrice);
 
