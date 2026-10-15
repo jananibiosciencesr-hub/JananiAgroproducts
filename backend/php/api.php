@@ -710,58 +710,56 @@ function ensureJananiCatalogSynced($pdo) {
             $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
         }
 
-        // 11 Core Janani Agro Taxonomy Categories
-        $categories = [
-            ['cat-bio-fertilizers', 'Bio Fertilizers', 'bio-fertilizers', 1, null, null, '/products/dharani.jpg', '/products/dharani.jpg', '🌾', 2, 1, 1, 1, 1, 'Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour.'],
-            ['cat-bio-pesticides', 'Bio Pesticides', 'bio-pesticides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🛡️', 2, 1, 1, 1, 2, 'Targeted biological and microbial pest management formulations for organic insect and borer control.'],
-            ['cat-bio-fungicides', 'Bio Fungicides', 'bio-fungicides', 1, null, null, '/products/harit.jpg', '/products/harit.jpg', '🍄', 2, 1, 1, 1, 3, 'Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens.'],
-            ['cat-bio-stimulants', 'Bio Stimulants', 'bio-stimulants', 1, null, null, '/products/pushkal.jpg', '/products/pushkal.jpg', '⚡', 4, 1, 1, 1, 4, 'Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield.'],
-            ['cat-micro-nutrients', 'Micro Nutrients', 'micro-nutrients', 1, null, null, '/products/annada.jpg', '/products/annada.jpg', '🌱', 2, 1, 1, 1, 5, 'Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health.'],
-            ['cat-insecticides', 'Insecticides', 'insecticides', 1, null, null, '/products/balavan.jpg', '/products/balavan.jpg', '🦗', 1, 1, 1, 0, 6, 'Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers.'],
-            ['cat-fungicides', 'Fungicides', 'fungicides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🍃', 1, 1, 1, 0, 7, 'Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots.'],
-            ['cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, null, null, '/products/neem-oil.jpg', '/products/neem-oil.jpg', '🌿', 1, 1, 1, 0, 8, 'Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection.'],
-            ['cat-water-solubles', 'Water Solubles', 'water-solubles', 1, null, null, '/products/dhanya.jpg', '/products/dhanya.jpg', '💧', 1, 1, 1, 0, 9, '100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery.'],
-            ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', '/products/bhumi-shakti.jpg', '🚜', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.'],
-            ['cat-others', 'Others', 'others', 1, null, null, '/products/balavan-bottle.jpg', '/products/balavan-bottle.jpg', '📦', 1, 1, 0, 0, 11, 'Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants.']
-        ];
-        $stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `image`=VALUES(`image`), `banner_image`=VALUES(`banner_image`), `active`=1, `description`=VALUES(`description`)");
-        foreach ($categories as $cat) { 
-            try { $stmtCat->execute($cat); } catch (Exception $e) {} 
+        // 11 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
+        $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
+        if ($catCount === 0) {
+            $categories = [
+                ['cat-bio-fertilizers', 'Bio Fertilizers', 'bio-fertilizers', 1, null, null, '/products/dharani.jpg', '/products/dharani.jpg', '🌾', 2, 1, 1, 1, 1, 'Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour.'],
+                ['cat-bio-pesticides', 'Bio Pesticides', 'bio-pesticides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🛡️', 2, 1, 1, 1, 2, 'Targeted biological and microbial pest management formulations for organic insect and borer control.'],
+                ['cat-bio-fungicides', 'Bio Fungicides', 'bio-fungicides', 1, null, null, '/products/harit.jpg', '/products/harit.jpg', '🍄', 2, 1, 1, 1, 3, 'Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens.'],
+                ['cat-bio-stimulants', 'Bio Stimulants', 'bio-stimulants', 1, null, null, '/products/pushkal.jpg', '/products/pushkal.jpg', '⚡', 4, 1, 1, 1, 4, 'Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield.'],
+                ['cat-micro-nutrients', 'Micro Nutrients', 'micro-nutrients', 1, null, null, '/products/annada.jpg', '/products/annada.jpg', '🌱', 2, 1, 1, 1, 5, 'Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health.'],
+                ['cat-insecticides', 'Insecticides', 'insecticides', 1, null, null, '/products/balavan.jpg', '/products/balavan.jpg', '🦗', 1, 1, 1, 0, 6, 'Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers.'],
+                ['cat-fungicides', 'Fungicides', 'fungicides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🍃', 1, 1, 1, 0, 7, 'Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots.'],
+                ['cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, null, null, '/products/neem-oil.jpg', '/products/neem-oil.jpg', '🌿', 1, 1, 1, 0, 8, 'Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection.'],
+                ['cat-water-solubles', 'Water Solubles', 'water-solubles', 1, null, null, '/products/dhanya.jpg', '/products/dhanya.jpg', '💧', 1, 1, 1, 0, 9, '100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery.'],
+                ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', '/products/bhumi-shakti.jpg', '🚜', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.'],
+                ['cat-others', 'Others', 'others', 1, null, null, '/products/balavan-bottle.jpg', '/products/balavan-bottle.jpg', '📦', 1, 1, 0, 0, 11, 'Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants.']
+            ];
+            $stmtCat = $pdo->prepare("INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($categories as $cat) { 
+                try { $stmtCat->execute($cat); } catch (Exception $e) {} 
+            }
         }
 
-        // All 18 Janani Agro Flagship Products (including ROOT PLUS under Bio Fertilizers)
-        $products = [
-            ['harit', 'HARIT', 'Bio Fungicides', 450.00, 520.00, '1 L', 150, 4.8, 142, 'Best Seller', '/products/harit.jpg', 'HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases.', 'JAP-SKU-HARIT'],
-            ['bhumi-shakti', 'BHUMI SHAKTI', 'Bio Stimulants', 380.00, 450.00, '1 L', 120, 4.7, 98, 'New', '/products/bhumi-shakti.jpg', 'BHUMI SHAKTI is a humic and fulvic based formulation designed to support soil health, improve nutrient availability and promote efficient nutrient utilization by plants. Its organic carbon-rich components help support favourable soil conditions and contribute to better root-zone development.', 'JAP-SKU-BHUMISHAKTI'],
-            ['neem-oil-1000-ppm', 'NEEM OIL 1000 PPM', 'Botanical Extracts', 550.00, 650.00, '1 L', 140, 4.6, 86, 'Popular', '/products/neem-oil.jpg', 'NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized azadirachtin (0.10% w/w minimum / 1000 ppm). It is intended for use as part of an Integrated Pest Management (IPM) programme for management of susceptible insect pests.', 'JAP-SKU-NEEM1000'],
-            ['pushkal', 'PUSHKAL', 'Bio Stimulants', 600.00, 720.00, '1 L', 95, 4.5, 74, null, '/products/pushkal.jpg', 'PUSHKAL is an advanced bio-stimulant plant growth promoter formulated with bioactive peptides, micronutrients and organic stimulants to enhance metabolic activity, chlorophyll synthesis and photosynthesis efficiency.', 'JAP-SKU-PUSHKAL'],
-            ['annada', 'ANNADA', 'Agri Inputs', 420.00, 490.00, '1 L', 110, 4.6, 65, null, '/products/annada.jpg', 'ANNADA is an organic soil enhancer and nutrient formulation rich in natural organic peptides, metabolites and beneficial soil microbe stimulants designed to enrich soil ecology and accelerate root aeration and nutrient assimilation.', 'JAP-SKU-ANNADA'],
-            ['dharani', 'DHARANI', 'Bio Fertilizers', 390.00, 460.00, '1 L', 85, 4.4, 53, 'Bestseller', '/products/dharani.jpg', 'DHARANI is a specialised potassium mobilizing biofertilizer and rooting formulation containing natural auxin precursors, seaweed biostimulants, and potassium mobilizers to develop dense lateral feeder roots and white roots for superior water and nutrient uptake.', 'JAP-SKU-DHARANI'],
-            ['balavan', 'BALAVAN', 'Insecticides', 480.00, 560.00, '1 L', 90, 4.5, 61, null, '/products/balavan.jpg', 'BALAVAN is a multi-action botanical crop protector synthesized from herbal extracts and beneficial microbial bio-agents that repel chewing and sucking pests and inhibit fungal spore germination.', 'JAP-SKU-BALAVAN'],
-            ['dhanya', 'DHANYA', 'Water Solubles', 520.00, 600.00, '1 L', 75, 4.3, 49, null, '/products/dhanya.jpg', 'DHANYA is an EDTA-chelated balanced liquid micronutrient formulation containing Zinc, Iron, Manganese, Copper, Boron and Molybdenum to remedy hidden hunger and deficiency chlorosis in demanding crops.', 'JAP-SKU-DHANYA'],
-            ['suraksha', 'SURAKSHA', 'Fungicides', 410.00, 480.00, '1 L', 130, 4.4, 58, null, '/products/suraksha.jpg', 'SURAKSHA is a broad-spectrum biological fungicide powered by beneficial antagonistic microorganisms that effectively protect roots and aerial plant foliage from blight, leaf spots, downy mildew and anthracnose.', 'JAP-SKU-SURAKSHA'],
-            ['pushkal-bottle', 'PUSHKAL', 'Bio Stimulants', 495.00, 580.00, '1 L', 95, 4.5, 72, null, '/products/pushkal-bottle.jpg', 'PUSHKAL is an innovative speciality physiological activator designed to combat stress from drought, salinity, and heat. It enhances branching, vegetative shoots and overall vigour in critical development windows.', 'JAP-SKU-PUSHKALBOTTLE'],
-            ['balavan-bottle', 'BALAVAN', 'Agri Inputs', 460.00, 530.00, '1 L', 80, 4.3, 40, null, '/products/balavan-bottle.jpg', 'BALAVAN is a natural soil buffering conditioner that corrects soil pH, reduces compaction, improves water holding capacity, and restores depleted beneficial soil microflora in intensive agricultural soils.', 'JAP-SKU-BALAVANBOTTLE'],
-            ['annada-bottle', 'ANNADA', 'Micro Nutrients', 575.00, 670.00, '1 L', 115, 4.6, 83, null, '/products/annada-bottle.jpg', 'ANNADA is a powerful organic crop booster and bioprotectant formulated with sea-kelp minerals, organic plant extracts and microbial metabolites to provide deep green foliage and rapid recovery from fungal stress.', 'JAP-SKU-ANNADABOTTLE'],
-            ['balavan-bacillus-subtilis-5l', 'BALAVAN', 'Bio Fungicides', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Bio Defense', '/products/balavan.jpg', 'BALAVAN contains high-potency Bacillus subtilis bacteria that actively colonize plant surfaces and rhizosphere, producing lipopeptide antibiotics that prevent bacterial blights and fungal blast.', 'JAP-SKU-BALAVAN'],
-            ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA', 'Bio Pesticides', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'SURAKSHA is a potent liquid bio-pesticide and bio-protective formulation containing Pseudomonas fluorescens. It induces systemic resistance in crops and produces siderophores to suppress soil pathogens.', 'JAP-SKU-SURAKSHA'],
-            ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB', 'Bio Fertilizers', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'DHARANI KMB contains living cultures of Potassium Mobilizing Bacteria that solubilize and convert insoluble soil potassium into readily plant-absorbable ionic forms, maximizing crop size and sugar content.', 'JAP-SKU-DHARANI'],
-            ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL', 'Bio Stimulants', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering Booster', '/products/pushkal.jpg', 'PUSHKAL is a premium crop biostimulant formulated with 10% Free L-Amino Acids, 10% Seaweed Ascophyllum Nodosum extract, Fulvic Acid, Zinc and Boron for dramatic flower retention and fruit enlargement.', 'JAP-SKU-PUSHKAL'],
-            ['annada-fish-amino-acid-5l', 'ANNADA', 'Micro Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'ANNADA is a cold-fermented Fish Amino Acid formulation rich in natural organic peptides, macro and micro minerals that rapidly stimulate chlorophyll formation, crop canopy development, and stress relief.', 'JAP-SKU-ANNADA'],
-            ['agri-stick-silicone-spreader-activator', 'AGRI STICK', 'Others', 350.00, 420.00, '250 ml', 120, 4.8, 38, 'Specialty Aid', '/products/balavan-bottle.jpg', 'AGRI STICK is a premium non-ionic organosilicone super-spreader and adjuvant that significantly lowers the surface tension of spray solutions, ensuring uniform droplet spreading, rainfastness and rapid cuticle penetration.', 'JAP-SKU-AGRISTICK']
-        ];
-
-        // Seed with INSERT IGNORE / ON DUPLICATE KEY UPDATE - NEVER DELETE USER PRODUCTS!
-        $stmtProd = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active') 
-            ON DUPLICATE KEY UPDATE 
-                `category_name`=VALUES(`category_name`), 
-                `unit`=VALUES(`unit`), 
-                `image`=VALUES(`image`), 
-                `description`=VALUES(`description`), 
-                `sku`=VALUES(`sku`)");
-        foreach ($products as $prod) { 
-            try { $stmtProd->execute($prod); } catch (Exception $e) {} 
+        // All 18 Janani Agro Flagship Products - seed ONLY if empty, NEVER overwrite admin product edits!
+        $prodCount = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE `status` != 'Trash'")->fetchColumn();
+        if ($prodCount === 0) {
+            $products = [
+                ['harit', 'HARIT', 'Bio Fungicides', 450.00, 520.00, '1 L', 150, 4.8, 142, 'Best Seller', '/products/harit.jpg', 'HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases.', 'JAP-SKU-HARIT'],
+                ['bhumi-shakti', 'BHUMI SHAKTI', 'Bio Stimulants', 380.00, 450.00, '1 L', 120, 4.7, 98, 'New', '/products/bhumi-shakti.jpg', 'BHUMI SHAKTI is a humic and fulvic based formulation designed to support soil health, improve nutrient availability and promote efficient nutrient utilization by plants. Its organic carbon-rich components help support favourable soil conditions and contribute to better root-zone development.', 'JAP-SKU-BHUMISHAKTI'],
+                ['neem-oil-1000-ppm', 'NEEM OIL 1000 PPM', 'Botanical Extracts', 550.00, 650.00, '1 L', 140, 4.6, 86, 'Popular', '/products/neem-oil.jpg', 'NEEM OIL 1000 PPM is a neem-oil-based botanical formulation containing standardized azadirachtin (0.10% w/w minimum / 1000 ppm). It is intended for use as part of an Integrated Pest Management (IPM) programme for management of susceptible insect pests.', 'JAP-SKU-NEEM1000'],
+                ['pushkal', 'PUSHKAL', 'Bio Stimulants', 600.00, 720.00, '1 L', 95, 4.5, 74, null, '/products/pushkal.jpg', 'PUSHKAL is an advanced bio-stimulant plant growth promoter formulated with bioactive peptides, micronutrients and organic stimulants to enhance metabolic activity, chlorophyll synthesis and photosynthesis efficiency.', 'JAP-SKU-PUSHKAL'],
+                ['annada', 'ANNADA', 'Agri Inputs', 420.00, 490.00, '1 L', 110, 4.6, 65, null, '/products/annada.jpg', 'ANNADA is an organic soil enhancer and nutrient formulation rich in natural organic peptides, metabolites and beneficial soil microbe stimulants designed to enrich soil ecology and accelerate root aeration and nutrient assimilation.', 'JAP-SKU-ANNADA'],
+                ['dharani', 'DHARANI', 'Bio Fertilizers', 390.00, 460.00, '1 L', 85, 4.4, 53, 'Bestseller', '/products/dharani.jpg', 'DHARANI is a specialised potassium mobilizing biofertilizer and rooting formulation containing natural auxin precursors, seaweed biostimulants, and potassium mobilizers to develop dense lateral feeder roots and white roots for superior water and nutrient uptake.', 'JAP-SKU-DHARANI'],
+                ['balavan', 'BALAVAN', 'Insecticides', 480.00, 560.00, '1 L', 90, 4.5, 61, null, '/products/balavan.jpg', 'BALAVAN is a multi-action botanical crop protector synthesized from herbal extracts and beneficial microbial bio-agents that repel chewing and sucking pests and inhibit fungal spore germination.', 'JAP-SKU-BALAVAN'],
+                ['dhanya', 'DHANYA', 'Water Solubles', 520.00, 600.00, '1 L', 75, 4.3, 49, null, '/products/dhanya.jpg', 'DHANYA is an EDTA-chelated balanced liquid micronutrient formulation containing Zinc, Iron, Manganese, Copper, Boron and Molybdenum to remedy hidden hunger and deficiency chlorosis in demanding crops.', 'JAP-SKU-DHANYA'],
+                ['suraksha', 'SURAKSHA', 'Fungicides', 410.00, 480.00, '1 L', 130, 4.4, 58, null, '/products/suraksha.jpg', 'SURAKSHA is a broad-spectrum biological fungicide powered by beneficial antagonistic microorganisms that effectively protect roots and aerial plant foliage from blight, leaf spots, downy mildew and anthracnose.', 'JAP-SKU-SURAKSHA'],
+                ['pushkal-bottle', 'PUSHKAL', 'Bio Stimulants', 495.00, 580.00, '1 L', 95, 4.5, 72, null, '/products/pushkal-bottle.jpg', 'PUSHKAL is an innovative speciality physiological activator designed to combat stress from drought, salinity, and heat. It enhances branching, vegetative shoots and overall vigour in critical development windows.', 'JAP-SKU-PUSHKALBOTTLE'],
+                ['balavan-bottle', 'BALAVAN', 'Agri Inputs', 460.00, 530.00, '1 L', 80, 4.3, 40, null, '/products/balavan-bottle.jpg', 'BALAVAN is a natural soil buffering conditioner that corrects soil pH, reduces compaction, improves water holding capacity, and restores depleted beneficial soil microflora in intensive agricultural soils.', 'JAP-SKU-BALAVANBOTTLE'],
+                ['annada-bottle', 'ANNADA', 'Micro Nutrients', 575.00, 670.00, '1 L', 115, 4.6, 83, null, '/products/annada-bottle.jpg', 'ANNADA is a powerful organic crop booster and bioprotectant formulated with sea-kelp minerals, organic plant extracts and microbial metabolites to provide deep green foliage and rapid recovery from fungal stress.', 'JAP-SKU-ANNADABOTTLE'],
+                ['balavan-bacillus-subtilis-5l', 'BALAVAN', 'Bio Fungicides', 5600.00, 6200.00, '5 L', 120, 5.0, 52, 'Bio Defense', '/products/balavan.jpg', 'BALAVAN contains high-potency Bacillus subtilis bacteria that actively colonize plant surfaces and rhizosphere, producing lipopeptide antibiotics that prevent bacterial blights and fungal blast.', 'JAP-SKU-BALAVAN'],
+                ['suraksha-pseudomonas-fluorescens-5l', 'SURAKSHA', 'Bio Pesticides', 4900.00, 5500.00, '5 L', 110, 4.9, 63, 'Root Defender', '/products/suraksha.jpg', 'SURAKSHA is a potent liquid bio-pesticide and bio-protective formulation containing Pseudomonas fluorescens. It induces systemic resistance in crops and produces siderophores to suppress soil pathogens.', 'JAP-SKU-SURAKSHA'],
+                ['dharani-kmb-potassium-mobilizing-biofertilizer-5l', 'DHARANI KMB', 'Bio Fertilizers', 5300.00, 5800.00, '5 L', 100, 5.0, 48, 'Potassium Mobilizer', '/products/dharani.jpg', 'DHARANI KMB contains living cultures of Potassium Mobilizing Bacteria that solubilize and convert insoluble soil potassium into readily plant-absorbable ionic forms, maximizing crop size and sugar content.', 'JAP-SKU-DHARANI'],
+                ['pushkal-flowering-fruit-set-biostimulant-1l', 'PUSHKAL', 'Bio Stimulants', 999.00, 1199.00, '1 L', 150, 5.0, 42, 'Flowering Booster', '/products/pushkal.jpg', 'PUSHKAL is a premium crop biostimulant formulated with 10% Free L-Amino Acids, 10% Seaweed Ascophyllum Nodosum extract, Fulvic Acid, Zinc and Boron for dramatic flower retention and fruit enlargement.', 'JAP-SKU-PUSHKAL'],
+                ['annada-fish-amino-acid-5l', 'ANNADA', 'Micro Nutrients', 3600.00, 3999.00, '5 L', 150, 5.0, 64, 'Flagship Nutrient', '/products/annada.jpg', 'ANNADA is a cold-fermented Fish Amino Acid formulation rich in natural organic peptides, macro and micro minerals that rapidly stimulate chlorophyll formation, crop canopy development, and stress relief.', 'JAP-SKU-ANNADA'],
+                ['agri-stick-silicone-spreader-activator', 'AGRI STICK', 'Others', 350.00, 420.00, '250 ml', 120, 4.8, 38, 'Specialty Aid', '/products/balavan-bottle.jpg', 'AGRI STICK is a premium non-ionic organosilicone super-spreader and adjuvant that significantly lowers the surface tension of spray solutions, ensuring uniform droplet spreading, rainfastness and rapid cuticle penetration.', 'JAP-SKU-AGRISTICK']
+            ];
+            $stmtProd = $pdo->prepare("INSERT IGNORE INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`, `active`, `status`) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'Active')");
+            foreach ($products as $prod) { 
+                try { $stmtProd->execute($prod); } catch (Exception $e) {} 
+            }
         }
 
         // Update category product counts dynamically
@@ -2476,7 +2474,7 @@ try {
                             $vals[] = $body['seo']['canonicalUrl'];
                         }
 
-                        // Locate existing category in database
+                        // Locate existing category in database flexibly
                         $existingCat = null;
                         $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? LIMIT 1");
                         $fStmt->execute([$id]);
@@ -2491,6 +2489,22 @@ try {
                             $fStmt->execute([$body['slug']]);
                             $existingCat = $fStmt->fetch();
                         }
+                        if (!$existingCat && !empty($body['name'])) {
+                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `name` = ? OR LOWER(`name`) = LOWER(?) LIMIT 1");
+                            $fStmt->execute([$body['name'], $body['name']]);
+                            $existingCat = $fStmt->fetch();
+                        }
+                        if (!$existingCat && strpos($id, 'cat-') !== 0) {
+                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                            $fStmt->execute(['cat-' . $id, 'cat-' . $id]);
+                            $existingCat = $fStmt->fetch();
+                        }
+                        if (!$existingCat && strpos($id, 'cat-') === 0) {
+                            $rawStrip = substr($id, 4);
+                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                            $fStmt->execute([$rawStrip, $rawStrip]);
+                            $existingCat = $fStmt->fetch();
+                        }
 
                         if ($existingCat && !empty($fields)) {
                             $targetId = $existingCat['id'];
@@ -2498,9 +2512,51 @@ try {
                             $upStmt = $pdo->prepare("UPDATE `categories` SET " . implode(', ', $fields) . " WHERE `id` = ?");
                             $upStmt->execute($vals);
 
+                            // Cascade category name changes to products and subcategories
+                            if (!empty($body['name']) && $existingCat['name'] !== $body['name']) {
+                                try {
+                                    $oldName = $existingCat['name'];
+                                    $newName = trim($body['name']);
+                                    $pUp = $pdo->prepare("UPDATE `products` SET `category_name` = ? WHERE `category_name` = ? OR `category_id` = ?");
+                                    $pUp->execute([$newName, $oldName, $targetId]);
+
+                                    $cUp = $pdo->prepare("UPDATE `categories` SET `parent_name` = ? WHERE `parent_id` = ? OR `parent_name` = ?");
+                                    $cUp->execute([$newName, $targetId, $oldName]);
+                                } catch (Exception $e) {}
+                            }
+
+                            // If category slug changed, cascade to products if column exists
+                            if (!empty($body['slug']) && $existingCat['slug'] !== $body['slug']) {
+                                try {
+                                    $pUpSlug = $pdo->prepare("UPDATE `products` SET `category_slug` = ? WHERE `category_slug` = ? OR `category_name` = ?");
+                                    $pUpSlug->execute([trim($body['slug']), $existingCat['slug'], $existingCat['name']]);
+                                } catch (Exception $e) {}
+                            }
+
                             $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? LIMIT 1");
                             $fetchStmt->execute([$targetId]);
                             $updated = $fetchStmt->fetch();
+
+                            if ($updated) {
+                                $updated['parentId'] = $updated['parent_id'];
+                                $updated['parentName'] = $updated['parent_name'];
+                                $updated['bannerImage'] = $updated['banner_image'];
+                                $updated['productCount'] = (int)($updated['product_count'] ?? 0);
+                                $updated['productsCount'] = (int)($updated['product_count'] ?? 0);
+                                $updated['orderIndex'] = (int)($updated['display_order'] ?? 0);
+                                $updated['active'] = (bool)$updated['active'];
+                                $updated['featured'] = (bool)$updated['featured'];
+                                $updated['trending'] = (bool)$updated['trending'];
+                                $lvl = (int)($updated['level'] ?? 1);
+                                $updated['level'] = $lvl === 2 ? 'sub' : ($lvl === 3 ? 'child' : 'root');
+                                $updated['seo'] = [
+                                    'metaTitle' => $updated['meta_title'] ?? ($updated['name'] . ' | JANANI AGRO'),
+                                    'metaDescription' => $updated['meta_description'] ?? $updated['description'] ?? '',
+                                    'metaKeywords' => $updated['meta_keywords'] ?? '',
+                                    'canonicalUrl' => $updated['canonical_url'] ?? ('https://jananiagro.com/categories/' . $updated['slug']),
+                                    'ogImage' => $updated['image'] ?? ''
+                                ];
+                            }
 
                             echo json_encode([
                                 'success' => true,

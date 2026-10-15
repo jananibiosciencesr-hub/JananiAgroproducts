@@ -3793,9 +3793,10 @@ export const createAdminCategory = (req, res) => {
 
 export const updateAdminCategory = (req, res) => {
   const { id } = req.params;
-  const index = adminCategories.findIndex(c => c.id === id);
+  const index = adminCategories.findIndex(c => c.id === id || c.slug === id || c.id === ('cat-' + id) || (c.id && c.id.startsWith('cat-') && c.id.slice(4) === id));
   if (index === -1) return res.status(404).json({ success: false, message: "Category not found" });
 
+  const oldName = adminCategories[index].name;
   adminCategories[index] = {
     ...adminCategories[index],
     ...req.body,
@@ -3804,6 +3805,19 @@ export const updateAdminCategory = (req, res) => {
       ...(req.body.seo || {})
     }
   };
+
+  // If category name changed, update products
+  if (req.body.name && req.body.name !== oldName && Array.isArray(global.adminProducts || adminProducts)) {
+    try {
+      const prods = global.adminProducts || adminProducts;
+      prods.forEach(p => {
+        if (p.category === oldName || p.category_name === oldName) {
+          p.category = req.body.name;
+          p.category_name = req.body.name;
+        }
+      });
+    } catch (e) {}
+  }
 
   res.json({ success: true, message: "Category updated successfully", data: adminCategories[index] });
 };

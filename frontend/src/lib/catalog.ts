@@ -7,12 +7,7 @@ export { heroImage, productsImage, storyImage, pantryImage };
 
 // Smart Category Image Resolver with verified organic photography
 export function getCategoryImage(nameOrSlug: string = "", customImage?: string): string {
-  if (
-    customImage &&
-    (customImage.startsWith("/images/categories/") ||
-      ((customImage.startsWith("http://") || customImage.startsWith("https://") || customImage.startsWith("data:")) &&
-        !customImage.includes("/products/")))
-  ) {
+  if (customImage && typeof customImage === "string" && customImage.trim() !== "" && !customImage.includes("placeholder")) {
     return customImage;
   }
   const s = (nameOrSlug || "").toLowerCase();

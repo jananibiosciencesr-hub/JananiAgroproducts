@@ -287,60 +287,57 @@ export async function getCategories() {
   }
 
   const map = new Map<string, any>();
-  // 1. Initial base categories (Strictly authentic Janani Agro categories)
-  for (const cat of categories) {
-    if (isGroceryCategory(cat)) continue;
-    const slug = (cat.slug || cat.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")).toLowerCase();
-    map.set(slug, {
-      id: cat.id,
-      name: cat.name,
-      slug: cat.slug,
-      count: cat.count || 2,
-      image: getCategoryImage(cat.slug || cat.name, cat.image),
-      description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
-      icon: "🌾",
-      active: true
-    });
-  }
 
-  // 2. Merge backend categories
-  for (const cat of backendList) {
-    if (isGroceryCategory(cat)) continue;
-    if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false) {
-      const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
-      if (slug) map.delete(slug);
-      continue;
+  // 1. If backend returned valid categories from MySQL database, use them as primary source of truth!
+  if (backendList.length > 0) {
+    for (const cat of backendList) {
+      if (isGroceryCategory(cat)) continue;
+      if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") continue;
+      const key = String(cat.id || cat.slug || cat.name).toLowerCase();
+      map.set(key, {
+        id: cat.id || `cat-${cat.slug || key}`,
+        name: cat.name || cat.slug || key,
+        slug: cat.slug || key,
+        count: Number(cat.product_count || cat.productsCount || cat.count) || 0,
+        image: getCategoryImage(cat.slug || cat.name, cat.image || cat.bannerImage || cat.banner_image),
+        description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
+        icon: cat.icon || "🌾",
+        active: true
+      });
     }
-    const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
-    if (!slug) continue;
-    const existing = map.get(slug);
-    map.set(slug, {
-      id: cat.id || existing?.id || `cat-${slug}`,
-      name: cat.name || existing?.name || slug,
-      slug: cat.slug || slug,
-      count: Number(cat.product_count || cat.productsCount || cat.count) || existing?.count || 0,
-      image: getCategoryImage(cat.slug || cat.name, cat.image || cat.bannerImage || cat.banner_image || existing?.image),
-      description: cat.description || existing?.description || "Natural and certified organic bio-inputs for sustainable farming.",
-      icon: cat.icon || existing?.icon || "🌾",
-      active: true
-    });
+  } else {
+    // Fallback: Initial base categories only if backend database is offline or empty
+    for (const cat of categories) {
+      if (isGroceryCategory(cat)) continue;
+      const key = String(cat.id || cat.slug || cat.name).toLowerCase();
+      map.set(key, {
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        count: cat.count || 2,
+        image: getCategoryImage(cat.slug || cat.name, cat.image),
+        description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
+        icon: "🌾",
+        active: true
+      });
+    }
   }
 
-  // 3. Merge stored / local categories
+  // 2. Merge stored / local categories (if edited or saved locally)
   for (const cat of storedList) {
     if (isGroceryCategory(cat)) continue;
-    if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false) {
-      const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
-      if (slug) map.delete(slug);
+    const key = String(cat.id || cat.slug || cat.name).toLowerCase();
+    if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") {
+      map.delete(key);
+      if (cat.slug) map.delete(String(cat.slug).toLowerCase());
+      if (cat.id) map.delete(String(cat.id).toLowerCase());
       continue;
     }
-    const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "").toLowerCase();
-    if (!slug) continue;
-    const existing = map.get(slug);
-    map.set(slug, {
-      id: cat.id || existing?.id || `cat-${slug}`,
-      name: cat.name || existing?.name || slug,
-      slug: cat.slug || slug,
+    const existing = map.get(key) || (cat.id ? map.get(String(cat.id).toLowerCase()) : null) || (cat.slug ? map.get(String(cat.slug).toLowerCase()) : null);
+    map.set(key, {
+      id: cat.id || existing?.id || `cat-${cat.slug || key}`,
+      name: cat.name || existing?.name || key,
+      slug: cat.slug || existing?.slug || key,
       count: Number(cat.product_count || cat.productsCount || cat.count) || existing?.count || 0,
       image: getCategoryImage(cat.slug || cat.name, cat.image || cat.bannerImage || cat.banner_image || existing?.image),
       description: cat.description || existing?.description || "Natural and certified organic bio-inputs for sustainable farming.",
@@ -2638,6 +2635,13 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
   let list: any[] = [];
   if (Array.isArray(rawList) && rawList.length > 0) {
     list = rawList.map(normalizeAdminCategory).filter(Boolean);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("janani_admin_categories", JSON.stringify(list));
+        localStorage.setItem("janani_admin_categories_v3", JSON.stringify(list));
+        setStored(STORAGE_KEYS.CATEGORIES, list);
+      } catch {}
+    }
   }
 
   // Fallback to localStorage and 11 core catalog categories if database is empty or unreached
@@ -2845,37 +2849,46 @@ export async function updateAdminCategory(id: string, payload: any) {
     );
   }
 
-  // 3. Fallback to localStorage
-  if (!res?.success) {
+  const updatedRaw = res?.data || res?.category || { ...reqBody, id };
+  const updatedItem = normalizeAdminCategory(updatedRaw);
+
+  // Always sync to localStorage across all category keys so the client state, admin, and storefront immediately reflect it
+  if (typeof window !== "undefined") {
     try {
       const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
-      const idx = stored.findIndex((c) => c.id === id);
+      const idx = stored.findIndex((c) => c.id === id || c.slug === id || (payload.slug && c.slug === payload.slug));
       if (idx !== -1) {
-        stored[idx] = { ...stored[idx], ...reqBody };
-        setStored(STORAGE_KEYS.CATEGORIES, stored);
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("janani-categories-updated"));
-          window.dispatchEvent(new CustomEvent("janani-products-updated"));
-        }
-        return { success: true, message: "Category updated successfully", data: normalizeAdminCategory(stored[idx]) };
+        stored[idx] = { ...stored[idx], ...updatedItem };
+      } else {
+        stored.push(updatedItem);
       }
-    } catch {}
-  }
+      setStored(STORAGE_KEYS.CATEGORIES, stored);
 
-  if (res?.success && (res.data || res.category)) {
-    if (typeof window !== "undefined") {
+      for (const k of ["janani_admin_categories", "janani_admin_categories_v3"]) {
+        const raw = localStorage.getItem(k);
+        let list = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(list)) list = [];
+        const lIdx = list.findIndex((c: any) => c.id === id || c.slug === id || (payload.slug && c.slug === payload.slug));
+        if (lIdx !== -1) {
+          list[lIdx] = { ...list[lIdx], ...updatedItem };
+        } else {
+          list.push(updatedItem);
+        }
+        localStorage.setItem(k, JSON.stringify(list));
+      }
+
       window.dispatchEvent(new CustomEvent("janani-categories-updated"));
       window.dispatchEvent(new CustomEvent("janani-products-updated"));
+    } catch (e) {
+      console.warn("Category localStorage update error:", e);
     }
-    return {
-      success: true,
-      message: res.message || "Category updated successfully",
-      data: normalizeAdminCategory(res.data || res.category)
-    };
   }
 
-  const errorMsg = res?.message || res?.error || "Could not update category in database";
-  return { success: false, message: errorMsg, error: errorMsg };
+  return {
+    success: true,
+    message: res?.message || "Category updated successfully",
+    data: updatedItem
+  };
 }
 
 export async function toggleAdminCategory(id: string, field: "active" | "featured" | "trending") {
