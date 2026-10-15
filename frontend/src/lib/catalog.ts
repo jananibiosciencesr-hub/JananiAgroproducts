@@ -99,6 +99,7 @@ export type Product = {
   storageNotice?: string;
   netContent?: string;
   targetDiseases?: string;
+  gallery?: string[];
   faqs?: { q: string; a: string; question?: string; answer?: string }[];
 };
 

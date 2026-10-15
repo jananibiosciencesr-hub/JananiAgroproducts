@@ -135,7 +135,19 @@ export function normalizeProduct(raw: any): Product {
     methodOfApplication: raw.methodOfApplication,
     compatibility: raw.compatibility,
     storageNotice: raw.storageNotice,
-    netContent: raw.netContent
+    netContent: raw.netContent,
+    gallery: Array.isArray(raw.gallery)
+      ? raw.gallery
+      : typeof raw.gallery === "string" && raw.gallery.trim() !== ""
+      ? (() => {
+          try {
+            const parsed = JSON.parse(raw.gallery);
+            return Array.isArray(parsed) ? parsed : [raw.gallery];
+          } catch {
+            return raw.gallery.includes(",") ? raw.gallery.split(",").map((s: string) => s.trim()) : [raw.gallery];
+          }
+        })()
+      : (raw.image ? [raw.image] : [])
   };
 }
 
@@ -1559,6 +1571,8 @@ export async function createAdminProduct(productData: any) {
     unit: productData.unit || "1 L",
     badge: productData.badge || "",
     image: productData.image || (Array.isArray(productData.gallery) && productData.gallery[0]) || "",
+    gallery: Array.isArray(productData.gallery) ? productData.gallery : (productData.gallery ? [productData.gallery] : (productData.image ? [productData.image] : [])),
+    variants: productData.variants,
     description: productData.description || "",
     origin: productData.origin || productData.harvestOrigin || "Lodhika GIDC, Gujarat",
     certification: certVal || "Certified Organic & NPOP Verified",
@@ -1633,6 +1647,8 @@ export async function updateAdminProduct(id: string, productData: any) {
     unit: productData.unit,
     badge: productData.badge,
     image: productData.image,
+    gallery: Array.isArray(productData.gallery) ? productData.gallery : (productData.gallery ? [productData.gallery] : (productData.image ? [productData.image] : undefined)),
+    variants: productData.variants,
     description: productData.description,
     origin: productData.origin || productData.harvestOrigin,
     harvestOrigin: productData.origin || productData.harvestOrigin,

@@ -611,7 +611,19 @@ function ensureProductsTableSchema($pdo) {
             'active' => 'TINYINT(1) DEFAULT 1',
             'status' => "VARCHAR(50) DEFAULT 'Active'",
             'sku' => 'VARCHAR(100) NULL',
-            'low_stock_threshold' => 'INT(11) DEFAULT 20'
+            'low_stock_threshold' => 'INT(11) DEFAULT 20',
+            'gallery' => 'LONGTEXT NULL',
+            'variants' => 'LONGTEXT NULL',
+            'subtitle' => 'VARCHAR(500) NULL',
+            'benefits' => 'MEDIUMTEXT NULL',
+            'specifications' => 'MEDIUMTEXT NULL',
+            'crops' => 'TEXT NULL',
+            'recommendedCrops' => 'TEXT NULL',
+            'dosage' => 'TEXT NULL',
+            'methodOfApplication' => 'TEXT NULL',
+            'compatibility' => 'TEXT NULL',
+            'storageNotice' => 'TEXT NULL',
+            'faqs' => 'LONGTEXT NULL'
         ];
         foreach ($needed as $colName => $colDef) {
             if (!isset($existingCols[strtolower($colName)])) {
@@ -1667,8 +1679,20 @@ try {
                     $image = $body['image'] ?? '/images/products/placeholder.webp';
                     $description = $body['description'] ?? '';
                     $sku = $body['sku'] ?? ('JAP-' . rand(1000, 9999));
+                    $gallery = isset($body['gallery']) ? (is_array($body['gallery']) ? json_encode($body['gallery'], JSON_UNESCAPED_SLASHES) : $body['gallery']) : json_encode([$image], JSON_UNESCAPED_SLASHES);
+                    $variants = isset($body['variants']) ? (is_array($body['variants']) ? json_encode($body['variants'], JSON_UNESCAPED_SLASHES) : $body['variants']) : null;
+                    $subtitle = $body['subtitle'] ?? null;
+                    $benefits = isset($body['benefits']) ? (is_array($body['benefits']) ? json_encode($body['benefits'], JSON_UNESCAPED_SLASHES) : $body['benefits']) : null;
+                    $specs = isset($body['specifications']) ? (is_array($body['specifications']) ? json_encode($body['specifications'], JSON_UNESCAPED_SLASHES) : $body['specifications']) : null;
+                    $crops = isset($body['crops']) ? (is_array($body['crops']) ? json_encode($body['crops'], JSON_UNESCAPED_SLASHES) : $body['crops']) : null;
+                    $recCrops = $body['recommendedCrops'] ?? null;
+                    $dosage = $body['dosage'] ?? null;
+                    $methodApp = $body['methodOfApplication'] ?? null;
+                    $compat = $body['compatibility'] ?? null;
+                    $storageNotice = $body['storageNotice'] ?? null;
+                    $faqs = isset($body['faqs']) ? (is_array($body['faqs']) ? json_encode($body['faqs'], JSON_UNESCAPED_SLASHES) : $body['faqs']) : null;
 
-                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`, `gallery`, `variants`, `subtitle`, `benefits`, `specifications`, `crops`, `recommendedCrops`, `dosage`, `methodOfApplication`, `compatibility`, `storageNotice`, `faqs`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $slug,
                         $name,
@@ -1684,7 +1708,19 @@ try {
                         $cert,
                         $active,
                         $status,
-                        $sku
+                        $sku,
+                        $gallery,
+                        $variants,
+                        $subtitle,
+                        $benefits,
+                        $specs,
+                        $crops,
+                        $recCrops,
+                        $dosage,
+                        $methodApp,
+                        $compat,
+                        $storageNotice,
+                        $faqs
                     ]);
                     $newId = $pdo->lastInsertId();
                     $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
@@ -1919,12 +1955,22 @@ try {
                         $body['old_price'] = (float)$body['old_price'];
                     }
 
+                    $jsonFields = ['gallery', 'variants', 'benefits', 'specifications', 'crops', 'faqs'];
+                    foreach ($jsonFields as $jf) {
+                        if (isset($body[$jf]) && is_array($body[$jf])) {
+                            $body[$jf] = json_encode($body[$jf], JSON_UNESCAPED_SLASHES);
+                        }
+                    }
+
                     $fields = [];
                     $vals = [];
                     $allowed = [
                         'name', 'slug', 'category_name', 'category_id', 'price', 'old_price',
                         'unit', 'stock', 'rating', 'reviews_count', 'badge', 'image',
-                        'description', 'origin', 'certification', 'active', 'status', 'sku'
+                        'description', 'origin', 'certification', 'active', 'status', 'sku',
+                        'gallery', 'variants', 'subtitle', 'benefits', 'specifications',
+                        'crops', 'recommendedCrops', 'dosage', 'methodOfApplication',
+                        'compatibility', 'storageNotice', 'faqs'
                     ];
 
                     foreach ($allowed as $f) {

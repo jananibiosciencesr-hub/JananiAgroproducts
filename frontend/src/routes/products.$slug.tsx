@@ -140,26 +140,64 @@ function ProductDetailPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [product.slug]);
 
-  // Gallery Images List matching mockup
+  // Gallery Images List: dynamically loaded from backend product.image & product.gallery
   const galleryImages = useMemo(() => {
-    return [
-      { id: "main", src: product.image, label: "Main Pack" },
-      { id: "soil", src: "/images/hands-soil-sprout.jpg", label: "Seedling in Soil" },
-      { id: "roots", src: "/images/sprout_roots_circle.jpg", label: "Root Health" },
-      {
-        id: "label",
-        src: product.image.includes("harit")
-          ? "/products/harit-label.png"
-          : product.image.includes("bhumi")
-          ? "/products/bhumi-shakti-label.png"
-          : product.image.includes("neem")
-          ? "/products/neem-oil-label.png"
-          : "/products/harit-label.png",
-        label: "Dosage & Label Guide",
-      },
-      { id: "field", src: "/images/farmer_ramesh.jpg", label: "Field Results" },
-      { id: "video", src: product.image, label: "Application Video", isVideo: true },
-    ];
+    const list: { id: string; src: string; label: string; isVideo?: boolean }[] = [];
+    const seen = new Set<string>();
+
+    const addImg = (src?: string, label?: string, isVideo = false) => {
+      if (!src || typeof src !== "string") return;
+      const clean = src.trim();
+      if (!clean || seen.has(clean)) return;
+      seen.add(clean);
+      list.push({
+        id: `img-${list.length}`,
+        src: clean,
+        label: label || `${product.name} - View ${list.length + 1}`,
+        isVideo,
+      });
+    };
+
+    // 1. Primary image from product
+    if (product.image) {
+      addImg(product.image, `${product.name} - Front View`);
+    }
+
+    // 2. Additional gallery images added in the backend
+    if (Array.isArray(product.gallery) && product.gallery.length > 0) {
+      product.gallery.forEach((g, idx) => {
+        addImg(g, `${product.name} - Gallery ${idx + 1}`);
+      });
+    }
+
+    // 3. Fallback: If only 1 image exists and product has an official dosage/label guide on server
+    if (list.length === 1) {
+      const slugOrImg = ((product.slug || "") + " " + (product.image || "")).toLowerCase();
+      if (slugOrImg.includes("harit")) {
+        addImg("/products/harit-label.png", "Official Dosage & Label Guide");
+      } else if (slugOrImg.includes("bhumi")) {
+        addImg("/products/bhumi-shakti-label.png", "Official Dosage & Label Guide");
+      } else if (slugOrImg.includes("neem")) {
+        addImg("/products/neem-oil-label.png", "Official Dosage & Label Guide");
+      } else if (slugOrImg.includes("annada")) {
+        addImg("/products/annada-label.png", "Official Dosage & Label Guide");
+      } else if (slugOrImg.includes("balavan")) {
+        addImg("/products/balavan-label.png", "Official Dosage & Label Guide");
+      } else if (slugOrImg.includes("pushkal")) {
+        addImg("/products/pushkal-label.png", "Official Dosage & Label Guide");
+      } else if (slugOrImg.includes("suraksha")) {
+        addImg("/products/suraksha-label.png", "Official Dosage & Label Guide");
+      } else if (slugOrImg.includes("dharani") || slugOrImg.includes("dhanya")) {
+        addImg("/products/dharani-label.png", "Official Dosage & Label Guide");
+      }
+    }
+
+    // 4. Default fallback if empty
+    if (list.length === 0) {
+      addImg("/products/dharani.jpg", product.name);
+    }
+
+    return list;
   }, [product]);
 
   const discountPercent = Math.round(
@@ -366,37 +404,39 @@ function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
           {/* LEFT: Product Gallery with Left Vertical Thumbnails */}
           <div className="lg:col-span-6 flex flex-col-reverse sm:flex-row gap-4 h-full">
-            {/* Vertical Thumbnail Strip */}
-            <div className="flex sm:flex-col gap-2.5 overflow-x-auto sm:overflow-y-auto max-h-[500px] w-full sm:w-20 shrink-0 scrollbar-none pb-2 sm:pb-0">
-              {galleryImages.map((img, idx) => {
-                const isActive = activeImageIndex === idx;
-                return (
-                  <button
-                    key={img.id}
-                    onClick={() => {
-                      setActiveImageIndex(idx);
-                      if (img.isVideo) setIsVideoModalOpen(true);
-                    }}
-                    className={`relative size-16 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1 flex items-center justify-center ${
-                      isActive
-                        ? "border-[#075B32] shadow-xs"
-                        : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                    <img
-                      src={img.src}
-                      alt={img.label}
-                      className="w-full h-full object-contain"
-                    />
-                    {img.isVideo && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Play className="size-4 text-white fill-white" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Vertical Thumbnail Strip (shown when multiple gallery images exist) */}
+            {galleryImages.length > 1 && (
+              <div className="flex sm:flex-col gap-2.5 overflow-x-auto sm:overflow-y-auto max-h-[500px] w-full sm:w-20 shrink-0 scrollbar-none pb-2 sm:pb-0">
+                {galleryImages.map((img, idx) => {
+                  const isActive = activeImageIndex === idx;
+                  return (
+                    <button
+                      key={img.id}
+                      onClick={() => {
+                        setActiveImageIndex(idx);
+                        if (img.isVideo) setIsVideoModalOpen(true);
+                      }}
+                      className={`relative size-16 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1 flex items-center justify-center ${
+                        isActive
+                          ? "border-[#075B32] shadow-xs"
+                          : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <img
+                        src={img.src}
+                        alt={img.label}
+                        className="w-full h-full object-contain"
+                      />
+                      {img.isVideo && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <Play className="size-4 text-white fill-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Main Big Image Viewport */}
             <div className="relative flex-1 w-full h-full min-h-[440px] rounded-2xl border border-gray-200 bg-white p-4 flex items-center justify-center overflow-hidden group shadow-xs">
@@ -407,22 +447,26 @@ function ProductDetailPage() {
               />
 
               {/* Prev Arrow */}
-              <button
-                onClick={handlePrevImage}
-                aria-label="Previous Image"
-                className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
-              >
-                <ChevronLeft className="size-5" />
-              </button>
+              {galleryImages.length > 1 && (
+                <button
+                  onClick={handlePrevImage}
+                  aria-label="Previous Image"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+              )}
 
               {/* Next Arrow */}
-              <button
-                onClick={handleNextImage}
-                aria-label="Next Image"
-                className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
-              >
-                <ChevronRight className="size-5" />
-              </button>
+              {galleryImages.length > 1 && (
+                <button
+                  onClick={handleNextImage}
+                  aria-label="Next Image"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              )}
 
               {/* Expand Lightbox Button (Bottom Right) */}
               <button
