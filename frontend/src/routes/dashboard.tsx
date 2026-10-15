@@ -345,9 +345,9 @@ function DashboardPage() {
       </div>
 
       {/* Main Content Layout */}
-      <div className="mt-8 sm:mt-10 grid gap-8 lg:grid-cols-[260px_1fr]">
+      <div className="mt-8 sm:mt-10 grid gap-8 lg:grid-cols-[260px_1fr] items-start">
         {/* Navigation Tabs */}
-        <aside className="space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft h-fit">
+        <aside className="space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft h-fit lg:sticky lg:top-24 self-start z-10">
           {[
             { id: "orders", label: "My Orders & Shipments", icon: Package, count: customerOrders.length },
             { id: "addresses", label: "Saved Addresses", icon: MapPin, count: savedAddresses.length },
