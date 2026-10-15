@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
   Heart,
@@ -57,6 +57,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
@@ -384,8 +385,8 @@ function Shell({ children }: { children: React.ReactNode }) {
                   onClick={() => {
                     logoutUser();
                     setMenu(false);
-                    if (typeof window !== "undefined" && (pathname.startsWith("/dashboard") || pathname.startsWith("/profile") || pathname.startsWith("/orders"))) {
-                      window.location.href = "/";
+                    if (pathname.startsWith("/dashboard") || pathname.startsWith("/profile") || pathname.startsWith("/orders")) {
+                      navigate({ to: "/" });
                     }
                   }}
                   variant="outline"

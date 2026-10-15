@@ -191,16 +191,16 @@ function DashboardPage() {
     }
   }, [user]);
 
-  const handleLogout = () => {
-    logoutUser();
-    if (typeof window !== "undefined") {
-      window.location.href = "/";
-    } else {
-      navigate({ to: "/" });
+  const handleLogout = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
+    logoutUser();
+    navigate({ to: "/" });
   };
 
-  // Clear customer data and redirect if user logs out while on dashboard
+  // Clear customer data if user logs out while on dashboard
   useEffect(() => {
     if (!user) {
       setCustomerOrders([]);
@@ -220,13 +220,11 @@ function DashboardPage() {
       setProfilePhone("");
       setProfileEmail("");
       setSelectedInvoiceOrder(null);
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
+      navigate({ to: "/" });
     };
     window.addEventListener("janani-customer-logged-out", onLogout);
     return () => window.removeEventListener("janani-customer-logged-out", onLogout);
-  }, []);
+  }, [navigate]);
 
   const handleReorder = (order: CustomerOrder) => {
     if (order?.items && Array.isArray(order.items) && order.items.length > 0) {

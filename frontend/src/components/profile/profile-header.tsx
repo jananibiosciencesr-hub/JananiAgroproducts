@@ -53,13 +53,13 @@ export function ProfileHeader() {
     toast.info("Profile photo removed. Showing default initials.");
   };
 
-  const handleLogout = () => {
-    logoutUser();
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    } else {
-      navigate({ to: "/login" });
+  const handleLogout = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
+    logoutUser();
+    navigate({ to: "/" });
   };
 
   const name = user?.name || "Janani Patron";

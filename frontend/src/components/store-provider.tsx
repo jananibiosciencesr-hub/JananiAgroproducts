@@ -376,26 +376,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const logoutUser = () => {
+    // 1. Immediately wipe all customer keys - preserve admin session untouched!
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("janani_token");
+        localStorage.removeItem("janani_auth_token");
+        localStorage.removeItem("janani_user");
+        localStorage.removeItem("janani_auth_user");
+        localStorage.removeItem("janani_cart");
+        localStorage.removeItem("janani_saved_for_later");
+        localStorage.removeItem("janani_pending_checkout");
+        localStorage.removeItem("janani_wishlist");
+        localStorage.removeItem("janani_latest_order");
+        localStorage.removeItem("janani_customer_orders");
+        sessionStorage.removeItem("janani_user");
+        sessionStorage.removeItem("janani_auth_user");
+        sessionStorage.removeItem("janani_token");
+        sessionStorage.removeItem("janani_auth_token");
+
+        // Clear any dynamic customer-scoped keys (orders, addresses, etc.)
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (
+            k &&
+            !k.startsWith("janani_admin_") &&
+            (k.startsWith("janani_user") ||
+              k.startsWith("janani_auth_") ||
+              k.startsWith("janani_customer_orders") ||
+              k.startsWith("janani_saved_addresses_"))
+          ) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+      } catch (e) {}
+    }
+
+    // 2. Clear state synchronously
     setUser(null);
     setCart({});
     setWishlist([]);
-    if (typeof window !== "undefined") {
-      // Clear ONLY customer keys - preserve admin session untouched!
-      localStorage.removeItem("janani_token");
-      localStorage.removeItem("janani_auth_token");
-      localStorage.removeItem("janani_user");
-      localStorage.removeItem("janani_auth_user");
-      localStorage.removeItem("janani_cart");
-      localStorage.removeItem("janani_saved_for_later");
-      localStorage.removeItem("janani_pending_checkout");
-      localStorage.removeItem("janani_wishlist");
-      localStorage.removeItem("janani_latest_order");
-      localStorage.removeItem("janani_customer_orders");
-      sessionStorage.removeItem("janani_user");
-      sessionStorage.removeItem("janani_auth_user");
-      sessionStorage.removeItem("janani_token");
-      sessionStorage.removeItem("janani_auth_token");
 
+    // 3. Dispatch broadcast event for listeners
+    if (typeof window !== "undefined") {
       try {
         window.dispatchEvent(new Event("janani-customer-logged-out"));
       } catch (e) {}
