@@ -56,7 +56,12 @@ import {
 } from "@/lib/api";
 import { toast } from "sonner";
 
-export function ReviewsManagement() {
+export interface ReviewsManagementProps {
+  searchQuery?: string;
+  addTrigger?: number;
+}
+
+export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger = 0 }: ReviewsManagementProps = {}) {
   const [activeTab, setActiveTab] = useState<"desk" | "gallery" | "abuse" | "analytics">("desk");
   const [statusSubTab, setStatusSubTab] = useState<"all" | "pending" | "approved" | "rejected" | "flagged">("all");
 
@@ -77,7 +82,7 @@ export function ReviewsManagement() {
   const [analytics, setAnalytics] = useState<ReviewAnalyticsData | null>(null);
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedRating, setSelectedRating] = useState<string>("all");
   const [filterVerifiedOnly, setFilterVerifiedOnly] = useState(false);
   const [filterWithPhotosOnly, setFilterWithPhotosOnly] = useState(false);
@@ -90,6 +95,24 @@ export function ReviewsManagement() {
   const [inspectingReview, setInspectingReview] = useState<AdminReview | null>(null);
   const [lightboxImage, setLightboxImage] = useState<{ image: ReviewImage; review: AdminReview } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (addTrigger && addTrigger > 0) {
+      setIsCreateModalOpen(true);
+    }
+  }, [addTrigger]);
+
+  useEffect(() => {
+    const handleAdd = () => setIsCreateModalOpen(true);
+    window.addEventListener("admin:add-review", handleAdd);
+    return () => window.removeEventListener("admin:add-review", handleAdd);
+  }, []);
+
+  useEffect(() => {
+    if (initialSearch !== undefined) {
+      setSearchQuery(initialSearch);
+    }
+  }, [initialSearch]);
 
   // Load reviews and stats
   const fetchReviews = async () => {
@@ -217,30 +240,6 @@ export function ReviewsManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Action Utilities */}
-      <div className="flex items-center justify-end gap-2.5">
-        <button
-          onClick={fetchReviews}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm hover:bg-muted cursor-pointer"
-        >
-          <RefreshCw className="size-3.5" />
-          Refresh
-        </button>
-        <button
-          onClick={handleExportCSV}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm hover:bg-muted cursor-pointer"
-        >
-          <Download className="size-3.5" />
-          Export CSV
-        </button>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-brand-leaf px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-leaf/90 cursor-pointer"
-        >
-          <Plus className="size-3.5" />
-          Add Review
-        </button>
-      </div>
 
       {/* 6 KPI Ribbon Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
@@ -425,6 +424,26 @@ export function ReviewsManagement() {
                   <option value="rating_low">Lowest Rating (1★ → 5★)</option>
                   <option value="helpful">Most Helpful Votes</option>
                 </select>
+
+                {/* Export CSV & Refresh Buttons */}
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  title="Export Reviews to CSV"
+                >
+                  <Download className="size-3.5" />
+                  <span>Export CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={fetchReviews}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  title="Refresh Reviews"
+                >
+                  <RefreshCw className="size-3.5" />
+                  <span>Refresh</span>
+                </button>
               </div>
             </div>
           </div>

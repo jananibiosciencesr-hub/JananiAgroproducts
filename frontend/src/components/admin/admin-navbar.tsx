@@ -73,6 +73,8 @@ function getAddConfig(tab?: AdminTab): { label: string; shortLabel: string } | n
       return { label: "Add Product", shortLabel: "Product" };
     case "coupons":
       return { label: "Add Coupon", shortLabel: "Coupon" };
+    case "reviews":
+      return { label: "Add Review", shortLabel: "Review" };
     default:
       return null;
   }

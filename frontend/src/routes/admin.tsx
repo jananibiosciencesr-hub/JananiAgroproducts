@@ -263,6 +263,8 @@ function AdminDashboardPage() {
       window.dispatchEvent(new CustomEvent("admin:add-coupon"));
     } else if (activeTab === "inquiries") {
       window.dispatchEvent(new CustomEvent("admin:add-inquiry"));
+    } else if (activeTab === "reviews") {
+      window.dispatchEvent(new CustomEvent("admin:add-review"));
     }
   };
 
@@ -867,7 +869,12 @@ function AdminDashboardPage() {
 
           {activeTab === "shipping" && <ShippingManagement />}
 
-          {activeTab === "reviews" && <ReviewsManagement />}
+          {activeTab === "reviews" && (
+            <ReviewsManagement
+              searchQuery={adminSearch}
+              addTrigger={addTriggerTab?.tab === "reviews" ? addTriggerTab.timestamp : 0}
+            />
+          )}
 
           {activeTab === "returns" && (
             <ReturnsView
