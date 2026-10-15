@@ -47,7 +47,7 @@ export const AVAILABLE_COUPONS: CouponRule[] = [
     value: 60,
     minSubtotal: 499,
     expiry: "31 Dec 2026",
-    badge: "FREE SHIPPING",
+    badge: "FREE DELIVERY",
   },
   {
     code: "BILONA20",
@@ -133,20 +133,29 @@ export function CouponSelector({
     getStorefrontCoupons().then((dbCoupons) => {
       if (!active || !dbCoupons || dbCoupons.length === 0) return;
       const mapped: CouponRule[] = dbCoupons.map((c) => {
+        const isFree =
+          c.type === "free_shipping" ||
+          Boolean(c.isFreeShipping) ||
+          c.code.toUpperCase().includes("FREESHIP") ||
+          c.code.toUpperCase().includes("FREEDEL");
+
         let typeVal: "percentage" | "flat" | "free_delivery" = "percentage";
-        if (c.type === "flat") typeVal = "flat";
-        else if (c.type === "free_shipping" || c.isFreeShipping) typeVal = "free_delivery";
+        if (isFree) {
+          typeVal = "free_delivery";
+        } else if (c.type === "flat") {
+          typeVal = "flat";
+        }
 
         return {
           code: c.code,
-          title: c.title || `${c.code} Promo`,
-          description: c.description || (c.type === "percentage" ? `${c.discount}% instant off` : `Flat ₹${c.discount} off`),
+          title: c.title || (isFree ? "Free Priority Delivery" : `${c.code} Promo`),
+          description: c.description || (isFree ? "Complimentary farm direct delivery anywhere in India" : c.type === "percentage" ? `${c.discount}% instant off` : `Flat ₹${c.discount} off`),
           type: typeVal,
-          value: c.discount,
+          value: isFree ? 60 : c.discount,
           maxDiscount: c.maxDiscount || undefined,
           minSubtotal: c.minCart || 0,
           expiry: c.expiryDate || "31 Dec 2026",
-          badge: c.type === "percentage" ? `${c.discount}% OFF` : c.type === "flat" ? `FLAT ₹${c.discount}` : "FREE SHIPPING",
+          badge: isFree ? "FREE DELIVERY" : c.type === "percentage" ? `${c.discount}% OFF` : `FLAT ₹${c.discount} OFF`,
         };
       });
       setCouponsList(mapped);
@@ -175,7 +184,11 @@ export function CouponSelector({
     onApplyCoupon(matched);
     setManualCode("");
     setIsModalOpen(false);
-    toast.success(`Coupon ${matched.code} applied! Saved ₹${calculateCouponDiscount(matched, subtotal, shippingFee)}`);
+    if (matched.type === "free_delivery") {
+      toast.success(`Coupon ${matched.code} applied! Free priority delivery unlocked.`);
+    } else {
+      toast.success(`Coupon ${matched.code} applied! Saved ₹${calculateCouponDiscount(matched, subtotal, shippingFee)}`);
+    }
   };
 
   const handleSelectCoupon = (coupon: CouponRule) => {
@@ -185,7 +198,11 @@ export function CouponSelector({
     }
     onApplyCoupon(coupon);
     setIsModalOpen(false);
-    toast.success(`Coupon ${coupon.code} applied! Saved ₹${calculateCouponDiscount(coupon, subtotal, shippingFee)}`);
+    if (coupon.type === "free_delivery") {
+      toast.success(`Coupon ${coupon.code} applied! Free priority delivery unlocked.`);
+    } else {
+      toast.success(`Coupon ${coupon.code} applied! Saved ₹${calculateCouponDiscount(coupon, subtotal, shippingFee)}`);
+    }
   };
 
   const handleRemoveCoupon = () => {
@@ -333,7 +350,7 @@ export function CouponSelector({
                 return (
                   <div
                     key={coupon.code}
-                    className={`rounded-2xl border p-4 text-left transition-all ${
+                    className={`shrink-0 rounded-2xl border p-4 text-left transition-all ${
                       isCurrent
                         ? "border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-500/20"
                         : isApplicable

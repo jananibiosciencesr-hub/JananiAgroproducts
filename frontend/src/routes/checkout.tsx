@@ -69,7 +69,77 @@ export function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(null);
 
   // 2. Coupon State
-  const [appliedCoupon, setAppliedCoupon] = useState<CouponRule | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponRule | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("janani_applied_coupon");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const c = parsed.coupon;
+          if (c) {
+            const isFree =
+              c.type === "free_shipping" ||
+              Boolean(c.isFreeShipping) ||
+              c.code?.toUpperCase().includes("FREESHIP") ||
+              c.code?.toUpperCase().includes("FREEDEL");
+
+            return {
+              code: c.code,
+              title: c.title || (isFree ? "Free Priority Delivery" : `${c.code} Promo`),
+              description: c.description || "",
+              type: isFree ? "free_delivery" : (c.type === "flat" ? "flat" : "percentage"),
+              value: isFree ? 60 : c.discount,
+              maxDiscount: c.maxDiscount || undefined,
+              minSubtotal: c.minCart || 0,
+              expiry: c.expiryDate || "31 Dec 2026",
+              badge: isFree ? "FREE DELIVERY" : c.type === "percentage" ? `${c.discount}% OFF` : `FLAT ₹${c.discount} OFF`,
+            };
+          }
+        }
+      } catch (e) {}
+    }
+    return null;
+  });
+
+  const handleApplyCoupon = (coupon: CouponRule | null) => {
+    setAppliedCoupon(coupon);
+    if (typeof window !== "undefined") {
+      if (coupon) {
+        localStorage.setItem(
+          "janani_applied_coupon",
+          JSON.stringify({
+            code: coupon.code,
+            coupon: {
+              code: coupon.code,
+              title: coupon.title,
+              description: coupon.description,
+              type: coupon.type === "free_delivery" ? "free_shipping" : coupon.type,
+              discount: coupon.value,
+              minCart: coupon.minSubtotal,
+              maxDiscount: coupon.maxDiscount,
+              expiryDate: coupon.expiry,
+              isFreeShipping: coupon.type === "free_delivery",
+              active: true,
+            },
+            discount: coupon.value,
+            label: `${coupon.code} (${coupon.badge || coupon.title})`,
+          })
+        );
+      } else {
+        localStorage.removeItem("janani_applied_coupon");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (appliedCoupon && appliedCoupon.minSubtotal > 0 && subtotal < appliedCoupon.minSubtotal) {
+      setAppliedCoupon(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("janani_applied_coupon");
+      }
+      toast.warning(`Coupon ${appliedCoupon.code} removed because cart total is below ₹${appliedCoupon.minSubtotal}.`);
+    }
+  }, [subtotal, appliedCoupon]);
 
   // 3. Gift Card State
   const [appliedGiftCard, setAppliedGiftCard] = useState<AppliedGiftCard | null>(null);
@@ -520,7 +590,7 @@ export function CheckoutPage() {
           {/* Apply Promo Coupons & Vouchers (Directly Above Payment Summary) */}
           <CouponSelector
             appliedCoupon={appliedCoupon}
-            onApplyCoupon={(coupon) => setAppliedCoupon(coupon)}
+            onApplyCoupon={handleApplyCoupon}
             subtotal={subtotal}
             shippingFee={standardShippingFee}
           />

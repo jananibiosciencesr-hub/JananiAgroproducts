@@ -28,7 +28,7 @@ import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
 import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
-import { getStorefrontCoupons, validateCoupon, type AdminCoupon } from "@/lib/api";
+import { getStorefrontCoupons, validateCoupon, normalizeCouponData, type AdminCoupon } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
@@ -67,8 +67,30 @@ export function CartPage() {
   const [isAllCouponsModalOpen, setIsAllCouponsModalOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
-  const [appliedCouponObj, setAppliedCouponObj] = useState<AdminCoupon | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("janani_applied_coupon");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.label || parsed.code || null;
+        }
+      } catch (e) {}
+    }
+    return null;
+  });
+  const [appliedCouponObj, setAppliedCouponObj] = useState<AdminCoupon | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("janani_applied_coupon");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.coupon || null;
+        }
+      } catch (e) {}
+    }
+    return null;
+  });
   const [isCouponsDropdownOpen, setIsCouponsDropdownOpen] = useState(false);
 
   // Fetch active database coupons on mount
@@ -202,25 +224,73 @@ export function CartPage() {
   useEffect(() => {
     if (!appliedCouponObj) return;
 
+    const isFree =
+      appliedCouponObj.type === "free_shipping" ||
+      Boolean(appliedCouponObj.isFreeShipping) ||
+      appliedCouponObj.code.toUpperCase().includes("FREESHIP") ||
+      appliedCouponObj.code.toUpperCase().includes("FREEDEL");
+
     if (appliedCouponObj.minCart > 0 && subtotal < appliedCouponObj.minCart) {
       setDiscount(0);
       setAppliedCoupon(null);
       setAppliedCouponObj(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("janani_applied_coupon");
+      }
       toast.warning(
         `Coupon ${appliedCouponObj.code} removed because cart subtotal is below the required ₹${appliedCouponObj.minCart}.`
       );
       return;
     }
 
-    if (appliedCouponObj.type === "percentage") {
+    if (isFree) {
+      setDiscount(0);
+      const label = `${appliedCouponObj.code} (Free Farm Delivery Unlocked)`;
+      setAppliedCoupon(label);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "janani_applied_coupon",
+          JSON.stringify({
+            code: appliedCouponObj.code,
+            coupon: appliedCouponObj,
+            discount: 60,
+            label,
+          })
+        );
+      }
+    } else if (appliedCouponObj.type === "percentage") {
       const calculated = Math.round((subtotal * appliedCouponObj.discount) / 100);
       const capped = appliedCouponObj.maxDiscount > 0 ? Math.min(calculated, appliedCouponObj.maxDiscount) : calculated;
       setDiscount(capped);
-      setAppliedCoupon(`${appliedCouponObj.code} (${appliedCouponObj.discount}% Off: -₹${capped})`);
+      const label = `${appliedCouponObj.code} (${appliedCouponObj.discount}% Off: -₹${capped})`;
+      setAppliedCoupon(label);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "janani_applied_coupon",
+          JSON.stringify({
+            code: appliedCouponObj.code,
+            coupon: appliedCouponObj,
+            discount: capped,
+            label,
+          })
+        );
+      }
     } else if (appliedCouponObj.type === "flat") {
       const capped = Math.min(appliedCouponObj.discount, subtotal);
       setDiscount(capped);
-      setAppliedCoupon(`${appliedCouponObj.code} (Flat ₹${capped} Off)`);
+      const label = `${appliedCouponObj.code} (Flat ₹${capped} Off)`;
+      setAppliedCoupon(label);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "janani_applied_coupon",
+          JSON.stringify({
+            code: appliedCouponObj.code,
+            coupon: appliedCouponObj,
+            discount: capped,
+            label,
+          })
+        );
+      }
     }
   }, [subtotal, appliedCouponObj]);
 
@@ -228,11 +298,12 @@ export function CartPage() {
   const freeShippingThreshold = 799;
   const isFreeDeliveryCoupon =
     appliedCouponObj?.type === "free_shipping" ||
-    appliedCouponObj?.isFreeShipping ||
+    Boolean(appliedCouponObj?.isFreeShipping) ||
     appliedCoupon?.toLowerCase().includes("free delivery") ||
+    appliedCoupon?.toLowerCase().includes("free farm delivery") ||
     appliedCoupon?.toLowerCase().includes("free shipping") ||
-    appliedCoupon?.includes("FREEDEL") ||
-    appliedCoupon?.includes("FREESHIP");
+    appliedCoupon?.toUpperCase().includes("FREEDEL") ||
+    appliedCoupon?.toUpperCase().includes("FREESHIP");
   const shippingFee =
     subtotal >= freeShippingThreshold || subtotal === 0 || isFreeDeliveryCoupon ? 0 : 60;
 
@@ -251,21 +322,63 @@ export function CartPage() {
       return;
     }
 
-    const coupon = res.coupon;
+    const coupon = normalizeCouponData(res.coupon);
+    const isFree =
+      coupon.type === "free_shipping" ||
+      Boolean(coupon.isFreeShipping) ||
+      coupon.code.toUpperCase().includes("FREESHIP") ||
+      coupon.code.toUpperCase().includes("FREEDEL");
+
     setAppliedCouponObj(coupon);
     setCouponCode(coupon.code);
 
-    if (coupon.type === "free_shipping" || coupon.isFreeShipping) {
+    if (isFree) {
       setDiscount(0);
-      setAppliedCoupon(`${coupon.code} (Free Farm Delivery Unlocked)`);
+      const label = `${coupon.code} (Free Farm Delivery Unlocked)`;
+      setAppliedCoupon(label);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "janani_applied_coupon",
+          JSON.stringify({
+            code: coupon.code,
+            coupon,
+            discount: 60,
+            label,
+          })
+        );
+      }
       toast.success(`Coupon ${coupon.code} applied! Free delivery unlocked.`);
     } else if (coupon.type === "percentage") {
       setDiscount(res.discount);
-      setAppliedCoupon(`${coupon.code} (${coupon.discount}% Off: -₹${res.discount})`);
+      const label = `${coupon.code} (${coupon.discount}% Off: -₹${res.discount})`;
+      setAppliedCoupon(label);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "janani_applied_coupon",
+          JSON.stringify({
+            code: coupon.code,
+            coupon,
+            discount: res.discount,
+            label,
+          })
+        );
+      }
       toast.success(`Coupon ${coupon.code} applied! ₹${res.discount} discount saved.`);
     } else {
       setDiscount(res.discount);
-      setAppliedCoupon(`${coupon.code} (Flat ₹${res.discount} Off)`);
+      const label = `${coupon.code} (Flat ₹${res.discount} Off)`;
+      setAppliedCoupon(label);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "janani_applied_coupon",
+          JSON.stringify({
+            code: coupon.code,
+            coupon,
+            discount: res.discount,
+            label,
+          })
+        );
+      }
       toast.success(`Coupon ${coupon.code} applied! Flat ₹${res.discount} deducted.`);
     }
   };
@@ -275,6 +388,9 @@ export function CartPage() {
     setAppliedCoupon(null);
     setAppliedCouponObj(null);
     setCouponCode("");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("janani_applied_coupon");
+    }
     toast.info("Coupon removed.");
   };
 
@@ -528,7 +644,9 @@ export function CartPage() {
                   <span>Estimated Delivery Fee</span>
                   <span>
                     {shippingFee === 0 ? (
-                      <span className="text-emerald-700 font-bold">FREE</span>
+                      <span className="text-emerald-700 font-bold">
+                        {isFreeDeliveryCoupon ? "FREE (Coupon Applied)" : "FREE"}
+                      </span>
                     ) : (
                       <span className="font-mono">₹{shippingFee}</span>
                     )}
@@ -637,55 +755,59 @@ export function CartPage() {
                           No promo coupons active right now. Check back soon!
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-2.5 max-h-72 overflow-y-auto pr-1">
+                        <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1.5 scrollbar-thin">
                           {availableCoupons.map((c) => {
+                            const isFree =
+                              c.type === "free_shipping" ||
+                              Boolean(c.isFreeShipping) ||
+                              c.code.toUpperCase().includes("FREESHIP") ||
+                              c.code.toUpperCase().includes("FREEDEL");
+
                             const isApplied =
-                              appliedCouponObj?.code === c.code ||
+                              appliedCouponObj?.code.toUpperCase() === c.code.toUpperCase() ||
                               (appliedCoupon && appliedCoupon.toUpperCase().startsWith(c.code.toUpperCase()));
                             const isEligible = subtotal >= (c.minCart || 0);
                             const diffToUnlock = (c.minCart || 0) - subtotal;
 
                             let offerTitle = c.title;
                             if (!offerTitle || offerTitle.includes("Promo Offer") || offerTitle.includes("Special Offer")) {
-                              if (c.type === "percentage") {
+                              if (isFree) {
+                                offerTitle = "Free Farm Delivery (Save ₹60)";
+                              } else if (c.type === "percentage") {
                                 offerTitle = `${c.discount}% Instant Discount${c.maxDiscount ? ` (Up to ₹${c.maxDiscount})` : ""}`;
                               } else if (c.type === "flat") {
                                 offerTitle = `Flat ₹${c.discount} Instant Discount`;
-                              } else if (c.type === "free_shipping" || c.isFreeShipping) {
-                                offerTitle = "Free Farm Delivery (Save ₹60)";
                               }
                             }
 
                             return (
                               <div
                                 key={c.id || c.code}
-                                className={`p-3 rounded-xl border transition-all relative overflow-hidden ${
+                                className={`shrink-0 p-3.5 rounded-xl border transition-all relative ${
                                   isApplied
-                                    ? "bg-emerald-500/10 border-emerald-500/40 shadow-xs"
+                                    ? "bg-emerald-500/10 border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/20"
                                     : isEligible
                                     ? "bg-background border-border hover:border-brand-leaf/50 hover:bg-brand-leaf/[0.02] shadow-xs"
                                     : "bg-muted/30 border-border/60 opacity-85"
                                 }`}
                               >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="space-y-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2.5">
+                                  <div className="space-y-1 min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className="font-mono font-black text-xs text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg tracking-wider">
                                         {c.code}
                                       </span>
-                                      {c.type === "percentage" && (
-                                        <span className="text-[10px] font-bold bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.2 rounded">
+                                      {isFree ? (
+                                        <span className="text-[10px] font-bold bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md">
+                                          FREE DELIVERY
+                                        </span>
+                                      ) : c.type === "percentage" ? (
+                                        <span className="text-[10px] font-bold bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded">
                                           {c.discount}% OFF
                                         </span>
-                                      )}
-                                      {c.type === "flat" && (
-                                        <span className="text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.2 rounded">
+                                      ) : (
+                                        <span className="text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded">
                                           FLAT ₹{c.discount} OFF
-                                        </span>
-                                      )}
-                                      {(c.type === "free_shipping" || c.isFreeShipping) && (
-                                        <span className="text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 px-1.5 py-0.2 rounded">
-                                          FREE SHIPPING
                                         </span>
                                       )}
                                     </div>
@@ -693,7 +815,7 @@ export function CartPage() {
                                       {offerTitle}
                                     </h4>
                                     {c.description && (
-                                      <p className="text-[11px] text-muted-foreground leading-tight">
+                                      <p className="text-[11px] text-muted-foreground leading-normal">
                                         {c.description}
                                       </p>
                                     )}
@@ -730,7 +852,7 @@ export function CartPage() {
                                     {c.minCart > 0 ? (
                                       isEligible ? (
                                         <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                                          <Check className="size-3 text-emerald-600" /> Min Purchase ₹{c.minCart} met
+                                          <Check className="size-3 text-emerald-600" /> Min Spend ₹{c.minCart} met
                                         </span>
                                       ) : (
                                         <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
@@ -951,32 +1073,38 @@ export function CartPage() {
                 </div>
               ) : (
                 availableCoupons.map((c) => {
+                  const isFree =
+                    c.type === "free_shipping" ||
+                    Boolean(c.isFreeShipping) ||
+                    c.code.toUpperCase().includes("FREESHIP") ||
+                    c.code.toUpperCase().includes("FREEDEL");
+
                   const isApplied =
-                    appliedCouponObj?.code === c.code ||
+                    appliedCouponObj?.code.toUpperCase() === c.code.toUpperCase() ||
                     (appliedCoupon && appliedCoupon.toUpperCase().startsWith(c.code.toUpperCase()));
                   const isEligible = subtotal >= (c.minCart || 0);
                   const diffToUnlock = (c.minCart || 0) - subtotal;
 
                   let offerTitle = c.title;
                   if (!offerTitle || offerTitle.includes("Promo Offer") || offerTitle.includes("Special Offer")) {
-                    if (c.type === "percentage") {
+                    if (isFree) {
+                      offerTitle = "Free Priority Delivery";
+                    } else if (c.type === "percentage") {
                       offerTitle = `${c.discount}% Off Storewide`;
                     } else if (c.type === "flat") {
                       offerTitle = `Flat ₹${c.discount} Instant Discount`;
-                    } else if (c.type === "free_shipping" || c.isFreeShipping) {
-                      offerTitle = "Free Priority Delivery";
                     }
                   }
 
                   let discountBadge = "";
-                  if (c.type === "percentage") discountBadge = `${c.discount}% OFF`;
+                  if (isFree) discountBadge = "FREE DELIVERY";
+                  else if (c.type === "percentage") discountBadge = `${c.discount}% OFF`;
                   else if (c.type === "flat") discountBadge = `FLAT ₹${c.discount} OFF`;
-                  else if (c.type === "free_shipping" || c.isFreeShipping) discountBadge = "0% OFF (FREE SHIPPING)";
 
                   return (
                     <div
                       key={c.id || c.code}
-                      className={`p-4 rounded-2xl border transition-all relative ${
+                      className={`shrink-0 p-4 rounded-2xl border transition-all relative ${
                         isApplied
                           ? "border-emerald-600 bg-emerald-500/10 ring-2 ring-emerald-500/20"
                           : isEligible

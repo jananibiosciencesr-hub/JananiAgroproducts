@@ -3869,14 +3869,33 @@ export async function getAdminCoupons(params?: CouponQueryParams) {
   };
 }
 
+export function normalizeCouponData(c: AdminCoupon): AdminCoupon {
+  const isFree =
+    c.type === "free_shipping" ||
+    Boolean(c.isFreeShipping) ||
+    (c.code ? c.code.toUpperCase().includes("FREESHIP") || c.code.toUpperCase().includes("FREEDEL") : false);
+
+  if (isFree) {
+    return {
+      ...c,
+      type: "free_shipping",
+      isFreeShipping: true,
+      discount: c.discount > 0 ? c.discount : 60,
+      title: c.title && !c.title.includes("Special Offer") ? c.title : "Free Priority Delivery",
+    };
+  }
+  return c;
+}
+
 export async function getStorefrontCoupons(): Promise<AdminCoupon[]> {
   try {
-    let res = await fetchJson<{ success: boolean; data: AdminCoupon[] }>(`/coupons`);
-    if (!res?.success || !Array.isArray(res.data) || res.data.length === 0) {
-      res = await fetchJson<{ success: boolean; data: AdminCoupon[] }>(`/admin/coupons?status=active`);
+    let res = await fetchJson<{ success: boolean; data?: AdminCoupon[]; coupons?: AdminCoupon[] }>(`/coupons`);
+    if (!res?.success || !Array.isArray(res.data || res.coupons) || (res.data || res.coupons)!.length === 0) {
+      res = await fetchJson<{ success: boolean; data?: AdminCoupon[]; coupons?: AdminCoupon[] }>(`/admin/coupons?status=active`);
     }
-    if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-      return res.data.filter((c) => c.active);
+    const rawList = res?.data || res?.coupons;
+    if (res?.success && Array.isArray(rawList) && rawList.length > 0) {
+      return rawList.filter((c) => c.active).map(normalizeCouponData);
     }
   } catch (e) {
     console.warn("Could not fetch coupons from server, using local store:", e);
@@ -3888,7 +3907,7 @@ export async function getStorefrontCoupons(): Promise<AdminCoupon[]> {
     if (!c.active) return false;
     if (c.expiryDate && c.expiryDate < todayStr) return false;
     return true;
-  });
+  }).map(normalizeCouponData);
 }
 
 export interface CouponValidationResult {
@@ -3910,11 +3929,13 @@ export async function validateCoupon(code: string, subtotal: number): Promise<Co
       body: JSON.stringify({ code: cleanCode, subtotal })
     });
     if (res && res.valid !== undefined) {
+      const normalized = res.coupon ? normalizeCouponData(res.coupon) : undefined;
+      const isFree = normalized?.type === "free_shipping" || normalized?.isFreeShipping;
       return {
         valid: res.valid,
-        discount: res.discount || 0,
-        message: res.message || (res.valid ? "Coupon applied successfully!" : "Invalid coupon"),
-        coupon: res.coupon
+        discount: isFree ? 60 : (res.discount || 0),
+        message: res.message || (isFree ? `Coupon '${cleanCode}' applied! Free farm delivery unlocked.` : (res.valid ? "Coupon applied successfully!" : "Invalid coupon")),
+        coupon: normalized
       };
     }
   } catch (e) {
@@ -3923,10 +3944,11 @@ export async function validateCoupon(code: string, subtotal: number): Promise<Co
 
   // Local fallback validation
   const stored = getStored<AdminCoupon[]>(STORAGE_KEYS.COUPONS, DEFAULT_COUPONS);
-  const coupon = stored.find((c) => c.code.toUpperCase() === cleanCode);
-  if (!coupon) {
+  const rawCoupon = stored.find((c) => c.code.toUpperCase() === cleanCode);
+  if (!rawCoupon) {
     return { valid: false, discount: 0, message: `Coupon code '${cleanCode}' is invalid.` };
   }
+  const coupon = normalizeCouponData(rawCoupon);
   if (!coupon.active) {
     return { valid: false, discount: 0, message: `Coupon '${cleanCode}' is currently inactive.` };
   }
@@ -3943,22 +3965,25 @@ export async function validateCoupon(code: string, subtotal: number): Promise<Co
     };
   }
 
+  const isFree = coupon.type === "free_shipping" || coupon.isFreeShipping;
   let discount = 0;
-  if (coupon.type === "percentage") {
+  if (isFree) {
+    discount = 60;
+  } else if (coupon.type === "percentage") {
     discount = Math.round((subtotal * coupon.discount) / 100);
     if (coupon.maxDiscount > 0) {
       discount = Math.min(discount, coupon.maxDiscount);
     }
   } else if (coupon.type === "flat") {
     discount = Math.min(coupon.discount, subtotal);
-  } else if (coupon.type === "free_shipping" || coupon.isFreeShipping) {
-    discount = 60;
   }
 
   return {
     valid: true,
     discount,
-    message: `Coupon '${coupon.code}' applied! Saved ₹${discount}.`,
+    message: isFree
+      ? `Coupon '${coupon.code}' applied! Free farm delivery unlocked (Saved ₹60).`
+      : `Coupon '${coupon.code}' applied! Saved ₹${discount}.`,
     coupon
   };
 }

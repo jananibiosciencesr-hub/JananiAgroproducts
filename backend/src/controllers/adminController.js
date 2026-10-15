@@ -2472,22 +2472,29 @@ export const restockProduct = (req, res) => {
 };
 
 function mapDbCoupon(row) {
+  const isFree = Boolean(
+    row.is_free_shipping == 1 ||
+    row.type === "free_shipping" ||
+    String(row.code).toUpperCase().includes("FREESHIP") ||
+    String(row.code).toUpperCase().includes("FREEDEL")
+  );
+
   return {
     id: String(row.id || `CPN-${row.code}`),
     code: String(row.code).trim().toUpperCase(),
-    title: row.title || `${row.code} Special Offer`,
-    description: row.description || "",
-    type: row.type || "percentage",
-    discount: Number(row.discount || 0),
+    title: row.title || (isFree ? "Free Priority Delivery" : `${row.code} Special Offer`),
+    description: row.description || (isFree ? "Complimentary delivery anywhere in India on orders ₹499+" : ""),
+    type: isFree ? "free_shipping" : (row.type || "percentage"),
+    discount: isFree ? 60 : Number(row.discount || 0),
     minCart: Number(row.min_cart || 0),
-    maxDiscount: Number(row.max_discount || 0),
+    maxDiscount: isFree ? 60 : Number(row.max_discount || 0),
     startDate: row.start_date ? new Date(row.start_date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     expiryDate: row.expiry_date ? new Date(row.expiry_date).toISOString().split("T")[0] : "2026-12-31",
     uses: Number(row.uses || 0),
     maxUses: Number(row.max_uses || 1000),
     perUserLimit: Number(row.per_user_limit || 1),
     isFirstOrderOnly: Boolean(row.is_first_order_only),
-    isFreeShipping: Boolean(row.is_free_shipping || row.type === "free_shipping"),
+    isFreeShipping: isFree,
     userSpecificTier: row.user_specific_tier || "All",
     userSpecificEmails: [],
     categorySpecific: [],
@@ -2675,24 +2682,38 @@ export const validateCouponOffer = async (req, res) => {
     });
   }
 
+  const isFree = Boolean(
+    coupon.type === "free_shipping" ||
+    coupon.isFreeShipping ||
+    String(coupon.code).toUpperCase().includes("FREESHIP") ||
+    String(coupon.code).toUpperCase().includes("FREEDEL")
+  );
+
   let calculatedDiscount = 0;
-  if (coupon.type === "percentage") {
+  if (isFree) {
+    calculatedDiscount = 60; // Standard shipping waiver value
+  } else if (coupon.type === "percentage") {
     calculatedDiscount = Math.round((orderSubtotal * coupon.discount) / 100);
     if (coupon.maxDiscount > 0) {
       calculatedDiscount = Math.min(calculatedDiscount, coupon.maxDiscount);
     }
   } else if (coupon.type === "flat") {
     calculatedDiscount = Math.min(coupon.discount, orderSubtotal);
-  } else if (coupon.type === "free_shipping" || coupon.isFreeShipping) {
-    calculatedDiscount = 60; // Standard shipping waiver value
   }
 
   res.json({
     success: true,
     valid: true,
     discount: calculatedDiscount,
-    coupon,
-    message: `Coupon '${coupon.code}' applied! You saved ₹${calculatedDiscount}.`
+    coupon: {
+      ...coupon,
+      type: isFree ? "free_shipping" : coupon.type,
+      isFreeShipping: isFree,
+      discount: isFree ? 60 : coupon.discount
+    },
+    message: isFree
+      ? `Coupon '${coupon.code}' applied! Free farm delivery unlocked (Saved ₹60).`
+      : `Coupon '${coupon.code}' applied! You saved ₹${calculatedDiscount}.`
   });
 };
 

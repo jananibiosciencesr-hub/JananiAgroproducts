@@ -399,7 +399,7 @@ export async function initDatabase() {
       const couponsSeed = [
         ["coup-1", "JANANI10", "10% Off Storewide", "Save 10% on your entire basket of organic essentials", "percentage", 10.0, 499.0, 200.0, "2026-01-01", "2026-12-31", 142, 1000, 1, 1],
         ["coup-2", "HARVEST15", "15% Harvest Fest Savings", "15% off orders above ₹999 on cold pressed oils and pulses", "percentage", 15.0, 999.0, 350.0, "2026-01-01", "2026-12-31", 88, 500, 1, 1],
-        ["coup-3", "FREESHIP", "Free Priority Delivery", "Complimentary delivery anywhere in India on orders ₹499+", "percentage", 0.0, 499.0, 60.0, "2026-01-01", "2026-12-31", 110, 2000, 2, 1],
+        ["coup-3", "FREESHIP", "Free Priority Delivery", "Complimentary delivery anywhere in India on orders ₹499+", "free_shipping", 60.0, 499.0, 60.0, "2026-01-01", "2026-12-31", 110, 2000, 2, 1],
         ["coup-4", "BILONA20", "Flat 20% on Desi Ghee", "Exclusive discount on Vedic A2 Gir Cow Bilona Ghee", "percentage", 20.0, 1200.0, 500.0, "2026-01-01", "2026-12-31", 64, 300, 1, 1]
       ];
       for (const [id, code, title, desc, type, discount, minCart, maxDiscount, start, end, uses, maxUses, perUser, active] of couponsSeed) {
