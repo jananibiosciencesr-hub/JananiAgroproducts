@@ -454,18 +454,7 @@ function ProductDetailPage() {
                 {product.subtitle || "Trichoderma Viride Liquid Biofungal Formulation"}
               </p>
 
-              {/* Ratings & Social Proof */}
-              <div className="flex items-center gap-2 pt-0.5 text-xs text-gray-500 font-medium">
-                <div className="flex items-center text-[#E7A91A]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="size-3.5 fill-current" />
-                  ))}
-                </div>
-                <span className="font-bold text-gray-800">({product.rating.toFixed(1)})</span>
-                <span>{product.reviews || 28} Reviews</span>
-                <span>|</span>
-                <span className="text-[#075B32] font-semibold">{product.stockCount || 124} Sold</span>
-              </div>
+
 
               {/* Price Row */}
               <div className="flex items-baseline gap-3 pt-1">
