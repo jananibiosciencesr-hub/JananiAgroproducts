@@ -515,18 +515,6 @@ export function HomePage() {
                           {prod.spec}
                         </p>
 
-                        {/* Rating */}
-                        <div className="mt-1 flex items-center gap-1 text-[10px] sm:text-[11px]">
-                          <div className="flex items-center text-[#E7A91A]">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="size-2.5 sm:size-3 fill-current" />
-                            ))}
-                          </div>
-                          <span className="text-gray-500 font-semibold ml-0.5">
-                            (89 reviews)
-                          </span>
-                        </div>
-
                         {/* Price: Rs. XXX  Rs. YYY */}
                         <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
                           <span className="font-bold text-xs sm:text-base text-gray-900 font-mono">

@@ -1547,7 +1547,7 @@ function ProductFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-2xl rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-2xl max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-4xl rounded-3xl border border-border bg-card p-6 sm:p-7 shadow-2xl max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-border shrink-0">
           <div>
@@ -1560,7 +1560,7 @@ function ProductFormModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex flex-wrap rounded-2xl border border-border bg-muted/40 p-1 mt-4 text-xs font-bold shrink-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center gap-1.5 rounded-2xl border border-border bg-muted/40 p-1.5 mt-4 shrink-0 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "general", label: "1. Info" },
             { id: "pricing", label: "2. Pricing & Stock" },
@@ -1572,9 +1572,12 @@ function ProductFormModal({
           ].map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 min-w-[70px] rounded-xl py-2 transition-colors text-center ${
-                activeTab === tab.id ? "bg-card text-foreground shadow-sm font-extrabold text-emerald-700 dark:text-emerald-400" : "text-muted-foreground hover:text-foreground"
+              className={`flex-1 min-w-max px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all text-center whitespace-nowrap select-none ${
+                activeTab === tab.id
+                  ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm border border-border/80 font-extrabold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               }`}
             >
               {tab.label}

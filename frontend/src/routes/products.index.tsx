@@ -9,7 +9,6 @@ import {
   Boxes,
   Leaf,
   ShieldCheck,
-  Star,
   Eye,
   Truck,
   Shield,
@@ -764,18 +763,6 @@ function ProductsPage() {
                           <p className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-1 mt-0.5">
                             {p.subtitle || p.description}
                           </p>
-
-                          {/* Rating & Reviews */}
-                          <div className="flex items-center gap-1 mt-1.5 text-[10px] sm:text-[11px]">
-                            <div className="flex items-center text-[#E7A91A]">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className="size-2.5 sm:size-3 fill-current" />
-                              ))}
-                            </div>
-                            <span className="text-gray-500 font-semibold ml-0.5">
-                              ({p.reviews} reviews)
-                            </span>
-                          </div>
 
                           {/* Price: Rs. XXX  Rs. YYY */}
                           <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
