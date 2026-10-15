@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Download,
   Share2,
-  Gift,
   Tag,
   Sparkles,
   ShoppingBag,
@@ -34,7 +33,6 @@ import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
-import { ReferEarnModal } from "@/components/order-success/refer-earn-modal";
 
 export const Route = createFileRoute("/order-success")({
   head: () => ({
@@ -70,7 +68,6 @@ export function OrderSuccessPage() {
 
   // Modals state
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
-  const [isReferEarnModalOpen, setIsReferEarnModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
   // Effective order values
@@ -235,37 +232,14 @@ export function OrderSuccessPage() {
         {/* Primary Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Button
-            asChild
-            variant="gold"
-            size="lg"
-            className="rounded-xl px-6 text-xs font-bold gap-2 shadow-md"
-          >
-            <Link to="/track-order">
-              <Truck className="size-4" />
-              <span>Track Live Dispatch</span>
-            </Link>
-          </Button>
-
-          <Button
             type="button"
             variant="outline"
             size="lg"
             onClick={() => setIsInvoiceModalOpen(true)}
             className="rounded-xl px-5 text-xs font-semibold gap-2 border-border hover:border-brand-leaf hover:text-brand-leaf transition"
           >
-            <Download className="size-4" />
+            <Download className="size-4 text-brand-leaf" />
             <span>Download Invoice PDF</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={() => setIsReferEarnModalOpen(true)}
-            className="rounded-xl px-5 text-xs font-semibold gap-2 text-brand-gold border-brand-gold/40 hover:bg-brand-gold/10 transition"
-          >
-            <Gift className="size-4" />
-            <span>Refer & Earn ₹250</span>
           </Button>
         </div>
       </div>
@@ -496,12 +470,6 @@ export function OrderSuccessPage() {
         discount={discount}
         finalTotal={finalTotal}
         paymentMethod={paymentMethod}
-      />
-
-      <ReferEarnModal
-        isOpen={isReferEarnModalOpen}
-        onClose={() => setIsReferEarnModalOpen(false)}
-        referralCode={user?.referralCode || "JANANI100"}
       />
     </div>
   );
