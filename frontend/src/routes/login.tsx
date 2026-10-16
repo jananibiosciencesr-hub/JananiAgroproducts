@@ -689,7 +689,7 @@ export function AuthenticationPage() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] w-full bg-gradient-to-br from-cream via-cream/80 to-amber-50/40 py-3 sm:py-6 px-2 sm:px-4 lg:px-6 flex items-start sm:items-center justify-center">
-      <div className="w-full max-w-4xl lg:max-w-[960px] mx-auto">
+      <div className="w-full max-w-3xl lg:max-w-[780px] mx-auto">
         {/* Main Dual-Pane Auth Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/70 bg-card/60 backdrop-blur-2xl shadow-xl transition-all w-full">
           
@@ -1122,8 +1122,8 @@ export function AuthenticationPage() {
                 /* VIEW 3: CREATE ACCOUNT (Signup with Strength Meter)       */
                 /* ========================================================= */
                 <form onSubmit={handleSignupSubmit} className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
-                  {/* Row 1: Contact Information (3 Columns on Desktop) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+                  {/* Row 1: Full Name & Mobile Number (2 Columns) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-foreground">Full Name *</label>
                       <div className="relative">
@@ -1179,8 +1179,8 @@ export function AuthenticationPage() {
                       ) : null}
                     </div>
 
-                    {/* Email Address / Gmail Field with real-time validation */}
-                    <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+                    {/* Email Address / Gmail Field with real-time validation (Full width in row 2) */}
+                    <div className="space-y-1 sm:col-span-2">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold text-foreground">Email Address *</label>
                         {isEmailValid && (
@@ -1229,8 +1229,8 @@ export function AuthenticationPage() {
                     </div>
                   </div>
 
-                  {/* Row 2: Security & Password Fields (3 Columns on Desktop) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 items-start">
+                  {/* Row 2: Passwords (2 Columns) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 items-start">
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold text-foreground">Create Password *</label>
@@ -1321,8 +1321,8 @@ export function AuthenticationPage() {
                       )}
                     </div>
 
-                    {/* PASSWORD STRENGTH METER inline in Column 3 */}
-                    <div className="rounded-xl border border-border/80 bg-secondary/40 p-2 sm:p-2.5 space-y-1 sm:col-span-2 lg:col-span-1">
+                    {/* PASSWORD STRENGTH METER inline full width */}
+                    <div className="rounded-xl border border-border/80 bg-secondary/40 p-2 sm:p-2.5 space-y-1 sm:col-span-2">
                       <div className="flex items-center justify-between text-[11px]">
                         <span className="text-muted-foreground font-medium">Security:</span>
                         <span className={`font-bold ${passwordStrength.text}`}>
@@ -1339,7 +1339,7 @@ export function AuthenticationPage() {
                           />
                         ))}
                       </div>
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-muted-foreground">
+                      <div className="grid grid-cols-4 gap-1 text-[9px] sm:text-[10px] text-muted-foreground">
                         <span className={password.length >= 8 ? "text-emerald-600 font-semibold" : ""}>
                           {password.length >= 8 ? "✓" : "○"} 8+ chars
                         </span>
@@ -1357,7 +1357,7 @@ export function AuthenticationPage() {
 
                     {/* PASSWORD MISMATCH BANNER ALERT */}
                     {isPasswordMismatch && (
-                      <div className="sm:col-span-2 lg:col-span-3 p-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-center gap-2 animate-in fade-in">
+                      <div className="sm:col-span-2 p-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-center gap-2 animate-in fade-in">
                         <AlertCircle className="size-4 shrink-0 text-destructive" />
                         <div>
                           <span className="font-bold">Password Mismatch Alert: </span>
