@@ -179,6 +179,9 @@ export function AuthenticationPage() {
 
   const isPhoneValid = phone.length === 10 && /^[6-9][0-9]{9}$/.test(phone);
   const isEmailValid = Boolean(email && !formErrors.email && !formErrors.emailSuggestion && validateEmail(email).isValid);
+  const isConfirmFilled = confirmPassword.length > 0;
+  const isPasswordMismatch = isConfirmFilled && password !== confirmPassword;
+  const isPasswordMatch = isConfirmFilled && password.length >= 6 && password === confirmPassword;
 
 
 
@@ -505,6 +508,10 @@ export function AuthenticationPage() {
   // 4. Handle Signup Form Submit (Dispatches Email OTP to confirm account)
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match. Please ensure Create Password and Confirm Password are identical.");
+      return;
+    }
     if (!name.trim()) {
       toast.error("Please enter your full name.");
       return;
@@ -528,10 +535,6 @@ export function AuthenticationPage() {
     }
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters long.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match. Please re-enter.");
       return;
     }
     if (!agreeTerms) {
@@ -740,12 +743,12 @@ export function AuthenticationPage() {
             
             {/* Top Navigation Mode Pill */}
             <div>
-              <div className="flex items-center justify-between gap-3 mb-2.5">
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-brand-leaf">
+              <div className="mb-3 space-y-2">
+                <div>
+                  <span className="text-[10.5px] sm:text-xs font-bold uppercase tracking-wider text-brand-leaf block">
                     {authMode === "login" ? "Welcome Back" : "New Harvest Member"}
                   </span>
-                  <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground leading-tight">
+                  <h1 className="font-display text-lg sm:text-2xl font-bold text-foreground leading-snug tracking-tight">
                     {isOtpStep
                       ? "Verify Security Code"
                       : authMode === "login"
@@ -754,15 +757,15 @@ export function AuthenticationPage() {
                   </h1>
                 </div>
 
-                {/* Quick tab toggle */}
+                {/* Quick tab toggle below title */}
                 {!isOtpStep && (
-                  <div className="flex shrink-0 items-center rounded-xl bg-secondary p-1 border border-border/60 shadow-xs">
+                  <div className="inline-flex items-center rounded-xl bg-secondary/80 p-1 border border-border/60 shadow-xs w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => { setAuthMode("login"); setIsOtpStep(false); }}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition ${
+                      className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                         authMode === "login"
-                          ? "bg-card text-foreground shadow-sm"
+                          ? "bg-card text-foreground shadow-sm font-bold"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -771,9 +774,9 @@ export function AuthenticationPage() {
                     <button
                       type="button"
                       onClick={() => { setAuthMode("signup"); setIsOtpStep(false); }}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition ${
+                      className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                         authMode === "signup"
-                          ? "bg-card text-foreground shadow-sm"
+                          ? "bg-card text-foreground shadow-sm font-bold"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -1253,7 +1256,19 @@ export function AuthenticationPage() {
                   {/* Row 2: Security & Password Fields (3 Columns on Desktop) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 items-start">
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-foreground">Create Password *</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-foreground">Create Password *</label>
+                        {password.length > 0 && password.length < 6 && (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1 animate-in fade-in">
+                            <AlertCircle className="size-3" /> Min 6 chars
+                          </span>
+                        )}
+                        {password.length >= 6 && (
+                          <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 animate-in fade-in">
+                            <CheckCircle2 className="size-3" /> Valid
+                          </span>
+                        )}
+                      </div>
                       <div className="relative">
                         <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
@@ -1262,12 +1277,18 @@ export function AuthenticationPage() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Min 8 characters"
-                          className="h-9.5 sm:h-10 w-full rounded-xl border border-input bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none transition ${
+                            password.length > 0 && password.length < 6
+                              ? "border-amber-500/70 focus:border-amber-600 ring-1 ring-amber-500/20"
+                              : password.length >= 6
+                              ? "border-emerald-500/70 focus:border-emerald-600"
+                              : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
+                          }`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
                         >
                           {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                         </button>
@@ -1275,25 +1296,53 @@ export function AuthenticationPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-foreground">Confirm Password *</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-foreground">Confirm Password *</label>
+                        {isPasswordMismatch && (
+                          <span className="text-[10px] text-destructive font-bold flex items-center gap-1 animate-in fade-in">
+                            <AlertCircle className="size-3 shrink-0" /> Mismatch
+                          </span>
+                        )}
+                        {isPasswordMatch && (
+                          <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 animate-in fade-in">
+                            <CheckCircle2 className="size-3 shrink-0" /> Match
+                          </span>
+                        )}
+                      </div>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                        <Lock className={`absolute left-3 top-2.5 size-4 ${isPasswordMismatch ? "text-destructive" : "text-muted-foreground"}`} />
                         <input
                           type={showConfirmPassword ? "text" : "password"}
                           required
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Re-enter password"
-                          className="h-9.5 sm:h-10 w-full rounded-xl border border-input bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none transition ${
+                            isPasswordMismatch
+                              ? "border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5 focus:border-destructive"
+                              : isPasswordMatch
+                              ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20 text-foreground"
+                              : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
+                          }`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
                         >
                           {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                         </button>
                       </div>
+                      {isPasswordMismatch && (
+                        <p className="text-[10.5px] text-destructive flex items-center gap-1 font-semibold mt-1 animate-in fade-in">
+                          <AlertCircle className="size-3.5 shrink-0" /> Passwords do not match
+                        </p>
+                      )}
+                      {isPasswordMatch && (
+                        <p className="text-[10.5px] text-emerald-600 flex items-center gap-1 font-semibold mt-1 animate-in fade-in">
+                          <CheckCircle2 className="size-3.5 shrink-0" /> Passwords match perfectly
+                        </p>
+                      )}
                     </div>
 
                     {/* PASSWORD STRENGTH METER inline in Column 3 */}
@@ -1329,6 +1378,17 @@ export function AuthenticationPage() {
                         </span>
                       </div>
                     </div>
+
+                    {/* PASSWORD MISMATCH BANNER ALERT */}
+                    {isPasswordMismatch && (
+                      <div className="sm:col-span-2 lg:col-span-3 p-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-center gap-2 animate-in fade-in">
+                        <AlertCircle className="size-4 shrink-0 text-destructive" />
+                        <div>
+                          <span className="font-bold">Password Mismatch Alert: </span>
+                          <span>"Confirm Password" must match "Create Password" exactly. Please check and re-enter.</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Terms & Privacy Acceptance */}
