@@ -434,58 +434,9 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
     <div className="space-y-6">
 
 
-      {/* Multi-Filter Toolbar */}
-      <div className="rounded-3xl border border-border bg-card p-4 shadow-soft space-y-3">
-        <div className="grid gap-3 sm:grid-cols-3">
-
-          {/* Category Filter */}
-          <select
-            value={categoryFilter}
-            onChange={(e) => {
-              setCategoryFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600"
-          >
-            <option value="all">All Categories</option>
-            {availableCategories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-
-          {/* Brand Filter */}
-          <select
-            value={brandFilter}
-            onChange={(e) => {
-              setBrandFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600"
-          >
-            <option value="all">All Brands</option>
-            {JANANI_DEFAULT_BRANDS.map((brand) => (
-              <option key={brand} value={brand}>{brand}</option>
-            ))}
-          </select>
-
-          {/* Stock Level Filter */}
-          <select
-            value={stockFilter}
-            onChange={(e) => {
-              setStockFilter(e.target.value as any);
-              setCurrentPage(1);
-            }}
-            className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600"
-          >
-            <option value="all">All Stock Status</option>
-            <option value="in_stock">In Stock (&gt; 20 units)</option>
-            <option value="low_stock">Low Stock (≤ 20 units)</option>
-            <option value="out_of_stock">Out of Stock (0 units)</option>
-          </select>
-        </div>
-
-        {/* Bulk Action Toolbar */}
-        {selectedIds.length > 0 && (
+      {/* Bulk Action Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="rounded-3xl border border-border bg-card p-4 shadow-soft">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-emerald-500/10 p-3 border border-emerald-500/30 animate-in fade-in">
             <div className="flex items-center gap-2">
               <span className="rounded-xl bg-emerald-600 px-2.5 py-0.5 text-xs font-extrabold text-white">
@@ -549,8 +500,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Products Data Table */}
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
