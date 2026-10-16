@@ -4542,13 +4542,20 @@ export interface HomepageCmsData {
 }
 
 export async function getHomepageCms(): Promise<HomepageCmsData> {
-  let res = await fetchJson<{ success: boolean; data: HomepageCmsData }>(`/api.php?action=cms&id=all`);
+  let res = await fetchJson<any>(`/api.php?action=cms&id=all`);
   if (!res?.success) {
-    res = await fetchJson<{ success: boolean; data: HomepageCmsData }>(`/admin/cms/all`);
+    res = await fetchJson<any>(`/admin/cms/all`);
   }
-  if (res?.success && res.data) return res.data;
+  if (res?.success && res.data && Array.isArray(res.data.sections) && res.data.sections.length > 0) {
+    return res.data;
+  }
 
-  return getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
+  const stored = getStored<any>(STORAGE_KEYS.CMS, DEFAULT_CMS);
+  if (stored && Array.isArray(stored.sections) && stored.sections.length > 0 && Array.isArray(stored.heroBanners) && stored.heroBanners.length > 0) {
+    return stored;
+  }
+
+  return DEFAULT_CMS as any;
 }
 
 export async function updateHomepageLayout(sections: CmsSection[]) {

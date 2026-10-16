@@ -71,9 +71,10 @@ import {
   type HomepageCmsData
 } from "@/lib/api";
 import { type Product } from "@/lib/catalog";
+import { DEFAULT_CMS } from "@/lib/mock-storage";
 
 export function CmsManagement() {
-  const [activeTab, setActiveTab] = useState<"layout" | "hero" | "offers" | "categories" | "flashSale" | "showcases">("layout");
+  const [activeTab, setActiveTab] = useState<"layout" | "hero" | "offers" | "categories" | "flashSale" | "showcases">("hero");
   const [loading, setLoading] = useState(true);
 
   // Core CMS Data
@@ -127,15 +128,23 @@ export function CmsManagement() {
         getProducts()
       ]);
 
+      const defaultSecs = DEFAULT_CMS.sections as any;
+      const defaultHeros = DEFAULT_CMS.heroBanners as any;
+      const defaultOffers = DEFAULT_CMS.offerBanners as any;
+
       if (cmsData) {
-        setSections(cmsData.sections || []);
-        setHeroBanners(cmsData.heroBanners || []);
-        setOfferBanners(cmsData.offerBanners || []);
+        setSections(cmsData.sections && cmsData.sections.length > 0 ? cmsData.sections : defaultSecs);
+        setHeroBanners(cmsData.heroBanners && cmsData.heroBanners.length > 0 ? cmsData.heroBanners : defaultHeros);
+        setOfferBanners(cmsData.offerBanners && cmsData.offerBanners.length > 0 ? cmsData.offerBanners : defaultOffers);
         setCategoryBanners(cmsData.categoryBanners || []);
         setFlashSaleBanners(cmsData.flashSaleBanners || []);
         if (cmsData.curatedProductSections) {
           setCuratedSections(cmsData.curatedProductSections);
         }
+      } else {
+        setSections(defaultSecs);
+        setHeroBanners(defaultHeros);
+        setOfferBanners(defaultOffers);
       }
       setStoreProducts(prods || []);
     } catch (err) {
@@ -189,23 +198,15 @@ export function CmsManagement() {
     }
   };
 
-  const handleResetDefaultLayout = () => {
-    const defaultSections: CmsSection[] = [
-      { id: "sec_hero", name: "Hero Carousel Banners", type: "hero_slider", enabled: true, order: 1, description: "Full-width responsive carousel with dual desktop/mobile banners & primary CTAs." },
-      { id: "sec_trust", name: "Trust Badges & Value Strip", type: "trust_badges", enabled: true, order: 2, description: "100% Organic, Direct Farmer Sourced, Chemical Free, Fast Delivery badges." },
-      { id: "sec_promo_strip", name: "Promotional Announcement Strip", type: "offer_strip", enabled: true, order: 3, description: "Highlight seasonal coupons & sitewide free shipping thresholds." },
-      { id: "sec_categories", name: "Shop by Category Cards", type: "category_grid", enabled: true, order: 4, description: "Curated category cards for Millets, Cold Pressed Oils, Rice & Sweeteners." },
-      { id: "sec_flash_sale", name: "Urgent Flash Sale Ticker", type: "flash_sale", enabled: true, order: 5, description: "Time-limited urgent deal box with live countdown timer & stock scarcity meter." },
-      { id: "sec_featured", name: "Featured Organic Essentials", type: "product_showcase_featured", enabled: true, order: 6, description: "Hand-picked organic staple products curated by admin." },
-      { id: "sec_trending", name: "Trending This Harvest Week", type: "product_showcase_trending", enabled: true, order: 7, description: "High velocity organic best-sellers and newly in-demand items." },
-      { id: "sec_brand_story", name: "Janani Agro Farm Story", type: "brand_story", enabled: true, order: 8, description: "Heritage mission, ethical farmer partnerships, and purity guarantee video/story." },
-      { id: "sec_best_sellers", name: "Customer Top Favorites", type: "product_showcase_bestsellers", enabled: true, order: 9, description: "Top-rated 5-star items loved by over 50,000+ happy households." },
-      { id: "sec_new_arrivals", name: "Fresh Harvest Arrivals", type: "product_showcase_new", enabled: true, order: 10, description: "Newly harvested grains, freshly pressed oils and seasonal jaggery." },
-      { id: "sec_testimonials", name: "Customer Reviews & UGC Showcase", type: "testimonials", enabled: true, order: 11, description: "Verified customer photo reviews and verified health benefits feedback." },
-      { id: "sec_faq", name: "Frequently Asked Questions", type: "faq", enabled: true, order: 12, description: "Organic certifications, delivery timeline, and farm sourcing FAQs." }
-    ];
+  const handleResetDefaultLayout = async () => {
+    const defaultSections: CmsSection[] = DEFAULT_CMS.sections as any;
     setSections(defaultSections);
-    toast.info("Layout reset to default standard hierarchy. Click 'Save & Publish' to sync.");
+    try {
+      await updateHomepageLayout(defaultSections);
+      toast.success("Layout reset to 12 standard sections and published!");
+    } catch {
+      toast.info("Layout reset to default standard hierarchy. Click 'Save & Publish' to sync.");
+    }
   };
 
   // ----------------------------------------------------
@@ -417,37 +418,80 @@ export function CmsManagement() {
   return (
     <div className="space-y-6">
       {/* Action Utilities */}
-      <div className="flex items-center justify-end gap-2.5 flex-wrap">
-        <button
-          onClick={() => setIsPreviewModalOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-card hover:bg-muted text-foreground border border-border rounded-xl font-medium text-xs transition-all shadow-sm cursor-pointer"
-        >
-          <Eye className="w-3.5 h-3.5 text-emerald-600" />
-          Live Device Preview
-        </button>
-        <button
-          onClick={handleSaveLayout}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition-all shadow-sm cursor-pointer"
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          Publish Layout
-        </button>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              setActiveTab("hero");
+              setEditingHero(null);
+              setIsHeroModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition-all shadow-sm cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            + Add Hero Banner
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("offers");
+              setEditingOffer(null);
+              setIsOfferModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-white rounded-xl font-bold text-xs transition-all shadow-sm cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            + Add Promo Ticker
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsPreviewModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-card hover:bg-muted text-foreground border border-border rounded-xl font-medium text-xs transition-all shadow-sm cursor-pointer"
+          >
+            <Eye className="w-3.5 h-3.5 text-emerald-600" />
+            Live Device Preview
+          </button>
+          <button
+            onClick={handleSaveLayout}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs transition-all shadow-sm cursor-pointer"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Publish Layout
+          </button>
+        </div>
       </div>
 
-      {/* 2. KPI Ribbon Cards */}
+      {/* 2. KPI Ribbon Cards (Clickable Quick Switchers) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5">
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => setActiveTab("hero")}
+          className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between text-left transition-all cursor-pointer ${
+            activeTab === "hero"
+              ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500 ring-2 ring-emerald-500/20"
+              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50"
+          }`}
+        >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
-            <span>Total Active Assets</span>
+            <span>Active Assets</span>
             <Layers className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="mt-2">
             <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">{totalActiveBanners}</span>
             <span className="text-xs text-zinc-500 ml-1.5">Assets Live</span>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => setActiveTab("hero")}
+          className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between text-left transition-all cursor-pointer ${
+            activeTab === "hero"
+              ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500 ring-2 ring-emerald-500/20"
+              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50"
+          }`}
+        >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
             <span>Hero Carousel</span>
             <ImageIcon className="w-4 h-4 text-emerald-600" />
@@ -456,9 +500,17 @@ export function CmsManagement() {
             <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">{totalActiveHero}</span>
             <span className="text-xs text-zinc-500 ml-1.5">/ {heroBanners.length} Slides</span>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => setActiveTab("offers")}
+          className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between text-left transition-all cursor-pointer ${
+            activeTab === "offers"
+              ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-500 ring-2 ring-amber-500/20"
+              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50"
+          }`}
+        >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
             <span>Promo Tickers</span>
             <Tag className="w-4 h-4 text-amber-500" />
@@ -467,9 +519,17 @@ export function CmsManagement() {
             <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">{totalActiveOffers}</span>
             <span className="text-xs text-zinc-500 ml-1.5">Live Strips</span>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => setActiveTab("flashSale")}
+          className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between text-left transition-all cursor-pointer ${
+            activeTab === "flashSale"
+              ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-500 ring-2 ring-rose-500/20"
+              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-rose-500/50"
+          }`}
+        >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
             <span>Flash Deal</span>
             <Flame className="w-4 h-4 text-rose-500" />
@@ -481,9 +541,17 @@ export function CmsManagement() {
               {isFlashSaleActive ? "🔥 ACTIVE 40%" : "INACTIVE"}
             </span>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => setActiveTab("layout")}
+          className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between text-left transition-all cursor-pointer ${
+            activeTab === "layout"
+              ? "bg-teal-50/50 dark:bg-teal-950/20 border-teal-500 ring-2 ring-teal-500/20"
+              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-teal-500/50"
+          }`}
+        >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
             <span>Active Sections</span>
             <Sliders className="w-4 h-4 text-emerald-600" />
@@ -492,7 +560,7 @@ export function CmsManagement() {
             <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">{totalActiveSections}</span>
             <span className="text-xs text-zinc-500 ml-1.5">/ {sections.length}</span>
           </div>
-        </div>
+        </button>
 
         <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-semibold uppercase tracking-wider">
@@ -504,6 +572,110 @@ export function CmsManagement() {
             <span>Real-time Live</span>
           </div>
         </div>
+      </div>
+
+      {/* 3. Navigation Tab Bar */}
+      <div className="flex items-center gap-2 p-1.5 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-x-auto shadow-inner">
+        <button
+          type="button"
+          onClick={() => setActiveTab("hero")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === "hero"
+              ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-zinc-200 dark:border-zinc-700"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-zinc-800/60"
+          }`}
+        >
+          <ImageIcon className="w-4 h-4 text-emerald-600" />
+          <span>Hero Banners & Carousel</span>
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+            activeTab === "hero" ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400" : "bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+          }`}>
+            {heroBanners.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("offers")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === "offers"
+              ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-zinc-200 dark:border-zinc-700"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-zinc-800/60"
+          }`}
+        >
+          <Tag className="w-4 h-4 text-amber-500" />
+          <span>Promo Tickers & Offers</span>
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+            activeTab === "offers" ? "bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400" : "bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+          }`}>
+            {offerBanners.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("categories")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === "categories"
+              ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-zinc-200 dark:border-zinc-700"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-zinc-800/60"
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4 text-blue-500" />
+          <span>Category Banners</span>
+          <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300">
+            {categoryBanners.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("flashSale")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === "flashSale"
+              ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-zinc-200 dark:border-zinc-700"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-zinc-800/60"
+          }`}
+        >
+          <Flame className="w-4 h-4 text-rose-500" />
+          <span>Flash Sale Ticker</span>
+          {isFlashSaleActive && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-400 animate-pulse">
+              LIVE
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("showcases")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === "showcases"
+              ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-zinc-200 dark:border-zinc-700"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-zinc-800/60"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-purple-500" />
+          <span>Product Showcases</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("layout")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === "layout"
+              ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-zinc-200 dark:border-zinc-700"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-zinc-800/60"
+          }`}
+        >
+          <Sliders className="w-4 h-4 text-teal-600" />
+          <span>Storefront Section Flow</span>
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+            activeTab === "layout" ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400" : "bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+          }`}>
+            {sections.length}
+          </span>
+        </button>
       </div>
 
 
@@ -539,89 +711,108 @@ export function CmsManagement() {
             </div>
           </div>
 
-          <div className="space-y-2.5">
-            {sections.map((section, index) => (
-              <div
-                key={section.id}
-                className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                  section.enabled
-                    ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:border-emerald-500/50"
-                    : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200/60 dark:border-zinc-800/60 opacity-60"
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="flex items-center gap-1">
-                    <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-300">
-                      {section.order}
-                    </span>
-                    <div className="flex flex-col">
-                      <button
-                        disabled={index === 0}
-                        onClick={() => moveSection(index, "up")}
-                        className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-20 transition-colors"
-                        title="Move Up"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        disabled={index === sections.length - 1}
-                        onClick={() => moveSection(index, "down")}
-                        className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-20 transition-colors"
-                        title="Move Down"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{section.name}</h3>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 font-mono">
-                        {section.type}
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-500 mt-0.5">{section.description}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      if (section.type === "hero_slider") setActiveTab("hero");
-                      else if (section.type === "offer_strip") setActiveTab("offers");
-                      else if (section.type === "category_grid") setActiveTab("categories");
-                      else if (section.type === "flash_sale") setActiveTab("flashSale");
-                      else if (section.type.startsWith("product_showcase")) {
-                        setActiveTab("showcases");
-                        if (section.type.includes("featured")) setSelectedShowcaseKey("featured");
-                        else if (section.type.includes("trending")) setSelectedShowcaseKey("trending");
-                        else if (section.type.includes("bestsellers")) setSelectedShowcaseKey("bestSellers");
-                        else if (section.type.includes("new")) setSelectedShowcaseKey("newArrivals");
-                      } else {
-                        toast.info(`Configuring ${section.name}...`);
-                      }
-                    }}
-                    className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-                  >
-                    <span>Configure</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    onClick={() => toggleSectionEnabled(section.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      section.enabled
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400"
-                        : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
-                    }`}
-                  >
-                    {section.enabled ? "Visible" : "Hidden"}
-                  </button>
-                </div>
+          {sections.length === 0 ? (
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center mb-4">
+                <Sliders className="w-8 h-8" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">No Storefront Sections Configured</h3>
+              <p className="text-xs text-zinc-500 max-w-md mt-1 mb-5">
+                Load the standard 12 sections flow (Hero Slider, Trust Badges, Categories, Deals, Farm Story & more).
+              </p>
+              <button
+                onClick={handleResetDefaultLayout}
+                className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-md cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Load Standard 12 Sections
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {sections.map((section, index) => (
+                <div
+                  key={section.id}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+                    section.enabled
+                      ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:border-emerald-500/50"
+                      : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200/60 dark:border-zinc-800/60 opacity-60"
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex items-center gap-1">
+                      <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                        {section.order}
+                      </span>
+                      <div className="flex flex-col">
+                        <button
+                          disabled={index === 0}
+                          onClick={() => moveSection(index, "up")}
+                          className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-20 transition-colors"
+                          title="Move Up"
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          disabled={index === sections.length - 1}
+                          onClick={() => moveSection(index, "down")}
+                          className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-20 transition-colors"
+                          title="Move Down"
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{section.name}</h3>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 font-mono">
+                          {section.type}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-500 mt-0.5">{section.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        if (section.type === "hero_slider") setActiveTab("hero");
+                        else if (section.type === "offer_strip") setActiveTab("offers");
+                        else if (section.type === "category_grid") setActiveTab("categories");
+                        else if (section.type === "flash_sale") setActiveTab("flashSale");
+                        else if (section.type.startsWith("product_showcase")) {
+                          setActiveTab("showcases");
+                          if (section.type.includes("featured")) setSelectedShowcaseKey("featured");
+                          else if (section.type.includes("trending")) setSelectedShowcaseKey("trending");
+                          else if (section.type.includes("bestsellers")) setSelectedShowcaseKey("bestSellers");
+                          else if (section.type.includes("new")) setSelectedShowcaseKey("newArrivals");
+                        } else {
+                          toast.info(`Configuring ${section.name}...`);
+                        }
+                      }}
+                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                    >
+                      <span>Configure</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => toggleSectionEnabled(section.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        section.enabled
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400"
+                          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+                      }`}
+                    >
+                      {section.enabled ? "Visible" : "Hidden"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -650,8 +841,29 @@ export function CmsManagement() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {heroBanners.map(banner => (
+          {heroBanners.length === 0 ? (
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center mb-4">
+                <ImageIcon className="w-8 h-8" />
+              </div>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">No Hero Banners Found</h3>
+              <p className="text-xs text-zinc-500 max-w-md mt-1 mb-5">
+                Add responsive slides with desktop & mobile images, compelling headlines, and direct shop CTAs.
+              </p>
+              <button
+                onClick={() => {
+                  setEditingHero(null);
+                  setIsHeroModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-md cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Add Your First Hero Slide
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {heroBanners.map(banner => (
               <div
                 key={banner.id}
                 className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm flex flex-col justify-between group hover:border-emerald-500/50 transition-all"
@@ -737,6 +949,7 @@ export function CmsManagement() {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
