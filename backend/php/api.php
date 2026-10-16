@@ -280,6 +280,13 @@ foreach ($attempts as $att) {
     }
 }
 
+if ($pdo) {
+    try {
+        // Automatically reset any demo/seed wallet balances for all Customers in database
+        $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
+    } catch (Throwable $e) {}
+}
+
 $action = $_GET['action'] ?? '';
 $method = strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? $_SERVER['REQUEST_METHOD'] ?? 'GET');
 
@@ -428,7 +435,7 @@ if (!$pdo) {
                     'verified' => true,
                     'isVerified' => true,
                     'status' => 'Active',
-                    'walletBalance' => $isAdmin ? 10000 : 150,
+                    'walletBalance' => $isAdmin ? 10000 : 0,
                     'tier' => $isAdmin ? 'Platinum Root Access' : 'Silver'
                 ],
                 'token' => 'janani_jwt_' . md5(($email ?: 'user') . time())
@@ -950,7 +957,7 @@ try {
                     'email' => $foundUser['email'],
                     'phone' => $custPhone,
                     'role' => $foundUser['role'] ?: 'Customer',
-                    'walletBalance' => (float)($foundUser['wallet_balance'] ?? 150),
+                    'walletBalance' => (float)($foundUser['wallet_balance'] ?? 0),
                     'referralCode' => $foundUser['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
                     'isVerified' => true,
                     'tier' => $foundUser['tier'] ?: 'Silver'
@@ -1004,7 +1011,7 @@ try {
                         'email' => $email,
                         'phone' => $phone ?: ($existingUserRow['phone'] ?? ''),
                         'role' => $existingUserRow['role'] ?: 'Customer',
-                        'walletBalance' => (float)($existingUserRow['wallet_balance'] ?? (!empty($referralCode) ? 100 : 50)),
+                        'walletBalance' => (float)($existingUserRow['wallet_balance'] ?? 0),
                         'referralCode' => $existingUserRow['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
                         'isVerified' => true,
                         'tier' => $existingUserRow['tier'] ?? 'Silver',
@@ -1039,7 +1046,7 @@ try {
                     'email' => $email,
                     'phone' => $phone,
                     'role' => 'Customer',
-                    'walletBalance' => !empty($referralCode) ? 100 : 50,
+                    'walletBalance' => 0,
                     'referralCode' => 'JANANI' . rand(1000, 9999),
                     'isVerified' => true,
                     'tier' => 'Silver',
@@ -1309,7 +1316,7 @@ try {
                 }
 
                 $userRole = $existingUser && !empty($existingUser['role']) ? $existingUser['role'] : ($isAdmin ? 'Super Admin' : 'Customer');
-                $walletBalance = $existingUser && isset($existingUser['wallet_balance']) ? (float)$existingUser['wallet_balance'] : ($isAdmin ? 10000 : 150);
+                $walletBalance = $existingUser && isset($existingUser['wallet_balance']) ? (float)$existingUser['wallet_balance'] : ($isAdmin ? 10000 : 0);
                 $tier = $existingUser && !empty($existingUser['tier']) ? $existingUser['tier'] : ($isAdmin ? 'Platinum Root Access' : 'Silver');
                 $referralCode = $existingUser && !empty($existingUser['referral_code']) ? $existingUser['referral_code'] : ($isAdmin ? 'JANANIROOT' : 'JANANI' . rand(1000, 9999));
 
@@ -2702,15 +2709,17 @@ try {
                     $stmt->execute([$code, $code]);
                     $coupon = $stmt->fetch();
                     if ($coupon) {
-                        $coupon['discount'] = (float)$coupon['discount'];
+                        $isFree = (bool)($coupon['is_free_shipping'] ?? 0) || $coupon['type'] === 'free_shipping' || stripos($coupon['code'], 'FREESHIP') !== false || stripos($coupon['code'], 'FREEDEL') !== false;
+                        $coupon['type'] = $isFree ? 'free_shipping' : ($coupon['type'] ?? 'percentage');
+                        $coupon['discount'] = $isFree ? 60.0 : (float)$coupon['discount'];
                         $coupon['minCart'] = (float)($coupon['min_cart'] ?? 0);
-                        $coupon['maxDiscount'] = (float)($coupon['max_discount'] ?? 0);
+                        $coupon['maxDiscount'] = $isFree ? 60.0 : (float)($coupon['max_discount'] ?? 0);
                         $coupon['startDate'] = $coupon['start_date'];
                         $coupon['expiryDate'] = $coupon['expiry_date'];
                         $coupon['maxUses'] = (int)($coupon['max_uses'] ?? 1000);
                         $coupon['perUserLimit'] = (int)($coupon['per_user_limit'] ?? 1);
                         $coupon['isFirstOrderOnly'] = (bool)($coupon['is_first_order_only'] ?? 0);
-                        $coupon['isFreeShipping'] = (bool)($coupon['is_free_shipping'] ?? 0);
+                        $coupon['isFreeShipping'] = $isFree;
                         $coupon['userSpecificTier'] = $coupon['user_specific_tier'] ?? 'All';
                         $coupon['active'] = (bool)$coupon['active'];
                     }
@@ -2741,15 +2750,17 @@ try {
                 $coupons = $stmt->fetchAll();
 
                 foreach ($coupons as &$c) {
-                    $c['discount'] = (float)$c['discount'];
+                    $isFree = (bool)($c['is_free_shipping'] ?? 0) || $c['type'] === 'free_shipping' || stripos($c['code'], 'FREESHIP') !== false || stripos($c['code'], 'FREEDEL') !== false;
+                    $c['type'] = $isFree ? 'free_shipping' : ($c['type'] ?? 'percentage');
+                    $c['discount'] = $isFree ? 60.0 : (float)$c['discount'];
                     $c['minCart'] = (float)($c['min_cart'] ?? 0);
-                    $c['maxDiscount'] = (float)($c['max_discount'] ?? 0);
+                    $c['maxDiscount'] = $isFree ? 60.0 : (float)($c['max_discount'] ?? 0);
                     $c['startDate'] = $c['start_date'];
                     $c['expiryDate'] = $c['expiry_date'];
                     $c['maxUses'] = (int)($c['max_uses'] ?? 1000);
                     $c['perUserLimit'] = (int)($c['per_user_limit'] ?? 1);
                     $c['isFirstOrderOnly'] = (bool)($c['is_first_order_only'] ?? 0);
-                    $c['isFreeShipping'] = (bool)($c['is_free_shipping'] ?? 0);
+                    $c['isFreeShipping'] = $isFree;
                     $c['userSpecificTier'] = $c['user_specific_tier'] ?? 'All';
                     $c['active'] = (bool)$c['active'];
                 }
@@ -2771,6 +2782,73 @@ try {
             } elseif ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
                 $body = getJsonBody();
                 $rawId = $_GET['id'] ?? ($body['id'] ?? null);
+
+                if ($rawId === 'validate' || isset($_GET['validate'])) {
+                    $code = strtoupper(trim($body['code'] ?? ''));
+                    $subtotal = (float)($body['subtotal'] ?? 0);
+
+                    if (empty($code)) {
+                        echo json_encode(['success' => false, 'valid' => false, 'message' => 'Please enter a coupon code']);
+                        exit;
+                    }
+
+                    $stmt = $pdo->prepare("SELECT * FROM `coupons` WHERE UPPER(`code`) = ? LIMIT 1");
+                    $stmt->execute([$code]);
+                    $coupon = $stmt->fetch();
+
+                    if (!$coupon) {
+                        echo json_encode(['success' => false, 'valid' => false, 'message' => "Coupon '{$code}' is invalid or does not exist."]);
+                        exit;
+                    }
+
+                    if (empty($coupon['active'])) {
+                        echo json_encode(['success' => false, 'valid' => false, 'message' => "Coupon '{$code}' is currently inactive."]);
+                        exit;
+                    }
+
+                    $todayStr = date('Y-m-d');
+                    if (!empty($coupon['expiry_date']) && $coupon['expiry_date'] < $todayStr) {
+                        echo json_encode(['success' => false, 'valid' => false, 'message' => "Coupon '{$code}' expired on {$coupon['expiry_date']}."]);
+                        exit;
+                    }
+
+                    $minCart = (float)($coupon['min_cart'] ?? 0);
+                    if ($minCart > 0 && $subtotal < $minCart) {
+                        $diff = $minCart - $subtotal;
+                        echo json_encode([
+                            'success' => false,
+                            'valid' => false,
+                            'message' => "{$coupon['code']} requires a minimum cart value of ₹{$minCart}. Add ₹{$diff} more to unlock."
+                        ]);
+                        exit;
+                    }
+
+                    $isFree = (bool)($coupon['is_free_shipping'] ?? 0) || $coupon['type'] === 'free_shipping' || stripos($coupon['code'], 'FREESHIP') !== false || stripos($coupon['code'], 'FREEDEL') !== false;
+                    $discount = 0;
+                    if ($isFree) {
+                        $discount = 60.0;
+                        $coupon['type'] = 'free_shipping';
+                        $coupon['isFreeShipping'] = true;
+                        $coupon['discount'] = 60.0;
+                    } elseif ($coupon['type'] === 'percentage') {
+                        $discount = round(($subtotal * (float)$coupon['discount']) / 100);
+                        $maxDisc = (float)($coupon['max_discount'] ?? 0);
+                        if ($maxDisc > 0) {
+                            $discount = min($discount, $maxDisc);
+                        }
+                    } elseif ($coupon['type'] === 'flat') {
+                        $discount = min((float)$coupon['discount'], $subtotal);
+                    }
+
+                    echo json_encode([
+                        'success' => true,
+                        'valid' => true,
+                        'discount' => $discount,
+                        'coupon' => $coupon,
+                        'message' => $isFree ? "Coupon '{$coupon['code']}' applied! Free farm delivery unlocked." : "Coupon '{$coupon['code']}' applied! Saved ₹{$discount}."
+                    ]);
+                    exit;
+                }
 
                 if (empty($rawId)) {
                     // Create coupon
@@ -3735,7 +3813,7 @@ try {
                             $newPhone = $formattedPhone ?? trim($body['phone'] ?? '');
                             $newRole = $body['role'] ?? 'Customer';
                             $newTier = $body['tier'] ?? 'Silver';
-                            $newWallet = (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 150.00));
+                            $newWallet = (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 0.00));
                             $jsonPrefs = !empty($prefs) ? json_encode($prefs) : null;
 
                             try {

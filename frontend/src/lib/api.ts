@@ -7440,7 +7440,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
     email: normalizedEmail,
     phone: check.user?.phone || "",
     role: "Customer",
-    walletBalance: 150,
+    walletBalance: 0,
     referralCode: "JANANI" + Math.floor(1000 + Math.random() * 9000),
     isVerified: true,
     tier: "Silver"
@@ -7595,7 +7595,7 @@ export async function verifyAuthOtp(payload: { phone?: string; email?: string; o
       email: payload.email || (payload.phone ? `${payload.phone}@janani.customer` : "patron@jananiagro.com"),
       phone: payload.phone || (isAdmin ? "+91 98480 22338" : ""),
       role: isAdmin ? "Super Admin" : "Customer",
-      walletBalance: isAdmin ? 10000 : 150,
+      walletBalance: isAdmin ? 10000 : 0,
       referralCode: isAdmin ? "JANANIROOT" : "JANANI" + Math.floor(1000 + Math.random() * 9000),
       isVerified: true,
       tier: isAdmin ? "Platinum Root Access" : "Silver"

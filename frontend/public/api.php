@@ -280,6 +280,13 @@ foreach ($attempts as $att) {
     }
 }
 
+if ($pdo) {
+    try {
+        // Automatically reset any demo/seed wallet balances for all Customers in database
+        $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
+    } catch (Throwable $e) {}
+}
+
 $action = $_GET['action'] ?? '';
 $method = strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? $_SERVER['REQUEST_METHOD'] ?? 'GET');
 
@@ -428,7 +435,7 @@ if (!$pdo) {
                     'verified' => true,
                     'isVerified' => true,
                     'status' => 'Active',
-                    'walletBalance' => $isAdmin ? 10000 : 150,
+                    'walletBalance' => $isAdmin ? 10000 : 0,
                     'tier' => $isAdmin ? 'Platinum Root Access' : 'Silver'
                 ],
                 'token' => 'janani_jwt_' . md5(($email ?: 'user') . time())
@@ -950,7 +957,7 @@ try {
                     'email' => $foundUser['email'],
                     'phone' => $custPhone,
                     'role' => $foundUser['role'] ?: 'Customer',
-                    'walletBalance' => (float)($foundUser['wallet_balance'] ?? 150),
+                    'walletBalance' => (float)($foundUser['wallet_balance'] ?? 0),
                     'referralCode' => $foundUser['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
                     'isVerified' => true,
                     'tier' => $foundUser['tier'] ?: 'Silver'
@@ -1004,7 +1011,7 @@ try {
                         'email' => $email,
                         'phone' => $phone ?: ($existingUserRow['phone'] ?? ''),
                         'role' => $existingUserRow['role'] ?: 'Customer',
-                        'walletBalance' => (float)($existingUserRow['wallet_balance'] ?? (!empty($referralCode) ? 100 : 50)),
+                        'walletBalance' => (float)($existingUserRow['wallet_balance'] ?? 0),
                         'referralCode' => $existingUserRow['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
                         'isVerified' => true,
                         'tier' => $existingUserRow['tier'] ?? 'Silver',
@@ -1039,7 +1046,7 @@ try {
                     'email' => $email,
                     'phone' => $phone,
                     'role' => 'Customer',
-                    'walletBalance' => !empty($referralCode) ? 100 : 50,
+                    'walletBalance' => 0,
                     'referralCode' => 'JANANI' . rand(1000, 9999),
                     'isVerified' => true,
                     'tier' => 'Silver',
@@ -1309,7 +1316,7 @@ try {
                 }
 
                 $userRole = $existingUser && !empty($existingUser['role']) ? $existingUser['role'] : ($isAdmin ? 'Super Admin' : 'Customer');
-                $walletBalance = $existingUser && isset($existingUser['wallet_balance']) ? (float)$existingUser['wallet_balance'] : ($isAdmin ? 10000 : 150);
+                $walletBalance = $existingUser && isset($existingUser['wallet_balance']) ? (float)$existingUser['wallet_balance'] : ($isAdmin ? 10000 : 0);
                 $tier = $existingUser && !empty($existingUser['tier']) ? $existingUser['tier'] : ($isAdmin ? 'Platinum Root Access' : 'Silver');
                 $referralCode = $existingUser && !empty($existingUser['referral_code']) ? $existingUser['referral_code'] : ($isAdmin ? 'JANANIROOT' : 'JANANI' . rand(1000, 9999));
 
@@ -3806,7 +3813,7 @@ try {
                             $newPhone = $formattedPhone ?? trim($body['phone'] ?? '');
                             $newRole = $body['role'] ?? 'Customer';
                             $newTier = $body['tier'] ?? 'Silver';
-                            $newWallet = (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 150.00));
+                            $newWallet = (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 0.00));
                             $jsonPrefs = !empty($prefs) ? json_encode($prefs) : null;
 
                             try {
