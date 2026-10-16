@@ -675,6 +675,7 @@ function DashboardPage() {
             paymentMethod: selectedInvoiceOrder.paymentMethod || "Razorpay (Online)",
             customerName: selectedInvoiceOrder.address?.fullName || userName || "Valued Patron",
             customerPhone: selectedInvoiceOrder.address?.phone || userPhone || "",
+            customerEmail: selectedInvoiceOrder.customerEmail || selectedInvoiceOrder.address?.email || user?.email || "",
             customerAddress: selectedInvoiceOrder.address
               ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}`
               : "Registered Delivery Address",

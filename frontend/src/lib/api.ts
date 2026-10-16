@@ -471,6 +471,9 @@ export interface CreateOrderPayload {
   walletDeduction?: number;
   deliveryFee?: number;
   shippingFee?: number;
+  gstAmount?: number;
+  cgst?: number;
+  sgst?: number;
   finalTotal?: number;
   total?: number;
   paymentMethod?: string;
@@ -488,8 +491,11 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
   const couponDiscount = orderPayload.couponDiscount ?? (orderPayload.couponCode ? (orderPayload.discount ?? 0) : 0);
   const walletDeduction = orderPayload.walletDeduction ?? 0;
   const discount = orderPayload.discount ?? couponDiscount;
+  const gstAmount = orderPayload.gstAmount ?? Math.round(subtotal * 0.05);
+  const cgst = orderPayload.cgst ?? Math.round(gstAmount / 2);
+  const sgst = orderPayload.sgst ?? (gstAmount - cgst);
   const deliveryFee = orderPayload.deliveryFee ?? orderPayload.shippingFee ?? (subtotal >= 799 ? 0 : 60);
-  const total = orderPayload.finalTotal ?? orderPayload.total ?? Math.max(0, subtotal - couponDiscount - walletDeduction + deliveryFee);
+  const total = orderPayload.finalTotal ?? orderPayload.total ?? Math.max(0, subtotal + gstAmount - couponDiscount - walletDeduction + deliveryFee);
   
   const generatedId = orderPayload.orderNumber || orderPayload.number || orderPayload.id || `JAP-${Math.floor(100000 + Math.random() * 900000)}`;
   const custName = orderPayload.customer.name || `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim() || "Valued Patron";
@@ -580,6 +586,10 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
       subtotal: i.price * (i.quantity || i.qty || 1)
     })),
     subtotal,
+    gst_amount: gstAmount,
+    gstAmount,
+    cgst,
+    sgst,
     discount,
     coupon_code: orderPayload.couponCode || null,
     couponCode: orderPayload.couponCode || null,

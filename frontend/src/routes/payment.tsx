@@ -320,8 +320,8 @@ export function PaymentPage() {
           name: customerName,
           firstName: customerName.split(" ")[0] || "Valued",
           lastName: customerName.split(" ").slice(1).join(" ") || "Patron",
-          phone: customerPhone,
-          email: customerEmail,
+          phone: user?.phone || customerPhone,
+          email: user?.email || customerEmail,
           address: streetAddr,
           streetAddress: streetAddr,
           city: checkoutData?.address?.city || city,
@@ -329,6 +329,9 @@ export function PaymentPage() {
           pincode: checkoutData?.address?.pincode || "380054",
         },
         subtotal: checkoutData?.subtotal || subtotal,
+        gstAmount: checkoutData?.gstAmount || Math.round((checkoutData?.subtotal || subtotal) * 0.05),
+        cgst: checkoutData?.cgst,
+        sgst: checkoutData?.sgst,
         discount: checkoutData?.discount || 0,
         couponCode: checkoutData?.coupon?.code || checkoutData?.couponCode || "",
         couponDiscount: checkoutData?.couponDiscount || (checkoutData?.coupon?.code ? checkoutData?.discount : 0) || 0,
@@ -337,8 +340,8 @@ export function PaymentPage() {
         shippingFee: checkoutData?.shippingFee || 0,
         finalTotal: effectiveAmount,
         total: effectiveAmount,
-        paymentMethod: "Razorpay",
-        paymentStatus: "Paid",
+        paymentMethod: details.method || "Razorpay",
+        paymentStatus: details.method === "Cash on Delivery" ? "Pending (COD)" : "Paid",
         transactionId: details.transactionId,
         razorpayOrderId: details.razorpayOrderId,
         deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
@@ -348,6 +351,39 @@ export function PaymentPage() {
     } catch (apiErr) {
       console.warn("Backend order creation sync note:", apiErr);
     }
+
+    // 3. Dispatch official GST Tax Invoice email to customer & admin
+    try {
+      fetch("/api.php?action=send-order-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          number: effectiveOrderNumber,
+          orderNumber: effectiveOrderNumber,
+          customer_name: customerName,
+          customer_email: user?.email || customerEmail,
+          customer_phone: user?.phone || customerPhone,
+          shipping_address: {
+            streetAddress: streetAddr,
+            city: checkoutData?.address?.city || city,
+            state: checkoutData?.address?.state || "Gujarat",
+            pincode: checkoutData?.address?.pincode || "380054",
+          },
+          items: cartItems.map((i: any) => ({
+            name: i.product?.name || i.name,
+            price: i.product?.price || i.price,
+            quantity: i.qty || i.quantity || 1,
+          })),
+          subtotal: checkoutData?.subtotal || subtotal,
+          gstAmount: checkoutData?.gstAmount || Math.round((checkoutData?.subtotal || subtotal) * 0.05),
+          delivery_fee: checkoutData?.shippingFee || 0,
+          discount: checkoutData?.couponDiscount || checkoutData?.discount || 0,
+          total: effectiveAmount,
+          finalTotal: effectiveAmount,
+          payment_method: details.method || "Razorpay",
+        }),
+      }).catch(() => {});
+    } catch (e) {}
 
     clearCart();
     if (checkoutData?.walletDeduction > 0) {

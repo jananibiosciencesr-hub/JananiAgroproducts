@@ -565,17 +565,19 @@ export function MyOrdersPage() {
           invoiceDate={selectedInvoiceOrder.date || "Recent"}
           customerName={selectedInvoiceOrder.address?.fullName || user?.name || "Valued Customer"}
           customerPhone={selectedInvoiceOrder.address?.phone || user?.phone || ""}
+          customerEmail={selectedInvoiceOrder.customerEmail || selectedInvoiceOrder.address?.email || user?.email || ""}
           customerAddress={selectedInvoiceOrder.address ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}` : "Registered Delivery Address"}
           items={(Array.isArray(selectedInvoiceOrder.items) ? selectedInvoiceOrder.items : []).map((it) => ({
-            name: it.name,
-            quantity: it.quantity,
-            price: it.price,
+            name: it.name || it.title || "Agro Formulation Product",
+            quantity: it.quantity || it.qty || 1,
+            price: it.price || 0,
           }))}
-          subtotal={selectedInvoiceOrder.subtotal || selectedInvoiceOrder.total || 0}
+          subtotal={selectedInvoiceOrder.subtotal || 0}
           deliveryFee={selectedInvoiceOrder.deliveryFee || 0}
           discount={selectedInvoiceOrder.discount || 0}
           finalTotal={selectedInvoiceOrder.total || selectedInvoiceOrder.finalTotal || 0}
           paymentMethod={selectedInvoiceOrder.paymentMethod || "Online"}
+          order={selectedInvoiceOrder}
         />
       )}
     </div>

@@ -253,6 +253,271 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
     return ['success' => false, 'error' => "All delivery channels failed. Check SMTP credentials or host outbound port restrictions."];
 }
 
+/**
+ * Send Official GST Tax Invoice Email to Customer & Admin Copy
+ */
+function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $adminEmail = 'jananibiosciences.r@gmail.com') {
+    $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : ('JAP-' . rand(100000, 999999)));
+    $customerName = !empty($orderData['customer_name']) ? $orderData['customer_name'] : (!empty($orderData['customerName']) ? $orderData['customerName'] : 'Valued Patron');
+    $toEmail = strtolower(trim(!empty($orderData['customer_email']) ? $orderData['customer_email'] : (!empty($orderData['customerEmail']) ? $orderData['customerEmail'] : (!empty($orderData['customer']['email']) ? $orderData['customer']['email'] : (!empty($orderData['email']) ? $orderData['email'] : '')))));
+
+    if (empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+        if (!empty($adminEmail) && filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+            $toEmail = $adminEmail;
+        } else {
+            return ['success' => false, 'error' => 'Invalid or missing customer email address'];
+        }
+    }
+
+    $orderDate = !empty($orderData['order_date']) ? $orderData['order_date'] : (!empty($orderData['date']) ? $orderData['date'] : date('d M Y, h:i A'));
+    $paymentMethod = !empty($orderData['payment_method']) ? $orderData['payment_method'] : (!empty($orderData['paymentMethod']) ? $orderData['paymentMethod'] : 'Prepaid Online / UPI');
+
+    $sAddr = $orderData['shipping_address'] ?? ($orderData['shippingAddress'] ?? ($orderData['address'] ?? []));
+    if (is_string($sAddr)) {
+        $sAddr = json_decode($sAddr, true) ?: [];
+    }
+    $addrStr = !empty($sAddr['streetAddress']) ? $sAddr['streetAddress'] : (!empty($sAddr['street']) ? $sAddr['street'] : '');
+    $city = !empty($sAddr['city']) ? $sAddr['city'] : '';
+    $state = !empty($sAddr['state']) ? $sAddr['state'] : '';
+    $pincode = !empty($sAddr['pincode']) ? $sAddr['pincode'] : '';
+    $fullAddress = trim("{$addrStr}, {$city}, {$state} - {$pincode}", ", - ");
+    if (empty($fullAddress)) $fullAddress = 'Registered Delivery Address';
+
+    // Parse items
+    $items = $orderData['items'] ?? [];
+    if (is_string($items)) {
+        $items = json_decode($items, true) ?: [];
+    }
+
+    $itemsRowsHtml = '';
+    $itemsSubtotal = 0;
+    $idx = 1;
+
+    foreach ($items as $it) {
+        $name = !empty($it['name']) ? $it['name'] : (!empty($it['title']) ? $it['title'] : 'Agro Formulation Product');
+        $qty = (int)(!empty($it['quantity']) ? $it['quantity'] : (!empty($it['qty']) ? $it['qty'] : 1));
+        $price = (float)(!empty($it['price']) ? $it['price'] : 0);
+        $lineTotal = $price * $qty;
+        $itemsSubtotal += $lineTotal;
+
+        $hsn = '3105';
+        if (stripos($name, 'oil') !== false) $hsn = '1508';
+        elseif (stripos($name, 'ghee') !== false) $hsn = '0405';
+        elseif (stripos($name, 'seed') !== false) $hsn = '1209';
+
+        $cgst = round($lineTotal * 0.025);
+        $sgst = round($lineTotal * 0.025);
+        $itemTotal = $lineTotal + $cgst + $sgst;
+
+        $itemsRowsHtml .= "
+        <tr style='border-bottom: 1px solid #e2e8f0; font-size: 13px;'>
+            <td style='padding: 10px 8px; text-align: center; color: #64748b;'>{$idx}</td>
+            <td style='padding: 10px 8px; font-weight: 600; color: #1e293b;'>{$name}</td>
+            <td style='padding: 10px 8px; text-align: center; color: #64748b; font-family: monospace;'>{$hsn}</td>
+            <td style='padding: 10px 8px; text-align: center; font-weight: 600;'>{$qty}</td>
+            <td style='padding: 10px 8px; text-align: right; font-family: monospace;'>₹" . number_format($price, 2) . "</td>
+            <td style='padding: 10px 8px; text-align: right; font-family: monospace; font-weight: 600;'>₹" . number_format($lineTotal, 2) . "</td>
+            <td style='padding: 10px 8px; text-align: right; font-family: monospace; color: #059669;'>₹" . number_format($cgst, 2) . "</td>
+            <td style='padding: 10px 8px; text-align: right; font-family: monospace; color: #059669;'>₹" . number_format($sgst, 2) . "</td>
+            <td style='padding: 10px 8px; text-align: right; font-family: monospace; font-weight: 700; color: #0f172a;'>₹" . number_format($itemTotal, 2) . "</td>
+        </tr>";
+        $idx++;
+    }
+
+    if ($itemsSubtotal <= 0) {
+        $itemsSubtotal = (float)($orderData['subtotal'] ?? 0);
+    }
+
+    $totalGst = isset($orderData['gstAmount']) ? (float)$orderData['gstAmount'] : round($itemsSubtotal * 0.05);
+    $cgstTotal = isset($orderData['cgst']) ? (float)$orderData['cgst'] : round($totalGst / 2);
+    $sgstTotal = isset($orderData['sgst']) ? (float)$orderData['sgst'] : ($totalGst - $cgstTotal);
+    $deliveryFee = isset($orderData['delivery_fee']) ? (float)$orderData['delivery_fee'] : (isset($orderData['shippingFee']) ? (float)$orderData['shippingFee'] : ($itemsSubtotal >= 799 ? 0 : 60));
+    $discount = (float)($orderData['discount'] ?? ($orderData['coupon_discount'] ?? 0));
+    $finalTotal = $itemsSubtotal + $totalGst + $deliveryFee - $discount;
+
+    $invoiceNumber = "INV-" . str_replace("JAP-", "2026-", $orderNumber);
+    $rawSubject = "🧾 Order Confirmation & GST Tax Invoice #{$orderNumber} - Janani Agro Products";
+    $subject = "=?UTF-8?B?" . base64_encode($rawSubject) . "?=";
+
+    $emailBody = "
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset='utf-8'></head>
+    <body style='font-family: Arial, sans-serif; background-color: #f4f7f4; padding: 20px; margin: 0;'>
+      <div style='max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e2ece2;'>
+        <div style='background: linear-gradient(135deg, #075B32 0%, #04341B 100%); padding: 25px; color: white;'>
+          <table style='width: 100%; border-collapse: collapse;'>
+            <tr>
+              <td>
+                <h1 style='margin: 0; font-size: 20px; letter-spacing: 0.5px;'>JANANI AGRO PRODUCTS PVT. LTD.</h1>
+                <p style='margin: 4px 0 0 0; font-size: 11px; color: #a7f3d0;'>Nurturing Soil Health & Empowering Farmers</p>
+                <p style='margin: 3px 0 0 0; font-size: 10px; color: #e2e8f0;'>GSTIN: 24AAACJ1029K1Z4 &bull; FSSAI Lic. No: 10721026000412</p>
+              </td>
+              <td style='text-align: right; vertical-align: middle;'>
+                <span style='background: #D99A12; color: #04341B; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;'>
+                  TAX INVOICE
+                </span>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style='padding: 24px;'>
+          <p style='font-size: 15px; color: #1e293b; margin: 0 0 12px 0;'>Dear <strong>{$customerName}</strong>,</p>
+          <p style='font-size: 13px; color: #475569; line-height: 1.5; margin: 0 0 16px 0;'>
+            Thank you for placing your order with Janani Agro Products! Your order has been placed and confirmed. Below is your official computer-generated GST tax invoice (Rule 46):
+          </p>
+          <table style='width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; font-size: 12px; margin-bottom: 20px;'>
+            <tr>
+              <td style='padding: 4px 8px; color: #64748b;'>Order Reference:</td>
+              <td style='padding: 4px 8px; font-weight: bold; color: #075B32; font-family: monospace;'>{$orderNumber}</td>
+              <td style='padding: 4px 8px; color: #64748b;'>Invoice Number:</td>
+              <td style='padding: 4px 8px; font-weight: bold; color: #1e293b; font-family: monospace;'>{$invoiceNumber}</td>
+            </tr>
+            <tr>
+              <td style='padding: 4px 8px; color: #64748b;'>Order Date:</td>
+              <td style='padding: 4px 8px; font-weight: 600; color: #1e293b;'>{$orderDate}</td>
+              <td style='padding: 4px 8px; color: #64748b;'>Payment Method:</td>
+              <td style='padding: 4px 8px; font-weight: 600; color: #1e293b;'>{$paymentMethod}</td>
+            </tr>
+            <tr>
+              <td style='padding: 4px 8px; color: #64748b;'>Delivery Address:</td>
+              <td colspan='3' style='padding: 4px 8px; font-weight: 600; color: #1e293b;'>{$fullAddress}</td>
+            </tr>
+          </table>
+
+          <div style='overflow-x: auto; margin-bottom: 20px;'>
+            <table style='width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px;'>
+              <thead>
+                <tr style='background: #f1f5f9; color: #334155; font-size: 11px; text-transform: uppercase; font-weight: 700;'>
+                  <th style='padding: 10px 8px; text-align: center; border-bottom: 1px solid #cbd5e1;'>#</th>
+                  <th style='padding: 10px 8px; text-align: left; border-bottom: 1px solid #cbd5e1;'>Product</th>
+                  <th style='padding: 10px 8px; text-align: center; border-bottom: 1px solid #cbd5e1;'>HSN</th>
+                  <th style='padding: 10px 8px; text-align: center; border-bottom: 1px solid #cbd5e1;'>Qty</th>
+                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>Rate</th>
+                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>Taxable</th>
+                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>CGST (2.5%)</th>
+                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>SGST (2.5%)</th>
+                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {$itemsRowsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <table style='width: 100%; border-collapse: collapse;'>
+            <tr>
+              <td style='width: 50%; vertical-align: top; padding-right: 15px;'>
+                <div style='background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; font-size: 11px; color: #166534;'>
+                  <strong>100% Quality & Potency Guaranteed:</strong><br>
+                  Inspected for batch potency and packed in secure agricultural transit packaging.
+                </div>
+              </td>
+              <td style='width: 50%; vertical-align: top;'>
+                <table style='width: 100%; font-size: 13px;'>
+                  <tr>
+                    <td style='padding: 4px 0; color: #64748b;'>Taxable Subtotal:</td>
+                    <td style='padding: 4px 0; text-align: right; font-family: monospace; font-weight: 600;'>₹" . number_format($itemsSubtotal, 2) . "</td>
+                  </tr>
+                  <tr>
+                    <td style='padding: 4px 0; color: #64748b;'>Total CGST (2.5%):</td>
+                    <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669;'>+₹" . number_format($cgstTotal, 2) . "</td>
+                  </tr>
+                  <tr>
+                    <td style='padding: 4px 0; color: #64748b;'>Total SGST (2.5%):</td>
+                    <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669;'>+₹" . number_format($sgstTotal, 2) . "</td>
+                  </tr>
+                  " . ($discount > 0 ? "
+                  <tr>
+                    <td style='padding: 4px 0; color: #059669; font-weight: 600;'>Discount Applied:</td>
+                    <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669;'>-₹" . number_format($discount, 2) . "</td>
+                  </tr>" : "") . "
+                  <tr>
+                    <td style='padding: 4px 0; color: #64748b;'>Shipping Charges:</td>
+                    <td style='padding: 4px 0; text-align: right; font-family: monospace; font-weight: 600; color: " . ($deliveryFee === 0 ? "#059669" : "#1e293b") . ";'>" . ($deliveryFee === 0 ? "FREE" : "₹" . number_format($deliveryFee, 2)) . "</td>
+                  </tr>
+                  <tr style='border-top: 2px solid #075B32;'>
+                    <td style='padding: 8px 0 0 0; font-weight: bold; font-size: 15px; color: #0f172a;'>Total Paid:</td>
+                    <td style='padding: 8px 0 0 0; text-align: right; font-family: monospace; font-weight: bold; font-size: 16px; color: #075B32;'>₹" . number_format($finalTotal, 2) . "</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style='background: #f8fafc; padding: 15px 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;'>
+          Need assistance with this order? Call +91 93114 16225 or WhatsApp us.<br>
+          &copy; " . date('Y') . " Janani Agro Products Pvt. Ltd. &bull; Lodhika GIDC, Gujarat.
+        </div>
+      </div>
+    </body>
+    </html>";
+
+    $cleanSmtpPass = str_replace(' ', '', $smtpPass);
+    $recipients = array_values(array_unique(array_filter([$toEmail, $adminEmail])));
+
+    // TIER 1: SSL Direct (Port 465)
+    $sslContext = stream_context_create([
+        'ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true]
+    ]);
+    $socket = @stream_socket_client('ssl://smtp.gmail.com:465', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $sslContext);
+    if ($socket) {
+        stream_set_timeout($socket, 4);
+        fgets($socket, 512);
+        fputs($socket, "EHLO jananiagroproducts.com\r\n");
+        while ($line = fgets($socket, 512)) { if (substr($line, 3, 1) === ' ') break; }
+        fputs($socket, "AUTH LOGIN\r\n");
+        fgets($socket, 512);
+        fputs($socket, base64_encode($smtpUser) . "\r\n");
+        fgets($socket, 512);
+        fputs($socket, base64_encode($cleanSmtpPass) . "\r\n");
+        $authRes = fgets($socket, 512);
+        if (substr($authRes, 0, 3) === '235') {
+            fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
+            fgets($socket, 512);
+            foreach ($recipients as $rcpt) {
+                fputs($socket, "RCPT TO: <{$rcpt}>\r\n");
+                fgets($socket, 512);
+            }
+            fputs($socket, "DATA\r\n");
+            fgets($socket, 512);
+            $headers  = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+            $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+            $headers .= "To: <{$toEmail}>\r\n";
+            if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
+                $headers .= "Cc: <{$adminEmail}>\r\n";
+            }
+            $headers .= "Reply-To: {$smtpUser}\r\n";
+            $headers .= "Subject: {$subject}\r\n";
+            fputs($socket, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
+            $dataRes = fgets($socket, 512);
+            fputs($socket, "QUIT\r\n");
+            fclose($socket);
+            if (substr($dataRes, 0, 3) === '250') {
+                return ['success' => true, 'method' => 'gmail_smtp_ssl_465'];
+            }
+        } else {
+            fclose($socket);
+        }
+    }
+
+    // TIER 2: Native mail fallback
+    $mailHeaders  = "MIME-Version: 1.0\r\n";
+    $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $mailHeaders .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
+        $mailHeaders .= "Cc: {$adminEmail}\r\n";
+    }
+    $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
+    $mailSent = @mail($toEmail, $rawSubject, $emailBody, $mailHeaders);
+    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
+        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $emailBody, $mailHeaders);
+    }
+    return $mailSent ? ['success' => true, 'method' => 'hostinger_mail'] : ['success' => false, 'error' => 'Mail delivery failed'];
+}
+
 // On Hostinger Linux/CageFS, MySQL connects via unix domain socket ('localhost').
 $pdo = null;
 $connectedDb = $raw_db;
@@ -1069,6 +1334,29 @@ try {
                     'isNewUser' => true,
                     'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
                     'user' => $user
+                ]);
+                exit;
+            }
+        case 'send-order-email':
+            if ($method === 'POST' || $method === 'GET') {
+                $body = getJsonBody();
+                $ordId = $_GET['id'] ?? ($body['number'] ?? ($body['orderNumber'] ?? null));
+                $orderData = null;
+                if ($ordId && $pdo) {
+                    try {
+                        $stmt = $pdo->prepare("SELECT * FROM `orders` WHERE `number` = ? OR `id` = ? LIMIT 1");
+                        $stmt->execute([$ordId, $ordId]);
+                        $orderData = $stmt->fetch();
+                    } catch (Exception $e) {}
+                }
+                if (!$orderData) {
+                    $orderData = $body;
+                }
+                $res = sendOrderConfirmationInvoiceEmail($orderData, $smtp_user, $smtp_pass, $admin_email);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Order invoice email dispatched successfully',
+                    'detail' => $res
                 ]);
                 exit;
             }
@@ -3361,6 +3649,11 @@ try {
                         $created['items'] = json_decode($created['items'], true);
                         $created['timeline'] = json_decode($created['timeline'], true);
                     }
+
+                    // Automatically dispatch official GST tax invoice email to customer and admin
+                    try {
+                        @sendOrderConfirmationInvoiceEmail($created ?: $body, $smtp_user, $smtp_pass, $admin_email);
+                    } catch (Exception $emailEx) {}
 
                     echo json_encode(['success' => true, 'message' => "Order {$orderNum} recorded in MySQL with full realtime breakdown", 'data' => $created, 'order' => $created, 'orderId' => $orderNum]);
                     exit;

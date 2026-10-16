@@ -74,6 +74,7 @@ export function OrderSuccessPage() {
   const deliveryDate = orderData?.slot?.dateStr || orderData?.deliverySlot || orderData?.expectedDelivery || "2-3 Business Days";
   const customerName = orderData?.customerName || orderData?.address?.fullName || user?.name || "Valued Patron";
   const customerPhone = orderData?.customerPhone || orderData?.address?.phone || user?.phone || "";
+  const customerEmail = orderData?.customerEmail || orderData?.customer_email || orderData?.address?.email || user?.email || "";
   
   const customerAddress = orderData?.customerAddress || (orderData?.address
     ? `${orderData.address.streetAddress || orderData.address.houseFlat || ""}${orderData.address.street ? ", " + orderData.address.street : ""}${orderData.address.landmark ? ", " + orderData.address.landmark : ""}, ${orderData.address.city || ""}, ${orderData.address.state || ""} - ${orderData.address.pincode || ""}`
@@ -507,6 +508,7 @@ export function OrderSuccessPage() {
         invoiceDate={formattedDate}
         customerName={customerName}
         customerPhone={customerPhone}
+        customerEmail={customerEmail}
         customerAddress={customerAddress}
         items={items}
         subtotal={subtotal}
@@ -514,6 +516,7 @@ export function OrderSuccessPage() {
         discount={discount}
         finalTotal={finalTotal}
         paymentMethod={paymentMethod}
+        order={orderData}
       />
     </div>
   );
