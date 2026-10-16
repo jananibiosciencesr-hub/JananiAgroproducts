@@ -7,7 +7,6 @@ import {
   Upload,
   Trash2,
   Check,
-  User,
   ShoppingBag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,8 +64,7 @@ export function ProfileHeader() {
   const name = user?.name || "Janani Patron";
   const email = user?.email || "customer@jananiagro.com";
   const phone = user?.phone || "";
-  const tier = user?.tier || "Harvest Member";
-  const walletBalance = user?.walletBalance ?? 0;
+  const tier = user?.tier || "Silver";
   const avatar = user?.avatar;
 
   const initials = name
@@ -76,35 +74,36 @@ export function ProfileHeader() {
     .join("");
 
   return (
-    <div className="relative rounded-[2.5rem] bg-gradient-to-r from-forest via-forest to-emerald-950 p-6 sm:p-10 text-primary-foreground shadow-luxe overflow-hidden">
-      {/* Subtle organic watermark */}
-      <div className="absolute -right-16 -bottom-16 size-64 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none" />
+    <div className="relative rounded-2xl bg-gradient-to-r from-forest via-[#075B32] to-[#04341B] p-3 sm:p-4 text-white shadow-md border border-white/10 overflow-hidden">
+      {/* Subtle organic ambient glow */}
+      <div className="absolute -right-10 -bottom-10 size-40 rounded-full bg-brand-gold/10 blur-2xl pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        {/* Left: Avatar with Upload Button + Details */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-          {/* Avatar container with interactive Camera button */}
+      {/* Single-line compact horizontal layout */}
+      <div className="relative z-10 flex items-center justify-between gap-2.5 sm:gap-4">
+        {/* Left: Compact Avatar + Name & Info in Single Line */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
+          {/* Compact Avatar with interactive Camera button */}
           <div className="relative group shrink-0">
             {avatar ? (
               <img
                 src={avatar}
                 alt={name}
-                className="size-24 sm:size-28 rounded-3xl object-cover border-2 border-brand-gold/40 shadow-md ring-4 ring-white/10"
+                className="size-11 sm:size-13 rounded-xl object-cover border border-brand-gold/50 shadow-xs"
               />
             ) : (
-              <div className="size-24 sm:size-28 rounded-3xl bg-brand-gold text-forest font-display text-3xl font-bold flex items-center justify-center shadow-md ring-4 ring-white/10">
+              <div className="size-11 sm:size-13 rounded-xl bg-brand-gold text-forest font-display text-base sm:text-xl font-bold flex items-center justify-center shadow-xs">
                 {initials}
               </div>
             )}
 
-            {/* Camera Overlay Button */}
+            {/* Camera Overlay Icon */}
             <button
               type="button"
               onClick={() => setShowPresets(!showPresets)}
-              className="absolute -bottom-2 -right-2 size-9 rounded-full bg-brand-gold text-forest flex items-center justify-center shadow-md hover:scale-105 transition"
+              className="absolute -bottom-1 -right-1 size-5 rounded-full bg-brand-gold text-forest flex items-center justify-center shadow hover:scale-110 transition cursor-pointer"
               title="Change Profile Photo"
             >
-              <Camera className="size-4.5" />
+              <Camera className="size-2.5" />
             </button>
 
             <input
@@ -116,91 +115,94 @@ export function ProfileHeader() {
             />
           </div>
 
-          {/* User Meta */}
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold/20 text-brand-gold px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider">
-                <Sparkles className="size-3" /> {tier}
+          {/* User Details */}
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="font-display text-sm sm:text-base font-bold text-white tracking-tight truncate max-w-[150px] sm:max-w-xs">
+                {name}
+              </h1>
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold/25 text-brand-gold px-2 py-0.2 text-[9.5px] font-extrabold uppercase tracking-wide">
+                <Sparkles className="size-2.5" /> {tier}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 text-[10px] font-bold">
-                <ShieldCheck className="size-3" /> KYC Verified
+              <span className="hidden xs:inline-flex sm:inline-flex items-center gap-0.5 rounded-full bg-emerald-500/25 text-emerald-300 px-1.5 py-0.2 text-[9px] font-semibold">
+                <ShieldCheck className="size-2.5" /> Verified
               </span>
             </div>
 
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              {name}
-            </h1>
-            <p className="text-xs text-primary-foreground/75">
-              {email} · {phone}
+            <p className="text-[11px] text-white/80 truncate">
+              {email}{phone ? ` • ${phone}` : ""}
             </p>
           </div>
         </div>
 
-        {/* Right: Quick Action Controls - Ultra-Luxury Executive Buttons */}
-        <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 self-center md:self-auto">
+        {/* Right: Compact Action Buttons in Single Line */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Link
             to="/orders"
-            className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-black tracking-wide text-[#05321A] bg-gradient-to-b from-[#FFE072] via-[#F5B723] to-[#D4910B] border border-[#FFF4B8]/90 shadow-[0_4px_18px_rgba(217,154,18,0.48),inset_0_1.5px_1px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(150,90,0,0.25)] hover:shadow-[0_8px_26px_rgba(245,183,35,0.65),inset_0_1.5px_1.5px_rgba(255,255,255,1)] hover:from-[#FFF099] hover:via-[#F9C33F] hover:to-[#DE9E16] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold text-[#05321A] bg-gradient-to-b from-[#FFE072] to-[#F5B723] hover:from-[#FFF099] hover:to-[#F9C33F] border border-[#FFF4B8]/80 shadow-xs hover:shadow transition active:scale-95 cursor-pointer"
+            title="My Orders Hub"
           >
-            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-            <ShoppingBag className="size-4 stroke-[2.4] text-[#05321A] group-hover:scale-110 transition-transform duration-200" />
-            <span className="relative z-10 font-black">My Orders Hub</span>
+            <ShoppingBag className="size-3.5 stroke-[2.4] text-[#05321A]" />
+            <span className="whitespace-nowrap font-bold text-[11px] sm:text-xs">
+              <span className="hidden xs:inline">My </span>Orders
+            </span>
           </Link>
 
           <button
             type="button"
             onClick={handleLogout}
-            className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-white/35 hover:border-rose-300/70 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] hover:shadow-[0_6px_24px_rgba(244,63,94,0.4),inset_0_1px_1.5px_rgba(255,255,255,0.6)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold text-white/90 bg-white/10 hover:bg-rose-500/25 hover:text-white hover:border-rose-400/40 border border-white/20 transition active:scale-95 cursor-pointer"
+            title="Sign Out"
           >
-            <LogOut className="size-3.5 stroke-[2.2] text-white/90 group-hover:text-rose-200 group-hover:-translate-x-1 transition-all duration-200" />
-            <span className="group-hover:text-rose-100 transition-colors">Sign Out</span>
+            <LogOut className="size-3.5" />
+            <span className="hidden sm:inline text-xs">Sign Out</span>
           </button>
         </div>
       </div>
 
       {/* Preset Avatar Popover / Picker Drawer */}
       {showPresets && (
-        <div className="mt-6 pt-5 border-t border-white/15 animate-in fade-in duration-200">
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-            <span className="font-bold text-brand-gold flex items-center gap-1.5">
-              <Upload className="size-3.5" /> Choose Profile Avatar or Upload Photo
+        <div className="mt-3 pt-3 border-t border-white/15 animate-in fade-in duration-200">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-brand-gold text-[11px] flex items-center gap-1">
+              <Upload className="size-3" /> Select Avatar or Upload:
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-full text-[11px] h-7 bg-white/10 text-white border-white/20 hover:bg-white/20"
+                className="rounded-lg text-[10px] h-6 px-2.5 bg-white/10 text-white border-white/20 hover:bg-white/20"
               >
-                Upload from Device
+                Upload Photo
               </Button>
               {avatar && (
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
-                  className="text-white/70 hover:text-red-300 text-[11px] flex items-center gap-1 transition"
+                  className="text-white/70 hover:text-rose-300 text-[10px] flex items-center gap-1 transition px-1 py-0.5 cursor-pointer"
                 >
-                  <Trash2 className="size-3" /> Remove Photo
+                  <Trash2 className="size-2.5" /> Remove
                 </button>
               )}
             </div>
           </div>
 
-          <div className="mt-3 flex items-center gap-3 overflow-x-auto pb-1">
+          <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             {AVATAR_PRESETS.map((preset, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleAvatarChange(preset)}
-                className={`relative rounded-2xl p-0.5 border-2 transition ${
+                className={`relative rounded-xl p-0.5 border-2 transition shrink-0 cursor-pointer ${
                   avatar === preset ? "border-brand-gold scale-105" : "border-transparent opacity-80 hover:opacity-100"
                 }`}
               >
-                <img src={preset} alt={`Preset ${idx + 1}`} className="size-12 rounded-xl object-cover" />
+                <img src={preset} alt={`Preset ${idx + 1}`} className="size-9 rounded-lg object-cover" />
                 {avatar === preset && (
-                  <span className="absolute -top-1 -right-1 size-4 rounded-full bg-brand-gold text-forest flex items-center justify-center">
-                    <Check className="size-2.5 stroke-[3]" />
+                  <span className="absolute -top-1 -right-1 size-3.5 rounded-full bg-brand-gold text-forest flex items-center justify-center">
+                    <Check className="size-2 stroke-[3]" />
                   </span>
                 )}
               </button>
