@@ -18,7 +18,7 @@ export function getWordVariants(token: string): string[] {
 
   // Clean alphanumeric
   const clean = t.replace(/[^a-z0-9]/g, "");
-  if (clean && clean.length > 1) {
+  if (clean) {
     variants.add(clean);
   }
 
@@ -36,7 +36,7 @@ export function getWordVariants(token: string): string[] {
     variants.add(t + "es");
   }
 
-  return Array.from(variants).filter((v) => v.length > 1);
+  return Array.from(variants).filter((v) => v.length > 0);
 }
 
 /**
@@ -110,7 +110,7 @@ export function calculateProductRelevance(p: Product | any, query: string): numb
       return (
         corpus.includes(v) ||
         normalizedCorpus.includes(v) ||
-        (vClean.length > 2 && compactCorpus.includes(vClean))
+        (vClean.length > 0 && compactCorpus.includes(vClean))
       );
     });
 
@@ -127,10 +127,15 @@ export function calculateProductRelevance(p: Product | any, query: string): numb
   const catLower = (p.category || "").toLowerCase();
   const aliases = (p.aliases || []).map((a: string) => String(a).toLowerCase());
   const badgeLower = (p.badge || "").toLowerCase();
+  const nameWords = nameLower.split(/[\s-]+/).filter(Boolean);
+  const catWords = catLower.split(/[\s-]+/).filter(Boolean);
 
-  // Exact phrase bonuses
-  if (nameLower === q) score += 120;
-  else if (nameLower.includes(q)) score += 60;
+  // Exact phrase and word-start bonuses (ranks prefix matches like 'N' -> 'Neem Oil' highest)
+  if (nameLower === q) score += 150;
+  else if (nameLower.startsWith(q)) score += 100;
+  else if (nameWords.some((w) => w.startsWith(q))) score += 80;
+  else if (catWords.some((w) => w.startsWith(q))) score += 50;
+  else if (nameLower.includes(q)) score += 40;
 
   if (subLower.includes(q)) score += 40;
   if (catLower.includes(q)) score += 30;

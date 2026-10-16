@@ -548,9 +548,9 @@ function ProductsPage() {
 
   return (
     <div className="bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-5 lg:py-6">
         {/* Breadcrumb (NO top banner as requested) */}
-        <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-6 font-medium">
+        <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-2 sm:mb-4 lg:mb-6 font-medium">
           <Link to="/" className="hover:text-[#075B32] transition">
             Home
           </Link>
@@ -570,7 +570,7 @@ function ProductsPage() {
           {/* Right Main Content Area */}
           <div className="flex-1 w-full min-w-0">
             {/* Top Toolbar - Sticky Bar */}
-            <div className="sticky top-20 z-20 bg-white/95 backdrop-blur-md py-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-xl border border-gray-100 shadow-xs mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 transition-all">
+            <div className="sticky top-16 sm:top-20 z-20 bg-white/95 backdrop-blur-md py-2.5 sm:py-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-xl border border-gray-100 shadow-xs mb-3 sm:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 transition-all">
               {/* Left: Product count & Mobile filter trigger */}
               <div className="flex items-center justify-between sm:justify-start gap-3">
                 <button

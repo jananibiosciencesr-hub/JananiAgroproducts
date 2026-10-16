@@ -158,12 +158,12 @@ function Shell({ children }: { children: React.ReactNode }) {
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? "border-b border-[#075B32]/15 bg-white/98 shadow-[0_12px_36px_-6px_rgba(7,91,50,0.12)] backdrop-blur-2xl py-2"
-            : "border-b border-[#075B32]/10 bg-white/95 shadow-[0_4px_25px_-5px_rgba(7,91,50,0.06)] backdrop-blur-xl py-2.5 sm:py-3"
+            ? "border-b border-[#075B32]/15 bg-white/98 shadow-[0_12px_36px_-6px_rgba(7,91,50,0.12)] backdrop-blur-2xl py-1 sm:py-2"
+            : "border-b border-[#075B32]/10 bg-white/95 shadow-[0_4px_25px_-5px_rgba(7,91,50,0.06)] backdrop-blur-xl py-1.5 sm:py-2.5"
         }`}
         style={{ top: 0 }}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6">
           {/* Brand Logo with Ambient Halo */}
           <Brand />
 
@@ -225,7 +225,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Right Action Terminal: Quick Search Pill, Wishlist, Cart & Luxe Auth */}
-          <div className="flex items-center justify-end gap-2 sm:gap-3">
+          <div className="flex items-center justify-end gap-1 sm:gap-2.5 shrink-0">
             {/* Desktop Quick Search Pill */}
             <button
               type="button"
@@ -247,9 +247,9 @@ function Shell({ children }: { children: React.ReactNode }) {
               onClick={() => setIsGlobalSearchOpen(true)}
               aria-label="Quick Search"
               title="Search Products"
-              className="md:hidden size-10 rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED]"
+              className="md:hidden size-8.5 sm:size-10 rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED]"
             >
-              <Search className="size-4.5" />
+              <Search className="size-4 sm:size-4.5" />
             </Button>
             
             {/* Wishlist Button */}
@@ -273,11 +273,11 @@ function Shell({ children }: { children: React.ReactNode }) {
               onClick={() => setIsCartDrawerOpen(true)}
               aria-label="Open Shopping Cart"
               title="Shopping Cart"
-              className="relative flex size-10 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-all cursor-pointer group"
+              className="relative flex size-8.5 sm:size-10 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-all cursor-pointer group"
             >
-              <ShoppingBag className="size-4.5 group-hover:scale-105 transition-transform" />
+              <ShoppingBag className="size-4 sm:size-4.5 group-hover:scale-105 transition-transform" />
               {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-gradient-to-r from-[#D99A12] to-[#E7A91A] px-1 text-[9px] font-black text-white shadow-xs ring-2 ring-white">
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 sm:h-4.5 sm:min-w-4.5 items-center justify-center rounded-full bg-gradient-to-r from-[#D99A12] to-[#E7A91A] px-1 text-[8.5px] sm:text-[9px] font-black text-white shadow-xs ring-2 ring-white">
                   {cartCount}
                 </span>
               )}
@@ -317,11 +317,11 @@ function Shell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden size-10 rounded-full text-[#075B32] hover:bg-[#F0F7ED]"
+              className="lg:hidden size-8.5 sm:size-10 rounded-full text-[#075B32] hover:bg-[#F0F7ED]"
               onClick={() => setMenu(true)}
               aria-label="Open menu"
             >
-              <Menu className="size-5" />
+              <Menu className="size-4.5 sm:size-5" />
             </Button>
           </div>
         </div>
