@@ -181,7 +181,7 @@ export function AdminOverview({
               <div
                 key={idx}
                 onClick={() => onNavigateTab(card.tab)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 bg-card p-3 sm:p-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-luxe min-w-0"
+                className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-card p-3 sm:p-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-luxe min-w-0 shadow-2xs"
               >
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground truncate">{card.title}</span>

@@ -101,7 +101,7 @@
   --accent-foreground: #075B32;
   --destructive: #d32f2f;
   --destructive-foreground: #ffffff;
-  --border: transparent;
+  --border: #e2e8f0;
   --input: #0B6B35;
   --ring: #4FAE2A;
   --brand-forest: #075B32;
@@ -168,7 +168,7 @@
 
 @layer base {
   * {
-    border-color: transparent;
+    border-color: var(--border, #e2e8f0);
   }
 
   html {
@@ -273,21 +273,6 @@ main section {
   gap: 1rem !important;
 }
 
-/* Remove all borders from sections, cards, decorative boxes, and buttons */
-section,
-section > div,
-.rounded-2xl,
-.rounded-3xl,
-.border,
-.border-t,
-.border-b,
-.border-l,
-.border-r,
-.border-2,
-.border-4 {
-  border-width: 0 !important;
-  border-color: transparent !important;
-}
 
 /* Retain clean borders only for form inputs/selects for usability */
 input:not([type="button"]):not([type="submit"]):not([type="reset"]),
