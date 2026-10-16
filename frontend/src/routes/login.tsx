@@ -1010,7 +1010,7 @@ export function AuthenticationPage() {
                             <div>
                               <p className="font-bold text-foreground">Account Not Found / Not Registered!</p>
                               <p className="text-[11px] text-muted-foreground mt-0.5">
-                                <strong className="text-foreground">{loginUnregisteredWarn}</strong> is not registered. Only registered patrons can log in.
+                                <strong className="text-foreground break-all">{loginUnregisteredWarn}</strong> is not registered. Only registered patrons can log in.
                               </p>
                             </div>
                           </div>
@@ -1026,7 +1026,7 @@ export function AuthenticationPage() {
                             className="rounded-xl text-xs font-bold px-3.5 h-8.5 shadow-xs w-full"
                           >
                             <UserPlus className="size-3.5 mr-1.5" />
-                            Create New Account with {loginUnregisteredWarn}
+                            Create New Account
                           </Button>
                         </div>
                       )}
