@@ -563,8 +563,8 @@ export function AuthenticationPage() {
         setResendTimer(res.resendCooldownSeconds || 60);
         setCanResend(false);
         setOtpValues(["", "", "", "", "", ""]);
-        toast.success(res.message || `Verification code sent to ${emailToSend}. (Test OTP: ${otpCode})`, {
-          duration: 8000,
+        toast.success(res.message || `Verification code sent to ${emailToSend}. Please check your Gmail!`, {
+          duration: 6000,
         });
         setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
       } else {
@@ -791,52 +791,28 @@ export function AuthenticationPage() {
               {/* ========================================================= */}
               {isOtpStep ? (
                 <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-950 flex items-start gap-3">
+                  <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-3.5 text-xs text-emerald-950 flex items-start gap-3">
                     {otpTarget.includes("@") ? (
                       <Mail className="size-5 text-emerald-600 shrink-0 mt-0.5" />
                     ) : (
                       <Smartphone className="size-5 text-emerald-600 shrink-0 mt-0.5" />
                     )}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-emerald-800">
-                          {otpTarget.includes("@")
-                            ? `Enter OTP sent to ${otpTarget}`
-                            : `Enter OTP sent to +91 ${otpTarget}`}
-                        </p>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-emerald-900 break-all text-xs sm:text-sm">
+                        {otpTarget.includes("@")
+                          ? `Enter OTP sent to ${otpTarget}`
+                          : `Enter OTP sent to +91 ${otpTarget}`}
+                      </p>
                       {otpTarget.toLowerCase() === "jananibiosciences.r@gmail.com" ? (
                         <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-emerald-700 text-white px-2.5 py-0.5 text-[10px] font-bold shadow-sm">
                           🛡️ Super Admin Root Access
                         </span>
                       ) : (
-                        <div className="flex flex-wrap items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-emerald-600/15">
-                          <p className="text-[11px] text-emerald-700/80">
-                            {otpTarget.includes("@")
-                              ? "Check your Gmail inbox & spam / junk folder."
-                              : "SMS dispatched. Carrier delays? Please check your messages."}
-                          </p>
-                          {receivedDemoOtp && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const digits = receivedDemoOtp.slice(0, 6).split("");
-                                setOtpValues([
-                                  digits[0] || "",
-                                  digits[1] || "",
-                                  digits[2] || "",
-                                  digits[3] || "",
-                                  digits[4] || "",
-                                  digits[5] || "",
-                                ]);
-                                toast.success(`Auto-filled verification code: ${receivedDemoOtp}`);
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-700 text-white text-[11px] font-bold hover:bg-emerald-800 transition shadow-xs cursor-pointer"
-                            >
-                              ⚡ Auto-fill Code ({receivedDemoOtp})
-                            </button>
-                          )}
-                        </div>
+                        <p className="text-[11px] text-emerald-700/90 mt-1">
+                          {otpTarget.includes("@")
+                            ? "Check your Gmail inbox & spam / junk folder."
+                            : "SMS dispatched. Carrier delays? Please check your messages."}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -848,7 +824,7 @@ export function AuthenticationPage() {
                         6-Digit Authentication Code
                       </label>
                     </div>
-                    <div className="flex justify-between gap-2 sm:gap-3">
+                    <div className="flex justify-between gap-1.5 sm:gap-2.5">
                       {otpValues.map((val, idx) => (
                         <input
                           key={idx}
@@ -859,7 +835,7 @@ export function AuthenticationPage() {
                           value={val}
                           onChange={(e) => handleOtpChange(idx, e.target.value)}
                           onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                          className="size-11 sm:size-12 rounded-2xl border border-input bg-background/90 text-center font-mono text-lg font-bold text-foreground shadow-sm transition outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className="size-10 sm:size-12 rounded-xl sm:rounded-2xl border border-input bg-background/90 text-center font-mono text-base sm:text-lg font-bold text-foreground shadow-sm transition outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                         />
                       ))}
                     </div>
