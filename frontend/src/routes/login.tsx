@@ -743,7 +743,7 @@ export function AuthenticationPage() {
             
             {/* Top Navigation Mode Pill */}
             <div>
-              <div className="mb-3 space-y-2">
+              <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <span className="text-[10.5px] sm:text-xs font-bold uppercase tracking-wider text-brand-leaf block">
                     {authMode === "login" ? "Welcome Back" : "New Harvest Member"}
@@ -757,9 +757,9 @@ export function AuthenticationPage() {
                   </h1>
                 </div>
 
-                {/* Quick tab toggle below title */}
+                {/* Quick tab toggle below title on mobile, aligned to the top-right on laptop screen */}
                 {!isOtpStep && (
-                  <div className="inline-flex items-center rounded-xl bg-secondary/80 p-1 border border-border/60 shadow-xs w-full sm:w-auto">
+                  <div className="inline-flex items-center rounded-xl bg-secondary/80 p-1 border border-border/60 shadow-xs w-full sm:w-auto shrink-0 self-start sm:self-center">
                     <button
                       type="button"
                       onClick={() => { setAuthMode("login"); setIsOtpStep(false); }}
