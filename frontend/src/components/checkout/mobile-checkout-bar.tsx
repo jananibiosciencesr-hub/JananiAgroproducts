@@ -30,7 +30,7 @@ export function MobileCheckoutBar({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-card/95 backdrop-blur-md border-t border-border shadow-luxe transition-all">
+    <div className="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-t border-border shadow-luxe transition-all">
       {/* Expandable Breakdown Drawer */}
       {isExpanded && (
         <div className="p-4 border-b border-border bg-background/90 text-xs space-y-2 animate-in slide-in-from-bottom-2 duration-200">
@@ -96,13 +96,15 @@ export function MobileCheckoutBar({
           disabled={disabled || isSubmitting}
           variant="gold"
           size="default"
-          className="flex-1 max-w-[220px] text-xs font-bold rounded-xl h-11 gap-1.5 shadow-sm"
+          className="flex-1 max-w-[220px] text-xs font-bold rounded-xl h-11 gap-1.5 shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <span className="flex items-center gap-1.5">
               <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
               Processing...
             </span>
+          ) : disabled ? (
+            <span>Select Delivery Address</span>
           ) : (
             <>
               Place Order

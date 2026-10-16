@@ -404,185 +404,203 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
-          <MapPin className="size-5 text-brand-leaf" />
-          Delivery Address
-        </h3>
-        <Button
-          type="button"
-          onClick={openAddModal}
-          variant="outline"
-          size="sm"
-          className="rounded-full text-xs font-semibold gap-1.5 border-brand-leaf/30 text-brand-leaf hover:bg-brand-leaf/10"
-        >
-          <Plus className="size-3.5" /> Add New Address
-        </Button>
-      </div>
+    <div className="space-y-3">
+      {/* Header bar only when addresses exist */}
+      {addresses.length > 0 && (
+        <div className="flex items-center justify-between pb-1">
+          <span className="text-xs font-semibold text-muted-foreground">
+            Saved Addresses ({addresses.length})
+          </span>
+          <Button
+            type="button"
+            onClick={openAddModal}
+            variant="outline"
+            size="sm"
+            className="rounded-full text-xs font-semibold gap-1.5 border-brand-leaf/40 text-brand-leaf hover:bg-brand-leaf/10 h-7.5 px-3 cursor-pointer"
+          >
+            <Plus className="size-3.5" /> Add Address
+          </Button>
+        </div>
+      )}
 
-      {/* Address Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {addresses.map((addr) => {
-          const isSelected = addr.id === selectedAddressId;
-          const TypeIcon = addr.type === "home" ? Home : addr.type === "work" ? Briefcase : Building;
+      {/* When NO addresses exist: Clean, attractive Empty State */}
+      {addresses.length === 0 ? (
+        <div className="rounded-2xl border-2 border-dashed border-brand-leaf/30 bg-brand-leaf/5 p-6 sm:p-8 text-center space-y-3">
+          <div className="size-12 mx-auto rounded-full bg-brand-leaf/15 flex items-center justify-center text-brand-leaf shadow-inner">
+            <MapPin className="size-6" />
+          </div>
+          <div className="max-w-xs mx-auto">
+            <h4 className="font-bold text-sm sm:text-base text-foreground">
+              No Delivery Address Added Yet
+            </h4>
+            <p className="text-xs text-muted-foreground mt-1">
+              Add your delivery address to calculate dispatch timing and complete checkout.
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={openAddModal}
+            variant="gold"
+            size="default"
+            className="rounded-xl px-6 font-bold shadow-sm cursor-pointer mt-2"
+          >
+            <Plus className="size-4 mr-1.5" /> Add Delivery Address
+          </Button>
+        </div>
+      ) : (
+        /* Address Cards Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {addresses.map((addr) => {
+            const isSelected = addr.id === selectedAddressId;
+            const TypeIcon = addr.type === "home" ? Home : addr.type === "work" ? Briefcase : Building;
 
-          return (
-            <div
-              key={addr.id}
-              onClick={() => onSelectAddress(addr)}
-              className={`relative cursor-pointer rounded-2xl border p-4 transition-all duration-200 text-left ${
-                isSelected
-                  ? "border-brand-leaf bg-brand-leaf/5 shadow-soft ring-2 ring-brand-leaf/20"
-                  : "border-border bg-card hover:border-brand-leaf/40 hover:bg-secondary/40"
-              }`}
-            >
-              {/* Header with Type badge and Radio */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+            return (
+              <div
+                key={addr.id}
+                onClick={() => onSelectAddress(addr)}
+                className={`relative cursor-pointer rounded-2xl border p-3.5 sm:p-4 transition-all duration-200 text-left ${
+                  isSelected
+                    ? "border-brand-leaf bg-brand-leaf/5 shadow-soft ring-2 ring-brand-leaf/25"
+                    : "border-border bg-card hover:border-brand-leaf/40 hover:bg-secondary/40"
+                }`}
+              >
+                {/* Header with Type badge and Radio */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        isSelected
+                          ? "bg-brand-leaf text-white"
+                          : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
+                      <TypeIcon className="size-3" />
+                      {addr.type}
+                    </span>
+                    {addr.isDefault && (
+                      <span className="rounded-full bg-brand-gold/15 text-brand-gold px-2 py-0.5 text-[9px] font-bold">
+                        DEFAULT
+                      </span>
+                    )}
+                  </div>
+
+                  <div
+                    className={`size-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                       isSelected
-                        ? "bg-brand-leaf text-white"
-                        : "bg-secondary text-muted-foreground"
+                        ? "border-brand-leaf bg-brand-leaf text-white"
+                        : "border-muted-foreground/30 bg-background"
                     }`}
                   >
-                    <TypeIcon className="size-3" />
-                    {addr.type}
-                  </span>
-                  {addr.isDefault && (
-                    <span className="rounded-full bg-brand-gold/15 text-brand-gold px-2 py-0.5 text-[10px] font-bold">
-                      DEFAULT
+                    {isSelected && <CheckCircle2 className="size-3.5" />}
+                  </div>
+                </div>
+
+                {/* Recipient info */}
+                <div className="space-y-0.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-foreground text-sm truncate">{addr.fullName}</h4>
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1 shrink-0 ml-2">
+                      <Phone className="size-3" /> {addr.phone}
                     </span>
-                  )}
-                </div>
-
-                <div
-                  className={`size-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    isSelected
-                      ? "border-brand-leaf bg-brand-leaf text-white"
-                      : "border-muted-foreground/30 bg-background"
-                  }`}
-                >
-                  {isSelected && <CheckCircle2 className="size-3.5" />}
-                </div>
-              </div>
-
-              {/* Recipient info */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm text-foreground">{addr.fullName}</h4>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Phone className="size-3" /> {addr.phone}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-1 font-medium">
-                  {addr.houseFlat}, {addr.street}
-                </p>
-                {addr.landmark && (
-                  <p className="text-[11px] text-muted-foreground/80 italic">
-                    Landmark: {addr.landmark}
+                  </div>
+                  <p className="text-muted-foreground line-clamp-1 font-medium">
+                    {addr.houseFlat}, {addr.street}
                   </p>
-                )}
-                <p className="text-xs font-semibold text-foreground">
-                  {addr.city}, {addr.state} — <span className="font-mono">{addr.pincode}</span>
-                </p>
-              </div>
+                  {addr.landmark && (
+                    <p className="text-[10.5px] text-muted-foreground/80 italic">
+                      Landmark: {addr.landmark}
+                    </p>
+                  )}
+                  <p className="font-semibold text-foreground pt-0.5">
+                    {addr.city}, {addr.state} — <span className="font-mono">{addr.pincode}</span>
+                  </p>
+                </div>
 
-              {/* Action Buttons */}
-              <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between text-xs">
-                <span className="text-[11px] text-brand-leaf font-semibold">
-                  {isSelected ? "✓ Active Delivery Target" : "Click to Deliver Here"}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => openEditModal(addr, e)}
-                    className="p-1 text-muted-foreground hover:text-foreground transition rounded-md hover:bg-secondary"
-                    title="Edit address"
-                  >
-                    <Edit2 className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteAddress(addr.id, e)}
-                    className="p-1 text-muted-foreground hover:text-destructive transition rounded-md hover:bg-destructive/10"
-                    title="Delete address"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
+                {/* Action Buttons */}
+                <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-xs">
+                  <span className={`text-[10.5px] font-semibold ${isSelected ? "text-brand-leaf font-bold" : "text-muted-foreground"}`}>
+                    {isSelected ? "✓ Deliver to this address" : "Tap to select"}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={(e) => openEditModal(addr, e)}
+                      className="p-1 text-muted-foreground hover:text-foreground transition rounded-md hover:bg-secondary cursor-pointer"
+                      title="Edit address"
+                    >
+                      <Edit2 className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteAddress(addr.id, e)}
+                      className="p-1 text-muted-foreground hover:text-destructive transition rounded-md hover:bg-destructive/10 cursor-pointer"
+                      title="Delete address"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-
-        {/* Quick Add Button Card */}
-        <button
-          type="button"
-          onClick={openAddModal}
-          className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/80 p-6 text-center text-muted-foreground hover:border-brand-leaf hover:bg-brand-leaf/5 hover:text-brand-leaf transition-all duration-200 min-h-[140px]"
-        >
-          <div className="size-10 rounded-full bg-secondary flex items-center justify-center text-foreground group-hover:bg-brand-leaf/10">
-            <Plus className="size-5" />
-          </div>
-          <span className="text-xs font-bold">Add Another Delivery Location</span>
-          <span className="text-[10px] text-muted-foreground">Home, Office, or Family Farm</span>
-        </button>
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Add / Edit Address Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-luxe max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-black/60 p-2 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200 flex items-center justify-center min-h-screen">
+          <div className="relative w-full max-w-lg md:max-w-2xl rounded-2xl sm:rounded-3xl border border-border bg-card p-3.5 sm:p-6 shadow-luxe max-h-[92vh] overflow-y-auto overflow-x-hidden my-auto min-w-0 box-border">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition cursor-pointer"
+              className="absolute right-2.5 top-2.5 sm:right-4 sm:top-4 rounded-full p-1.5 sm:p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition cursor-pointer z-10"
+              title="Close modal"
             >
               <X className="size-5" />
             </button>
 
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3 pr-8">
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
-                  <Sparkles className="size-3.5" />
+            <div className="mb-3.5 sm:mb-4 border-b border-border/70 pb-2.5 sm:pb-3 pr-8">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 shrink-0" />
                   {editingAddress ? "Update Location" : "New Harvest Dispatch Location"}
                 </span>
-                <h3 className="font-display text-xl sm:text-2xl font-bold text-foreground mt-0.5">
-                  {editingAddress ? "Edit Delivery Address" : "Add Delivery Address"}
-                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <h3 className="font-display text-lg sm:text-xl md:text-2xl font-bold text-foreground">
+                    {editingAddress ? "Edit Delivery Address" : "Add Delivery Address"}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={handleUseCurrentLocation}
+                    disabled={isLocating}
+                    className="inline-flex items-center self-start sm:self-auto gap-1.5 rounded-xl border border-brand-leaf/40 bg-brand-leaf/10 hover:bg-brand-leaf/20 text-brand-leaf px-2.5 py-1 text-[11px] sm:text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
+                    title="Auto-detect current GPS location and fill address"
+                  >
+                    <Compass className={`size-3.5 shrink-0 ${isLocating ? "animate-spin text-brand-gold" : "text-brand-leaf"}`} />
+                    <span>{isLocating ? "Detecting..." : "📍 Use Current Location"}</span>
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={handleUseCurrentLocation}
-                disabled={isLocating}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-leaf/40 bg-brand-leaf/10 hover:bg-brand-leaf/20 text-brand-leaf px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
-                title="Auto-detect current GPS location and fill address"
-              >
-                <Compass className={`size-3.5 ${isLocating ? "animate-spin text-brand-gold" : "text-brand-leaf"}`} />
-                <span>{isLocating ? "Detecting..." : "📍 Use Current Location"}</span>
-              </button>
             </div>
 
-            <form onSubmit={handleSaveAddress} className="space-y-3.5 text-xs font-semibold">
-              {/* Row 1: Full Name, Primary Phone, Alternate Phone (3 Columns) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="grid gap-1">
+            <form onSubmit={handleSaveAddress} className="space-y-3 sm:space-y-3.5 text-xs font-semibold">
+              {/* Row 1: Full Name, Primary Phone, Alternate Phone */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-foreground">Full Name *</span>
                   <input
                     required
                     placeholder="e.g. Rahul Sharma"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
+                    className="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs box-border"
                   />
                 </div>
 
-                <div className="grid gap-1">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-foreground">Primary Mobile Number *</span>
-                  <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf">
-                    <span className="inline-flex items-center gap-1 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
+                  <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf w-full min-w-0 overflow-hidden">
+                    <span className="inline-flex items-center gap-1 border-r border-border/70 px-2 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap bg-muted/20">
                       <span className="text-sm leading-none shrink-0">🇮🇳</span>
                       <span className="shrink-0 font-semibold">+91</span>
                     </span>
@@ -594,15 +612,15 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                       placeholder="93114 16225"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                      className="h-10 w-full min-w-0 rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
+                      className="h-10 w-full min-w-0 rounded-r-xl bg-transparent px-2.5 text-xs outline-none text-foreground font-mono font-medium"
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-1">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-muted-foreground">Alternate Phone (Optional)</span>
-                  <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf">
-                    <span className="inline-flex items-center gap-1 border-r border-border/70 px-2.5 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap">
+                  <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf w-full min-w-0 overflow-hidden">
+                    <span className="inline-flex items-center gap-1 border-r border-border/70 px-2 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap bg-muted/20">
                       <span className="text-sm leading-none shrink-0">🇮🇳</span>
                       <span className="shrink-0 font-semibold">+91</span>
                     </span>
@@ -613,77 +631,77 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                       placeholder="Backup mobile"
                       value={formData.alternatePhone || ""}
                       onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                      className="h-10 w-full min-w-0 rounded-r-xl bg-transparent px-3 text-xs outline-none text-foreground font-mono font-medium"
+                      className="h-10 w-full min-w-0 rounded-r-xl bg-transparent px-2.5 text-xs outline-none text-foreground font-mono font-medium"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Row 2: Flat/House, Area/Street, Landmark (3 Columns) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="grid gap-1">
+              {/* Row 2: Flat/House, Area/Street, Landmark */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-foreground">Flat, House No., Building, Apt *</span>
                   <input
                     required
                     placeholder="e.g. Flat 402, Shivalik Palms"
                     value={formData.houseFlat}
                     onChange={(e) => setFormData({ ...formData, houseFlat: e.target.value })}
-                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
+                    className="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs box-border"
                   />
                 </div>
 
-                <div className="grid gap-1">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-foreground">Area, Street, Sector, Village *</span>
                   <input
                     required
                     placeholder="e.g. Judges Bungalow Road, Bodakdev"
                     value={formData.street}
                     onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
+                    className="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs box-border"
                   />
                 </div>
 
-                <div className="grid gap-1">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-muted-foreground">Landmark (Optional)</span>
                   <input
                     placeholder="e.g. Near Pakwan Dining Hall"
                     value={formData.landmark || ""}
                     onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
-                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
+                    className="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs box-border"
                   />
                 </div>
               </div>
 
-              {/* Row 3: PIN Code, City, State (3 Columns) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="grid gap-1">
+              {/* Row 3: PIN Code, City, State */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-foreground">PIN Code *</span>
                   <input
                     required
                     placeholder="6 digits (e.g. 380054)"
                     value={formData.pincode}
                     onChange={(e) => handlePincodeChange(e.target.value)}
-                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground font-mono shadow-xs"
+                    className="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground font-mono shadow-xs box-border"
                   />
                 </div>
 
-                <div className="grid gap-1">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-foreground">City *</span>
                   <input
                     required
                     placeholder="e.g. Ahmedabad / Hyderabad"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="h-10 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs"
+                    className="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs box-border"
                   />
                 </div>
 
-                <div className="grid gap-1">
+                <div className="grid gap-1 min-w-0">
                   <span className="text-foreground">State *</span>
                   <select
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="h-10 rounded-xl border border-input bg-background px-2.5 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs cursor-pointer font-medium"
+                    className="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-2.5 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs cursor-pointer font-medium box-border"
                   >
                     <option value="">-- Select State / UT --</option>
                     {ALL_INDIAN_STATES.map((st) => (
@@ -696,49 +714,51 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
               </div>
 
               {/* Row 4: Address Type Selection, Default Toggle & Form Actions */}
-              <div className="pt-3 border-t border-border/70 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-foreground font-semibold mr-1">Type:</span>
-                    {(["home", "work", "other"] as const).map((type) => {
-                      const Icon = type === "home" ? Home : type === "work" ? Briefcase : Building;
-                      const isActive = formData.type === type;
-                      return (
-                        <button
-                          type="button"
-                          key={type}
-                          onClick={() => setFormData({ ...formData, type })}
-                          className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl border text-xs font-bold uppercase transition cursor-pointer ${
-                            isActive
-                              ? "border-brand-leaf bg-brand-leaf text-white shadow-xs"
-                              : "border-border bg-background text-muted-foreground hover:bg-secondary"
-                          }`}
-                        >
-                          <Icon className="size-3.5" />
-                          {type}
-                        </button>
-                      );
-                    })}
+              <div className="pt-3 border-t border-border/70 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="space-y-1">
+                    <span className="text-xs text-foreground font-semibold block">Address Type:</span>
+                    <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center">
+                      {(["home", "work", "other"] as const).map((type) => {
+                        const Icon = type === "home" ? Home : type === "work" ? Briefcase : Building;
+                        const isActive = formData.type === type;
+                        return (
+                          <button
+                            type="button"
+                            key={type}
+                            onClick={() => setFormData({ ...formData, type })}
+                            className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl border text-[11px] sm:text-xs font-bold uppercase transition cursor-pointer ${
+                              isActive
+                                ? "border-brand-leaf bg-brand-leaf text-white shadow-xs"
+                                : "border-border bg-background text-muted-foreground hover:bg-secondary"
+                            }`}
+                          >
+                            <Icon className="size-3.5 shrink-0" />
+                            <span>{type}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none pt-1 sm:pt-0">
                     <input
                       type="checkbox"
                       checked={formData.isDefault}
                       onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                      className="rounded border-input text-brand-leaf focus:ring-brand-leaf size-4"
+                      className="rounded border-input text-brand-leaf focus:ring-brand-leaf size-4 shrink-0"
                     />
-                    <span className="text-xs text-foreground font-medium">Set as default</span>
+                    <span className="text-xs text-foreground font-medium">Set as default address</span>
                   </label>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <div className="flex items-center gap-2 pt-1 w-full sm:w-auto sm:justify-end">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setIsModalOpen(false)}
-                    className="rounded-xl text-xs font-semibold px-4 h-9"
+                    className="flex-1 sm:flex-initial rounded-xl text-xs font-semibold px-4 h-9.5"
                   >
                     Cancel
                   </Button>
@@ -746,7 +766,7 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                     type="submit"
                     variant="gold"
                     size="sm"
-                    className="rounded-xl text-xs font-bold px-6 h-9 shadow-sm"
+                    className="flex-1 sm:flex-initial rounded-xl text-xs font-bold px-6 h-9.5 shadow-sm"
                   >
                     {editingAddress ? "Update Address" : "Save Address"}
                   </Button>

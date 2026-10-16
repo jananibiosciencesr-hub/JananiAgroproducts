@@ -381,83 +381,82 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-28 lg:pb-12">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-6 lg:py-8 pb-32 lg:pb-12">
       {/* Header with Breadcrumb & Trust Ticker */}
-      <div className="border-b border-border pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="border-b border-border pb-3 sm:pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
             <Link to="/" className="hover:text-brand-leaf transition">Home</Link>
             <span>/</span>
             <Link to="/cart" className="hover:text-brand-leaf transition">Cart</Link>
             <span>/</span>
-            <span className="text-brand-leaf">Checkout</span>
+            <span className="text-brand-leaf font-bold">Checkout</span>
           </div>
-          <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl text-foreground flex items-center gap-3">
-            Checkout & Scheduled Dispatch
+          <h1 className="mt-1 font-display text-xl sm:text-3xl font-bold text-foreground">
+            Secure Checkout
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full border border-brand-leaf/30 bg-brand-leaf/5 px-4 py-1.5 text-xs font-semibold text-brand-leaf">
-          <ShieldCheck className="size-4" />
-          <span>256-Bit SSL Encrypted Checkout</span>
+        <div className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-full border border-brand-leaf/30 bg-brand-leaf/10 px-3 py-1 text-xs font-semibold text-brand-leaf">
+          <ShieldCheck className="size-3.5" />
+          <span>256-Bit SSL Encrypted</span>
         </div>
       </div>
 
       {/* Main Grid: Left Steps + Right Rail Summary */}
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_420px] items-start">
+      <div className="mt-5 sm:mt-8 grid gap-5 sm:gap-8 lg:grid-cols-[1fr_420px] items-start">
         {/* Left Column: Sequential Checkout Steps */}
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-6">
           {/* USER PROFILE INFO BANNER */}
-          <section className="rounded-3xl border border-brand-leaf/40 bg-gradient-to-r from-brand-leaf/10 via-brand-leaf/5 to-transparent p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-            <div className="flex items-center gap-3.5">
-              <div className="grid size-11 place-items-center rounded-2xl bg-brand-leaf text-white font-bold text-sm shadow-sm shrink-0">
-                <UserCheck className="size-5" />
+          <section className="rounded-2xl border border-brand-leaf/30 bg-brand-leaf/5 p-3 sm:p-4 flex items-center justify-between gap-3 text-xs shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="grid size-9 place-items-center rounded-full bg-brand-leaf text-white font-bold text-xs shrink-0 shadow-xs">
+                {(user.name || "U")[0]?.toUpperCase() || <UserCheck className="size-4" />}
               </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <strong className="text-base font-bold text-foreground">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-foreground text-xs sm:text-sm truncate">
                     {user.name || "Valued Patron"}
-                  </strong>
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-leaf/20 text-brand-leaf px-2.5 py-0.5 rounded-full border border-brand-leaf/30">
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-brand-leaf/20 text-brand-leaf px-1.5 py-0.5 rounded border border-brand-leaf/30 shrink-0">
                     Verified Customer
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                   {user.email} {user.phone ? `· ${user.phone}` : ""}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  logoutUser();
-                  toast.info("Signed out. Redirecting to Sign In...");
-                  navigate({ to: "/login", search: { redirect: "/checkout" } as any });
-                }}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition cursor-pointer px-3 py-1.5 rounded-xl hover:bg-destructive/10"
-              >
-                <LogOut className="size-3.5" />
-                <span>Switch Account / Sign Out</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                logoutUser();
+                toast.info("Signed out. Redirecting to Sign In...");
+                navigate({ to: "/login", search: { redirect: "/checkout" } as any });
+              }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-destructive shrink-0 cursor-pointer px-2.5 py-1.5 rounded-xl hover:bg-destructive/10 transition"
+              title="Sign out or switch account"
+            >
+              <LogOut className="size-3" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </section>
 
           {/* STEP 1: Delivery Address (CRUD) */}
-          <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold shadow-xs">
+          <section className="rounded-2xl sm:rounded-3xl border border-border bg-card p-3.5 sm:p-6 shadow-soft space-y-3.5">
+            <div className="flex items-center justify-between border-b border-border pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="grid size-6 sm:size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold shadow-xs">
                   1
                 </span>
-                <h2 className="font-display text-lg font-bold text-foreground">
-                  Select Delivery Location
+                <h2 className="font-display text-base sm:text-lg font-bold text-foreground">
+                  Delivery Address
                 </h2>
               </div>
               {selectedAddress && (
                 <span className="text-xs text-brand-leaf font-bold flex items-center gap-1">
-                  ✓ Address Selected
+                  ✓ Selected
                 </span>
               )}
             </div>
@@ -469,12 +468,12 @@ export function CheckoutPage() {
           </section>
 
           {/* STEP 2: Order Notes & Harvest Instructions */}
-          <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
-            <div className="flex items-center gap-2.5 border-b border-border pb-3">
-              <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold shadow-xs">
+          <section className="rounded-2xl sm:rounded-3xl border border-border bg-card p-3.5 sm:p-6 shadow-soft space-y-3.5">
+            <div className="flex items-center gap-2 border-b border-border pb-2.5">
+              <span className="grid size-6 sm:size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold shadow-xs">
                 2
               </span>
-              <h2 className="font-display text-lg font-bold text-foreground">
+              <h2 className="font-display text-base sm:text-lg font-bold text-foreground">
                 Special Delivery Instructions
               </h2>
             </div>
@@ -486,17 +485,17 @@ export function CheckoutPage() {
           </section>
 
           {/* STEP 3: Payment Option Selection */}
-          <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-soft space-y-4">
-            <div className="flex items-center gap-2.5 border-b border-border pb-3">
-              <span className="grid size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold shadow-xs">
+          <section className="rounded-2xl sm:rounded-3xl border border-border bg-card p-3.5 sm:p-6 shadow-soft space-y-3.5">
+            <div className="flex items-center gap-2 border-b border-border pb-2.5">
+              <span className="grid size-6 sm:size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold shadow-xs">
                 3
               </span>
-              <h2 className="font-display text-lg font-bold text-foreground">
+              <h2 className="font-display text-base sm:text-lg font-bold text-foreground">
                 Payment Option
               </h2>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-3">
               {[
                 {
                   id: "upi",
@@ -525,7 +524,7 @@ export function CheckoutPage() {
                     type="button"
                     key={m.id}
                     onClick={() => setPaymentMethod(m.id as any)}
-                    className={`flex flex-col items-center p-4 rounded-2xl border text-center transition-all duration-200 relative cursor-pointer ${
+                    className={`flex sm:flex-col items-center gap-3 sm:gap-2 p-3 sm:p-4 rounded-xl sm:rounded-2xl border text-left sm:text-center transition-all duration-200 relative cursor-pointer ${
                       isSelected
                         ? "border-brand-leaf bg-brand-leaf/10 text-brand-leaf shadow-sm ring-1 ring-brand-leaf/30"
                         : "border-border bg-background text-foreground hover:bg-secondary"
@@ -536,9 +535,11 @@ export function CheckoutPage() {
                         {m.badge}
                       </span>
                     )}
-                    <Icon className="size-6 mb-2" />
-                    <span className="text-xs font-bold">{m.label}</span>
-                    <span className="text-[10px] text-muted-foreground mt-0.5">{m.sub}</span>
+                    <Icon className="size-5 sm:size-6 shrink-0 text-brand-leaf sm:mb-1" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-bold block">{m.label}</span>
+                      <span className="text-[10px] text-muted-foreground block truncate">{m.sub}</span>
+                    </div>
                   </button>
                 );
               })}

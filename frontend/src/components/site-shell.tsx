@@ -71,6 +71,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdminRoute = pathname.startsWith("/admin");
+  const isCheckoutFlow = pathname === "/checkout" || pathname === "/payment";
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -417,42 +418,46 @@ function Shell({ children }: { children: React.ReactNode }) {
       
       <Footer />
 
-      <a
-        href="https://wa.me/919311416225"
-        aria-label="Chat on WhatsApp"
-        className="fixed bottom-20 right-4 z-30 grid size-12 place-items-center rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xl transition-all hover:scale-110 active:scale-95 md:bottom-6"
-      >
-        <WhatsAppIcon className="size-6" />
-      </a>
+      {!isCheckoutFlow && (
+        <a
+          href="https://wa.me/919311416225"
+          aria-label="Chat on WhatsApp"
+          className="fixed bottom-20 right-4 z-30 grid size-12 place-items-center rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xl transition-all hover:scale-110 active:scale-95 md:bottom-6"
+        >
+          <WhatsAppIcon className="size-6" />
+        </a>
+      )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-white/98 px-2 py-2 backdrop-blur-lg md:hidden shadow-lg">
-        {[
-          { Icon: Home, label: "Home", to: "/" },
-          { Icon: Grid2X2, label: "Categories", to: "/categories" },
-          { Icon: Heart, label: "Wishlist", to: "/wishlist" },
-          { Icon: ShoppingBag, label: "Cart", to: "/cart" },
-          { Icon: User, label: "Account", to: user ? "/profile" : "/login" },
-        ].map(({ Icon, label, to }) => {
-          const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
-          return (
-            <Link
-              key={to}
-              to={to}
-              className={`flex flex-col items-center gap-1 text-[10px] transition-all relative py-0.5 ${
-                isActive
-                  ? "text-[#075B32] font-black"
-                  : "text-muted-foreground hover:text-foreground font-semibold"
-              }`}
-            >
-              {isActive && (
-                <span className="absolute -top-2 w-8 h-1 bg-[#075B32] rounded-full shadow-xs" />
-              )}
-              <Icon className={`size-5 transition-transform ${isActive ? "scale-110 text-[#075B32] stroke-[2.5]" : ""}`} />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {!isCheckoutFlow && (
+        <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-white/98 px-2 py-2 backdrop-blur-lg md:hidden shadow-lg">
+          {[
+            { Icon: Home, label: "Home", to: "/" },
+            { Icon: Grid2X2, label: "Categories", to: "/categories" },
+            { Icon: Heart, label: "Wishlist", to: "/wishlist" },
+            { Icon: ShoppingBag, label: "Cart", to: "/cart" },
+            { Icon: User, label: "Account", to: user ? "/profile" : "/login" },
+          ].map(({ Icon, label, to }) => {
+            const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={`flex flex-col items-center gap-1 text-[10px] transition-all relative py-0.5 ${
+                  isActive
+                    ? "text-[#075B32] font-black"
+                    : "text-muted-foreground hover:text-foreground font-semibold"
+                }`}
+              >
+                {isActive && (
+                  <span className="absolute -top-2 w-8 h-1 bg-[#075B32] rounded-full shadow-xs" />
+                )}
+                <Icon className={`size-5 transition-transform ${isActive ? "scale-110 text-[#075B32] stroke-[2.5]" : ""}`} />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Global Quick Search Omnibar Modal */}
       <GlobalSearchModal
