@@ -513,36 +513,44 @@ function ProductDetailPage() {
           {/* RIGHT: Product Purchasing Information */}
           <div className="lg:col-span-6 flex flex-col justify-between h-full space-y-3 sm:space-y-4">
             <div className="space-y-2.5 sm:space-y-3">
-              {/* Title & In Stock Badge */}
-              <div className="flex items-center justify-between gap-2 sm:gap-3">
-                <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-[#075B32] tracking-tight uppercase font-display leading-tight">
+              {/* Product Header: In Stock Badge, Category & Clean Title in 1-2 Lines */}
+              <div className="space-y-1 sm:space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-xs font-bold bg-[#EAF5E9] text-[#075B32] border border-[#075B32]/20 shrink-0">
+                    <Leaf className="size-3 fill-current" />
+                    In Stock
+                  </span>
+                  {product.category && (
+                    <span className="text-[10.5px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">
+                      {product.category}
+                    </span>
+                  )}
+                </div>
+
+                <h1 className="text-base sm:text-2xl lg:text-3xl font-bold text-[#075B32] tracking-tight leading-snug font-display">
                   {product.name}
                 </h1>
-                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-[#EAF5E9] text-[#075B32] border border-[#075B32]/20 shrink-0">
-                  <Leaf className="size-3 sm:size-3.5 fill-current" />
-                  In Stock
-                </span>
               </div>
 
               {/* Subtitle / Technical formulation info */}
-              <p className="text-sm font-medium text-gray-600 leading-snug">
-                {product.subtitle || "Trichoderma Viride Liquid Biofungal Formulation"}
-              </p>
-
-
+              {product.subtitle && (
+                <p className="text-xs sm:text-sm font-medium text-gray-600 leading-snug">
+                  {product.subtitle}
+                </p>
+              )}
 
               {/* Price Row */}
-              <div className="flex items-baseline gap-3 pt-1">
-                <span className="text-3xl sm:text-4xl font-bold text-gray-900">
-                  ₹ {variantPrice.toFixed(2)}
+              <div className="flex items-baseline gap-2.5 sm:gap-3 pt-0.5 sm:pt-1 flex-wrap">
+                <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 whitespace-nowrap font-mono">
+                  ₹{variantPrice.toFixed(2)}
                 </span>
                 {variantOldPrice > variantPrice && (
-                  <span className="text-base text-gray-400 line-through font-medium">
-                    ₹ {variantOldPrice.toFixed(2)}
+                  <span className="text-xs sm:text-base text-gray-400 line-through font-medium whitespace-nowrap font-mono">
+                    ₹{variantOldPrice.toFixed(2)}
                   </span>
                 )}
                 {discountPercent > 0 && (
-                  <span className="bg-[#4FAE2A] text-white text-xs font-bold px-2.5 py-0.5 rounded-md shadow-xs">
+                  <span className="bg-[#4FAE2A] text-white text-[10.5px] sm:text-xs font-bold px-2 py-0.5 rounded-md shadow-xs whitespace-nowrap">
                     {discountPercent}% OFF
                   </span>
                 )}

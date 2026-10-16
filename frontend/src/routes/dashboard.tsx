@@ -290,7 +290,7 @@ function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12">
       {/* Profile Header Card */}
       <div className="rounded-[2.5rem] bg-forest p-6 sm:p-10 text-primary-foreground shadow-luxe flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4 sm:gap-5">

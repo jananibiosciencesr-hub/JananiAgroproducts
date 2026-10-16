@@ -161,7 +161,7 @@ export function WishlistPage() {
   }, [wishlist]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12">
       {/* Wishlist Header & Summary Bar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-8 border-b border-border">
         <div>

@@ -218,7 +218,7 @@ export function LiveTrackingPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 pb-24 lg:pb-16 space-y-8 animate-in fade-in duration-300">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-24 lg:pb-16 space-y-4 sm:space-y-8 animate-in fade-in duration-300">
       {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
         <Link to="/" className="hover:text-brand-leaf transition flex items-center gap-1">

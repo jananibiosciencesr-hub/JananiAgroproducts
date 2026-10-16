@@ -444,7 +444,7 @@ export function CartPage() {
   }, [cartItems]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12">
       {/* Header */}
       <div className="border-b border-border pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

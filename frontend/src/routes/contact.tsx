@@ -179,7 +179,7 @@ function ContactPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-80px)] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 flex items-center justify-center overflow-hidden">
+    <div className="relative min-h-[calc(100vh-80px)] py-3 sm:py-10 px-3 sm:px-6 lg:px-8 flex items-start sm:items-center justify-center overflow-hidden">
       {/* Agricultural Background Image: High-resolution sunrise over terraced fields */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
