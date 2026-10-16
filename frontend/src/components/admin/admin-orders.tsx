@@ -529,7 +529,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
       {/* 3. Filter Navigation Tabs & Toolbar */}
       <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm space-y-3 sm:space-y-4 max-w-full overflow-hidden">
         {/* Status Tabs */}
-        <div className="flex items-center gap-1.5 pb-2 overflow-x-auto flex-nowrap min-w-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-b border-border/60">
+        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap min-w-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "all", label: "All Orders", count: stats.total },
             { id: "Pending", label: "Pending", count: stats.pending, badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" },
@@ -565,91 +565,6 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
               </button>
             );
           })}
-        </div>
-
-        {/* Search & Secondary Filter Dropdowns */}
-        <div className="flex flex-col lg:flex-row gap-2.5 sm:gap-3 items-stretch lg:items-center justify-between">
-          <div className="relative w-full lg:max-w-md min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Search ID, Customer, Phone, Shiprocket AWB..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary placeholder:text-muted-foreground/60 transition-all"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground rounded cursor-pointer"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-row gap-2 w-full lg:w-auto">
-            {/* Payment Filter */}
-            <select
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value)}
-              className="px-2.5 py-1.5 sm:py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium truncate"
-            >
-              <option value="all">Payment: All</option>
-              <option value="Paid">Paid</option>
-              <option value="Pending">Pending / COD</option>
-              <option value="Refunded">Refunded</option>
-            </select>
-
-            {/* Warehouse Filter */}
-            <select
-              value={warehouseFilter}
-              onChange={(e) => setWarehouseFilter(e.target.value)}
-              className="px-2.5 py-1.5 sm:py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium truncate"
-            >
-              <option value="all">Warehouse: All</option>
-              <option value="WH-BLR-01">Bengaluru Hub</option>
-              <option value="WH-HYD-01">Hyderabad Hub</option>
-              <option value="WH-DEL-02">Delhi Hub</option>
-              <option value="WH-MUM-01">Mumbai Hub</option>
-            </select>
-
-            {/* Courier Filter */}
-            <select
-              value={courierFilter}
-              onChange={(e) => setCourierFilter(e.target.value)}
-              className="px-2.5 py-1.5 sm:py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium truncate"
-            >
-              <option value="all">Courier: All</option>
-              <option value="Shiprocket (Bluedart Air)">Bluedart</option>
-              <option value="Shiprocket (Delhivery Surface)">Delhivery</option>
-              <option value="Shiprocket (Ekart Logistics)">Ekart</option>
-              <option value="Shadowfax">Shadowfax</option>
-              <option value="XpressBees">XpressBees</option>
-            </select>
-
-            {/* Sort Filter */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-2.5 py-1.5 sm:py-2 bg-background border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-medium truncate"
-            >
-              <option value="date_desc">Newest First</option>
-              <option value="date_asc">Oldest First</option>
-              <option value="amount_desc">Highest Value</option>
-              <option value="amount_asc">Lowest Value</option>
-            </select>
-
-            {/* Export CSV Button */}
-            <button
-              onClick={handleExportCSV}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all truncate cursor-pointer shrink-0"
-              title="Export Orders CSV"
-            >
-              <Download className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">Export CSV</span>
-            </button>
-          </div>
         </div>
 
         {/* Bulk Actions Floating Bar */}
