@@ -212,22 +212,22 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
         {/* Full-width Rectangular Add to Cart / Quantity Stepper Button */}
         <div className="mt-2.5 pt-2">
           {cartQty > 0 ? (
-            <div className="w-full bg-[#075B32] text-white text-[11px] sm:text-xs font-bold py-1 sm:py-1.5 rounded-none transition shadow-xs flex items-center justify-between px-2">
+            <div className="w-full bg-[#075B32] text-white py-1.5 sm:py-2 px-3 rounded-none transition shadow-xs flex items-center justify-between">
               <button
                 type="button"
                 onClick={handleDecrement}
-                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-sm transition active:scale-90 cursor-pointer"
+                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-md transition active:scale-90 cursor-pointer"
                 aria-label="Decrease quantity"
               >
                 <Minus className="size-3.5" />
               </button>
-              <span className="font-mono font-bold text-xs select-none">
-                {cartQty} IN BASKET
+              <span className="font-bold text-sm sm:text-base select-none px-2 tracking-tight">
+                {cartQty}
               </span>
               <button
                 type="button"
                 onClick={handleIncrement}
-                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-sm transition active:scale-90 cursor-pointer"
+                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-md transition active:scale-90 cursor-pointer"
                 aria-label="Increase quantity"
               >
                 <Plus className="size-3.5" />

@@ -633,8 +633,8 @@ function ProductDetailPage() {
                     >
                       <Minus className="size-4" />
                     </button>
-                    <span className="font-mono font-bold text-xs sm:text-sm select-none">
-                      {cartQty} IN BASKET
+                    <span className="font-bold text-base select-none px-2 tracking-tight">
+                      {cartQty}
                     </span>
                     <button
                       type="button"

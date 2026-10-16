@@ -51,7 +51,12 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <StoreProvider>
       <Shell>{children}</Shell>
-      <Toaster position="top-right" richColors closeButton duration={3500} />
+      <Toaster
+        position="bottom-right"
+        duration={2400}
+        offset={{ bottom: 84, right: 24 }}
+        mobileOffset={{ bottom: "80px", left: "16px", right: "16px" }}
+      />
     </StoreProvider>
   );
 }
