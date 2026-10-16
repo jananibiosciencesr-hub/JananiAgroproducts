@@ -689,7 +689,7 @@ export function AuthenticationPage() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] w-full bg-gradient-to-br from-cream via-cream/80 to-amber-50/40 py-3 sm:py-6 px-2 sm:px-4 lg:px-6 flex items-start sm:items-center justify-center">
-      <div className="w-full max-w-[98%] 2xl:max-w-[1600px] mx-auto">
+      <div className="w-full max-w-4xl lg:max-w-[960px] mx-auto">
         {/* Main Dual-Pane Auth Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/70 bg-card/60 backdrop-blur-2xl shadow-xl transition-all w-full">
           
