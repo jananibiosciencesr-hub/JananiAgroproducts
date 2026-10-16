@@ -117,6 +117,17 @@ export function AdminNavbar({
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [liveInquiries, setLiveInquiries] = useState<AdminInquiry[]>(inquiries);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Scroll detection for sticky header elevation
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Sync when prop updates
   useEffect(() => {
@@ -242,7 +253,9 @@ export function AdminNavbar({
   ];
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 sm:h-20 w-full max-w-full items-center justify-between border-b border-border/70 bg-card/85 px-3 sm:px-4 lg:px-8 backdrop-blur-xl">
+    <header className={`sticky top-0 z-40 flex h-16 sm:h-20 w-full max-w-full items-center justify-between border-b backdrop-blur-xl transition-all duration-200 px-3 sm:px-4 lg:px-8 ${
+      isScrolled ? "bg-card/95 border-border shadow-sm" : "bg-card/85 border-border/70"
+    }`}>
       {/* Left Area: Mobile Menu, Dynamic Search & Contextual Add */}
       <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-2xl min-w-0 mr-2">
         <button
