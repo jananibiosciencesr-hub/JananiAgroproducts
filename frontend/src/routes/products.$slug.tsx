@@ -159,7 +159,9 @@ function ProductDetailPage() {
     }
     setQty(1);
     setActiveImageIndex(0);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
   }, [product.slug, product.variants, product.unit, product.price, product.oldPrice]);
 
   // Gallery Images List: dynamically loaded from backend product.image & product.gallery
@@ -411,9 +413,9 @@ function ProductDetailPage() {
 
   return (
     <div className="bg-white min-h-screen text-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-6">
         {/* 1. Breadcrumbs Strip */}
-        <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-6 font-medium flex-wrap">
+        <nav className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-500 mb-2 sm:mb-5 font-medium flex-wrap">
           <Link to="/" className="hover:text-[#075B32] transition">
             Home
           </Link>
@@ -430,12 +432,12 @@ function ProductDetailPage() {
         </nav>
 
         {/* 2. Top Hero Product Grid (Left: Gallery, Right: Details) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-10 items-stretch">
           {/* LEFT: Product Gallery with Left Vertical Thumbnails */}
-          <div className="lg:col-span-6 flex flex-col-reverse sm:flex-row gap-4 h-full">
+          <div className="lg:col-span-6 flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-4 h-full">
             {/* Vertical Thumbnail Strip (shown when multiple gallery images exist) */}
             {galleryImages.length > 1 && (
-              <div className="flex sm:flex-col gap-2.5 overflow-x-auto sm:overflow-y-auto max-h-[500px] w-full sm:w-20 shrink-0 scrollbar-none pb-2 sm:pb-0">
+              <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto max-h-[500px] w-full sm:w-20 shrink-0 scrollbar-none pb-1 sm:pb-0">
                 {galleryImages.map((img, idx) => {
                   const isActive = activeImageIndex === idx;
                   return (
@@ -445,7 +447,7 @@ function ProductDetailPage() {
                         setActiveImageIndex(idx);
                         if (img.isVideo) setIsVideoModalOpen(true);
                       }}
-                      className={`relative size-16 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1 flex items-center justify-center ${
+                      className={`relative size-13 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1 flex items-center justify-center ${
                         isActive
                           ? "border-[#075B32] shadow-xs"
                           : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
@@ -468,11 +470,11 @@ function ProductDetailPage() {
             )}
 
             {/* Main Big Image Viewport */}
-            <div className="relative flex-1 w-full h-full min-h-[440px] rounded-2xl border border-gray-200 bg-white p-4 flex items-center justify-center overflow-hidden group shadow-xs">
+            <div className="relative flex-1 w-full aspect-square sm:aspect-auto sm:min-h-[440px] rounded-2xl border border-gray-200 bg-white p-2.5 sm:p-4 flex items-center justify-center overflow-hidden group shadow-xs">
               <img
                 src={galleryImages[activeImageIndex]?.src || product.image}
                 alt={product.name}
-                className="w-full h-full max-h-[460px] object-contain transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* Prev Arrow */}
@@ -480,9 +482,9 @@ function ProductDetailPage() {
                 <button
                   onClick={handlePrevImage}
                   aria-label="Previous Image"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
+                  className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 size-8 sm:size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
                 >
-                  <ChevronLeft className="size-5" />
+                  <ChevronLeft className="size-4 sm:size-5" />
                 </button>
               )}
 
@@ -491,9 +493,9 @@ function ProductDetailPage() {
                 <button
                   onClick={handleNextImage}
                   aria-label="Next Image"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
+                  className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 size-8 sm:size-9 rounded-full bg-white/90 shadow-md border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition"
                 >
-                  <ChevronRight className="size-5" />
+                  <ChevronRight className="size-4 sm:size-5" />
                 </button>
               )}
 
@@ -501,23 +503,23 @@ function ProductDetailPage() {
               <button
                 onClick={() => setIsLightboxOpen(true)}
                 title="Expand Full View"
-                className="absolute bottom-3 right-3 size-8 rounded-lg bg-white/90 border border-gray-200 flex items-center justify-center text-gray-600 hover:text-[#075B32] hover:bg-white shadow-xs transition"
+                className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 size-7 sm:size-8 rounded-lg bg-white/90 border border-gray-200 flex items-center justify-center text-gray-600 hover:text-[#075B32] hover:bg-white shadow-xs transition"
               >
-                <Maximize2 className="size-4" />
+                <Maximize2 className="size-3.5 sm:size-4" />
               </button>
             </div>
           </div>
 
           {/* RIGHT: Product Purchasing Information */}
-          <div className="lg:col-span-6 flex flex-col justify-between h-full space-y-4">
-            <div className="space-y-3">
+          <div className="lg:col-span-6 flex flex-col justify-between h-full space-y-3 sm:space-y-4">
+            <div className="space-y-2.5 sm:space-y-3">
               {/* Title & In Stock Badge */}
-              <div className="flex items-center justify-between gap-3">
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#075B32] tracking-tight uppercase font-display">
+              <div className="flex items-center justify-between gap-2 sm:gap-3">
+                <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-[#075B32] tracking-tight uppercase font-display leading-tight">
                   {product.name}
                 </h1>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#EAF5E9] text-[#075B32] border border-[#075B32]/20 shrink-0">
-                  <Leaf className="size-3.5 fill-current" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-[#EAF5E9] text-[#075B32] border border-[#075B32]/20 shrink-0">
+                  <Leaf className="size-3 sm:size-3.5 fill-current" />
                   In Stock
                 </span>
               </div>
@@ -670,9 +672,9 @@ function ProductDetailPage() {
         </div>
 
         {/* Tabbed Content Section */}
-        <section className="mt-12">
+        <section className="mt-6 sm:mt-12">
           {/* Tab Headers */}
-          <div className="flex items-center gap-2 overflow-x-auto border-b border-gray-200 pb-px scrollbar-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto border-b border-gray-200 pb-px scrollbar-none">
             {[
               { id: "description", label: "Product Description" },
               { id: "benefits", label: "Key Benefits" },
@@ -687,7 +689,7 @@ function ProductDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`px-4 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition border-b-2 -mb-px ${
+                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition border-b-2 -mb-px ${
                     isActive
                       ? "border-[#075B32] text-[#075B32]"
                       : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
@@ -701,9 +703,9 @@ function ProductDetailPage() {
 
           {/* Tab Body: Product Description */}
           {activeTab === "description" && (
-            <div className="pt-5 pb-3 space-y-4">
+            <div className="pt-3 sm:pt-5 pb-3 space-y-3 sm:space-y-4">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3 font-display">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 font-display">
                   Product Description
                 </h3>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">

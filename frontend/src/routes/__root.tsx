@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  ScrollRestoration,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { SiteShell } from "@/components/site-shell";
@@ -104,6 +105,7 @@ function RootShell({ children }: { children: ReactNode }) {
       </head>
       <body suppressHydrationWarning>
         {children}
+        <ScrollRestoration />
         <Scripts />
       </body>
     </html>

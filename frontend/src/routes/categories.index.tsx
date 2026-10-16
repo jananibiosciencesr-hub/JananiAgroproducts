@@ -95,7 +95,7 @@ function CategoriesIndexPage() {
   return (
     <>
       {/* Compact Categories Header */}
-      <div className="border-b border-border/70 bg-gradient-to-b from-[#075B32]/10 via-background to-background pt-6 pb-6 px-4 sm:px-6 lg:px-8">
+      <div className="border-b border-border/70 bg-gradient-to-b from-[#075B32]/10 via-background to-background pt-3 pb-3 sm:pt-6 sm:pb-6 px-3 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>

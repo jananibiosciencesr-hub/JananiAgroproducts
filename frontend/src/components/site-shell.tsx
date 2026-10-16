@@ -82,10 +82,14 @@ function Shell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Automatically close mega menu and mobile menu whenever route changes
+  // Automatically close mega menu and mobile menu and scroll to top whenever route changes
   useEffect(() => {
     setIsMegaMenuOpen(false);
     setMenu(false);
+    // Instant scroll to the very top of the page across the entire website
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
   }, [pathname]);
 
   if (isAdminRoute) {
