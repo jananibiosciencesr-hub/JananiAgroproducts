@@ -418,7 +418,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       
       <Footer />
 
-      {!isCheckoutFlow && (
+      {!isCheckoutFlow && pathname !== "/order-success" && (
         <a
           href="https://wa.me/919311416225"
           aria-label="Chat on WhatsApp"
