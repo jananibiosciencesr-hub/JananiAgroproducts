@@ -561,8 +561,8 @@ function ProductsPage() {
         {/* Main 2-Column Layout */}
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Left Sidebar (Desktop) - Sticky Filter Rail */}
-          <aside className="hidden lg:block w-64 xl:w-72 shrink-0 lg:sticky lg:top-24 self-start">
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+          <aside className="hidden lg:block w-64 xl:w-72 shrink-0 lg:sticky lg:top-20 self-start z-10">
+            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
               {filterSidebarContent}
             </div>
           </aside>
