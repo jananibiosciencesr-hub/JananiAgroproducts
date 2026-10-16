@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, getProductImage, pantryImage } from "@/lib/catalog";
+import { products, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
@@ -92,7 +92,7 @@ export function OrderSuccessPage() {
   const items = orderData?.items?.length
     ? orderData.items.map((it: any) => ({
         id: it.productId || it.product?.id || Math.random(),
-        name: it.name || it.product?.name || "Agro Formulation Product",
+        name: formatProductName(it.name || it.product?.name || "Agro Formulation Product"),
         quantity: it.qty || it.quantity || 1,
         price: it.price || it.product?.price || 420,
         image: it.image || it.product?.image || pantryImage,
@@ -386,7 +386,7 @@ export function OrderSuccessPage() {
                   className="size-10 rounded-xl object-cover border border-border shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">{item.name}</p>
+                  <p className="font-semibold text-foreground truncate">{formatProductName(item.name)}</p>
                   <p className="text-[11px] text-muted-foreground">
                     Qty: {item.quantity} × ₹{item.price}
                   </p>

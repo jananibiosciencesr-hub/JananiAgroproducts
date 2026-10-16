@@ -31,7 +31,7 @@ import {
   Plus,
   Minus
 } from "lucide-react";
-import { products, categories, type Product } from "@/lib/catalog";
+import { products, categories, type Product, formatProductName } from "@/lib/catalog";
 import { matchesProductSearch, calculateProductRelevance } from "@/lib/search-helper";
 import { useStore } from "@/components/store-provider";
 import { ProductQuickViewModal } from "@/components/shop/product-quick-view-modal";
@@ -294,7 +294,7 @@ function ProductsPage() {
     e.preventDefault();
     e.stopPropagation();
     addToCart(product.id);
-    toast.success(`Added ${product.name} to cart!`, {
+    toast.success(`Added ${formatProductName(product.name)} to cart!`, {
       description: `₹${product.price.toFixed(2)} • ${product.unit}`,
     });
   };
@@ -765,7 +765,7 @@ function ProductsPage() {
                             params={{ slug: p.slug }}
                             className="font-bold text-xs sm:text-sm text-[#075B32] group-hover:text-[#4FAE2A] transition line-clamp-1 block"
                           >
-                            {p.name}
+                            {formatProductName(p.name)}
                           </Link>
 
                           {/* Subtitle / Spec */}
@@ -799,7 +799,7 @@ function ProductsPage() {
                                     removeFromCart(p.id);
                                     removeFromCart(String(p.id));
                                     removeFromCart(Number(p.id));
-                                    toast.info(`Removed ${p.name} from cart`);
+                                    toast.info(`Removed ${formatProductName(p.name)} from cart`);
                                   } else {
                                     updateQuantity(p.id, cartQty - 1);
                                   }

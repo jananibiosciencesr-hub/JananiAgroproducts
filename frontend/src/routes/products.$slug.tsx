@@ -36,7 +36,7 @@ import {
   Eye,
   Heart
 } from "lucide-react";
-import { products, categories, type Product, type ProductVariant } from "@/lib/catalog";
+import { products, categories, type Product, type ProductVariant, formatProductName } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 import { getStorefrontReviews } from "@/lib/api";
 import { toast } from "sonner";
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/products/$slug")({
   head: ({ params }) => {
     const p = products.find((x) => x.slug === params.slug || x.aliases?.includes(params.slug) || String(x.id) === params.slug);
     const title = p
-      ? `${p.name} — ${p.subtitle || "Janani Agro Products"}`
+      ? `${formatProductName(p.name)} — ${p.subtitle || "Janani Agro Products"}`
       : "Product Detail — JANANI AGRO PRODUCTS";
     const description =
       p?.description ??
@@ -528,7 +528,7 @@ function ProductDetailPage() {
                 </div>
 
                 <h1 className="text-base sm:text-2xl lg:text-3xl font-bold text-[#075B32] tracking-tight leading-snug font-display">
-                  {product.name}
+                  {formatProductName(product.name)}
                 </h1>
               </div>
 

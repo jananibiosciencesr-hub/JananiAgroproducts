@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, getProductImage, pantryImage } from "@/lib/catalog";
+import { products, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 
 import { AddressManager, type ShippingAddress } from "@/components/checkout/address-manager";
@@ -582,7 +582,7 @@ export function CheckoutPage() {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="truncate font-semibold text-foreground text-xs">
-                      {product.name}
+                      {formatProductName(product.name)}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       Qty: {qty} × ₹{product.price}

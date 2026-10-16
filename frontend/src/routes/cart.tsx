@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
+import { products, type Product, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
 import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
 import { getStorefrontCoupons, validateCoupon, normalizeCouponData, type AdminCoupon } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -493,7 +493,7 @@ export function CartPage() {
                         params={{ slug: product.slug }}
                         className="block font-bold text-sm sm:text-base text-foreground hover:text-primary transition"
                       >
-                        {product.name}
+                        {formatProductName(product.name)}
                       </Link>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         ₹{product.price} • {product.unit}
@@ -593,7 +593,7 @@ export function CartPage() {
                             params={{ slug: prod.slug }}
                             className="font-bold text-xs text-foreground hover:text-primary transition truncate block"
                           >
-                            {prod.name}
+                            {formatProductName(prod.name)}
                           </Link>
                           <span className="font-mono text-xs font-bold text-primary">
                             ₹{prod.price}
@@ -954,7 +954,7 @@ export function CartPage() {
                           params={{ slug: prod.slug }}
                           className="font-bold text-xs text-foreground hover:text-primary transition truncate block"
                         >
-                          {prod.name}
+                          {formatProductName(prod.name)}
                         </Link>
                         <span className="font-mono text-xs font-bold text-primary">
                           ₹{prod.price}

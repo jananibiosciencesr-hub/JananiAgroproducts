@@ -1,4 +1,4 @@
-import { products, categories, orders, type Product, getCategoryImage, getProductImage } from "./catalog";
+import { products, categories, orders, type Product, getCategoryImage, getProductImage, formatProductName } from "./catalog";
 import { matchesProductSearch } from "./search-helper";
 import {
   STORAGE_KEYS,
@@ -174,7 +174,7 @@ export function normalizeProduct(raw: any): Product {
   return {
     id: Number(raw.id),
     slug: raw.slug || `prod-${raw.id}`,
-    name: raw.name || "Organic Product",
+    name: formatProductName(raw.name || "Organic Product"),
     category: raw.category_name || raw.category || "Cold Pressed Oils",
     brand: raw.brand || "Janani Pure Harvest",
     price: price,
@@ -1124,7 +1124,7 @@ export async function getAdminWidgets() {
     .slice(0, 4)
     .map((p) => ({
       id: p.id,
-      name: p.name,
+      name: formatProductName(p.name),
       stock: Number(p.stock) || 0,
       threshold: 10,
       status: (Number(p.stock) || 0) <= 0 ? "Critical" : "Low Stock"
@@ -1472,7 +1472,7 @@ export function normalizeAdminProduct(raw: any) {
 
   return {
     id: String(raw.id),
-    name: raw.name || "Organic Product",
+    name: formatProductName(raw.name || "Organic Product"),
     slug: raw.slug || `product-${raw.id}`,
     sku: raw.sku || `JAP-SKU-${raw.id}`,
     category: raw.category_name || raw.category || "Bio Fertilizers",
@@ -2293,7 +2293,7 @@ export async function getAdminInventory() {
   return productsList.map((p) => ({
     id: p.id,
     sku: p.sku || `JAP-SKU-${p.id}`,
-    name: p.name,
+    name: formatProductName(p.name),
     category: p.category,
     image: p.image,
     price: p.price,

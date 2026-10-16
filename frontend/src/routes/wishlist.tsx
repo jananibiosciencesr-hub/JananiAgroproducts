@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
+import { products, type Product, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
@@ -342,7 +342,7 @@ export function WishlistPage() {
                       params={{ slug: product.slug }}
                       className="block font-bold text-xs sm:text-sm text-[#075B32] hover:text-[#064A29] transition line-clamp-1 leading-snug"
                     >
-                      {product.name}
+                      {formatProductName(product.name)}
                     </Link>
 
                     {/* Pricing: Rs. XXX  Rs. YYY */}

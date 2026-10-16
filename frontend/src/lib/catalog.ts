@@ -55,6 +55,30 @@ export function getProductImage(nameOrCategory: string = "", customImage?: strin
   return getCategoryImage(nameOrCategory, customImage);
 }
 
+/**
+ * Formats product names from ALL CAPS to Title Case (e.g., "HARIT" -> "Harit", "BHUMI SHAKTI" -> "Bhumi Shakti")
+ * Preserves standard units and acronyms like PPM, WDG, NPK, KMB, CFU/ml, IPM.
+ */
+export function formatProductName(name: string = ""): string {
+  if (!name || typeof name !== "string") return "";
+  const trimmed = name.trim();
+  const lettersOnly = trimmed.replace(/[^A-Za-z]/g, "");
+  if (lettersOnly.length > 0 && lettersOnly === lettersOnly.toUpperCase()) {
+    return trimmed
+      .toLowerCase()
+      .split(" ")
+      .map((word) => {
+        const lower = word.toLowerCase();
+        if (["ppm", "wdg", "npk", "kmb", "cfu/ml", "cfu", "ipm", "coa"].includes(lower)) {
+          return lower.toUpperCase();
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(" ");
+  }
+  return trimmed;
+}
+
 export type ProductVariant = {
   id: string;
   label: string;
@@ -128,7 +152,7 @@ export const products: Product[] = [
   {
     id: 1,
     slug: "harit",
-    name: "HARIT",
+    name: "Harit",
     subtitle: "Trichoderma Viride Liquid Biofungal Formulation",
     category: "Bio Fungicides",
     brand: "Janani Agro Products",
@@ -173,7 +197,7 @@ export const products: Product[] = [
   {
     id: 2,
     slug: "bhumi-shakti",
-    name: "BHUMI SHAKTI",
+    name: "Bhumi Shakti",
     subtitle: "Humic & Fulvic Based Soil Conditioner",
     category: "Bio Stimulants",
     brand: "Janani Agro Products",
@@ -218,7 +242,7 @@ export const products: Product[] = [
   {
     id: 3,
     slug: "neem-oil-1000-ppm",
-    name: "NEEM OIL 1000 PPM",
+    name: "Neem Oil 1000 PPM",
     subtitle: "Containing Azadirachtin 1000 PPM",
     category: "Botanical Extracts",
     brand: "Janani Agro Products",
@@ -262,7 +286,7 @@ export const products: Product[] = [
     id: 4,
     slug: "pushkal",
     aliases: ["nano-gold"],
-    name: "PUSHKAL",
+    name: "Pushkal",
     subtitle: "Plant Growth Promoter",
     category: "Bio Stimulants",
     brand: "Janani Agro Products",
@@ -302,7 +326,7 @@ export const products: Product[] = [
     id: 5,
     slug: "annada",
     aliases: ["vermi-boost"],
-    name: "ANNADA",
+    name: "Annada",
     subtitle: "Organic Soil Enhancer & Micro Nutrients",
     category: "Agri Inputs",
     brand: "Janani Agro Products",
@@ -340,7 +364,7 @@ export const products: Product[] = [
     id: 6,
     slug: "dharani",
     aliases: ["root-plus"],
-    name: "DHARANI",
+    name: "Dharani",
     subtitle: "Root Growth Promoter & Biofertilizer",
     category: "Bio Fertilizers",
     brand: "Janani Agro Products",
@@ -378,7 +402,7 @@ export const products: Product[] = [
     id: 7,
     slug: "balavan",
     aliases: ["crop-shield"],
-    name: "BALAVAN",
+    name: "Balavan",
     subtitle: "Botanical Crop Shield & Biofungicide",
     category: "Insecticides",
     brand: "Janani Agro Products",
@@ -416,7 +440,7 @@ export const products: Product[] = [
     id: 8,
     slug: "dhanya",
     aliases: ["foliar-nutri"],
-    name: "DHANYA",
+    name: "Dhanya",
     subtitle: "Micronutrient Mixture",
     category: "Water Solubles",
     brand: "Janani Agro Products",
@@ -455,7 +479,7 @@ export const products: Product[] = [
     id: 9,
     slug: "suraksha",
     aliases: ["bio-care"],
-    name: "SURAKSHA",
+    name: "Suraksha",
     subtitle: "Biofungicide & Crop Protector",
     category: "Fungicides",
     brand: "Janani Agro Products",
@@ -492,7 +516,7 @@ export const products: Product[] = [
     id: 10,
     slug: "pushkal-bottle",
     aliases: ["plant-vigor"],
-    name: "PUSHKAL",
+    name: "Pushkal",
     subtitle: "Plant Growth Promoter & Stress Care",
     category: "Bio Stimulants",
     brand: "Janani Agro Products",
@@ -530,7 +554,7 @@ export const products: Product[] = [
     id: 11,
     slug: "balavan-bottle",
     aliases: ["soil-sure"],
-    name: "BALAVAN",
+    name: "Balavan",
     subtitle: "Soil Conditioner & Bio-Shield",
     category: "Agri Inputs",
     brand: "Janani Agro Products",
@@ -567,7 +591,7 @@ export const products: Product[] = [
     id: 12,
     slug: "annada-bottle",
     aliases: ["green-power"],
-    name: "ANNADA",
+    name: "Annada",
     subtitle: "Organic Crop Booster",
     category: "Micro Nutrients",
     brand: "Janani Agro Products",
@@ -604,7 +628,7 @@ export const products: Product[] = [
   {
     id: 13,
     slug: "balavan-bacillus-subtilis-5l",
-    name: "BALAVAN",
+    name: "Balavan",
     subtitle: "Bacillus Subtilis Liquid Biofungicide",
     category: "Bio Fungicides",
     brand: "Janani Agro Products",
@@ -636,7 +660,7 @@ export const products: Product[] = [
   {
     id: 14,
     slug: "suraksha-pseudomonas-fluorescens-5l",
-    name: "SURAKSHA",
+    name: "Suraksha",
     subtitle: "Pseudomonas Fluorescens Bio Formulation",
     category: "Bio Pesticides",
     brand: "Janani Agro Products",
@@ -668,7 +692,7 @@ export const products: Product[] = [
   {
     id: 15,
     slug: "dharani-kmb-potassium-mobilizing-biofertilizer-5l",
-    name: "DHARANI KMB",
+    name: "Dharani KMB",
     subtitle: "Potassium Mobilizing Biofertilizer",
     category: "Bio Fertilizers",
     brand: "Janani Agro Products",
@@ -700,7 +724,7 @@ export const products: Product[] = [
   {
     id: 16,
     slug: "pushkal-flowering-fruit-set-biostimulant-1l",
-    name: "PUSHKAL",
+    name: "Pushkal",
     subtitle: "Flowering & Fruit Set Biostimulant",
     category: "Bio Stimulants",
     brand: "Janani Agro Products",
@@ -732,7 +756,7 @@ export const products: Product[] = [
   {
     id: 17,
     slug: "annada-fish-amino-acid-5l",
-    name: "ANNADA",
+    name: "Annada",
     subtitle: "Fish Amino Acid & Micro Nutrients",
     category: "Micro Nutrients",
     brand: "Janani Agro Products",
@@ -764,7 +788,7 @@ export const products: Product[] = [
   {
     id: 18,
     slug: "agri-stick-silicone-spreader-activator",
-    name: "AGRI STICK",
+    name: "Agri Stick",
     subtitle: "Silicone Spreader, Sticker & Penetrator",
     category: "Others",
     brand: "Janani Agro Products",

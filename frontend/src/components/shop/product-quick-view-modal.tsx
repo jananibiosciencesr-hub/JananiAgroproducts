@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import { type Product, type ProductVariant, getProductImage, pantryImage } from "@/lib/catalog";
+import { type Product, type ProductVariant, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
 import { toast } from "sonner";
 
 interface ProductQuickViewModalProps {
@@ -61,7 +61,7 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
     for (let i = 0; i < quantity; i++) {
       addToCart(product.id);
     }
-    toast.success(`Added ${quantity}x ${product.name} (${selectedVariant.label}) to cart!`, {
+    toast.success(`Added ${quantity}x ${formatProductName(product.name)} (${selectedVariant.label}) to cart!`, {
       description: "Enjoy fresh farm-direct pure organic delivery.",
     });
   };
@@ -158,7 +158,7 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
 
               {/* Name */}
               <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold text-foreground">
-                {product.name}
+                {formatProductName(product.name)}
               </h2>
 
               {/* Ratings */}

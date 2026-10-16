@@ -3,7 +3,7 @@ import { Heart, ShoppingBag, Eye, MapPin, Sparkles, Minus, Plus } from "lucide-r
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import { type Product, getProductImage, pantryImage } from "@/lib/catalog";
+import { type Product, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
 import { toast } from "sonner";
 
 interface ProductCardProps {
@@ -21,11 +21,11 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
     e.preventDefault();
     e.stopPropagation();
     if (!product.inStock) {
-      toast.error(`${product.name} is currently out of stock.`);
+      toast.error(`${formatProductName(product.name)} is currently out of stock.`);
       return;
     }
     addToCart(product.id);
-    toast.success(`Added ${product.name} to cart!`, {
+    toast.success(`Added ${formatProductName(product.name)} to cart!`, {
       description: `₹${product.price} • ${product.unit}`,
     });
   };
@@ -44,7 +44,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
       removeFromCart(product.id);
       removeFromCart(String(product.id));
       if (!isNaN(Number(product.id))) removeFromCart(Number(product.id));
-      toast.info(`Removed ${product.name} from cart`);
+      toast.info(`Removed ${formatProductName(product.name)} from cart`);
     } else {
       updateQuantity(product.id, cartQty - 1);
     }
@@ -179,7 +179,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
             params={{ slug: product.slug }}
             className="mt-1 font-bold text-xs sm:text-sm md:text-base text-[#075B32] hover:text-[#064A29] line-clamp-1 block transition leading-snug"
           >
-            {product.name}
+            {formatProductName(product.name)}
           </Link>
 
           {/* Subtitle / Unit */}

@@ -145,7 +145,7 @@ export function HomePage() {
     {
       id: "harit",
       numId: 1,
-      name: "HARIT",
+      name: "Harit",
       spec: "Trichoderma Viride Liquid Biofungal Formulation",
       image: "/products/harit.jpg",
       link: "/products/harit-trichoderma-viride-liquid-biofungal-formulation-1l",
@@ -155,7 +155,7 @@ export function HomePage() {
     {
       id: "bhumi-shakti",
       numId: 2,
-      name: "BHUMI SHAKTI",
+      name: "Bhumi Shakti",
       spec: "Humic & Fulvic Based Soil Conditioner Biostimulant",
       image: "/products/bhumi-shakti.jpg",
       link: "/products/bhumi-shakti-humic-fulvic-biostimulant-5l",
@@ -165,7 +165,7 @@ export function HomePage() {
     {
       id: "neem-oil",
       numId: 3,
-      name: "NEEM OIL",
+      name: "Neem Oil 1000 PPM",
       spec: "Containing Azadirachtin 1000 PPM",
       image: "/products/neem-oil.jpg",
       link: "/products/neem-oil-1000-ppm-azadirachtin-1l",
@@ -175,7 +175,7 @@ export function HomePage() {
     {
       id: "pushkal",
       numId: 4,
-      name: "PUSHKAL",
+      name: "Pushkal",
       spec: "Plant Growth Promoter",
       image: "/products/pushkal.jpg",
       link: "/products/pushkal-flowering-fruit-set-biostimulant-1l",
@@ -185,7 +185,7 @@ export function HomePage() {
     {
       id: "annada",
       numId: 5,
-      name: "ANNADA",
+      name: "Annada",
       spec: "Organic Soil Enhancer & Micro Nutrients",
       image: "/products/annada.jpg",
       link: "/products/annada-fish-amino-acid-5l",

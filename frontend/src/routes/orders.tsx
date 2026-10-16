@@ -30,6 +30,7 @@ import { ReturnOrderModal } from "@/components/orders/return-order-modal";
 import { ExchangeOrderModal } from "@/components/orders/exchange-order-modal";
 import { OrderSupportModal } from "@/components/orders/order-support-modal";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
+import { formatProductName } from "@/lib/catalog";
 
 export const Route = createFileRoute("/orders")({
   head: () => ({
@@ -129,7 +130,7 @@ export function MyOrdersPage() {
               },
               items: Array.isArray(o.items) ? o.items.map((it: any) => ({
                 productId: it.productId || it.id || 1,
-                name: it.title || it.name || "Single-Origin Organic Harvest",
+                name: formatProductName(it.title || it.name || "Single-Origin Organic Harvest"),
                 variant: it.variant || "Standard Pack",
                 quantity: it.quantity || it.qty || 1,
                 price: Number(it.price) || 399,
@@ -568,7 +569,7 @@ export function MyOrdersPage() {
           customerEmail={selectedInvoiceOrder.customerEmail || selectedInvoiceOrder.address?.email || user?.email || ""}
           customerAddress={selectedInvoiceOrder.address ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}` : "Registered Delivery Address"}
           items={(Array.isArray(selectedInvoiceOrder.items) ? selectedInvoiceOrder.items : []).map((it) => ({
-            name: it.name || it.title || "Agro Formulation Product",
+            name: formatProductName(it.name || it.title || "Agro Formulation Product"),
             quantity: it.quantity || it.qty || 1,
             price: it.price || 0,
           }))}

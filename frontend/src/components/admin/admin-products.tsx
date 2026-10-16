@@ -56,6 +56,7 @@ import {
   getAdminFullCategories,
   getCategories
 } from "@/lib/api";
+import { formatProductName } from "@/lib/catalog";
 import { matchesProductSearch } from "@/lib/search-helper";
 
 export interface ProductVariant {
@@ -572,7 +573,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                               onClick={() => setPreviewProduct(p)}
                               className="font-extrabold text-foreground text-sm hover:text-emerald-600 cursor-pointer truncate block"
                             >
-                              {p.name}
+                              {formatProductName(p.name)}
                             </span>
                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                               <span className="font-mono text-emerald-600 font-bold">{p.sku}</span>
