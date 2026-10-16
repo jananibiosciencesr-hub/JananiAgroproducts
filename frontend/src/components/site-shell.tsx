@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
+  ChevronRight,
   Heart,
   Menu,
   Search,
@@ -17,6 +18,8 @@ import {
   Phone,
   LogOut,
   Package,
+  PackageCheck,
+  Info,
   Wallet,
   Gift,
   MapPin,
@@ -92,6 +95,21 @@ function Shell({ children }: { children: React.ReactNode }) {
     if (document.documentElement) document.documentElement.scrollTop = 0;
     if (document.body) document.body.scrollTop = 0;
   }, [pathname]);
+
+  // Prevent background scroll and horizontal overflow when mobile menu is open
+  useEffect(() => {
+    if (menu) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [menu]);
 
   if (isAdminRoute) {
     return <div className="min-h-screen bg-background">{children}</div>;
@@ -339,57 +357,167 @@ function Shell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Drawer */}
       {menu && (
-        <div className="fixed inset-0 z-50 bg-forest/40 backdrop-blur-sm" onClick={() => setMenu(false)}>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200" onClick={() => setMenu(false)}>
           <aside
-            className="ml-auto flex h-full w-[88%] max-w-sm flex-col bg-cream p-6 shadow-luxe overflow-y-auto"
+            className="flex h-full w-[82%] max-w-[295px] flex-col bg-white p-3.5 shadow-2xl overflow-y-auto overflow-x-hidden no-scrollbar scrollbar-none animate-in slide-in-from-right duration-250 select-none"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 shrink-0">
               <Brand />
-              <Button variant="ghost" size="icon" onClick={() => setMenu(false)}>
-                <X className="size-5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                onClick={() => setMenu(false)}
+                aria-label="Close menu"
+              >
+                <X className="size-4" />
               </Button>
             </div>
 
-            {user && (
-              <div className="mt-6 rounded-2xl border border-border/80 bg-card p-4 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="grid size-9 place-items-center rounded-full bg-brand-gold text-xs font-bold text-forest">
-                    {user.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("")}
+            {/* Profile / Account Status */}
+            {user ? (
+              <div className="mt-2.5 rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50/90 to-emerald-100/50 p-2 flex items-center justify-between gap-2 shadow-2xs shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="size-8 rounded-full bg-gradient-to-tr from-[#075B32] to-[#0A8046] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs ring-2 ring-emerald-200">
+                    {user.name ? user.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() : "U"}
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground">{user.name}</h4>
-                    <p className="text-[11px] text-muted-foreground">{user.email || user.phone}</p>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">{user.name}</h4>
+                    <p className="text-[10px] text-slate-500 truncate leading-tight mt-0.5">{user.email || user.phone}</p>
+                    <span className="inline-block text-[8.5px] font-semibold text-emerald-800 bg-emerald-200/60 px-1.5 py-0.2 rounded mt-0.5">
+                      Verified Member
+                    </span>
                   </div>
                 </div>
-                <Button asChild size="sm" variant="outline" className="text-xs h-8">
+                <Button asChild size="sm" variant="ghost" className="h-6.5 px-2 text-[10.5px] font-semibold text-emerald-800 hover:bg-emerald-200/50 rounded-lg shrink-0">
                   <Link to="/profile" onClick={() => setMenu(false)}>Profile</Link>
                 </Button>
               </div>
+            ) : (
+              <div className="mt-2.5 rounded-xl border border-emerald-200/60 bg-gradient-to-br from-[#075B32] to-[#04341B] p-2.5 text-white shadow-xs shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold leading-tight truncate">Welcome to Janani Agro</h4>
+                    <p className="text-[10px] text-emerald-200/90 mt-0.5 leading-tight truncate">Sign in for orders & rewards</p>
+                  </div>
+                  <Button asChild size="sm" className="h-6.5 px-2 text-[10.5px] font-bold bg-[#E7A91A] hover:bg-[#d89b14] text-slate-900 rounded-lg shrink-0 shadow-xs">
+                    <Link to="/login" onClick={() => setMenu(false)}>Sign In</Link>
+                  </Button>
+                </div>
+              </div>
             )}
 
-            <nav className="mt-6 grid gap-1.5">
-              {[...links, ["My Orders", "/orders"] as const, ["Profile Settings", "/profile"] as const, ["Track Order", "/track-order"] as const].map(([label, to]) => {
-                const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
-                return (
-                  <Link
-                    key={label}
-                    to={to}
-                    onClick={() => setMenu(false)}
-                    className={`rounded-2xl px-4 py-3 text-sm font-semibold transition flex items-center justify-between ${
-                      isActive
-                        ? "bg-[#075B32] text-white font-bold shadow-md"
-                        : "text-foreground hover:bg-secondary"
-                    }`}
-                  >
-                    <span>{label}</span>
-                    {isActive && <span className="size-2 rounded-full bg-[#E7A91A] shadow-xs" />}
-                  </Link>
-                );
-              })}
-            </nav>
+            {/* Navigation Lists with Single Smooth Scroll Container */}
+            <div className="mt-2.5 flex-1 space-y-2.5 overflow-x-hidden no-scrollbar">
+              {/* Store Browsing */}
+              <div>
+                <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 px-2 block mb-1">
+                  Shop & Explore
+                </span>
+                <nav className="space-y-0.5">
+                  {[
+                    { label: "Home", to: "/", Icon: Home },
+                    { label: "Categories", to: "/categories", Icon: Grid2X2 },
+                    { label: "All Products", to: "/products", Icon: ShoppingBag },
+                    { label: "About Janani", to: "/about", Icon: Info },
+                    { label: "Contact Us", to: "/contact", Icon: Phone },
+                  ].map(({ label, to, Icon }) => {
+                    const isActive = to === "/" ? pathname === "/" : (to === "/categories" ? pathname === "/categories" || pathname.startsWith("/categories/") : pathname.startsWith(to));
+                    return (
+                      <Link
+                        key={label}
+                        to={to}
+                        onClick={() => setMenu(false)}
+                        className={`rounded-xl px-2 py-1.5 text-xs font-semibold transition-all flex items-center justify-between group ${
+                          isActive
+                            ? "bg-[#075B32] text-white font-bold shadow-xs"
+                            : "text-slate-700 hover:bg-slate-100/90 hover:text-emerald-800"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`size-6.5 rounded-lg transition-colors flex items-center justify-center shrink-0 ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-slate-100 text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-700"
+                          }`}>
+                            <Icon className="size-3" />
+                          </span>
+                          <span className="truncate">{label}</span>
+                        </div>
+                        {isActive ? (
+                          <span className="size-1.5 rounded-full bg-[#E7A91A] shrink-0" />
+                        ) : (
+                          <ChevronRight className="size-3 text-slate-300 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5 shrink-0" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
 
-            <div className="mt-auto pt-6 border-t border-border">
+              {/* Customer Account & Order Management */}
+              <div className="pt-1.5 border-t border-slate-100">
+                <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 px-2 block mb-1">
+                  Orders & Account
+                </span>
+                <nav className="space-y-0.5">
+                  {[
+                    { label: "My Orders", to: "/orders", Icon: PackageCheck },
+                    { label: "Track Order", to: "/track-order", Icon: Truck },
+                    { label: "Saved Wishlist", to: "/wishlist", Icon: Heart },
+                    { label: "Profile Settings", to: "/profile", Icon: User },
+                  ].map(({ label, to, Icon }) => {
+                    const isActive = pathname.startsWith(to);
+                    return (
+                      <Link
+                        key={label}
+                        to={to}
+                        onClick={() => setMenu(false)}
+                        className={`rounded-xl px-2 py-1.5 text-xs font-semibold transition-all flex items-center justify-between group ${
+                          isActive
+                            ? "bg-[#075B32] text-white font-bold shadow-xs"
+                            : "text-slate-700 hover:bg-slate-100/90 hover:text-emerald-800"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`size-6.5 rounded-lg transition-colors flex items-center justify-center shrink-0 ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-slate-100 text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-700"
+                          }`}>
+                            <Icon className="size-3" />
+                          </span>
+                          <span className="truncate">{label}</span>
+                        </div>
+                        {isActive ? (
+                          <span className="size-1.5 rounded-full bg-[#E7A91A] shrink-0" />
+                        ) : (
+                          <ChevronRight className="size-3 text-slate-300 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5 shrink-0" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="pt-2 mt-auto border-t border-slate-100 space-y-1.5 shrink-0">
+              <a
+                href="https://wa.me/919311416225"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl bg-emerald-50/90 hover:bg-emerald-100/80 text-emerald-900 border border-emerald-200/70 px-2.5 py-1.5 text-[11px] font-semibold flex items-center justify-between transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <WhatsAppIcon className="size-3.5 text-[#25D366]" />
+                  <span>WhatsApp Help & Support</span>
+                </div>
+                <span className="text-[9.5px] text-emerald-700 font-bold bg-white px-1.5 py-0.5 rounded-full border border-emerald-200">24x7</span>
+              </a>
+
               {user ? (
                 <Button
                   onClick={() => {
@@ -400,12 +528,13 @@ function Shell({ children }: { children: React.ReactNode }) {
                     }
                   }}
                   variant="outline"
-                  className="w-full gap-2"
+                  size="sm"
+                  className="w-full h-7.5 text-xs font-bold gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-xl"
                 >
-                  <LogOut className="size-4" /> Sign Out
+                  <LogOut className="size-3.5" /> Sign Out
                 </Button>
               ) : (
-                <Button asChild className="w-full">
+                <Button asChild size="sm" className="w-full h-7.5 text-xs font-bold bg-[#075B32] hover:bg-[#054324] text-white rounded-xl">
                   <Link to="/login" onClick={() => setMenu(false)}>Sign In / Register</Link>
                 </Button>
               )}
