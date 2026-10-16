@@ -28,8 +28,8 @@ import { useStore } from "@/components/store-provider";
 
 interface OrderCardProps {
   order: CustomerOrder;
-  onOpenTimeline: (order: CustomerOrder) => void;
-  onOpenCancel: (order: CustomerOrder) => void;
+  onOpenTimeline?: (order: CustomerOrder) => void;
+  onOpenCancel?: (order: CustomerOrder) => void;
   onOpenReturn: (order: CustomerOrder) => void;
   onOpenExchange: (order: CustomerOrder) => void;
   onOpenInvoice: (order: CustomerOrder) => void;
@@ -307,18 +307,6 @@ export function OrderCard({
       <div className="pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
         {/* Left Secondary Actions */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Track Shipment / Timeline */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onOpenTimeline(order)}
-            className="rounded-full text-xs font-bold gap-1.5 hover:border-brand-leaf hover:text-brand-leaf"
-          >
-            <Truck className="size-3.5" />
-            <span>Track Shipment</span>
-          </Button>
-
           {/* Download Tax Invoice */}
           <Button
             type="button"
@@ -357,19 +345,6 @@ export function OrderCard({
             <ShoppingBag className="size-3.5" />
             <span>Reorder</span>
           </Button>
-
-          {/* Cancel Order (if eligible) */}
-          {isCancellable && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenCancel(order)}
-              className="rounded-full text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:border-destructive"
-            >
-              Cancel Order
-            </Button>
-          )}
 
           {/* Return & Exchange (if delivered) */}
           {isReturnable && (

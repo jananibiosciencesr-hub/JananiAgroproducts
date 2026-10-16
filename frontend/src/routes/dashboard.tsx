@@ -542,11 +542,6 @@ function DashboardPage() {
                           </Button>
 
                           <div className="flex items-center gap-2.5">
-                            <Button asChild variant="outline" size="sm" className="h-8 text-xs rounded-xl">
-                              <Link to="/track-order">
-                                Track Shipment <ArrowRight className="size-3 ml-1" />
-                              </Link>
-                            </Button>
                             <Button onClick={() => handleReorder(o)} variant="gold" size="sm" className="h-8 text-xs gap-1.5 rounded-xl font-bold">
                               <RefreshCw className="size-3" /> Reorder
                             </Button>
