@@ -180,8 +180,13 @@ export function CheckoutPage() {
     standardShippingFee
   );
 
-  // Net before gift card
-  const grossPayable = Math.max(0, subtotal + totalShippingCharges - couponDiscount);
+  // GST 5% (2.5% CGST + 2.5% SGST) added on top of items subtotal
+  const gstAmount = Math.round(subtotal * 0.05);
+  const cgst = Math.round(gstAmount / 2);
+  const sgst = gstAmount - cgst;
+
+  // Net before gift card: Subtotal + GST + Shipping - Discount
+  const grossPayable = Math.max(0, subtotal + gstAmount + totalShippingCharges - couponDiscount);
   const walletDeduction = 0;
   const payableAfterWallet = grossPayable;
 
@@ -231,6 +236,9 @@ export function CheckoutPage() {
       },
       items: cartItems,
       subtotal,
+      gstAmount,
+      cgst,
+      sgst,
       shippingFee: standardShippingFee,
       slotFee: 0,
       couponDiscount,
@@ -607,6 +615,9 @@ export function CheckoutPage() {
             isWalletEnabled={false}
             walletDeduction={0}
             appliedGiftCard={appliedGiftCard}
+            gstAmount={gstAmount}
+            cgst={cgst}
+            sgst={sgst}
             finalTotal={finalTotal}
             totalSavings={totalSavings}
             selectedAddress={selectedAddress}
@@ -627,6 +638,7 @@ export function CheckoutPage() {
       <MobileCheckoutBar
         finalTotal={finalTotal}
         subtotal={subtotal}
+        gstAmount={gstAmount}
         shippingFee={standardShippingFee}
         slotFee={slotFee}
         couponDiscount={couponDiscount}

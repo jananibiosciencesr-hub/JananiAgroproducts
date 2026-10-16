@@ -80,14 +80,13 @@ export function OrderInvoiceModal({
   const resolvedSubtotal = subtotal ?? order?.subtotal ?? order?.amount ?? 0;
   const resolvedDeliveryFee = deliveryFee ?? order?.deliveryFee ?? 0;
   const resolvedDiscount = discount ?? order?.discount ?? 0;
-  const resolvedFinalTotal = finalTotal ?? order?.finalTotal ?? order?.total ?? (resolvedSubtotal + resolvedDeliveryFee - resolvedDiscount);
-  const resolvedPaymentMethod = paymentMethod || order?.paymentMethod || "Prepaid Online / UPI";
-
   const invoiceNumber = `INV-${resolvedOrderNumber.replace("JAP-", "2026-")}`;
-  const taxableValue = Math.round(resolvedSubtotal / 1.05);
-  const totalGst = resolvedSubtotal - taxableValue;
-  const cgst = Math.round(totalGst / 2);
-  const sgst = totalGst - cgst;
+  const totalGst = order?.gstAmount ?? Math.round(resolvedSubtotal * 0.05);
+  const cgst = order?.cgst ?? Math.round(totalGst / 2);
+  const sgst = order?.sgst ?? (totalGst - cgst);
+  const taxableValue = resolvedSubtotal;
+  const resolvedFinalTotal = finalTotal ?? order?.finalTotal ?? order?.total ?? (resolvedSubtotal + totalGst + resolvedDeliveryFee - resolvedDiscount);
+  const resolvedPaymentMethod = paymentMethod || order?.paymentMethod || "Prepaid Online / UPI";
 
   const handlePrint = () => {
     window.print();
@@ -204,9 +203,10 @@ export function OrderInvoiceModal({
                 {resolvedItems.map((item, idx) => {
                   const hsn = item.hsn || getHsnCode(item.name);
                   const lineTotal = item.price * item.quantity;
-                  const itemTaxable = Math.round(lineTotal / 1.05);
-                  const itemCgst = Math.round((lineTotal - itemTaxable) / 2);
-                  const itemSgst = lineTotal - itemTaxable - itemCgst;
+                  const itemTaxable = lineTotal;
+                  const itemCgst = Math.round(lineTotal * 0.025);
+                  const itemSgst = Math.round(lineTotal * 0.025);
+                  const itemTotal = lineTotal + itemCgst + itemSgst;
 
                   return (
                     <tr key={idx} className="hover:bg-slate-50/80">
@@ -218,7 +218,7 @@ export function OrderInvoiceModal({
                       <td className="p-3 text-right font-mono text-slate-700">₹{itemTaxable}</td>
                       <td className="p-3 text-right font-mono text-slate-500">₹{itemCgst}</td>
                       <td className="p-3 text-right font-mono text-slate-500">₹{itemSgst}</td>
-                      <td className="p-3 text-right font-mono font-bold text-slate-900">₹{lineTotal}</td>
+                      <td className="p-3 text-right font-mono font-bold text-slate-900">₹{itemTotal}</td>
                     </tr>
                   );
                 })}

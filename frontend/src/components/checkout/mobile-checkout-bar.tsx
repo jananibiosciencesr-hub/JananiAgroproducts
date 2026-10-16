@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 interface MobileCheckoutBarProps {
   finalTotal: number;
   subtotal: number;
+  gstAmount?: number;
   shippingFee: number;
   slotFee?: number;
   couponDiscount: number;
@@ -18,6 +19,7 @@ interface MobileCheckoutBarProps {
 export function MobileCheckoutBar({
   finalTotal,
   subtotal,
+  gstAmount,
   shippingFee,
   slotFee = 0,
   couponDiscount,
@@ -28,6 +30,7 @@ export function MobileCheckoutBar({
   disabled,
 }: MobileCheckoutBarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const calculatedGst = gstAmount ?? Math.round(subtotal * 0.05);
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-t border-border shadow-luxe transition-all">
@@ -37,6 +40,10 @@ export function MobileCheckoutBar({
           <div className="flex justify-between text-muted-foreground">
             <span>Items Subtotal</span>
             <span className="font-semibold text-foreground">₹{subtotal}</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>GST (5% Organic Staples)</span>
+            <span className="font-semibold text-foreground">+₹{calculatedGst}</span>
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Delivery Charges</span>

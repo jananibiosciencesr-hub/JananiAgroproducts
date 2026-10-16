@@ -431,7 +431,8 @@ export function CartPage() {
     toast.info(productName ? `Removed ${productName} from saved list.` : "Item removed from saved list.");
   };
 
-  const finalTotal = Math.max(0, subtotal - discount + shippingFee);
+  const gstAmount = Math.round(subtotal * 0.05);
+  const finalTotal = Math.max(0, subtotal + gstAmount - discount + shippingFee);
   const totalSavings = cartItems.reduce(
     (sum, { product, qty }) => sum + (product.oldPrice - product.price) * qty,
     0
@@ -662,8 +663,8 @@ export function CartPage() {
                 )}
 
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Tax Invoice (GST)</span>
-                  <span className="text-xs text-brand-leaf font-medium">Included in MRP</span>
+                  <span>Estimated GST (5% Organic Staples)</span>
+                  <span className="font-mono font-semibold text-foreground">+ ₹{gstAmount}</span>
                 </div>
 
                 <div className="border-t border-border pt-4 flex items-baseline justify-between text-base font-bold text-foreground">

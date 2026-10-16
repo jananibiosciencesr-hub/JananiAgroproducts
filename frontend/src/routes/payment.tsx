@@ -623,9 +623,15 @@ export function PaymentPage() {
                 </span>
               </div>
               <div className="flex justify-between">
+                <span>GST (5% Organic Staples)</span>
+                <span className="font-semibold text-foreground">
+                  +₹{checkoutData?.gstAmount || Math.round((checkoutData?.subtotal || subtotal) * 0.05)}
+                </span>
+              </div>
+              <div className="flex justify-between">
                 <span>Delivery</span>
                 <span className="font-semibold text-brand-leaf">
-                  {checkoutData?.shippingFee === 0 || subtotal >= 799 ? "FREE" : "₹60"}
+                  {checkoutData?.shippingFee === 0 || (checkoutData?.subtotal || subtotal) >= 799 ? "FREE" : "₹60"}
                 </span>
               </div>
               {checkoutData?.couponDiscount > 0 && (

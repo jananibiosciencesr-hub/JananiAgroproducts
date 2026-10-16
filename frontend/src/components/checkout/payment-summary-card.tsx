@@ -27,6 +27,9 @@ interface PaymentSummaryCardProps {
   isWalletEnabled: boolean;
   walletDeduction: number;
   appliedGiftCard: AppliedGiftCard | null;
+  gstAmount?: number;
+  cgst?: number;
+  sgst?: number;
   finalTotal: number;
   totalSavings: number;
   selectedAddress: ShippingAddress | null;
@@ -45,6 +48,9 @@ export function PaymentSummaryCard({
   isWalletEnabled,
   walletDeduction,
   appliedGiftCard,
+  gstAmount,
+  cgst,
+  sgst,
   finalTotal,
   totalSavings,
   selectedAddress,
@@ -52,11 +58,10 @@ export function PaymentSummaryCard({
   isSubmitting,
   onPlaceOrder,
 }: PaymentSummaryCardProps) {
-  // GST 5% breakdown (2.5% CGST + 2.5% SGST)
-  const taxableValue = Math.round(subtotal / 1.05);
-  const totalGst = subtotal - taxableValue;
-  const cgst = Math.round(totalGst / 2);
-  const sgst = totalGst - cgst;
+  // GST 5% breakdown (2.5% CGST + 2.5% SGST) added to items subtotal
+  const totalGst = gstAmount ?? Math.round(subtotal * 0.05);
+  const calculatedCgst = cgst ?? Math.round(totalGst / 2);
+  const calculatedSgst = sgst ?? (totalGst - calculatedCgst);
 
   return (
     <div className="space-y-4 sticky top-24">
@@ -174,19 +179,15 @@ export function PaymentSummaryCard({
             </div>
           )}
 
-          {/* Tax Breakdown Accordion */}
+          {/* GST Added Breakdown */}
           <div className="pt-2 border-t border-dashed border-border text-[11px] space-y-1 text-muted-foreground/80">
             <div className="flex justify-between">
-              <span>Taxable Merchandise Value</span>
-              <span>₹{taxableValue}</span>
-            </div>
-            <div className="flex justify-between">
               <span>CGST (2.5% on organic staples)</span>
-              <span>₹{cgst}</span>
+              <span className="font-semibold text-foreground">+₹{calculatedCgst}</span>
             </div>
             <div className="flex justify-between">
               <span>SGST (2.5% on organic staples)</span>
-              <span>₹{sgst}</span>
+              <span className="font-semibold text-foreground">+₹{calculatedSgst}</span>
             </div>
           </div>
         </div>
@@ -204,7 +205,7 @@ export function PaymentSummaryCard({
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
               Total Payable
             </span>
-            <span className="text-[10px] text-muted-foreground">Inclusive of all taxes & delivery</span>
+            <span className="text-[10px] text-muted-foreground">Items Subtotal + GST & Delivery</span>
           </div>
           <span className="font-display text-2xl sm:text-3xl font-bold text-foreground">
             ₹{finalTotal}

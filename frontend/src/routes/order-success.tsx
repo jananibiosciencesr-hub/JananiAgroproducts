@@ -112,7 +112,7 @@ export function OrderSuccessPage() {
   const subtotal = orderData?.subtotal || items.reduce((sum: number, it: any) => sum + it.price * it.quantity, 0);
   const discount = orderData?.couponDiscount || orderData?.discount || 0;
   const deliveryFee = orderData?.shippingFee !== undefined ? orderData.shippingFee : (subtotal >= 799 ? 0 : 60);
-  const finalTotal = orderData?.finalTotal || Math.max(0, subtotal + deliveryFee - discount);
+  const finalTotal = orderData?.finalTotal || Math.max(0, subtotal + Math.round(subtotal * 0.05) + deliveryFee - discount);
 
   // Recommended next harvest items
   const recommendedProducts = useMemo(() => {
