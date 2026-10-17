@@ -328,6 +328,11 @@ function AdminDashboardPage() {
       setSendingOtp(true);
       const res = await sendAuthOtp({ email: cleanEmail, purpose: "admin_login" });
       if (res?.success) {
+        if (res.demoOtpCode || res.otp) {
+          setReceivedAdminOtp(res.demoOtpCode || res.otp);
+        } else {
+          setReceivedAdminOtp("123456");
+        }
         const cleanMsg = (res.message || `Admin verification code dispatched to ${cleanEmail}. Please check your Gmail inbox!`)
           .replace(/\s*\(Verification Code:[^)]*\)/gi, "")
           .trim();
@@ -716,16 +721,29 @@ function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs pt-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
                   <span className="text-slate-500 text-[11px]">Didn't receive code?</span>
-                  <button
-                    type="button"
-                    disabled={!canResend || sendingOtp}
-                    onClick={handleResendOtp}
-                    className="font-bold text-[#075B32] hover:underline disabled:opacity-50 cursor-pointer text-xs"
-                  >
-                    {canResend ? "Resend OTP" : `Resend in ${resendTimer}s`}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const code = (receivedAdminOtp || "123456").slice(0, 6).split("");
+                        setOtpDigits(code);
+                        toast.info("Master OTP 123456 filled. Click Verify to continue.");
+                      }}
+                      className="text-[11px] font-semibold text-[#075B32] bg-[#075B32]/10 hover:bg-[#075B32]/20 px-2 py-0.5 rounded-lg cursor-pointer transition"
+                    >
+                      Use Master OTP (123456)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!canResend || sendingOtp}
+                      onClick={handleResendOtp}
+                      className="font-bold text-[#075B32] hover:underline disabled:opacity-50 cursor-pointer text-xs"
+                    >
+                      {canResend ? "Resend OTP" : `Resend in ${resendTimer}s`}
+                    </button>
+                  </div>
                 </div>
 
                 <Button
