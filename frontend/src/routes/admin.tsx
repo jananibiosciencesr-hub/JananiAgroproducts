@@ -802,7 +802,7 @@ function AdminDashboardPage() {
         />
 
         {/* Dynamic View Body */}
-        <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto overflow-x-hidden">
+        <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 max-w-[1600px] xl:max-w-[1800px] w-full mx-auto overflow-x-hidden">
           {activeTab === "dashboard" && (
             <AdminOverview
               stats={stats}

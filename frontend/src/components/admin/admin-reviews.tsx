@@ -1637,7 +1637,7 @@ function CreateReviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xl my-8">
+      <div className="w-full max-w-2xl lg:max-w-3xl rounded-2xl border border-border bg-card p-5 sm:p-7 shadow-xl my-8">
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-600">
@@ -1702,7 +1702,7 @@ function CreateReviewModal({
             <label className="text-xs font-semibold text-foreground block mb-1.5">
               Farmer Photo / Avatar (Choose Preset or Custom URL)
             </label>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none flex-wrap">
               {farmerPresets.map(preset => {
                 const isSelected = customerAvatar === preset.avatar && !customAvatarUrl.trim();
                 return (
