@@ -417,9 +417,12 @@ $categories = [
     ['cat-fungicides', 'Fungicides', 'fungicides', 1, null, null, '/products/suraksha.jpg', 1, 1, 1, 0, 7, 'Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots.'],
     ['cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, null, null, '/products/neem-oil.jpg', 1, 1, 1, 0, 8, 'Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection.'],
     ['cat-water-solubles', 'Water Solubles', 'water-solubles', 1, null, null, '/products/dhanya.jpg', 1, 1, 1, 0, 9, '100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery.'],
-    ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.'],
-    ['cat-others', 'Others', 'others', 1, null, null, '/products/balavan-bottle.jpg', 1, 1, 0, 0, 11, 'Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants.']
+    ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.']
 ];
+
+// Purge any deleted categories (others, termeric, etc.)
+$pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric') OR `active` = 0 OR `deleted_at` IS NOT NULL");
+$pdo->exec("UPDATE `products` SET `category_name` = 'Agri Inputs' WHERE `category_name` = 'Others' OR `category_id` = 'cat-others'");
 
 $stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -432,7 +435,7 @@ ON DUPLICATE KEY UPDATE
 foreach ($categories as $cat) {
     try { $stmtCat->execute($cat); } catch (Exception $e) {}
 }
-$response['seeds_inserted'][] = 'categories (11)';
+$response['seeds_inserted'][] = 'categories (10)';
 
 // 2. Products - All 18 Janani Agro Flagship Formulations (including ROOT PLUS)
 $products = [

@@ -22,29 +22,15 @@ export function PdpGallery({ product }: PdpGalleryProps) {
   const mainImageSrc = getProductImage(product.name || product.category, product.image);
   const galleryImages = [
     { id: "main", src: mainImageSrc, alt: `${product.name} - Front Package View`, label: "Main Pack" },
-    ...(product.slug.includes("annada") || product.image.includes("annada")
-      ? [{ id: "label", src: "/products/annada-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
-      : []),
-    ...(product.slug.includes("balavan") || product.image.includes("balavan")
-      ? [{ id: "label", src: "/products/balavan-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
-      : []),
-    ...(product.slug.includes("bhumi") || product.image.includes("bhumi")
-      ? [{ id: "label", src: "/products/bhumi-shakti-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
-      : []),
-    ...(product.slug.includes("suraksha") || product.image.includes("suraksha")
-      ? [{ id: "label", src: "/products/suraksha-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
-      : []),
-    ...(product.slug.includes("dharani") || product.slug.includes("dhanya") || product.slug.includes("kmb") || product.image.includes("dharani") || product.image.includes("dhanya")
-      ? [{ id: "label", src: "/products/dharani-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
-      : []),
-    ...(product.slug.includes("pushkal") || product.image.includes("pushkal")
-      ? [{ id: "label", src: "/products/pushkal-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
-      : []),
-    ...(product.slug.includes("harit") || product.image.includes("harit")
-      ? [{ id: "label", src: "/products/harit-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
-      : []),
-    ...(product.slug.includes("neem") || product.image.includes("neem")
-      ? [{ id: "label", src: "/products/neem-oil-label.png", alt: `${product.name} - Official Label & Dosage Specifications`, label: "Official Label" }]
+    ...(Array.isArray(product.gallery)
+      ? product.gallery
+          .filter((g) => typeof g === "string" && !g.toLowerCase().includes("-label.png"))
+          .map((g, idx) => ({
+            id: `gallery-${idx}`,
+            src: g,
+            alt: `${product.name} - View ${idx + 1}`,
+            label: `View ${idx + 1}`,
+          }))
       : []),
     { id: "pantry", src: pantryImage, alt: `${product.name} - Application & Storage`, label: "Storage & Care" },
     { id: "story", src: storyImage, alt: `${product.name} - Farm Origin Harvest`, label: "Farm Provenance" },

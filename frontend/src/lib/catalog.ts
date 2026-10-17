@@ -140,8 +140,7 @@ export const categories: { id: number; name: string; slug: string; count: number
   { id: 6, name: "Fungicides", slug: "fungicides", count: 1, image: "/images/categories/fungicides.jpg", description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
   { id: 7, name: "Botanical Extracts", slug: "botanical-extracts", count: 1, image: "/images/categories/botanical-extracts.jpg", description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
   { id: 8, name: "Water Solubles", slug: "water-solubles", count: 1, image: "/images/categories/water-solubles.jpg", description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
-  { id: 9, name: "Agri Inputs", slug: "agri-inputs", count: 2, image: "/images/categories/agri-inputs.jpg", description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
-  { id: 10, name: "Others", slug: "others", count: 1, image: "/images/categories/others.jpg", description: "Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants." }
+  { id: 9, name: "Agri Inputs", slug: "agri-inputs", count: 2, image: "/images/categories/agri-inputs.jpg", description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." }
 ];
 
 export const products: Product[] = [
@@ -788,7 +787,7 @@ export const products: Product[] = [
     slug: "agri-stick-silicone-spreader-activator",
     name: "Agri Stick",
     subtitle: "Silicone Spreader, Sticker & Penetrator",
-    category: "Others",
+    category: "Agri Inputs",
     brand: "Janani Agro Products",
     price: 350,
     oldPrice: 420,

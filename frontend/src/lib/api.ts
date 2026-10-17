@@ -426,60 +426,62 @@ export async function getCategories() {
     } catch (e) {}
   }
 
+  const FORBIDDEN_CATEGORIES = new Set([
+    "others", "cat-others", "termeric", "cat-termeric", "turmeric", "cat-turmeric"
+  ]);
+
   const map = new Map<string, any>();
 
-  // 1. Initialise with the 10 canonical categories from Image 1 specification
-  for (const cat of categories) {
-    const key = cat.slug.toLowerCase();
-    map.set(key, {
-      id: `cat-${cat.slug}`,
-      name: cat.name,
-      slug: cat.slug,
-      count: cat.count || 1,
-      image: getCategoryImage(cat.slug || cat.name),
-      description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
-      icon: "🌾",
-      active: true
-    });
-  }
-
-  // 2. If backend returned categories, merge valid custom categories or update counts
+  // 1. If backend returned categories from MySQL, use it as primary source of truth!
   if (backendList.length > 0) {
     for (const cat of backendList) {
       if (isGroceryCategory(cat)) continue;
       if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") continue;
-      const key = String(cat.slug || cat.name || cat.id).toLowerCase();
-      const existing = map.get(key) || (cat.slug ? map.get(String(cat.slug).toLowerCase()) : null);
-      if (existing) {
-        // Update count if available, but ALWAYS preserve verified Image 1 category image
-        existing.count = Number(cat.product_count || cat.productsCount || cat.count) || existing.count;
-        if (cat.description) existing.description = cat.description;
-      } else {
-        // Admin-created new category
-        map.set(key, {
-          id: cat.id || `cat-${cat.slug || key}`,
-          name: cat.name || cat.slug || key,
-          slug: cat.slug || key,
-          count: Number(cat.product_count || cat.productsCount || cat.count) || 1,
-          image: getCategoryImage(cat.slug || cat.name),
-          description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
-          icon: cat.icon || "🌾",
-          active: true
-        });
-      }
+      const s = String(cat.slug || cat.id || cat.name).toLowerCase().trim();
+      const n = String(cat.name || "").toLowerCase().trim();
+      const i = String(cat.id || "").toLowerCase().trim();
+      if (FORBIDDEN_CATEGORIES.has(s) || FORBIDDEN_CATEGORIES.has(n) || FORBIDDEN_CATEGORIES.has(i)) continue;
+
+      const key = s;
+      map.set(key, {
+        id: cat.id || `cat-${cat.slug || key}`,
+        name: cat.name || cat.slug || key,
+        slug: cat.slug || key,
+        count: Number(cat.product_count || cat.productsCount || cat.count) || 0,
+        image: cat.image || getCategoryImage(cat.slug || cat.name),
+        description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
+        icon: cat.icon || "🌾",
+        active: true
+      });
+    }
+  } else {
+    // Fallback: Initialise with canonical categories, excluding forbidden/deleted
+    for (const cat of categories) {
+      const key = cat.slug.toLowerCase().trim();
+      if (FORBIDDEN_CATEGORIES.has(key) || FORBIDDEN_CATEGORIES.has(cat.name.toLowerCase().trim())) continue;
+      map.set(key, {
+        id: `cat-${cat.slug}`,
+        name: cat.name,
+        slug: cat.slug,
+        count: cat.count || 1,
+        image: getCategoryImage(cat.slug || cat.name),
+        description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
+        icon: "🌾",
+        active: true
+      });
     }
   }
 
-  // 3. Merge stored / local categories if admin edited locally
+  // 2. Merge stored / local categories if admin edited locally
   for (const cat of storedList) {
     if (isGroceryCategory(cat)) continue;
-    const key = String(cat.slug || cat.name || cat.id).toLowerCase();
-    if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") {
+    const key = String(cat.slug || cat.name || cat.id).toLowerCase().trim();
+    if (FORBIDDEN_CATEGORIES.has(key) || cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") {
       map.delete(key);
-      if (cat.slug) map.delete(String(cat.slug).toLowerCase());
+      if (cat.slug) map.delete(String(cat.slug).toLowerCase().trim());
       continue;
     }
-    const existing = map.get(key) || (cat.slug ? map.get(String(cat.slug).toLowerCase()) : null);
+    const existing = map.get(key) || (cat.slug ? map.get(String(cat.slug).toLowerCase().trim()) : null);
     if (existing) {
       existing.count = Number(cat.product_count || cat.productsCount || cat.count) || existing.count;
       if (cat.name) existing.name = cat.name;
@@ -488,8 +490,11 @@ export async function getCategories() {
     }
   }
 
-  const result = Array.from(map.values()).filter((c) => !isGroceryCategory(c));
-  return result.length > 0 ? result : categories;
+  // Ensure forbidden categories are definitely excluded
+  FORBIDDEN_CATEGORIES.forEach((k) => map.delete(k));
+
+  const result = Array.from(map.values()).filter((c) => !isGroceryCategory(c) && !FORBIDDEN_CATEGORIES.has(c.slug.toLowerCase()));
+  return result;
 }
 
 /**
@@ -3079,7 +3084,7 @@ export async function toggleAdminCategory(id: string, field: "active" | "feature
 
 export async function deleteAdminCategory(id: string) {
   let res = await fetchJson<{ success: boolean; message: string }>(
-    `/admin/categories/${encodeURIComponent(id)}`,
+    `/api.php?action=categories&id=${encodeURIComponent(id)}&permanent=1`,
     {
       method: "DELETE"
     }
@@ -3087,14 +3092,40 @@ export async function deleteAdminCategory(id: string) {
 
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; message: string }>(
-      `/api.php?action=categories&id=${encodeURIComponent(id)}`,
+      `/admin/categories/${encodeURIComponent(id)}/permanent`,
       {
         method: "DELETE"
       }
     );
   }
 
-  return res || { success: true, message: "Category moved to trash" };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(
+      `/admin/categories/${encodeURIComponent(id)}`,
+      {
+        method: "DELETE"
+      }
+    );
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      ["janani_admin_categories", "janani_admin_categories_v3"].forEach((key) => {
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          const list = JSON.parse(stored);
+          if (Array.isArray(list)) {
+            const updated = list.filter((c: any) => c.id !== id && c.slug !== id && c.name?.toLowerCase() !== id.toLowerCase());
+            localStorage.setItem(key, JSON.stringify(updated));
+          }
+        }
+      });
+      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
+    } catch (e) {}
+  }
+
+  return res || { success: true, message: "Category deleted from database" };
 }
 
 export async function restoreAdminCategory(id: string) {
@@ -3134,7 +3165,33 @@ export async function permanentDeleteAdminCategory(id: string) {
     );
   }
 
-  return res || { success: true, message: "Category permanently deleted" };
+  if (!res?.success) {
+    res = await fetchJson<{ success: boolean; message: string }>(
+      `/api.php?action=categories&id=${encodeURIComponent(id)}`,
+      {
+        method: "DELETE"
+      }
+    );
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      ["janani_admin_categories", "janani_admin_categories_v3"].forEach((key) => {
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          const list = JSON.parse(stored);
+          if (Array.isArray(list)) {
+            const updated = list.filter((c: any) => c.id !== id && c.slug !== id && c.name?.toLowerCase() !== id.toLowerCase());
+            localStorage.setItem(key, JSON.stringify(updated));
+          }
+        }
+      });
+      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
+    } catch (e) {}
+  }
+
+  return res || { success: true, message: "Category permanently deleted from database" };
 }
 
 export async function bulkUpdateAdminCategoryStatus(ids: string[], active: boolean) {

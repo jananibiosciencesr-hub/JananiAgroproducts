@@ -191,19 +191,11 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
     toast.success(`Category ${field} updated`);
   };
 
-  // Soft Delete & Restore Handlers
+  // Delete & Restore Handlers
   const handleDelete = async (id: string) => {
-    if (statusFilter === "trash") {
-      // Permanent delete
-      await permanentDeleteAdminCategory(id);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
-      toast.success("Category permanently deleted");
-    } else {
-      // Soft delete
-      await deleteAdminCategory(id);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
-      toast.success("Category moved to Trash Bin");
-    }
+    await permanentDeleteAdminCategory(id);
+    setCategories((prev) => prev.filter((c) => c.id !== id));
+    toast.success("Category permanently deleted from database");
   };
 
   const handleRestore = async (id: string) => {
@@ -225,10 +217,12 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    await bulkDeleteAdminCategories(selectedIds);
+    for (const id of selectedIds) {
+      await permanentDeleteAdminCategory(id);
+    }
     setCategories((prev) => prev.filter((c) => !selectedIds.includes(c.id)));
     setSelectedIds([]);
-    toast.success(`Moved ${selectedIds.length} categories to Trash`);
+    toast.success(`Deleted ${selectedIds.length} categories from database`);
   };
 
   // Reordering (Sequence)

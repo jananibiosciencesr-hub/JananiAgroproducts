@@ -302,7 +302,7 @@ function ProductDetailPage() {
     const addImg = (src?: string, label?: string, isVideo = false) => {
       if (!src || typeof src !== "string") return;
       const clean = src.trim();
-      if (!clean || seen.has(clean)) return;
+      if (!clean || seen.has(clean) || clean.toLowerCase().includes("-label.png")) return;
       seen.add(clean);
       list.push({
         id: `img-${list.length}`,
@@ -324,29 +324,7 @@ function ProductDetailPage() {
       });
     }
 
-    // 3. Fallback: If only 1 image exists and product has an official dosage/label guide on server
-    if (list.length === 1) {
-      const slugOrImg = ((product.slug || "") + " " + (product.image || "")).toLowerCase();
-      if (slugOrImg.includes("harit")) {
-        addImg("/products/harit-label.png", "Official Dosage & Label Guide");
-      } else if (slugOrImg.includes("bhumi")) {
-        addImg("/products/bhumi-shakti-label.png", "Official Dosage & Label Guide");
-      } else if (slugOrImg.includes("neem")) {
-        addImg("/products/neem-oil-label.png", "Official Dosage & Label Guide");
-      } else if (slugOrImg.includes("annada")) {
-        addImg("/products/annada-label.png", "Official Dosage & Label Guide");
-      } else if (slugOrImg.includes("balavan")) {
-        addImg("/products/balavan-label.png", "Official Dosage & Label Guide");
-      } else if (slugOrImg.includes("pushkal")) {
-        addImg("/products/pushkal-label.png", "Official Dosage & Label Guide");
-      } else if (slugOrImg.includes("suraksha")) {
-        addImg("/products/suraksha-label.png", "Official Dosage & Label Guide");
-      } else if (slugOrImg.includes("dharani") || slugOrImg.includes("dhanya")) {
-        addImg("/products/dharani-label.png", "Official Dosage & Label Guide");
-      }
-    }
-
-    // 4. Default fallback if empty
+    // 3. Default fallback if empty
     if (list.length === 0) {
       addImg("/products/dharani.jpg", product.name);
     }

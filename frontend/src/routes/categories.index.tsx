@@ -23,7 +23,7 @@ export const Route = createFileRoute("/categories/")({
       {
         name: "description",
         content:
-          "Explore Janani Agri Products by category: Bio Fertilizers, Bio Pesticides, Bio Stimulants, Micro Nutrients, Insecticides, Fungicides, Botanical Extracts, Water Solubles, Agri Inputs and Others.",
+          "Explore Janani Agri Products by category: Bio Fertilizers, Bio Pesticides, Bio Stimulants, Micro Nutrients, Insecticides, Fungicides, Botanical Extracts, Water Solubles and Agri Inputs.",
       },
       { property: "og:title", content: "Agri Products Categories — JANANI AGRO PRODUCTS" },
     ],
@@ -43,15 +43,24 @@ function CategoriesIndexPage() {
       "cat-cropprot",
       "cat-nutrients",
       "cat-soil",
-      "cat-biofert"
+      "cat-biofert",
+      "others",
+      "cat-others",
+      "termeric",
+      "cat-termeric",
+      "turmeric",
+      "cat-turmeric"
     ];
     const seen = new Set<string>();
     const filtered = rawCats.filter((cat: any) => {
+      if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") {
+        return false;
+      }
       const n = (cat.name || "").toLowerCase().trim();
       const s = (cat.slug || "").toLowerCase().trim();
       const id = (cat.id || "").toString().toLowerCase().trim();
 
-      if (legacyBlacklist.some((b) => s === b || id === b)) return false;
+      if (legacyBlacklist.some((b) => s === b || id === b || n === b)) return false;
 
       if (
         [

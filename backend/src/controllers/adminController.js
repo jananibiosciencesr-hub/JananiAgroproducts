@@ -3858,12 +3858,8 @@ export const toggleAdminCategory = (req, res) => {
 
 export const deleteAdminCategory = (req, res) => {
   const { id } = req.params;
-  const category = adminCategories.find(c => c.id === id);
-  if (!category) return res.status(404).json({ success: false, message: "Category not found" });
-
-  // Soft delete
-  category.deletedAt = new Date().toISOString();
-  res.json({ success: true, message: "Category moved to trash", data: category });
+  adminCategories = adminCategories.filter(c => c.id !== id && c.slug !== id);
+  res.json({ success: true, message: "Category permanently deleted" });
 };
 
 export const restoreAdminCategory = (req, res) => {

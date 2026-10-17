@@ -632,8 +632,7 @@ if (!$pdo) {
                 ['id' => 'cat-fungicides', 'name' => 'Fungicides', 'slug' => 'fungicides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🍃', 'active' => 1, 'featured' => 0],
                 ['id' => 'cat-botanical-extracts', 'name' => 'Botanical Extracts', 'slug' => 'botanical-extracts', 'product_count' => 1, 'image' => '/products/neem-oil.jpg', 'icon' => '🌿', 'active' => 1, 'featured' => 0],
                 ['id' => 'cat-water-solubles', 'name' => 'Water Solubles', 'slug' => 'water-solubles', 'product_count' => 1, 'image' => '/products/dhanya.jpg', 'icon' => '💧', 'active' => 1, 'featured' => 0],
-                ['id' => 'cat-agri-inputs', 'name' => 'Agri Inputs', 'slug' => 'agri-inputs', 'product_count' => 2, 'image' => '/products/bhumi-shakti.jpg', 'icon' => '🚜', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-others', 'name' => 'Others', 'slug' => 'others', 'product_count' => 1, 'image' => '/products/balavan-bottle.jpg', 'icon' => '📦', 'active' => 1, 'featured' => 0]
+                ['id' => 'cat-agri-inputs', 'name' => 'Agri Inputs', 'slug' => 'agri-inputs', 'product_count' => 2, 'image' => '/products/bhumi-shakti.jpg', 'icon' => '🚜', 'active' => 1, 'featured' => 1]
             ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;
@@ -994,7 +993,11 @@ function ensureJananiCatalogSynced($pdo) {
             $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
         }
 
-        // 11 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
+        // Purge deleted/inactive categories (including others, termeric, and soft-deleted rows)
+        $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric') OR `active` = 0 OR `deleted_at` IS NOT NULL");
+        $pdo->exec("UPDATE `products` SET `category_name` = 'Agri Inputs' WHERE `category_name` = 'Others' OR `category_id` = 'cat-others'");
+
+        // 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
         $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
         if ($catCount === 0) {
             $categories = [
@@ -1007,8 +1010,7 @@ function ensureJananiCatalogSynced($pdo) {
                 ['cat-fungicides', 'Fungicides', 'fungicides', 1, null, null, '/products/suraksha.jpg', '/products/suraksha.jpg', '🍃', 1, 1, 1, 0, 7, 'Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots.'],
                 ['cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, null, null, '/products/neem-oil.jpg', '/products/neem-oil.jpg', '🌿', 1, 1, 1, 0, 8, 'Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection.'],
                 ['cat-water-solubles', 'Water Solubles', 'water-solubles', 1, null, null, '/products/dhanya.jpg', '/products/dhanya.jpg', '💧', 1, 1, 1, 0, 9, '100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery.'],
-                ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', '/products/bhumi-shakti.jpg', '🚜', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.'],
-                ['cat-others', 'Others', 'others', 1, null, null, '/products/balavan-bottle.jpg', '/products/balavan-bottle.jpg', '📦', 1, 1, 0, 0, 11, 'Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants.']
+                ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', '/products/bhumi-shakti.jpg', '🚜', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.']
             ];
             $stmtCat = $pdo->prepare("INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             foreach ($categories as $cat) { 
@@ -2971,17 +2973,10 @@ try {
                 }
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
-                $permanent = isset($_GET['permanent']) && $_GET['permanent'] == 1;
                 if ($id) {
-                    if ($permanent) {
-                        $stmt = $pdo->prepare("DELETE FROM `categories` WHERE `id` = ? OR `slug` = ?");
-                        $stmt->execute([$id, $id]);
-                        echo json_encode(['success' => true, 'message' => 'Category permanently deleted from MySQL']);
-                    } else {
-                        $stmt = $pdo->prepare("UPDATE `categories` SET `active` = 0, `deleted_at` = CURRENT_TIMESTAMP WHERE `id` = ? OR `slug` = ?");
-                        $stmt->execute([$id, $id]);
-                        echo json_encode(['success' => true, 'message' => 'Category moved to Trash in MySQL']);
-                    }
+                    $stmt = $pdo->prepare("DELETE FROM `categories` WHERE `id` = ? OR `slug` = ?");
+                    $stmt->execute([$id, $id]);
+                    echo json_encode(['success' => true, 'message' => 'Category permanently deleted from MySQL database']);
                     exit;
                 }
                 echo json_encode(['success' => false, 'message' => 'Category ID required for deletion']);

@@ -268,8 +268,7 @@ INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `pa
 ('cat-fungicides', 'Fungicides', 'fungicides', 1, NULL, NULL, '/products/harit.jpg', 1, 1, 0, 0, 7, 'Broad-spectrum fungal defense and curative treatments.'),
 ('cat-botanical-extracts', 'Botanical Extracts', 'botanical-extracts', 1, NULL, NULL, '/products/annada.jpg', 1, 1, 0, 0, 8, 'Pure herbal extracts and natural plant-derived bioactive agents.'),
 ('cat-water-solubles', 'Water Solubles', 'water-solubles', 1, NULL, NULL, '/products/bhumi-shakti.jpg', 1, 1, 0, 0, 9, 'High-grade 100% water soluble plant nutrients for drip & foliar application.'),
-('cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, NULL, NULL, '/products/dharani.jpg', 1, 1, 0, 0, 10, 'Agricultural wetting agents, silicon spreaders and adjuvant enhancers.'),
-('cat-others', 'Others', 'others', 1, NULL, NULL, '/products/balavan.jpg', 1, 1, 0, 0, 11, 'Speciality agricultural formulations and customized farm solutions.');
+('cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, NULL, NULL, '/products/dharani.jpg', 1, 1, 0, 0, 10, 'Agricultural wetting agents, silicon spreaders and adjuvant enhancers.');
 
 -- Products Seed (Organic SKUs)
 INSERT IGNORE INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `rating`, `reviews_count`, `badge`, `image`, `description`, `sku`) VALUES
