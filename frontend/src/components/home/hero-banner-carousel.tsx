@@ -94,7 +94,7 @@ export function HeroBannerCarousel() {
       aria-label="Janani Agro Featured Campaigns"
     >
       {/* Slides Container */}
-      <div className="relative w-full aspect-[447/800] sm:aspect-[9/16] md:aspect-[1376/768] md:max-h-[85vh] overflow-hidden">
+      <div className="relative w-full aspect-[768/1376] md:aspect-[1376/768] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -120,7 +120,7 @@ export function HeroBannerCarousel() {
                     src={slide.desktopImage}
                     alt={slide.alt}
                     loading={idx === 0 ? "eager" : "lazy"}
-                    className="w-full h-full object-cover object-top md:object-center block transition-transform duration-700 group-hover:scale-[1.01]"
+                    className="w-full h-full object-cover object-center block transition-transform duration-700 group-hover:scale-[1.01]"
                   />
                 </picture>
               </Link>

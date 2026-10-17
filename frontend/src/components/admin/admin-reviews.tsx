@@ -1636,11 +1636,15 @@ function CreateReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-      <div className="w-full max-w-2xl lg:max-w-3xl rounded-2xl border border-border bg-card p-5 sm:p-7 shadow-xl my-8">
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-600">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs animate-in fade-in">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-2xl lg:max-w-3xl max-h-[92vh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden my-auto"
+      >
+        {/* Modal Header - Fixed at top, never cropped */}
+        <div className="flex items-center justify-between border-b border-border p-4 sm:p-5 shrink-0 bg-card">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-600">
               <Plus className="size-4" />
             </span>
             <div>
@@ -1648,12 +1652,17 @@ function CreateReviewModal({
               <p className="text-[11px] text-muted-foreground">This review will appear in the Admin Console & Homepage Carousel</p>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-muted-foreground hover:bg-muted">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer"
+          >
             <X className="size-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
+        {/* Scrollable Form Body - Smoothly scrollable without cropping */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5">
           {/* Associated Agro Product */}
           <div>
             <label className="text-xs font-semibold text-foreground">Associated Agro Product *</label>
@@ -1802,26 +1811,27 @@ function CreateReviewModal({
               <span className="font-semibold">✓ Verified Farmer Purchase</span>
             </label>
           </div>
+        </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-lg bg-[#075B32] hover:bg-[#064A29] px-4 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-50 flex items-center gap-1.5"
-            >
-              <Plus className="size-3.5" />
-              {saving ? "Publishing..." : "Add & Publish Review"}
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Modal Footer - Fixed at bottom, never cropped */}
+        <div className="flex items-center justify-end gap-2.5 border-t border-border p-3.5 sm:p-4 bg-muted/20 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-lg bg-[#075B32] hover:bg-[#064A29] px-4 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-50 flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            {saving ? "Publishing..." : "Add & Publish Review"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
