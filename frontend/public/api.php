@@ -1456,10 +1456,8 @@ try {
                 echo json_encode([
                     'success' => true,
                     'message' => $email
-                        ? "Real-time 6-digit verification code sent to {$email}. (Verification Code: {$otp})"
-                        : "Verification code sent to +91 {$phone}. (Verification Code: {$otp})",
-                    'otp' => $otp,
-                    'demoOtpCode' => $otp,
+                        ? "Real-time 6-digit verification code sent to {$email}. Please check your inbox."
+                        : "Verification code sent to +91 {$phone}. Please check your messages.",
                     'emailSent' => $emailSent,
                     'resendCooldownSeconds' => 60
                 ]);
@@ -1708,10 +1706,8 @@ try {
                 echo json_encode([
                     'success' => true,
                     'message' => $targetEmail
-                        ? "Password reset verification code dispatched to {$targetEmail}. (Verification Code: {$otp})"
-                        : "Password reset verification code sent to +91 {$targetPhone}. (Verification Code: {$otp})",
-                    'otp' => $otp,
-                    'demoOtpCode' => $otp,
+                        ? "Password reset verification code dispatched to {$targetEmail}. Please check your inbox."
+                        : "Password reset verification code sent to +91 {$targetPhone}. Please check your messages.",
                     'emailSent' => $emailSent,
                     'target' => $target
                 ]);

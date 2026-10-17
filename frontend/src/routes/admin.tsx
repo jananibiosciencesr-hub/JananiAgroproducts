@@ -328,9 +328,10 @@ function AdminDashboardPage() {
       setSendingOtp(true);
       const res = await sendAuthOtp({ email: cleanEmail, purpose: "admin_login" });
       if (res?.success) {
-        const otpCode = res.demoOtpCode || res.otp || "";
-        if (otpCode) setReceivedAdminOtp(otpCode);
-        toast.success(res.message || `Admin verification code dispatched to ${cleanEmail}. Please check your Gmail inbox!`, { duration: 6000 });
+        const cleanMsg = (res.message || `Admin verification code dispatched to ${cleanEmail}. Please check your Gmail inbox!`)
+          .replace(/\s*\(Verification Code:[^)]*\)/gi, "")
+          .trim();
+        toast.success(cleanMsg, { duration: 5000 });
         setIsOtpStep(true);
         setResendTimer(60);
         setCanResend(false);

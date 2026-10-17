@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
+import { products, getProductImage, getProductVariantImage, pantryImage, formatProductName, parseCartItems } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 
 import { AddressManager, type ShippingAddress } from "@/components/checkout/address-manager";
@@ -152,16 +152,7 @@ export function CheckoutPage() {
 
   // Cart items list
   const cartItems = useMemo(() => {
-    return Object.entries(cart)
-      .map(([idStr, qty]) => {
-        const product = allProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr))
-          || products.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr));
-        return { product, qty: Number(qty) || 1 };
-      })
-      .filter(
-        (item): item is { product: NonNullable<typeof item.product>; qty: number } =>
-          item.product !== undefined && item.qty > 0
-      );
+    return parseCartItems(cart, allProducts);
   }, [cart, allProducts]);
 
   const actualCartCount = useMemo(() => {
@@ -570,26 +561,26 @@ export function CheckoutPage() {
               <span className="font-mono">{actualCartCount} Total</span>
             </h4>
             <div className="max-h-48 overflow-y-auto divide-y divide-border/60 pr-1 mt-2 space-y-1">
-              {cartItems.map(({ product, qty }) => (
-                <div key={product.id} className="flex items-center gap-2.5 pt-2 text-xs">
+              {cartItems.map((item) => (
+                <div key={item.cartKey} className="flex items-center gap-2.5 pt-2 text-xs">
                   <img
-                    src={getProductImage(product.name || product.category, product.image)}
-                    alt={product.name}
+                    src={getProductImage(item.product.name || item.product.category, item.variant?.image || getProductVariantImage(item.product, item.variantId) || item.product.image)}
+                    alt={`${item.product.name} - ${item.unit}`}
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = pantryImage;
                     }}
-                    className="size-10 rounded-lg object-cover border border-border shrink-0"
+                    className="size-10 rounded-lg object-contain border border-border shrink-0 p-0.5 bg-white"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="truncate font-semibold text-foreground text-xs">
-                      {formatProductName(product.name)}
+                      {formatProductName(item.product.name)}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      Qty: {qty} × ₹{product.price}
+                      Qty: {item.qty} × ₹{item.price} • {item.unit}
                     </p>
                   </div>
-                  <strong className="font-bold text-foreground text-xs">
-                    ₹{product.price * qty}
+                  <strong className="font-bold text-foreground text-xs font-mono">
+                    ₹{item.lineTotal}
                   </strong>
                 </div>
               ))}

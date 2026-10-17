@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
-import { products as initialProducts, categories as initialCategories, type Product } from "@/lib/catalog";
+import { products as initialProducts, categories as initialCategories, type Product, parseCartItems } from "@/lib/catalog";
 import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories, updateUserProfileApi } from "@/lib/api";
 
 type StoreContextValue = {
@@ -14,12 +14,12 @@ type StoreContextValue = {
   subtotal: number;
   user: AuthUser | null;
   isAuthenticated: boolean;
-  addToCart: (id: number | string, quantity?: number) => void;
+  addToCart: (id: number | string, quantity?: number, variantId?: string) => void;
   updateQuantity: (id: number | string, quantity: number) => void;
   removeFromCart: (id: number | string) => void;
   toggleWishlist: (id: number | string) => void;
   clearWishlist: () => void;
-  moveToCart: (id: number | string, quantity?: number) => void;
+  moveToCart: (id: number | string, quantity?: number, variantId?: string) => void;
   clearCart: () => void;
   deductWalletBalance: (amount: number) => void;
   addWalletBalance: (amount: number) => void;
@@ -485,152 +485,181 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Auto purge orphan/invalid product IDs & merge duplicate string/number keys in cart
+  // Auto purge orphan/invalid product IDs & normalize cart keys into canonical format (${id}__${variant})
   useEffect(() => {
     if (!isCartHydratedRef.current) return;
-    if (!liveProducts || liveProducts.length === 0) return;
+    const allProds = liveProducts && liveProducts.length > 0 ? liveProducts : initialProducts;
+    if (!allProds || allProds.length === 0) return;
+
     setCart((current) => {
-      const entries = Object.entries(current);
-      let changed = false;
-      const cleaned: Record<number, number> = {};
-      
-      for (const [idStr, qty] of entries) {
-        const q = Number(qty);
-        if (isNaN(q) || q <= 0) {
-          changed = true;
-          continue;
-        }
-        const prod =
-          liveProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === idStr || p.slug === idStr) ||
-          initialProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === idStr || p.slug === idStr);
-        
-        if (prod) {
-          const canonicalId = Number(prod.id);
-          if (canonicalId !== Number(idStr) || cleaned[canonicalId] !== undefined) {
+      const parsedItems = parseCartItems(current, allProds);
+      const cleaned: Record<string, number> = {};
+
+      for (const item of parsedItems) {
+        cleaned[item.cartKey] = item.qty;
+      }
+
+      const currentKeys = Object.keys(current);
+      const cleanedKeys = Object.keys(cleaned);
+      let changed = currentKeys.length !== cleanedKeys.length;
+      if (!changed) {
+        for (const k of currentKeys) {
+          if (current[k] !== cleaned[k]) {
             changed = true;
+            break;
           }
-          cleaned[canonicalId] = (cleaned[canonicalId] || 0) + q;
-        } else {
-          changed = true;
         }
       }
       return changed ? cleaned : current;
     });
   }, [liveProducts]);
 
-  const value = useMemo(() => ({
-    products: liveProducts,
-    categories: liveCategories,
-    refreshProducts,
-    refreshUserProfile,
-    cart,
-    wishlist,
-    cartCount: Object.entries(cart).reduce((sum, [id, qty]) => {
-      const q = Number(qty);
-      if (isNaN(q) || q <= 0) return sum;
-      const numId = Number(id);
-      const prod =
-        liveProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id) || p.slug === String(id)) ||
-        initialProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id) || p.slug === String(id));
-      return prod ? sum + q : sum;
-    }, 0),
-    subtotal: Object.entries(cart).reduce((sum, [id, qty]) => {
-      const q = Number(qty);
-      if (isNaN(q) || q <= 0) return sum;
-      const numId = Number(id);
-      const prod =
-        liveProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id) || p.slug === String(id)) ||
-        initialProducts.find((p) => Number(p.id) === numId || String(p.id) === String(id) || p.slug === String(id));
-      return prod ? sum + (prod?.price ?? 0) * q : sum;
-    }, 0),
-    user,
-    isAuthenticated: !!user,
-    addToCart: (id: number | string, quantity = 1) => {
-      const prod =
-        liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
-        initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
-      
-      const targetId = prod ? (isNaN(Number(prod.id)) ? String(prod.id) : Number(prod.id)) : (isNaN(Number(id)) ? String(id) : Number(id));
-      if (!targetId || quantity <= 0) return;
+  const value = useMemo(() => {
+    const allProds = liveProducts && liveProducts.length > 0 ? liveProducts : initialProducts;
+    const parsedItems = parseCartItems(cart, allProds);
+    const computedCartCount = parsedItems.reduce((sum, item) => sum + item.qty, 0);
+    const computedSubtotal = parsedItems.reduce((sum, item) => sum + item.lineTotal, 0);
 
-      setCart((current) => ({
-        ...current,
-        [targetId]: (current[targetId] ?? (current as any)[String(targetId)] ?? 0) + quantity,
-      }));
-    },
-    updateQuantity: (id: number | string, quantity: number) => {
-      const prod =
-        liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
-        initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
-      
-      const targetId = prod ? (isNaN(Number(prod.id)) ? String(prod.id) : Number(prod.id)) : (isNaN(Number(id)) ? String(id) : Number(id));
-      const strId = String(targetId);
-
-      setCart((current) => {
-        const next = { ...current };
-        delete (next as any)[targetId];
-        delete (next as any)[strId];
-        if (!isNaN(Number(targetId))) delete (next as any)[Number(targetId)];
-        
-        if (quantity > 0) {
-          next[targetId] = quantity;
+    return {
+      products: liveProducts,
+      categories: liveCategories,
+      refreshProducts,
+      refreshUserProfile,
+      cart,
+      wishlist,
+      cartCount: computedCartCount,
+      subtotal: computedSubtotal,
+      user,
+      isAuthenticated: !!user,
+      addToCart: (id: number | string, quantity = 1, variantId = "1l") => {
+        let baseId = String(id);
+        let vId = variantId;
+        if (baseId.includes("__")) {
+          const parts = baseId.split("__");
+          baseId = parts[0]!;
+          vId = parts[1] || variantId;
         }
-        return next;
-      });
-    },
-    removeFromCart: (id: number | string) => {
-      const prod =
-        liveProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id)) ||
-        initialProducts.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id) || p.slug === String(id));
-      
-      const targetId = prod ? (isNaN(Number(prod.id)) ? String(prod.id) : Number(prod.id)) : (isNaN(Number(id)) ? String(id) : Number(id));
-      const strId = String(targetId);
 
-      setCart((current) => {
-        const next = { ...current };
-        delete (next as any)[targetId];
-        delete (next as any)[strId];
-        if (!isNaN(Number(targetId))) delete (next as any)[Number(targetId)];
-        return next;
-      });
-    },
-    toggleWishlist: (id: number) => {
-      if (!user) {
-        toast.error("Please Sign In or Register to use Wishlist!", {
-          description: "Wishlist is only available for registered patrons. Please sign in or register to save favourite crop solutions.",
-          action: {
-            label: "Sign In / Register",
-            onClick: () => {
-              window.location.href = "/login";
-            },
-          },
-          duration: 5000,
+        const prod =
+          allProds.find((p) => String(p.id) === baseId || Number(p.id) === Number(baseId) || p.slug === baseId);
+
+        if (!prod || quantity <= 0) return;
+
+        const canonicalProdId = String(prod.id);
+        const normalizedVariantId = vId.toLowerCase().includes("5") ? "5l" : "1l";
+        const cartKey = `${canonicalProdId}__${normalizedVariantId}`;
+
+        setCart((current) => {
+          const legacyQty = normalizedVariantId === "1l" ? (Number(current[canonicalProdId]) || Number((current as any)[Number(canonicalProdId)]) || 0) : 0;
+          const currentVariantQty = Number(current[cartKey]) || 0;
+          const next = { ...current };
+          if (legacyQty > 0) {
+            delete next[canonicalProdId];
+            delete (next as any)[Number(canonicalProdId)];
+          }
+          next[cartKey] = currentVariantQty + legacyQty + quantity;
+          return next;
         });
-        return;
-      }
-      setWishlist((current) => {
-        const isPresent = current.includes(id);
-        if (isPresent) {
-          toast.info("Removed from your saved wishlist");
-          return current.filter((item) => item !== id);
-        } else {
-          toast.success("Saved to your wishlist!");
-          return [...current, id];
+      },
+      updateQuantity: (id: number | string, quantity: number) => {
+        const keyStr = String(id);
+        setCart((current) => {
+          const next = { ...current };
+
+          let baseId = keyStr;
+          let vId = "1l";
+          if (keyStr.includes("__")) {
+            const parts = keyStr.split("__");
+            baseId = parts[0]!;
+            vId = parts[1] || "1l";
+          }
+          const canonicalVariantId = vId.toLowerCase().includes("5") ? "5l" : "1l";
+          const canonicalKey = `${baseId}__${canonicalVariantId}`;
+
+          delete next[keyStr];
+          delete next[canonicalKey];
+          delete next[baseId];
+          if (!isNaN(Number(baseId))) delete next[Number(baseId)];
+
+          if (quantity > 0) {
+            next[canonicalKey] = quantity;
+          }
+          return next;
+        });
+      },
+      removeFromCart: (id: number | string) => {
+        const keyStr = String(id);
+        setCart((current) => {
+          const next = { ...current };
+          let baseId = keyStr;
+          let vId = "1l";
+          if (keyStr.includes("__")) {
+            const parts = keyStr.split("__");
+            baseId = parts[0]!;
+            vId = parts[1] || "1l";
+          }
+          const canonicalKey = `${baseId}__${vId.toLowerCase().includes("5") ? "5l" : "1l"}`;
+
+          delete next[keyStr];
+          delete next[canonicalKey];
+          if (!keyStr.includes("__")) {
+            delete next[baseId];
+            if (!isNaN(Number(baseId))) delete next[Number(baseId)];
+          }
+          return next;
+        });
+      },
+      toggleWishlist: (id: number | string) => {
+        if (!user) {
+          toast.error("Please Sign In or Register to use Wishlist!", {
+            description: "Wishlist is only available for registered patrons. Please sign in or register to save favourite crop solutions.",
+            action: {
+              label: "Sign In / Register",
+              onClick: () => {
+                window.location.href = "/login";
+              },
+            },
+            duration: 5000,
+          });
+          return;
         }
-      });
-    },
-    clearWishlist: () => {
-      setWishlist([]);
-      toast.info("Wishlist cleared");
-    },
-    moveToCart: (id: number, quantity = 1) => {
-      setCart((current) => ({ ...current, [id]: (current[id] ?? 0) + quantity }));
-      setWishlist((current) => current.filter((item) => item !== id));
-      toast.success("Moved harvest item to your cart!");
-    },
-    clearCart: () => {
-      setCart({});
-    },
+        setWishlist((current) => {
+          const isPresent = current.some((item) => String(item) === String(id) || Number(item) === Number(id));
+          if (isPresent) {
+            toast.info("Removed from your saved wishlist");
+            return current.filter((item) => String(item) !== String(id) && Number(item) !== Number(id));
+          } else {
+            toast.success("Saved to your wishlist!");
+            return [...current, id];
+          }
+        });
+      },
+      clearWishlist: () => {
+        setWishlist([]);
+        toast.info("Wishlist cleared");
+      },
+      moveToCart: (id: number | string, quantity = 1, variantId = "1l") => {
+        let baseId = String(id);
+        let vId = variantId;
+        if (baseId.includes("__")) {
+          const parts = baseId.split("__");
+          baseId = parts[0]!;
+          vId = parts[1] || variantId;
+        }
+        const prod =
+          allProds.find((p) => String(p.id) === baseId || Number(p.id) === Number(baseId) || p.slug === baseId);
+
+        const canonicalProdId = prod ? String(prod.id) : baseId;
+        const normalizedVariantId = vId.toLowerCase().includes("5") ? "5l" : "1l";
+        const cartKey = `${canonicalProdId}__${normalizedVariantId}`;
+
+        setCart((current) => ({ ...current, [cartKey]: (current[cartKey] ?? 0) + quantity }));
+        setWishlist((current) => current.filter((item) => String(item) !== String(id) && Number(item) !== Number(id)));
+        toast.success("Moved harvest item to your cart!");
+      },
+      clearCart: () => {
+        setCart({});
+      },
     deductWalletBalance: (amount: number) => {
       setUser((prev) => prev ? { ...prev, walletBalance: Math.max(0, (prev.walletBalance || 0) - amount) } : null);
     },
@@ -641,7 +670,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     logoutUser,
     updateUserProfile,
     updatePreferences
-  }), [cart, wishlist, user, liveProducts, liveCategories]);
+  };
+}, [cart, wishlist, user, liveProducts, liveCategories]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

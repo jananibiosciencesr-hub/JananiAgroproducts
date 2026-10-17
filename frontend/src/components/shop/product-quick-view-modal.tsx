@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import { type Product, type ProductVariant, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
+import { type Product, type ProductVariant, resolveProductVariants, getProductImage, getProductVariantImage, pantryImage, formatProductName } from "@/lib/catalog";
 import { toast } from "sonner";
 
 interface ProductQuickViewModalProps {
@@ -36,17 +36,17 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
   const navigate = useNavigate();
   const { user, wishlist, toggleWishlist, addToCart } = useStore();
 
+  const resolvedVariants = useMemo(() => resolveProductVariants(product), [product]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
-    product.variants && product.variants.length > 0
-      ? product.variants[0]!
-      : {
-          id: "std",
-          label: product.unit,
-          unit: product.unit,
-          price: product.price,
-          oldPrice: product.oldPrice,
-          inStock: product.inStock,
-        }
+    resolvedVariants[0] || {
+      id: "1l",
+      label: product.unit || "1 L",
+      unit: product.unit || "1 L",
+      price: product.price,
+      oldPrice: product.oldPrice,
+      inStock: product.inStock,
+      image: getProductVariantImage(product, "1l"),
+    }
   );
 
   const [quantity, setQuantity] = useState(1);
@@ -57,12 +57,12 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
     ((selectedVariant.oldPrice - selectedVariant.price) / selectedVariant.oldPrice) * 100
   );
 
+  const currentImage = selectedVariant?.image || getProductVariantImage(product, selectedVariant?.id || "1l") || product.image;
+
   const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) {
-      addToCart(product.id);
-    }
-    toast.success(`Added ${quantity}x ${formatProductName(product.name)} (${selectedVariant.label}) to cart!`, {
-      description: "Enjoy fresh farm-direct pure organic delivery.",
+    addToCart(product.id, quantity, selectedVariant.id);
+    toast.success(`Added ${quantity}x ${formatProductName(product.name)} (${selectedVariant.label || selectedVariant.unit}) to cart!`, {
+      description: `₹${selectedVariant.price * quantity} • ${selectedVariant.unit || selectedVariant.label}`,
     });
   };
 
@@ -112,7 +112,7 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
             {/* Main Image */}
             <div className="my-6 relative aspect-square overflow-hidden rounded-3xl bg-secondary/80 flex items-center justify-center">
               <img
-                src={getProductImage(product.name || product.category, product.image)}
+                src={getProductImage(product.name || product.category, currentImage)}
                 alt={product.name}
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = pantryImage;
@@ -198,25 +198,25 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
               </p>
 
               {/* Multi-pack Variant Selector */}
-              {product.variants && product.variants.length > 0 && (
+              {resolvedVariants && resolvedVariants.length > 0 && (
                 <div className="mt-5 space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Select Pack Size / Quantity
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {product.variants.map((v) => {
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {resolvedVariants.map((v) => {
                       const isSelected = selectedVariant.id === v.id;
                       return (
                         <button
                           key={v.id}
                           onClick={() => setSelectedVariant(v)}
-                          className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border text-center transition ${
+                          className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border text-center transition cursor-pointer ${
                             isSelected
                               ? "bg-primary/10 border-primary text-primary font-bold shadow-sm"
                               : "bg-card border-border hover:bg-muted text-muted-foreground"
                           }`}
                         >
-                          <span className="text-xs font-bold text-foreground">{v.unit}</span>
+                          <span className="text-xs font-bold text-foreground">{v.unit || v.label}</span>
                           <span className="text-[11px] font-mono text-primary">₹{v.price}</span>
                         </button>
                       );

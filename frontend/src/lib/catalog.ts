@@ -87,6 +87,7 @@ export type ProductVariant = {
   sku?: string;
   originalPrice?: number;
   stock?: number;
+  image?: string;
 };
 
 export type Product = {
@@ -129,6 +130,273 @@ export type Product = {
 };
 
 export const slugs = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+/**
+ * Resolves the appropriate variant image (1L bottle vs 5L can) for a product.
+ */
+export function getProductVariantImage(
+  product: { slug?: string; name?: string; image?: string; id?: any } | Product,
+  variantIdOrUnit: string = "1l"
+): string {
+  const normKey = (variantIdOrUnit || "").toLowerCase();
+  const slug = (product?.slug || "").toLowerCase();
+  const name = (product?.name || "").toLowerCase();
+  const is5L =
+    normKey.includes("5l") ||
+    normKey.includes("5 l") ||
+    normKey.includes("5 litre") ||
+    normKey === "5";
+  const suffix = is5L ? "-5l.jpg" : "-1l.jpg";
+
+  if (slug.includes("harit") || name.includes("harit")) return `/products/harit${suffix}`;
+  if (slug.includes("suraksha") || name.includes("suraksha")) return `/products/suraksha${suffix}`;
+  if (slug.includes("balavan") || name.includes("balavan")) return `/products/balavan${suffix}`;
+  if (slug.includes("pushkal") || name.includes("pushkal")) return `/products/pushkal${suffix}`;
+  if (slug.includes("annada") || name.includes("annada")) return `/products/annada${suffix}`;
+  if (slug.includes("dharani") || name.includes("dharani")) return `/products/dharani${suffix}`;
+  if (slug.includes("bhumi") || name.includes("bhumi")) return `/products/bhumi-shakti${suffix}`;
+  if (slug.includes("neem") || name.includes("neem")) return `/products/neem-oil${suffix}`;
+  if (slug.includes("dhanya") || name.includes("dhanya")) return `/products/dhanya${suffix}`;
+  if (slug.includes("agri-stick") || name.includes("agri stick")) return `/products/agri-stick.jpg`;
+
+  return (product as any)?.image || (is5L ? "/products/harit-5l.jpg" : "/products/harit-1l.jpg");
+}
+
+/**
+ * Resolves standard 1L and 5L variants for any product in the catalog.
+ */
+export function resolveProductVariants(product: Product): ProductVariant[] {
+  let vars: ProductVariant[] =
+    Array.isArray(product.variants) && product.variants.length > 0
+      ? [...product.variants]
+      : [];
+
+  const has5L = vars.some((v) => {
+    const u = (v.unit || v.label || v.name || "").toLowerCase();
+    return u.includes("5 l") || u.includes("5l") || u.includes("5 litre");
+  });
+
+  const has1L = vars.some((v) => {
+    const u = (v.unit || v.label || v.name || "").toLowerCase();
+    return u.includes("1 l") || u.includes("1l") || u.includes("1 litre");
+  });
+
+  const isProduct5L =
+    (product.unit || "").toLowerCase().includes("5 l") ||
+    (product.unit || "").toLowerCase().includes("5l") ||
+    (product.slug || "").includes("-5l");
+
+  const basePrice = Number(product.price) || 450;
+  const baseOldPrice = Number(product.oldPrice) || Math.round(basePrice * 1.2);
+
+  const get5LPrice = (p1: number) => {
+    if (p1 === 450) return 2000;
+    if (p1 === 380) return 1750;
+    if (p1 === 550) return 2500;
+    if (p1 === 600) return 2600;
+    if (p1 === 420) return 1850;
+    if (p1 === 390) return 1750;
+    if (p1 === 480) return 2100;
+    if (p1 === 520) return 2300;
+    if (p1 === 410) return 1800;
+    if (p1 === 495) return 2200;
+    if (p1 === 460) return 2050;
+    if (p1 === 575) return 2550;
+    if (p1 === 999) return 4400;
+    if (p1 === 350) return 1550;
+    return Math.round(p1 * 4.4);
+  };
+
+  const get1LPrice = (p5: number) => {
+    if (p5 === 5600) return 1250;
+    if (p5 === 4900) return 1100;
+    if (p5 === 5300) return 1150;
+    if (p5 === 3600) return 850;
+    return Math.round(p5 / 4.4);
+  };
+
+  if (vars.length <= 1) {
+    const p1 = isProduct5L ? get1LPrice(basePrice) : basePrice;
+    const op1 = isProduct5L ? Math.round(p1 * 1.2) : baseOldPrice;
+    const p5 = isProduct5L ? basePrice : get5LPrice(basePrice);
+    const op5 = isProduct5L ? baseOldPrice : Math.round(baseOldPrice * 4.5);
+
+    return [
+      {
+        id: "1l",
+        name: "1 L",
+        label: "1 L",
+        unit: "1 L",
+        price: p1,
+        originalPrice: op1,
+        oldPrice: op1,
+        stock: product.stockCount || 100,
+        inStock: true,
+        image: getProductVariantImage(product, "1l"),
+      },
+      {
+        id: "5l",
+        name: "5 L",
+        label: "5 L",
+        unit: "5 L",
+        price: p5,
+        originalPrice: op5,
+        oldPrice: op5,
+        stock: product.stockCount || 50,
+        inStock: true,
+        image: getProductVariantImage(product, "5l"),
+      },
+    ];
+  }
+
+  if (!has5L) {
+    const v1L =
+      vars.find((v) => {
+        const u = (v.unit || v.label || v.name || "").toLowerCase();
+        return u.includes("1 l") || u.includes("1l") || u.includes("1 litre");
+      }) || vars[0];
+    const p1 = Number(v1L?.price) || basePrice;
+    const p5 = get5LPrice(p1);
+    const op5 = Math.round(p5 * 1.2);
+    vars.push({
+      id: "5l",
+      name: "5 L",
+      label: "5 L",
+      unit: "5 L",
+      price: p5,
+      originalPrice: op5,
+      oldPrice: op5,
+      stock: 50,
+      inStock: true,
+      image: getProductVariantImage(product, "5l"),
+    });
+  }
+
+  if (!has1L && isProduct5L) {
+    const v5L =
+      vars.find((v) => {
+        const u = (v.unit || v.label || v.name || "").toLowerCase();
+        return u.includes("5 l") || u.includes("5l") || u.includes("5 litre");
+      }) || vars[0];
+    const p5 = Number(v5L?.price) || basePrice;
+    const p1 = get1LPrice(p5);
+    const op1 = Math.round(p1 * 1.2);
+
+    vars.unshift({
+      id: "1l",
+      name: "1 L",
+      label: "1 L",
+      unit: "1 L",
+      price: p1,
+      originalPrice: op1,
+      oldPrice: op1,
+      stock: 100,
+      inStock: true,
+      image: getProductVariantImage(product, "1l"),
+    });
+  }
+
+  return vars.map((v) => ({
+    ...v,
+    image: v.image || getProductVariantImage(product, v.id || v.unit),
+  }));
+}
+
+export type CartParsedItem = {
+  cartKey: string;
+  product: Product;
+  variant: ProductVariant;
+  variantId: string;
+  qty: number;
+  price: number;
+  oldPrice: number;
+  unit: string;
+  lineTotal: number;
+};
+
+/**
+ * Parses cart keys (composite e.g. "1__5l" or legacy e.g. "1" or "harit") into deduplicated,
+ * variant-accurate cart items with accurate 1L/5L pricing and unit labels.
+ */
+export function parseCartItems(
+  cart: Record<string | number, number>,
+  allProducts: Product[]
+): CartParsedItem[] {
+  const itemMap = new Map<string, CartParsedItem>();
+
+  for (const [key, qtyRaw] of Object.entries(cart)) {
+    const qty = Number(qtyRaw);
+    if (isNaN(qty) || qty <= 0) continue;
+
+    let baseId = String(key);
+    let variantId = "1l";
+    if (baseId.includes("__")) {
+      const parts = baseId.split("__");
+      baseId = parts[0]!;
+      variantId = parts[1] || "1l";
+    }
+
+    const prod =
+      allProducts.find((p) => String(p.id) === baseId || Number(p.id) === Number(baseId) || p.slug === baseId) ||
+      products.find((p) => String(p.id) === baseId || Number(p.id) === Number(baseId) || p.slug === baseId);
+
+    if (!prod) continue;
+
+    const variants = resolveProductVariants(prod);
+    const matchedVariant =
+      variants.find(
+        (v) =>
+          v.id.toLowerCase() === variantId.toLowerCase() ||
+          (variantId === "5l" && (v.unit.includes("5") || v.label.includes("5") || v.id.includes("5")))
+      ) ||
+      variants.find(
+        (v) =>
+          variantId === "1l" &&
+          (v.unit.includes("1") || v.label.includes("1") || v.id.includes("1"))
+      ) ||
+      variants[0] || {
+        id: variantId,
+        label: variantId === "5l" ? "5 L" : "1 L",
+        unit: variantId === "5l" ? "5 L" : "1 L",
+        price: prod.price,
+        oldPrice: prod.oldPrice,
+        inStock: true,
+        image: getProductVariantImage(prod, variantId),
+      };
+
+    if (!matchedVariant.image) {
+      matchedVariant.image = getProductVariantImage(prod, variantId);
+    }
+
+    const canonicalProdId = String(prod.id);
+    const normalizedVariantId = matchedVariant.id.toLowerCase().includes("5") || matchedVariant.unit.includes("5") ? "5l" : "1l";
+    const canonicalKey = `${canonicalProdId}__${normalizedVariantId}`;
+
+    const existing = itemMap.get(canonicalKey);
+    if (existing) {
+      existing.qty += qty;
+      existing.lineTotal = existing.qty * existing.price;
+    } else {
+      const unitPrice = Number(matchedVariant.price) || Number(prod.price) || 0;
+      const unitOldPrice = Number(matchedVariant.oldPrice) || Number(prod.oldPrice) || Math.round(unitPrice * 1.2);
+      const displayUnit = matchedVariant.unit || matchedVariant.label || (normalizedVariantId === "5l" ? "5 L" : "1 L");
+
+      itemMap.set(canonicalKey, {
+        cartKey: canonicalKey,
+        product: prod,
+        variant: matchedVariant,
+        variantId: normalizedVariantId,
+        qty,
+        price: unitPrice,
+        oldPrice: unitOldPrice,
+        unit: displayUnit,
+        lineTotal: unitPrice * qty,
+      });
+    }
+  }
+
+  return Array.from(itemMap.values());
+}
 
 // The 10 Core Agri Products Categories (from Image 1 specification)
 export const categories: { id: number; name: string; slug: string; count: number; image: string; description?: string }[] = [

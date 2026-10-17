@@ -36,7 +36,7 @@ import {
   Eye,
   Heart
 } from "lucide-react";
-import { products, categories, type Product, type ProductVariant, formatProductName } from "@/lib/catalog";
+import { products, categories, type Product, type ProductVariant, formatProductName, getProductVariantImage } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 import { getStorefrontReviews } from "@/lib/api";
 import { toast } from "sonner";
@@ -84,8 +84,6 @@ function ProductDetailPage() {
     allProducts.find((p) => p.slug === slug || p.aliases?.includes(slug) || String(p.id) === slug) ||
     allProducts.find((p) => slug.includes(p.slug) || p.slug.includes(slug)) ||
     allProducts[0]!;
-
-  const cartQty = cart[product.id] || (cart as any)[Number(product.id)] || (cart as any)[String(product.id)] || 0;
 
   // Resolved product variants guaranteeing both 1L and 5L pack sizes
   const resolvedVariants: ProductVariant[] = useMemo(() => {
@@ -294,7 +292,7 @@ function ProductDetailPage() {
     if (document.body) document.body.scrollTop = 0;
   }, [product.slug, resolvedVariants, product.price, product.oldPrice]);
 
-  // Gallery Images List: dynamically loaded from backend product.image & product.gallery
+  // Gallery Images List: dynamically loaded from variant (1L bottle / 5L can), backend product.image & gallery
   const galleryImages = useMemo(() => {
     const list: { id: string; src: string; label: string; isVideo?: boolean }[] = [];
     const seen = new Set<string>();
@@ -312,25 +310,47 @@ function ProductDetailPage() {
       });
     };
 
-    // 1. Primary image from product
+    // 1. Primary image for currently selected variant (1L bottle or 5L can)
+    const activeVarNormId = selectedVariant?.id?.toLowerCase().includes("5") || selectedVariant?.unit?.includes("5") ? "5l" : "1l";
+    const activeVarImg = selectedVariant?.image || getProductVariantImage(product, activeVarNormId);
+    if (activeVarImg) {
+      addImg(activeVarImg, `${product.name} - ${selectedVariant?.label || selectedVariant?.unit || 'Pack'}`);
+    }
+
+    // 2. The other variant image (e.g. if 1L selected, offer 5L can; if 5L selected, offer 1L bottle)
+    const otherNormId = activeVarNormId === "5l" ? "1l" : "5l";
+    const otherVarImg = getProductVariantImage(product, otherNormId);
+    if (otherVarImg && otherVarImg !== activeVarImg) {
+      addImg(otherVarImg, `${product.name} - ${otherNormId.toUpperCase()} Pack`);
+    }
+
+    // 3. Fallback product image if distinct
     if (product.image) {
       addImg(product.image, `${product.name} - Front View`);
     }
 
-    // 2. Additional gallery images added in the backend
+    // 4. Additional gallery images added in the backend
     if (Array.isArray(product.gallery) && product.gallery.length > 0) {
       product.gallery.forEach((g, idx) => {
         addImg(g, `${product.name} - Gallery ${idx + 1}`);
       });
     }
 
-    // 3. Default fallback if empty
+    // 5. Default fallback if empty
     if (list.length === 0) {
       addImg("/products/dharani.jpg", product.name);
     }
 
     return list;
-  }, [product]);
+  }, [product, selectedVariant]);
+
+  const variantNormId = selectedVariant?.id?.toLowerCase().includes("5") || selectedVariant?.unit?.includes("5") ? "5l" : "1l";
+  const canonicalCartKey = `${product.id}__${variantNormId}`;
+  const cartQty =
+    (cart[canonicalCartKey] ?? 0) +
+    (variantNormId === "1l"
+      ? (cart[product.id] ?? (cart as any)[Number(product.id)] ?? (cart as any)[String(product.id)] ?? 0)
+      : 0);
 
   const variantPrice = Number(selectedVariant?.price) || Number(product.price) || 0;
   const variantOldPrice =
@@ -343,9 +363,7 @@ function ProductDetailPage() {
       : 0;
 
   const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) {
-      addToCart(product.id);
-    }
+    addToCart(product.id, qty, selectedVariant?.id);
     const variantLabel = selectedVariant?.label || (selectedVariant as any)?.name || product.unit || "Standard Pack";
     toast.success(`Added ${qty}x ${product.name} (${variantLabel}) to cart!`, {
       description: `₹${(variantPrice * qty).toFixed(2)} • Quick checkout ready`,
@@ -712,7 +730,10 @@ function ProductDetailPage() {
                       <button
                         key={v.id}
                         type="button"
-                        onClick={() => setSelectedVariant(v)}
+                        onClick={() => {
+                          setSelectedVariant(v);
+                          setActiveImageIndex(0);
+                        }}
                         className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
                             ? "border-2 border-[#075B32] bg-[#EAF5E9] shadow-xs"

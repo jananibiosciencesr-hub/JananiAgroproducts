@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, type Product, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
+import { products, type Product, getProductImage, getProductVariantImage, pantryImage, formatProductName, parseCartItems } from "@/lib/catalog";
 import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
 import { getStorefrontCoupons, validateCoupon, normalizeCouponData, type AdminCoupon } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -133,39 +133,7 @@ export function CartPage() {
   }, [savedForLater]);
 
   const cartItems = useMemo(() => {
-    const itemMap = new Map<number, { product: Product; qty: number }>();
-
-    for (const [idStr, qtyRaw] of Object.entries(cart)) {
-      const q = Number(qtyRaw) || 1;
-      if (q <= 0) continue;
-
-      let matchedProduct =
-        allProducts.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr) || p.slug === idStr) ||
-        products.find((p) => Number(p.id) === Number(idStr) || String(p.id) === String(idStr) || p.slug === idStr);
-
-      if (!matchedProduct) {
-        const pesticide = ALL_PESTICIDES.find(
-          (p) => p.id === idStr || String(p.catalogId) === idStr || p.slug === idStr
-        );
-        if (pesticide) {
-          matchedProduct =
-            allProducts.find((p) => Number(p.id) === Number(pesticide.catalogId) || p.slug === pesticide.slug) ||
-            products.find((p) => Number(p.id) === Number(pesticide.catalogId) || p.slug === pesticide.slug);
-        }
-      }
-
-      if (matchedProduct) {
-        const prodId = Number(matchedProduct.id);
-        const existing = itemMap.get(prodId);
-        if (existing) {
-          existing.qty += q;
-        } else {
-          itemMap.set(prodId, { product: matchedProduct, qty: q });
-        }
-      }
-    }
-
-    return Array.from(itemMap.values());
+    return parseCartItems(cart, allProducts);
   }, [cart, allProducts]);
 
   // Actual total quantity of verified items in the basket
@@ -434,7 +402,7 @@ export function CartPage() {
   const gstAmount = Math.round(subtotal * 0.05);
   const finalTotal = Math.max(0, subtotal + gstAmount - discount + shippingFee);
   const totalSavings = cartItems.reduce(
-    (sum, { product, qty }) => sum + (product.oldPrice - product.price) * qty,
+    (sum, item) => sum + (item.oldPrice - item.price) * item.qty,
     0
   ) + discount;
 
@@ -470,33 +438,33 @@ export function CartPage() {
           <div className="space-y-6">
             {/* Cart Items List */}
             <div className="divide-y divide-border rounded-[2rem] border border-border bg-card shadow-soft overflow-hidden">
-              {cartItems.map(({ product, qty }) => (
+              {cartItems.map((item) => (
                 <div
-                  key={product.id}
+                  key={item.cartKey}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6 hover:bg-muted/20 transition"
                 >
                   <div className="flex items-center gap-4">
                     <img
-                      src={getProductImage(product.name || product.category, product.image)}
-                      alt={product.name}
+                      src={getProductImage(item.product.name || item.product.category, item.variant?.image || getProductVariantImage(item.product, item.variantId) || item.product.image)}
+                      alt={`${item.product.name} - ${item.unit}`}
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = pantryImage;
                       }}
-                      className="size-20 sm:size-24 shrink-0 rounded-2xl object-cover border border-border"
+                      className="size-20 sm:size-24 shrink-0 rounded-2xl object-contain border border-border p-1.5 bg-white"
                     />
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-brand-leaf">
-                        {product.category}
+                        {item.product.category}
                       </span>
                       <Link
                         to="/products/$slug"
-                        params={{ slug: product.slug }}
+                        params={{ slug: item.product.slug }}
                         className="block font-bold text-sm sm:text-base text-foreground hover:text-primary transition"
                       >
-                        {formatProductName(product.name)}
+                        {formatProductName(item.product.name)}
                       </Link>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        ₹{product.price} • {product.unit}
+                        ₹{item.price} • {item.unit}
                       </p>
                       <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-1">
                         <Check className="size-3" /> In Stock • Fresh Farm Batch
@@ -508,16 +476,16 @@ export function CartPage() {
                     {/* Quantity Selector */}
                     <div className="flex h-10 items-center rounded-xl border border-input bg-background p-0.5">
                       <button
-                        onClick={() => updateQuantity(product.id, qty - 1)}
-                        className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted"
+                        onClick={() => updateQuantity(item.cartKey, item.qty - 1)}
+                        className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted cursor-pointer"
                         aria-label="Decrease quantity"
                       >
                         <Minus className="size-3.5" />
                       </button>
-                      <span className="w-8 text-center text-xs font-bold font-mono">{qty}</span>
+                      <span className="w-8 text-center text-xs font-bold font-mono">{item.qty}</span>
                       <button
-                        onClick={() => updateQuantity(product.id, qty + 1)}
-                        className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted"
+                        onClick={() => updateQuantity(item.cartKey, item.qty + 1)}
+                        className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted cursor-pointer"
                         aria-label="Increase quantity"
                       >
                         <Plus className="size-3.5" />
@@ -527,18 +495,18 @@ export function CartPage() {
                     {/* Line Total */}
                     <div className="text-right min-w-20">
                       <strong className="block text-base font-bold font-mono text-foreground">
-                        ₹{product.price * qty}
+                        ₹{item.lineTotal}
                       </strong>
                       <span className="text-[10px] text-muted-foreground line-through font-mono">
-                        ₹{product.oldPrice * qty}
+                        ₹{item.oldPrice * item.qty}
                       </span>
                     </div>
 
                     {/* Actions: Save for Later & Delete */}
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleSaveForLater(product.id, product.name)}
-                        className="p-2 text-muted-foreground hover:text-brand-leaf transition rounded-lg hover:bg-muted"
+                        onClick={() => handleSaveForLater(item.product.id, item.product.name)}
+                        className="p-2 text-muted-foreground hover:text-brand-leaf transition rounded-lg hover:bg-muted cursor-pointer"
                         title="Save for later"
                         aria-label="Save for later"
                       >
@@ -547,10 +515,10 @@ export function CartPage() {
 
                       <button
                         onClick={() => {
-                          removeFromCart(product.id);
-                          toast.info(`Removed ${product.name} from cart`);
+                          removeFromCart(item.cartKey);
+                          toast.info(`Removed ${item.product.name} (${item.unit}) from cart`);
                         }}
-                        className="p-2 text-muted-foreground hover:text-destructive transition rounded-lg hover:bg-muted"
+                        className="p-2 text-muted-foreground hover:text-destructive transition rounded-lg hover:bg-muted cursor-pointer"
                         title="Remove item"
                         aria-label="Remove item"
                       >
