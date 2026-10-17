@@ -171,10 +171,8 @@ export const products: Product[] = [
     crops: ["Fruits", "Vegetables", "Cereals", "Pulses", "Cotton", "Sugarcane", "All Crops"],
     benefits: ["Fungal Disease Control", "Damping Off Control", "Root Growth", "Soil Health"],
     variants: [
-      { id: "250ml", label: "250 ml", unit: "250 ml", price: 150, oldPrice: 180, inStock: true },
-      { id: "500ml", label: "500 ml", unit: "500 ml", price: 280, oldPrice: 320, inStock: true },
-      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 450, oldPrice: 520, inStock: true },
-      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 2000, oldPrice: 2350, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 450, oldPrice: 520, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 2000, oldPrice: 2350, inStock: true }
     ],
     specifications: {
       "Active Organism": "Trichoderma viride Minimum 5 × 10⁸ CFU/ml",
@@ -216,10 +214,8 @@ export const products: Product[] = [
     crops: ["Fruits", "Vegetables", "Cereals", "Pulses", "Oilseeds", "Cotton", "Sugarcane", "All Crops"],
     benefits: ["Soil Health", "Root Growth", "Plant Growth", "Organic Farming"],
     variants: [
-      { id: "250ml", label: "250 ml", unit: "250 ml", price: 130, oldPrice: 150, inStock: true },
-      { id: "500ml", label: "500 ml", unit: "500 ml", price: 220, oldPrice: 260, inStock: true },
-      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 380, oldPrice: 450, inStock: true },
-      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 1750, oldPrice: 2100, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 380, oldPrice: 450, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 1750, oldPrice: 2100, inStock: true }
     ],
     specifications: {
       "Humic Acid": "12.00%",
@@ -261,10 +257,8 @@ export const products: Product[] = [
     crops: ["Fruits", "Vegetables", "Cotton", "Pulses", "Cereals", "All Crops"],
     benefits: ["Organic Farming", "Crop Yield"],
     variants: [
-      { id: "250ml", label: "250 ml", unit: "250 ml", price: 180, oldPrice: 210, inStock: true },
-      { id: "500ml", label: "500 ml", unit: "500 ml", price: 320, oldPrice: 380, inStock: true },
-      { id: "1l", label: "1 Litre", unit: "1 Litre", price: 550, oldPrice: 650, inStock: true },
-      { id: "5l", label: "5 Litre", unit: "5 Litre", price: 2500, oldPrice: 2950, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 550, oldPrice: 650, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 2500, oldPrice: 2950, inStock: true }
     ],
     specifications: {
       "Active Ingredient": "Azadirachtin - 0.10% w/w minimum (1000 ppm)",
@@ -304,8 +298,8 @@ export const products: Product[] = [
     crops: ["Fruits", "Vegetables", "Cotton", "Cereals", "Sugarcane"],
     benefits: ["Plant Growth", "Crop Yield", "Root Growth"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 600, oldPrice: 720, inStock: true },
-      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 340, oldPrice: 400, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 600, oldPrice: 720, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 2600, oldPrice: 3100, inStock: true }
     ],
     specifications: {
       "Bioactive Peptides": "8.00%",
@@ -344,7 +338,8 @@ export const products: Product[] = [
     crops: ["Vegetables", "Fruits", "Cereals", "Pulses", "All Crops"],
     benefits: ["Soil Health", "Organic Farming", "Plant Growth"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 420, oldPrice: 490, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 420, oldPrice: 490, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 1850, oldPrice: 2200, inStock: true }
     ],
     specifications: {
       "Vermi-Derived Liquid": "35.00%",
@@ -382,7 +377,8 @@ export const products: Product[] = [
     crops: ["Vegetables", "Cereals", "Pulses", "Cotton", "Sugarcane"],
     benefits: ["Root Growth", "Plant Growth", "Crop Yield"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 390, oldPrice: 460, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 390, oldPrice: 460, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 1750, oldPrice: 2050, inStock: true }
     ],
     specifications: {
       "Root Inducing Factors": "15.00%",
@@ -420,7 +416,8 @@ export const products: Product[] = [
     crops: ["Fruits", "Vegetables", "Cotton", "Pulses", "Oilseeds"],
     benefits: ["Fungal Disease Control", "Organic Farming"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 480, oldPrice: 560, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 480, oldPrice: 560, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 2100, oldPrice: 2500, inStock: true }
     ],
     specifications: {
       "Karanj Oil Extract": "20.00%",
@@ -458,7 +455,8 @@ export const products: Product[] = [
     crops: ["Fruits", "Vegetables", "Cereals", "Cotton", "Sugarcane"],
     benefits: ["Plant Growth", "Crop Yield"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 520, oldPrice: 600, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 520, oldPrice: 600, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 2300, oldPrice: 2700, inStock: true }
     ],
     specifications: {
       "Chelated Zinc (Zn)": "3.00%",
@@ -497,7 +495,8 @@ export const products: Product[] = [
     crops: ["Vegetables", "Fruits", "Cereals", "Pulses", "Oilseeds"],
     benefits: ["Fungal Disease Control", "Damping Off Control", "Soil Health"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 410, oldPrice: 480, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 410, oldPrice: 480, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 1800, oldPrice: 2150, inStock: true }
     ],
     specifications: {
       "Bio-Active Antagonists": "Minimum 2 × 10⁸ CFU/ml",
@@ -534,7 +533,8 @@ export const products: Product[] = [
     crops: ["Fruits", "Vegetables", "Cotton", "Sugarcane", "All Crops"],
     benefits: ["Plant Growth", "Crop Yield", "Root Growth"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 495, oldPrice: 580, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 495, oldPrice: 580, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 2200, oldPrice: 2600, inStock: true }
     ],
     specifications: {
       "Speciality Osmolytes": "12.00%",
@@ -572,7 +572,8 @@ export const products: Product[] = [
     crops: ["Cereals", "Pulses", "Cotton", "Sugarcane", "All Crops"],
     benefits: ["Soil Health", "Organic Farming", "Root Growth"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 460, oldPrice: 530, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 460, oldPrice: 530, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 2050, oldPrice: 2400, inStock: true }
     ],
     specifications: {
       "Organic Buffering Agents": "25.00%",
@@ -609,7 +610,8 @@ export const products: Product[] = [
     crops: ["Vegetables", "Fruits", "Cotton", "Cereals", "All Crops"],
     benefits: ["Plant Growth", "Crop Yield", "Fungal Disease Control"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 575, oldPrice: 670, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 575, oldPrice: 670, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 2550, oldPrice: 3000, inStock: true }
     ],
     specifications: {
       "Organic Plant Extracts": "22.00%",
@@ -647,8 +649,8 @@ export const products: Product[] = [
     crops: ["Paddy", "Cotton", "Chilli", "Tomato", "Pomegranate", "All Crops"],
     benefits: ["Fungal Disease Control", "Soil Health", "Organic Farming"],
     variants: [
-      { id: "5l", label: "5 Litre Can", unit: "5 L", price: 5600, oldPrice: 6200, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1250, oldPrice: 1400, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 1250, oldPrice: 1400, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 5600, oldPrice: 6200, inStock: true }
     ],
     recommendedCrops: "Paddy, Cotton, Chilli, Tomato, Pomegranate, Groundnut, Sugarcane.",
     dosage: "Foliar Spray: 2–3 ml/L | Drip / Fertigation: 1–2 Litres per acre."
@@ -679,8 +681,8 @@ export const products: Product[] = [
     crops: ["Paddy", "Vegetables", "Ginger", "Turmeric", "Banana", "All Crops"],
     benefits: ["Fungal Disease Control", "Soil Health", "Plant Growth"],
     variants: [
-      { id: "5l", label: "5 Litre Can", unit: "5 L", price: 4900, oldPrice: 5500, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1100, oldPrice: 1250, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 1100, oldPrice: 1250, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 4900, oldPrice: 5500, inStock: true }
     ],
     recommendedCrops: "Rice, Chilli, Cotton, Banana, Vegetables, Ginger, Turmeric.",
     dosage: "Seed Treatment: 10 ml/kg | Drip: 1–2 Litres per acre | Foliar: 2.5 ml/L."
@@ -711,8 +713,8 @@ export const products: Product[] = [
     crops: ["Sugarcane", "Cotton", "Banana", "Potato", "Paddy", "Grapes", "All Crops"],
     benefits: ["Plant Growth", "Crop Yield", "Soil Health"],
     variants: [
-      { id: "5l", label: "5 Litre Can", unit: "5 L", price: 5300, oldPrice: 5800, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 1150, oldPrice: 1300, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 1150, oldPrice: 1300, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 5300, oldPrice: 5800, inStock: true }
     ],
     recommendedCrops: "Sugarcane, Banana, Potato, Cotton, Vegetables, Paddy, Fruit Orchards.",
     dosage: "Drip Fertigation: 1–2 Litres per acre at vegetative and fruit development stages."
@@ -743,8 +745,8 @@ export const products: Product[] = [
     crops: ["Chilli", "Cotton", "Tomato", "Pomegranate", "Mango", "All Crops"],
     benefits: ["Plant Growth", "Crop Yield"],
     variants: [
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 999, oldPrice: 1199, inStock: true },
-      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 550, oldPrice: 650, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 999, oldPrice: 1199, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 4400, oldPrice: 5200, inStock: true }
     ],
     recommendedCrops: "Chilli, Cotton, Tomato, Brinjal, Pomegranate, Citrus, Grapes, Mango.",
     dosage: "Foliar Spray: 2 ml per litre of water at pre-flowering and fruit set."
@@ -775,8 +777,8 @@ export const products: Product[] = [
     crops: ["Paddy", "Cotton", "Chilli", "Vegetables", "Horticulture", "All Crops"],
     benefits: ["Plant Growth", "Crop Yield", "Organic Farming"],
     variants: [
-      { id: "5l", label: "5 Litre Can", unit: "5 L", price: 3600, oldPrice: 3999, inStock: true },
-      { id: "1l", label: "1 Litre Bottle", unit: "1 L", price: 850, oldPrice: 950, inStock: true }
+      { id: "1l", label: "1 L", unit: "1 L", price: 850, oldPrice: 950, inStock: true },
+      { id: "5l", label: "5 L", unit: "5 L", price: 3600, oldPrice: 3999, inStock: true }
     ],
     recommendedCrops: "Paddy, Cotton, Chilli, Sugarcane, Vegetables, Banana, Orchards.",
     dosage: "Foliar Spray: 3 ml/L | Drip Irrigation: 2 Litres per acre."
@@ -807,8 +809,8 @@ export const products: Product[] = [
     crops: ["All Crops", "Vegetables", "Cotton", "Paddy", "Orchards"],
     benefits: ["Crop Yield", "Organic Farming"],
     variants: [
-      { id: "250ml", label: "250 ml Bottle", unit: "250 ml", price: 350, oldPrice: 420, inStock: true },
-      { id: "500ml", label: "500 ml Bottle", unit: "500 ml", price: 650, oldPrice: 780, inStock: true }
+      { id: "250ml", label: "250 ml", unit: "250 ml", price: 350, oldPrice: 420, inStock: true },
+      { id: "500ml", label: "500 ml", unit: "500 ml", price: 650, oldPrice: 780, inStock: true }
     ],
     recommendedCrops: "Suitable for tank mixing with all agricultural foliar sprays across all crops.",
     dosage: "Tank Mix: 0.3 ml to 0.5 ml per litre of spray water (50 ml per 150–200 L drum)."

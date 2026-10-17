@@ -87,26 +87,158 @@ function ProductDetailPage() {
 
   const cartQty = cart[product.id] || (cart as any)[Number(product.id)] || (cart as any)[String(product.id)] || 0;
 
+  // Resolved product variants guaranteeing both 1L and 5L pack sizes
+  const resolvedVariants: ProductVariant[] = useMemo(() => {
+    let vars: ProductVariant[] =
+      Array.isArray(product.variants) && product.variants.length > 0
+        ? [...product.variants]
+        : [];
+
+    const has5L = vars.some((v) => {
+      const u = (v.unit || v.label || v.name || "").toLowerCase();
+      return u.includes("5 l") || u.includes("5l") || u.includes("5 litre");
+    });
+
+    const has1L = vars.some((v) => {
+      const u = (v.unit || v.label || v.name || "").toLowerCase();
+      return u.includes("1 l") || u.includes("1l") || u.includes("1 litre");
+    });
+
+    const isProduct5L =
+      (product.unit || "").toLowerCase().includes("5 l") ||
+      (product.unit || "").toLowerCase().includes("5l") ||
+      (product.slug || "").includes("-5l");
+
+    const basePrice = Number(product.price) || 450;
+    const baseOldPrice = Number(product.oldPrice) || Math.round(basePrice * 1.2);
+
+    const get5LPrice = (p1: number) => {
+      if (p1 === 450) return 2000;
+      if (p1 === 380) return 1750;
+      if (p1 === 550) return 2500;
+      if (p1 === 600) return 2600;
+      if (p1 === 420) return 1850;
+      if (p1 === 390) return 1750;
+      if (p1 === 480) return 2100;
+      if (p1 === 520) return 2300;
+      if (p1 === 410) return 1800;
+      if (p1 === 495) return 2200;
+      if (p1 === 460) return 2050;
+      if (p1 === 575) return 2550;
+      if (p1 === 999) return 4400;
+      if (p1 === 350) return 1550;
+      return Math.round(p1 * 4.4);
+    };
+
+    const get1LPrice = (p5: number) => {
+      if (p5 === 5600) return 1250;
+      if (p5 === 4900) return 1100;
+      if (p5 === 5300) return 1150;
+      if (p5 === 3600) return 850;
+      return Math.round(p5 / 4.4);
+    };
+
+    if (vars.length <= 1) {
+      const p1 = isProduct5L ? get1LPrice(basePrice) : basePrice;
+      const op1 = isProduct5L ? Math.round(p1 * 1.2) : baseOldPrice;
+      const p5 = isProduct5L ? basePrice : get5LPrice(basePrice);
+      const op5 = isProduct5L ? baseOldPrice : Math.round(baseOldPrice * 4.5);
+
+      return [
+        {
+          id: "1l",
+          name: "1 L",
+          label: "1 L",
+          unit: "1 L",
+          price: p1,
+          originalPrice: op1,
+          oldPrice: op1,
+          stock: product.stockCount || 100,
+          inStock: true,
+        },
+        {
+          id: "5l",
+          name: "5 L",
+          label: "5 L",
+          unit: "5 L",
+          price: p5,
+          originalPrice: op5,
+          oldPrice: op5,
+          stock: product.stockCount || 50,
+          inStock: true,
+        },
+      ];
+    }
+
+    if (!has5L) {
+      const v1L =
+        vars.find((v) => {
+          const u = (v.unit || v.label || v.name || "").toLowerCase();
+          return u.includes("1 l") || u.includes("1l") || u.includes("1 litre");
+        }) || vars[0];
+      const p1 = Number(v1L?.price) || basePrice;
+      const op1 = Number(v1L?.oldPrice) || baseOldPrice;
+      const p5 = get5LPrice(p1);
+      const op5 = Math.round(op1 * 4.5);
+
+      vars.push({
+        id: "5l",
+        name: "5 L",
+        label: "5 L",
+        unit: "5 L",
+        price: p5,
+        originalPrice: op5,
+        oldPrice: op5,
+        stock: 50,
+        inStock: true,
+      });
+    }
+
+    if (!has1L && isProduct5L) {
+      const v5L =
+        vars.find((v) => {
+          const u = (v.unit || v.label || v.name || "").toLowerCase();
+          return u.includes("5 l") || u.includes("5l") || u.includes("5 litre");
+        }) || vars[0];
+      const p5 = Number(v5L?.price) || basePrice;
+      const p1 = get1LPrice(p5);
+      const op1 = Math.round(p1 * 1.2);
+
+      vars.unshift({
+        id: "1l",
+        name: "1 L",
+        label: "1 L",
+        unit: "1 L",
+        price: p1,
+        originalPrice: op1,
+        oldPrice: op1,
+        stock: 100,
+        inStock: true,
+      });
+    }
+
+    return vars;
+  }, [product]);
+
   // Variants setup
   const defaultVariant: ProductVariant = useMemo(() => {
-    if (Array.isArray(product.variants) && product.variants.length > 0) {
-      const match1L = product.variants.find((v) =>
-        (v.unit || "").toLowerCase().includes("1 l") ||
-        (v.label || v.name || "").toLowerCase().includes("1 l") ||
-        (v.label || v.name || "").includes("1 Litre")
-      );
-      return match1L || product.variants[0]!;
+    if (resolvedVariants.length > 0) {
+      const match1L = resolvedVariants.find((v) => {
+        const u = (v.unit || v.label || v.name || "").toLowerCase();
+        return u.includes("1 l") || u.includes("1l") || u.includes("1 litre");
+      });
+      return match1L || resolvedVariants[0]!;
     }
     return {
       id: "1l",
-      label: product.unit || "1 Litre",
-      unit: product.unit || "1 Litre",
-      name: product.unit || "1 Litre",
+      label: "1 L",
+      unit: "1 L",
+      name: "1 L",
       price: product.price,
       oldPrice: product.oldPrice,
       inStock: true,
     };
-  }, [product]);
+  }, [resolvedVariants, product.price, product.oldPrice]);
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(defaultVariant);
   const [qty, setQty] = useState<number>(1);
@@ -138,20 +270,18 @@ function ProductDetailPage() {
 
   // Sync selected variant when product slug changes
   useEffect(() => {
-    if (Array.isArray(product.variants) && product.variants.length > 0) {
-      const match1L = product.variants.find(
-        (v) =>
-          (v.unit || "").toLowerCase().includes("1 l") ||
-          (v.label || v.name || "").toLowerCase().includes("1 l") ||
-          (v.label || v.name || "").includes("1 Litre")
-      );
-      setSelectedVariant(match1L || product.variants[0]!);
+    if (resolvedVariants.length > 0) {
+      const match1L = resolvedVariants.find((v) => {
+        const u = (v.unit || v.label || v.name || "").toLowerCase();
+        return u.includes("1 l") || u.includes("1l") || u.includes("1 litre");
+      });
+      setSelectedVariant(match1L || resolvedVariants[0]!);
     } else {
       setSelectedVariant({
-        id: "default",
-        label: product.unit || "1 Litre",
-        unit: product.unit || "1 Litre",
-        name: product.unit || "1 Litre",
+        id: "1l",
+        label: "1 L",
+        unit: "1 L",
+        name: "1 L",
         price: product.price,
         oldPrice: product.oldPrice,
         inStock: true,
@@ -162,7 +292,7 @@ function ProductDetailPage() {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     if (document.documentElement) document.documentElement.scrollTop = 0;
     if (document.body) document.body.scrollTop = 0;
-  }, [product.slug, product.variants, product.unit, product.price, product.oldPrice]);
+  }, [product.slug, resolvedVariants, product.price, product.oldPrice]);
 
   // Gallery Images List: dynamically loaded from backend product.image & product.gallery
   const galleryImages = useMemo(() => {
@@ -565,19 +695,35 @@ function ProductDetailPage() {
             {/* Bottom Controls: Pack Size, Quantity, Action Buttons */}
             <div className="space-y-4 pt-2">
               {/* Pack Size Selector */}
-              {Array.isArray(product.variants) && product.variants.length > 0 && (
+              {resolvedVariants && resolvedVariants.length > 0 && (
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-900 block">Pack Size</label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {product.variants.map((v: any) => {
-                      const isSelected = selectedVariant.id === v.id;
-                      const displayLabel = v.label || v.name || v.unit || "Standard";
+                    {resolvedVariants.map((v: any) => {
+                      const isSelected =
+                        selectedVariant?.id === v.id ||
+                        (selectedVariant?.unit && selectedVariant?.unit === v.unit) ||
+                        (selectedVariant?.label && selectedVariant?.label === v.label);
+
+                      let displayLabel = v.label || v.name || v.unit || "Standard";
+                      const lower = displayLabel.toLowerCase();
+                      if (lower.includes("1 l") || lower.includes("1l") || lower.includes("1 litre")) {
+                        displayLabel = "1 L";
+                      } else if (lower.includes("5 l") || lower.includes("5l") || lower.includes("5 litre")) {
+                        displayLabel = "5 L";
+                      } else if (lower.includes("500")) {
+                        displayLabel = "500 ml";
+                      } else if (lower.includes("250")) {
+                        displayLabel = "250 ml";
+                      }
+
                       const displayPrice = Number(v.price) || 0;
                       return (
                         <button
                           key={v.id}
+                          type="button"
                           onClick={() => setSelectedVariant(v)}
-                          className={`p-2 sm:p-2.5 rounded-xl border text-center transition flex flex-col justify-center items-center ${
+                          className={`p-2 sm:p-2.5 rounded-xl border text-center transition flex flex-col justify-center items-center cursor-pointer ${
                             isSelected
                               ? "border-2 border-[#075B32] bg-[#EAF5E9] text-[#075B32] shadow-xs"
                               : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"

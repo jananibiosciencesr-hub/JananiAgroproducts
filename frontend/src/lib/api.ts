@@ -118,26 +118,53 @@ export function parseProductVariants(
     }
   }
 
+  const get5LPrice = (p1: number) => {
+    if (p1 === 450) return 2000;
+    if (p1 === 380) return 1750;
+    if (p1 === 550) return 2500;
+    if (p1 === 600) return 2600;
+    if (p1 === 420) return 1850;
+    if (p1 === 390) return 1750;
+    if (p1 === 480) return 2100;
+    if (p1 === 520) return 2300;
+    if (p1 === 410) return 1800;
+    if (p1 === 650) return 2800;
+    return Math.round(p1 * 4.4);
+  };
+
   if (list.length === 0) {
     const origPrice = Math.round(fallbackPrice * 1.2);
-    const unitLabel = fallbackUnit || "1 L";
+    const p5 = get5LPrice(fallbackPrice);
+    const op5 = Math.round(origPrice * 4.5);
     return [
       {
-        id: "default",
-        name: unitLabel,
-        label: unitLabel,
-        unit: unitLabel,
-        sku: "JAP-STD",
+        id: "1l",
+        name: "1 L",
+        label: "1 L",
+        unit: "1 L",
+        sku: "JAP-1L",
         price: fallbackPrice,
         originalPrice: origPrice,
         oldPrice: origPrice,
         stock: fallbackStock,
         inStock: fallbackStock > 0
+      },
+      {
+        id: "5l",
+        name: "5 L",
+        label: "5 L",
+        unit: "5 L",
+        sku: "JAP-5L",
+        price: p5,
+        originalPrice: op5,
+        oldPrice: op5,
+        stock: Math.max(10, Math.floor(fallbackStock / 2)),
+        inStock: true
       }
     ];
   }
 
-  return list.map((v: any, idx: number) => {
+  const mapped = list.map((v: any, idx: number) => {
     const price = Number(v.price) || fallbackPrice || 0;
     const origPrice = Number(v.originalPrice ?? v.oldPrice ?? v.old_price) || Math.round(price * 1.2);
     const stock = v.stock !== undefined ? Number(v.stock) : (v.stockCount !== undefined ? Number(v.stockCount) : fallbackStock);
@@ -159,6 +186,38 @@ export function parseProductVariants(
       inStock: stock > 0
     };
   });
+
+  const has5L = mapped.some((v: any) => {
+    const u = (v.unit || v.label || v.name || "").toLowerCase();
+    return u.includes("5 l") || u.includes("5l") || u.includes("5 litre");
+  });
+
+  if (!has5L) {
+    const v1L = mapped.find((v: any) => {
+      const u = (v.unit || v.label || v.name || "").toLowerCase();
+      return u.includes("1 l") || u.includes("1l") || u.includes("1 litre");
+    }) || mapped[0];
+
+    const p1 = Number(v1L?.price) || fallbackPrice || 450;
+    const op1 = Number(v1L?.oldPrice) || Math.round(p1 * 1.2);
+    const p5 = get5LPrice(p1);
+    const op5 = Math.round(op1 * 4.5);
+
+    mapped.push({
+      id: "5l",
+      name: "5 L",
+      label: "5 L",
+      unit: "5 L",
+      sku: "JAP-5L",
+      price: p5,
+      originalPrice: op5,
+      oldPrice: op5,
+      stock: 50,
+      inStock: true
+    });
+  }
+
+  return mapped;
 }
 
 /**
