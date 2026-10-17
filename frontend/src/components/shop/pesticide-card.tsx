@@ -92,11 +92,11 @@ export function PesticideCard({ product }: PesticideCardProps) {
             type="button"
             onClick={handleToggleWishlist}
             aria-label="Wishlist"
-            className="flex size-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-red-500 active:scale-90"
+            className="flex size-8 items-center justify-center bg-transparent transition-transform hover:scale-110 active:scale-95"
           >
             <Heart
               className={`size-4 transition-colors ${
-                isWishlisted ? "fill-red-500 text-red-500" : "text-slate-500"
+                isWishlisted ? "fill-red-500 text-red-500" : "text-slate-500 hover:text-red-500"
               }`}
             />
           </button>

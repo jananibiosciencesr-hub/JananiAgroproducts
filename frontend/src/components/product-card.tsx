@@ -108,21 +108,19 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
           </span>
         </div>
 
-        {/* Top-Right Circular Wishlist Button */}
+        {/* Top-Right Wishlist Button (Transparent Background) */}
         <div className="absolute top-2 right-2 z-10 flex flex-col gap-1.5">
           <button
             type="button"
             onClick={handleWishlist}
             aria-label={`Save ${product.name}`}
-            className={`size-7 sm:size-8 rounded-full shadow-xs flex items-center justify-center transition backdrop-blur-xs ${
-              isWishlisted
-                ? "bg-red-500 text-white"
-                : "bg-white/95 text-gray-700 hover:text-red-500 hover:bg-white"
-            }`}
+            className="size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
           >
             <Heart
-              className={`size-3.5 sm:size-4 transition ${
-                isWishlisted ? "fill-current text-white scale-110" : "text-gray-700"
+              className={`size-4 sm:size-4.5 transition-colors ${
+                isWishlisted
+                  ? "fill-red-500 text-red-500"
+                  : "text-slate-600 hover:text-red-500"
               }`}
             />
           </button>

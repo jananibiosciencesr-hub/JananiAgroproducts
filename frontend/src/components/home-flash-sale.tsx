@@ -182,18 +182,20 @@ export function HomeFlashSale({
                     SAVE {item.discount}%
                   </span>
 
-                  {/* Top-Right Circular Wishlist Button */}
+                  {/* Top-Right Wishlist Button (Transparent Background) */}
                   <button
                     type="button"
                     onClick={() => toggleWishlist(item.id)}
                     aria-label="Wishlist"
-                    className={`absolute right-2 top-2 z-10 grid size-7 sm:size-8 place-items-center rounded-full backdrop-blur-md transition shadow-xs ${
-                      isWishlisted
-                        ? "bg-red-500 text-white"
-                        : "bg-white/95 text-gray-700 hover:bg-white hover:text-red-500"
-                    }`}
+                    className="absolute right-2 top-2 z-10 size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
                   >
-                    <Heart className={`size-3.5 sm:size-4 ${isWishlisted ? "fill-current" : ""}`} />
+                    <Heart
+                      className={`size-4 sm:size-4.5 transition-colors ${
+                        isWishlisted
+                          ? "fill-red-500 text-red-500"
+                          : "text-slate-600 hover:text-red-500"
+                      }`}
+                    />
                   </button>
 
                   {/* Bottom-Center Pill - 🔥 BESTSELLER */}
