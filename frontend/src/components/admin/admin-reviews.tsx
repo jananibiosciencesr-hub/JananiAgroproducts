@@ -320,132 +320,38 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
       {/* TAB 1: ALL & MODERATION DESK */}
       {activeTab === "desk" && (
         <div className="space-y-4">
-          {/* Sub Tabs + Filter Toolbar */}
-          <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-            {/* 5 Status Sub-Tabs */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
-              {[
-                { id: "all", label: "All Reviews", count: stats.totalReviews },
-                { id: "pending", label: "Pending Review", count: stats.pendingCount, alert: stats.pendingCount > 0 },
-                { id: "approved", label: "Approved Public", count: stats.approvedCount },
-                { id: "rejected", label: "Rejected / Quarantined", count: stats.rejectedCount },
-                { id: "flagged", label: "Flagged for Abuse", count: stats.flaggedCount, alert: stats.flaggedCount > 0 }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setStatusSubTab(tab.id as any)}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+          {/* 5 Status Sub-Tabs */}
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-4 shadow-sm">
+            {[
+              { id: "all", label: "All Reviews", count: stats.totalReviews },
+              { id: "pending", label: "Pending Review", count: stats.pendingCount, alert: stats.pendingCount > 0 },
+              { id: "approved", label: "Approved Public", count: stats.approvedCount },
+              { id: "rejected", label: "Rejected / Quarantined", count: stats.rejectedCount },
+              { id: "flagged", label: "Flagged for Abuse", count: stats.flaggedCount, alert: stats.flaggedCount > 0 }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setStatusSubTab(tab.id as any)}
+                className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  statusSubTab === tab.id
+                    ? "bg-brand-leaf text-white shadow-sm"
+                    : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                }`}
+              >
+                {tab.label}
+                <span
+                  className={`rounded-full px-1.5 py-0.2 text-[11px] ${
                     statusSubTab === tab.id
-                      ? "bg-brand-leaf text-white shadow-sm"
-                      : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                      ? "bg-white/20 text-white"
+                      : tab.alert
+                      ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold"
+                      : "bg-background text-muted-foreground"
                   }`}
                 >
-                  {tab.label}
-                  <span
-                    className={`rounded-full px-1.5 py-0.2 text-[11px] ${
-                      statusSubTab === tab.id
-                        ? "bg-white/20 text-white"
-                        : tab.alert
-                        ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold"
-                        : "bg-background text-muted-foreground"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Filter Row */}
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <form onSubmit={handleSearchSubmit} className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search by customer, product, review keywords, email, or order ID..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-4 text-xs text-foreground placeholder:text-muted-foreground focus:border-brand-leaf focus:outline-none"
-                />
-              </form>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Rating Filter */}
-                <select
-                  value={selectedRating}
-                  onChange={e => setSelectedRating(e.target.value)}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-brand-leaf focus:outline-none"
-                >
-                  <option value="all">All Star Ratings</option>
-                  <option value="5">5 Stars (★★★★★)</option>
-                  <option value="4">4 Stars (★★★★☆)</option>
-                  <option value="3">3 Stars (★★★☆☆)</option>
-                  <option value="2">2 Stars (★★☆☆☆)</option>
-                  <option value="1">1 Star (★☆☆☆☆)</option>
-                </select>
-
-                {/* Verified Purchase Toggle */}
-                <button
-                  type="button"
-                  onClick={() => setFilterVerifiedOnly(!filterVerifiedOnly)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${
-                    filterVerifiedOnly
-                      ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                      : "border-border bg-background text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  <Check className="size-3.5" />
-                  Verified Buyer Only
-                </button>
-
-                {/* With Photos Only Toggle */}
-                <button
-                  type="button"
-                  onClick={() => setFilterWithPhotosOnly(!filterWithPhotosOnly)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${
-                    filterWithPhotosOnly
-                      ? "border-purple-500/50 bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                      : "border-border bg-background text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  <ImageIcon className="size-3.5" />
-                  With Photos Only
-                </button>
-
-                {/* Sorting */}
-                <select
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value as any)}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-brand-leaf focus:outline-none"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="rating_high">Highest Rating (5★ → 1★)</option>
-                  <option value="rating_low">Lowest Rating (1★ → 5★)</option>
-                  <option value="helpful">Most Helpful Votes</option>
-                </select>
-
-                {/* Export CSV & Refresh Buttons */}
-                <button
-                  type="button"
-                  onClick={handleExportCSV}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-                  title="Export Reviews to CSV"
-                >
-                  <Download className="size-3.5" />
-                  <span>Export CSV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={fetchReviews}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-                  title="Refresh Reviews"
-                >
-                  <RefreshCw className="size-3.5" />
-                  <span>Refresh</span>
-                </button>
-              </div>
-            </div>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
           </div>
 
           {/* Reviews List */}
