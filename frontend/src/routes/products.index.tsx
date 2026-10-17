@@ -705,7 +705,7 @@ function ProductsPage() {
                   return (
                     <article
                       key={p.id}
-                      className="group bg-white rounded-none border border-gray-200 hover:border-[#075B32] hover:shadow-md transition-all duration-200 flex flex-col justify-between relative overflow-hidden"
+                      className="group bg-white rounded-none border-0 shadow-none hover:shadow-md transition-all duration-200 flex flex-col justify-between relative overflow-hidden"
                     >
                       {/* Image Container with Badges */}
                       <div className="relative aspect-square w-full bg-white overflow-hidden p-2 sm:p-3 flex items-center justify-center rounded-none">
@@ -757,7 +757,7 @@ function ProductsPage() {
                       </div>
 
                       {/* Info & Details - Sharp edges */}
-                      <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between border-t border-gray-100">
+                      <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
                         <div>
                           {/* Title in brand dark green */}
                           <Link

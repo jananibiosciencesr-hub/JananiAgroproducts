@@ -688,50 +688,50 @@ export function AuthenticationPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] w-full bg-gradient-to-br from-cream via-cream/80 to-amber-50/40 py-3 sm:py-6 px-2 sm:px-4 lg:px-6 flex items-start sm:items-center justify-center">
+    <div className="min-h-[calc(100vh-72px)] lg:h-[calc(100vh-72px)] w-full bg-gradient-to-br from-cream via-cream/80 to-amber-50/40 py-1.5 sm:py-2.5 px-2 sm:px-4 lg:px-6 flex items-center justify-center overflow-hidden">
       <div className="w-full max-w-3xl lg:max-w-[780px] mx-auto">
         {/* Main Dual-Pane Auth Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/70 bg-card/60 backdrop-blur-2xl shadow-xl transition-all w-full">
           
           {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 4 cols) */}
-          <div className="relative hidden lg:flex lg:col-span-4 xl:col-span-4 flex-col justify-between overflow-hidden bg-gradient-to-br from-forest via-[#1e3a29] to-[#0f2418] p-5 sm:p-6 lg:p-7 text-primary-foreground">
+          <div className="relative hidden lg:flex lg:col-span-4 xl:col-span-4 flex-col justify-between overflow-hidden bg-gradient-to-br from-forest via-[#1e3a29] to-[#0f2418] p-4 lg:p-5 text-primary-foreground">
             {/* Background Texture & Glow */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(217,160,54,0.18),transparent_60%)]" />
             <div className="absolute -bottom-24 -left-24 size-72 rounded-full bg-brand-leaf/20 blur-3xl pointer-events-none" />
             
             {/* Top Brand Header */}
             <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-gold backdrop-blur-md">
-                <Sparkles className="size-3 text-brand-gold animate-pulse" />
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-brand-gold backdrop-blur-md">
+                <Sparkles className="size-2.5 text-brand-gold animate-pulse" />
                 Pure Soil to Soul
               </div>
-              <h2 className="mt-2.5 font-display text-xl lg:text-2xl font-bold leading-snug tracking-tight text-cream">
+              <h2 className="mt-1.5 font-display text-base lg:text-lg font-bold leading-snug tracking-tight text-cream">
                 Nourish Your Family With Heritage Harvests.
               </h2>
-              <p className="mt-1 text-xs text-primary-foreground/75 leading-relaxed">
+              <p className="mt-1 text-[11px] text-primary-foreground/75 leading-relaxed line-clamp-3">
                 Join 50,000+ conscious households celebrating wood-pressed oils, native millets, and Vedic churned A2 ghee.
               </p>
             </div>
 
             {/* Middle Floating Trust Badges */}
-            <div className="relative z-10 my-3 space-y-2">
-              <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md shadow-xs transition hover:bg-white/10">
-                <div className="grid size-8 place-items-center rounded-xl bg-brand-gold/20 text-brand-gold shrink-0">
-                  <Award className="size-4" />
+            <div className="relative z-10 my-2 space-y-1.5">
+              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-md shadow-xs transition hover:bg-white/10">
+                <div className="grid size-7 place-items-center rounded-lg bg-brand-gold/20 text-brand-gold shrink-0">
+                  <Award className="size-3.5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-white">100% Certified Organic</h4>
-                  <p className="text-[10px] text-white/60">Zero chemicals, zero palm oil, wood-pressed purity.</p>
+                  <h4 className="text-[11px] font-semibold text-white">100% Certified Organic</h4>
+                  <p className="text-[9.5px] text-white/60">Zero chemicals, zero palm oil, wood-pressed purity.</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md shadow-xs transition hover:bg-white/10">
-                <div className="grid size-8 place-items-center rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
-                  <Truck className="size-4" />
+              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-md shadow-xs transition hover:bg-white/10">
+                <div className="grid size-7 place-items-center rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0">
+                  <Truck className="size-3.5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-white">Farm Fresh Delivery</h4>
-                  <p className="text-[10px] text-white/60">Express dispatch directly from 450+ grower clusters.</p>
+                  <h4 className="text-[11px] font-semibold text-white">Farm Fresh Delivery</h4>
+                  <p className="text-[9.5px] text-white/60">Express dispatch directly from 450+ grower clusters.</p>
                 </div>
               </div>
 
@@ -739,16 +739,16 @@ export function AuthenticationPage() {
           </div>
 
           {/* RIGHT PANE: Interactive Glassmorphism Form (8 cols) */}
-          <div className="lg:col-span-8 xl:col-span-8 p-4 sm:p-6 lg:p-7 py-3 sm:py-4 flex flex-col justify-center bg-card/70 backdrop-blur-xl">
+          <div className="lg:col-span-8 xl:col-span-8 px-4 sm:px-6 py-2.5 sm:py-3.5 flex flex-col justify-center bg-card/70 backdrop-blur-xl">
             
             {/* Top Navigation Mode Pill */}
             <div>
-              <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                  <span className="text-[10.5px] sm:text-xs font-bold uppercase tracking-wider text-brand-leaf block">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-leaf block">
                     {authMode === "login" ? "Welcome Back" : "New Harvest Member"}
                   </span>
-                  <h1 className="font-display text-lg sm:text-2xl font-bold text-foreground leading-snug tracking-tight">
+                  <h1 className="font-display text-base sm:text-xl font-bold text-foreground leading-snug tracking-tight">
                     {isOtpStep
                       ? "Verify Security Code"
                       : authMode === "login"
@@ -759,7 +759,7 @@ export function AuthenticationPage() {
 
                 {/* Quick tab toggle below title on mobile, aligned to the top-right on laptop screen */}
                 {!isOtpStep && (
-                  <div className="inline-flex items-center rounded-xl bg-secondary/80 p-1 border border-border/60 shadow-xs w-full sm:w-auto shrink-0 self-start sm:self-center">
+                  <div className="inline-flex items-center rounded-xl bg-secondary/80 p-0.5 border border-border/60 shadow-xs w-full sm:w-auto shrink-0 self-start sm:self-center">
                     <button
                       type="button"
                       onClick={() => { setAuthMode("login"); setIsOtpStep(false); }}

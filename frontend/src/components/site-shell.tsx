@@ -118,69 +118,71 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white">
       {/* Dynamic Announcement Bar - Deep Gradient Forest Green with Gold Accents */}
-      <div className="bg-gradient-to-r from-[#032613] via-[#064A29] to-[#032613] border-b border-[#D99A12]/25 h-8 sm:h-9 flex items-center overflow-hidden select-none">
-        {/* Mobile View: Continuous Marquee Scrolling Ticker */}
-        <div className="md:hidden w-full overflow-hidden whitespace-nowrap">
-          <div className="animate-marquee flex items-center gap-6 text-[11px] font-medium text-emerald-100">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-bold text-[10px]">
+      {pathname !== "/login" && (
+        <div className="bg-gradient-to-r from-[#032613] via-[#064A29] to-[#032613] border-b border-[#D99A12]/25 h-8 sm:h-9 flex items-center overflow-hidden select-none">
+          {/* Mobile View: Continuous Marquee Scrolling Ticker */}
+          <div className="md:hidden w-full overflow-hidden whitespace-nowrap">
+            <div className="animate-marquee flex items-center gap-6 text-[11px] font-medium text-emerald-100">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-bold text-[10px]">
+                  <Sparkles className="size-3 fill-current" />
+                  PURE SOIL TO SOUL
+                </span>
+                <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
+              </span>
+              <span className="text-[#F5B726]">•</span>
+              <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
+              <span className="text-[#F5B726]">•</span>
+              <span className="text-emerald-200 font-semibold">Direct Farm Support Across India</span>
+              <span className="text-[#F5B726]">•</span>
+
+              {/* Seamless duplicate loop for infinite single-line scroll */}
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-bold text-[10px]">
+                  <Sparkles className="size-3 fill-current" />
+                  PURE SOIL TO SOUL
+                </span>
+                <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
+              </span>
+              <span className="text-[#F5B726]">•</span>
+              <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
+              <span className="text-[#F5B726]">•</span>
+              <span className="text-emerald-200 font-semibold">Direct Farm Support Across India</span>
+              <span className="text-[#F5B726]">•</span>
+            </div>
+          </div>
+
+          {/* Desktop View: Side Aligned Single Line with Utility Links */}
+          <div className="hidden md:flex w-full items-center justify-between px-4 sm:px-6 max-w-7xl mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-extrabold text-[10.5px] uppercase tracking-wider">
                 <Sparkles className="size-3 fill-current" />
                 PURE SOIL TO SOUL
               </span>
-              <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
-            </span>
-            <span className="text-[#F5B726]">•</span>
-            <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
-            <span className="text-[#F5B726]">•</span>
-            <span className="text-emerald-200 font-semibold">Direct Farm Support Across India</span>
-            <span className="text-[#F5B726]">•</span>
-
-            {/* Seamless duplicate loop for infinite single-line scroll */}
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-bold text-[10px]">
-                <Sparkles className="size-3 fill-current" />
-                PURE SOIL TO SOUL
+              <span className="text-white/95 font-medium">
+                "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture"
               </span>
-              <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
-            </span>
-            <span className="text-[#F5B726]">•</span>
-            <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
-            <span className="text-[#F5B726]">•</span>
-            <span className="text-emerald-200 font-semibold">Direct Farm Support Across India</span>
-            <span className="text-[#F5B726]">•</span>
+              <span className="text-[#F5B726]">•</span>
+              <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
+            </div>
+
+            <div className="flex items-center gap-4 text-[11px] text-emerald-200/90 font-medium">
+              <a
+                href="tel:+919311416225"
+                className="hover:text-white transition-colors flex items-center gap-1"
+              >
+                <Phone className="size-3 text-[#F5B726]" />
+                <span>Helpline: +91 93114 16225</span>
+              </a>
+              <span className="text-white/30">|</span>
+              <Link to="/track-order" className="hover:text-white transition-colors flex items-center gap-1">
+                <Truck className="size-3 text-[#F5B726]" />
+                <span>Track Order</span>
+              </Link>
+            </div>
           </div>
         </div>
-
-        {/* Desktop View: Side Aligned Single Line with Utility Links */}
-        <div className="hidden md:flex w-full items-center justify-between px-4 sm:px-6 max-w-7xl mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-extrabold text-[10.5px] uppercase tracking-wider">
-              <Sparkles className="size-3 fill-current" />
-              PURE SOIL TO SOUL
-            </span>
-            <span className="text-white/95 font-medium">
-              "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture"
-            </span>
-            <span className="text-[#F5B726]">•</span>
-            <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
-          </div>
-
-          <div className="flex items-center gap-4 text-[11px] text-emerald-200/90 font-medium">
-            <a
-              href="tel:+919311416225"
-              className="hover:text-white transition-colors flex items-center gap-1"
-            >
-              <Phone className="size-3 text-[#F5B726]" />
-              <span>Helpline: +91 93114 16225</span>
-            </a>
-            <span className="text-white/30">|</span>
-            <Link to="/track-order" className="hover:text-white transition-colors flex items-center gap-1">
-              <Truck className="size-3 text-[#F5B726]" />
-              <span>Track Order</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Sticky Main Header - Ultra-Luxe Elevated Frosted Design */}
       <header
@@ -545,7 +547,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
       <main>{children}</main>
       
-      <Footer />
+      {!isCheckoutFlow && pathname !== "/order-success" && pathname !== "/login" && <Footer />}
 
       {!isCheckoutFlow && pathname !== "/order-success" && (
         <a
@@ -557,7 +559,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </a>
       )}
 
-      {!isCheckoutFlow && (
+      {!isCheckoutFlow && pathname !== "/login" && (
         <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-white/98 px-2 py-2 backdrop-blur-lg md:hidden shadow-lg">
           {[
             { Icon: Home, label: "Home", to: "/" },

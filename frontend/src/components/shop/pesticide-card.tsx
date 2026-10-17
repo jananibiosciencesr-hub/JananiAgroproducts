@@ -70,7 +70,7 @@ export function PesticideCard({ product }: PesticideCardProps) {
   };
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg">
+    <div className="group relative flex flex-col justify-between rounded-2xl border-0 bg-white p-3.5 sm:p-4 shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
       <Link
         to="/products/$slug"
         params={{ slug: product.slug }}

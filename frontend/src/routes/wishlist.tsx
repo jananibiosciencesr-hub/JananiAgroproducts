@@ -263,7 +263,7 @@ export function WishlistPage() {
             return (
               <div
                 key={product.id}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-none border border-gray-200 bg-white shadow-xs hover:shadow-md transition duration-300"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-none border-0 bg-white shadow-none hover:shadow-md transition duration-300"
               >
                 <div>
                   {/* Image Container */}
@@ -327,7 +327,7 @@ export function WishlistPage() {
                   </div>
 
                   {/* Card Content */}
-                  <div className="p-2.5 sm:p-3 space-y-1 border-t border-gray-100">
+                  <div className="p-2.5 sm:p-3 space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#0B6B35] truncate">
                         {product.category}

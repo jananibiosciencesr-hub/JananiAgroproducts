@@ -157,7 +157,7 @@ export function HomeFlashSale({
             return (
               <div
                 key={item.id}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-none border border-gray-200 bg-white shadow-xs hover:shadow-md transition duration-300"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-none border-0 bg-white shadow-none hover:shadow-md transition duration-300"
               >
                 {/* Image & Badges */}
                 <div className="relative aspect-square w-full overflow-hidden rounded-none bg-white p-2.5 flex items-center justify-center">
@@ -206,7 +206,7 @@ export function HomeFlashSale({
                 </div>
 
                 {/* Details */}
-                <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between border-t border-gray-100">
+                <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-[#E7A91A]">
                       <Star className="size-2.5 sm:size-3 fill-current" />

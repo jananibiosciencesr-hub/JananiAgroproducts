@@ -73,7 +73,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-none border border-gray-200 bg-white shadow-xs transition duration-300 hover:shadow-md flex flex-col justify-between ${
+      className={`group relative overflow-hidden rounded-none border-0 bg-white shadow-none transition duration-300 hover:shadow-md flex flex-col justify-between ${
         list ? "sm:grid sm:grid-cols-[220px_1fr]" : ""
       }`}
     >
@@ -159,7 +159,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
       </div>
 
       {/* Content Section - Sharp Rectangular Styling */}
-      <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between border-t border-gray-100">
+      <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
         <div>
           {/* Category */}
           <div className="flex items-center justify-between gap-1">
