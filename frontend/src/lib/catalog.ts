@@ -795,7 +795,7 @@ export const products: Product[] = [
     rating: 4.8,
     reviews: 38,
     badge: "Specialty Aid",
-    image: "/products/balavan-bottle.jpg",
+    image: "/products/agri-stick.jpg",
     inStock: true,
     stockCount: 120,
     description: "AGRI STICK is a premium non-ionic organosilicone super-spreader and adjuvant that significantly lowers the surface tension of spray solutions, ensuring uniform droplet spreading, rainfastness and rapid cuticle penetration.",
