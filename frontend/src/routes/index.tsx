@@ -294,28 +294,8 @@ export function HomePage() {
               </p>
             </div>
 
-            {/* Top-Right Controls: Left & Right Navigation Arrows + View All Categories Button */}
+            {/* Top-Right Controls: View All Categories Button */}
             <div className="flex items-center gap-2 sm:gap-3 self-start sm:self-auto">
-              {/* Carousel Arrows */}
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => scrollCategories("left")}
-                  aria-label="Previous Categories"
-                  className="size-9 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] hover:text-[#4FAE2A] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs border border-slate-200/70"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollCategories("right")}
-                  aria-label="Next Categories"
-                  className="size-9 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] hover:text-[#4FAE2A] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs border border-slate-200/70"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
-              </div>
-
               {/* View All Categories Link Button */}
               <Button
                 asChild
