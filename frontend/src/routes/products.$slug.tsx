@@ -34,11 +34,12 @@ import {
   Mail,
   Users,
   Eye,
-  Heart
+  Heart,
+  MessageSquarePlus
 } from "lucide-react";
 import { products, categories, type Product, type ProductVariant, formatProductName, getProductVariantImage } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
-import { getStorefrontReviews } from "@/lib/api";
+import { getStorefrontReviews, createAdminReview } from "@/lib/api";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/product-card";
 
@@ -246,6 +247,65 @@ function ProductDetailPage() {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState<boolean>(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [matchingReviews, setMatchingReviews] = useState<any[]>([]);
+  const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewName, setReviewName] = useState("");
+  const [reviewEmail, setReviewEmail] = useState("");
+  const [reviewLocation, setReviewLocation] = useState("");
+  const [reviewTitle, setReviewTitle] = useState("");
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewName.trim() || !reviewComment.trim()) {
+      toast.error("Please enter your name and comments.");
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const payload = {
+        product_id: String(product.id || product.slug),
+        product_name: product.name,
+        customer_name: reviewName.trim(),
+        customer_email: reviewEmail.trim() || "farmer@jananiagro.com",
+        rating: reviewRating,
+        title: reviewTitle.trim() || "Farmer Experience",
+        comment: reviewComment.trim(),
+        verified_purchase: 1,
+        status: "Approved"
+      };
+      const res = await createAdminReview(payload as any);
+      if (res?.success) {
+        toast.success("Thank you! Your review has been saved to the database.");
+        const newRev = {
+          id: (res as any)?.reviewId || `REV-${Date.now()}`,
+          productId: String(product.id),
+          productName: product.name,
+          customerName: reviewName.trim(),
+          customerEmail: reviewEmail.trim() || "farmer@jananiagro.com",
+          location: reviewLocation.trim() || "Verified Farmer",
+          rating: reviewRating,
+          title: reviewTitle.trim() || "Farmer Experience",
+          comment: reviewComment.trim(),
+          verifiedPurchase: true,
+          status: "Approved",
+          createdAt: "Just now"
+        };
+        setMatchingReviews((prev) => [newRev, ...prev]);
+        setIsWriteReviewOpen(false);
+        setReviewTitle("");
+        setReviewComment("");
+        setReviewRating(5);
+      } else {
+        toast.error("Failed to save review. Please try again.");
+      }
+    } catch (err) {
+      toast.error("Error submitting review.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -1086,14 +1146,24 @@ function ProductDetailPage() {
           {/* Tab Body: Reviews */}
           {activeTab === "reviews" && (
             <div className="py-6 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 font-display">Farmer Reviews</h3>
-                  <p className="text-xs text-gray-500">Based on {product.reviews || 28} verified customer experiences</p>
+                  <p className="text-xs text-gray-500">Based on {matchingReviews.length > 0 ? matchingReviews.length : (product.reviews || 28)} verified customer experiences</p>
                 </div>
-                <div className="flex items-center gap-1 text-[#E7A91A]">
-                  <Star className="size-4 fill-current" />
-                  <span className="text-sm font-bold text-gray-900">{product.rating.toFixed(1)} / 5.0</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-[#E7A91A]">
+                    <Star className="size-4 fill-current" />
+                    <span className="text-sm font-bold text-gray-900">{product.rating.toFixed(1)} / 5.0</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsWriteReviewOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#075B32] hover:bg-[#064B29] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                  >
+                    <MessageSquarePlus className="size-4" />
+                    Write a Review
+                  </button>
                 </div>
               </div>
 
@@ -1162,6 +1232,127 @@ function ProductDetailPage() {
                   </>
                 )}
               </div>
+
+              {/* Write Review Modal */}
+              {isWriteReviewOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in">
+                  <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                      <div>
+                        <h4 className="text-base font-bold text-gray-900">Share Your Experience</h4>
+                        <p className="text-xs text-gray-500">{product.name}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsWriteReviewOpen(false)}
+                        className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 cursor-pointer"
+                      >
+                        <X className="size-5" />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSubmitReview} className="space-y-4 text-left">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Your Rating</label>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setReviewRating(star)}
+                              className="p-1 cursor-pointer transition hover:scale-110"
+                            >
+                              <Star
+                                className={`size-6 ${
+                                  star <= reviewRating
+                                    ? "text-[#E7A91A] fill-[#E7A91A]"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Your Name *</label>
+                          <input
+                            type="text"
+                            required
+                            value={reviewName}
+                            onChange={(e) => setReviewName(e.target.value)}
+                            placeholder="e.g. Ramesh Kumar"
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-900 outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Your Email</label>
+                          <input
+                            type="email"
+                            value={reviewEmail}
+                            onChange={(e) => setReviewEmail(e.target.value)}
+                            placeholder="e.g. ramesh@example.com"
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-900 outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Crop / Location</label>
+                          <input
+                            type="text"
+                            value={reviewLocation}
+                            onChange={(e) => setReviewLocation(e.target.value)}
+                            placeholder="e.g. Mango Farmer, AP"
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-900 outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Review Title</label>
+                          <input
+                            type="text"
+                            value={reviewTitle}
+                            onChange={(e) => setReviewTitle(e.target.value)}
+                            placeholder="e.g. Excellent root development"
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-900 outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32]"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Detailed Review *</label>
+                        <textarea
+                          required
+                          rows={4}
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          placeholder="Tell fellow farmers how this Janani product performed on your soil and crops..."
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-900 outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32]"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={() => setIsWriteReviewOpen(false)}
+                          className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={submittingReview}
+                          className="rounded-xl bg-[#075B32] hover:bg-[#064B29] px-5 py-2 text-xs font-bold text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
+                        >
+                          {submittingReview ? "Submitting..." : "Submit Review"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

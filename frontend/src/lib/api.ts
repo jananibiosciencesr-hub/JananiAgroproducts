@@ -2517,6 +2517,23 @@ export async function getAdminReviews(params?: ReviewQueryParams) {
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; data: AdminReview[]; count: number; total: number; stats: ReviewStats }>(`/admin/reviews?${qs}`);
   }
+  if (res?.data && Array.isArray(res.data)) {
+    res.data = res.data.map((r: any) => ({
+      ...r,
+      productId: String(r.productId || r.product_id || ""),
+      productName: r.productName || r.product_name || "Janani Agro Product",
+      customerId: r.customerId || r.customer_id || "CUST-1001",
+      customerName: r.customerName || r.customer_name || "Verified Farmer",
+      customerEmail: r.customerEmail || r.customer_email || "farmer@jananiagro.com",
+      customerAvatar: r.customerAvatar || (r.customer_name ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(r.customer_name)}` : undefined),
+      rating: Number(r.rating || 5),
+      title: r.title || "Verified Experience",
+      comment: r.comment || "",
+      verifiedPurchase: r.verifiedPurchase !== undefined ? r.verifiedPurchase : !!r.verified_purchase,
+      helpfulCount: r.helpfulCount !== undefined ? r.helpfulCount : (r.helpful_count || 0),
+      createdAt: r.createdAt || r.created_at || "Recent"
+    }));
+  }
   return res || { success: true, data: [], count: 0, total: 0, stats: { totalReviews: 0, approvedCount: 0, pendingCount: 0, rejectedCount: 0, flaggedCount: 0, photoReviewsCount: 0, averageRating: 5.0, responseRate: "0%", recommendationRate: "0%" } };
 }
 
@@ -2553,6 +2570,16 @@ export async function createAdminReview(payload: Partial<AdminReview>) {
 
 export async function getStorefrontReviews(): Promise<AdminReview[]> {
   try {
+    const adminRes = await getAdminReviews({ status: "Approved" });
+    if (adminRes?.data && Array.isArray(adminRes.data) && adminRes.data.length > 0) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("janani_admin_reviews", JSON.stringify(adminRes.data));
+      }
+      return adminRes.data;
+    }
+  } catch (e) {}
+
+  try {
     const res = await fetchJson<{ success: boolean; data: AdminReview[] }>("/reviews");
     if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
       if (typeof window !== "undefined") {
@@ -2571,13 +2598,6 @@ export async function getStorefrontReviews(): Promise<AdminReview[]> {
       }
     } catch (e) {}
   }
-
-  try {
-    const adminRes = await getAdminReviews({ status: "Approved" });
-    if (adminRes?.data && adminRes.data.length > 0) {
-      return adminRes.data;
-    }
-  } catch (e) {}
 
   return [];
 }

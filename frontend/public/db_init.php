@@ -580,6 +580,25 @@ if ($orderCount == 0) {
     $response['seeds_inserted'][] = 'orders (2)';
 }
 
+// 7. Customer & Farmer Reviews Seed Data
+$revCount = $pdo->query("SELECT COUNT(*) FROM `reviews`")->fetchColumn();
+if ($revCount == 0) {
+    $reviews = [
+        ['REV-101', 'prod-bhumi-shakti', 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant', 'CUST-1001', 'Ramesh Kumar', 'ramesh.kumar@gmail.com', 5, 'Increased soil health and bumper yield', 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!', 1, 'Approved', 42],
+        ['REV-102', 'prod-harit', 'HARIT — Trichoderma Viride Liquid Biofungicide', 'CUST-1002', 'Srinivas Reddy', 'srinivas.reddy@gmail.com', 5, 'Root rot under complete control', 'HARIT helped in controlling root rot and my plants are now much healthier.', 1, 'Approved', 29],
+        ['REV-103', 'prod-suraksha', 'SURAKSHA — Bio Pesticide & Crop Shield', 'CUST-1003', 'Mahesh Patel', 'mahesh.patel@gmail.com', 5, 'Excellent cotton crop improvement', 'Good quality products and excellent results. My cotton crop showed great improvement.', 1, 'Approved', 18],
+        ['REV-104', 'prod-pushkal', 'PUSHKAL — Flowering & Fruit Set Biostimulant', 'CUST-1004', 'Suresh Patil', 'suresh.patil@gmail.com', 5, 'Thicker stalks and higher sugar recovery', 'Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!', 1, 'Approved', 15],
+        ['REV-105', 'prod-annada', 'ANNADA — Fish Amino Acid Organic Growth Promoter', 'CUST-1005', 'Baldev Singh', 'baldev.singh@gmail.com', 5, 'Zero chemical residue and vigorous tillering', 'Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.', 1, 'Approved', 21],
+        ['REV-106', 'prod-neem-oil', 'NEEM OIL — Cold Pressed Azadirachtin Formulation', 'CUST-1006', 'Radhika K.', 'radhika.k@gmail.com', 5, 'Authentic aroma and pure traditional extraction!', 'The fragrance and texture of this Neem formulation are completely unmatched compared to commercially refined market brands.', 1, 'Approved', 24],
+        ['REV-107', 'prod-dharani', 'DHARANI — Complete Organic Bio Fertilizer', 'CUST-1007', 'Suresh Narayanan', 'suresh.n@gmail.com', 5, 'Clean packing, fast delivery and authentic results', 'Ordered the farm pack. Eco-packaging is top notch, no leakage, and crops show vigorous healthy canopy within 10 days.', 1, 'Approved', 19]
+    ];
+    $stmt = $pdo->prepare("INSERT IGNORE INTO `reviews` (`id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `customer_email`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `helpful_count`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    foreach ($reviews as $r) {
+        $stmt->execute($r);
+    }
+    $response['seeds_inserted'][] = 'reviews (7)';
+}
+
 $response['success'] = count($response['errors']) === 0;
 $response['message'] = $response['success'] 
     ? 'All tables and columns verified & auto-migrated successfully in MySQL database ' . $connectedDb . '!' 
