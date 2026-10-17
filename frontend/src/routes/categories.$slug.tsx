@@ -49,7 +49,7 @@ function CategoryDetailPage() {
     });
   }, [rawCats]);
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
-  const category = allCats.find((c) => c.slug === slug) ?? allCats[0];
+  const category = allCats.find((c) => c.slug === slug || (slug === "bio-fungicides" && c.slug === "fungicides")) ?? allCats[0];
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
   const [list, setList] = useState(false);
@@ -349,15 +349,17 @@ function CategoryDetailPage() {
                   key={c.slug}
                   to="/categories/$slug"
                   params={{ slug: c.slug }}
-                  className="group flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                  className="group flex items-center gap-3.5 p-3.5 sm:p-4 rounded-3xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                 >
-                  <img
-                    src={c.image}
-                    alt={c.name}
-                    className="size-14 sm:size-16 rounded-2xl object-cover group-hover:scale-105 transition duration-300 shrink-0 border border-slate-100"
-                  />
+                  <div className="size-16 sm:size-18 rounded-full overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
+                    <img
+                      src={c.image}
+                      alt={c.name}
+                      className="size-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                  </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-[#075B32] transition-colors truncate">
+                    <h4 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors truncate">
                       {c.name}
                     </h4>
                     <span className="text-[11px] text-[#0B6B35] font-semibold mt-0.5 block">

@@ -334,17 +334,20 @@ export async function getCategories() {
   const FORBIDDEN_GROCERY_TERMS = [
     "rice", "grain", "grains", "pulse", "pulses", "dal", "dals", "spice", "spices",
     "ghee", "mustard oil", "cold pressed", "oil", "basmati", "wheat", "millet", "millets",
-    "flour", "atta", "sugar", "honey", "pantry", "grocery", "edible"
+    "flour", "atta", "sugar", "honey", "pantry", "grocery", "edible",
+    "biological-crop-protection", "organic-plant-nutrients", "soil-conditioners-biostimulants",
+    "organic-fertilizers", "cat-cropprot", "cat-nutrients", "cat-soil"
   ];
 
   const isGroceryCategory = (cat: any): boolean => {
     if (!cat) return false;
     const name = (cat.name || "").toLowerCase();
     const slug = (cat.slug || "").toLowerCase();
+    const id = (cat.id || "").toLowerCase();
     if (name.includes("neem") || slug.includes("neem") || name.includes("botanical") || slug.includes("botanical")) {
       return false;
     }
-    return FORBIDDEN_GROCERY_TERMS.some((term) => name.includes(term) || slug.includes(term));
+    return FORBIDDEN_GROCERY_TERMS.some((term) => name.includes(term) || slug.includes(term) || id.includes(term));
   };
 
   // Also read stored categories from localStorage for real-time reactivity
@@ -356,7 +359,7 @@ export async function getCategories() {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           storedList = parsed.filter((c) => !isGroceryCategory(c));
-          // Clean stale grocery categories from localStorage
+          // Clean stale grocery categories and product bottle images from localStorage
           localStorage.setItem("janani_admin_categories", JSON.stringify(storedList));
           localStorage.setItem("janani_admin_categories_v3", JSON.stringify(storedList));
         }
@@ -366,62 +369,64 @@ export async function getCategories() {
 
   const map = new Map<string, any>();
 
-  // 1. If backend returned valid categories from MySQL database, use them as primary source of truth!
+  // 1. Initialise with the 10 canonical categories from Image 1 specification
+  for (const cat of categories) {
+    const key = cat.slug.toLowerCase();
+    map.set(key, {
+      id: `cat-${cat.slug}`,
+      name: cat.name,
+      slug: cat.slug,
+      count: cat.count || 1,
+      image: getCategoryImage(cat.slug || cat.name),
+      description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
+      icon: "🌾",
+      active: true
+    });
+  }
+
+  // 2. If backend returned categories, merge valid custom categories or update counts
   if (backendList.length > 0) {
     for (const cat of backendList) {
       if (isGroceryCategory(cat)) continue;
       if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") continue;
-      const key = String(cat.id || cat.slug || cat.name).toLowerCase();
-      map.set(key, {
-        id: cat.id || `cat-${cat.slug || key}`,
-        name: cat.name || cat.slug || key,
-        slug: cat.slug || key,
-        count: Number(cat.product_count || cat.productsCount || cat.count) || 0,
-        image: getCategoryImage(cat.slug || cat.name, cat.image || cat.bannerImage || cat.banner_image),
-        description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
-        icon: cat.icon || "🌾",
-        active: true
-      });
-    }
-  } else {
-    // Fallback: Initial base categories only if backend database is offline or empty
-    for (const cat of categories) {
-      if (isGroceryCategory(cat)) continue;
-      const key = String(cat.id || cat.slug || cat.name).toLowerCase();
-      map.set(key, {
-        id: cat.id,
-        name: cat.name,
-        slug: cat.slug,
-        count: cat.count || 2,
-        image: getCategoryImage(cat.slug || cat.name, cat.image),
-        description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
-        icon: "🌾",
-        active: true
-      });
+      const key = String(cat.slug || cat.name || cat.id).toLowerCase();
+      const existing = map.get(key) || (cat.slug ? map.get(String(cat.slug).toLowerCase()) : null);
+      if (existing) {
+        // Update count if available, but ALWAYS preserve verified Image 1 category image
+        existing.count = Number(cat.product_count || cat.productsCount || cat.count) || existing.count;
+        if (cat.description) existing.description = cat.description;
+      } else {
+        // Admin-created new category
+        map.set(key, {
+          id: cat.id || `cat-${cat.slug || key}`,
+          name: cat.name || cat.slug || key,
+          slug: cat.slug || key,
+          count: Number(cat.product_count || cat.productsCount || cat.count) || 1,
+          image: getCategoryImage(cat.slug || cat.name),
+          description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
+          icon: cat.icon || "🌾",
+          active: true
+        });
+      }
     }
   }
 
-  // 2. Merge stored / local categories (if edited or saved locally)
+  // 3. Merge stored / local categories if admin edited locally
   for (const cat of storedList) {
     if (isGroceryCategory(cat)) continue;
-    const key = String(cat.id || cat.slug || cat.name).toLowerCase();
+    const key = String(cat.slug || cat.name || cat.id).toLowerCase();
     if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") {
       map.delete(key);
       if (cat.slug) map.delete(String(cat.slug).toLowerCase());
-      if (cat.id) map.delete(String(cat.id).toLowerCase());
       continue;
     }
-    const existing = map.get(key) || (cat.id ? map.get(String(cat.id).toLowerCase()) : null) || (cat.slug ? map.get(String(cat.slug).toLowerCase()) : null);
-    map.set(key, {
-      id: cat.id || existing?.id || `cat-${cat.slug || key}`,
-      name: cat.name || existing?.name || key,
-      slug: cat.slug || existing?.slug || key,
-      count: Number(cat.product_count || cat.productsCount || cat.count) || existing?.count || 0,
-      image: getCategoryImage(cat.slug || cat.name, cat.image || cat.bannerImage || cat.banner_image || existing?.image),
-      description: cat.description || existing?.description || "Natural and certified organic bio-inputs for sustainable farming.",
-      icon: cat.icon || existing?.icon || "🌾",
-      active: true
-    });
+    const existing = map.get(key) || (cat.slug ? map.get(String(cat.slug).toLowerCase()) : null);
+    if (existing) {
+      existing.count = Number(cat.product_count || cat.productsCount || cat.count) || existing.count;
+      if (cat.name) existing.name = cat.name;
+      if (cat.description) existing.description = cat.description;
+      existing.image = getCategoryImage(cat.slug || cat.name);
+    }
   }
 
   const result = Array.from(map.values()).filter((c) => !isGroceryCategory(c));
@@ -2740,21 +2745,20 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
     }
   }
 
-  // Fallback to localStorage and 11 core catalog categories if database is empty or unreached
+  // Fallback to localStorage and 10 core catalog categories from Image 1 specification
   if (list.length === 0) {
     const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
     const catalogSeed = [
-      { id: "cat-bio-fertilizers", name: "Bio Fertilizers", slug: "bio-fertilizers", image: "/products/dharani.jpg", bannerImage: "/products/dharani.jpg", icon: "🌾", count: 2, description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
-      { id: "cat-bio-pesticides", name: "Bio Pesticides", slug: "bio-pesticides", image: "/products/suraksha.jpg", bannerImage: "/products/suraksha.jpg", icon: "🛡️", count: 2, description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
-      { id: "cat-bio-fungicides", name: "Bio Fungicides", slug: "bio-fungicides", image: "/products/harit.jpg", bannerImage: "/products/harit.jpg", icon: "🍄", count: 2, description: "Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens." },
-      { id: "cat-bio-stimulants", name: "Bio Stimulants", slug: "bio-stimulants", image: "/products/pushkal.jpg", bannerImage: "/products/pushkal.jpg", icon: "⚡", count: 4, description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
-      { id: "cat-micro-nutrients", name: "Micro Nutrients", slug: "micro-nutrients", image: "/products/annada.jpg", bannerImage: "/products/annada.jpg", icon: "🌱", count: 2, description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
-      { id: "cat-insecticides", name: "Insecticides", slug: "insecticides", image: "/products/balavan.jpg", bannerImage: "/products/balavan.jpg", icon: "🦗", count: 1, description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
-      { id: "cat-fungicides", name: "Fungicides", slug: "fungicides", image: "/products/suraksha.jpg", bannerImage: "/products/suraksha.jpg", icon: "🍃", count: 1, description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
-      { id: "cat-botanical-extracts", name: "Botanical Extracts", slug: "botanical-extracts", image: "/products/neem-oil.jpg", bannerImage: "/products/neem-oil.jpg", icon: "🌿", count: 1, description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
-      { id: "cat-water-solubles", name: "Water Solubles", slug: "water-solubles", image: "/products/dhanya.jpg", bannerImage: "/products/dhanya.jpg", icon: "💧", count: 1, description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
-      { id: "cat-agri-inputs", name: "Agri Inputs", slug: "agri-inputs", image: "/products/bhumi-shakti.jpg", bannerImage: "/products/bhumi-shakti.jpg", icon: "🚜", count: 2, description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
-      { id: "cat-others", name: "Others", slug: "others", image: "/products/balavan-bottle.jpg", bannerImage: "/products/balavan-bottle.jpg", icon: "📦", count: 1, description: "Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants." }
+      { id: "cat-bio-fertilizers", name: "Bio Fertilizers", slug: "bio-fertilizers", image: "/images/categories/bio-fertilizers.jpg", bannerImage: "/images/categories/bio-fertilizers.jpg", icon: "🌾", count: 2, description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
+      { id: "cat-bio-pesticides", name: "Bio Pesticides", slug: "bio-pesticides", image: "/images/categories/bio-pesticides.jpg", bannerImage: "/images/categories/bio-pesticides.jpg", icon: "🛡️", count: 1, description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
+      { id: "cat-bio-stimulants", name: "Bio Stimulants", slug: "bio-stimulants", image: "/images/categories/bio-stimulants.jpg", bannerImage: "/images/categories/bio-stimulants.jpg", icon: "⚡", count: 4, description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
+      { id: "cat-micro-nutrients", name: "Micro Nutrients", slug: "micro-nutrients", image: "/images/categories/micro-nutrients.jpg", bannerImage: "/images/categories/micro-nutrients.jpg", icon: "🌱", count: 2, description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
+      { id: "cat-insecticides", name: "Insecticides", slug: "insecticides", image: "/images/categories/insecticides.jpg", bannerImage: "/images/categories/insecticides.jpg", icon: "🦗", count: 1, description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
+      { id: "cat-fungicides", name: "Fungicides", slug: "fungicides", image: "/images/categories/fungicides.jpg", bannerImage: "/images/categories/fungicides.jpg", icon: "🍃", count: 1, description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
+      { id: "cat-botanical-extracts", name: "Botanical Extracts", slug: "botanical-extracts", image: "/images/categories/botanical-extracts.jpg", bannerImage: "/images/categories/botanical-extracts.jpg", icon: "🌿", count: 1, description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
+      { id: "cat-water-solubles", name: "Water Solubles", slug: "water-solubles", image: "/images/categories/water-solubles.jpg", bannerImage: "/images/categories/water-solubles.jpg", icon: "💧", count: 1, description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
+      { id: "cat-agri-inputs", name: "Agri Inputs", slug: "agri-inputs", image: "/images/categories/agri-inputs.jpg", bannerImage: "/images/categories/agri-inputs.jpg", icon: "🚜", count: 2, description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
+      { id: "cat-others", name: "Others", slug: "others", image: "/images/categories/others.jpg", bannerImage: "/images/categories/others.jpg", icon: "📦", count: 1, description: "Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants." }
     ].map((c, idx) => ({
       id: c.id,
       name: c.name,

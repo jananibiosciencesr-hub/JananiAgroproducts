@@ -23,7 +23,7 @@ export const Route = createFileRoute("/categories/")({
       {
         name: "description",
         content:
-          "Explore Janani Agri Products by category: Bio Fertilizers, Bio Pesticides, Bio Fungicides, Bio Stimulants, Micro Nutrients, Insecticides, Fungicides, Botanical Extracts, Water Solubles, Agri Inputs and Others.",
+          "Explore Janani Agri Products by category: Bio Fertilizers, Bio Pesticides, Bio Stimulants, Micro Nutrients, Insecticides, Fungicides, Botanical Extracts, Water Solubles, Agri Inputs and Others.",
       },
       { property: "og:title", content: "Agri Products Categories — JANANI AGRO PRODUCTS" },
     ],
@@ -133,7 +133,7 @@ function CategoriesIndexPage() {
           </div>
 
           <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-none text-left lg:whitespace-nowrap hyphens-none">
-            Certified bio-inputs, organic crop protection, stimulants, micronutrients, and water solubles manufactured for sustainable Indian agriculture.
+            Discover biological crop protection, soil biostimulants, and organic plant nutrients.
           </p>
         </div>
 
@@ -178,7 +178,7 @@ function CategoriesIndexPage() {
         </div>
       </div>
 
-      {/* Categories Grid */}
+      {/* Categories Grid (Matches Image 1 5-column Pill Card Layout) */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
         {filteredCategories.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-border/80 p-8 shadow-xs">
@@ -200,78 +200,41 @@ function CategoriesIndexPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4">
             {filteredCategories.map((cat) => {
-              const count = allProds.filter(
+              const catImg = getCategoryImage(cat.slug || cat.name, cat.image);
+              const count = cat.count || allProds.filter(
                 (p) =>
                   p.category.toLowerCase() === cat.name.toLowerCase() ||
                   p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))
-              ).length;
-              const catImg = getCategoryImage(cat.slug || cat.name, cat.image);
+              ).length || 1;
 
               return (
-                <div
+                <Link
                   key={cat.slug}
-                  className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/80 bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[#075B32]/30"
+                  to="/categories/$slug"
+                  params={{ slug: cat.slug }}
+                  className="group flex items-center gap-3.5 p-3.5 sm:p-4 rounded-3xl border border-slate-200/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                 >
-                  {/* Clickable Image Header */}
-                  <Link
-                    to="/categories/$slug"
-                    params={{ slug: cat.slug }}
-                    className="relative aspect-[4/3] overflow-hidden bg-muted block"
-                  >
+                  <div className="size-16 sm:size-18 rounded-full overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
                     <img
                       src={catImg}
                       alt={cat.name}
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
                       }}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      className="size-full object-cover group-hover:scale-105 transition duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-                    
-                    <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-[#075B32]/90 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm shadow-xs">
-                      <Package className="size-3" />
-                      {count > 0 ? `${count} Products` : `${cat.count || 2} Products`}
-                    </span>
-                  </Link>
-
-                  {/* Card Content */}
-                  <div className="flex flex-1 flex-col justify-between p-5">
-                    <div>
-                      <Link
-                        to="/categories/$slug"
-                        params={{ slug: cat.slug }}
-                        className="block group-hover:text-[#075B32] transition-colors"
-                      >
-                        <h3 className="text-lg font-bold text-foreground tracking-tight">
-                          {cat.name}
-                        </h3>
-                      </Link>
-                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                        {cat.description ||
-                          "Certified organic bio-input formulated for sustainable agriculture and peak crop yields."}
-                      </p>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between pt-3.5 border-t border-border/60">
-                      <Link
-                        to="/categories/$slug"
-                        params={{ slug: cat.slug }}
-                        className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#075B32] hover:text-[#4FAE2A] transition-colors"
-                      >
-                        <span>Explore Category</span>
-                        <ChevronRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </Link>
-                      <Link
-                        to="/products"
-                        className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        All
-                      </Link>
-                    </div>
                   </div>
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors truncate">
+                      {cat.name}
+                    </h3>
+                    <span className="text-[11px] text-[#0B6B35] font-semibold mt-0.5 block">
+                      {count} formulations
+                    </span>
+                  </div>
+                </Link>
               );
             })}
           </div>

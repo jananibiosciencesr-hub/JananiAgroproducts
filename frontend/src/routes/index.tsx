@@ -115,7 +115,7 @@ export function HomePage() {
     }
   };
 
-  // Dynamic Agri Products Categories (from database & store)
+  // Dynamic Agri Products Categories (from Image 1 specification)
   const categoryCards = useMemo(() => {
     return allCategories
       .filter((cat: any) => {
@@ -125,19 +125,21 @@ export function HomePage() {
         return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((term) => n.includes(term) || s.includes(term));
       })
       .map((cat: any) => {
-      const slug = cat.slug || slugs(cat.name || "");
-      const title = cat.name || cat.title || "Category";
-      const image = getCategoryImage(slug || title, cat.image || cat.bannerImage || cat.banner_image);
-      const link = `/categories/${slug}`;
-      const description = cat.description || "Natural, biological, and effective solutions for every stage of crop growth.";
-      return {
-        id: cat.id || slug,
-        title,
-        image,
-        link,
-        description,
-      };
-    });
+        const slug = cat.slug || slugs(cat.name || "");
+        const title = cat.name || cat.title || "Category";
+        const image = getCategoryImage(slug || title, cat.image);
+        const link = `/categories/${slug}`;
+        const description = cat.description || "Natural, biological, and effective solutions for every stage of crop growth.";
+        const count = cat.count || cat.productsCount || 1;
+        return {
+          id: cat.id || slug,
+          title,
+          image,
+          link,
+          description,
+          count,
+        };
+      });
   }, [allCategories]);
 
   // 5 Featured Products (From Mockup)
@@ -361,7 +363,7 @@ export function HomePage() {
                   to={cat.link}
                   className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1.5 group"
                 >
-                  <div className="size-20 sm:size-24 rounded-2xl overflow-hidden mb-3.5 shadow-sm border border-emerald-100/80 bg-white group-hover:border-[#4FAE2A]/50 group-hover:shadow-md transition-all duration-300 relative">
+                  <div className="size-20 sm:size-24 rounded-full overflow-hidden mb-3.5 shadow-sm border border-emerald-100/80 bg-white group-hover:border-[#4FAE2A]/50 group-hover:shadow-md transition-all duration-300 relative">
                     <img
                       src={cat.image}
                       alt={cat.title}
@@ -372,9 +374,9 @@ export function HomePage() {
                   <h3 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors line-clamp-1">
                     {cat.title}
                   </h3>
-                  <p className="mt-1 text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                    {cat.description}
-                  </p>
+                  <span className="text-[11px] font-semibold text-[#0B6B35] mt-1 block">
+                    {cat.count} formulations
+                  </span>
                 </Link>
               ))}
             </div>

@@ -321,19 +321,16 @@ export async function initDatabase() {
     if (catRows[0].count === 0) {
       console.log(`🌱 [MySQL Seed] Seeding categories...`);
       const categoriesSeed = [
-        ["cat-nutrients", "Organic Plant Nutrients", "organic-plant-nutrients", 1, null, null, "/products/annada.jpg", 1, 1, 1, 1],
-        ["cat-cropprot", "Biological Crop Protection", "biological-crop-protection", 1, null, null, "/products/balavan.jpg", 2, 1, 1, 1],
-        ["cat-soil", "Soil Conditioners & Biostimulants", "soil-conditioners-biostimulants", 1, null, null, "/products/bhumi-shakti.jpg", 1, 1, 1, 1],
-        ["cat-oils", "Cold Pressed Oils", "cold-pressed-oils", 1, null, null, "/images/categories/oils.webp", 4, 1, 1, 1],
-        ["cat-rice", "Organic Rice", "organic-rice", 1, null, null, "/images/categories/rice.webp", 3, 1, 1, 0],
-        ["cat-pulses", "Pulses & Dals", "pulses", 1, null, null, "/images/categories/pulses.webp", 3, 1, 1, 0],
-        ["cat-spices", "Raw Spices", "spices", 1, null, null, "/images/categories/spices.webp", 4, 1, 1, 1],
-        ["cat-wheat", "Wheat & Grains", "wheat", 1, null, null, "/images/categories/wheat.webp", 2, 1, 0, 0],
-        ["cat-millets", "Ancient Millets", "millets", 1, null, null, "/images/categories/millets.webp", 2, 1, 0, 1],
-        ["cat-seeds", "Seeds & Superfoods", "seeds", 1, null, null, "/images/categories/seeds.webp", 3, 1, 0, 0],
-        ["cat-flours", "Stoneground Flours", "flours", 1, null, null, "/images/categories/flours.webp", 2, 1, 0, 0],
-        ["cat-dryfruits", "Dry Fruits & Sweeteners", "dry-fruits", 1, null, null, "/images/categories/dryfruits.webp", 2, 1, 0, 0],
-        ["cat-fertilizers", "Organic Fertilizers", "organic-fertilizers", 1, null, null, "/images/categories/fertilizers.webp", 1, 1, 0, 0]
+        ["cat-bio-fertilizers", "Bio Fertilizers", "bio-fertilizers", 1, null, null, "/images/categories/bio-fertilizers.jpg", 2, 1, 1, 1],
+        ["cat-bio-pesticides", "Bio Pesticides", "bio-pesticides", 1, null, null, "/images/categories/bio-pesticides.jpg", 1, 1, 1, 1],
+        ["cat-bio-stimulants", "Bio Stimulants", "bio-stimulants", 1, null, null, "/images/categories/bio-stimulants.jpg", 4, 1, 1, 1],
+        ["cat-micro-nutrients", "Micro Nutrients", "micro-nutrients", 1, null, null, "/images/categories/micro-nutrients.jpg", 2, 1, 1, 1],
+        ["cat-insecticides", "Insecticides", "insecticides", 1, null, null, "/images/categories/insecticides.jpg", 1, 1, 1, 1],
+        ["cat-fungicides", "Fungicides", "fungicides", 1, null, null, "/images/categories/fungicides.jpg", 1, 1, 1, 1],
+        ["cat-botanical-extracts", "Botanical Extracts", "botanical-extracts", 1, null, null, "/images/categories/botanical-extracts.jpg", 1, 1, 1, 1],
+        ["cat-water-solubles", "Water Solubles", "water-solubles", 1, null, null, "/images/categories/water-solubles.jpg", 1, 1, 1, 1],
+        ["cat-agri-inputs", "Agri Inputs", "agri-inputs", 1, null, null, "/images/categories/agri-inputs.jpg", 2, 1, 1, 1],
+        ["cat-others", "Others", "others", 1, null, null, "/images/categories/others.jpg", 1, 1, 1, 1]
       ];
       for (const [id, name, slug, level, parentId, parentName, img, count, active, featured, trending] of categoriesSeed) {
         await connection.query(
@@ -341,7 +338,7 @@ export async function initDatabase() {
           [id, name, slug, level, parentId, parentName, img, count, active, featured, trending]
         );
       }
-      results.seedsInserted.push("categories (12)");
+      results.seedsInserted.push("categories (10)");
     }
 
     // Seed Products if empty

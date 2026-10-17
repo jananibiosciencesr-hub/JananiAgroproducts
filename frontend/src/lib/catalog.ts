@@ -5,9 +5,9 @@ import pantryImage from "@/assets/janani-pantry.jpg";
 
 export { heroImage, productsImage, storyImage, pantryImage };
 
-// Smart Category Image Resolver with verified organic photography
+// Smart Category Image Resolver with verified organic photography (matches Image 1 exactly)
 export function getCategoryImage(nameOrSlug: string = "", customImage?: string): string {
-  if (customImage && typeof customImage === "string" && customImage.trim() !== "" && !customImage.includes("placeholder")) {
+  if (customImage && typeof customImage === "string" && customImage.startsWith("/images/categories/")) {
     return customImage;
   }
   const s = (nameOrSlug || "").toLowerCase();
@@ -16,9 +16,6 @@ export function getCategoryImage(nameOrSlug: string = "", customImage?: string):
   }
   if (s.includes("bio-pesticide") || s.includes("pesticide") || s.includes("suraksha")) {
     return "/images/categories/bio-pesticides.jpg";
-  }
-  if (s.includes("bio-fungicide") || s.includes("harit") || s.includes("trichoderma") || s.includes("viride")) {
-    return "/images/categories/bio-fungicides.jpg";
   }
   if (s.includes("stimulant") || s.includes("bio-stimulant") || s.includes("pushkal") || s.includes("vigor")) {
     return "/images/categories/bio-stimulants.jpg";
@@ -29,7 +26,7 @@ export function getCategoryImage(nameOrSlug: string = "", customImage?: string):
   if (s.includes("insecticide") || s.includes("shield")) {
     return "/images/categories/insecticides.jpg";
   }
-  if (s.includes("fungicide") || s.includes("care")) {
+  if (s.includes("fungicide") || s.includes("harit") || s.includes("trichoderma") || s.includes("viride") || s.includes("care")) {
     return "/images/categories/fungicides.jpg";
   }
   if (s.includes("botanical") || s.includes("neem")) {
@@ -133,19 +130,18 @@ export type Product = {
 
 export const slugs = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-// The 11 Core Agri Products Categories (from client specification)
+// The 10 Core Agri Products Categories (from Image 1 specification)
 export const categories: { id: number; name: string; slug: string; count: number; image: string; description?: string }[] = [
   { id: 1, name: "Bio Fertilizers", slug: "bio-fertilizers", count: 2, image: "/images/categories/bio-fertilizers.jpg", description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
   { id: 2, name: "Bio Pesticides", slug: "bio-pesticides", count: 1, image: "/images/categories/bio-pesticides.jpg", description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
-  { id: 3, name: "Bio Fungicides", slug: "bio-fungicides", count: 2, image: "/images/categories/bio-fungicides.jpg", description: "Antagonistic biological control agents suppressing wilt, damping-off, root rot, collar rot and soil-borne fungal pathogens." },
-  { id: 4, name: "Bio Stimulants", slug: "bio-stimulants", count: 4, image: "/images/categories/bio-stimulants.jpg", description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
-  { id: 5, name: "Micro Nutrients", slug: "micro-nutrients", count: 2, image: "/images/categories/micro-nutrients.jpg", description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
-  { id: 6, name: "Insecticides", slug: "insecticides", count: 1, image: "/images/categories/insecticides.jpg", description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
-  { id: 7, name: "Fungicides", slug: "fungicides", count: 1, image: "/images/categories/fungicides.jpg", description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
-  { id: 8, name: "Botanical Extracts", slug: "botanical-extracts", count: 1, image: "/images/categories/botanical-extracts.jpg", description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
-  { id: 9, name: "Water Solubles", slug: "water-solubles", count: 1, image: "/images/categories/water-solubles.jpg", description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
-  { id: 10, name: "Agri Inputs", slug: "agri-inputs", count: 2, image: "/images/categories/agri-inputs.jpg", description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
-  { id: 11, name: "Others", slug: "others", count: 1, image: "/images/categories/others.jpg", description: "Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants." }
+  { id: 3, name: "Bio Stimulants", slug: "bio-stimulants", count: 4, image: "/images/categories/bio-stimulants.jpg", description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
+  { id: 4, name: "Micro Nutrients", slug: "micro-nutrients", count: 2, image: "/images/categories/micro-nutrients.jpg", description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
+  { id: 5, name: "Insecticides", slug: "insecticides", count: 1, image: "/images/categories/insecticides.jpg", description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
+  { id: 6, name: "Fungicides", slug: "fungicides", count: 1, image: "/images/categories/fungicides.jpg", description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
+  { id: 7, name: "Botanical Extracts", slug: "botanical-extracts", count: 1, image: "/images/categories/botanical-extracts.jpg", description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
+  { id: 8, name: "Water Solubles", slug: "water-solubles", count: 1, image: "/images/categories/water-solubles.jpg", description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
+  { id: 9, name: "Agri Inputs", slug: "agri-inputs", count: 2, image: "/images/categories/agri-inputs.jpg", description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
+  { id: 10, name: "Others", slug: "others", count: 1, image: "/images/categories/others.jpg", description: "Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants." }
 ];
 
 export const products: Product[] = [
