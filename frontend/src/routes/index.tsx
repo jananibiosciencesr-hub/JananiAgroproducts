@@ -69,12 +69,44 @@ export function HomePage() {
     }
   };
 
-  // Featured Products Carousel Ref for Smooth Scrolling
+  // Featured Products Carousel Ref & Auto-scroll Effect
   const productsScrollRef = useRef<HTMLDivElement>(null);
+  const [isProductsHovered, setIsProductsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isProductsHovered) return;
+    const interval = setInterval(() => {
+      if (productsScrollRef.current) {
+        const el = productsScrollRef.current;
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        if (el.scrollLeft >= maxScroll - 15) {
+          el.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          el.scrollBy({ left: 280, behavior: "smooth" });
+        }
+      }
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isProductsHovered]);
+
   const scrollProducts = (direction: "left" | "right") => {
     if (productsScrollRef.current) {
-      const offset = direction === "left" ? -320 : 320;
-      productsScrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
+      const el = productsScrollRef.current;
+      const cardWidth = el.clientWidth > 640 ? 280 : 180;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (direction === "right") {
+        if (el.scrollLeft >= maxScroll - 15) {
+          el.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          el.scrollBy({ left: cardWidth, behavior: "smooth" });
+        }
+      } else {
+        if (el.scrollLeft <= 15) {
+          el.scrollTo({ left: maxScroll, behavior: "smooth" });
+        } else {
+          el.scrollBy({ left: -cardWidth, behavior: "smooth" });
+        }
+      }
     }
   };
 
@@ -142,7 +174,7 @@ export function HomePage() {
       });
   }, [allCategories]);
 
-  // 5 Featured Products (From Mockup)
+  // Featured Products
   const featuredProductsList = [
     {
       id: "harit",
@@ -193,6 +225,36 @@ export function HomePage() {
       link: "/products/annada-fish-amino-acid-5l",
       price: 3600,
       oldPrice: 3999,
+    },
+    {
+      id: "dharani",
+      numId: 6,
+      name: "Dharani",
+      spec: "Root Growth Promoter & Biofertilizer",
+      image: "/products/dharani.jpg",
+      link: "/products/dharani-root-growth-promoter-1l",
+      price: 390,
+      oldPrice: 460,
+    },
+    {
+      id: "balavan",
+      numId: 7,
+      name: "Balavan",
+      spec: "Botanical Crop Shield & Biofungicide",
+      image: "/products/balavan.jpg",
+      link: "/products/balavan-botanical-crop-protector-1l",
+      price: 480,
+      oldPrice: 560,
+    },
+    {
+      id: "dhanya",
+      numId: 8,
+      name: "Dhanya",
+      spec: "Chelated Micronutrient Mixture",
+      image: "/products/dhanya.jpg",
+      link: "/products/dhanya-micronutrient-mixture-1l",
+      price: 520,
+      oldPrice: 600,
     },
   ];
 
@@ -418,7 +480,9 @@ export function HomePage() {
             {/* Product Cards Row */}
             <div
               ref={productsScrollRef}
-              className="flex items-stretch gap-5 sm:gap-6 overflow-x-auto pb-4 pt-1 px-2 scrollbar-none snap-x snap-mandatory"
+              onMouseEnter={() => setIsProductsHovered(true)}
+              onMouseLeave={() => setIsProductsHovered(false)}
+              className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none snap-x snap-mandatory scroll-smooth"
             >
               {featuredProductsList.map((prod) => {
                 const isWishlisted = wishlist.includes(prod.numId);
@@ -430,7 +494,7 @@ export function HomePage() {
                 return (
                   <div
                     key={prod.id}
-                    className="snap-start flex-none w-[calc(50%-10px)] min-w-[155px] sm:w-[245px] flex flex-col justify-between rounded-2xl bg-[#f4f7f2] border-0 shadow-none hover:shadow-md transition-all duration-300 group overflow-hidden"
+                    className="snap-start flex-none w-[calc(50%-10px)] min-w-[155px] sm:w-[245px] flex flex-col justify-between rounded-none bg-[#f4f7f2] border-0 shadow-none hover:shadow-md transition-all duration-300 group overflow-hidden"
                   >
                     {/* Bottle Image with natural backdrop */}
                     <div className="relative aspect-square w-full bg-white p-2 sm:p-2.5 overflow-hidden flex items-center justify-center">
@@ -482,8 +546,8 @@ export function HomePage() {
                       </div>
                     </div>
 
-                    {/* Product Info & CTA */}
-                    <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
+                    {/* Product Info */}
+                    <div className="p-2.5 sm:p-3 pb-3 flex-1 flex flex-col justify-between">
                       <div>
                         <Link
                           to={prod.link}
@@ -507,61 +571,61 @@ export function HomePage() {
                           )}
                         </div>
                       </div>
+                    </div>
 
-                      {/* Full-width Rectangular Add to Cart / Quantity Stepper Button */}
-                      <div className="mt-2.5 pt-2">
-                        {cartQty > 0 ? (
-                          <div className="w-full bg-[#075B32] text-white py-1.5 sm:py-2 px-3 rounded-none transition shadow-xs flex items-center justify-between">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (cartQty <= 1) {
-                                  removeFromCart(prod.numId);
-                                  removeFromCart(prod.id);
-                                  toast.info(`Removed ${prod.name} from cart`);
-                                } else {
-                                  updateQuantity(prod.numId, cartQty - 1);
-                                }
-                              }}
-                              className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-md transition active:scale-90 cursor-pointer"
-                              aria-label="Decrease quantity"
-                            >
-                              <Minus className="size-3.5" />
-                            </button>
-                            <span className="font-bold text-sm sm:text-base select-none px-2 tracking-tight">
-                              {cartQty}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                addToCart(prod.numId, 1);
-                              }}
-                              className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-md transition active:scale-90 cursor-pointer"
-                              aria-label="Increase quantity"
-                            >
-                              <Plus className="size-3.5" />
-                            </button>
-                          </div>
-                        ) : (
+                    {/* Full-width Rectangular Add to Cart / Stepper Button - Flush at Bottom (No rounded chin) */}
+                    <div className="w-full mt-auto">
+                      {cartQty > 0 ? (
+                        <div className="w-full bg-[#075B32] text-white py-1.5 sm:py-2 px-3 rounded-none transition shadow-xs flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (cartQty <= 1) {
+                                removeFromCart(prod.numId);
+                                removeFromCart(prod.id);
+                                toast.info(`Removed ${prod.name} from cart`);
+                              } else {
+                                updateQuantity(prod.numId, cartQty - 1);
+                              }
+                            }}
+                            className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-none transition active:scale-90 cursor-pointer"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="size-3.5" />
+                          </button>
+                          <span className="font-bold text-sm sm:text-base select-none px-2 tracking-tight font-mono">
+                            {cartQty}
+                          </span>
                           <button
                             type="button"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               addToCart(prod.numId, 1);
-                              toast.success(`Added ${prod.name} to cart!`);
                             }}
-                            className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+                            className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-none transition active:scale-90 cursor-pointer"
+                            aria-label="Increase quantity"
                           >
-                            <ShoppingBag className="size-3.5 sm:size-4" />
-                            <span>ADD TO CART</span>
+                            <Plus className="size-3.5" />
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            addToCart(prod.numId, 1);
+                            toast.success(`Added ${prod.name} to cart!`);
+                          }}
+                          className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+                        >
+                          <ShoppingBag className="size-3.5 sm:size-4" />
+                          <span>ADD TO CART</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
