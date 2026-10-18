@@ -10,6 +10,8 @@ export interface BannerSlide {
   mobileImage: string;
   alt: string;
   ctaText: string;
+  desktopPosition?: string;
+  mobilePosition?: string;
 }
 
 export const HERO_SLIDES: BannerSlide[] = [
@@ -21,6 +23,8 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_healthier_tomorrow_mobile.jpg",
     alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     ctaText: "Explore Our Products",
+    desktopPosition: "md:object-[center_68%]",
+    mobilePosition: "object-[center_35%]",
   },
   {
     id: "organic-biocare",
@@ -30,6 +34,8 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_biocare_mobile.jpg",
     alt: "Janani Agro Products - Shield Your Crops Naturally",
     ctaText: "Explore Bio-Care",
+    desktopPosition: "md:object-[center_72%]",
+    mobilePosition: "object-[center_35%]",
   },
   {
     id: "organic-soilcare",
@@ -39,6 +45,8 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_soilcare_mobile.jpg",
     alt: "Janani Agro Products - Nourish From Root To Harvest",
     ctaText: "Explore Soil-Care",
+    desktopPosition: "md:object-[center_76%]",
+    mobilePosition: "object-[center_35%]",
   },
 ];
 
@@ -93,8 +101,8 @@ export function HeroBannerCarousel() {
       onTouchEnd={handleTouchEnd}
       aria-label="Janani Agro Featured Campaigns"
     >
-      {/* Slides Container */}
-      <div className="relative w-full aspect-[768/1376] md:aspect-[1376/768] overflow-hidden">
+      {/* Slides Container - Compact, viewport-balanced height with minimal space above images */}
+      <div className="relative w-full aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/7.2] lg:aspect-[16/6.8] max-h-[60vh] sm:max-h-[64vh] md:max-h-[460px] lg:max-h-[490px] xl:max-h-[510px] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -120,7 +128,9 @@ export function HeroBannerCarousel() {
                     src={slide.desktopImage}
                     alt={slide.alt}
                     loading={idx === 0 ? "eager" : "lazy"}
-                    className="w-full h-full object-cover object-center block transition-transform duration-700 group-hover:scale-[1.01]"
+                    className={`w-full h-full object-cover block transition-transform duration-700 group-hover:scale-[1.01] ${
+                      slide.mobilePosition || "object-center"
+                    } ${slide.desktopPosition || "md:object-[center_72%]"}`}
                   />
                 </picture>
               </Link>
