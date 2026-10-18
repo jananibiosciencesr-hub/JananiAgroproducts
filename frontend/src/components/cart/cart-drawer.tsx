@@ -74,7 +74,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   src={getProductImage(item.product.name || item.product.category, item.variant?.image || getProductVariantImage(item.product, item.variantId) || item.product.image)}
                   alt={`${item.product.name} - ${item.unit}`}
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = pantryImage;
+                    (e.currentTarget as HTMLImageElement).src = item.product.image || "/products/harit.jpg";
                   }}
                   className="size-16 rounded-xl object-contain border border-border shrink-0 p-1 bg-white"
                 />

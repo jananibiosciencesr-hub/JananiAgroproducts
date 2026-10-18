@@ -277,7 +277,7 @@ export function WishlistPage() {
                         src={getProductImage(product.name || product.category, product.image)}
                         alt={product.name}
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = pantryImage;
+                          (e.currentTarget as HTMLImageElement).src = product.image || "/products/harit.jpg";
                         }}
                         className="max-h-full max-w-full object-contain transition duration-500 group-hover:scale-105"
                       />

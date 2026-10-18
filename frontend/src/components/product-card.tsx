@@ -143,7 +143,29 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
             alt={`${product.name} - ${selectedVariant.label || selectedVariant.unit}`}
             loading="lazy"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = pantryImage;
+              const target = e.currentTarget as HTMLImageElement;
+              const n = (product?.name || product?.slug || "").toLowerCase();
+              if (n.includes("dharani")) {
+                target.src = "/products/dharani.jpg";
+              } else if (n.includes("harit")) {
+                target.src = "/products/harit.jpg";
+              } else if (n.includes("bhumi")) {
+                target.src = "/products/bhumi-shakti.jpg";
+              } else if (n.includes("pushkal")) {
+                target.src = "/products/pushkal.jpg";
+              } else if (n.includes("neem")) {
+                target.src = "/products/neem-oil.jpg";
+              } else if (n.includes("balavan")) {
+                target.src = "/products/balavan.jpg";
+              } else if (n.includes("annada")) {
+                target.src = "/products/annada.jpg";
+              } else if (n.includes("suraksha")) {
+                target.src = "/products/suraksha.jpg";
+              } else if (n.includes("dhanya")) {
+                target.src = "/products/dhanya.jpg";
+              } else {
+                target.src = product.image || "/products/harit.jpg";
+              }
             }}
             width={700}
             height={700}

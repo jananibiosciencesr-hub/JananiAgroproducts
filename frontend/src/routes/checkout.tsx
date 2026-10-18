@@ -567,7 +567,7 @@ export function CheckoutPage() {
                     src={getProductImage(item.product.name || item.product.category, item.variant?.image || getProductVariantImage(item.product, item.variantId) || item.product.image)}
                     alt={`${item.product.name} - ${item.unit}`}
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = pantryImage;
+                      (e.currentTarget as HTMLImageElement).src = item.product.image || "/products/harit.jpg";
                     }}
                     className="size-10 rounded-lg object-contain border border-border shrink-0 p-0.5 bg-white"
                   />

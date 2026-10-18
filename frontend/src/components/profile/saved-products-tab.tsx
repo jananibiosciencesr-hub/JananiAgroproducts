@@ -169,7 +169,7 @@ export function SavedProductsTab() {
                       src={getProductImage(prod.name || prod.category, prod.image)}
                       alt={prod.name}
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = pantryImage;
+                        (e.currentTarget as HTMLImageElement).src = prod.image || "/products/harit.jpg";
                       }}
                       className="max-h-full max-w-full object-contain transition duration-500 group-hover:scale-105"
                     />

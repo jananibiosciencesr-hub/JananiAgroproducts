@@ -115,7 +115,7 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
                 src={getProductImage(product.name || product.category, currentImage)}
                 alt={product.name}
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = pantryImage;
+                  (e.currentTarget as HTMLImageElement).src = product.image || "/products/harit.jpg";
                 }}
                 className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
               />

@@ -448,7 +448,7 @@ export function CartPage() {
                       src={getProductImage(item.product.name || item.product.category, item.variant?.image || getProductVariantImage(item.product, item.variantId) || item.product.image)}
                       alt={`${item.product.name} - ${item.unit}`}
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = pantryImage;
+                        (e.currentTarget as HTMLImageElement).src = item.product.image || "/products/harit.jpg";
                       }}
                       className="size-20 sm:size-24 shrink-0 rounded-2xl object-contain border border-border p-1.5 bg-white"
                     />
@@ -551,7 +551,7 @@ export function CartPage() {
                           src={getProductImage(prod.name || prod.category, prod.image)}
                           alt={prod.name}
                           onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = pantryImage;
+                            (e.currentTarget as HTMLImageElement).src = prod.image || "/products/harit.jpg";
                           }}
                           className="size-14 rounded-xl object-cover border border-border shrink-0"
                         />
@@ -912,7 +912,7 @@ export function CartPage() {
                         src={getProductImage(prod.name || prod.category, prod.image)}
                         alt={prod.name}
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = pantryImage;
+                          (e.currentTarget as HTMLImageElement).src = prod.image || "/products/harit.jpg";
                         }}
                         className="size-14 rounded-xl object-cover border border-border shrink-0"
                       />

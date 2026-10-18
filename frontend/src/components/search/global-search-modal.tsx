@@ -144,7 +144,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                           src={getProductImage(p.name || p.category, p.image)}
                           alt={p.name}
                           onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = pantryImage;
+                            (e.currentTarget as HTMLImageElement).src = p.image || "/products/harit.jpg";
                           }}
                           className="size-10 rounded-lg object-cover border border-slate-100 shrink-0"
                         />

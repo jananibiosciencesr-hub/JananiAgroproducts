@@ -40,6 +40,23 @@ async function syncBuild() {
     fs.cpSync(clientAssetsDir, distAssetsDir, { recursive: true });
   }
 
+  // Synchronize frontend/public/products and frontend/public/banners to root directories for Hostinger static serving
+  const publicProductsDir = path.join(rootDir, 'frontend', 'public', 'products');
+  const rootProductsDir = path.join(rootDir, 'products');
+  if (fs.existsSync(publicProductsDir)) {
+    fs.mkdirSync(rootProductsDir, { recursive: true });
+    fs.cpSync(publicProductsDir, rootProductsDir, { recursive: true });
+    console.log(`[sync-build] Synchronized products images to root products/`);
+  }
+
+  const publicBannersDir = path.join(rootDir, 'frontend', 'public', 'banners');
+  const rootBannersDir = path.join(rootDir, 'banners');
+  if (fs.existsSync(publicBannersDir)) {
+    fs.mkdirSync(rootBannersDir, { recursive: true });
+    fs.cpSync(publicBannersDir, rootBannersDir, { recursive: true });
+    console.log(`[sync-build] Synchronized banners to root banners/`);
+  }
+
   // 2. Find CSS bundle and JS entry bundle in client assets
   const clientFiles = fs.readdirSync(clientAssetsDir);
   const cssFile = clientFiles.find(f => f.startsWith('styles-') && f.endsWith('.css'));

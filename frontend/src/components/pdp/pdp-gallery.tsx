@@ -105,7 +105,7 @@ export function PdpGallery({ product }: PdpGalleryProps) {
             src={activeImage.src}
             alt={activeImage.alt}
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = pantryImage;
+              (e.currentTarget as HTMLImageElement).src = product.image || "/products/harit.jpg";
             }}
             className={`h-full w-full object-cover transition-transform duration-200 ${
               isZooming ? "scale-150" : "scale-100"
