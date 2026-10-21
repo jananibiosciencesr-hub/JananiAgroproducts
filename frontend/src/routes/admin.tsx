@@ -147,59 +147,38 @@ function AdminErrorFallback({ error, reset }: { error: any; reset: () => void })
 }
 
 function AdminDashboardPage() {
-  const [adminUser, setAdminUser] = useState<any>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const sessionActive = localStorage.getItem("janani_admin_session");
-        const sessionToken = localStorage.getItem("janani_admin_token");
-        const storedAdmin = localStorage.getItem("janani_admin_user");
-        const sessionTime = localStorage.getItem("janani_admin_auth_time");
+  const [adminUser, setAdminUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-        if (sessionActive === "true" && sessionToken && storedAdmin) {
-          if (sessionTime) {
-            const elapsed = Date.now() - parseInt(sessionTime, 10);
-            if (elapsed > 24 * 60 * 60 * 1000) {
-              localStorage.removeItem("janani_admin_session");
-              localStorage.removeItem("janani_admin_token");
-              localStorage.removeItem("janani_admin_user");
-              localStorage.removeItem("janani_admin_auth_time");
-              return null;
-            }
-          }
-          const parsed = JSON.parse(storedAdmin);
-          if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || parsed.role === "Staff" || parsed.role === "Manager")) {
-            return parsed;
+  // Safely restore admin session after client-side hydration to prevent React #418 mismatch
+  useEffect(() => {
+    try {
+      const sessionActive = localStorage.getItem("janani_admin_session");
+      const sessionToken = localStorage.getItem("janani_admin_token");
+      const storedAdmin = localStorage.getItem("janani_admin_user");
+      const sessionTime = localStorage.getItem("janani_admin_auth_time");
+
+      if (sessionActive === "true" && sessionToken && storedAdmin) {
+        if (sessionTime) {
+          const elapsed = Date.now() - parseInt(sessionTime, 10);
+          if (elapsed > 24 * 60 * 60 * 1000) {
+            localStorage.removeItem("janani_admin_session");
+            localStorage.removeItem("janani_admin_token");
+            localStorage.removeItem("janani_admin_user");
+            localStorage.removeItem("janani_admin_auth_time");
+            return;
           }
         }
-      } catch (e) {}
-    }
-    return null;
-  });
-
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const sessionActive = localStorage.getItem("janani_admin_session");
-        const sessionToken = localStorage.getItem("janani_admin_token");
-        const storedAdmin = localStorage.getItem("janani_admin_user");
-        const sessionTime = localStorage.getItem("janani_admin_auth_time");
-
-        if (sessionActive === "true" && sessionToken && storedAdmin) {
-          if (sessionTime) {
-            const elapsed = Date.now() - parseInt(sessionTime, 10);
-            if (elapsed > 24 * 60 * 60 * 1000) return false;
-          }
-          const parsed = JSON.parse(storedAdmin);
-          if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || parsed.role === "Staff" || parsed.role === "Manager")) {
-            return true;
-          }
+        const parsed = JSON.parse(storedAdmin);
+        if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || parsed.role === "Staff" || parsed.role === "Manager")) {
+          setAdminUser(parsed);
+          setIsAuthenticated(true);
         }
-      } catch (e) {
-        console.warn("Failed checking admin session:", e);
       }
+    } catch (e) {
+      console.warn("Failed checking admin session:", e);
     }
-    return false;
-  });
+  }, []);
 
   // Admin Login Portal Form State
   const [adminEmail, setAdminEmail] = useState("jananibiosciences.r@gmail.com");
@@ -333,10 +312,15 @@ function AdminDashboardPage() {
         } else {
           setReceivedAdminOtp("123456");
         }
-        const cleanMsg = (res.message || `Admin verification code dispatched to ${cleanEmail}. Please check your Gmail inbox!`)
-          .replace(/\s*\(Verification Code:[^)]*\)/gi, "")
-          .trim();
-        toast.success(cleanMsg, { duration: 5000 });
+        if (res.emailSent === false || (res as any).delivery?.success === false) {
+          const warnMsg = res.message || "Email OTP dispatch could not reach Gmail SMTP. Click 'Use Master OTP (123456)' to log in.";
+          toast.warning(warnMsg, { duration: 8000 });
+        } else {
+          const cleanMsg = (res.message || `Admin verification code dispatched to ${cleanEmail}. Please check your Gmail inbox!`)
+            .replace(/\s*\(Verification Code:[^)]*\)/gi, "")
+            .trim();
+          toast.success(cleanMsg, { duration: 5000 });
+        }
         setIsOtpStep(true);
         setResendTimer(60);
         setCanResend(false);

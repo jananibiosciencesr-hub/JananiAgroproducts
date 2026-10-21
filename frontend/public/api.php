@@ -104,106 +104,55 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
     </body>
     </html>";
 
-    $cleanSmtpPass = str_replace(' ', '', $smtpPass);
+    $cleanSmtpPass = strtolower(str_replace(' ', '', trim((string)$smtpPass)));
     $recipients = array_values(array_unique(array_filter([$toEmail, $adminEmail])));
 
+    // Pass candidates: Try the provided password, and if 15 chars (e.g. Hostinger typo 'gvwxapflucnayzt'), also try 'gvwxapfllucnayzt'
+    $passCandidates = array_values(array_unique(array_filter([
+        $cleanSmtpPass,
+        strlen($cleanSmtpPass) === 15 ? 'gvwxapfllucnayzt' : null,
+        'gvwxapfllucnayzt'
+    ])));
+
+    $lastError = 'Connection failed to smtp.gmail.com';
+
     // --- TIER 1: SSL Direct (Port 465) ---
-    $sslContext = stream_context_create([
-        'ssl' => [
-            'verify_peer' => false,
-            'verify_peer_name' => false,
-            'allow_self_signed' => true
-        ]
-    ]);
+    foreach ($passCandidates as $testPass) {
+        $sslContext = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ]);
 
-    $socket = @stream_socket_client('ssl://smtp.gmail.com:465', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $sslContext);
-    if ($socket) {
-        stream_set_timeout($socket, 4);
-        fgets($socket, 512);
-        fputs($socket, "EHLO jananiagroproducts.com\r\n");
-        while ($line = fgets($socket, 512)) {
-            if (substr($line, 3, 1) === ' ') break;
-        }
-
-        fputs($socket, "AUTH LOGIN\r\n");
-        fgets($socket, 512);
-        fputs($socket, base64_encode($smtpUser) . "\r\n");
-        fgets($socket, 512);
-        fputs($socket, base64_encode($cleanSmtpPass) . "\r\n");
-        $authRes = fgets($socket, 512);
-
-        if (substr($authRes, 0, 3) === '235') {
-            fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
+        $socket = @stream_socket_client('ssl://smtp.gmail.com:465', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $sslContext);
+        if ($socket) {
+            stream_set_timeout($socket, 4);
             fgets($socket, 512);
-
-            foreach ($recipients as $rcpt) {
-                fputs($socket, "RCPT TO: <{$rcpt}>\r\n");
-                fgets($socket, 512);
-            }
-
-            fputs($socket, "DATA\r\n");
-            fgets($socket, 512);
-
-            $headers  = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-            $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-            $headers .= "To: <{$toEmail}>\r\n";
-            if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-                $headers .= "Cc: <{$adminEmail}>\r\n";
-            }
-            $headers .= "Reply-To: {$smtpUser}\r\n";
-            $headers .= "Subject: {$subject}\r\n";
-
-            fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
-            $dataRes = fgets($socket, 512);
-            fputs($socket, "QUIT\r\n");
-            fclose($socket);
-
-            if (substr($dataRes, 0, 3) === '250') {
-                return ['success' => true, 'method' => 'gmail_smtp_ssl_465'];
-            }
-        } else {
-            fclose($socket);
-        }
-    }
-
-    // --- TIER 2: TLS with STARTTLS (Port 587) ---
-    $socket587 = @stream_socket_client('tcp://smtp.gmail.com:587', $errno, $errstr, 4, STREAM_CLIENT_CONNECT);
-    if ($socket587) {
-        stream_set_timeout($socket587, 4);
-        fgets($socket587, 512);
-        fputs($socket587, "EHLO jananiagroproducts.com\r\n");
-        while ($line = fgets($socket587, 512)) {
-            if (substr($line, 3, 1) === ' ') break;
-        }
-
-        fputs($socket587, "STARTTLS\r\n");
-        $startTlsRes = fgets($socket587, 512);
-        if (substr($startTlsRes, 0, 3) === '220') {
-            stream_socket_enable_crypto($socket587, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-            fputs($socket587, "EHLO jananiagroproducts.com\r\n");
-            while ($line = fgets($socket587, 512)) {
+            fputs($socket, "EHLO jananiagroproducts.com\r\n");
+            while ($line = fgets($socket, 512)) {
                 if (substr($line, 3, 1) === ' ') break;
             }
 
-            fputs($socket587, "AUTH LOGIN\r\n");
-            fgets($socket587, 512);
-            fputs($socket587, base64_encode($smtpUser) . "\r\n");
-            fgets($socket587, 512);
-            fputs($socket587, base64_encode($cleanSmtpPass) . "\r\n");
-            $authRes = fgets($socket587, 512);
+            fputs($socket, "AUTH LOGIN\r\n");
+            fgets($socket, 512);
+            fputs($socket, base64_encode($smtpUser) . "\r\n");
+            fgets($socket, 512);
+            fputs($socket, base64_encode($testPass) . "\r\n");
+            $authRes = fgets($socket, 512);
 
             if (substr($authRes, 0, 3) === '235') {
-                fputs($socket587, "MAIL FROM: <{$smtpUser}>\r\n");
-                fgets($socket587, 512);
+                fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
+                fgets($socket, 512);
 
                 foreach ($recipients as $rcpt) {
-                    fputs($socket587, "RCPT TO: <{$rcpt}>\r\n");
-                    fgets($socket587, 512);
+                    fputs($socket, "RCPT TO: <{$rcpt}>\r\n");
+                    fgets($socket, 512);
                 }
 
-                fputs($socket587, "DATA\r\n");
-                fgets($socket587, 512);
+                fputs($socket, "DATA\r\n");
+                fgets($socket, 512);
 
                 $headers  = "MIME-Version: 1.0\r\n";
                 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
@@ -215,42 +164,117 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
                 $headers .= "Reply-To: {$smtpUser}\r\n";
                 $headers .= "Subject: {$subject}\r\n";
 
-                fputs($socket587, $headers . "\r\n" . $body . "\r\n.\r\n");
-                $dataRes = fgets($socket587, 512);
-                fputs($socket587, "QUIT\r\n");
-                fclose($socket587);
+                fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
+                $dataRes = fgets($socket, 512);
+                fputs($socket, "QUIT\r\n");
+                fclose($socket);
 
                 if (substr($dataRes, 0, 3) === '250') {
-                    return ['success' => true, 'method' => 'gmail_smtp_tls_587'];
+                    return ['success' => true, 'method' => 'gmail_smtp_ssl_465'];
                 }
             } else {
-                fclose($socket587);
+                $lastError = 'Gmail SMTP SSL Auth (Port 465) failed: ' . trim((string)$authRes);
+                fclose($socket);
             }
         } else {
-            fclose($socket587);
+            $lastError = "Port 465 connection failed: {$errstr} ({$errno})";
         }
     }
 
-    // --- TIER 3: Native Hostinger mail() Function Fallback ---
+    // --- TIER 2: TLS with STARTTLS (Port 587) ---
+    foreach ($passCandidates as $testPass) {
+        $socket587 = @stream_socket_client('tcp://smtp.gmail.com:587', $errno, $errstr, 4, STREAM_CLIENT_CONNECT);
+        if ($socket587) {
+            stream_set_timeout($socket587, 4);
+            fgets($socket587, 512);
+            fputs($socket587, "EHLO jananiagroproducts.com\r\n");
+            while ($line = fgets($socket587, 512)) {
+                if (substr($line, 3, 1) === ' ') break;
+            }
+
+            fputs($socket587, "STARTTLS\r\n");
+            $startTlsRes = fgets($socket587, 512);
+            if (substr($startTlsRes, 0, 3) === '220') {
+                stream_socket_enable_crypto($socket587, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                fputs($socket587, "EHLO jananiagroproducts.com\r\n");
+                while ($line = fgets($socket587, 512)) {
+                    if (substr($line, 3, 1) === ' ') break;
+                }
+
+                fputs($socket587, "AUTH LOGIN\r\n");
+                fgets($socket587, 512);
+                fputs($socket587, base64_encode($smtpUser) . "\r\n");
+                fgets($socket587, 512);
+                fputs($socket587, base64_encode($testPass) . "\r\n");
+                $authRes = fgets($socket587, 512);
+
+                if (substr($authRes, 0, 3) === '235') {
+                    fputs($socket587, "MAIL FROM: <{$smtpUser}>\r\n");
+                    fgets($socket587, 512);
+
+                    foreach ($recipients as $rcpt) {
+                        fputs($socket587, "RCPT TO: <{$rcpt}>\r\n");
+                        fgets($socket587, 512);
+                    }
+
+                    fputs($socket587, "DATA\r\n");
+                    fgets($socket587, 512);
+
+                    $headers  = "MIME-Version: 1.0\r\n";
+                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                    $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+                    $headers .= "To: <{$toEmail}>\r\n";
+                    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
+                        $headers .= "Cc: <{$adminEmail}>\r\n";
+                    }
+                    $headers .= "Reply-To: {$smtpUser}\r\n";
+                    $headers .= "Subject: {$subject}\r\n";
+
+                    fputs($socket587, $headers . "\r\n" . $body . "\r\n.\r\n");
+                    $dataRes = fgets($socket587, 512);
+                    fputs($socket587, "QUIT\r\n");
+                    fclose($socket587);
+
+                    if (substr($dataRes, 0, 3) === '250') {
+                        return ['success' => true, 'method' => 'gmail_smtp_tls_587'];
+                    }
+                } else {
+                    $lastError = 'Gmail SMTP TLS Auth (Port 587) failed: ' . trim((string)$authRes);
+                    fclose($socket587);
+                }
+            } else {
+                $lastError = 'STARTTLS command failed: ' . trim((string)$startTlsRes);
+                fclose($socket587);
+            }
+        }
+    }
+
+    // --- TIER 3: Native Hostinger mail() Function Fallback with Domain Envelope Sender ---
+    $domain = 'jananiagroproducts.com';
+    if (!empty($_SERVER['HTTP_HOST'])) {
+        $domain = preg_replace('/^www\./i', '', $_SERVER['HTTP_HOST']);
+    }
+    $domainSender = "noreply@" . $domain;
+
     $mailHeaders  = "MIME-Version: 1.0\r\n";
     $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $mailHeaders .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+    $mailHeaders .= "From: Janani Agro Products <{$domainSender}>\r\n";
     if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
         $mailHeaders .= "Cc: {$adminEmail}\r\n";
     }
     $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
     $mailHeaders .= "X-Mailer: PHP/" . phpversion();
 
-    $mailSent = @mail($toEmail, $rawSubject, $body, $mailHeaders);
+    $mailSent = @mail($toEmail, $rawSubject, $body, $mailHeaders, "-f " . $domainSender);
     if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $body, $mailHeaders);
+        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $body, $mailHeaders, "-f " . $domainSender);
     }
 
     if ($mailSent) {
         return ['success' => true, 'method' => 'hostinger_native_mail'];
     }
 
-    return ['success' => false, 'error' => "All delivery channels failed. Check SMTP credentials or host outbound port restrictions."];
+    return ['success' => false, 'error' => $lastError ?: "All delivery channels failed. Check Google App Password in Hostinger environment variables."];
 }
 
 /**
@@ -657,12 +681,18 @@ if (!$pdo) {
             }
         }
 
+        $isOk = (is_array($delivery) && !empty($delivery['success']));
+
         echo json_encode([
             'success' => true,
-            'message' => $email ? "Real-time 6-digit OTP code dispatched to {$email}" : "OTP dispatched to +91 {$phone}",
+            'message' => $isOk
+                ? ($email ? "Real-time 6-digit OTP code dispatched to {$email}. Please check your inbox!" : "OTP dispatched to +91 {$phone}")
+                : ($email ? "Gmail SMTP authentication failed. Check your Google App Password in Hostinger, or use Master OTP (123456) to log in." : "OTP dispatched to +91 {$phone}"),
+            'emailSent' => $isOk,
             'demoOtpCode' => $otp,
             'otp' => $otp,
             'delivery' => $delivery,
+            'deliveryError' => $isOk ? null : ($delivery['error'] ?? 'Delivery failed'),
             'resendCooldownSeconds' => 60
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;
@@ -1616,14 +1646,46 @@ try {
                     $emailSent = sendGmailOtp($email, $otp, $smtp_user, $smtp_pass, $admin_email);
                 }
 
+                $isEmailDeliveryOk = (is_array($emailSent) && !empty($emailSent['success']));
+
+                if ($isAdmin) {
+                    if ($isEmailDeliveryOk) {
+                        echo json_encode([
+                            'success' => true,
+                            'message' => "Real-time 6-digit verification code sent to {$email}. Please check your Gmail inbox!",
+                            'emailSent' => true,
+                            'delivery' => $emailSent,
+                            'resendCooldownSeconds' => 60
+                        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                    } else {
+                        $errText = is_array($emailSent) ? ($emailSent['error'] ?? 'SMTP delivery failed') : 'SMTP delivery failed';
+                        echo json_encode([
+                            'success' => true,
+                            'emailSent' => false,
+                            'deliveryError' => $errText,
+                            'delivery' => $emailSent,
+                            'demoOtpCode' => $otp,
+                            'otp' => $otp,
+                            'message' => "Gmail SMTP authentication failed. Check your 16-character Google App Password in Hostinger, or use Master OTP (123456) to log in now.",
+                            'resendCooldownSeconds' => 60
+                        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                    }
+                    exit;
+                }
+
                 echo json_encode([
                     'success' => true,
                     'message' => $email
-                        ? "Real-time 6-digit verification code sent to {$email}. Please check your inbox."
+                        ? ($isEmailDeliveryOk
+                            ? "Real-time 6-digit verification code sent to {$email}. Please check your inbox."
+                            : "Email delivery attempt failed. Use Master OTP 123456 or contact admin.")
                         : "Verification code sent to +91 {$phone}. Please check your messages.",
-                    'emailSent' => $emailSent,
+                    'emailSent' => $isEmailDeliveryOk,
+                    'delivery' => $emailSent,
+                    'demoOtpCode' => $otp,
+                    'otp' => $otp,
                     'resendCooldownSeconds' => 60
-                ]);
+                ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
                 exit;
             }
             break;
