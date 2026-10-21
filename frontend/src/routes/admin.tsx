@@ -798,6 +798,7 @@ function AdminDashboardPage() {
           inquiries={inquiries}
           orders={safeOrders}
           inventory={safeInventory}
+          products={products}
           activeTab={activeTab}
           searchTerm={adminSearch}
           onSearchChange={setAdminSearch}
@@ -815,6 +816,8 @@ function AdminDashboardPage() {
               products={products}
               customers={customers}
               reviews={safeReviews}
+              searchQuery={adminSearch}
+              onClearSearch={() => setAdminSearch("")}
               onNavigateTab={handleNavigateTab}
               onOpenShiprocketModal={setSelectedOrderForShipping}
               onOpenRestockModal={setSelectedItemForRestock}
@@ -855,11 +858,12 @@ function AdminDashboardPage() {
           {activeTab === "inventory" && (
             <InventoryView
               inventory={safeInventory}
+              searchQuery={adminSearch}
               onOpenRestockModal={setSelectedItemForRestock}
             />
           )}
 
-          {activeTab === "payments" && <PaymentsManagement />}
+          {activeTab === "payments" && <PaymentsManagement searchQuery={adminSearch} />}
 
           {activeTab === "coupons" && (
             <CouponsManagement
@@ -868,9 +872,9 @@ function AdminDashboardPage() {
             />
           )}
 
-          {activeTab === "referrals" && <ReferralsManagement />}
+          {activeTab === "referrals" && <ReferralsManagement searchQuery={adminSearch} />}
 
-          {activeTab === "shipping" && <ShippingManagement />}
+          {activeTab === "shipping" && <ShippingManagement searchQuery={adminSearch} />}
 
           {activeTab === "reviews" && (
             <ReviewsManagement
@@ -882,6 +886,7 @@ function AdminDashboardPage() {
           {activeTab === "returns" && (
             <ReturnsView
               returns={safeReturns}
+              searchQuery={adminSearch}
               onUpdateReturn={handleUpdateReturn}
             />
           )}
@@ -890,7 +895,7 @@ function AdminDashboardPage() {
 
           {activeTab === "marketing" && <MarketingManagement />}
 
-          {activeTab === "reports" && <ReportsManagement />}
+          {activeTab === "reports" && <ReportsManagement searchQuery={adminSearch} />}
 
           {activeTab === "settings" && <SettingsManagement defaultTab="store_branding" />}
 

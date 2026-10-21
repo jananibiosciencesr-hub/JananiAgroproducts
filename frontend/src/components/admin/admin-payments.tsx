@@ -86,7 +86,7 @@ interface GatewayConfigState {
   [key: string]: any;
 }
 
-export function PaymentsManagement() {
+export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQuery?: string } = {}) {
   const [activeTab, setActiveTab] = useState<"transactions" | "gateways" | "refunds" | "settlements" | "recovery">("transactions");
   
   // Data State
@@ -140,6 +140,13 @@ export function PaymentsManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [gatewayFilter, setGatewayFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+
+  // Synchronize searchQuery prop from top navbar
+  useEffect(() => {
+    if (propSearchQuery !== undefined) {
+      setSearchQuery(propSearchQuery);
+    }
+  }, [propSearchQuery]);
 
   // Drawers & Modals
   const [selectedTxn, setSelectedTxn] = useState<PaymentTransaction | null>(null);

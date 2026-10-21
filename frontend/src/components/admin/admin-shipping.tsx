@@ -91,7 +91,7 @@ function getShipmentStatusBadge(status: string) {
 // Main Shipping Management Component
 // -------------------------------------------------------------
 
-export function ShippingManagement() {
+export function ShippingManagement({ searchQuery: propSearchQuery }: { searchQuery?: string } = {}) {
   // Main Tab State
   const [mainTab, setMainTab] = useState<"shipments" | "pickup_hubs" | "ndr" | "calculator" | "manifest" | "settings">("shipments");
 
@@ -113,6 +113,13 @@ export function ShippingManagement() {
   const [courierFilter, setCourierFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+
+  // Synchronize searchQuery prop from top navbar
+  useEffect(() => {
+    if (propSearchQuery !== undefined) {
+      setSearch(propSearchQuery);
+    }
+  }, [propSearchQuery]);
 
   // Pickup Hubs State
   const [pickupHubs, setPickupHubs] = useState<any[]>([]);

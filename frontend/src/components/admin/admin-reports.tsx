@@ -55,7 +55,7 @@ type ReportTab =
 
 type PeriodOption = "today" | "7d" | "30d" | "90d" | "1y" | "custom";
 
-export function ReportsManagement() {
+export function ReportsManagement({ searchQuery: propSearchQuery }: { searchQuery?: string } = {}) {
   const [activeTab, setActiveTab] = useState<ReportTab>("sales_revenue");
   const [period, setPeriod] = useState<PeriodOption>("30d");
   const [startDate, setStartDate] = useState("2026-08-12");
@@ -64,6 +64,13 @@ export function ReportsManagement() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Synchronize searchQuery prop from top navbar
+  useEffect(() => {
+    if (propSearchQuery !== undefined) {
+      setSearchQuery(propSearchQuery);
+    }
+  }, [propSearchQuery]);
   
   // Data States
   const [analyticsData, setAnalyticsData] = useState<ReportsAnalyticsData | null>(null);

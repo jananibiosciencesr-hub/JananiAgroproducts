@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   Star,
   BarChart3,
-  MessageSquareText
+  MessageSquareText,
+  Search
 } from "lucide-react";
 import {
   AreaChart,
@@ -51,6 +52,8 @@ interface AdminOverviewProps {
   products?: any[];
   customers?: any[];
   reviews?: any[];
+  searchQuery?: string;
+  onClearSearch?: () => void;
   onNavigateTab: (tab: AdminTab) => void;
   onOpenShiprocketModal: (order: any) => void;
   onOpenRestockModal: (item: any) => void;
@@ -65,6 +68,8 @@ export function AdminOverview({
   products = [],
   customers = [],
   reviews = [],
+  searchQuery = "",
+  onClearSearch,
   onNavigateTab,
   onOpenShiprocketModal,
   onOpenRestockModal,
@@ -108,9 +113,35 @@ export function AdminOverview({
 
 
 
+  const cleanSearch = (searchQuery || "").trim().toLowerCase();
+
   const filteredOrders = liveOrders.filter(o => {
-    if (tableFilter === "all") return true;
-    return (o.orderStatus || o.status || "").toLowerCase() === tableFilter.toLowerCase();
+    if (tableFilter !== "all") {
+      const s = (o.orderStatus || o.status || "").toLowerCase();
+      if (s !== tableFilter.toLowerCase()) return false;
+    }
+    if (!cleanSearch) return true;
+
+    const cust = getOrderCustomer(o);
+    const orderNum = String(o.number || o.id || "").toLowerCase();
+    const custName = String(cust.name || "").toLowerCase();
+    const custPhone = String(cust.phone || "").toLowerCase();
+    const custCity = String(cust.city || "").toLowerCase();
+    const method = String(o.paymentMethod || "").toLowerCase();
+    const status = String(o.orderStatus || o.status || "").toLowerCase();
+    const itemsMatch = Array.isArray(o.items) && o.items.some((it: any) =>
+      String(it?.name || it?.title || "").toLowerCase().includes(cleanSearch)
+    );
+
+    return (
+      orderNum.includes(cleanSearch) ||
+      custName.includes(cleanSearch) ||
+      custPhone.includes(cleanSearch) ||
+      custCity.includes(cleanSearch) ||
+      method.includes(cleanSearch) ||
+      status.includes(cleanSearch) ||
+      itemsMatch
+    );
   });
 
   const kpiCards = [
@@ -127,6 +158,16 @@ export function AdminOverview({
     { title: "Coupons Used Today", value: `${couponsUsedCount}`, trend: couponsUsedCount > 0 ? "Active Codes" : "No Coupons", icon: TicketPercent, color: "from-indigo-500 to-purple-600", tab: "coupons" as AdminTab },
     { title: "Referral Earnings", value: `₹${referralEarningsTotal.toLocaleString('en-IN')}`, trend: "Patron Rewards", icon: Share2, color: "from-emerald-600 to-green-700", tab: "referrals" as AdminTab },
   ];
+
+  const matchingKpiCards = cleanSearch
+    ? kpiCards.filter(card =>
+        card.title.toLowerCase().includes(cleanSearch) ||
+        card.trend.toLowerCase().includes(cleanSearch) ||
+        card.tab.toLowerCase().includes(cleanSearch)
+      )
+    : kpiCards;
+
+  const displayedKpiCards = cleanSearch && matchingKpiCards.length > 0 ? matchingKpiCards : kpiCards;
 
   // Dynamic Chart Fallbacks from Real Live Orders
   const defaultSalesOverview = charts?.salesOverview || (
@@ -170,12 +211,36 @@ export function AdminOverview({
   return (
     <div className="space-y-6 sm:space-y-8 pb-12 min-w-0 max-w-full overflow-x-hidden">
 
+      {/* Search Filter Status Banner */}
+      {cleanSearch && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 dark:text-emerald-100 animate-in fade-in">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold flex-wrap">
+            <Search className="size-4 text-emerald-600 shrink-0" />
+            <span>
+              Search active: <strong className="text-emerald-700 dark:text-emerald-400 font-bold">"{searchQuery}"</strong>
+            </span>
+            <span className="text-xs text-muted-foreground ml-1">
+              • {filteredOrders.length} matching order{filteredOrders.length === 1 ? "" : "s"}
+              {matchingKpiCards.length > 0 && ` • ${matchingKpiCards.length} matching metric card${matchingKpiCards.length === 1 ? "" : "s"}`}
+            </span>
+          </div>
+          {onClearSearch && (
+            <button
+              onClick={onClearSearch}
+              className="text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <XCircle className="size-3.5" /> Clear Filter
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 12 Luxury KPI Cards Grid */}
       <section className="min-w-0">
 
 
         <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4 xl:grid-cols-6">
-          {kpiCards.map((card, idx) => {
+          {displayedKpiCards.map((card, idx) => {
             const Icon = card.icon;
             return (
               <div
@@ -493,7 +558,7 @@ export function AdminOverview({
               </button>
             </div>
             <div className="space-y-3">
-              {liveOrders.slice(0, 4).map((o, idx) => {
+              {(cleanSearch ? filteredOrders : liveOrders).slice(0, 4).map((o, idx) => {
                 const cust = getOrderCustomer(o);
                 const txn = o.transactionId || o.paymentGatewayId || `TXN-${o.id || idx}`;
                 return (
@@ -511,7 +576,7 @@ export function AdminOverview({
                   </div>
                 );
               })}
-              {liveOrders.length === 0 && (
+              {(cleanSearch ? filteredOrders : liveOrders).length === 0 && (
                 <p className="text-xs text-muted-foreground italic py-3 text-center">No payment transactions recorded yet.</p>
               )}
             </div>
@@ -529,18 +594,27 @@ export function AdminOverview({
               </button>
             </div>
             <div className="space-y-3">
-              {(liveCustomers.length > 0
-                ? liveCustomers.slice(0, 4)
-                : liveOrders.slice(0, 4).map(o => {
-                    const cust = getOrderCustomer(o);
-                    return {
-                      name: cust.name,
-                      email: cust.email || `${cust.phone}@janani.customer`,
-                      tier: cust.tier || "Active Patron",
-                      walletBalance: 0
-                    };
-                  })
-              ).map((c, idx) => (
+              {(cleanSearch
+                ? (liveCustomers.length > 0
+                    ? liveCustomers.filter(c => {
+                        const q = cleanSearch;
+                        return String(c.name || "").toLowerCase().includes(q) || String(c.email || "").toLowerCase().includes(q) || String(c.phone || "").toLowerCase().includes(q);
+                      })
+                    : liveOrders.filter(o => {
+                        const cust = getOrderCustomer(o);
+                        const q = cleanSearch;
+                        return String(cust.name || "").toLowerCase().includes(q) || String(cust.email || "").toLowerCase().includes(q) || String(cust.phone || "").toLowerCase().includes(q);
+                      }).map(o => {
+                        const cust = getOrderCustomer(o);
+                        return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: cust.tier || "Active Patron", walletBalance: 0 };
+                      }))
+                : (liveCustomers.length > 0
+                    ? liveCustomers
+                    : liveOrders.map(o => {
+                        const cust = getOrderCustomer(o);
+                        return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: cust.tier || "Active Patron", walletBalance: 0 };
+                      }))
+              ).slice(0, 4).map((c, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-muted/40 border border-border/40 text-xs">
                   <div className="flex items-center gap-3">
                     <div className="size-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center text-[10px]">

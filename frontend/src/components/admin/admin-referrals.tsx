@@ -54,7 +54,7 @@ import {
   ReferralAnalyticsData
 } from "@/lib/api";
 
-export function ReferralsManagement() {
+export function ReferralsManagement({ searchQuery: propSearchQuery }: { searchQuery?: string } = {}) {
   const [activeTab, setActiveTab] = useState<"referrals" | "wallet" | "refSettings" | "walletSettings" | "analytics">("referrals");
 
   // Data State
@@ -89,6 +89,14 @@ export function ReferralsManagement() {
   const [walletTypeFilter, setWalletTypeFilter] = useState<string>("all");
   const [walletCategoryFilter, setWalletCategoryFilter] = useState<string>("all");
   const [walletSearch, setWalletSearch] = useState<string>("");
+
+  // Synchronize searchQuery prop from top navbar
+  useEffect(() => {
+    if (propSearchQuery !== undefined) {
+      setReferralSearch(propSearchQuery);
+      setWalletSearch(propSearchQuery);
+    }
+  }, [propSearchQuery]);
 
   // Modals & Drawers State
   const [creditModalOpen, setCreditModalOpen] = useState(false);

@@ -410,7 +410,27 @@ export function CustomersView({ customers }: { customers: any[] }) {
 }
 
 // Inventory View
-export function InventoryView({ inventory, onOpenRestockModal }: { inventory: any[]; onOpenRestockModal: (item: any) => void }) {
+export function InventoryView({
+  inventory,
+  searchQuery = "",
+  onOpenRestockModal
+}: {
+  inventory: any[];
+  searchQuery?: string;
+  onOpenRestockModal: (item: any) => void;
+}) {
+  const cleanSearch = (searchQuery || "").trim().toLowerCase();
+  const filteredInventory = inventory.filter((item) => {
+    if (!cleanSearch) return true;
+    const name = String(item?.name || "").toLowerCase();
+    const sku = String(item?.sku || "").toLowerCase();
+    const cat = String(item?.category || "").toLowerCase();
+    const status = String(
+      item?.stock === 0 ? "out of stock" : item?.stock < 20 ? "low stock alert" : "healthy stock"
+    ).toLowerCase();
+    return name.includes(cleanSearch) || sku.includes(cleanSearch) || cat.includes(cleanSearch) || status.includes(cleanSearch);
+  });
+
   return (
     <div className="space-y-6 min-w-0 max-w-full">
 
@@ -429,7 +449,7 @@ export function InventoryView({ inventory, onOpenRestockModal }: { inventory: an
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {inventory.map((item) => (
+              {filteredInventory.map((item) => (
                 <tr key={item.id} className="hover:bg-accent/40 transition-colors">
                   <td className="px-6 py-4 font-bold text-foreground">{item.name}</td>
                   <td className="px-6 py-4 font-mono text-[11px] text-muted-foreground">{item.sku}</td>
@@ -450,6 +470,13 @@ export function InventoryView({ inventory, onOpenRestockModal }: { inventory: an
                   </td>
                 </tr>
               ))}
+              {filteredInventory.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-xs text-muted-foreground italic">
+                    No warehouse inventory matching "{searchQuery}".
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -507,7 +534,26 @@ export function CouponsView({ coupons, onOpenAddCouponModal, onToggleCoupon }: {
 }
 
 // Shipping / Shiprocket View
-export function ShippingView({ orders, onOpenShiprocketModal }: { orders: any[]; onOpenShiprocketModal: (order: any) => void }) {
+export function ShippingView({
+  orders,
+  searchQuery = "",
+  onOpenShiprocketModal
+}: {
+  orders: any[];
+  searchQuery?: string;
+  onOpenShiprocketModal: (order: any) => void;
+}) {
+  const cleanSearch = (searchQuery || "").trim().toLowerCase();
+  const pendingOrders = orders
+    .filter((o) => o.orderStatus === "Processing" || o.orderStatus === "Pending")
+    .filter((o) => {
+      if (!cleanSearch) return true;
+      const id = String(o?.id || o?.number || "").toLowerCase();
+      const name = String(o?.customer?.name || "").toLowerCase();
+      const city = String(o?.customer?.city || "").toLowerCase();
+      return id.includes(cleanSearch) || name.includes(cleanSearch) || city.includes(cleanSearch);
+    });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -535,9 +581,9 @@ export function ShippingView({ orders, onOpenShiprocketModal }: { orders: any[];
       </div>
 
       <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-        <h3 className="text-sm font-bold text-foreground mb-4">Pending Courier Pickup Requests</h3>
+        <h3 className="text-sm font-bold text-foreground mb-4">Pending Courier Pickup Requests ({pendingOrders.length})</h3>
         <div className="space-y-3">
-          {orders.filter(o => o.orderStatus === "Processing" || o.orderStatus === "Pending").map((o) => (
+          {pendingOrders.map((o) => (
             <div key={o.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-muted/40 border border-border/40 gap-3">
               <div>
                 <span className="font-bold text-foreground">{o.id} • {o.customer?.name}</span>
@@ -552,6 +598,11 @@ export function ShippingView({ orders, onOpenShiprocketModal }: { orders: any[];
               </Button>
             </div>
           ))}
+          {pendingOrders.length === 0 && (
+            <p className="text-xs text-muted-foreground italic py-3 text-center">
+              No pending courier pickup orders matching filter.
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -610,12 +661,39 @@ export function ReviewsView({ reviews, onUpdateReview }: { reviews: any[]; onUpd
 }
 
 // Returns View
-export function ReturnsView({ returns, onUpdateReturn }: { returns: any[]; onUpdateReturn: (id: string, status: string) => void }) {
+export function ReturnsView({
+  returns,
+  searchQuery = "",
+  onUpdateReturn
+}: {
+  returns: any[];
+  searchQuery?: string;
+  onUpdateReturn: (id: string, status: string) => void;
+}) {
+  const cleanSearch = (searchQuery || "").trim().toLowerCase();
+  const filteredReturns = returns.filter((ret) => {
+    if (!cleanSearch) return true;
+    const id = String(ret?.id || "").toLowerCase();
+    const orderId = String(ret?.orderId || "").toLowerCase();
+    const prod = String(ret?.product || "").toLowerCase();
+    const reason = String(ret?.reason || "").toLowerCase();
+    const type = String(ret?.type || "").toLowerCase();
+    const status = String(ret?.status || "").toLowerCase();
+    return (
+      id.includes(cleanSearch) ||
+      orderId.includes(cleanSearch) ||
+      prod.includes(cleanSearch) ||
+      reason.includes(cleanSearch) ||
+      type.includes(cleanSearch) ||
+      status.includes(cleanSearch)
+    );
+  });
+
   return (
     <div className="space-y-6">
 
       <div className="space-y-3">
-        {returns.map((ret) => (
+        {filteredReturns.map((ret) => (
           <div key={ret.id} className="rounded-3xl border border-border bg-card p-5 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="font-extrabold text-foreground">{ret.id} • Order {ret.orderId}</span>
@@ -640,6 +718,11 @@ export function ReturnsView({ returns, onUpdateReturn }: { returns: any[]; onUpd
             </div>
           </div>
         ))}
+        {filteredReturns.length === 0 && (
+          <div className="rounded-3xl border border-border bg-card p-8 text-center text-xs text-muted-foreground italic">
+            No return or refund requests matching "{searchQuery}".
+          </div>
+        )}
       </div>
     </div>
   );
