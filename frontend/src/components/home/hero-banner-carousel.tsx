@@ -23,7 +23,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_healthier_tomorrow_mobile.jpg",
     alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     ctaText: "Explore Our Products",
-    desktopPosition: "md:object-[center_68%]",
+    desktopPosition: "md:object-[center_45%]",
     mobilePosition: "object-[center_35%]",
   },
   {
@@ -34,7 +34,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_biocare_mobile.jpg",
     alt: "Janani Agro Products - Shield Your Crops Naturally",
     ctaText: "Explore Bio-Care",
-    desktopPosition: "md:object-[center_72%]",
+    desktopPosition: "md:object-[center_44%]",
     mobilePosition: "object-[center_35%]",
   },
   {
@@ -45,7 +45,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_soilcare_mobile.jpg",
     alt: "Janani Agro Products - Nourish From Root To Harvest",
     ctaText: "Explore Soil-Care",
-    desktopPosition: "md:object-[center_76%]",
+    desktopPosition: "md:object-[center_45%]",
     mobilePosition: "object-[center_35%]",
   },
 ];
@@ -102,7 +102,7 @@ export function HeroBannerCarousel() {
       aria-label="Janani Agro Featured Campaigns"
     >
       {/* Slides Container - Compact, viewport-balanced height with minimal space above images */}
-      <div className="relative w-full aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/7.2] lg:aspect-[16/6.8] max-h-[60vh] sm:max-h-[64vh] md:max-h-[460px] lg:max-h-[490px] xl:max-h-[510px] overflow-hidden">
+      <div className="relative w-full aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/7.5] lg:aspect-[16/7.2] max-h-[58vh] sm:max-h-[60vh] md:max-h-[440px] lg:max-h-[460px] xl:max-h-[480px] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -130,7 +130,7 @@ export function HeroBannerCarousel() {
                     loading={idx === 0 ? "eager" : "lazy"}
                     className={`w-full h-full object-cover block transition-transform duration-700 group-hover:scale-[1.01] ${
                       slide.mobilePosition || "object-center"
-                    } ${slide.desktopPosition || "md:object-[center_72%]"}`}
+                    } ${slide.desktopPosition || "md:object-[center_45%]"}`}
                   />
                 </picture>
               </Link>
