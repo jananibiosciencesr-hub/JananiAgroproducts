@@ -402,7 +402,10 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
             </thead>
             <tbody className="divide-y divide-border">
               {paginatedCategories.length > 0 ? (
-                paginatedCategories.map((cat, idx) => (
+                paginatedCategories.map((cat, idx) => {
+                  const realIdx = filteredCategories.findIndex((c) => c.id === cat.id);
+                  const effectiveIdx = realIdx !== -1 ? realIdx : idx;
+                  return (
                   <tr
                     key={cat.id}
                     className={`hover:bg-accent/40 transition-colors ${
@@ -424,17 +427,19 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                     <td className="px-3 py-4 text-center">
                       <div className="flex flex-col items-center gap-0.5">
                         <button
-                          onClick={() => handleMove(idx, "up")}
-                          disabled={idx === 0}
+                          onClick={() => handleMove(effectiveIdx, "up")}
+                          disabled={effectiveIdx === 0}
                           className="text-muted-foreground hover:text-foreground disabled:opacity-20"
+                          title="Move Up"
                         >
                           <ChevronUp className="size-3.5" />
                         </button>
-                        <span className="text-[10px] font-bold text-muted-foreground">{cat.orderIndex || idx + 1}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground">{cat.orderIndex || effectiveIdx + 1}</span>
                         <button
-                          onClick={() => handleMove(idx, "down")}
-                          disabled={idx === paginatedCategories.length - 1}
+                          onClick={() => handleMove(effectiveIdx, "down")}
+                          disabled={effectiveIdx >= filteredCategories.length - 1}
                           className="text-muted-foreground hover:text-foreground disabled:opacity-20"
+                          title="Move Down"
                         >
                           <ChevronDown className="size-3.5" />
                         </button>
@@ -576,7 +581,8 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+              })
               ) : (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-muted-foreground">

@@ -2991,6 +2991,8 @@ export async function updateAdminCategory(id: string, payload: any) {
   const levelNum = payload.level ? (payload.level === "sub" ? 2 : (payload.level === "child" ? 3 : 1)) : undefined;
   const reqBody: Record<string, any> = {
     id,
+    targetId: id,
+    editingId: id,
     name: payload.name,
     slug: payload.slug,
     image: payload.image,
@@ -3022,8 +3024,19 @@ export async function updateAdminCategory(id: string, payload: any) {
     }
   );
 
-  // 2. Try Node endpoint if PHP endpoint not available
-  if (!res?.success) {
+  // 2. Try REST rewrite if PHP was not reachable (e.g. 404 / HTML)
+  if (!res) {
+    res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
+      `/api/categories/${encodeURIComponent(id)}`,
+      {
+        method: "POST",
+        body: JSON.stringify(reqBody)
+      }
+    );
+  }
+
+  // 3. Try Node endpoint if still unreachable
+  if (!res) {
     res = await fetchJson<{ success: boolean; message?: string; error?: string; data?: any; category?: any }>(
       `/admin/categories/${encodeURIComponent(id)}`,
       {
@@ -3031,6 +3044,17 @@ export async function updateAdminCategory(id: string, payload: any) {
         body: JSON.stringify(reqBody)
       }
     );
+  }
+
+  // If server explicitly returned failure (e.g. MySQL error), surface it and DO NOT falsely claim success!
+  if (res && res.success === false) {
+    const errorMsg = res.message || res.error || "Failed to update category in database";
+    console.error("[updateAdminCategory] Server rejected update:", errorMsg);
+    return {
+      success: false,
+      message: errorMsg,
+      error: errorMsg
+    };
   }
 
   const updatedRaw = res?.data || res?.category || { ...reqBody, id };
