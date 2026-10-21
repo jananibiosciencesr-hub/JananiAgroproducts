@@ -69,7 +69,7 @@ async function syncBuild() {
   console.log(`[sync-build] Current CSS: ${cssFile}`);
   console.log(`[sync-build] Current JS Entry: ${jsEntryFile}`);
 
-  // 3. Render fresh SSR HTML using server.js if available to eliminate React #418 hydration mismatch
+  // 3. Render fresh SSR HTML using server.js for all routes to eliminate React #418 hydration mismatch
   let generatedHtml = null;
 
   if (fs.existsSync(serverJsFile)) {
@@ -77,11 +77,52 @@ async function syncBuild() {
       const serverUrl = pathToFileURL(serverJsFile).href;
       const serverModule = await import(serverUrl);
       if (serverModule?.default?.fetch) {
-        const req = new Request('http://localhost/');
-        const res = await serverModule.default.fetch(req);
-        if (res.ok) {
-          generatedHtml = await res.text();
-          console.log(`[sync-build] Successfully rendered SSR HTML (${generatedHtml.length} bytes) via server.js`);
+        const routes = [
+          { path: '/', destDir: null },
+          { path: '/admin', destDir: 'admin' },
+          { path: '/login', destDir: 'login' },
+          { path: '/cart', destDir: 'cart' },
+          { path: '/wishlist', destDir: 'wishlist' },
+          { path: '/categories', destDir: 'categories' },
+          { path: '/products', destDir: 'products' },
+          { path: '/about', destDir: 'about' },
+          { path: '/contact', destDir: 'contact' },
+          { path: '/checkout', destDir: 'checkout' },
+          { path: '/dashboard', destDir: 'dashboard' },
+          { path: '/faq', destDir: 'faq' },
+          { path: '/services', destDir: 'services' },
+          { path: '/track-order', destDir: 'track-order' },
+          { path: '/become-distributor', destDir: 'become-distributor' },
+          { path: '/privacy', destDir: 'privacy' },
+          { path: '/terms', destDir: 'terms' },
+          { path: '/shipping-policy', destDir: 'shipping-policy' },
+          { path: '/return-policy', destDir: 'return-policy' },
+        ];
+
+        for (const route of routes) {
+          try {
+            const req = new Request(`http://localhost${route.path}`);
+            const res = await serverModule.default.fetch(req);
+            if (res.ok) {
+              const html = await res.text();
+              if (route.destDir === null) {
+                generatedHtml = html;
+                console.log(`[sync-build] Successfully rendered SSR HTML (${html.length} bytes) for /`);
+              } else {
+                const targetDir = path.join(rootDir, route.destDir);
+                fs.mkdirSync(targetDir, { recursive: true });
+                fs.writeFileSync(path.join(targetDir, 'index.html'), html, 'utf8');
+
+                const distTargetDir = path.join(rootDir, 'dist', route.destDir);
+                fs.mkdirSync(distTargetDir, { recursive: true });
+                fs.writeFileSync(path.join(distTargetDir, 'index.html'), html, 'utf8');
+
+                console.log(`[sync-build] Pre-rendered and saved SSR HTML for ${route.path} -> ${route.destDir}/index.html`);
+              }
+            }
+          } catch (rErr) {
+            console.warn(`[sync-build] Could not pre-render ${route.path}:`, rErr.message);
+          }
         }
       }
     } catch (ssrErr) {
