@@ -31,7 +31,7 @@ export const AVAILABLE_COUPONS: CouponRule[] = [
   {
     code: "HARVEST15",
     title: "15% Harvest Fest Savings",
-    description: "15% off orders above ₹999 on cold pressed oils and pulses",
+    description: "15% off orders above ₹999 on bio-fertilizers and bio-pesticides",
     type: "percentage",
     value: 15,
     maxDiscount: 500,
@@ -50,9 +50,9 @@ export const AVAILABLE_COUPONS: CouponRule[] = [
     badge: "FREE DELIVERY",
   },
   {
-    code: "BILONA20",
-    title: "Flat 20% on Desi Ghee",
-    description: "Special savings on handcrafted Bilona Gir Cow Ghee jars",
+    code: "KISAN20",
+    title: "Flat 20% Kisan Agri Saver",
+    description: "Special savings on Trichoderma Viride (Harit) and Bhumi Shakti 5L packs",
     type: "percentage",
     value: 20,
     maxDiscount: 400,
@@ -61,9 +61,9 @@ export const AVAILABLE_COUPONS: CouponRule[] = [
     badge: "20% OFF",
   },
   {
-    code: "ORGANIC100",
-    title: "₹100 Pure Organic Saver",
-    description: "Instant ₹100 off on cold-pressed oils, grains, and kitchen pantry items.",
+    code: "AGRO100",
+    title: "₹100 Bio-Input Saver",
+    description: "Instant ₹100 off on liquid bio-fertilizers, bio-fungicides and micronutrients.",
     type: "flat",
     value: 100,
     minSubtotal: 750,
@@ -72,8 +72,8 @@ export const AVAILABLE_COUPONS: CouponRule[] = [
   },
   {
     code: "FARMDIRECT",
-    title: "₹150 Bulk Harvest Reward",
-    description: "Special ₹150 privilege discount for family monthly pantry stocking orders.",
+    title: "₹150 Bulk Farm Reward",
+    description: "Special ₹150 privilege discount for seasonal farm cultivation orders.",
     type: "flat",
     value: 150,
     minSubtotal: 1200,
@@ -82,13 +82,13 @@ export const AVAILABLE_COUPONS: CouponRule[] = [
   },
   {
     code: "WELCOME150",
-    title: "₹150 New Patron Welcome",
-    description: "First time tasting Janani Agro organic harvests? Enjoy ₹150 off right away.",
+    title: "₹150 New Farmer Welcome",
+    description: "First time choosing Janani Agro biological formulations? Enjoy ₹150 off right away.",
     type: "flat",
     value: 150,
     minSubtotal: 600,
     expiry: "31 Dec 2026",
-    badge: "NEW PATRON",
+    badge: "NEW FARMER",
   },
 ];
 

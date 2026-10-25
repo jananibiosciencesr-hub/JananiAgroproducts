@@ -135,7 +135,7 @@ export function ShipmentRouteMap({
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground pt-1">
         <div className="flex items-center gap-2">
           <ShieldCheck className="size-4 text-brand-leaf shrink-0" />
-          <span>Cold-Pressed Integrity: Temperature logs validated by sensor array.</span>
+          <span>Bio-Culture Integrity: Spore viability and temperature logs validated by sensor array.</span>
         </div>
         <div className="font-medium text-foreground">
           Distance Remaining: <strong className="text-brand-leaf">38 km</strong> (Est. 45 mins)

@@ -42,7 +42,7 @@ export const Route = createFileRoute("/diseases/$slug")({
 
 function DiseaseDetailPage() {
   const { slug } = Route.useParams();
-  const disease: DiseaseData = getDiseaseById(slug) || DISEASE_LIST[2]; // defaults to Gram pod borers
+  const disease: DiseaseData = getDiseaseById(slug) || DISEASE_LIST[2]!; // defaults to Gram pod borers
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const pesticides = useMemo(() => {

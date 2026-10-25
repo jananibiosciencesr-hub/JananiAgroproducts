@@ -234,8 +234,8 @@ export function normalizeProduct(raw: any): Product {
     id: Number(raw.id),
     slug: raw.slug || `prod-${raw.id}`,
     name: formatProductName(raw.name || "Organic Product"),
-    category: raw.category_name || raw.category || "Cold Pressed Oils",
-    brand: raw.brand || "Janani Pure Harvest",
+    category: raw.category_name || raw.category || "Bio-Fertilizers",
+    brand: raw.brand || "Janani Agro Products",
     price: price,
     oldPrice: oldPrice,
     discount: discount,
@@ -1140,13 +1140,13 @@ export async function getAdminCharts() {
       { name: "Cancelled / Returned", value: cancelledCnt, color: "#dc2626" }
     ],
     topCategories: [
-      { category: "Cold Pressed Oils", revenue: Math.round(totalRev * 0.45), units: Math.max(1, storedOrders.length) },
-      { category: "A2 Vedic Ghee", revenue: Math.round(totalRev * 0.35), units: Math.max(1, storedOrders.length) },
-      { category: "Organic Staples", revenue: Math.round(totalRev * 0.20), units: Math.max(1, storedOrders.length) }
+      { category: "Bio-Fertilizers & Stimulants", revenue: Math.round(totalRev * 0.45), units: Math.max(1, storedOrders.length) },
+      { category: "Bio-Pesticides & Fungicides", revenue: Math.round(totalRev * 0.35), units: Math.max(1, storedOrders.length) },
+      { category: "Micro Nutrients & Sprays", revenue: Math.round(totalRev * 0.20), units: Math.max(1, storedOrders.length) }
     ],
     topProducts: [
-      { name: "A2 Vedic Bilona Gir Cow Ghee (500ml)", sales: Math.round(totalRev * 0.5), units: Math.max(1, storedOrders.length) },
-      { name: "Wood-Pressed Groundnut Oil (1L)", sales: Math.round(totalRev * 0.3), units: Math.max(1, storedOrders.length) }
+      { name: "Harit (1 L) — Trichoderma Viride", sales: Math.round(totalRev * 0.5), units: Math.max(1, storedOrders.length) },
+      { name: "Bhumi Shakti (1 L) — Humic & Fulvic", sales: Math.round(totalRev * 0.3), units: Math.max(1, storedOrders.length) }
     ],
     weeklySales: [
       { day: "Mon", online: 0, cod: 0 },
@@ -1204,7 +1204,7 @@ export async function getAdminWidgets() {
     conversionRate: { rate: 3.84, target: 4.0, previous: 3.21, change: "Active Rate" },
     averageOrderValue: { value: Math.round(totalRev / Math.max(1, storedOrders.length)), target: 2000, change: "Per Order" },
     paymentSplit: { onlinePercent: onlinePct, codPercent: codPct, onlineTotal: onlineSum, codTotal: codSum },
-    bestSellingBrand: { name: "Janani Gold Heritage Reserve", share: "100%", topProduct: "A2 Vedic Gir Cow Ghee" },
+    bestSellingBrand: { name: "Janani Agro Products", share: "100%", topProduct: "Harit (1 L) — Trichoderma Viride" },
     lowInventoryAlerts: lowInventory
   };
 }
@@ -4365,14 +4365,14 @@ export async function getCouponAnalytics() {
     topCoupons: [
       { code: "JANANI10", redemptions: 142, revenueGenerated: 348000, totalDiscounts: 34800, conversionRate: "4.8%" },
       { code: "HARVEST15", redemptions: 88, revenueGenerated: 264000, totalDiscounts: 39600, conversionRate: "6.2%" },
-      { code: "BILONA20", redemptions: 64, revenueGenerated: 218000, totalDiscounts: 43600, conversionRate: "5.1%" },
+      { code: "KISAN20", redemptions: 64, revenueGenerated: 218000, totalDiscounts: 43600, conversionRate: "5.1%" },
       { code: "FREESHIP", redemptions: 110, revenueGenerated: 154000, totalDiscounts: 6600, conversionRate: "7.9%" }
     ],
     categoryBreakdown: [
-      { category: "Cold Pressed Oils", percentage: 42 },
-      { category: "Basmati Rice", percentage: 28 },
-      { category: "Gir Cow Ghee", percentage: 18 },
-      { category: "Raw Spices", percentage: 12 }
+      { category: "Bio-Fertilizers", percentage: 42 },
+      { category: "Bio-Pesticides", percentage: 28 },
+      { category: "Bio-Stimulants", percentage: 18 },
+      { category: "Micro Nutrients", percentage: 12 }
     ]
   };
 }
@@ -4768,8 +4768,8 @@ export async function createHeroBanner(bannerData: Partial<HeroBanner>) {
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   const newBanner: HeroBanner = {
     id: `hero-${Date.now()}`,
-    title: bannerData.title || "Pure Organic Harvest",
-    desktopImageUrl: bannerData.desktopImageUrl || "/images/banners/hero-wood-pressed-oil.webp",
+    title: bannerData.title || "Certified Bio-Formulations & Biological Protection",
+    desktopImageUrl: bannerData.desktopImageUrl || "/images/banners/hero-bio-protection.webp",
     slideOrder: (currentCms.heroBanners?.length || 0) + 1,
     active: bannerData.active ?? true,
     ...bannerData
@@ -4977,9 +4977,9 @@ export async function createCategoryBanner(catData: Partial<CategoryBanner>) {
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   const newBanner: CategoryBanner = {
     id: `catban-${Date.now()}`,
-    categorySlug: catData.categorySlug || "oils",
-    title: catData.title || "Cold Pressed Oils",
-    desktopImageUrl: catData.desktopImageUrl || "/images/categories/oils.webp",
+    categorySlug: catData.categorySlug || "bio-fertilizers",
+    title: catData.title || "Bio-Fertilizers & Crop Formulations",
+    desktopImageUrl: catData.desktopImageUrl || "/images/categories/bio-fertilizers.webp",
     active: catData.active ?? true,
     ...catData
   };
@@ -5085,8 +5085,8 @@ export async function createFlashSaleBanner(fsData: Partial<FlashSaleBanner>) {
     title: fsData.title || "Limited Flash Sale",
     endsAt: fsData.endsAt || "2026-09-30T23:59:59Z",
     discountPercentage: fsData.discountPercentage || 20,
-    targetProductSlug: fsData.targetProductSlug || "wood-pressed-groundnut-oil",
-    bannerImageUrl: fsData.bannerImageUrl || "/images/banners/flash-sale.webp",
+    targetProductSlug: fsData.targetProductSlug || "harit-bio-fungicide-1l",
+    bannerImageUrl: fsData.bannerImageUrl || "/images/banners/flash-sale-agro.webp",
     active: fsData.active ?? true,
     ...fsData
   };
@@ -7636,7 +7636,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
   return authData;
 }
 
-export async function sendAuthOtp(payload: { phone?: string; email?: string; purpose?: string }): Promise<OtpSendResponse> {
+export async function sendAuthOtp(payload: { phone?: string | undefined; email?: string | undefined; purpose?: string | undefined }): Promise<OtpSendResponse> {
   // 1. Prioritize Hostinger PHP API (which dispatches via Gmail SMTP with app password to user & admin)
   try {
     const phpRes = await fetch("/api.php?action=send-otp", {
@@ -7718,7 +7718,7 @@ export async function sendAuthOtp(payload: { phone?: string; email?: string; pur
   };
 }
 
-export async function verifyAuthOtp(payload: { phone?: string; email?: string; otp: string; name?: string }): Promise<AuthResponse> {
+export async function verifyAuthOtp(payload: { phone?: string | undefined; email?: string | undefined; otp: string; name?: string | undefined }): Promise<AuthResponse> {
   // 1. Prioritize Hostinger PHP API verification against database settings table
   try {
     const phpRes = await fetch("/api.php?action=verify-otp", {

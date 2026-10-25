@@ -138,7 +138,7 @@ export function PaymentPage() {
   }
 
   // Handle Payment Success & Order Settlement
-  const handlePaymentSuccess = async (details: { method: string; transactionId: string }) => {
+  const handlePaymentSuccess = async (details: { method: string; transactionId: string; razorpayOrderId?: string }) => {
     setTransactionDetails((prev) => ({
       ...prev,
       transactionId: details.transactionId,
@@ -197,9 +197,7 @@ export function PaymentPage() {
         state: "Gujarat",
         pincode: "380054",
       },
-      paymentMethod: "Razorpay (Online)",
-      transactionId: details.transactionId,
-      razorpayOrderId: details.razorpayOrderId,
+      ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
     };
 
     // Full customer order object for Dashboard & Orders Hub with Flipkart 5-stage tracking
@@ -224,10 +222,10 @@ export function PaymentPage() {
       deliveryFee: checkoutData?.shippingFee || 0,
       total: effectiveAmount,
       finalTotal: effectiveAmount,
-      paymentMethod: "Razorpay (Online)",
+      paymentMethod: details.method || "Razorpay (Online)",
       paymentStatus: "Paid",
       transactionId: details.transactionId,
-      razorpayOrderId: details.razorpayOrderId,
+      ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
       address: {
         fullName: customerName,
         phone: customerPhone,
@@ -343,7 +341,7 @@ export function PaymentPage() {
         paymentMethod: details.method || "Razorpay",
         paymentStatus: details.method === "Cash on Delivery" ? "Pending (COD)" : "Paid",
         transactionId: details.transactionId,
-        razorpayOrderId: details.razorpayOrderId,
+        ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
         deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
         expectedDelivery: deliveryDate,
         timeline: newCustomerOrder.timeline,

@@ -354,30 +354,13 @@ export async function initDatabase() {
         ["pushkal-flowering-fruit-set-biostimulant-1l", "PUSHKAL - Flowering & Fruit Set Biostimulant (1L)", "Organic Plant Nutrients", 999, 1199, "1 L", 150, 5.0, 42, "Flowering & Fruit Set", "/products/pushkal.jpg", "Concentrated crop biostimulant formulated with 10% Free Amino Acids, 10% Seaweed Extract, Fulvic Acid, Boron and Zinc to support flower initiation and fruit set.", "JAP-SKU-PUSHKAL"],
         ["harit-trichoderma-viride-liquid-biofungal-formulation-1l", "HARIT - Trichoderma Viride Liquid Biofungal Formulation (1L)", "Biological Crop Protection", 950, 1100, "1 L", 120, 5.0, 39, "Bio-Fungal Shield", "/products/harit.jpg", "Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off, root rot, collar rot and rhizosphere diseases.", "JAP-SKU-HARIT"],
         ["neem-oil-1000-ppm-azadirachtin-1l", "NEEM OIL 1000 PPM - Botanical Insecticide & Mite Control (1L)", "Biological Crop Protection", 599, 699, "1 L", 140, 4.9, 44, "Botanical IPM", "/products/neem-oil.jpg", "Neem-oil-based botanical formulation containing standardized Azadirachtin 1000 PPM for organic management of aphids, whiteflies, thrips, caterpillars and mites.", "JAP-SKU-NEEM1000"],
-        ["wood-pressed-groundnut-oil", "Wood Pressed Groundnut Oil", "Cold Pressed Oils", 399, 480, "1 L", 85, 4.9, 86, "Bestseller", "/images/products/wood-pressed-groundnut-oil.webp", "Slow wood-pressed from Saurashtra native groundnuts. 100% natural, chemical-free.", "JAP-SKU-001"],
-        ["cold-pressed-mustard-oil", "Cold Pressed Mustard Oil", "Cold Pressed Oils", 329, 395, "1 L", 60, 4.8, 54, "Pure Kachi Ghani", "/images/products/cold-pressed-mustard-oil.webp", "Traditional Kachi Ghani extracted from whole yellow and brown mustard seeds.", "JAP-SKU-002"],
-        ["virgin-coconut-oil", "Cold Pressed Virgin Coconut Oil", "Cold Pressed Oils", 449, 540, "500 ml", 45, 4.9, 42, "Pure Aroma", "/images/products/virgin-coconut-oil.webp", "Cold extracted from freshly grated coconut milk. Raw, unrefined, and aromatic.", "JAP-SKU-003"],
-        ["organic-basmati-rice", "Royal Aged Organic Basmati Rice", "Organic Rice", 249, 299, "1 kg", 120, 4.9, 112, "Heritage Reserve", "/images/products/organic-basmati-rice.webp", "Aged 2 years for elongated grain fluffiness and authentic aroma.", "JAP-SKU-004"],
-        ["brown-rice", "Traditional Brown Basmati Rice", "Organic Rice", 219, 260, "1 kg", 75, 4.7, 38, null, "/images/products/brown-rice.webp", "Unpolished nutrient-rich brown rice rich in dietary fibre.", "JAP-SKU-005"],
-        ["unpolished-toor-dal", "Unpolished Organic Toor Dal", "Pulses & Dals", 199, 240, "1 kg", 90, 4.8, 64, "High Protein", "/images/products/unpolished-toor-dal.webp", "Zero water polish, enzyme-rich farm fresh toor dal that cooks easily.", "JAP-SKU-006"],
-        ["organic-green-gram", "Organic Whole Moong (Green Gram)", "Pulses & Dals", 179, 215, "500 g", 65, 4.8, 41, null, "/images/products/organic-green-gram.webp", "High-sprouting native whole green moong for nutritious daily meals.", "JAP-SKU-007"],
-        ["split-bengal-gram", "Organic Chana Dal (Bengal Gram)", "Pulses & Dals", 149, 180, "500 g", 70, 4.7, 29, null, "/images/products/split-bengal-gram.webp", "Stone-milled pesticide-free split Bengal gram dal.", "JAP-SKU-008"],
-        ["lakadong-turmeric-powder", "Lakadong High-Curcumin Turmeric Powder", "Raw Spices", 189, 230, "200 g", 80, 5.0, 95, "7.8% Curcumin", "/images/products/lakadong-turmeric-powder.webp", "Organically harvested Meghalaya Lakadong turmeric with superior medicinal potency.", "JAP-SKU-009"],
-        ["kashmiri-red-chilli-powder", "Kashmiri Mild Red Chilli Powder", "Raw Spices", 169, 205, "200 g", 60, 4.8, 48, "Vibrant Colour", "/images/products/kashmiri-red-chilli-powder.webp", "Stemless sun-dried Kashmiri chillies delivering vivid crimson shade and mild heat.", "JAP-SKU-010"],
-        ["whole-coriander-powder", "Stone Ground Coriander Powder", "Raw Spices", 139, 170, "200 g", 55, 4.7, 33, null, "/images/products/whole-coriander-powder.webp", "Freshly powdered whole aromatic Dhana seeds.", "JAP-SKU-011"],
-        ["cumin-seeds", "Whole Native Cumin Seeds (Jeera)", "Raw Spices", 219, 265, "200 g", 70, 4.9, 52, "Rich Essential Oils", "/images/products/cumin-seeds.webp", "Sun-cured Gujarat cumin seeds packed with aroma.", "JAP-SKU-012"],
-        ["khapli-wheat", "Ancient Emmer (Khapli) Wheat", "Wheat & Grains", 189, 230, "1 kg", 50, 4.9, 61, "Diabetic Friendly", "/images/products/khapli-wheat.webp", "Low GI indigenous grain celebrated for sustained energy.", "JAP-SKU-013"],
-        ["premium-wheat-flour", "Chakki Fresh Sharbati Atta", "Wheat & Grains", 119, 145, "1 kg", 150, 4.8, 88, null, "/images/products/premium-wheat-flour.webp", "100% whole grain wheat flour ground at low temperature.", "JAP-SKU-014"],
-        ["foxtail-millet", "Organic Foxtail Millet (Kangni)", "Ancient Millets", 149, 180, "500 g", 65, 4.8, 44, "Superfood", "/images/products/foxtail-millet.webp", "Gluten-free traditional grain rich in iron and phosphorus.", "JAP-SKU-015"],
-        ["pearl-millet", "Native Desi Bajra (Pearl Millet)", "Ancient Millets", 109, 135, "500 g", 80, 4.7, 31, null, "/images/products/pearl-millet.webp", "Wholesome winter millet grown in dry Saurashtra soils.", "JAP-SKU-016"],
-        ["organic-sesame-seeds", "Natural White Sesame Seeds (Til)", "Seeds & Superfoods", 159, 195, "250 g", 55, 4.8, 36, "Calcium Rich", "/images/products/organic-sesame-seeds.webp", "Sun-dried whole unhulled white sesame seeds.", "JAP-SKU-017"],
-        ["flax-seeds", "Roasted Golden Flax Seeds (Alsi)", "Seeds & Superfoods", 169, 205, "250 g", 70, 4.9, 47, "Omega-3", "/images/products/flax-seeds.webp", "Nutrient-dense superfood for cardiovascular wellness.", "JAP-SKU-018"],
-        ["stoneground-besan", "Fine Stoneground Gram Flour (Besan)", "Stoneground Flours", 139, 170, "500 g", 85, 4.8, 59, null, "/images/products/stoneground-besan.webp", "Silky smooth aromatic chana dal flour for pakoras and laddoos.", "JAP-SKU-019"],
-        ["natural-jaggery-powder", "Unrefined Desi Jaggery Powder (Gud)", "Dry Fruits & Sweeteners", 129, 160, "500 g", 95, 4.9, 73, "Chemical Free", "/images/products/natural-jaggery-powder.webp", "Naturally crystallised sugarcane juice without chemical bleaching.", "JAP-SKU-020"],
-        ["almonds-premium", "Giri Mamra Almonds", "Dry Fruits & Sweeteners", 599, 720, "500 g", 40, 5.0, 51, "High Oil Content", "/images/products/almonds-premium.webp", "Hand-selected unpasteurized Mamra almonds from verified orchards.", "JAP-SKU-021"],
-        ["vermicompost-plus", "Bio-Enriched Vermicompost Fertilizer", "Organic Fertilizers", 299, 360, "5 kg", 100, 4.9, 67, "100% Organic", "/images/products/vermicompost-plus.webp", "Earthworm enriched organic manure for lush terrace and farm crops.", "JAP-SKU-022"],
-        ["native-vegetable-seeds", "Indigenous Heritage Kitchen Garden Seed Kit", "Seeds & Superfoods", 199, 250, "12 packs", 60, 4.9, 43, "Non-Hybrid", "/images/products/native-vegetable-seeds.webp", "12 non-GMO heirloom open-pollinated vegetable varieties.", "JAP-SKU-023"],
-        ["black-pepper-whole", "Malabar Bold Black Peppercorns", "Raw Spices", 299, 365, "150 g", 50, 4.9, 39, "Grade TGSEB", "/images/products/black-pepper-whole.webp", "Large-berried Tellicherry black pepper with punchy heat.", "JAP-SKU-024"]
+        ["harit-trichoderma-viride-5l", "HARIT - Trichoderma Viride Liquid Biofungicide (5L)", "Biological Crop Protection", 2000, 2350, "5 L", 120, 5.0, 85, "Best Seller", "/products/harit.jpg", "Trichoderma viride liquid biofungal formulation for suppression of wilt, damping-off and root rot.", "JAP-SKU-HARIT-5L"],
+        ["bhumi-shakti-humic-1l", "BHUMI SHAKTI - Humic & Fulvic Soil Conditioner (1L)", "Soil Conditioners & Biostimulants", 380, 450, "1 L", 150, 4.8, 98, "Soil Rejuvenator", "/products/bhumi-shakti.jpg", "Humic and fulvic based formulation for living soil health, nutrient uptake and vigorous roots.", "JAP-SKU-BHUMI-1L"],
+        ["neem-oil-1000-ppm-5l", "NEEM OIL 1000 PPM - Botanical Pest Shield (5L)", "Biological Crop Protection", 2400, 2800, "5 L", 90, 4.9, 56, "Botanical IPM", "/products/neem-oil.jpg", "Cold-pressed Azadirachtin botanical formulation for sucking pest management across cotton and chilli.", "JAP-SKU-NEEM-5L"],
+        ["dharani-root-growth-promoter-1l", "DHARANI - Root Growth Promoter & Biofertilizer (1L)", "Organic Plant Nutrients", 390, 460, "1 L", 130, 4.8, 64, "Root Initiator", "/products/dharani.jpg", "Auxin precursors and seaweed extract biostimulant for dense feeder white root growth.", "JAP-SKU-DHARANI-1L"],
+        ["balavan-crop-shield-1l", "BALAVAN - Botanical Crop Shield & Biofungicide (1L)", "Biological Crop Protection", 480, 560, "1 L", 100, 4.7, 45, "Bio-Shield", "/products/balavan.jpg", "Botanical extract and microbial multi-action foliar shield against leaf spots and fungal diseases.", "JAP-SKU-BALAVAN-1L"],
+        ["dhanya-crop-vitalizer-1l", "DHANYA - Bio-Stimulant & Crop Vitalizer (1L)", "Organic Plant Nutrients", 540, 620, "1 L", 110, 4.9, 53, "Crop Vitalizer", "/products/dhanya.jpg", "Sea-kelp amino complex promoting vigorous vegetative growth and resistance against abiotic drought stress.", "JAP-SKU-DHANYA-1L"],
+        ["agri-stick-silicon-spreader-500ml", "AGRI STICK - Silicon Wetting Agent & Spreader (500ml)", "Agricultural Inputs", 350, 420, "500 ml", 200, 5.0, 78, "Super Spreader", "/products/agri-stick.jpg", "Organo-silicone non-ionic super spreader and rain-fast penetrant for enhanced foliar spray efficacy.", "JAP-SKU-AGRISTICK-500ML"]
       ];
 
       for (const [slug, name, cat, price, oldPrice, unit, stock, rating, reviews, badge, img, desc, sku] of productsSeed) {
@@ -394,10 +377,10 @@ export async function initDatabase() {
     if (coupRows[0].count === 0) {
       console.log(`🌱 [MySQL Seed] Seeding promo coupons...`);
       const couponsSeed = [
-        ["coup-1", "JANANI10", "10% Off Storewide", "Save 10% on your entire basket of organic essentials", "percentage", 10.0, 499.0, 200.0, "2026-01-01", "2026-12-31", 142, 1000, 1, 1],
-        ["coup-2", "HARVEST15", "15% Harvest Fest Savings", "15% off orders above ₹999 on cold pressed oils and pulses", "percentage", 15.0, 999.0, 350.0, "2026-01-01", "2026-12-31", 88, 500, 1, 1],
-        ["coup-3", "FREESHIP", "Free Priority Delivery", "Complimentary delivery anywhere in India on orders ₹499+", "free_shipping", 60.0, 499.0, 60.0, "2026-01-01", "2026-12-31", 110, 2000, 2, 1],
-        ["coup-4", "BILONA20", "Flat 20% on Desi Ghee", "Exclusive discount on Vedic A2 Gir Cow Bilona Ghee", "percentage", 20.0, 1200.0, 500.0, "2026-01-01", "2026-12-31", 64, 300, 1, 1]
+        ["coup-1", "JANANI10", "10% Off Storewide", "Save 10% on your entire basket of agricultural bio-formulations", "percentage", 10.0, 499.0, 200.0, "2026-01-01", "2026-12-31", 142, 1000, 1, 1],
+        ["coup-2", "HARVEST15", "15% Harvest Fest Savings", "15% off orders above ₹999 on bio-fertilizers and crop boosters", "percentage", 15.0, 999.0, 350.0, "2026-01-01", "2026-12-31", 88, 500, 1, 1],
+        ["coup-3", "FREESHIP", "Free Priority Delivery", "Complimentary farm delivery anywhere in India on orders ₹499+", "free_shipping", 60.0, 499.0, 60.0, "2026-01-01", "2026-12-31", 110, 2000, 2, 1],
+        ["coup-4", "KISAN20", "Flat 20% Kisan Agri Saver", "Exclusive discount on Trichoderma Viride (Harit) and Bhumi Shakti 5L packs", "percentage", 20.0, 1200.0, 500.0, "2026-01-01", "2026-12-31", 64, 300, 1, 1]
       ];
       for (const [id, code, title, desc, type, discount, minCart, maxDiscount, start, end, uses, maxUses, perUser, active] of couponsSeed) {
         await connection.query(
@@ -485,7 +468,7 @@ export async function initDatabase() {
           "rajesh.varma@gmail.com",
           "+91 98480 22338",
           JSON.stringify({ name: "Rajesh Varma", street: "Flat 402, Green Palms, Indiranagar", city: "Bengaluru", state: "Karnataka", pincode: "560038" }),
-          JSON.stringify([{ productId: 1, title: "Wood Pressed Groundnut Oil (5L)", price: 1850, quantity: 1, subtotal: 1850 }]),
+          JSON.stringify([{ productId: 1, title: "Harit (5 L) — Trichoderma Viride", price: 1850, quantity: 1, subtotal: 1850 }]),
           2450.0, 245.0, 0.0, 2205.0,
           "UPI Instant", "Paid", "Delivered",
           "Delhivery Air Express", "DEL-8492048194", "DEL-8492048194"
@@ -498,7 +481,7 @@ export async function initDatabase() {
           "dr.ananya@heritagehealth.org",
           "+91 98450 11223",
           JSON.stringify({ name: "Dr. Ananya Iyer", street: "Villa 14, Palm Meadows, Whitefield", city: "Bengaluru", state: "Karnataka", pincode: "560066" }),
-          JSON.stringify([{ productId: 4, title: "Royal Aged Basmati Rice (5kg)", price: 1200, quantity: 2, subtotal: 2400 }]),
+          JSON.stringify([{ productId: 2, title: "Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner", price: 380, quantity: 2, subtotal: 760 }]),
           3890.0, 583.0, 0.0, 3307.0,
           "Razorpay (Credit Card)", "Paid", "In Transit",
           "Delhivery Air Express", "DEL-8492048195", "DEL-8492048195"

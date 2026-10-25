@@ -35,7 +35,7 @@ function ContactPage() {
     subject: "General Inquiry",
     message: "",
   });
-  const [errors, setErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
+  const [errors, setErrors] = useState<{ phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined }>({});
   const [touched, setTouched] = useState<{ phone: boolean; email: boolean }>({
     phone: false,
     email: false,
@@ -124,7 +124,7 @@ function ContactPage() {
     const phoneRes = validatePhone(form.phone);
     const emailRes = validateEmail(form.email);
 
-    const newErrors: { phone?: string; email?: string; emailSuggestion?: string } = {};
+    const newErrors: { phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined } = {};
     if (!phoneRes.isValid) newErrors.phone = phoneRes.error;
     if (!emailRes.isValid) {
       newErrors.email = emailRes.error;

@@ -1548,7 +1548,7 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
                 <span>AI Promo Recommendation</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Cart sizes with <strong>Cold Pressed Oils</strong> and <strong>A2 Desi Ghee</strong> show a 42% higher repeat purchase rate when paired with a <code className="text-foreground font-mono">FREESHIP</code> coupon on orders above ₹799.
+                Cart sizes with <strong>Bio-Fertilizers</strong> and <strong>Bhumi Shakti (5L)</strong> show a 42% higher repeat purchase rate when paired with a <code className="text-foreground font-mono">FREESHIP</code> coupon on farm orders above ₹799.
               </p>
             </div>
           </div>
@@ -1782,7 +1782,7 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
                       type="text"
                       value={formCategorySpecific}
                       onChange={e => setFormCategorySpecific(e.target.value)}
-                      placeholder="e.g. Cold Pressed Oils, Spices (or leave empty)"
+                      placeholder="e.g. Bio-Fertilizers, Bio-Pesticides (or leave empty)"
                       className="w-full px-3.5 py-2 text-sm rounded-lg bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>

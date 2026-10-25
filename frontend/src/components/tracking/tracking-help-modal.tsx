@@ -15,7 +15,7 @@ const INSTRUCTION_OPTIONS = [
   "Leave with neighbor if door is unanswered",
   "Call phone 10 minutes prior to doorstep arrival",
   "Avoid delivery between 1:00 PM – 3:00 PM",
-  "Fragile cold-pressed glass bottles — handle with care",
+  "Fragile bio-liquid containers — handle with care",
 ];
 
 export function TrackingHelpModal({

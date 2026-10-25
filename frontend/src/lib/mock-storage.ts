@@ -125,41 +125,41 @@ export const DEFAULT_ORDERS = [
     paymentGatewayId: "pay_NL8820491823",
     customer: {
       id: "CUST-001",
-      name: "Ananya Sharma",
-      email: "ananya.s@gmail.com",
-      phone: "+91 98451 22345",
-      tier: "Platinum Gold",
+      name: "Ramesh Patel",
+      email: "ramesh.patel@gmail.com",
+      phone: "+91 98251 22345",
+      tier: "Progressive Farmer",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80"
     },
     shippingAddress: {
-      name: "Ananya Sharma",
-      street: "Flat 402, Green Glen Heights, Bellandur Outer Ring Road",
-      city: "Bengaluru",
-      state: "Karnataka",
-      pincode: "560103",
+      name: "Ramesh Patel",
+      street: "Farm Plot 42, Lodhika-Shapar Road, Near Kisan Seva Kendra",
+      city: "Rajkot",
+      state: "Gujarat",
+      pincode: "360024",
       country: "India",
-      phone: "+91 98451 22345"
+      phone: "+91 98251 22345"
     },
     items: [
-      { id: 1, title: "A2 Vedic Bilona Gir Cow Ghee (500ml)", name: "A2 Vedic Bilona Gir Cow Ghee (500ml)", price: 1450, qty: 2, quantity: 2, image: pantryImage, subtotal: 2900 },
-      { id: 3, title: "Lakadong Turmeric Powder (200g)", name: "Lakadong Turmeric Powder (200g)", price: 189, qty: 2, quantity: 2, image: storyImage, subtotal: 378 },
-      { id: 6, title: "Wood-Pressed Groundnut Oil (1L)", name: "Wood-Pressed Groundnut Oil (1L)", price: 399, qty: 1, quantity: 1, image: pantryImage, subtotal: 399 }
+      { id: 1, title: "Harit (1 L) — Trichoderma Viride Liquid Biofungicide", name: "Harit (1 L) — Trichoderma Viride Liquid Biofungicide", price: 450, qty: 2, quantity: 2, image: "/products/harit.jpg", subtotal: 900 },
+      { id: 2, title: "Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner", name: "Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner", price: 380, qty: 2, quantity: 2, image: "/products/bhumi-shakti.jpg", subtotal: 760 },
+      { id: 3, title: "Neem Oil 1000 PPM (1 L) — Botanical Pest Shield", name: "Neem Oil 1000 PPM (1 L) — Botanical Pest Shield", price: 680, qty: 1, quantity: 1, image: "/products/neem-oil.jpg", subtotal: 680 }
     ],
-    subtotal: 3677,
-    discount: 200,
-    couponCode: "JANANI10",
+    subtotal: 2340,
+    discount: 150,
+    couponCode: "KISAN20",
     deliveryFee: 0,
     shippingFee: 0,
-    total: 3477,
-    warehouse: "Bengaluru South Fulfillment Center",
-    courier: "Shiprocket (Bluedart Air)",
-    trackingId: "SR-BLR-884910",
-    awb: "SR-BLR-884910",
+    total: 2190,
+    warehouse: "Lodhika GIDC Central Facility, Rajkot",
+    courier: "Delhivery Air Express",
+    trackingId: "DEL-884910291",
+    awb: "DEL-884910291",
     timeline: [
-      { status: "Order Confirmed & Paid", title: "Order Confirmed", time: "2026-09-15 10:45 AM", done: true },
-      { status: "Packed in Lodhika GIDC Facility", title: "Packed", time: "2026-09-15 02:30 PM", done: true },
-      { status: "Dispatched via Bluedart Air", title: "Dispatched", time: "2026-09-16 08:00 AM", done: true },
-      { status: "Delivered to Customer", title: "Delivered", time: "2026-09-17 01:15 PM", done: true }
+      { status: "Order Confirmed & Paid via Razorpay", title: "Order Confirmed", time: "2026-09-15 10:45 AM", done: true },
+      { status: "Quality Inspected & Nitrogen Sealed", title: "Packed", time: "2026-09-15 02:30 PM", done: true },
+      { status: "Dispatched via Delhivery Express", title: "Dispatched", time: "2026-09-16 08:00 AM", done: true },
+      { status: "Delivered to Customer Doorstep", title: "Delivered", time: "2026-09-17 01:15 PM", done: true }
     ]
   },
   {
@@ -173,37 +173,37 @@ export const DEFAULT_ORDERS = [
     paymentGatewayId: "pay_NL7739182301",
     customer: {
       id: "CUST-002",
-      name: "Suresh Patwardhan",
-      email: "suresh.p@yahoo.co.in",
-      phone: "+91 94220 89123",
-      tier: "Silver Patron",
+      name: "Suresh Reddy",
+      email: "suresh.reddy@gmail.com",
+      phone: "+91 94401 89123",
+      tier: "Chilli Farm Specialist",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80"
     },
     shippingAddress: {
-      name: "Suresh Patwardhan",
-      street: "Plot 18, Sahakar Nagar, Senapati Bapat Road",
-      city: "Pune",
-      state: "Maharashtra",
-      pincode: "411016",
+      name: "Suresh Reddy",
+      street: "Plot 18, Amaravathi Agricultural Zone, Main Road",
+      city: "Guntur",
+      state: "Andhra Pradesh",
+      pincode: "522002",
       country: "India",
-      phone: "+91 94220 89123"
+      phone: "+91 94401 89123"
     },
     items: [
-      { id: 1, title: "Organic Basmati Rice (1kg)", name: "Organic Basmati Rice (1kg)", price: 249, qty: 3, quantity: 3, image: productsImage, subtotal: 747 },
-      { id: 7, title: "Cold-Pressed Mustard Oil (1L)", name: "Cold-Pressed Mustard Oil (1L)", price: 329, qty: 2, quantity: 2, image: pantryImage, subtotal: 658 }
+      { id: 6, title: "Dharani (1 L) — Root Growth Promoter & Biofertilizer", name: "Dharani (1 L) — Root Growth Promoter & Biofertilizer", price: 390, qty: 3, quantity: 3, image: "/products/dharani.jpg", subtotal: 1170 },
+      { id: 4, title: "Pushkal (1 L) — Micronutrients & Seaweed Bio-Stimulant", name: "Pushkal (1 L) — Micronutrients & Seaweed Bio-Stimulant", price: 520, qty: 2, quantity: 2, image: "/products/pushkal.jpg", subtotal: 1040 }
     ],
-    subtotal: 1405,
+    subtotal: 2210,
     discount: 100,
     deliveryFee: 0,
-    total: 1305,
-    warehouse: "Mumbai Western Regional Hub",
+    total: 2110,
+    warehouse: "Rajkot Central Formulation Facility",
     courier: "Delhivery Air Express",
     trackingId: "DEL-8492048194",
     awb: "DEL-8492048194",
     timeline: [
       { status: "Order Placed & Verified", title: "Order Confirmed", time: "2026-09-16 03:20 PM", done: true },
       { status: "Dispatched from Sorting Facility", title: "Dispatched", time: "2026-09-17 09:30 AM", done: true },
-      { status: "Out for Delivery", title: "In Transit", time: "Expected 18 Sep", done: false }
+      { status: "Out for Delivery to Farm Hub", title: "In Transit", time: "Expected 18 Sep", done: false }
     ]
   },
   {
@@ -217,36 +217,36 @@ export const DEFAULT_ORDERS = [
     paymentGatewayId: "pay_NL6655221190",
     customer: {
       id: "CUST-003",
-      name: "Kavitha Ranganathan",
-      email: "kavitha.r@outlook.com",
+      name: "Balram Choudhary",
+      email: "balram.agro@outlook.com",
       phone: "+91 98410 44231",
-      tier: "Gold Harvest Member",
+      tier: "Cotton & Soybean Grower",
       avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80"
     },
     shippingAddress: {
-      name: "Kavitha Ranganathan",
-      street: "14/2, 4th Cross, Gandhi Nagar, Adyar",
-      city: "Chennai",
-      state: "Tamil Nadu",
-      pincode: "600020",
+      name: "Balram Choudhary",
+      street: "14/2, Krishi Mandi Road, Opp. APMC Yard",
+      city: "Ujjain",
+      state: "Madhya Pradesh",
+      pincode: "456001",
       country: "India",
       phone: "+91 98410 44231"
     },
     items: [
-      { id: 9, title: "Unpolished Toor Dal (500g)", name: "Unpolished Toor Dal (500g)", price: 199, qty: 4, quantity: 4, image: storyImage, subtotal: 796 },
-      { id: 10, title: "Foxtail Millet (500g)", name: "Foxtail Millet (500g)", price: 149, qty: 2, quantity: 2, image: productsImage, subtotal: 298 }
+      { id: 7, title: "Balavan (1 L) — Botanical Crop Shield & Biofungicide", name: "Balavan (1 L) — Botanical Crop Shield & Biofungicide", price: 480, qty: 2, quantity: 2, image: "/products/balavan.jpg", subtotal: 960 },
+      { id: 5, title: "Annada (1 L) — Organic Crop Booster Formulation", name: "Annada (1 L) — Organic Crop Booster Formulation", price: 575, qty: 1, quantity: 1, image: "/products/annada.jpg", subtotal: 575 }
     ],
-    subtotal: 1094,
+    subtotal: 1535,
     discount: 50,
     deliveryFee: 0,
-    total: 1044,
-    warehouse: "Bengaluru South Fulfillment Center",
-    courier: "Shiprocket (Shadowfax)",
-    trackingId: "SFX-CH-99201",
-    awb: "SFX-CH-99201",
+    total: 1485,
+    warehouse: "Lodhika GIDC Central Facility, Rajkot",
+    courier: "Delhivery Surface Logistics",
+    trackingId: "SFX-MP-99201",
+    awb: "SFX-MP-99201",
     timeline: [
       { status: "Order Confirmed & Paid", title: "Order Confirmed", time: "2026-09-17 11:10 AM", done: true },
-      { status: "Packaging & Quality Inspection", title: "Processing", time: "In Progress", done: true }
+      { status: "Nitrogen Flushing & Packaging", title: "Processing", time: "In Progress", done: true }
     ]
   },
   {
@@ -260,34 +260,34 @@ export const DEFAULT_ORDERS = [
     paymentGatewayId: "cod_pending",
     customer: {
       id: "CUST-004",
-      name: "Rameshwar Patel",
-      email: "ramesh.patel@gmail.com",
+      name: "Venkatesh Rao",
+      email: "venkatesh.farm@gmail.com",
       phone: "+91 98251 10928",
-      tier: "New Harvest Patron",
+      tier: "Paddy Farmer",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80"
     },
     shippingAddress: {
-      name: "Rameshwar Patel",
-      street: "B-204, Shivalik Residency, University Road",
-      city: "Rajkot",
-      state: "Gujarat",
-      pincode: "360005",
+      name: "Venkatesh Rao",
+      street: "H.No 4-92, Rythu Bharosa Road, Kazipet",
+      city: "Warangal",
+      state: "Telangana",
+      pincode: "506003",
       country: "India",
       phone: "+91 98251 10928"
     },
     items: [
-      { id: 6, title: "Wood-Pressed Groundnut Oil (1L)", name: "Wood-Pressed Groundnut Oil (1L)", price: 399, qty: 2, quantity: 2, image: pantryImage, subtotal: 798 }
+      { id: 1, title: "Harit (5 L Can) — Trichoderma Viride Liquid Biofungicide", name: "Harit (5 L Can) — Trichoderma Viride Liquid Biofungicide", price: 2000, qty: 1, quantity: 1, image: "/products/harit.jpg", subtotal: 2000 }
     ],
-    subtotal: 798,
+    subtotal: 2000,
     discount: 0,
-    deliveryFee: 50,
-    total: 848,
-    warehouse: "Lodhika GIDC Central Facility",
-    courier: "Pending Courier Allocation",
+    deliveryFee: 0,
+    total: 2000,
+    warehouse: "Lodhika GIDC Central Facility, Rajkot",
+    courier: "Delhivery Surface Logistics",
     trackingId: "",
     awb: "",
     timeline: [
-      { status: "COD Order Placed — Pending Phone Verification", title: "Pending", time: "2026-09-17 01:45 PM", done: true }
+      { status: "COD Order Placed — Pending Logistics Dispatch", title: "Pending", time: "2026-09-17 01:45 PM", done: true }
     ]
   }
 ];
@@ -375,7 +375,7 @@ export const DEFAULT_COUPONS = [
     id: "CPN-01",
     code: "JANANI10",
     title: "10% Off Storewide",
-    description: "Save 10% on your entire basket of organic essentials",
+    description: "Save 10% on your entire basket of agricultural bio-formulations",
     type: "percentage",
     discount: 10,
     minCart: 499,
@@ -391,7 +391,7 @@ export const DEFAULT_COUPONS = [
     id: "CPN-02",
     code: "HARVEST15",
     title: "15% Harvest Fest Savings",
-    description: "15% off orders above ₹999 on cold pressed oils and pulses",
+    description: "15% off orders above ₹999 on bio-fertilizers, humic stimulants and crop boosters",
     type: "percentage",
     discount: 15,
     minCart: 999,
@@ -407,7 +407,7 @@ export const DEFAULT_COUPONS = [
     id: "CPN-03",
     code: "FREESHIP",
     title: "Free Priority Delivery",
-    description: "Complimentary delivery anywhere in India on orders ₹499+",
+    description: "Complimentary farm delivery anywhere in India on orders ₹499+",
     type: "free_shipping",
     discount: 60,
     minCart: 499,
@@ -421,9 +421,9 @@ export const DEFAULT_COUPONS = [
   },
   {
     id: "CPN-04",
-    code: "BILONA20",
-    title: "Flat 20% on Desi Ghee",
-    description: "Special savings on handcrafted Bilona Gir Cow Ghee jars",
+    code: "KISAN20",
+    title: "Flat 20% Kisan Agri Saver",
+    description: "Special savings on Trichoderma Viride (Harit) and Bhumi Shakti 5L packs",
     type: "percentage",
     discount: 20,
     minCart: 1450,
@@ -437,9 +437,9 @@ export const DEFAULT_COUPONS = [
   },
   {
     id: "CPN-05",
-    code: "ORGANIC100",
-    title: "₹100 Pure Organic Saver",
-    description: "Instant ₹100 off on cold-pressed oils, grains, and kitchen pantry items",
+    code: "AGRO100",
+    title: "₹100 Bio-Input Saver",
+    description: "Instant ₹100 off on liquid bio-fertilizers, bio-fungicides and micronutrients",
     type: "flat",
     discount: 100,
     minCart: 750,
@@ -454,8 +454,8 @@ export const DEFAULT_COUPONS = [
   {
     id: "CPN-06",
     code: "FARMDIRECT",
-    title: "₹150 Bulk Harvest Reward",
-    description: "Special ₹150 privilege discount for family monthly pantry stocking orders",
+    title: "₹150 Bulk Farm Reward",
+    description: "Special ₹150 privilege discount for seasonal farm cultivation orders",
     type: "flat",
     discount: 150,
     minCart: 1200,
@@ -470,8 +470,8 @@ export const DEFAULT_COUPONS = [
   {
     id: "CPN-07",
     code: "WELCOME150",
-    title: "₹150 New Patron Welcome",
-    description: "First time tasting Janani Agro organic harvests? Enjoy ₹150 off right away",
+    title: "₹150 New Farmer Welcome",
+    description: "First time choosing Janani Agro biological formulations? Enjoy ₹150 off right away",
     type: "flat",
     discount: 150,
     minCart: 600,
@@ -489,7 +489,7 @@ export const DEFAULT_SETTINGS = {
   store: {
     storeName: "JANANI AGRO PRODUCTS",
     legalBusinessName: "JANANI AGRO PRODUCTS PRIVATE LIMITED",
-    storeTagline: "Ancient Grains, Pure Bilona Ghee & Wood-Pressed Oils Direct from Indian Farms",
+    storeTagline: "Certified Bio-Fertilizers, Bio-Pesticides & Crop Protection Direct from Lodhika Facility",
     supportEmail: "care@jananiagro.com",
     ordersEmail: "orders@jananiagro.com",
     supportPhone: "+91 93114 16225",
@@ -523,9 +523,9 @@ export const DEFAULT_SETTINGS = {
     customerAppBanner: "/assets/janani-pantry.jpg"
   },
   seo: {
-    metaTitle: "JANANI AGRO PRODUCTS — Pure Organic Harvest, Ghee & Cold Pressed Oils",
-    metaDescription: "Direct from verified heritage Indian farms. Handcrafted Vedic A2 Gir cow ghee, wood-pressed oils, unpolished native millets and aged Basmati rice.",
-    metaKeywords: "organic products, cold pressed oil, A2 ghee, bilona ghee, basmati rice, millets, spices, janani agro",
+    metaTitle: "JANANI AGRO PRODUCTS — Biological Crop Protection, Bio-Fertilizers & Stimulants",
+    metaDescription: "Direct from Lodhika GIDC facility. Trichoderma viride, humic and fulvic soil conditioners, botanical pest deterrents and micronutrients for sustainable farming.",
+    metaKeywords: "bio fertilizers, bio pesticides, trichoderma viride, humic acid, neem oil, biostimulants, micronutrients, janani agro",
     canonicalBaseUrl: "https://jananiagro.com",
     ogImageUrl: "/assets/janani-hero.jpg",
     ogType: "website",
@@ -797,12 +797,12 @@ export const DEFAULT_CMS = {
   offerBanners: [
     {
       id: "offer-1",
-      title: "Farm Direct Pantry Combo",
-      subtitle: "Save flat 20% on A2 Ghee + 5L Wood Pressed Groundnut Oil",
+      title: "Biological Crop Shield Combo",
+      subtitle: "Save flat 20% on Harit Trichoderma + 5L Bhumi Shakti Soil Booster",
       badge: "Limited Seasonal Batch",
       ctaText: "Claim Bundle Offer",
       ctaUrl: "/products",
-      imageUrl: "/assets/janani-pantry.jpg",
+      imageUrl: "/products/harit.jpg",
       active: true,
       order: 1
     },

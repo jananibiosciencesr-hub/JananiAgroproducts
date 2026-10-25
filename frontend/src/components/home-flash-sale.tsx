@@ -35,8 +35,8 @@ interface FlashDealItem {
 }
 
 export function HomeFlashSale({
-  bannerTitle = "Festive Harvest Flash Sale",
-  bannerSubtitle = "Limited small-batch cold-pressed oils & A2 Vedic Ghee directly from today's morning press.",
+  bannerTitle = "Seasonal Bio-Agro Flash Deals",
+  bannerSubtitle = "Certified bio-fertilizers, bio-fungicides & plant stimulants fresh from our Lodhika GIDC facility.",
 }: FlashSaleProps) {
   const { addToCart, wishlist, toggleWishlist, products: storeProducts } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
@@ -76,22 +76,22 @@ export function HomeFlashSale({
     const discount = Math.max(10, Math.round(((originalPrice - flashPrice) / originalPrice) * 100));
 
     const totalStock = p.stockCount || 50;
-    const remaining = Math.max(3, Math.min(12, (p.id * 7) % 9 + 4));
+    const remaining = Math.max(3, Math.min(12, (Number(p.id) * 7) % 9 + 4));
     const claimed = totalStock - remaining;
 
-    const badges = ["Deal of the Day", "Morning Mill Batch", "Fresh Harvest", "Bestseller Deal"];
+    const badges = ["Deal of the Day", "Crop Booster Deal", "Farm Direct", "Bestseller Deal"];
     const badge = p.badge || badges[idx % badges.length];
 
     const subtitle = p.description
       ? (p.description.length > 55 ? p.description.slice(0, 52) + "..." : p.description)
-      : (p.unit ? `${p.unit} • 100% Certified Organic` : "Direct from partner organic farms");
+      : (p.unit ? `${p.unit} • For Agriculture Use Only` : "Direct from Lodhika GIDC Facility");
 
     return {
       id: p.id,
       slug: p.slug,
       name: p.name,
       category: p.category,
-      image: p.image || "/assets/janani-pantry.jpg",
+      image: p.image || "/products/harit.jpg",
       rating: p.rating || 4.9,
       reviews: p.reviews || 48,
       flashPrice,

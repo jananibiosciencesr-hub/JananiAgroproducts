@@ -482,10 +482,10 @@ try {
 $coupCount = $pdo->query("SELECT COUNT(*) FROM `coupons`")->fetchColumn();
 if ($coupCount == 0) {
     $coupons = [
-        ['coup-1', 'JANANI10', '10% Off Storewide', 'Save 10% on your entire basket of organic essentials', 'percentage', 10.00, 499.00, 200.00, '2026-01-01', '2026-12-31', 142, 1000, 1, 1],
-        ['coup-2', 'HARVEST15', '15% Harvest Fest Savings', '15% off orders above ₹999 on cold pressed oils and pulses', 'percentage', 15.00, 999.00, 350.00, '2026-01-01', '2026-12-31', 88, 500, 1, 1],
-        ['coup-3', 'FREESHIP', 'Free Priority Delivery', 'Complimentary delivery anywhere in India on orders ₹499+', 'free_shipping', 60.00, 499.00, 60.00, '2026-01-01', '2026-12-31', 110, 2000, 2, 1],
-        ['coup-4', 'BILONA20', 'Flat 20% on Desi Ghee', 'Exclusive discount on Vedic A2 Gir Cow Bilona Ghee', 'percentage', 20.00, 1200.00, 500.00, '2026-01-01', '2026-12-31', 64, 300, 1, 1]
+        ['coup-1', 'JANANI10', '10% Off Storewide', 'Save 10% on your entire basket of agricultural bio-formulations', 'percentage', 10.00, 499.00, 200.00, '2026-01-01', '2026-12-31', 142, 1000, 1, 1],
+        ['coup-2', 'HARVEST15', '15% Harvest Fest Savings', '15% off orders above ₹999 on bio-fertilizers and crop boosters', 'percentage', 15.00, 999.00, 350.00, '2026-01-01', '2026-12-31', 88, 500, 1, 1],
+        ['coup-3', 'FREESHIP', 'Free Priority Delivery', 'Complimentary farm delivery anywhere in India on orders ₹499+', 'free_shipping', 60.00, 499.00, 60.00, '2026-01-01', '2026-12-31', 110, 2000, 2, 1],
+        ['coup-4', 'KISAN20', 'Flat 20% Kisan Agri Saver', 'Exclusive discount on Trichoderma Viride (Harit) and Bhumi Shakti 5L packs', 'percentage', 20.00, 1200.00, 500.00, '2026-01-01', '2026-12-31', 64, 300, 1, 1]
     ];
     $stmt = $pdo->prepare("INSERT IGNORE INTO `coupons` (`id`, `code`, `title`, `description`, `type`, `discount`, `min_cart`, `max_discount`, `start_date`, `expiry_date`, `uses`, `max_uses`, `per_user_limit`, `active`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     foreach ($coupons as $c) {
@@ -563,13 +563,13 @@ if ($orderCount == 0) {
         [
             'JAP-849201', 'JAP-849201', '11 Sep 2026, 14:20', 'Rajesh Varma', 'rajesh.varma@gmail.com', '+91 98490 55441',
             json_encode(['name' => 'Rajesh Varma', 'street' => 'Flat 402, Green Palms, Indiranagar', 'city' => 'Bengaluru', 'state' => 'Karnataka', 'pincode' => '560038']),
-            json_encode([['productId' => 1, 'title' => 'Wood Pressed Groundnut Oil (5L)', 'price' => 1850, 'quantity' => 1, 'subtotal' => 1850]]),
+            json_encode([['productId' => 1, 'title' => 'Harit (5 L Can) — Trichoderma Viride', 'price' => 2000, 'quantity' => 1, 'subtotal' => 2000]]),
             2450.00, 245.00, 0.00, 2205.00, 'UPI Instant', 'Paid', 'Delivered', 'Delhivery Air Express', 'DEL-8492048194', 'DEL-8492048194'
         ],
         [
             'JAP-849202', 'JAP-849202', '10 Sep 2026, 18:45', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223',
             json_encode(['name' => 'Dr. Ananya Iyer', 'street' => 'Villa 14, Palm Meadows, Whitefield', 'city' => 'Bengaluru', 'state' => 'Karnataka', 'pincode' => '560066']),
-            json_encode([['productId' => 4, 'title' => 'Royal Aged Basmati Rice (5kg)', 'price' => 1200, 'quantity' => 2, 'subtotal' => 2400]]),
+            json_encode([['productId' => 2, 'title' => 'Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner', 'price' => 380, 'quantity' => 2, 'subtotal' => 760]]),
             3890.00, 583.00, 0.00, 3307.00, 'Razorpay (Credit Card)', 'Paid', 'In Transit', 'Delhivery Air Express', 'DEL-8492048195', 'DEL-8492048195'
         ]
     ];

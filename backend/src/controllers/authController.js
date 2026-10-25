@@ -279,10 +279,8 @@ export const sendOtp = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: email
-        ? `Real-time 6-digit verification code sent to ${email} (and copied to admin). Please check your email inbox.`
+        ? `Real-time 6-digit verification code sent to ${email}. Please check your email inbox.`
         : `Verification code sent to +91 ${phone}. Please check your SMS.`,
-      otp: otpCode,
-      demoOtpCode: otpCode,
       emailSent,
       resendCooldownSeconds: 60
     });
@@ -311,9 +309,8 @@ export const verifyOtp = async (req, res) => {
     const cleanOtp = String(otp).trim();
     const stored = activeOtpStore.get(identifier);
 
-    // Universal bypass for rapid testing: "123456", "1234", "000000", "999999"
-    const isValidOtp = (stored && stored.code === cleanOtp && stored.expiresAt > Date.now()) ||
-      cleanOtp === "123456" || cleanOtp === "1234" || cleanOtp === "000000" || cleanOtp === "999999";
+    // Only genuine matching OTP within expiry is valid
+    const isValidOtp = stored && stored.code === cleanOtp && stored.expiresAt > Date.now();
 
     if (!isValidOtp) {
       return res.status(400).json({

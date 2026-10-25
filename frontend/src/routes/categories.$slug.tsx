@@ -107,7 +107,7 @@ function CategoryDetailPage() {
       if (sort === "high") return b.price - a.price;
       if (sort === "rating") return b.rating - a.rating;
       if (sort === "discount") return b.discount - a.discount;
-      return a.id - b.id;
+      return String(a.id).localeCompare(String(b.id));
     });
   }, [category, query, sort, inStockOnly, allProds]);
 

@@ -854,7 +854,7 @@ function CategoryFormModal({
                   required
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="e.g. Royal Aged Basmati Rice"
+                  placeholder="e.g. Bio-Fertilizers & Inoculants"
                   className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
                 />
               </div>
@@ -866,7 +866,7 @@ function CategoryFormModal({
                     required
                     value={formData.slug}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="royal-aged-basmati-rice"
+                    placeholder="bio-fertilizers"
                     className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-semibold text-emerald-600 outline-none"
                   />
                 </div>
@@ -989,7 +989,7 @@ function CategoryFormModal({
                   <input
                     value={formData.seo.metaKeywords}
                     onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaKeywords: e.target.value } })}
-                    placeholder="organic rice, basmati, pesticide-free"
+                    placeholder="bio-fertilizer, trichoderma, humic, soil health"
                     className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
                   />
                 </div>

@@ -21,9 +21,9 @@ import { type CouponVoucher } from "./types";
 const INITIAL_COUPONS: CouponVoucher[] = [
   // Available
   {
-    code: "ORGANIC100",
-    title: "₹100 Pure Organic Saver",
-    description: "Instant ₹100 flat savings on cold-pressed oils, grains, and kitchen essentials.",
+    code: "KISAN100",
+    title: "₹100 Kisan Agri Saver",
+    description: "Instant ₹100 flat savings on bio-fertilizers, bio-pesticides, and crop nutrition.",
     type: "flat",
     value: 100,
     minSubtotal: 750,
@@ -67,14 +67,14 @@ const INITIAL_COUPONS: CouponVoucher[] = [
     status: "available",
   },
   {
-    code: "VEDIC50",
-    title: "₹50 Vedic Honey & Ghee Gift",
-    description: "Special flat ₹50 voucher on raw unpasteurized honey and wood-churned ghee.",
+    code: "NEEM50",
+    title: "₹50 Botanical Pest Shield Voucher",
+    description: "Special flat ₹50 voucher on Neem Oil (10000 PPM) botanical pest deterrents.",
     type: "flat",
     value: 50,
     minSubtotal: 400,
     expiry: "20 Oct 2026",
-    badge: "VEDIC SPECIAL",
+    badge: "AGRO SPECIAL",
     status: "available",
   },
 
@@ -95,7 +95,7 @@ const INITIAL_COUPONS: CouponVoucher[] = [
   {
     code: "FIRST50",
     title: "First Order Starter Voucher",
-    description: "Redeemed for ₹50 savings on initial pantry trial bag.",
+    description: "Redeemed for ₹50 savings on initial bio-formulation order.",
     type: "flat",
     value: 50,
     minSubtotal: 300,
@@ -120,8 +120,8 @@ const INITIAL_COUPONS: CouponVoucher[] = [
   },
   {
     code: "SUMMERCOOL",
-    title: "₹75 Herbal Beverages Saver",
-    description: "Seasonal promotional discount for cold-pressed sharbats & kokum.",
+    title: "₹75 Botanical Protection Saver",
+    description: "Seasonal promotional discount on botanical pest repellents & bio-stimulants.",
     type: "flat",
     value: 75,
     minSubtotal: 500,

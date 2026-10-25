@@ -49,7 +49,7 @@ export function ReferralProgramSection() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
 
-  const inviteMessage = `Hey! Taste the purest cold-pressed oils and organic Vedic grains from Janani Agro Products. Use my invite code ${data.referralCode} to get flat ₹250 off your first harvest basket! Shop here: ${data.referralUrl}`;
+  const inviteMessage = `Hey! Protect your crops with certified bio-fertilizers and bio-pesticides from Janani Agro Products. Use my invite code ${data.referralCode} to get flat ₹250 off your first bio-inputs order! Shop here: ${data.referralUrl}`;
 
   const handleCopyCode = async () => {
     try {
@@ -80,13 +80,13 @@ export function ReferralProgramSection() {
 
   const handleShareTelegram = () => {
     const url = `https://t.me/share/url?url=${encodeURIComponent(data.referralUrl)}&text=${encodeURIComponent(
-      `Taste pure organic cold-pressed harvests from Janani Agro! Use code ${data.referralCode} for ₹250 OFF.`
+      `Get certified bio-fertilizers and botanical pest repellents from Janani Agro! Use code ${data.referralCode} for ₹250 OFF.`
     )}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleShareEmail = () => {
-    const subject = encodeURIComponent("Special ₹250 Gift: Fresh Organic Harvests from Janani Agro");
+    const subject = encodeURIComponent("Special ₹250 Gift: Certified Agricultural Bio-Inputs from Janani Agro");
     const body = encodeURIComponent(inviteMessage);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -122,8 +122,8 @@ export function ReferralProgramSection() {
               Refer Friends & Harvest Cash Rewards
             </h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Introduce your family and loved ones to authentic wood-pressed oils, unpolished
-              millets, and chemical-free groceries. They get <strong>₹250 off</strong> their first
+              Introduce your fellow farmers and agricultural community to certified bio-fertilizers,
+              crop boosters, and zero-residue pest shields. They get <strong>₹250 off</strong> their first
               order, and you earn <strong>₹250 instant wallet cash</strong> directly in your passbook!
             </p>
           </div>

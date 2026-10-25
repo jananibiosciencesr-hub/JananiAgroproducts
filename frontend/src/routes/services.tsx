@@ -23,29 +23,29 @@ const serviceList = [
   {
     id: "dealer-supply",
     title: "Dealer & Retail Network Supply",
-    desc: "Partner with Janani to distribute our certified organic consumer packs. High-turnover fast moving organic grains, spices, and cold pressed oils with attractive margins and point-of-sale branding support.",
-    features: ["Pre-packed retail ready SKUs", "Attractive distributor profit margins", "Marketing collateral & POS branding", "Regional exclusivity options"],
+    desc: "Partner with Janani to distribute our certified agricultural bio-formulations. High-demand bio-fertilizers, bio-pesticides, and crop stimulants with attractive distributor margins and point-of-sale branding support.",
+    features: ["Pre-packed 1L & 5L retail SKUs", "Attractive agricultural dealer profit margins", "Marketing collateral & farmer meeting support", "District exclusivity options"],
     icon: Handshake,
   },
   {
     id: "wholesale",
-    title: "Wholesale & Institutional Grain Supply",
-    desc: "Direct bulk procurement for restaurants, organic supermarkets, hospitality chains, and food manufacturers. Consistent grain sizing, rigorous grading, and moisture-controlled packaging.",
-    features: ["25kg & 50kg food-grade bulk bags", "Batch test reports & lab COAs provided", "Scheduled recurring deliveries", "Volume-based tier pricing"],
+    title: "Wholesale & Commercial Agro Formulation Supply",
+    desc: "Direct bulk procurement for agricultural cooperatives, corporate farms, and input dealers. Consistent microbial viability, certified CFU count, and nitrogen-sealed packaging.",
+    features: ["200L drums & bulk IBC containers", "Batch test reports & lab COAs provided", "Scheduled recurring farm deliveries", "Volume-based agricultural tier pricing"],
     icon: Truck,
   },
   {
     id: "private-label",
-    title: "Private Label & Contract Packaging",
-    desc: "End-to-end white-labeling solutions from raw material sourcing, automated cleaning, grading, nitrogen flushing, and custom pouch/box packaging under your brand name.",
-    features: ["Custom packaging & label printing", "Hygienic cleanroom packaging line", "Full compliance with FSSAI & Organic standards", "Low minimum order quantity pilots"],
+    title: "Contract Formulation & Custom Packaging",
+    desc: "End-to-end biological formulation solutions from active microbial stabilization, botanical extraction, automated bottling, and custom label printing under your registered brand.",
+    features: ["Custom agricultural label printing", "State-of-the-art liquid formulation facility", "Full compliance with agricultural quality standards", "Low minimum order volume pilots"],
     icon: PackageCheck,
   },
   {
     id: "bulk-orders",
-    title: "Commercial & Export Sourcing",
-    desc: "Large volume bulk shipments of Indian native grains, non-basmati & basmati rice, mustard, groundnut, and whole spices directly dispatched from our Gujarat processing hub.",
-    features: ["Palletized container-load dispatch", "Phytosanitary & export documentation", "Customized fumigation protocols", "Dedicated logistics manager"],
+    title: "Commercial & Institutional Agro Sourcing",
+    desc: "Large volume bulk shipments of agricultural bio-fertilizers, humic acid conditioners, and botanical neem formulations directly dispatched from our Lodhika GIDC Gujarat processing facility.",
+    features: ["Palletized tanker & freight dispatch", "Agricultural registration & quality documentation", "Secure leakage-proof packaging", "Dedicated logistics manager"],
     icon: Factory,
   },
   {
@@ -56,10 +56,10 @@ const serviceList = [
     icon: Award,
   },
   {
-    id: "custom-milling",
-    title: "Cold Milling & Wood Pressing",
-    desc: "Traditional slow-stone milling and artisanal wooden churner oil extraction that preserves essential fatty acids, delicate aromas, and natural antioxidants.",
-    features: ["Zero heat degradation process", "Unrefined single-pressed purity", "Custom particle size stoneground flours", "Chemical-free sediment filtration"],
+    id: "bio-formulation",
+    title: "Custom Bio-Formulation & Toll Manufacturing",
+    desc: "State-of-the-art laboratory fermentation and bio-processing facility providing custom fungal cultures, liquid bio-fertilizers, and high-CFU botanical formulations.",
+    features: ["Controlled bioreactor fermentation", "High CFU microbial stability", "Custom concentration bio-inputs", "Certified non-toxic residue testing"],
     icon: Sparkles,
   },
 ];
@@ -76,7 +76,7 @@ function ServicesPage() {
   });
 
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
+  const [errors, setErrors] = useState<{ phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined }>({});
   const [touched, setTouched] = useState<{ phone: boolean; email: boolean }>({ phone: false, email: false });
 
   const handlePhoneChange = (val: string) => {

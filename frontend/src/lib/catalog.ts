@@ -1085,23 +1085,23 @@ export const products: Product[] = [
 ];
 
 export const services: [string, string][] = [
-  ["Dealer Supply", "Reliable stock, market-ready packaging and dedicated account support."],
-  ["Wholesale Supply", "Consistent quality and competitive pricing for institutional buyers."],
-  ["Retail Products", "Farm-traceable pantry staples in practical everyday pack sizes."],
-  ["Bulk Orders", "Custom quantities and dispatch planning for large requirements."],
-  ["Organic Consultation", "Practical guidance for sourcing and transitioning to organics."],
-  ["Private Label", "From product selection to compliant, premium packaging."],
+  ["Dealer Supply", "Reliable stock, agricultural retailer-ready packaging and dedicated regional account support."],
+  ["Wholesale Supply", "Consistent certified quality and competitive volume pricing for agricultural cooperatives and large farm estates."],
+  ["Retail Formulations", "Farm-tested bio-fertilizers, biopesticides, and crop stimulants in practical 1L and 5L pack sizes."],
+  ["Bulk Farm Orders", "Custom quantities, tanker dispatch, and agricultural logistics planning for large farming requirements."],
+  ["Agronomy Consultation", "Practical guidance on dosage, soil testing, and transitioning to sustainable bio-input protocols."],
+  ["Institutional Supply", "From formulation testing to compliant, state-registered agricultural packaging."],
 ];
 
 const rawPosts: [string, string][] = [
-  ["Why Ancient Grains Belong in the Modern Kitchen", "A simple guide to bringing millets back to everyday meals."],
-  ["Cold-Pressed Oils: A Better Way to Cook", "How slow extraction protects aroma, flavour and nutrients."],
-  ["How to Read an Organic Food Label", "The signals that separate trusted produce from clever packaging."],
-  ["From Gujarat Farms to Your Pantry", "Meet the growers and careful hands behind every harvest."],
-  ["Five Ways to Use Turmeric Every Day", "Golden ideas beyond curry, from breakfast to bedtime."],
-  ["The Case for Unpolished Pulses", "Why less processing can mean more flavour and nourishment."],
-  ["Building Healthier Soil Naturally", "Traditional methods helping farms become more resilient."],
-  ["A Guide to Storing Grains at Home", "Keep staples fresher for longer with these practical steps."],
+  ["Maximizing Crop Yield with Trichoderma Viride", "A comprehensive guide to controlling damping-off, root rot, and wilt naturally using Harit."],
+  ["Humic and Fulvic Acid: The Secret to Soil Rejuvenation", "How Bhumi Shakti improves organic carbon, CEC, and root aeration across varied soils."],
+  ["Integrated Pest Management with Neem Oil (10000 PPM)", "Effective spray techniques for controlling whiteflies, thrips, and aphids without chemical residues."],
+  ["From Lodhika GIDC to Indian Farms", "Inside our state-of-the-art bio-formulation processing and quality control facility in Gujarat."],
+  ["Drip Fertigation Protocol for Micro Nutrients", "Step-by-step guidance on applying Pushkal and micronutrient foliar blends for balanced plant nutrition."],
+  ["Root Zone Activation in Chilli and Cotton", "How Dharani biostimulant promotes dense feeder white root growth and drought resilience."],
+  ["Building Living Soil in Sustainable Agriculture", "Practical biofertilizer methods helping farms restore microbial biodiversity naturally."],
+  ["Safe Storage and Handling of Bio-Fungicides", "Keep live microbial formulations viable and active with these essential storage tips."],
 ];
 
 export const posts = rawPosts.map(([title, excerpt], index) => ({
@@ -1113,23 +1113,23 @@ export const posts = rawPosts.map(([title, excerpt], index) => ({
 }));
 
 export const faqs: [string, string][] = [
-  ["Are all JANANI products certified organic?", "Our organic range is sourced from verified farms and quality-tested batches. Certification details are shown on each applicable pack."],
-  ["Where do you deliver?", "We deliver across serviceable pin codes in India. Enter your delivery details at checkout for availability and estimates."],
-  ["How are products packed?", "Products are cleaned, batch tested, and packed in food-safe, moisture-resistant packaging to preserve freshness."],
-  ["Can I place a wholesale or dealer order?", "Yes. Use our dealer enquiry form and our sales team will contact you with pricing and availability."],
-  ["What is your return policy?", "Unopened items can be reported within seven days. Damaged or incorrect deliveries are prioritised for replacement."],
-  ["Do you offer cash on delivery?", "Cash on delivery is shown at checkout wherever it is available for the selected pin code."],
+  ["Are all JANANI products certified for agricultural use?", "Yes. Our biological formulations, bio-fertilizers, and organic inputs are manufactured under strict Gujarat State Agricultural guidelines with complete batch traceability."],
+  ["What crops are compatible with Janani Agro formulations?", "Our products are suitable for paddy, cotton, chilli, tomato, sugarcane, pulses, oilseeds, fruits, vegetables, and all plantation crops."],
+  ["How should Trichoderma (Harit) and biofertilizers be applied?", "They can be applied via soil drenching, drip fertigation, seed treatment, or basal application. Specific dosage details are printed on every 1L and 5L pack."],
+  ["Can I become a Janani Agro authorized dealer or distributor?", "Yes! We welcome agricultural retailers and distributors across India. Submit the Become a Distributor form or call our sales team for dealership pricing."],
+  ["What is the shelf life of Janani microbial and liquid formulations?", "Most of our bio-formulations have an active shelf life of 12 to 18 months when stored in a cool, dry place away from direct sunlight."],
+  ["Do you offer Cash on Delivery (COD) for farm delivery?", "Yes, Cash on Delivery is available across most agricultural rural and semi-urban pin codes in India."],
 ];
 
 export const testimonials: [string, string, string][] = [
-  ["Nandini Patel", "Ahmedabad", "The rice has a delicate aroma and cooks beautifully. The packaging feels as thoughtful as the product."],
-  ["Rohan Mehta", "Mumbai", "Janani has become our trusted source for oils and everyday dals. Quality is remarkably consistent."],
-  ["Asha Menon", "Bengaluru", "Fresh, clean and honestly labelled. The turmeric colour and fragrance are exceptional."],
-  ["Devang Shah", "Rajkot", "Their wholesale team is responsive and dispatches arrive exactly as committed."],
-  ["Ira Kapoor", "Delhi", "Beautiful pantry staples that I feel good serving to my family."],
-  ["Farhan Ali", "Pune", "The groundnut oil tastes wonderfully traditional without feeling heavy."],
-  ["Mira Joshi", "Surat", "Fast delivery, careful packing and grains that are visibly premium."],
-  ["Kunal Rao", "Hyderabad", "A rare brand that gets traceability, taste and presentation equally right."],
+  ["Ramesh Patel", "Rajkot, Gujarat", "Using Harit on our groundnut crop eliminated root rot completely. The 5L pack is economical and highly effective."],
+  ["Suresh Reddy", "Guntur, Andhra Pradesh", "Bhumi Shakti and Pushkal gave exceptional results in my chilli fields. Vibrant vegetative growth and no leaf curl issues."],
+  ["Balram Choudhary", "Ujjain, Madhya Pradesh", "Janani Neem Oil 10000 PPM is the most reliable organic shield against sucking pests on our soybean and cotton crops."],
+  ["Venkatesh Rao", "Warangal, Telangana", "Dharani root developer helped our paddy seedlings establish vigorous white roots within a week of transplanting."],
+  ["Praveen Patil", "Kolhapur, Maharashtra", "Their Lodhika manufacturing quality is top-notch. Our sugarcane yield increased by 20% after using their bio-fertilizer regimen."],
+  ["Mahesh Deshmukh", "Nashik, Maharashtra", "Outstanding biofungicide. Harit controlled damping-off in our tomato nursery without any synthetic chemicals."],
+  ["Devang Shah", "Ahmedabad, Gujarat", "As an agro dealer for 10 years, Janani Agro Products is one of our fastest moving and most trusted bio-input brands."],
+  ["Kiran Varma", "Vijayawada, Andhra Pradesh", "Fast delivery directly to our village hub, careful nitrogen-sealed packaging, and visible crop vigor in our horticulture orchards."],
 ];
 
 export const orders: any[] = [];

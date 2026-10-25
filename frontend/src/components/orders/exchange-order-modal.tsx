@@ -18,17 +18,17 @@ interface ExchangeOrderModalProps {
 const EXCHANGE_REASONS = [
   "Want a different package size / quantity (e.g. 1 Litre instead of 500ml)",
   "Replace with identical fresh batch (defect / damage exchange)",
-  "Want to swap with another organic pantry staple",
+  "Want to swap with another Janani Agro formulation",
   "Ordered wrong product variant by mistake",
 ];
 
 const REPLACEMENT_OPTIONS = [
-  "Wood-Pressed Groundnut Oil (1 Litre Tin Can)",
-  "Cold-Pressed Mustard Oil (1 Litre Bottle)",
-  "Organic Basmati Rice (1 kg Pack)",
-  "A2 Gir Cow Bilona Cultured Ghee (500ml)",
-  "Lakadong Turmeric Powder (200 g Aroma-Jar)",
-  "Same Item Fresh Batch Replacement",
+  "Harit (1 L) — Trichoderma Viride Liquid Biofungicide",
+  "Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner",
+  "Neem Oil 1000 PPM (1 L) — Botanical Pest Shield",
+  "Dharani (1 L) — Root Growth Promoter & Biofertilizer",
+  "Pushkal (1 L) — Micronutrients & Seaweed Bio-Stimulant",
+  "Same Formulation Fresh Nitrogen-Sealed Replacement",
 ];
 
 export function ExchangeOrderModal({

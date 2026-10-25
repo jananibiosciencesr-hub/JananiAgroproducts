@@ -19,7 +19,7 @@ export function ReferEarnModal({
   if (!isOpen) return null;
 
   const referralUrl = `https://jananiagro.com/invite/${referralCode}`;
-  const shareMessage = `Hey! I just ordered single-origin organic cold-pressed oils & pantry staples from Janani Agro Products. Use my referral link to get ₹150 off your first harvest basket: ${referralUrl}`;
+  const shareMessage = `Hey! I just ordered certified bio-fertilizers & agricultural formulations from Janani Agro Products. Use my referral link to get ₹150 off your first bio-inputs order: ${referralUrl}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralUrl);

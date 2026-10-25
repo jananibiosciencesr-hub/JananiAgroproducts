@@ -32,8 +32,8 @@ interface AddMoneyModalProps {
 const PRESET_AMOUNTS = [
   { amount: 500, label: "₹500", tag: "Starter" },
   { amount: 1000, label: "₹1,000", tag: "Popular + 5% Extra", bonus: 50 },
-  { amount: 2000, label: "₹2,000", tag: "Vedic Saver + 8% Extra", bonus: 160 },
-  { amount: 5000, label: "₹5,000", tag: "Pantry Patron + 10% Extra", bonus: 500 },
+  { amount: 2000, label: "₹2,000", tag: "Agri Saver + 8% Extra", bonus: 160 },
+  { amount: 5000, label: "₹5,000", tag: "Kisan Patron + 10% Extra", bonus: 500 },
 ];
 
 export function AddMoneyModal({ isOpen, onClose, onSuccess }: AddMoneyModalProps) {

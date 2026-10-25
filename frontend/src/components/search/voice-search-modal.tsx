@@ -112,10 +112,10 @@ export function VoiceSearchModal({ isOpen, onClose, onSearch }: VoiceSearchModal
             <Sparkles className="size-3.5" /> AI Smart Voice Search
           </span>
           <h3 className="font-display text-2xl font-bold text-foreground mt-2">
-            {isListening ? "Listening to Your Voice..." : "Speak Your Harvest Request"}
+            {isListening ? "Listening to Your Voice..." : "Speak Your Agri Formulation Request"}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Say an ingredient, recipe goal, or dietary preference in English or Hindi.
+            Say a crop name, pest symptom, or bio-formulation in English, Telugu, or Hindi.
           </p>
         </div>
 
@@ -151,7 +151,7 @@ export function VoiceSearchModal({ isOpen, onClose, onSearch }: VoiceSearchModal
             <p className="text-xs text-destructive font-medium">{errorMessage}</p>
           ) : (
             <p className="text-xs text-muted-foreground animate-pulse">
-              Try saying: "Wood pressed mustard oil" or "Millets for diabetes"...
+              Try saying: "Harit Trichoderma for wilt" or "Bhumi Shakti humic acid"...
             </p>
           )}
         </div>

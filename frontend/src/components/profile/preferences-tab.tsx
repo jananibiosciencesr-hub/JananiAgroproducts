@@ -170,9 +170,9 @@ export function PreferencesTab() {
             <div className="flex items-start gap-3">
               <Mail className="size-5 text-brand-gold mt-0.5 shrink-0" />
               <div>
-                <h4 className="text-xs font-bold text-foreground">Seasonal Harvest Reports & New Batches</h4>
+                <h4 className="text-xs font-bold text-foreground">Seasonal Agronomy Reports & Bio-Input Batches</h4>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Curated organic recipes, farm harvest logs, and monthly patron loyalty perks.
+                  Curated agronomy guides, crop harvest advisories, and monthly farmer loyalty perks.
                 </p>
               </div>
             </div>

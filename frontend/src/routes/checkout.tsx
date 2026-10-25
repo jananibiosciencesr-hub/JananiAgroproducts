@@ -370,10 +370,10 @@ export function CheckoutPage() {
           Your Harvest Basket is Empty
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Add wood-pressed oils, aged pulses, or natural spices to proceed to secure checkout.
+          Add bio-fertilizers, growth promoters, or botanical shields to proceed to secure checkout.
         </p>
         <Button asChild variant="gold" size="lg" className="mt-6 rounded-full px-8 font-bold">
-          <Link to="/products">Browse Organic Staples</Link>
+          <Link to="/products">Browse Agricultural Formulations</Link>
         </Button>
       </div>
     );

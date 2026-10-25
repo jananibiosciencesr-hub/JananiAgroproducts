@@ -973,7 +973,7 @@ function CampaignBuilderModal({
                   value={formData.subject || ""}
                   onChange={e => setFormData({ ...formData, subject: e.target.value })}
                   className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                  placeholder="e.g. ✨ Celebrate with 25% OFF on Cold Pressed Oils!"
+                  placeholder="e.g. 🌱 Protect your crops with 25% OFF on Bio-Fertilizers!"
                 />
               </div>
             )}
@@ -1192,7 +1192,7 @@ function SegmentBuilderModal({
               value={name}
               onChange={e => setName(e.target.value)}
               className="mt-1 w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl"
-              placeholder="e.g. Cold Pressed Oil Loyalists"
+              placeholder="e.g. Bio-Fertilizer & Trichoderma Buyers"
             />
           </div>
 

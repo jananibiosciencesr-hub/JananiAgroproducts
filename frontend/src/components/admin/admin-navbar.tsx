@@ -36,8 +36,8 @@ export const SEARCHABLE_NAV_MODULES: Array<{
 }> = [
   { id: "dashboard", title: "Dashboard Overview", desc: "Live sales metrics & KPI performance", keywords: ["dashboard", "home", "metrics", "kpi", "sales", "overview", "analytics"], icon: ShoppingBag },
   { id: "orders", title: "Orders Manager", desc: "All customer orders, dispatch & invoices", keywords: ["orders", "sales", "dispatch", "invoices", "order", "ord"], icon: ShoppingBag },
-  { id: "products", title: "Products Catalog", desc: "Manage catalog, stock & pricing", keywords: ["products", "items", "catalog", "sku", "ghee", "oils", "rice"], icon: Package },
-  { id: "categories", title: "Categories & Hierarchy", desc: "Organic grain classifications & oils", keywords: ["categories", "category", "hierarchy", "slugs"], icon: Package },
+  { id: "products", title: "Products Catalog", desc: "Manage catalog, stock & pricing", keywords: ["products", "items", "catalog", "sku", "harit", "biofertilizer", "humic"], icon: Package },
+  { id: "categories", title: "Categories & Hierarchy", desc: "Bio-fertilizer, pesticide & stimulant classifications", keywords: ["categories", "category", "hierarchy", "slugs"], icon: Package },
   { id: "customers", title: "Customers & Patrons", desc: "Patron profiles, wallets & addresses", keywords: ["customers", "patrons", "users", "profiles", "wallets"], icon: UserCheck },
   { id: "inquiries", title: "Customer Inquiries", desc: "B2B, dealership & contact requests", keywords: ["inquiries", "inquiry", "messages", "dealership", "contact", "support"], icon: MessageSquare },
   { id: "inventory", title: "Inventory & Restock", desc: "Warehouse stock levels & alerts", keywords: ["inventory", "stock", "restock", "warehouse", "threshold", "units"], icon: AlertTriangle },
@@ -325,7 +325,7 @@ export function AdminNavbar({
           {
             id: "inv-alert-1",
             title: "Critical Low Stock Alert",
-            desc: `${inventory.find((i) => (i?.stock ?? 45) < 20)?.name || "Gir Cow Ghee"} has low stock units`,
+            desc: `${inventory.find((i) => (i?.stock ?? 45) < 20)?.name || "Harit Biofungicide (1L)"} has low stock units`,
             time: "Today",
             icon: AlertTriangle,
             color: "text-rose-500 bg-rose-500/10",

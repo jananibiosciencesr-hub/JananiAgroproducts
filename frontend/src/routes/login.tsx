@@ -54,7 +54,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign In & Create Account — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Sign in with Email, Mobile OTP, or Google to manage your organic pantry, harvest subscriptions, and exclusive member savings." },
+      { name: "description", content: "Sign in with Email, Mobile OTP, or Google to manage your agricultural orders, bio-fertilizer shipments, and farmer savings." },
     ],
   }),
   component: AuthenticationPage,
@@ -106,7 +106,7 @@ export function AuthenticationPage() {
   const [signupAlreadyExistsWarn, setSignupAlreadyExistsWarn] = useState<string | null>(null);
 
   // Validation State for Phone & Email
-  const [formErrors, setFormErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
+  const [formErrors, setFormErrors] = useState<{ phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined }>({});
   const [formTouched, setFormTouched] = useState<{ phone: boolean; email: boolean }>({ phone: false, email: false });
 
   const handlePhoneChange = (val: string) => {
@@ -706,10 +706,10 @@ export function AuthenticationPage() {
                 Pure Soil to Soul
               </div>
               <h2 className="mt-1.5 font-display text-base lg:text-lg font-bold leading-snug tracking-tight text-cream">
-                Nourish Your Family With Heritage Harvests.
+                Empower Your Farmland With Biological Formulations.
               </h2>
               <p className="mt-1 text-[11px] text-primary-foreground/75 leading-relaxed line-clamp-3">
-                Join 50,000+ conscious households celebrating wood-pressed oils, native millets, and Vedic churned A2 ghee.
+                Join 50,000+ progressive farmers and agricultural dealers choosing certified bio-fertilizers and zero-residue crop solutions.
               </p>
             </div>
 
@@ -720,8 +720,8 @@ export function AuthenticationPage() {
                   <Award className="size-3.5" />
                 </div>
                 <div>
-                  <h4 className="text-[11px] font-semibold text-white">100% Certified Organic</h4>
-                  <p className="text-[9.5px] text-white/60">Zero chemicals, zero palm oil, wood-pressed purity.</p>
+                  <h4 className="text-[11px] font-semibold text-white">100% Certified Agricultural Formulations</h4>
+                  <p className="text-[9.5px] text-white/60">Zero synthetic toxins, bio-active microbial cultures, rhizosphere purity.</p>
                 </div>
               </div>
 
@@ -1562,8 +1562,8 @@ export function AuthenticationPage() {
 
             <div className="p-6 overflow-y-auto text-xs text-muted-foreground space-y-4 leading-relaxed">
               <div>
-                <h4 className="font-bold text-foreground mb-1 text-sm">1. Pure Organic Quality Commitment</h4>
-                <p>Janani Agro Products guarantees 100% genuine single-origin wood-pressed oils, unadulterated Vedic ghee, and farm-fresh heritage millets. All harvest items conform strictly to FSSAI standards.</p>
+                <h4 className="font-bold text-foreground mb-1 text-sm">1. Agricultural Formulation Quality Commitment</h4>
+                <p>Janani Agro Products guarantees 100% genuine biological formulations, certified Trichoderma viride, humic biostimulants, and botanical IPM protectors manufactured strictly under agricultural regulatory standards.</p>
               </div>
 
               <div>

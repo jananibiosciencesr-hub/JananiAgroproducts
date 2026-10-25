@@ -18,12 +18,12 @@ export const Route = createFileRoute("/faq")({
 
 const allFaqs: Array<[string, string]> = [
   ...faqs,
-  ["What makes Janani Agro Basmati rice different from commercial market rice?", "Our Basmati rice is grown in fertile pesticide-free soils, naturally aged for 18–24 months to enhance aroma and elongation, and never bleached or synthetically coated with mineral oils."],
-  ["Are your edible oils truly cold-pressed and unrefined?", "Yes. Our Groundnut, Mustard, and Coconut oils are extracted using traditional slow wooden expellers (Kachi Ghani / Lakdi Ghani) without chemical solvent extraction or high-temperature processing."],
-  ["How do ensure zero pest infestation in stored pulses without chemical fumigants?", "We utilize temperature-controlled clean storage, airtight nitrogen flushing packaging, and natural organic bio-deterrents like neem leaves and dry red chilies rather than chemical synthetic fumigants."],
-  ["What is the shelf life of Janani Agro products?", "Most grains and pulses have a shelf life of 12 months when stored in an airtight container in a cool, dry place. Cold-pressed oils have a recommended shelf life of 9 months."],
-  ["How do I place a bulk order for institutional or temple requirements?", "You can submit an inquiry via our Services page or directly contact our commercial desk at +91 93114 16225. We provide custom 25kg/50kg packing with dedicated freight."],
-  ["What payment modes do you accept on the website?", "We accept all major UPI apps (Google Pay, PhonePe, Paytm, BHIM), Credit/Debit Cards, NetBanking, and Cash on Delivery for serviceable pin codes."],
+  ["How does Harit (Trichoderma Viride) prevent root rot and wilt in crops?", "Harit contains live beneficial Trichoderma viride spores (5 × 10⁸ CFU/ml) that aggressively colonize the root zone (rhizosphere), physically outcompeting and parasitizing harmful soil-borne pathogens like Fusarium, Rhizoctonia, and Pythium."],
+  ["What is the recommended dosage of Bhumi Shakti per acre?", "For drip irrigation or fertigation, apply 1 to 2 Litres of Bhumi Shakti per acre during active vegetative stages. For foliar spraying, mix 3 to 5 ml per litre of clean spray water."],
+  ["Can Janani Agro bio-fertilizers be mixed with chemical insecticides or weedicides?", "We advise keeping a 4 to 7-day interval between biological bio-fungicide (Trichoderma) applications and chemical copper/systemic fungicides. However, botanical pest deterrents like Neem Oil 1000 PPM are widely tank-mix compatible."],
+  ["What is the shelf life and storage requirement for Janani liquid formulations?", "Our formulations have an active shelf life of 12 to 18 months from manufacturing date when stored in a cool, ventilated shed away from direct solar radiation."],
+  ["How do I place a bulk wholesale order for our FPO, dealer store, or farm estate?", "You can submit an inquiry via our Become a Distributor page or call our dedicated commercial sales desk at +91 93114 16225 for wholesale volume dispatch in 1L, 5L, or 200L drums."],
+  ["What payment modes do you accept for agricultural doorstep delivery?", "We accept all major UPI apps (Google Pay, PhonePe, Paytm, BHIM), NetBanking, Credit/Debit Cards, and Cash on Delivery (COD) for rural and semi-urban agricultural pin codes across India."],
 ];
 
 function FaqPage() {
@@ -40,7 +40,7 @@ function FaqPage() {
       <PageHero
         eyebrow="Help & Support"
         title="Frequently Asked Questions"
-        copy="Everything you need to know about our organic cultivation standards, purity testing, doorstep delivery, and wholesale partnerships."
+        copy="Everything you need to know about our agricultural bio-formulation standards, crop compatibility, field dosages, and dealership partnerships."
         image={storyImage}
       />
 
@@ -51,7 +51,7 @@ function FaqPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search questions (e.g. organic, delivery, cold pressed, returns)..."
+            placeholder="Search questions (e.g. bio-fertilizer, dosage, trichoderma, delivery, dealers)..."
             className="h-12 w-full rounded-full border border-input bg-card pl-12 pr-4 text-sm outline-none focus:border-primary shadow-soft"
           />
         </div>

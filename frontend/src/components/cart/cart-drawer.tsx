@@ -140,7 +140,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               </div>
               <p className="font-display font-bold text-lg text-foreground">Your basket is empty</p>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                Explore our pure cold-pressed oils, millets, and Vedic spices to fill your basket.
+                Explore our certified bio-fertilizers, bio-pesticides, and soil boosters to protect your crops.
               </p>
               <Button
                 asChild

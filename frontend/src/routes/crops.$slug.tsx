@@ -43,7 +43,7 @@ export const Route = createFileRoute("/crops/$slug")({
 
 function CropDetailPage() {
   const { slug } = Route.useParams();
-  const crop: CropData = getCropById(slug) || CROP_LIST[0]; // defaults to Cotton if not found
+  const crop: CropData = getCropById(slug) || CROP_LIST[0]!; // defaults to Cotton if not found
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
   const pesticides = useMemo(() => {

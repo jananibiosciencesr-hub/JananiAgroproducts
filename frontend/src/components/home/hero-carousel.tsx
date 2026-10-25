@@ -96,7 +96,7 @@ const DEFAULT_SLIDES: HeroSlideData[] = [
     ctaSecondaryLink: "/contact",
     discountBadgeText: "HIGH YIELD",
     discountBadgeSub: "Maximum Efficacy",
-    bgImage: "/banners/banner_pantry_harvest_hd.jpg",
+    bgImage: "/banners/banner_crop_protection_hd.jpg",
     themeColor: "emerald",
     contentAlign: "left"
   }

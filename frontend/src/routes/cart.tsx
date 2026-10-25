@@ -114,7 +114,7 @@ export function CartPage() {
 
 
   // Save for Later State (Persisted in localStorage)
-  const [savedForLater, setSavedForLater] = useState<number[]>(() => {
+  const [savedForLater, setSavedForLater] = useState<(number | string)[]>(() => {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("janani_saved_for_later");
@@ -142,12 +142,12 @@ export function CartPage() {
   }, [cartItems]);
 
   // Active items currently in the cart
-  const activeCartIds = useMemo(() => new Set(Object.keys(cart).map(Number)), [cart]);
+  const activeCartIds = useMemo(() => new Set(Object.keys(cart)), [cart]);
 
   // Combined Saved for Later and Liked (Wishlisted) products not currently in the active cart
   const savedForLaterProducts = useMemo(() => {
     const combinedIds = Array.from(new Set([...savedForLater, ...(wishlist || [])]));
-    const availableIds = combinedIds.filter((id) => !activeCartIds.has(id));
+    const availableIds = combinedIds.filter((id) => !activeCartIds.has(String(id)));
 
     return availableIds
       .map((id) => {
@@ -374,7 +374,7 @@ export function CartPage() {
   };
 
   // Save for Later actions
-  const handleSaveForLater = (productId: number, productName: string) => {
+  const handleSaveForLater = (productId: number | string, productName: string) => {
     removeFromCart(productId);
     setSavedForLater((prev) =>
       prev.includes(productId) ? prev : [productId, ...prev]
@@ -382,7 +382,7 @@ export function CartPage() {
     toast.info(`Moved ${productName} to Saved for Later.`);
   };
 
-  const handleMoveBackToCart = (productId: number, productName: string) => {
+  const handleMoveBackToCart = (productId: number | string, productName: string) => {
     addToCart(productId, 1);
     setSavedForLater((prev) => prev.filter((id) => id !== productId));
     if (wishlist.includes(productId)) {
@@ -391,7 +391,7 @@ export function CartPage() {
     toast.success(`Moved ${productName} back to your active basket!`);
   };
 
-  const handleRemoveFromSaved = (productId: number, productName?: string) => {
+  const handleRemoveFromSaved = (productId: number | string, productName?: string) => {
     setSavedForLater((prev) => prev.filter((id) => id !== productId));
     if (wishlist.includes(productId)) {
       toggleWishlist(productId);
@@ -881,13 +881,13 @@ export function CartPage() {
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               {savedForLaterProducts.length > 0
-                ? "You have saved or liked harvests waiting below. Move them into your active basket or explore our full catalog."
-                : "Looks like you haven't added any pure organic harvests yet. Explore our pantry staples, single-origin oils, and native millets to start filling your basket."}
+                ? "You have saved or liked formulations waiting below. Move them into your active basket or explore our full catalog."
+                : "Looks like you haven't added any agricultural formulations yet. Explore our bio-fertilizers, bio-fungicides, and crop growth promoters to start filling your basket."}
             </p>
             <div className="pt-2">
               <Button asChild className="rounded-full px-8 font-bold shadow-md" size="lg">
                 <Link to="/products">
-                  Explore Farm Harvests <ArrowRight className="size-4 ml-1" />
+                  Explore Formulations <ArrowRight className="size-4 ml-1" />
                 </Link>
               </Button>
             </div>
@@ -958,7 +958,7 @@ export function CartPage() {
         </div>
       )}
 
-      {/* Recommended Products (Pantry Add-ons) */}
+      {/* Recommended Bio-Formulations & Boosters */}
       <section className="mt-20 border-t border-border pt-12 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -966,7 +966,7 @@ export function CartPage() {
               <Sparkles className="size-4 text-brand-gold" /> Frequently Bought Together
             </span>
             <h3 className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-1">
-              Complete Your Organic Kitchen
+              Complete Your Crop Care Kit
             </h3>
           </div>
           <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-bold">

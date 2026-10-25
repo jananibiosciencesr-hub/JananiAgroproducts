@@ -8,9 +8,9 @@ import { posts, storyImage } from "@/lib/catalog";
 export const Route = createFileRoute("/blog/")({
   head: () => ({
     meta: [
-      { title: "The Farm Journal & Recipes — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Stories, guides, recipes and agricultural insights from Janani Agro Products." },
-      { property: "og:title", content: "The Farm Journal — JANANI" },
+      { title: "Field Agronomy & Crop Protection Journal — JANANI AGRO PRODUCTS" },
+      { name: "description", content: "Field guides, crop protection advisories, and agronomy insights from Janani Agro Products." },
+      { property: "og:title", content: "Agronomy Journal — JANANI AGRO" },
     ],
   }),
   component: BlogIndexPage,
@@ -20,7 +20,7 @@ function BlogIndexPage() {
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState("All");
 
-  const tags = ["All", "Pantry Wisdom", "Organic Farming", "Health & Recipes", "Storage Guides"];
+  const tags = ["All", "Bio-Fertilizers", "Soil Health", "Crop Protection", "Application Guides"];
 
   const filteredPosts = useMemo(() => {
     return posts.filter((p) => {
@@ -32,9 +32,9 @@ function BlogIndexPage() {
   return (
     <>
       <PageHero
-        eyebrow="The Harvest Journal"
-        title="Field Notes & Mindful Living"
-        copy="Exploring the deep connection between sustainable agronomy, wholesome traditional ingredients, and everyday culinary nourishment."
+        eyebrow="The Agronomy Journal"
+        title="Field Notes & Crop Health Guides"
+        copy="Practical field knowledge on bio-fungicides, rhizosphere revitalization, humic stimulants, and sustainable zero-residue agriculture."
         image={storyImage}
       />
 

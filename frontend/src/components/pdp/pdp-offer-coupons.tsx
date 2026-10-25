@@ -26,10 +26,10 @@ export function PdpOfferCoupons({ productPrice }: PdpOfferCouponsProps) {
 
   const coupons = [
     {
-      code: "ORGANIC100",
+      code: "KISAN100",
       discount: "₹100 Instant Discount",
       minOrder: 599,
-      desc: "Valid on all cold-pressed oils & Vedic staples above ₹599.",
+      desc: "Valid on all bio-fertilizers & bio-pesticides above ₹599.",
     },
     {
       code: "FIRSTHARVEST",
@@ -41,7 +41,7 @@ export function PdpOfferCoupons({ productPrice }: PdpOfferCouponsProps) {
       code: "BULK500",
       discount: "Flat ₹500 OFF",
       minOrder: 2499,
-      desc: "Applicable on 5L cans & family packs.",
+      desc: "Applicable on 5L cans & bulk farm packs.",
     },
   ];
 
@@ -60,14 +60,14 @@ export function PdpOfferCoupons({ productPrice }: PdpOfferCouponsProps) {
     },
     {
       id: "freebie",
-      title: "Free 100g Cold-Pressed Sesame Seeds on Orders > ₹999",
+      title: "Free 250ml Bio-Booster Sample on Orders > ₹999",
       desc: "Automatically bundled during packing.",
       badge: "Gift with Purchase",
     },
     {
       id: "harvest_cash",
       title: "Earn 5% Harvest Cash Rewards in Your Wallet",
-      desc: "Usable on your next organic refill.",
+      desc: "Usable on your next bio-input refill.",
       badge: "Loyalty Cashback",
     },
   ];

@@ -29,15 +29,16 @@ interface OrderInvoiceModalProps {
 }
 
 const HSN_MAP: Record<string, string> = {
-  oil: "1508",
-  ghee: "0405",
-  rice: "1006",
-  flour: "1101",
-  dal: "0713",
-  honey: "0409",
-  spice: "0910",
-  turmeric: "0910",
+  biofertilizer: "3105",
   fertilizer: "3105",
+  fungicide: "3808",
+  pesticide: "3808",
+  neem: "3808",
+  shakti: "3105",
+  harit: "3808",
+  dharani: "3105",
+  pushkal: "3808",
+  humic: "3105",
   seed: "1209",
 };
 

@@ -325,8 +325,7 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
         $itemsSubtotal += $lineTotal;
 
         $hsn = '3105';
-        if (stripos($name, 'oil') !== false) $hsn = '1508';
-        elseif (stripos($name, 'ghee') !== false) $hsn = '0405';
+        if (stripos($name, 'neem') !== false || stripos($name, 'harit') !== false || stripos($name, 'pesticide') !== false || stripos($name, 'fungicide') !== false) $hsn = '3808';
         elseif (stripos($name, 'seed') !== false) $hsn = '1209';
 
         $cgst = round($lineTotal * 0.025);
@@ -687,10 +686,8 @@ if (!$pdo) {
             'success' => true,
             'message' => $isOk
                 ? ($email ? "Real-time 6-digit OTP code dispatched to {$email}. Please check your inbox!" : "OTP dispatched to +91 {$phone}")
-                : ($email ? "Gmail SMTP authentication failed. Check your Google App Password in Hostinger, or use Master OTP (123456) to log in." : "OTP dispatched to +91 {$phone}"),
+                : ($email ? "Gmail SMTP delivery failed. Please verify your email or check server settings." : "OTP dispatched to +91 {$phone}"),
             'emailSent' => $isOk,
-            'demoOtpCode' => $otp,
-            'otp' => $otp,
             'delivery' => $delivery,
             'deliveryError' => $isOk ? null : ($delivery['error'] ?? 'Delivery failed'),
             'resendCooldownSeconds' => 60
@@ -707,11 +704,12 @@ if (!$pdo) {
         $target = $email ?: $phone;
 
         $tempOtpFile = sys_get_temp_dir() . '/janani_otp_' . md5($target ?: $email) . '.json';
-        $valid = in_array($otp, ['123456', '1234', '000000', '999999']);
+        $valid = false;
         if (file_exists($tempOtpFile)) {
             $savedData = json_decode(@file_get_contents($tempOtpFile), true);
             if ($savedData && (isset($savedData['otp']) || isset($savedData['code'])) && ((string)($savedData['otp'] ?? $savedData['code']) === $otp) && (time() - ($savedData['time'] ?? 0)) < 900) {
                 $valid = true;
+                @unlink($tempOtpFile);
             }
         }
 
@@ -1396,11 +1394,6 @@ try {
                     } catch (Exception $e) {}
                 }
 
-                // Testing bypass
-                if ($password === 'demo1234' || $password === '123456') {
-                    $passwordMatches = true;
-                }
-
                 if (!$passwordMatches) {
                     echo json_encode([
                         'success' => false,
@@ -1675,9 +1668,7 @@ try {
                             'emailSent' => false,
                             'deliveryError' => $errText,
                             'delivery' => $emailSent,
-                            'demoOtpCode' => $otp,
-                            'otp' => $otp,
-                            'message' => "Gmail SMTP authentication failed. Check your 16-character Google App Password in Hostinger, or use Master OTP (123456) to log in now.",
+                            'message' => "Gmail SMTP authentication failed. Please check server SMTP configuration.",
                             'resendCooldownSeconds' => 60
                         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
                     }
@@ -1689,12 +1680,10 @@ try {
                     'message' => $email
                         ? ($isEmailDeliveryOk
                             ? "Real-time 6-digit verification code sent to {$email}. Please check your inbox."
-                            : "Email delivery attempt failed. Use Master OTP 123456 or contact admin.")
+                            : "Email delivery attempt failed. Please try again or contact support.")
                         : "Verification code sent to +91 {$phone}. Please check your messages.",
                     'emailSent' => $isEmailDeliveryOk,
                     'delivery' => $emailSent,
-                    'demoOtpCode' => $otp,
-                    'otp' => $otp,
                     'resendCooldownSeconds' => 60
                 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
                 exit;
@@ -1747,11 +1736,6 @@ try {
                             }
                         }
                     } catch (Exception $e) {}
-                }
-
-                // 3. Testing bypass & universal fallback codes
-                if ($cleanOtp === '123456' || $cleanOtp === '1234' || $cleanOtp === '000000' || $cleanOtp === '999999') {
-                    $valid = true;
                 }
 
                 if (!$valid) {
@@ -2193,7 +2177,7 @@ try {
                 // If no ID is provided, this is a CREATE (INSERT) operation:
                 if (empty($rawId)) {
                     // Field Normalization for Admin Form Data
-                    $categoryName = $body['category_name'] ?? ($body['category'] ?? 'Cold Pressed Oils');
+                    $categoryName = $body['category_name'] ?? ($body['category'] ?? 'Bio-Fertilizers');
                     $price = isset($body['price']) ? (float)$body['price'] : 0.0;
                     $oldPrice = isset($body['old_price']) ? (float)$body['old_price'] : (isset($body['originalPrice']) ? (float)$body['originalPrice'] : (isset($body['oldPrice']) ? (float)$body['oldPrice'] : null));
                     $stock = isset($body['stock']) ? (int)$body['stock'] : (isset($body['warehouseStock']) ? (int)$body['warehouseStock'] : 50);
@@ -2360,7 +2344,7 @@ try {
                                 $pSlug = !empty($p['slug']) ? $p['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $pName), '-'));
                                 $pPrice = (float)($p['price'] ?? 0);
                                 $pOldPrice = isset($p['old_price']) ? (float)$p['old_price'] : (isset($p['originalPrice']) ? (float)$p['originalPrice'] : null);
-                                $pCategory = $p['category_name'] ?? ($p['category'] ?? 'Cold Pressed Oils');
+                                $pCategory = $p['category_name'] ?? ($p['category'] ?? 'Bio-Fertilizers');
                                 $pStock = (int)($p['stock'] ?? ($p['warehouseStock'] ?? 50));
                                 $pUnit = $p['unit'] ?? '1 kg';
                                 $pSku = $p['sku'] ?? ('JAP-' . rand(1000, 9999));
@@ -4897,7 +4881,7 @@ try {
                         'customerEmail' => 'suresh.reddy@gmail.com',
                         'customerPhone' => '+91 98489 11223',
                         'cartAmount' => 1450.00,
-                        'cartItems' => 'Organic Cold-Pressed Groundnut Oil (2L) × 1',
+                        'cartItems' => 'Harit (1 L) × 2 + Bhumi Shakti (1 L) × 1',
                         'failureReason' => 'Bank OTP timeout / Network drop',
                         'errorCode' => 'BAD_REQUEST_ERROR',
                         'failedAt' => date('d M Y, H:i', strtotime('-2 hours')),
@@ -5716,7 +5700,7 @@ try {
             } catch (Exception $e) {}
 
             // Top product
-            $topProdName = "Cold Pressed Groundnut Oil";
+            $topProdName = "Harit Bio-Fungicide";
             try {
                 $tp = $pdo->query("SELECT name FROM `products` WHERE active = 1 AND status != 'Trash' ORDER BY price DESC LIMIT 1")->fetch();
                 if ($tp && !empty($tp['name'])) $topProdName = $tp['name'];
@@ -5826,13 +5810,13 @@ try {
                     'brandPrimaryColor' => '#15803d',
                     'brandSecondaryColor' => '#ca8a04',
                     'emailHeaderBannerUrl' => '/images/email-banner.png',
-                    'invoiceWatermarkText' => 'JANANI AGRO PRODUCTS - CERTIFIED ORGANIC',
+                    'invoiceWatermarkText' => 'JANANI AGRO PRODUCTS - CERTIFIED BIO-INPUTS',
                     'customerAppBanner' => '/images/app-banner.webp'
                 ]),
                 'seo' => $settings['settings_seo'] ?? ($settings['seo'] ?? [
-                    'metaTitle' => 'Janani Agro Products | 100% Certified Organic Farm-to-Fork Staples',
-                    'metaDescription' => 'Shop certified cold-pressed oils, single-origin desi spices, organic pulses, pure A2 Gir cow bilona ghee, and unpolished heirloom grains straight from regenerative Gujarat farms.',
-                    'metaKeywords' => 'organic cold pressed oil, gir cow ghee, organic spices, wood pressed oil, raw honey, chemical free pulses',
+                    'metaTitle' => 'Janani Agro Products | Certified Bio-Fertilizers & Crop Formulations',
+                    'metaDescription' => 'Shop certified bio-fertilizers, bio-pesticides, Trichoderma viride, humic acid, bio-stimulants, and organic agricultural formulations for sustainable farming and bumper yields.',
+                    'metaKeywords' => 'bio fertilizers, bio pesticides, trichoderma viride, humic acid, neem oil 1000 ppm, organic farming, agricultural inputs, crop nutrition',
                     'canonicalBaseUrl' => 'https://jananiagroproducts.com',
                     'ogImageUrl' => 'https://jananiagroproducts.com/og-image.jpg',
                     'ogType' => 'website',

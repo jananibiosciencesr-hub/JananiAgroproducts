@@ -47,7 +47,7 @@ function BlogPostPage() {
       {/* Article Header */}
       <header className="mt-8">
         <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-brand-leaf">
-          <span className="rounded-full bg-accent px-3 py-1 text-primary">Farm & Pantry Wisdom</span>
+          <span className="rounded-full bg-accent px-3 py-1 text-primary">Agronomy & Field Wisdom</span>
           <span className="flex items-center gap-1 text-muted-foreground">
             <Calendar className="size-3.5" /> {post.date}
           </span>
@@ -137,20 +137,20 @@ function BlogPostPage() {
         </div>
 
         <h2 className="mt-10 font-display text-2xl font-semibold text-foreground sm:text-3xl">
-          3. Bringing Purity to Everyday Kitchens
+          3. Establishing Sustainable High-Yield Farming
         </h2>
         <p>
-          Making the transition to organic living doesn't require overwhelming culinary overhauls. Simply replacing everyday staples — such as switching to cold-pressed cooking oils, unadulterated whole turmeric, and traditional grains like Khapli wheat or millets — creates an immediate positive impact on digestive wellness and long-term vitality.
+          Making the transition to sustainable bio-farming doesn't require overwhelming operational overhauls. Incorporating live microbial cultures like Trichoderma viride (Harit), organic humic conditioners (Bhumi Shakti), and botanical IPM deterrents creates an immediate positive impact on root health, crop immunity, and market-grade harvest yields.
         </p>
       </div>
 
       {/* CTA Box */}
       <div className="mt-16 rounded-3xl bg-forest p-8 text-center text-primary-foreground sm:p-12">
         <h3 className="font-display text-2xl font-semibold sm:text-3xl">
-          Experience the Difference of True Organic Harvest
+          Experience the Difference of Certified Biological Formulations
         </h3>
         <p className="mx-auto mt-3 max-w-xl text-xs sm:text-sm text-primary-foreground/75 leading-6">
-          Explore our collection of 100% farm-traceable grains, spices, oils, and pulses delivered directly to your doorstep.
+          Explore our collection of certified bio-fertilizers, bio-fungicides, stimulants, and botanical protectors delivered directly to your farm.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <Button asChild variant="gold">

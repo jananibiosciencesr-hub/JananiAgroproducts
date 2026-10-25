@@ -566,9 +566,9 @@ export function MyOrdersPage() {
           invoiceDate={selectedInvoiceOrder.date || "Recent"}
           customerName={selectedInvoiceOrder.address?.fullName || user?.name || "Valued Customer"}
           customerPhone={selectedInvoiceOrder.address?.phone || user?.phone || ""}
-          customerEmail={selectedInvoiceOrder.customerEmail || selectedInvoiceOrder.address?.email || user?.email || ""}
+          customerEmail={selectedInvoiceOrder.customerEmail || (selectedInvoiceOrder.address as any)?.email || user?.email || ""}
           customerAddress={selectedInvoiceOrder.address ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}` : "Registered Delivery Address"}
-          items={(Array.isArray(selectedInvoiceOrder.items) ? selectedInvoiceOrder.items : []).map((it) => ({
+          items={(Array.isArray(selectedInvoiceOrder.items) ? selectedInvoiceOrder.items : []).map((it: any) => ({
             name: formatProductName(it.name || it.title || "Agro Formulation Product"),
             quantity: it.quantity || it.qty || 1,
             price: it.price || 0,

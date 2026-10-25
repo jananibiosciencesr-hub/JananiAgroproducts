@@ -768,9 +768,9 @@ export function ReferralsView() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { code: "ORGANICLIFESTYLE", owner: "Kavya Wellness", totalReferrals: 142, revenueGenerated: "₹1,84,000", payout: "₹18,400" },
-          { code: "NATURALHOMES", owner: "Pooja Hegde", totalReferrals: 98, revenueGenerated: "₹1,12,500", payout: "₹11,250" },
-          { code: "HEALTHYGRAINS", owner: "Chef Sanjeev Kitchen", totalReferrals: 84, revenueGenerated: "₹96,000", payout: "₹9,600" }
+          { code: "KISANAGRI", owner: "Kavya Bio Solutions", totalReferrals: 142, revenueGenerated: "₹1,84,000", payout: "₹18,400" },
+          { code: "GREENFARM", owner: "Pooja Hegde", totalReferrals: 98, revenueGenerated: "₹1,12,500", payout: "₹11,250" },
+          { code: "ORGANICGROWER", owner: "Sanjeev Organic Farms", totalReferrals: 84, revenueGenerated: "₹96,000", payout: "₹9,600" }
         ].map((r, idx) => (
           <div key={idx} className="rounded-3xl border border-border bg-card p-5 shadow-soft">
             <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded-md">{r.code}</span>
@@ -803,9 +803,9 @@ export function CmsView() {
 
       <div className="space-y-4">
         {[
-          { title: "Autumn Harvest Basmati Special (20% OFF)", tag: "Hero Carousel 1", status: "Active Live", date: "Sep 1 - Sep 30" },
-          { title: "Cold-Pressed Wooden Expeller Kachi Ghani Oils", tag: "Hero Carousel 2", status: "Active Live", date: "Permanent" },
-          { title: "Free Farm Fresh Shipping on Orders Above ₹799", tag: "Announcement Ticker", status: "Active Live", date: "Permanent" }
+          { title: "Kisan Special Bio-Formulations (20% OFF)", tag: "Hero Carousel 1", status: "Active Live", date: "Seasonal Campaign" },
+          { title: "Certified Trichoderma Viride & Humic Biostimulants", tag: "Hero Carousel 2", status: "Active Live", date: "Permanent" },
+          { title: "Free Farm Delivery on Formulations Above ₹799", tag: "Announcement Ticker", status: "Active Live", date: "Permanent" }
         ].map((b, idx) => (
           <div key={idx} className="rounded-3xl border border-border bg-card p-5 shadow-soft flex items-center justify-between">
             <div>

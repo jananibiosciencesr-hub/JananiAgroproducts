@@ -211,10 +211,10 @@ export function PdpGallery({ product }: PdpGalleryProps) {
                   <Play className="size-8 fill-current ml-1" />
                 </div>
                 <p className="text-sm font-semibold text-white">
-                  38°C Slow Wood-Pressed / Stone-Ground Live Demonstration
+                  Field Application & Bio-Formulation Dosage Guide
                 </p>
                 <p className="text-xs text-cream/80 mt-1">
-                  Single-origin harvest from {product.origin} with zero chemical processing.
+                  Certified agricultural bio-input from {product.origin || "Janani Agro Labs"} with zero chemical residues.
                 </p>
               </div>
 

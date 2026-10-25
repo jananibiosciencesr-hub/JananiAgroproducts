@@ -59,7 +59,7 @@ export function ProfilePage() {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
-            <Link to="/login">Sign In / Register with OTP</Link>
+            <Link to="/login" search={{ redirect: "/profile" }}>Sign In / Register with OTP</Link>
           </Button>
           <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
             <Link to="/">Explore Storefront</Link>

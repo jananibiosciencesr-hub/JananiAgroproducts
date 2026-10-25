@@ -49,14 +49,14 @@ const allBrands = [
 ];
 
 const allDietaryTags = [
-  "Cold Pressed",
-  "Gluten Free",
-  "Diabetic Friendly",
-  "High Protein",
-  "High Fiber",
-  "Zero Chemical",
-  "Single Origin",
-  "Stone Ground"
+  "High CFU Count",
+  "Zero Chemical Residue",
+  "Bio-Certified",
+  "Soil Soluble",
+  "Drip Compatible",
+  "Organic NPOP",
+  "100% Bio-Active",
+  "Botanical Extract"
 ];
 
 const allOrigins = [

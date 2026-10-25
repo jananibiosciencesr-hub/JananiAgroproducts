@@ -137,7 +137,7 @@ export function AddProductModal({
             <input
               value={formData.badge}
               onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-              placeholder="e.g. 100% Certified Organic / Wood Pressed"
+              placeholder="e.g. 100% Bio-Certified / High CFU Count"
               className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none font-semibold"
             />
           </div>
@@ -487,7 +487,7 @@ export function InvoiceModal({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {(order.items || [{ title: "Royal Aged Basmati Rice (5kg)", qty: 1, price: order.total }]).map((item: any, i: number) => (
+              {(order.items || [{ title: "Harit (1 L) — Trichoderma Viride", qty: 1, price: order.total }]).map((item: any, i: number) => (
                 <tr key={i}>
                   <td className="py-3 px-3 font-medium">{item.title || item.name}</td>
                   <td className="py-3 px-3 text-center">{item.qty || 1}</td>
@@ -575,7 +575,7 @@ export function GlobalSearchModal({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a command or search (e.g. Orders, Basmati, Inventory)..."
+            placeholder="Type a command or search (e.g. Orders, Harit, Inventory)..."
             className="w-full bg-transparent text-sm font-semibold outline-none text-foreground placeholder:text-muted-foreground"
           />
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-accent text-muted-foreground"><X className="size-4" /></button>

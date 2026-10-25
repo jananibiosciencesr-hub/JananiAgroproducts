@@ -36,8 +36,8 @@ export let adminOrders = [
     items: [
       {
         id: "PROD-001",
-        title: "A2 Vedic Bilona Gir Cow Ghee (500ml)",
-        sku: "JAN-GHEE-A2-500",
+        title: "Harit (1 L) — Trichoderma Viride Biofungicide",
+        sku: "JAP-HARIT-1L",
         hsnCode: "04059020",
         taxRate: 5,
         price: 1450,
@@ -49,21 +49,21 @@ export let adminOrders = [
       },
       {
         id: "PROD-003",
-        title: "Wild Raw Sundarban Multifloral Honey (500g)",
-        sku: "JAN-HNY-SUN-500",
-        hsnCode: "04090000",
+        title: "Janani Neem Oil 1000 PPM Botanical Repellent (1 L)",
+        sku: "JAN-BOT-NEEM-1L",
+        hsnCode: "38089910",
         taxRate: 5,
         price: 680,
         mrp: 850,
         qty: 1,
-        unit: "500g Jar",
+        unit: "1 L Bottle",
         image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80",
         subtotal: 680
       },
       {
         id: "PROD-002",
-        title: "Cold-Pressed Virgin Groundnut Oil (1L)",
-        sku: "JAN-OIL-GN-1000",
+        title: "Bhumi Shakti (1 L) — Humic & Fulvic Acid",
+        sku: "JAP-BHUMI-1L",
         hsnCode: "15089091",
         taxRate: 5,
         price: 420,
@@ -132,7 +132,7 @@ export let adminOrders = [
     items: [
       {
         id: "PROD-004",
-        title: "Ancient Black Kavuni Heritage Rice (1kg)",
+        title: "Harit Bio-Fungicide (1 L)",
         sku: "JAN-RICE-KAV-1000",
         hsnCode: "10063090",
         taxRate: 5,
@@ -145,8 +145,8 @@ export let adminOrders = [
       },
       {
         id: "PROD-002",
-        title: "Cold-Pressed Groundnut Oil (1L)",
-        sku: "JAN-OIL-GN-1000",
+        title: "Harit Bio-Fungicide (1L)",
+        sku: "JAP-BHUMI-1L",
         hsnCode: "15089091",
         taxRate: 5,
         price: 420,
@@ -213,8 +213,8 @@ export let adminOrders = [
     items: [
       {
         id: "PROD-001",
-        title: "A2 Vedic Gir Cow Ghee (500ml)",
-        sku: "JAN-GHEE-A2-500",
+        title: "Harit Trichoderma Viride (1 L) (500ml)",
+        sku: "JAP-HARIT-1L",
         hsnCode: "04059020",
         taxRate: 5,
         price: 1450,
@@ -279,22 +279,22 @@ export let adminOrders = [
     items: [
       {
         id: "PROD-003",
-        title: "Wild Raw Sundarban Multifloral Honey (500g)",
-        sku: "JAN-HNY-SUN-500",
-        hsnCode: "04090000",
+        title: "Janani Neem Oil 1000 PPM Botanical Repellent (1 L)",
+        sku: "JAN-BOT-NEEM-1L",
+        hsnCode: "38089910",
         taxRate: 5,
         price: 680,
         mrp: 850,
         qty: 2,
-        unit: "500g Jar",
+        unit: "1 L Bottle",
         image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80",
         subtotal: 1360
       },
       {
         id: "PROD-005",
-        title: "Pure Himalayan Shilajit Resin (20g)",
-        sku: "JAN-AYUR-SHIL-20",
-        hsnCode: "30049011",
+        title: "Harit Bio-Fungicide (1 L)",
+        sku: "JAN-BIO-HAR-1L",
+        hsnCode: "38089910",
         taxRate: 12,
         price: 1899,
         mrp: 2499,
@@ -359,8 +359,8 @@ export let adminOrders = [
     items: [
       {
         id: "PROD-001",
-        title: "A2 Vedic Bilona Gir Cow Ghee (500ml)",
-        sku: "JAN-GHEE-A2-500",
+        title: "Harit (1 L) — Trichoderma Viride Biofungicide",
+        sku: "JAP-HARIT-1L",
         hsnCode: "04059020",
         taxRate: 5,
         price: 1450,
@@ -372,14 +372,14 @@ export let adminOrders = [
       },
       {
         id: "PROD-003",
-        title: "Wild Raw Sundarban Multifloral Honey (500g)",
-        sku: "JAN-HNY-SUN-500",
-        hsnCode: "04090000",
+        title: "Janani Neem Oil 1000 PPM Botanical Repellent (1 L)",
+        sku: "JAN-BOT-NEEM-1L",
+        hsnCode: "38089910",
         taxRate: 5,
         price: 680,
         mrp: 850,
         qty: 1,
-        unit: "500g Jar",
+        unit: "1 L Bottle",
         image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80",
         subtotal: 680
       }
@@ -482,17 +482,17 @@ export let adminCustomers = [
       { id: "ADDR-102", label: "Office", street: "Tower B, 7th Floor, EcoWorld Tech Park", city: "Bengaluru", state: "Karnataka", pincode: "560103", isDefault: false, phone: "+91 98451 22345" }
     ],
     orderHistory: [
-      { id: "ORD-94812", date: "2026-09-11 10:45 AM", itemsSummary: "Royal Basmati Rice (5kg) x2, Mustard Oil (1L) x1", itemsCount: 3, total: 4040, paymentMethod: "UPI (PhonePe)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-884910" },
-      { id: "ORD-94730", date: "2026-08-28 04:15 PM", itemsSummary: "A2 Vedic Gir Cow Ghee (1L) x1, Raw Honey (500g) x1", itemsCount: 2, total: 2620, paymentMethod: "Credit Card (HDFC)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-748921" },
-      { id: "ORD-94610", date: "2026-08-10 11:30 AM", itemsSummary: "Cold Pressed Groundnut Oil (5L) x1", itemsCount: 1, total: 1450, paymentMethod: "UPI (Google Pay)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-661209" }
+      { id: "ORD-94812", date: "2026-09-11 10:45 AM", itemsSummary: "Harit Bio-Fungicide (1L) x2, Neem Oil 1000 PPM (1L) x1", itemsCount: 3, total: 4040, paymentMethod: "UPI (PhonePe)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-884910" },
+      { id: "ORD-94730", date: "2026-08-28 04:15 PM", itemsSummary: "Harit Bio-Fungicide (1L) x1, Bhumi Shakti (1L) x1", itemsCount: 2, total: 2620, paymentMethod: "Credit Card (HDFC)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-748921" },
+      { id: "ORD-94610", date: "2026-08-10 11:30 AM", itemsSummary: "Bhumi Shakti Soil Booster (5L) x1", itemsCount: 1, total: 1450, paymentMethod: "UPI (Google Pay)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-661209" }
     ],
     wishlist: [
-      { id: "kashmiri-saffron-strands", name: "Kashmiri Mongra Saffron Grade A (1g)", price: 549, originalPrice: 699, image: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=300&q=80", inStock: true, unit: "1g Sealed Vial" },
-      { id: "black-kavuni-rice", name: "Ancient Black Kavuni Heritage Rice (1kg)", price: 310, originalPrice: 390, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&q=80", inStock: true, unit: "1kg Pouch" }
+      { id: "neem-oil-1l", name: "Janani Neem Oil 1000 PPM (1 L)", price: 380, originalPrice: 480, image: "https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=300&q=80", inStock: true, unit: "1 L Bottle" },
+      { id: "harit-bio-fungicide-1l", name: "Harit Bio-Fungicide (1 L)", price: 310, originalPrice: 390, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&q=80", inStock: true, unit: "1kg Pouch" }
     ],
     cart: [
-      { id: "a2-desi-cow-ghee", name: "A2 Vedic Gir Cow Bilona Ghee", price: 1450, qty: 1, image: "https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=300&q=80", unit: "500ml Jar" },
-      { id: "wild-forest-raw-honey", name: "Wild Raw Sundarban Multifloral Honey", price: 680, qty: 2, image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80", unit: "500g Jar" }
+      { id: "bhumi-shakti-1l", name: "Bhumi Shakti Soil Conditioner", price: 1450, qty: 1, image: "https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=300&q=80", unit: "500ml Jar" },
+      { id: "neem-oil-1000-ppm-1l", name: "Neem Oil 1000 PPM Botanical Repellent", price: 680, qty: 2, image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80", unit: "1 L Bottle" }
     ],
     walletTransactions: [
       { id: "TXN-8821", date: "2026-09-01", type: "credit", amount: 500, description: "Referral bonus credited (Kavita Joined)", balanceAfter: 1250 },
@@ -541,10 +541,10 @@ export let adminCustomers = [
       { id: "ADDR-201", label: "Home (Default)", street: "B-12, Mayur Vihar, Kothrud", city: "Pune", state: "Maharashtra", pincode: "411038", isDefault: true, phone: "+91 97123 44556" }
     ],
     orderHistory: [
-      { id: "ORD-94811", date: "2026-09-11 09:30 AM", itemsSummary: "Unpolished Toor Dal (1kg) x3, Kashmiri Saffron (1g) x1", itemsCount: 4, total: 1179, paymentMethod: "Credit Card (HDFC)", paymentStatus: "Paid", orderStatus: "Processing", trackingId: "SR-PUN-992104" }
+      { id: "ORD-94811", date: "2026-09-11 09:30 AM", itemsSummary: "Harit Bio-Fungicide (1L) x3, Bhumi Shakti (1L) x1", itemsCount: 4, total: 1179, paymentMethod: "Credit Card (HDFC)", paymentStatus: "Paid", orderStatus: "Processing", trackingId: "SR-PUN-992104" }
     ],
     wishlist: [
-      { id: "cold-pressed-groundnut-oil", name: "Cold Pressed Wood Fired Groundnut Oil (5L)", price: 1450, originalPrice: 1800, image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&q=80", inStock: true, unit: "5L Canister" }
+      { id: "harit-5l", name: "Harit Bio-Fungicide Trichoderma Viride (5L)", price: 1450, originalPrice: 1800, image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&q=80", inStock: true, unit: "5L Canister" }
     ],
     cart: [],
     walletTransactions: [
@@ -588,11 +588,11 @@ export let adminCustomers = [
       { id: "ADDR-301", label: "Home (Default)", street: "4th Cross, RA Puram", city: "Chennai", state: "Tamil Nadu", pincode: "600028", isDefault: true, phone: "+91 94451 67890" }
     ],
     orderHistory: [
-      { id: "ORD-94810", date: "2026-09-11 08:15 AM", itemsSummary: "Cold Pressed Groundnut Oil (5L) x1", itemsCount: 1, total: 1450, paymentMethod: "Cash on Delivery", paymentStatus: "Pending", orderStatus: "Pending", trackingId: "" }
+      { id: "ORD-94810", date: "2026-09-11 08:15 AM", itemsSummary: "Bhumi Shakti Soil Booster (5L) x1", itemsCount: 1, total: 1450, paymentMethod: "Cash on Delivery", paymentStatus: "Pending", orderStatus: "Pending", trackingId: "" }
     ],
     wishlist: [],
     cart: [
-      { id: "black-kavuni-rice", name: "Ancient Black Kavuni Heritage Rice", price: 310, qty: 3, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&q=80", unit: "1kg Bag" }
+      { id: "harit-bio-fungicide-1l", name: "Ancient Black Kavuni Heritage Rice", price: 310, qty: 3, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&q=80", unit: "1kg Bag" }
     ],
     walletTransactions: [],
     loyaltyHistory: [
@@ -629,10 +629,10 @@ export let adminCustomers = [
       { id: "ADDR-401", label: "Villa (Default)", street: "Villa 18, Palm Drive, Golf Course Ext Road", city: "Gurugram", state: "Haryana", pincode: "122002", isDefault: true, phone: "+91 99887 66554" }
     ],
     orderHistory: [
-      { id: "ORD-94809", date: "2026-09-10 06:20 PM", itemsSummary: "Wild Forest Raw Multiflora Honey (500g) x2, A2 Vedic Gir Cow Ghee (1L) x1", itemsCount: 3, total: 3140, paymentMethod: "NetBanking (ICICI)", paymentStatus: "Paid", orderStatus: "Shipped", trackingId: "SR-DEL-441209" }
+      { id: "ORD-94809", date: "2026-09-10 06:20 PM", itemsSummary: "Bhumi Shakti (1L) x2, Harit Bio-Fungicide (1L) x1", itemsCount: 3, total: 3140, paymentMethod: "NetBanking (ICICI)", paymentStatus: "Paid", orderStatus: "Shipped", trackingId: "SR-DEL-441209" }
     ],
     wishlist: [
-      { id: "pure-himalayan-shilajit-resin", name: "Pure Himalayan Shilajit Resin (Gold Grade)", price: 1899, originalPrice: 2499, image: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=300&q=80", inStock: true, unit: "20g Jar" }
+      { id: "pushkal-humic-1l", name: "Pushkal Humic Acid Liquid (1 L)", price: 550, originalPrice: 650, image: "https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=300&q=80", inStock: true, unit: "1 L Bottle" }
     ],
     cart: [],
     walletTransactions: [
@@ -677,7 +677,7 @@ export let adminCustomers = [
       { id: "ADDR-501", label: "Clinic (Default)", street: "Road No 12, Banjara Hills", city: "Hyderabad", state: "Telangana", pincode: "500034", isDefault: true, phone: "+91 98231 11223" }
     ],
     orderHistory: [
-      { id: "ORD-94808", date: "2026-09-10 03:10 PM", itemsSummary: "Stone Ground Black Wheat Flour (5kg) x2", itemsCount: 2, total: 960, paymentMethod: "UPI (Google Pay)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-HYD-119283" }
+      { id: "ORD-94808", date: "2026-09-10 03:10 PM", itemsSummary: "Bhumi Shakti Soil Conditioner (5L) x2", itemsCount: 2, total: 960, paymentMethod: "UPI (Google Pay)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-HYD-119283" }
     ],
     wishlist: [],
     cart: [],
@@ -716,7 +716,7 @@ export let adminCustomers = [
       { id: "ADDR-601", label: "Residence (Default)", street: "Ballygunge Circular Road", city: "Kolkata", state: "West Bengal", pincode: "700019", isDefault: true, phone: "+91 93310 99887" }
     ],
     orderHistory: [
-      { id: "ORD-94807", date: "2026-09-10 11:00 AM", itemsSummary: "Royal Basmati Rice (10kg) x1", itemsCount: 1, total: 3500, paymentMethod: "Credit Card (Axis)", paymentStatus: "Refunded", orderStatus: "Cancelled", trackingId: "" }
+      { id: "ORD-94807", date: "2026-09-10 11:00 AM", itemsSummary: "Harit Bio-Fungicide (5L) x1", itemsCount: 1, total: 3500, paymentMethod: "Credit Card (Axis)", paymentStatus: "Refunded", orderStatus: "Cancelled", trackingId: "" }
     ],
     wishlist: [],
     cart: [],
@@ -782,8 +782,8 @@ export let adminCoupons = [
   {
     id: "CPN-103",
     code: "HARVESTFEST",
-    title: "Harvest Festive 15% Off Cold Pressed Oils & Ghee",
-    description: "Save 15% (up to ₹500) on wood-pressed oils and A2 Gir Cow Bilona Ghee",
+    title: "Harvest Festive 15% Off Bio-Fertilizers & Crop Protection",
+    description: "Save 15% (up to ₹500) on bio-fertilizers and Trichoderma formulations",
     type: "percentage",
     discount: 15,
     minCart: 1999,
@@ -795,7 +795,7 @@ export let adminCoupons = [
     perUserLimit: 3,
     isFirstOrderOnly: false,
     isFreeShipping: false,
-    categorySpecific: ["Cold Pressed Oils", "Desi Ghee & Dairy", "Spices & Herbs"],
+    categorySpecific: ["Biological Crop Protection", "Bio-Fertilizers", "Soil Health"],
     productSpecific: [],
     userSpecificTier: "All",
     userSpecificEmails: [],
@@ -1098,9 +1098,8 @@ export let adminReviews = [
   {
     id: "REV-106",
     productId: "PROD-1",
-    productName: "HARIT Organic Formulation",
-    productName: "Organic Basmati Rice (1 kg)",
-    productCategory: "Organic Rice",
+    productName: "Harit Bio-Fungicide (1 L)",
+    productCategory: "Bio-Pesticides",
     productImage: "/assets/janani-products.jpg",
     customerId: "CUST-1001",
     customerName: "Pooja Hegde",
@@ -1108,11 +1107,11 @@ export let adminReviews = [
     customerAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
     orderId: "ORD-94807",
     rating: 5,
-    title: "Extraordinary aroma and pristine grain elongation!",
-    comment: "Extraordinary aroma and pristine grain elongation. Best organic basmati we have tasted. Fluffs up beautifully without sticking together. Perfect for festive biryanis.",
+    title: "Extraordinary root health and fungal control!",
+    comment: "Outstanding Trichoderma viride formulation. Controlled root rot completely in my chilli crops within 10 days of drenching. Highly recommend for all organic farmers.",
     images: [
-      { id: "IMG-101A", url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80", caption: "Cooked long grains for Sunday Biryani", status: "Approved" },
-      { id: "IMG-101B", url: "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=600&auto=format&fit=crop&q=80", caption: "Raw rice grain comparison", status: "Approved" }
+      { id: "IMG-101A", url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80", caption: "Chilli crop field response after 10 days", status: "Approved" },
+      { id: "IMG-101B", url: "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=600&auto=format&fit=crop&q=80", caption: "Healthy root colonization and fungal barrier", status: "Approved" }
     ],
     verifiedPurchase: true,
     status: "Approved",
@@ -1123,7 +1122,7 @@ export let adminReviews = [
     adminReply: {
       authorName: "Doddi Sai Rama",
       authorRole: "Head of Quality & Founder",
-      message: "Dear Pooja, thank you so much for your heartwarming appreciation! Our Basmati is aged traditionally for 18+ months in Himalayan foothills to achieve this exact length and aroma. Happy cooking!",
+      message: "Dear Pooja, thank you so much for your heartwarming feedback! Harit is manufactured with high CFU count (2 x 10^8 CFU/g) for rapid root colonization. Happy farming!",
       repliedAt: "2026-09-10 04:30 PM"
     },
     customerReplies: [
@@ -1135,8 +1134,8 @@ export let adminReviews = [
   {
     id: "REV-102",
     productId: "PROD-6",
-    productName: "Wood-Pressed Groundnut Oil (1 L)",
-    productCategory: "Cold Pressed Oils",
+    productName: "Bhumi Shakti Soil Conditioner (1 L)",
+    productCategory: "Biological Crop Protection",
     productImage: "/assets/janani-products.jpg",
     customerId: "CUST-1002",
     customerName: "Narayanan Subramaniam",
@@ -1144,10 +1143,10 @@ export let adminReviews = [
     customerAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
     orderId: "ORD-94792",
     rating: 5,
-    title: "Authentic marachekku aroma, reminiscent of our village!",
-    comment: "Authentic bilona and marachekku aroma with golden clarity. Reminds me of traditional oil presses from Tamil Nadu. Low smoke and great flavor for daily South Indian tadka.",
+    title: "Authentic organic formulation, outstanding soil response!",
+    comment: "Authentic microbial formulation with high CFU count. Reminds me of traditional natural farming methods. Excellent results on cotton and vegetables.",
     images: [
-      { id: "IMG-102A", url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80", caption: "Golden unrefined oil texture", status: "Approved" }
+      { id: "IMG-102A", url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80", caption: "Microbial formulation field application", status: "Approved" }
     ],
     verifiedPurchase: true,
     status: "Approved",
@@ -1202,7 +1201,7 @@ export let adminReviews = [
     id: "REV-104",
     productId: "PROD-19",
     productName: "Virgin Coconut Oil (500 ml)",
-    productCategory: "Cold Pressed Oils",
+    productCategory: "Biological Crop Protection",
     productImage: "/assets/janani-products.jpg",
     customerId: "CUST-1004",
     customerName: "Divya Nair",
@@ -1229,7 +1228,7 @@ export let adminReviews = [
   {
     id: "REV-105",
     productId: "PROD-9",
-    productName: "Unpolished Toor Dal (500 g)",
+    productName: "Dharani Bio-Fertilizer (1 kg)",
     productCategory: "Pulses",
     productImage: "/assets/janani-products.jpg",
     customerId: "CUST-1005",
@@ -1283,7 +1282,7 @@ export let adminReviews = [
   {
     id: "REV-107",
     productId: "PROD-11",
-    productName: "Natural Jaggery Powder (500 g)",
+    productName: "Pushkal Plant Booster (500 ml)",
     productCategory: "Dry Fruits",
     productImage: "/assets/janani-products.jpg",
     customerId: "CUST-1007",
@@ -1349,8 +1348,8 @@ export let adminReviews = [
   {
     id: "REV-109",
     productId: "PROD-1",
-    productName: "Organic Basmati Rice (1 kg)",
-    productCategory: "Organic Rice",
+    productName: "Harit Bio-Fungicide (1 L)",
+    productCategory: "Bio-Pesticides",
     productImage: "/assets/janani-products.jpg",
     customerId: "CUST-9999",
     customerName: "SpamBot 2000",
@@ -1379,8 +1378,8 @@ export let adminReviews = [
   {
     id: "REV-110",
     productId: "PROD-7",
-    productName: "Cold-Pressed Mustard Oil (1 L)",
-    productCategory: "Cold Pressed Oils",
+    productName: "Neem Oil 1000 PPM (1 L)",
+    productCategory: "Biological Crop Protection",
     productImage: "/assets/janani-products.jpg",
     customerId: "CUST-8888",
     customerName: "Anonymous Troller",
@@ -1408,9 +1407,9 @@ export let adminReviews = [
 ];
 
 let adminReturns = [
-  { id: "RET-501", orderId: "ORD-94807", customer: "Kunal Singhania", product: "Royal Basmati Rice (10kg)", reason: "Ordered duplicate size by mistake", type: "Bank Refund", amount: 3500, status: "Refund Completed", date: "2026-09-10" },
-  { id: "RET-502", orderId: "ORD-94750", customer: "Harish Gupta", product: "Cold Pressed Mustard Oil (1L)", reason: "Outer seal damaged in transit", type: "Free Replacement", amount: 340, status: "Replacement Dispatched", date: "2026-09-08" },
-  { id: "RET-503", orderId: "ORD-94712", customer: "Shweta Tiwari", product: "Kashmiri Saffron (1g)", reason: "Late delivery request cancelled", type: "Store Credit", amount: 549, status: "Under Review", date: "2026-09-06" }
+  { id: "RET-501", orderId: "ORD-94807", customer: "Kunal Singhania", product: "Harit Bio-Fungicide (5L)", reason: "Ordered duplicate size by mistake", type: "Bank Refund", amount: 3500, status: "Refund Completed", date: "2026-09-10" },
+  { id: "RET-502", orderId: "ORD-94750", customer: "Harish Gupta", product: "Neem Oil 1000 PPM (1L)", reason: "Outer seal damaged in transit", type: "Free Replacement", amount: 340, status: "Replacement Dispatched", date: "2026-09-08" },
+  { id: "RET-503", orderId: "ORD-94712", customer: "Shweta Tiwari", product: "Bhumi Shakti (1L)", reason: "Late delivery request cancelled", type: "Store Credit", amount: 549, status: "Under Review", date: "2026-09-06" }
 ];
 
 let adminRoles = [
@@ -1467,18 +1466,18 @@ export const getAnalyticsCharts = (req, res) => {
       { name: "Cancelled / Returned", value: 7, color: "#dc2626" }
     ],
     topCategories: [
-      { category: "Cold Pressed Oils", revenue: 890000, units: 1420 },
-      { category: "Aged Basmati Rice", revenue: 760000, units: 980 },
-      { category: "Organic Pulses & Dals", revenue: 420000, units: 1840 },
-      { category: "Raw Spices & Herbs", revenue: 285000, units: 820 },
-      { category: "Artisanal Sweeteners", revenue: 130600, units: 640 }
+      { category: "Biological Crop Protection", revenue: 890000, units: 1420 },
+      { category: "Bio-Fertilizers", revenue: 760000, units: 980 },
+      { category: "Soil Enhancers & Conditioners", revenue: 420000, units: 1840 },
+      { category: "Botanical Pest Repellents", revenue: 285000, units: 820 },
+      { category: "Bio-Stimulants & Micronutrients", revenue: 130600, units: 640 }
     ],
     topProducts: [
-      { name: "Royal Aged Basmati Rice (5kg)", sales: 485000, units: 580 },
-      { name: "Wood Fired Groundnut Oil (5L)", sales: 435000, units: 300 },
-      { name: "A2 Vedic Gir Cow Ghee (1L)", sales: 378000, units: 180 },
-      { name: "Unpolished Organic Toor Dal", sales: 294000, units: 1400 },
-      { name: "Pure Kachi Ghani Mustard Oil", sales: 210000, units: 620 }
+      { name: "Harit Bio-Fungicide (1 L)", sales: 485000, units: 580 },
+      { name: "Bhumi Shakti Soil Booster (5 L)", sales: 435000, units: 300 },
+      { name: "Neem Oil 1000 PPM (1 L)", sales: 378000, units: 180 },
+      { name: "Dharani Mycorrhizal Bio-Fertilizer", sales: 294000, units: 1400 },
+      { name: "Pushkal Humic Acid Liquid", sales: 210000, units: 620 }
     ],
     weeklySales: [
       { day: "Mon", online: 68000, cod: 14000 },
@@ -1499,12 +1498,12 @@ export const getWidgetsData = (req, res) => {
     conversionRate: { rate: 3.84, target: 4.0, previous: 3.21, change: "+0.63%" },
     averageOrderValue: { value: 2217, target: 2000, change: "+14.8%" },
     paymentSplit: { onlinePercent: 78.4, codPercent: 21.6, onlineTotal: 1948710, codTotal: 536890 },
-    bestSellingBrand: { name: "Janani Gold Heritage Reserve", share: "44.8%", topProduct: "Wood Pressed Groundnut Oil" },
+    bestSellingBrand: { name: "Janani Agro Products", share: "44.8%", topProduct: "Harit Bio-Fungicide (1 L)" },
     lowInventoryAlerts: [
-      { id: "kashmiri-saffron", name: "Kashmiri Mongra Saffron (1g)", stock: 8, threshold: 25, status: "Critical" },
-      { id: "organic-black-wheat", name: "Stone Ground Black Wheat (5kg)", stock: 14, threshold: 30, status: "Low Stock" },
-      { id: "wild-honey", name: "Wild Forest Raw Multiflora Honey", stock: 19, threshold: 40, status: "Low Stock" },
-      { id: "a2-desi-ghee", name: "A2 Vedic Gir Cow Bilona Ghee (1L)", stock: 0, threshold: 20, status: "Out of Stock" }
+      { id: "neem-oil-1000", name: "Neem Oil 1000 PPM (1 L)", stock: 8, threshold: 25, status: "Critical" },
+      { id: "dharani-granules", name: "Dharani Granules (4 kg)", stock: 14, threshold: 30, status: "Low Stock" },
+      { id: "pushkal-liquid", name: "Pushkal Humic Acid (1 L)", stock: 19, threshold: 40, status: "Low Stock" },
+      { id: "harit-5l", name: "Harit Bio-Fungicide (5 L)", stock: 0, threshold: 20, status: "Out of Stock" }
     ]
   };
   res.json({ success: true, data });
@@ -3014,8 +3013,8 @@ export const getCouponAnalytics = (req, res) => {
       { code: "VIPPLATINUM25", redemptions: 45, revenueGenerated: 216000, totalDiscounts: 54000, conversionRate: "32.1%" }
     ],
     categoryBreakdown: [
-      { category: "Cold Pressed Oils", percentage: 38 },
-      { category: "A2 Desi Ghee & Dairy", percentage: 29 },
+      { category: "Biological Crop Protection", percentage: 38 },
+      { category: "Harit Trichoderma (5L) & Dairy", percentage: 29 },
       { category: "Spices & Herbs", percentage: 18 },
       { category: "Organic Staples & Rice", percentage: 15 }
     ]
@@ -3402,11 +3401,11 @@ export const getReviewAnalytics = (req, res) => {
   };
 
   const topProducts = [
-    { name: "Organic Basmati Rice (1 kg)", reviewsCount: 38, averageRating: 4.9, recommendationRate: "98%" },
-    { name: "Wood-Pressed Groundnut Oil (1 L)", reviewsCount: 32, averageRating: 4.9, recommendationRate: "97%" },
-    { name: "Lakadong Turmeric Powder (200 g)", reviewsCount: 24, averageRating: 4.8, recommendationRate: "95%" },
-    { name: "Black Pepper Whole (150 g)", reviewsCount: 19, averageRating: 4.9, recommendationRate: "96%" },
-    { name: "Natural Jaggery Powder (500 g)", reviewsCount: 16, averageRating: 4.9, recommendationRate: "98%" }
+    { name: "Harit Bio-Fungicide (1 L)", reviewsCount: 38, averageRating: 4.9, recommendationRate: "98%" },
+    { name: "Bhumi Shakti Soil Conditioner (1 L)", reviewsCount: 32, averageRating: 4.9, recommendationRate: "97%" },
+    { name: "Neem Oil 1000 PPM (1 L)", reviewsCount: 24, averageRating: 4.8, recommendationRate: "95%" },
+    { name: "Dharani Bio-Fertilizer (1 kg)", reviewsCount: 19, averageRating: 4.9, recommendationRate: "96%" },
+    { name: "Pushkal Plant Booster (500 ml)", reviewsCount: 16, averageRating: 4.9, recommendationRate: "98%" }
   ];
 
   res.json({
@@ -4056,7 +4055,7 @@ export let shipmentRecords = [
       pincode: "560103"
     },
     itemsCount: 4,
-    itemsSummary: "A2 Gir Cow Ghee (500ml) x2, Wild Raw Honey (500g) x1, Virgin Groundnut Oil (1L) x1",
+    itemsSummary: "Harit (1L) x2, Neem Oil 1000 PPM (1L) x1, Bhumi Shakti (1L) x1",
     packageWeight: "3.2 kg",
     dimensions: "32 x 22 x 18 cm",
     paymentType: "Prepaid (UPI)",
@@ -4092,7 +4091,7 @@ export let shipmentRecords = [
       pincode: "110016"
     },
     itemsCount: 5,
-    itemsSummary: "Lakadong Turmeric (500g) x2, Kashmiri Saffron (2g) x1, A2 Gir Cow Ghee (1L) x2",
+    itemsSummary: "Bhumi Shakti (1L) x2, Pushkal (500ml) x1, Harit (1L) x2",
     packageWeight: "4.8 kg",
     dimensions: "38 x 28 x 20 cm",
     paymentType: "Prepaid (Razorpay Card)",
@@ -4128,7 +4127,7 @@ export let shipmentRecords = [
       pincode: "700019"
     },
     itemsCount: 2,
-    itemsSummary: "Organic Black Wheat Atta (5kg) x2",
+    itemsSummary: "Bhumi Shakti (5L) x2",
     packageWeight: "10.4 kg",
     dimensions: "45 x 30 x 25 cm",
     paymentType: "Cash on Delivery (COD)",
@@ -4164,7 +4163,7 @@ export let shipmentRecords = [
       pincode: "500033"
     },
     itemsCount: 3,
-    itemsSummary: "Wood Pressed Sesame Oil (1L) x2, Forest Raw Honey (500g) x1",
+    itemsSummary: "Harit Bio-Fungicide (1L) x2, Bhumi Shakti (1L) x1",
     packageWeight: "2.8 kg",
     dimensions: "28 x 20 x 16 cm",
     paymentType: "Cash on Delivery (COD)",
@@ -4199,7 +4198,7 @@ export let shipmentRecords = [
       pincode: "575002"
     },
     itemsCount: 2,
-    itemsSummary: "Cardamom & Clove Pack (250g) x1, A2 Vedic Bilona Ghee (1L) x1",
+    itemsSummary: "Bhumi Shakti (1 L) x1, Harit (1 L) x1",
     packageWeight: "1.9 kg",
     dimensions: "24 x 18 x 14 cm",
     paymentType: "Prepaid (UPI)",
@@ -4889,7 +4888,7 @@ export let refundRecords = [
     amount: 850,
     totalOrderAmount: 3140,
     destination: "Original Payment Card (Stripe)",
-    reason: "Damaged honey jar in transit - Partial credit approved",
+    reason: "Outer cap seal loose in courier - Replacement approved",
     status: "Completed",
     gatewayRefundId: "re_3N8819283019_rfd1",
     processedAt: "2026-09-10 07:45 PM"
@@ -4969,7 +4968,7 @@ export let failedPaymentRetries = [
     customerEmail: "meera.n@kerala.org",
     customerPhone: "+91 94470 55667",
     cartAmount: 1850,
-    cartItems: "Lakadong Turmeric (500g) x1, A2 Vedic Gir Cow Ghee (500ml) x1",
+    cartItems: "Neem Oil 1000 PPM (1 L) x1, Harit (1 L) Bio-Fungicide x1",
     failureReason: "UPI App session timed out / VPA rejected",
     errorCode: "BAD_REQUEST_PAYMENT_TIMEDOUT",
     failedAt: "2026-09-09 09:15 AM",
@@ -4983,7 +4982,7 @@ export let failedPaymentRetries = [
     customerEmail: "gaurav.s@gmail.com",
     customerPhone: "+91 98200 77112",
     cartAmount: 3200,
-    cartItems: "Stone Ground Black Wheat (5kg) x2, Wild Multiflora Honey (1kg) x1",
+    cartItems: "Bhumi Shakti (5L) x2, Harit Bio-Fungicide (1L) x1",
     failureReason: "Card issuing bank 3D-Secure OTP verification failed",
     errorCode: "CARD_AUTHENTICATION_FAILED",
     failedAt: "2026-09-08 04:30 PM",
@@ -5254,9 +5253,9 @@ export let referralRecords = [
   {
     id: "REF-1003",
     referrerId: "CUST-003",
-    referrerName: "Chef Sanjeev Kitchen",
-    referrerEmail: "chef.sanjeev@healthykitchen.in",
-    referrerCode: "CHEF-SANJEEV-01",
+    referrerName: "Sanjeev Organic Farms",
+    referrerEmail: "sanjeev.farms@agriportal.in",
+    referrerCode: "SANJEEV-AGRI-01",
     referrerTier: "Gold",
     refereeName: "Vikram Malhotra",
     refereeEmail: "vikram.m@corporatemail.com",
@@ -5402,8 +5401,8 @@ export let globalWalletTransactions = [
   {
     id: "TXN-WAL-102",
     customerId: "CUST-003",
-    customerName: "Chef Sanjeev Kitchen",
-    customerEmail: "chef.sanjeev@healthykitchen.in",
+    customerName: "Sanjeev Organic Farms",
+    customerEmail: "sanjeev.farms@agriportal.in",
     type: "credit",
     amount: 225,
     balanceAfter: 1425,
@@ -5422,7 +5421,7 @@ export let globalWalletTransactions = [
     balanceAfter: 100,
     category: "Order Payment",
     referenceId: "ORD-99255",
-    notes: "Redeemed wallet points at checkout for Cold Pressed Oils",
+    notes: "Redeemed wallet points at checkout for Biological Crop Protection",
     createdAt: "2026-09-09 02:40 PM"
   },
   {
@@ -5474,7 +5473,7 @@ export let globalWalletTransactions = [
     balanceAfter: 200,
     category: "Order Payment",
     referenceId: "ORD-99410",
-    notes: "Applied wallet credits on A2 Desi Ghee purchase",
+    notes: "Applied wallet credits on Harit Trichoderma (5L) purchase",
     createdAt: "2026-09-11 09:30 AM"
   }
 ];
@@ -5748,7 +5747,7 @@ export const getReferralAnalytics = (req, res) => {
     leaderboard: [
       { rank: 1, name: "Kavya Wellness", code: "KAVYA-WELLNESS-05", tier: "Platinum", successfulReferrals: 142, revenueDriven: 184000, commissionEarned: 21300 },
       { rank: 2, name: "Pooja Hegde", code: "POOJA-ORGANIC-77", tier: "Gold", successfulReferrals: 98, revenueDriven: 112500, commissionEarned: 14700 },
-      { rank: 3, name: "Chef Sanjeev Kitchen", code: "CHEF-SANJEEV-01", tier: "Gold", successfulReferrals: 84, revenueDriven: 96000, commissionEarned: 12600 },
+      { rank: 3, name: "Sanjeev Organic Farms", code: "SANJEEV-AGRI-01", tier: "Gold", successfulReferrals: 84, revenueDriven: 96000, commissionEarned: 12600 },
       { rank: 4, name: "Aarav Patel", code: "AARAV-AGRO-22", tier: "Silver", successfulReferrals: 46, revenueDriven: 58200, commissionEarned: 6900 },
       { rank: 5, name: "Priya Sundaram", code: "PRIYA-AGRO-91", tier: "Silver", successfulReferrals: 38, revenueDriven: 49400, commissionEarned: 5700 }
     ],
@@ -5770,15 +5769,15 @@ let homepageSections = [
   { id: "sec-hero", type: "hero", name: "Hero Carousel Slider", description: "Full-width hero carousel with desktop/mobile banners & CTAs", enabled: true, order: 1 },
   { id: "sec-trust", type: "trust_badges", name: "Quality & Trust Ribbon", description: "Certified Organic, Farm Fresh, Fast Delivery badges", enabled: true, order: 2 },
   { id: "sec-offer-ticker", type: "offer_strip", name: "Promotional Offer Strip", description: "Seasonal harvest announcement & coupon callout ticker", enabled: true, order: 3 },
-  { id: "sec-categories", type: "categories", name: "Category Harvest Grid", description: "Visual grid cards linking to organic pantry categories", enabled: true, order: 4 },
+  { id: "sec-categories", type: "categories", name: "Category Bio-Grid", description: "Visual grid cards linking to agricultural bio-fertilizer and pesticide categories", enabled: true, order: 4 },
   { id: "sec-flash-sale", type: "flash_sale", name: "Flash Harvest Sale", description: "Time-limited urgent deals with real-time countdown timer", enabled: true, order: 5 },
-  { id: "sec-featured", type: "featured_products", name: "Featured Products Showcase", description: "Curated seasonal finest harvest staples", enabled: true, order: 6 },
+  { id: "sec-featured", type: "featured_products", name: "Featured Products Showcase", description: "Curated seasonal high-CFU bio-formulations", enabled: true, order: 6 },
   { id: "sec-trending", type: "trending_products", name: "Trending This Week", description: "Top trending items gaining maximum momentum", enabled: true, order: 7 },
   { id: "sec-story", type: "brand_story", name: "Our Roots & Organic Vision", description: "Traditional wisdom, farm traceability, and brand philosophy", enabled: true, order: 8 },
-  { id: "sec-best-seller", type: "best_sellers", name: "Best Sellers Pantry", description: "Highest rated crowd favorite pantry staples", enabled: true, order: 9 },
+  { id: "sec-best-seller", type: "best_sellers", name: "Best Sellers Bio-Inputs", description: "Highest rated farmer favorite agricultural formulations", enabled: true, order: 9 },
   { id: "sec-new-arrivals", type: "new_arrivals", name: "Fresh Harvest New Arrivals", description: "Recently harvested seasonal additions", enabled: true, order: 10 },
   { id: "sec-testimonials", type: "testimonials", name: "Community Reviews & Proof", description: "Verified customer testimonials and star ratings", enabled: true, order: 11 },
-  { id: "sec-faq", type: "faq", name: "Pantry FAQs & Accordion", description: "Clear answers on organic purity, sourcing & shipping", enabled: true, order: 12 }
+  { id: "sec-faq", type: "faq", name: "Agronomy FAQs & Accordion", description: "Clear answers on bio-fertilizer usage, dosage & shipping", enabled: true, order: 12 }
 ];
 
 let heroBanners = [
@@ -5801,11 +5800,11 @@ let heroBanners = [
   },
   {
     id: "HERO-2",
-    title: "Cold-Pressed Vaagai Wood Chekku Oils",
-    eyebrow: "Authentic Marachekku Extraction",
+    title: "Certified Bio-Fertilizers & Crop Formulations",
+    eyebrow: "High CFU Lab Cultured Bio-Inputs",
     subtitle: "Extracted under 38°C in single-origin batches to preserve natural aroma, vitamin E, and natural antioxidants.",
-    primaryCtaLabel: "Shop Cold-Pressed Oils",
-    primaryCtaUrl: "/categories/cold-pressed-oils",
+    primaryCtaLabel: "Shop Bio-Formulations",
+    primaryCtaUrl: "/categories/bio-fertilizers",
     secondaryCtaLabel: "View Lab Reports",
     secondaryCtaUrl: "/about",
     desktopImageUrl: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=1920&auto=format&fit=crop&q=80",
@@ -5818,12 +5817,12 @@ let heroBanners = [
   },
   {
     id: "HERO-3",
-    title: "Royal 2-Year Aged Himalayan Basmati Rice",
+    title: "Harit Liquid Bio-Fungicide (5L Can)",
     eyebrow: "Festive Harvest Special",
-    subtitle: "Extra-long pearls with pristine grain elongation, aged traditionally in Himalayan foothills for festive dining.",
-    primaryCtaLabel: "Order Basmati Rice",
-    primaryCtaUrl: "/products/organic-basmati-rice",
-    secondaryCtaLabel: "Explore All Grains",
+    subtitle: "Trichoderma viride formulation providing robust protection against damping-off, root rot, and wilt pathogens.",
+    primaryCtaLabel: "Order Harit Bio-Fungicide",
+    primaryCtaUrl: "/products/harit",
+    secondaryCtaLabel: "Explore All Formulations",
     secondaryCtaUrl: "/categories/organic-rice",
     desktopImageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=1920&auto=format&fit=crop&q=80",
     mobileImageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop&q=80",
@@ -5923,7 +5922,7 @@ let flashSaleBanners = [
   {
     id: "FLASH-1",
     title: "Autumn Equinox 48-Hour Harvest Flash Sale",
-    subtitle: "Flat 35% discount on pure Lakadong Turmeric, Himalayan Basmati & Virgin Coconut Oil.",
+    subtitle: "Special savings on Harit Trichoderma, Bhumi Shakti Humic & Neem Oil 1000 PPM.",
     discountBadge: "35% OFF",
     endsAt: "2026-09-30T23:59:59.000Z",
     targetProductSlug: "lakadong-turmeric-powder",
@@ -5939,7 +5938,7 @@ let curatedProductSections = {
     sectionKey: "featured",
     heading: "Naturally Loved Essentials",
     eyebrow: "Season's Finest",
-    subtitle: "Our most-loved pantry staples, chosen for aroma, flavour and honest nourishment.",
+    subtitle: "Our most-trusted agricultural formulations, chosen for high CFU count and proven crop yields.",
     productIds: [1, 6, 3, 19, 9, 18, 11, 21],
     layoutStyle: "grid",
     itemsLimit: 8,
@@ -5949,7 +5948,7 @@ let curatedProductSections = {
     sectionKey: "trending",
     heading: "Trending This Week",
     eyebrow: "Customer Favorites",
-    subtitle: "Most ordered organic kitchen staples across South and West India.",
+    subtitle: "Most ordered bio-fertilizers and bio-pesticides across farming communities.",
     productIds: [6, 1, 19, 3],
     layoutStyle: "carousel",
     itemsLimit: 4,
@@ -5969,7 +5968,7 @@ let curatedProductSections = {
     sectionKey: "bestSellers",
     heading: "All-Time Best Sellers",
     eyebrow: "Top Rated 4.9★",
-    subtitle: "Pantry heroes with over 1,000+ five-star verified customer reviews.",
+    subtitle: "Farmer favorites with over 1,000+ five-star verified crop reviews.",
     productIds: [1, 6, 11, 19],
     layoutStyle: "grid",
     itemsLimit: 4,
@@ -6294,7 +6293,7 @@ export const createFlashSaleBanner = (req, res) => {
     subtitle = "",
     discountBadge = "30% OFF",
     endsAt,
-    targetProductSlug = "organic-basmati-rice",
+    targetProductSlug = "harit",
     stockUrgencyText = "Limited harvest batch",
     bannerImageUrl,
     ctaLabel = "Shop Flash Deal"
@@ -6442,10 +6441,10 @@ export let audienceSegments = [
     createdAt: "2026-04-05"
   },
   {
-    id: "seg_millets",
-    name: "Organic Millets & Traditional Grains Buyers",
-    description: "Customers who frequently buy Foxtail, Kodo, Barnyard millets and native rice",
-    criteria: "Purchased Category: Millets or Rice >= 2 times",
+    id: "seg_bio_growers",
+    name: "Commercial Crop Growers & Farmers",
+    description: "Farmers and estate owners who frequently order bio-fertilizers and bio-pesticides",
+    criteria: "Purchased Category: Bio-Fertilizers or Bio-Pesticides >= 2 times",
     count: 4120,
     growthRate: "+15.0%",
     createdAt: "2026-04-12"
@@ -6455,12 +6454,12 @@ export let audienceSegments = [
 export let marketingCampaigns = [
   {
     id: "CAMP-101",
-    name: "Diwali Organic Sweetness & Cold Pressed Oils Extravaganza",
+    name: "Diwali Organic Sweetness & Biological Crop Protection Extravaganza",
     channel: "email",
     type: "festival",
-    subject: "✨ Celebrate Diwali with 100% Pure Cold-Pressed Sweetness & Free Ghee!",
-    previewText: "Flat 25% OFF on traditional oils & native jaggery sweets. Code: DIWALI25",
-    messageBody: "Dear {CustomerName},\n\nCelebrate this festive season with pure wood cold-pressed groundnut, sesame, and mustard oils, along with organic jaggery.\n\nUse coupon DIWALI25 to save 25% on your harvest basket.",
+    subject: "✨ Seasonal Bio-Agro Discounts on Certified Formulations!",
+    previewText: "Flat 25% OFF on bio-fertilizers & botanical pest shields. Code: KISAN25",
+    messageBody: "Dear {CustomerName},\n\nStrengthen your crop yield this season with certified Trichoderma viride, humic soil conditioners, and botanical pest shields.\n\nUse coupon KISAN20 to save 20% on your agricultural order.",
     targetSegmentId: "seg_all",
     targetSegmentName: "All Registered Customers",
     targetAudienceCount: 12850,
@@ -6486,12 +6485,12 @@ export let marketingCampaigns = [
   },
   {
     id: "CAMP-102",
-    name: "Flash Harvest Drop: Extra ₹200 OFF on Wood Pressed Oils",
+    name: "Kisan Special: Extra ₹200 OFF on Bio-Fertilizers & Bio-Pesticides",
     channel: "sms",
     type: "offer",
     subject: "SMS VIP Flash Drop",
-    previewText: "Exclusive VIP deal on freshly churned groundnut oil",
-    messageBody: "Janani Agro: Special VIP treat for {CustomerName}! Get flat Rs.200 OFF on 5L Fresh Wood Pressed Oil. Use code VIPHARVEST at checkout. Valid till midnight: https://jananiagro.com/oils OptOut reply STOP",
+    previewText: "Exclusive VIP deal on certified bio-formulations",
+    messageBody: "Janani Agro: Special Kisan offer for {CustomerName}! Get flat Rs.200 OFF on 5L Harit / Bhumi Shakti Bio-Inputs. Use code KISAN200 at checkout. Valid till midnight: https://jananiagro.com/products OptOut reply STOP",
     targetSegmentId: "seg_vip",
     targetSegmentName: "VIP High LTV Champions (Spent > ₹5,000)",
     targetAudienceCount: 1420,
@@ -6517,18 +6516,18 @@ export let marketingCampaigns = [
   },
   {
     id: "CAMP-103",
-    name: "🌾 Fresh Harvest Rice & Unpolished Millets Just Arrived!",
+    name: "🌱 Bio-Shield Formulations & Soil Conditioners Just Arrived!",
     channel: "push",
     type: "coupon",
     subject: "Fresh Harvest Grains Restocked!",
-    previewText: "Unpolished Foxtail & Brown Basmati freshly packed from our farmers",
-    messageBody: "Fresh batch of native grains and high-fiber millets ready for delivery. Use code MILLET15 for 15% discount.",
-    targetSegmentId: "seg_millets",
-    targetSegmentName: "Organic Millets & Traditional Grains Buyers",
+    previewText: "Certified Trichoderma & Humic Bio-Stimulants ready for dispatch",
+    messageBody: "Fresh batch of nitrogen-sealed bio-fertilizers and biopesticides ready for farm delivery. Use code KISAN20 for 20% discount.",
+    targetSegmentId: "seg_bio_growers",
+    targetSegmentName: "Commercial Crop Growers & Farmers",
     targetAudienceCount: 4120,
-    couponCode: "MILLET15",
-    ctaLabel: "View Fresh Millets",
-    ctaUrl: "/products?category=millets",
+    couponCode: "KISAN15",
+    ctaLabel: "View Bio-Inputs",
+    ctaUrl: "/products?category=bio-fertilizers",
     status: "Sent",
     scheduledAt: "2026-09-11T17:00:00.000Z",
     sentAt: "2026-09-11T17:00:00.000Z",
@@ -6588,9 +6587,9 @@ export let marketingCampaigns = [
     name: "Win Back: We Miss You! Here's ₹150 OFF Your Next Farm Basket",
     channel: "email",
     type: "offer",
-    subject: "🌾 {CustomerName}, here is ₹150 for your organic pantry!",
-    previewText: "It's been a while. Restock your kitchen with certified organic essentials.",
-    messageBody: "We miss you at Janani Agro! Enjoy ₹150 OFF on your next order with coupon COMEBACK150. Valid on all staples, cold pressed oils, and spices.",
+    subject: "🌱 {CustomerName}, here is ₹150 for your crop bio-inputs!",
+    previewText: "It's been a while. Protect your crops with certified bio-formulations.",
+    messageBody: "We miss you at Janani Agro! Enjoy ₹150 OFF on your next order with coupon COMEBACK150. Valid on all bio-fertilizers, bio-pesticides, and soil conditioners.",
     targetSegmentId: "seg_dormant",
     targetSegmentName: "Dormant / Inactive (> 60 Days)",
     targetAudienceCount: 2150,
@@ -6651,7 +6650,7 @@ export let notificationHistory = [
   {
     id: "NOTIF-701",
     campaignId: "CAMP-101",
-    campaignName: "Diwali Organic Sweetness & Cold Pressed Oils Extravaganza",
+    campaignName: "Diwali Organic Sweetness & Biological Crop Protection Extravaganza",
     channel: "email",
     segment: "All Registered Customers",
     recipients: 12850,
@@ -6666,7 +6665,7 @@ export let notificationHistory = [
   {
     id: "NOTIF-702",
     campaignId: "CAMP-102",
-    campaignName: "Flash Harvest Drop: Extra ₹200 OFF on Wood Pressed Oils",
+    campaignName: "Kisan Special: Extra ₹200 OFF on Bio-Fertilizers & Bio-Pesticides",
     channel: "sms",
     segment: "VIP High LTV Champions (Spent > ₹5,000)",
     recipients: 1420,
@@ -6681,9 +6680,9 @@ export let notificationHistory = [
   {
     id: "NOTIF-703",
     campaignId: "CAMP-103",
-    campaignName: "🌾 Fresh Harvest Rice & Unpolished Millets Just Arrived!",
+    campaignName: "🌱 Bio-Shield Formulations & Soil Conditioners Just Arrived!",
     channel: "push",
-    segment: "Organic Millets & Traditional Grains Buyers",
+    segment: "Commercial Crop Growers & Farmers",
     recipients: 4120,
     delivered: 3950,
     status: "Delivered",
@@ -7225,17 +7224,17 @@ export const getReportsAnalytics = (req, res) => {
   const stockTurnoverRatio = "5.8x";
 
   const fastMovingSkus = [
-    { sku: "JAN-GHEE-A2-500", name: "A2 Vedic Bilona Gir Cow Ghee (500ml)", stock: 84, monthlyRunRate: 340, daysOfSupply: 7, status: "High Velocity" },
-    { sku: "JAN-OIL-GN-1000", name: "Cold Pressed Virgin Groundnut Oil (1L)", stock: 120, monthlyRunRate: 280, daysOfSupply: 13, status: "High Velocity" },
-    { sku: "JAN-HNY-SUN-500", name: "Wild Raw Sundarban Honey (500g)", stock: 65, monthlyRunRate: 195, daysOfSupply: 10, status: "High Velocity" },
+    { sku: "JAP-HARIT-1L", name: "Harit (1 L) — Trichoderma Viride Biofungicide", stock: 84, monthlyRunRate: 340, daysOfSupply: 7, status: "High Velocity" },
+    { sku: "JAP-BHUMI-1L", name: "Bhumi Shakti (1 L) — Humic & Fulvic Acid", stock: 120, monthlyRunRate: 280, daysOfSupply: 13, status: "High Velocity" },
+    { sku: "JAN-BOT-NEEM-1L", name: "Janani Neem Oil 1000 PPM (1 L)", stock: 65, monthlyRunRate: 195, daysOfSupply: 10, status: "High Velocity" },
     { sku: "JAN-RICE-KAV-1000", name: "Ancient Black Kavuni Rice (1kg)", stock: 92, monthlyRunRate: 160, daysOfSupply: 17, status: "Healthy" },
-    { sku: "JAN-MLT-FOX-1000", name: "Unpolished Foxtail Millet (1kg)", stock: 110, monthlyRunRate: 140, daysOfSupply: 23, status: "Healthy" }
+    { sku: "JAN-BIO-HAR-1000", name: "Harit Bio-Fungicide (1L)", stock: 110, monthlyRunRate: 140, daysOfSupply: 23, status: "Healthy" }
   ];
 
   const slowMovingSkus = [
-    { sku: "JAN-SPICE-SAF-1G", name: "Pure Kashmiri Mongra Saffron (1g)", stock: 140, monthlyRunRate: 24, daysOfSupply: 175, status: "Slow Moving" },
+    { sku: "JAN-BIO-BAL-1L", name: "Balavan Plant Growth Booster (1 L)", stock: 140, monthlyRunRate: 24, daysOfSupply: 175, status: "Slow Moving" },
     { sku: "JAN-TEA-ORG-250", name: "Assam Orthodox Whole Leaf Tea (250g)", stock: 85, monthlyRunRate: 18, daysOfSupply: 141, status: "Slow Moving" },
-    { sku: "JAN-JAG-LIQ-500", name: "Organic Liquid Kakvi Jaggery (500ml)", stock: 95, monthlyRunRate: 22, daysOfSupply: 129, status: "Slow Moving" }
+    { sku: "JAN-BIO-ANN-1L", name: "Annada Organic Micronutrient (1 L)", stock: 95, monthlyRunRate: 22, daysOfSupply: 129, status: "Slow Moving" }
   ];
 
   // 9. Coupon Reports
@@ -7288,27 +7287,26 @@ export const getReportsAnalytics = (req, res) => {
 
   // 12. Top Selling Products
   const topProducts = [
-    { rank: 1, sku: "JAN-GHEE-A2-500", name: "A2 Vedic Bilona Gir Cow Ghee (500ml)", category: "A2 Vedic Dairy", unitsSold: Math.round(480 * mult), revenue: Math.round(696000 * mult), cogs: Math.round(334080 * mult), margin: "52.0%", stock: 84, inStock: true },
-    { rank: 2, sku: "JAN-OIL-GN-1000", name: "Cold-Pressed Virgin Groundnut Oil (1L)", category: "Cold Pressed Oils", unitsSold: Math.round(410 * mult), revenue: Math.round(172200 * mult), cogs: Math.round(89544 * mult), margin: "48.0%", stock: 120, inStock: true },
-    { rank: 3, sku: "JAN-HNY-SUN-500", name: "Wild Raw Sundarban Multifloral Honey (500g)", category: "Raw Forest Honey", unitsSold: Math.round(320 * mult), revenue: Math.round(217600 * mult), cogs: Math.round(108800 * mult), margin: "50.0%", stock: 65, inStock: true },
-    { rank: 4, sku: "JAN-RICE-KAV-1000", name: "Ancient Black Kavuni Heritage Rice (1kg)", category: "Heritage Rice", unitsSold: Math.round(290 * mult), revenue: Math.round(89900 * mult), cogs: Math.round(47647 * mult), margin: "47.0%", stock: 92, inStock: true },
-    { rank: 5, sku: "JAN-OIL-SES-1000", name: "Wood-Pressed Black Sesame Gingelly Oil (1L)", category: "Cold Pressed Oils", unitsSold: Math.round(240 * mult), revenue: Math.round(124800 * mult), cogs: Math.round(63648 * mult), margin: "49.0%", stock: 78, inStock: true },
-    { rank: 6, sku: "JAN-MLT-FOX-1000", name: "Unpolished Organic Foxtail Millet (1kg)", category: "Millet Staples", unitsSold: Math.round(210 * mult), revenue: Math.round(37800 * mult), cogs: Math.round(19656 * mult), margin: "48.0%", stock: 110, inStock: true },
-    { rank: 7, sku: "JAN-JAG-ORG-1000", name: "Organic Granular Desi Jaggery Powder (1kg)", category: "Natural Sweeteners", unitsSold: Math.round(195 * mult), revenue: Math.round(37050 * mult), cogs: Math.round(18525 * mult), margin: "50.0%", stock: 145, inStock: true },
-    { rank: 8, sku: "JAN-TUR-LAK-250", name: "High-Curcumin Lakadong Turmeric Powder (250g)", category: "Spices & Wellness", unitsSold: Math.round(175 * mult), revenue: Math.round(50750 * mult), cogs: Math.round(24360 * mult), margin: "52.0%", stock: 60, inStock: true },
-    { rank: 9, sku: "JAN-DAL-TOOR-1000", name: "Unpolished Desi Toor Dal (1kg)", category: "Organic Pulses", unitsSold: Math.round(160 * mult), revenue: Math.round(35200 * mult), cogs: Math.round(18304 * mult), margin: "48.0%", stock: 98, inStock: true },
-    { rank: 10, sku: "JAN-SHIL-GLD-20G", name: "Pure Himalayan Shilajit Resin (20g)", category: "Spices & Wellness", unitsSold: Math.round(135 * mult), revenue: Math.round(256365 * mult), cogs: Math.round(117927 * mult), margin: "54.0%", stock: 42, inStock: true }
+    { rank: 1, sku: "JAP-HARIT-1L", name: "Harit (1 L) — Trichoderma Viride Biofungicide", category: "Bio-Fungicides", unitsSold: Math.round(480 * mult), revenue: Math.round(696000 * mult), cogs: Math.round(334080 * mult), margin: "52.0%", stock: 84, inStock: true },
+    { rank: 2, sku: "JAP-BHUMI-1L", name: "Bhumi Shakti (1 L) — Humic & Fulvic Acid", category: "Biological Crop Protection", unitsSold: Math.round(410 * mult), revenue: Math.round(172200 * mult), cogs: Math.round(89544 * mult), margin: "48.0%", stock: 120, inStock: true },
+    { rank: 3, sku: "JAN-BOT-NEEM-1000", name: "Janani Neem Oil 1000 PPM (1 L)", category: "Bio-Pesticides", unitsSold: Math.round(320 * mult), revenue: Math.round(217600 * mult), cogs: Math.round(108800 * mult), margin: "50.0%", stock: 65, inStock: true },
+    { rank: 4, sku: "JAN-SOIL-DHR-4KG", name: "Dharani Mycorrhizal Granules (4 kg)", category: "Bio-Fertilizers", unitsSold: Math.round(290 * mult), revenue: Math.round(89900 * mult), cogs: Math.round(47647 * mult), margin: "47.0%", stock: 92, inStock: true },
+    { rank: 5, sku: "JAN-SOIL-PUS-1L", name: "Pushkal Humic Acid Liquid (1 L)", category: "Bio-Stimulants", unitsSold: Math.round(240 * mult), revenue: Math.round(124800 * mult), cogs: Math.round(63648 * mult), margin: "49.0%", stock: 78, inStock: true },
+    { rank: 6, sku: "JAN-BIO-HAR-1000", name: "Harit Bio-Fungicide (1 L)", category: "Bio-Pesticides", unitsSold: Math.round(210 * mult), revenue: Math.round(37800 * mult), cogs: Math.round(19656 * mult), margin: "48.0%", stock: 110, inStock: true },
+    { rank: 7, sku: "JAN-BIO-ANN-1L", name: "Annada Organic Micronutrient (1 L)", category: "Micronutrients", unitsSold: Math.round(195 * mult), revenue: Math.round(37050 * mult), cogs: Math.round(18525 * mult), margin: "50.0%", stock: 145, inStock: true },
+    { rank: 8, sku: "JAN-BIO-BAL-1L", name: "Balavan Plant Growth Booster (1 L)", category: "Bio-Stimulants", unitsSold: Math.round(175 * mult), revenue: Math.round(50750 * mult), cogs: Math.round(24360 * mult), margin: "52.0%", stock: 60, inStock: true },
+    { rank: 9, sku: "JAN-SOIL-DHR-1000", name: "Dharani Bio-Fertilizer (1 kg)", category: "Bio-Fertilizers", unitsSold: Math.round(160 * mult), revenue: Math.round(35200 * mult), cogs: Math.round(18304 * mult), margin: "48.0%", stock: 98, inStock: true },
+    { rank: 10, sku: "JAN-SOIL-FULV-500", name: "Concentrated Fulvic Acid (500 ml)", category: "Bio-Stimulants", unitsSold: Math.round(135 * mult), revenue: Math.round(256365 * mult), cogs: Math.round(117927 * mult), margin: "54.0%", stock: 42, inStock: true }
   ];
 
   // 13. Top Categories
   const topCategories = [
-    { rank: 1, name: "A2 Vedic Dairy & Bilona Ghee", revenue: Math.round(grossSales * 0.36), sharePercent: 36.0, unitsSold: Math.round(520 * mult), productsCount: 4, growthRate: "+28.4%" },
-    { rank: 2, name: "Cold Pressed Virgin Oils", revenue: Math.round(grossSales * 0.22), sharePercent: 22.0, unitsSold: Math.round(710 * mult), productsCount: 6, growthRate: "+22.1%" },
-    { rank: 3, name: "Raw Forest Honey & Bee Pollen", revenue: Math.round(grossSales * 0.14), sharePercent: 14.0, unitsSold: Math.round(360 * mult), productsCount: 3, growthRate: "+18.7%" },
-    { rank: 4, name: "Spices, Herbs & Wellness", revenue: Math.round(grossSales * 0.12), sharePercent: 12.0, unitsSold: Math.round(310 * mult), productsCount: 8, growthRate: "+34.2%" },
-    { rank: 5, name: "Heritage Rice & Ancient Grains", revenue: Math.round(grossSales * 0.08), sharePercent: 8.0, unitsSold: Math.round(390 * mult), productsCount: 5, growthRate: "+15.3%" },
-    { rank: 6, name: "Millet Staples & Flours", revenue: Math.round(grossSales * 0.05), sharePercent: 5.0, unitsSold: Math.round(340 * mult), productsCount: 6, growthRate: "+12.9%" },
-    { rank: 7, name: "Natural Sweeteners & Jaggery", revenue: Math.round(grossSales * 0.03), sharePercent: 3.0, unitsSold: Math.round(280 * mult), productsCount: 4, growthRate: "+9.8%" }
+    { rank: 1, name: "Bio-Fertilizers & Inoculants", revenue: Math.round(grossSales * 0.36), sharePercent: 36.0, unitsSold: Math.round(520 * mult), productsCount: 4, growthRate: "+28.4%" },
+    { rank: 2, name: "Soil Conditioners & Biostimulants", revenue: Math.round(grossSales * 0.22), sharePercent: 22.0, unitsSold: Math.round(710 * mult), productsCount: 6, growthRate: "+22.1%" },
+    { rank: 3, name: "Biological Crop Protection", revenue: Math.round(grossSales * 0.18), sharePercent: 18.0, unitsSold: Math.round(360 * mult), productsCount: 4, growthRate: "+18.7%" },
+    { rank: 4, name: "Botanical Pest Repellents", revenue: Math.round(grossSales * 0.12), sharePercent: 12.0, unitsSold: Math.round(310 * mult), productsCount: 3, growthRate: "+34.2%" },
+    { rank: 5, name: "Organic Micronutrients", revenue: Math.round(grossSales * 0.08), sharePercent: 8.0, unitsSold: Math.round(390 * mult), productsCount: 5, growthRate: "+15.3%" },
+    { rank: 6, name: "Plant Growth Boosters", revenue: Math.round(grossSales * 0.04), sharePercent: 4.0, unitsSold: Math.round(340 * mult), productsCount: 6, growthRate: "+12.9%" }
   ];
 
   // 14. Top Customers
@@ -7460,7 +7458,7 @@ export const getGstTaxReport = (req, res) => {
   const hsnBreakdown = [
     {
       hsnCode: "04059020",
-      description: "A2 Vedic Bilona Gir Cow Ghee (Pure Clarified Butter)",
+      description: "Harit Trichoderma Viride Biofungicide (Pure Clarified Butter)",
       uqc: "LTR",
       totalQuantity: 520,
       totalValue: 791700,
@@ -7472,8 +7470,8 @@ export const getGstTaxReport = (req, res) => {
       cess: 0
     },
     {
-      hsnCode: "04090000",
-      description: "Raw Unfiltered Sundarban Wild Honey (Natural Honey)",
+      hsnCode: "38089910",
+      description: "Janani Neem Oil 1000 PPM Botanical Pest Deterrent",
       uqc: "KGS",
       totalQuantity: 340,
       totalValue: 242760,
@@ -7486,7 +7484,7 @@ export const getGstTaxReport = (req, res) => {
     },
     {
       hsnCode: "15089091",
-      description: "Cold Pressed Virgin Groundnut & Black Sesame Oils",
+      description: "Harit Bio-Fungicide & Trichoderma Formulations",
       uqc: "LTR",
       totalQuantity: 680,
       totalValue: 299880,
@@ -7512,7 +7510,7 @@ export const getGstTaxReport = (req, res) => {
     },
     {
       hsnCode: "10082900",
-      description: "Unpolished Organic Foxtail & Little Millets",
+      description: "Certified Trichoderma & Humic Formulations",
       uqc: "KGS",
       totalQuantity: 510,
       totalValue: 96390,
@@ -7525,7 +7523,7 @@ export const getGstTaxReport = (req, res) => {
     },
     {
       hsnCode: "17011490",
-      description: "Organic Desi Jaggery Powder & Kakvi Liquid Jaggery",
+      description: "Annada & Balavan Plant Growth Boosters",
       uqc: "KGS",
       totalQuantity: 380,
       totalValue: 75810,
@@ -7538,7 +7536,7 @@ export const getGstTaxReport = (req, res) => {
     },
     {
       hsnCode: "09103030",
-      description: "High-Curcumin Lakadong Turmeric & Kashmiri Saffron",
+      description: "Pushkal & Dharani Bio-Fertilizer Granules",
       uqc: "KGS",
       totalQuantity: 210,
       totalValue: 149940,
@@ -7551,7 +7549,7 @@ export const getGstTaxReport = (req, res) => {
     },
     {
       hsnCode: "07136000",
-      description: "Unpolished Desi Toor Dal & Green Moong",
+      description: "Dharani & Bhumi Shakti Formulations",
       uqc: "KGS",
       totalQuantity: 360,
       totalValue: 155410,
@@ -7669,24 +7667,24 @@ export const exportReportData = (req, res) => {
       case "inventory":
         csvHeader = "SKU,Product Name,Category,Units In Stock,Monthly Velocity,Days of Supply,Cost Price (INR),Retail Price (INR),Stock Status";
         csvRows = [
-          "JAN-GHEE-A2-500,A2 Vedic Bilona Gir Cow Ghee (500ml),A2 Vedic Dairy,84,340,7,754,1450,High Velocity",
-          "JAN-OIL-GN-1000,Cold-Pressed Virgin Groundnut Oil (1L),Cold Pressed Oils,120,280,13,218,420,High Velocity",
-          "JAN-HNY-SUN-500,Wild Raw Sundarban Multifloral Honey (500g),Raw Forest Honey,65,195,10,340,680,High Velocity",
-          "JAN-RICE-KAV-1000,Ancient Black Kavuni Heritage Rice (1kg),Heritage Rice,92,160,17,164,310,Healthy",
-          "JAN-MLT-FOX-1000,Unpolished Organic Foxtail Millet (1kg),Millet Staples,110,140,23,93,180,Healthy",
-          "JAN-SPICE-SAF-1G,Pure Kashmiri Mongra Saffron (1g),Spices & Herbs,140,24,175,280,550,Slow Moving"
+          "JAP-HARIT-1L,Harit (1 L) — Trichoderma Viride Biofungicide,Bio-Fungicides,84,340,7,754,1450,High Velocity",
+          "JAP-BHUMI-1L,Bhumi Shakti (1 L) — Humic & Fulvic Acid,Biological Crop Protection,120,280,13,218,420,High Velocity",
+          "JAN-BOT-NEEM-1L,Janani Neem Oil 1000 PPM (1 L),Bio-Pesticides,65,195,10,340,680,High Velocity",
+          "JAN-RICE-KAV-1000,Harit Bio-Fungicide (1 L),Heritage Rice,92,160,17,164,310,Healthy",
+          "JAN-BIO-HAR-1000,Harit Bio-Fungicide (1L),Bio-Pesticides,110,140,23,93,180,Healthy",
+          "JAN-BIO-BAL-1L,Balavan Plant Growth Booster (1 L),Bio-Stimulants,140,24,175,280,550,Healthy"
         ];
         break;
 
       case "gst":
         csvHeader = "HSN Code,Description,UQC,Total Qty,Taxable Value (INR),GST Rate %,CGST 2.5% (INR),SGST 2.5% (INR),IGST 5.0% (INR),Total Tax (INR)";
         csvRows = [
-          "04059020,A2 Vedic Bilona Gir Cow Ghee,LTR,520,754000,5.0%,14137.5,14137.5,9425,37700",
-          "04090000,Raw Unfiltered Sundarban Honey,KGS,340,231200,5.0%,4335,4335,2890,11560",
-          "15089091,Cold Pressed Virgin Groundnut Oil,LTR,680,285600,5.0%,5355,5355,3570,14280",
+          "04059020,Harit Trichoderma Viride Biofungicide,LTR,520,754000,5.0%,14137.5,14137.5,9425,37700",
+          "38089910,Janani Neem Oil 1000 PPM,LTR,340,231200,5.0%,4335,4335,2890,11560",
+          "31051000,Bhumi Shakti Soil Conditioner,LTR,680,285600,5.0%,5355,5355,3570,14280",
           "10063090,Ancient Black Kavuni Rice,KGS,420,130200,5.0%,2441.25,2441.25,1627.5,6510",
-          "10082900,Unpolished Foxtail Millet,KGS,510,91800,5.0%,1721.25,1721.25,1147.5,4590",
-          "17011490,Organic Desi Jaggery Powder,KGS,380,72200,5.0%,1353.75,1353.75,902.5,3610",
+          "38089910,Harit Bio-Fungicide,LTR,510,91800,5.0%,1721.25,1721.25,1147.5,4590",
+          "31051000,Dharani Mycorrhizal Bio-Fertilizer,KGS,380,72200,5.0%,1353.75,1353.75,902.5,3610",
           "09103030,Lakadong Turmeric Powder,KGS,210,142800,5.0%,2677.5,2677.5,1785,7140"
         ];
         break;
@@ -7724,24 +7722,24 @@ export const exportReportData = (req, res) => {
       case "top_products":
         csvHeader = "Rank,SKU,Product Name,Category,Units Sold,Revenue (INR),COGS (INR),Gross Margin %,Stock Status";
         csvRows = [
-          "1,JAN-GHEE-A2-500,A2 Vedic Bilona Gir Cow Ghee (500ml),A2 Vedic Dairy,480,696000,334080,52.0%,In Stock (84 units)",
-          "2,JAN-OIL-GN-1000,Cold-Pressed Virgin Groundnut Oil (1L),Cold Pressed Oils,410,172200,89544,48.0%,In Stock (120 units)",
-          "3,JAN-HNY-SUN-500,Wild Raw Sundarban Multifloral Honey (500g),Raw Forest Honey,320,217600,108800,50.0%,In Stock (65 units)",
-          "4,JAN-RICE-KAV-1000,Ancient Black Kavuni Heritage Rice (1kg),Heritage Rice,290,89900,47647,47.0%,In Stock (92 units)",
-          "5,JAN-OIL-SES-1000,Wood-Pressed Black Sesame Gingelly Oil (1L),Cold Pressed Oils,240,124800,63648,49.0%,In Stock (78 units)"
+          "1,JAP-HARIT-1L,Harit (1 L) — Trichoderma Viride Biofungicide,Bio-Fungicides,480,696000,334080,52.0%,In Stock (84 units)",
+          "2,JAP-BHUMI-1L,Bhumi Shakti (1 L) — Humic & Fulvic Acid,Biological Crop Protection,410,172200,89544,48.0%,In Stock (120 units)",
+          "3,JAN-BOT-NEEM-1000,Janani Neem Oil 1000 PPM (1 L),Bio-Pesticides,320,217600,108800,50.0%,In Stock (65 units)",
+          "4,JAN-SOIL-DHR-4KG,Dharani Mycorrhizal Granules (4 kg),Bio-Fertilizers,290,89900,47647,47.0%,In Stock (92 units)",
+          "5,JAN-SOIL-PUS-1L,Pushkal Humic Acid Liquid (1 L),Bio-Stimulants,240,124800,63648,49.0%,In Stock (78 units)"
         ];
         break;
 
       case "top_categories":
         csvHeader = "Rank,Category Name,Gross Revenue (INR),Revenue Share %,Units Sold,Products Count,YoY Growth %";
         csvRows = [
-          "1,A2 Vedic Dairy & Bilona Ghee,701496,36.0%,520,4,+28.4%",
-          "2,Cold Pressed Virgin Oils,428692,22.0%,710,6,+22.1%",
-          "3,Raw Forest Honey & Bee Pollen,272804,14.0%,360,3,+18.7%",
+          "1,Bio-Fertilizers & Inoculants,701496,36.0%,520,4,+28.4%",
+          "2,Soil Conditioners & Biostimulants,428692,22.0%,710,6,+22.1%",
+          "3,Biological Crop Protection,272804,18.0%,360,4,+18.7%",
           "4,Spices Herbs & Wellness,233832,12.0%,310,8,+34.2%",
           "5,Heritage Rice & Ancient Grains,155888,8.0%,390,5,+15.3%",
-          "6,Millet Staples & Flours,97430,5.0%,340,6,+12.9%",
-          "7,Natural Sweeteners & Jaggery,58458,3.0%,280,4,+9.8%"
+          "6,Botanical Formulations,97430,5.0%,340,6,+12.9%",
+          "5,Organic Micronutrients & Boosters,58458,5.0%,280,4,+9.8%"
         ];
         break;
 
@@ -7788,7 +7786,7 @@ let adminSettingsData = {
   store: {
     storeName: "JANANI AGRO PRODUCTS & CO.",
     legalBusinessName: "Janani Agro Producers Pvt. Ltd.",
-    storeTagline: "Ancient Grains, Bilona Ghee & Pure Forest Organics from Andhra & Gujarat",
+    storeTagline: "Certified Bio-Fertilizers, Bio-Pesticides & Crop Protection Direct from Lodhika GIDC",
     supportEmail: "support@jananiagro.com",
     ordersEmail: "orders@jananiagro.com",
     supportPhone: "+91 89190 23456",
@@ -7822,9 +7820,9 @@ let adminSettingsData = {
     customerAppBanner: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&q=80"
   },
   seo: {
-    metaTitle: "Janani Agro | 100% Pure A2 Gir Cow Ghee, Forest Honey & Cold Pressed Oils",
-    metaDescription: "Experience authentic Vedic farm-to-table nutrition. Certified organic A2 Bilona Ghee, raw multifloral forest honey, wood-pressed virgin oils, and GI-tagged heritage rice delivered fresh across India.",
-    metaKeywords: "A2 bilona ghee, Gir cow ghee, raw forest honey, wood pressed oil, ancient black rice kavuni, organic foxtail millet, cold pressed gingelly oil, farm direct organic food",
+    metaTitle: "Janani Agro | Certified Bio-Fertilizers & Biological Crop Protection",
+    metaDescription: "Manufactured at Lodhika GIDC facility. Trichoderma viride, humic and fulvic soil conditioners, botanical pest deterrents and micronutrients for sustainable zero-residue agriculture.",
+    metaKeywords: "bio fertilizers, bio pesticides, trichoderma viride, humic acid, neem oil, biostimulants, micronutrients, crop protection, janani agro",
     canonicalBaseUrl: "https://www.jananiagro.com",
     ogImageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&q=80",
     ogType: "website",

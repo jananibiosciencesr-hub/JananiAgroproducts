@@ -175,7 +175,7 @@ function ProductsPage() {
       const next = exists ? prev.filter((c) => c !== catName) : [...prev, catName];
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
-        if (next.length === 1) {
+        if (next.length === 1 && next[0]) {
           url.searchParams.set("category", next[0]);
         } else if (next.length > 1) {
           url.searchParams.set("category", next.join(","));
@@ -340,7 +340,7 @@ function ProductsPage() {
             aria-expanded={isCategoryDropdownOpen}
           >
             <div className="flex items-center gap-2.5 truncate pr-2">
-              {selectedCategories.length === 1 ? (
+              {selectedCategories.length === 1 && selectedCategories[0] ? (
                 <>
                   <span className="shrink-0">{getCategoryIcon(selectedCategories[0])}</span>
                   <span className="truncate font-bold text-[#075B32]">{selectedCategories[0]}</span>
@@ -367,10 +367,10 @@ function ProductsPage() {
                     : "bg-gray-200/80 text-gray-700"
                 }`}
               >
-                {selectedCategories.length === 1
+                {selectedCategories.length === 1 && selectedCategories[0]
                   ? activeProductList.filter((p) => {
                       const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                      const cName = selectedCategories[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+                      const cName = (selectedCategories[0] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
                       return pCat === cName;
                     }).length
                   : selectedCategories.length > 1

@@ -29,11 +29,11 @@ import { ProductCard } from "@/components/product-card";
 export const Route = createFileRoute("/wishlist")({
   head: () => ({
     meta: [
-      { title: "My Organic Wishlist & Saved Harvests — JANANI AGRO PRODUCTS" },
+      { title: "My Bio-Inputs Wishlist — JANANI AGRO PRODUCTS" },
       {
         name: "description",
         content:
-          "Manage your saved single-origin organic pantry essentials, track price drop alerts, and move items to cart.",
+          "Manage your saved bio-fertilizers and bio-pesticide formulations, track price drop alerts, and move items to cart.",
       },
     ],
   }),
@@ -49,10 +49,10 @@ export function WishlistPage() {
   const [sort, setSort] = useState<SortOption>("recent");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [notifiedItems, setNotifiedItems] = useState<Record<number, boolean>>({});
-  const [priceAlertActive, setPriceAlertActive] = useState<Record<number, boolean>>({
-    6: true, // groundnut oil price alert active by default
-    10: true, // foxtail millet
+  const [notifiedItems, setNotifiedItems] = useState<Record<string | number, boolean>>({});
+  const [priceAlertActive, setPriceAlertActive] = useState<Record<string | number, boolean>>({
+    1: true, // Harit price alert active by default
+    2: true, // Bhumi Shakti
   });
 
   // If patron is not signed in, show clean Sign In prompt
@@ -72,7 +72,7 @@ export function WishlistPage() {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
-            <Link to="/login">Sign In / Register with OTP</Link>
+            <Link to="/login" search={{ redirect: "/wishlist" }}>Sign In / Register with OTP</Link>
           </Button>
           <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
             <Link to="/products">Explore Products</Link>
@@ -129,7 +129,7 @@ export function WishlistPage() {
     });
   };
 
-  const handleTogglePriceAlert = (id: number, name: string) => {
+  const handleTogglePriceAlert = (id: string | number, name: string) => {
     setPriceAlertActive((prev) => {
       const active = !prev[id];
       if (active) {
@@ -143,7 +143,7 @@ export function WishlistPage() {
     });
   };
 
-  const handleStockNotification = (id: number, name: string) => {
+  const handleStockNotification = (id: string | number, name: string) => {
     setNotifiedItems((prev) => ({ ...prev, [id]: true }));
     toast.success(`Stock alert registered for ${name}!`, {
       description: "You'll receive an SMS/WhatsApp notification as soon as the fresh harvest batch is ready.",
@@ -256,7 +256,7 @@ export function WishlistPage() {
       {savedProducts.length > 0 ? (
         <div className="mt-6 sm:mt-8 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-6">
           {savedProducts.map((product) => {
-            const hasPriceDrop = product.id % 2 === 0; // Simulate price drop on item 6, 10, etc.
+            const hasPriceDrop = typeof product.id === "number" ? product.id % 2 === 0 : false;
             const isAlertActive = priceAlertActive[product.id];
             const isNotified = notifiedItems[product.id];
 
@@ -423,13 +423,13 @@ export function WishlistPage() {
             Your Harvest Wishlist is Empty
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            You haven't saved any organic pantry staples yet. Tap the heart icon on any cold-pressed oil,
-            millet, or Vedic spice to track price drops and save items for your next harvest order.
+            You haven't saved any agricultural bio-formulations yet. Tap the heart icon on any bio-fertilizer,
+            stimulant, or botanical shield to track price drops and save items for your next farm order.
           </p>
           <div className="pt-2">
             <Button asChild className="rounded-full px-8 font-bold shadow-md" size="lg">
               <Link to="/products">
-                Explore Farm Pantry <ArrowRight className="size-4 ml-1.5" />
+                Explore Formulations <ArrowRight className="size-4 ml-1.5" />
               </Link>
             </Button>
           </div>
@@ -441,7 +441,7 @@ export function WishlistPage() {
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-brand-leaf flex items-center gap-1.5">
-              <Sparkles className="size-4 text-brand-gold" /> Recommended For Your Pantry
+              <Sparkles className="size-4 text-brand-gold" /> Recommended For Your Crops
             </span>
             <h3 className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-1">
               Top Rated Organic Staples
@@ -477,12 +477,12 @@ export function WishlistPage() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Share your curated collection of {savedProducts.length} organic staples with your family or friends.
+              Share your curated collection of {savedProducts.length} bio-formulations with fellow farmers or friends.
             </p>
 
             <div className="grid grid-cols-2 gap-3">
               <a
-                href={`https://wa.me/?text=Check%20out%20my%20Janani%20Agro%20Organic%20Pantry%20Wishlist:%20${encodeURIComponent(
+                href={`https://wa.me/?text=Check%20out%20my%20Janani%20Agro%20Bio-Inputs%20Wishlist:%20${encodeURIComponent(
                   window.location.href
                 )}`}
                 target="_blank"

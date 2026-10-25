@@ -1590,7 +1590,7 @@ function HeroBannerModal({
                 value={formData.title || ""}
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                 className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                placeholder="e.g. 100% Pure Wood Cold Pressed Oils"
+                placeholder="e.g. 100% Certified Bio-Fertilizers & Bio-Pesticides"
               />
             </div>
 
@@ -1893,7 +1893,7 @@ function OfferBannerModal({
                 value={formData.headline || ""}
                 onChange={e => setFormData({ ...formData, headline: e.target.value })}
                 className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                placeholder="e.g. Get 20% OFF on all cold pressed oils today!"
+                placeholder="e.g. Get 20% OFF on all bio-fertilizers today!"
               />
             </div>
 
@@ -2002,12 +2002,12 @@ function CategoryBannerModal({
 }) {
   const [formData, setFormData] = useState<Partial<CategoryBanner>>(
     category || {
-      categorySlug: "oils",
-      title: "Wood Cold Pressed Oils",
-      subtitle: "Traditional Marachekku Extraction",
-      desktopImageUrl: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&q=80",
-      mobileImageUrl: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&q=80",
-      badge: "Pure Harvest",
+      categorySlug: "bio-fertilizers",
+      title: "Certified Bio-Fertilizers",
+      subtitle: "High CFU Microbial Formulations",
+      desktopImageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=600&q=80",
+      mobileImageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=400&q=80",
+      badge: "Certified Agro",
       active: true
     }
   );
@@ -2175,13 +2175,13 @@ function FlashSaleModal({
 }) {
   const [formData, setFormData] = useState<Partial<FlashSaleBanner>>(
     flashSale || {
-      title: "Harvest Festival Flash Deal: Premium Groundnut Wood Pressed Oil (5L)",
-      subtitle: "First Cold Pressing • Zero Chemicals • Unrefined Nutty Flavor",
-      badge: "LIMITED HARVEST",
+      title: "Kisan Flash Deal: Harit Bio-Fungicide Trichoderma Viride (5 L)",
+      subtitle: "High CFU Count • Pure Organic Formulation • Complete Root & Wilt Protection",
+      badge: "KISAN SPECIAL",
       endsAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString().slice(0, 16),
-      discountPercentage: 40,
-      targetProductSlug: "wood-pressed-groundnut-oil-5l",
-      bannerImageUrl: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=1200&q=80",
+      discountPercentage: 25,
+      targetProductSlug: "harit-bio-fungicide-5l",
+      bannerImageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=1200&q=80",
       totalStock: 100,
       claimedStock: 84,
       active: true
@@ -2342,7 +2342,7 @@ function FlashSaleModal({
               value={formData.targetProductSlug || ""}
               onChange={e => setFormData({ ...formData, targetProductSlug: e.target.value })}
               className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl font-mono"
-              placeholder="e.g. wood-pressed-groundnut-oil-5l"
+              placeholder="e.g. harit-bio-fungicide-5l"
             />
           </div>
 

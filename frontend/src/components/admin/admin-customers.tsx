@@ -1126,7 +1126,7 @@ function CustomerProfileDrawer({
                 <div>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-300">Live Janani Wallet</span>
                   <p className="text-3xl font-black mt-1">₹{(customer.walletBalance || 0).toLocaleString('en-IN')}</p>
-                  <p className="text-[11px] text-emerald-200/80 mt-1">Available store credit for organic pantry orders</p>
+                  <p className="text-[11px] text-emerald-200/80 mt-1">Available store credit for agricultural bio-input orders</p>
                 </div>
 
                 <button

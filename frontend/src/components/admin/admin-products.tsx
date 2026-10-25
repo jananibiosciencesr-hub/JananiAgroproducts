@@ -1607,7 +1607,7 @@ function ProductFormModal({
                   required
                   value={formData.name}
                   onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder="e.g. Royal Traditional Aged Basmati Rice (5kg)"
+                  placeholder="e.g. Harit Trichoderma Viride (1 L)"
                   className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
                 />
               </div>
@@ -1629,7 +1629,7 @@ function ProductFormModal({
                     required
                     value={formData.slug}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="royal-basmati-rice"
+                    placeholder="harit-trichoderma-1l"
                     className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono outline-none"
                   />
                 </div>
@@ -2835,9 +2835,9 @@ function ProductImportModal({
   if (!isOpen) return null;
 
   const sampleCsv = `Name,SKU,Category,Brand,Price,MRP,Stock,Unit,Description
-"Single Estate Lakadong Turmeric",JAP-TUR-01,Spices,"Janani Gold Reserve",199,249,60,"200g","High 7.5% curcumin turmeric from Meghalaya"
-"Wild Himalayan Raw Forest Honey",JAP-HNY-02,Spices,"Janani Farm Fresh",520,640,40,"500g","Unfiltered monofloral honey from high altitude hives"
-"Organic Pearl Bajra Flour",JAP-BAJ-03,Flours,"Heritage Organic",140,180,80,"1 kg","Stoneground organic pearl millet flour"`;
+"Harit Trichoderma Viride",JAP-BIO-01,Bio-Pesticides,"Janani Agro",450,550,120,"1 L","Biological fungicide for root rot, wilt, and damping off control"
+"Bhumi Shakti Soil Conditioner",JAP-SOIL-02,Bio-Fertilizers,"Janani Agro",750,900,80,"1 L","Liquid organic carbon and humic formulation for enhanced soil aeration"
+"Janani Neem Oil 1000 PPM",JAP-BOT-03,Bio-Pesticides,"Janani Agro",380,480,100,"1 L","Cold-formulated botanical neem deterrent against sucking pests"`;
 
   const handleProcess = () => {
     try {
@@ -2856,13 +2856,13 @@ function ProductImportModal({
           parsed.push({
             name: cols[0],
             sku: cols[1] || `JAP-${Date.now()}`,
-            category: cols[2] || "Organic Staples",
-            brand: cols[3] || "Janani Gold Reserve",
-            price: Number(cols[4]) || 299,
-            originalPrice: Number(cols[5]) || 399,
+            category: cols[2] || "Bio-Fertilizers",
+            brand: cols[3] || "Janani Agro Products",
+            price: Number(cols[4]) || 450,
+            originalPrice: Number(cols[5]) || 550,
             stock: Number(cols[6]) || 50,
-            unit: cols[7] || "1 kg",
-            description: cols[8] || "Farm fresh organic product."
+            unit: cols[7] || "1 L",
+            description: cols[8] || "Certified agricultural bio-input formulation."
           });
         }
       }
@@ -2899,7 +2899,7 @@ function ProductImportModal({
             rows={8}
             value={csvText}
             onChange={(e) => setCsvText(e.target.value)}
-            placeholder={`Name,SKU,Category,Brand,Price,MRP,Stock,Unit,Description\n"Organic Toor Dal",JAP-DAL-01,Pulses,"Janani Gold",199,249,50,"500g","Unpolished unbleached toor dal"`}
+            placeholder={`Name,SKU,Category,Brand,Price,MRP,Stock,Unit,Description\n"Harit Trichoderma Viride",JAP-BIO-01,Bio-Pesticides,"Janani Agro",450,550,100,"1 L","Bio-fungicide formulation"`}
             className="w-full rounded-2xl border border-border bg-background p-3 font-mono text-[11px] outline-none focus:border-emerald-600"
           />
 

@@ -211,6 +211,11 @@ export function LiveTrackingPage() {
     fetchLiveTracking(orderQuery);
   };
 
+  const handlePresetSelect = (presetNumber: string) => {
+    setOrderQuery(presetNumber);
+    fetchLiveTracking(presetNumber);
+  };
+
   useEffect(() => {
     if (orderQuery) {
       fetchLiveTracking(orderQuery);

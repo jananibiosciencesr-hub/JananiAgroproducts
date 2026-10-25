@@ -11,7 +11,7 @@ const PRESET_CHIPS = [
   "Call 10 mins before arrival",
   "Do not ring doorbell",
   "Use plastic-free jute packing",
-  "Include seasonal harvest recipes",
+  "Include crop application & dosage guide",
 ];
 
 export function OrderNotesCard({ orderNotes, onChangeNotes }: OrderNotesCardProps) {

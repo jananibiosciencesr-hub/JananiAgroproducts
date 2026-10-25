@@ -325,8 +325,7 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
         $itemsSubtotal += $lineTotal;
 
         $hsn = '3105';
-        if (stripos($name, 'oil') !== false) $hsn = '1508';
-        elseif (stripos($name, 'ghee') !== false) $hsn = '0405';
+        if (stripos($name, 'neem') !== false || stripos($name, 'harit') !== false || stripos($name, 'pesticide') !== false || stripos($name, 'fungicide') !== false) $hsn = '3808';
         elseif (stripos($name, 'seed') !== false) $hsn = '1209';
 
         $cgst = round($lineTotal * 0.025);
@@ -687,10 +686,8 @@ if (!$pdo) {
             'success' => true,
             'message' => $isOk
                 ? ($email ? "Real-time 6-digit OTP code dispatched to {$email}. Please check your inbox!" : "OTP dispatched to +91 {$phone}")
-                : ($email ? "Gmail SMTP authentication failed. Check your Google App Password in Hostinger, or use Master OTP (123456) to log in." : "OTP dispatched to +91 {$phone}"),
+                : ($email ? "Gmail SMTP delivery failed. Please verify your email or check server settings." : "OTP dispatched to +91 {$phone}"),
             'emailSent' => $isOk,
-            'demoOtpCode' => $otp,
-            'otp' => $otp,
             'delivery' => $delivery,
             'deliveryError' => $isOk ? null : ($delivery['error'] ?? 'Delivery failed'),
             'resendCooldownSeconds' => 60
@@ -707,11 +704,12 @@ if (!$pdo) {
         $target = $email ?: $phone;
 
         $tempOtpFile = sys_get_temp_dir() . '/janani_otp_' . md5($target ?: $email) . '.json';
-        $valid = in_array($otp, ['123456', '1234', '000000', '999999']);
+        $valid = false;
         if (file_exists($tempOtpFile)) {
             $savedData = json_decode(@file_get_contents($tempOtpFile), true);
             if ($savedData && (isset($savedData['otp']) || isset($savedData['code'])) && ((string)($savedData['otp'] ?? $savedData['code']) === $otp) && (time() - ($savedData['time'] ?? 0)) < 900) {
                 $valid = true;
+                @unlink($tempOtpFile);
             }
         }
 
@@ -1015,6 +1013,17 @@ function ensureCategoriesTableSchema($pdo) {
     } catch (Exception $e) {}
 }
 
+function getCategoriesTableRealColumns($pdo) {
+    $existingCols = [];
+    try {
+        $colStmt = $pdo->query("SHOW COLUMNS FROM `categories`");
+        while ($col = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+            $existingCols[strtolower($col['Field'])] = true;
+        }
+    } catch (Exception $e) {}
+    return $existingCols;
+}
+
 function ensureProductsTableSchema($pdo) {
     static $schemaChecked = false;
     if ($schemaChecked) return;
@@ -1186,8 +1195,8 @@ function ensureJananiCatalogSynced($pdo) {
             $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
         }
 
-        // Purge deleted/inactive categories (including others, termeric, and soft-deleted rows)
-        $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric') OR `active` = 0 OR `deleted_at` IS NOT NULL");
+        // Purge legacy unused dummy categories
+        $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric')");
         $pdo->exec("UPDATE `products` SET `category_name` = 'Agri Inputs' WHERE `category_name` = 'Others' OR `category_id` = 'cat-others'");
 
         // 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
@@ -1383,11 +1392,6 @@ try {
                         $upStmt = $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ? OR `email` = ?");
                         $upStmt->execute([$password, $hash, $foundUser['id'], $email]);
                     } catch (Exception $e) {}
-                }
-
-                // Testing bypass
-                if ($password === 'demo1234' || $password === '123456') {
-                    $passwordMatches = true;
                 }
 
                 if (!$passwordMatches) {
@@ -1664,9 +1668,7 @@ try {
                             'emailSent' => false,
                             'deliveryError' => $errText,
                             'delivery' => $emailSent,
-                            'demoOtpCode' => $otp,
-                            'otp' => $otp,
-                            'message' => "Gmail SMTP authentication failed. Check your 16-character Google App Password in Hostinger, or use Master OTP (123456) to log in now.",
+                            'message' => "Gmail SMTP authentication failed. Please check server SMTP configuration.",
                             'resendCooldownSeconds' => 60
                         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
                     }
@@ -1678,12 +1680,10 @@ try {
                     'message' => $email
                         ? ($isEmailDeliveryOk
                             ? "Real-time 6-digit verification code sent to {$email}. Please check your inbox."
-                            : "Email delivery attempt failed. Use Master OTP 123456 or contact admin.")
+                            : "Email delivery attempt failed. Please try again or contact support.")
                         : "Verification code sent to +91 {$phone}. Please check your messages.",
                     'emailSent' => $isEmailDeliveryOk,
                     'delivery' => $emailSent,
-                    'demoOtpCode' => $otp,
-                    'otp' => $otp,
                     'resendCooldownSeconds' => 60
                 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
                 exit;
@@ -1736,11 +1736,6 @@ try {
                             }
                         }
                     } catch (Exception $e) {}
-                }
-
-                // 3. Testing bypass & universal fallback codes
-                if ($cleanOtp === '123456' || $cleanOtp === '1234' || $cleanOtp === '000000' || $cleanOtp === '999999') {
-                    $valid = true;
                 }
 
                 if (!$valid) {
@@ -2182,7 +2177,7 @@ try {
                 // If no ID is provided, this is a CREATE (INSERT) operation:
                 if (empty($rawId)) {
                     // Field Normalization for Admin Form Data
-                    $categoryName = $body['category_name'] ?? ($body['category'] ?? 'Cold Pressed Oils');
+                    $categoryName = $body['category_name'] ?? ($body['category'] ?? 'Bio-Fertilizers');
                     $price = isset($body['price']) ? (float)$body['price'] : 0.0;
                     $oldPrice = isset($body['old_price']) ? (float)$body['old_price'] : (isset($body['originalPrice']) ? (float)$body['originalPrice'] : (isset($body['oldPrice']) ? (float)$body['oldPrice'] : null));
                     $stock = isset($body['stock']) ? (int)$body['stock'] : (isset($body['warehouseStock']) ? (int)$body['warehouseStock'] : 50);
@@ -2349,7 +2344,7 @@ try {
                                 $pSlug = !empty($p['slug']) ? $p['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $pName), '-'));
                                 $pPrice = (float)($p['price'] ?? 0);
                                 $pOldPrice = isset($p['old_price']) ? (float)$p['old_price'] : (isset($p['originalPrice']) ? (float)$p['originalPrice'] : null);
-                                $pCategory = $p['category_name'] ?? ($p['category'] ?? 'Cold Pressed Oils');
+                                $pCategory = $p['category_name'] ?? ($p['category'] ?? 'Bio-Fertilizers');
                                 $pStock = (int)($p['stock'] ?? ($p['warehouseStock'] ?? 50));
                                 $pUnit = $p['unit'] ?? '1 kg';
                                 $pSku = $p['sku'] ?? ('JAP-' . rand(1000, 9999));
@@ -2836,32 +2831,44 @@ try {
                         $metaKeywords = $seo['metaKeywords'] ?? ($body['meta_keywords'] ?? '');
                         $canonicalUrl = $seo['canonicalUrl'] ?? ($body['canonical_url'] ?? "https://jananiagroproducts.com/categories/{$slug}");
 
-                        $stmt = $pdo->prepare("INSERT INTO `categories` (
-                            `id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`,
-                            `product_count`, `active`, `featured`, `trending`, `display_order`, `description`,
-                            `meta_title`, `meta_description`, `meta_keywords`, `canonical_url`
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON DUPLICATE KEY UPDATE 
-                            `name` = VALUES(`name`), 
-                            `image` = VALUES(`image`), 
-                            `banner_image` = VALUES(`banner_image`), 
-                            `icon` = VALUES(`icon`), 
-                            `active` = VALUES(`active`), 
-                            `featured` = VALUES(`featured`), 
-                            `trending` = VALUES(`trending`), 
-                            `display_order` = VALUES(`display_order`), 
-                            `description` = VALUES(`description`),
-                            `meta_title` = VALUES(`meta_title`),
-                            `meta_description` = VALUES(`meta_description`),
-                            `meta_keywords` = VALUES(`meta_keywords`),
-                            `canonical_url` = VALUES(`canonical_url`),
-                            `deleted_at` = NULL");
+                        $realCols = getCategoriesTableRealColumns($pdo);
+                        $insCols = ['`id`', '`name`', '`slug`'];
+                        $insVals = [$catId, $name, $slug];
+                        $insMarks = ['?', '?', '?'];
+                        $updateParts = ['`name` = VALUES(`name`)'];
 
-                        $stmt->execute([
-                            $catId, $name, $slug, $levelVal, $parentId, $parentName, $image, $bannerImage, $icon,
-                            $active, $featured, $trending, $displayOrder, $description,
-                            $metaTitle, $metaDesc, $metaKeywords, $canonicalUrl
-                        ]);
+                        $colMap = [
+                            'level' => $levelVal,
+                            'parent_id' => $parentId,
+                            'parent_name' => $parentName,
+                            'image' => $image,
+                            'banner_image' => $bannerImage,
+                            'icon' => $icon,
+                            'active' => $active,
+                            'featured' => $featured,
+                            'trending' => $trending,
+                            'display_order' => $displayOrder,
+                            'description' => $description,
+                            'meta_title' => $metaTitle,
+                            'meta_description' => $metaDesc,
+                            'meta_keywords' => $metaKeywords,
+                            'canonical_url' => $canonicalUrl
+                        ];
+
+                        foreach ($colMap as $col => $val) {
+                            if (isset($realCols[$col])) {
+                                $insCols[] = "`{$col}`";
+                                $insVals[] = $val;
+                                $insMarks[] = '?';
+                                $updateParts[] = "`{$col}` = VALUES(`{$col}`)";
+                            }
+                        }
+                        if (isset($realCols['deleted_at'])) {
+                            $updateParts[] = '`deleted_at` = NULL';
+                        }
+
+                        $stmt = $pdo->prepare("INSERT INTO `categories` (" . implode(', ', $insCols) . ") VALUES (" . implode(', ', $insMarks) . ") ON DUPLICATE KEY UPDATE " . implode(', ', $updateParts));
+                        $stmt->execute($insVals);
 
                         $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
                         $fetchStmt->execute([$catId, $slug]);
@@ -3023,98 +3030,112 @@ try {
                     if (isset($body['trending'])) {
                         $body['trending'] = ($body['trending'] === true || $body['trending'] === 1 || $body['trending'] === '1') ? 1 : 0;
                     }
+                    if (isset($body['parent_id']) && $body['parent_id'] === '') {
+                        $body['parent_id'] = null;
+                    }
 
                     ensureCategoriesTableSchema($pdo);
+                    $realCols = getCategoriesTableRealColumns($pdo);
                     try {
-                        $fields = [];
-                        $vals = [];
-                        $allowed = ['name', 'slug', 'level', 'parent_id', 'parent_name', 'image', 'banner_image', 'icon', 'active', 'featured', 'trending', 'display_order', 'description', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url'];
+                        // Locate existing category in database flexibly
+                        $existingCat = null;
+                        $candidates = array_values(array_unique(array_filter([
+                            $id,
+                            $rawId,
+                            $body['id'] ?? null,
+                            $body['targetId'] ?? null,
+                            $body['slug'] ?? null,
+                            strpos($id, 'cat-') === 0 ? substr($id, 4) : ('cat-' . $id),
+                            !empty($rawId) && strpos($rawId, 'cat-') === 0 ? substr($rawId, 4) : ('cat-' . $rawId)
+                        ])));
 
-                        foreach ($allowed as $f) {
-                            if (array_key_exists($f, $body)) {
-                                $fields[] = "`{$f}` = ?";
-                                $vals[] = $body[$f];
+                        foreach ($candidates as $cand) {
+                            if (!$cand) continue;
+                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                            $fStmt->execute([$cand, $cand]);
+                            $found = $fStmt->fetch();
+                            if ($found) {
+                                $existingCat = $found;
+                                break;
                             }
                         }
 
-                        if (isset($body['bannerImage']) && !isset($body['banner_image'])) {
-                            $fields[] = "`banner_image` = ?";
-                            $vals[] = $body['bannerImage'];
-                        }
-                        if (isset($body['seo']['metaTitle']) && !isset($body['meta_title'])) {
-                            $fields[] = "`meta_title` = ?";
-                            $vals[] = $body['seo']['metaTitle'];
-                        }
-                        if (isset($body['seo']['metaDescription']) && !isset($body['meta_description'])) {
-                            $fields[] = "`meta_description` = ?";
-                            $vals[] = $body['seo']['metaDescription'];
-                        }
-                        if (isset($body['seo']['metaKeywords']) && !isset($body['meta_keywords'])) {
-                            $fields[] = "`meta_keywords` = ?";
-                            $vals[] = $body['seo']['metaKeywords'];
-                        }
-                        if (isset($body['seo']['canonicalUrl']) && !isset($body['canonical_url'])) {
-                            $fields[] = "`canonical_url` = ?";
-                            $vals[] = $body['seo']['canonicalUrl'];
-                        }
-
-                        // Locate existing category in database flexibly
-                        $existingCat = null;
-                        $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? LIMIT 1");
-                        $fStmt->execute([$id]);
-                        $existingCat = $fStmt->fetch();
-                        if (!$existingCat) {
-                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `slug` = ? LIMIT 1");
-                            $fStmt->execute([$id]);
-                            $existingCat = $fStmt->fetch();
-                        }
-                        if (!$existingCat && !empty($body['slug'])) {
-                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `slug` = ? LIMIT 1");
-                            $fStmt->execute([$body['slug']]);
-                            $existingCat = $fStmt->fetch();
-                        }
                         if (!$existingCat && !empty($body['name'])) {
                             $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `name` = ? OR LOWER(`name`) = LOWER(?) LIMIT 1");
                             $fStmt->execute([$body['name'], $body['name']]);
                             $existingCat = $fStmt->fetch();
                         }
-                        if (!$existingCat && strpos($id, 'cat-') !== 0) {
-                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                            $fStmt->execute(['cat-' . $id, 'cat-' . $id]);
-                            $existingCat = $fStmt->fetch();
-                        }
-                        if (!$existingCat && strpos($id, 'cat-') === 0) {
-                            $rawStrip = substr($id, 4);
-                            $fStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
-                            $fStmt->execute([$rawStrip, $rawStrip]);
-                            $existingCat = $fStmt->fetch();
-                        }
 
-                        if ($existingCat && !empty($fields)) {
+                        if ($existingCat) {
                             $targetId = $existingCat['id'];
-                            $vals[] = $targetId;
-                            $upStmt = $pdo->prepare("UPDATE `categories` SET " . implode(', ', $fields) . " WHERE `id` = ?");
-                            $upStmt->execute($vals);
 
-                            // Cascade category name changes to products and subcategories
-                            if (!empty($body['name']) && $existingCat['name'] !== $body['name']) {
-                                try {
-                                    $oldName = $existingCat['name'];
-                                    $newName = trim($body['name']);
-                                    $pUp = $pdo->prepare("UPDATE `products` SET `category_name` = ? WHERE `category_name` = ? OR `category_id` = ?");
-                                    $pUp->execute([$newName, $oldName, $targetId]);
-
-                                    $cUp = $pdo->prepare("UPDATE `categories` SET `parent_name` = ? WHERE `parent_id` = ? OR `parent_name` = ?");
-                                    $cUp->execute([$newName, $targetId, $oldName]);
-                                } catch (Exception $e) {}
+                            // Check slug uniqueness against other categories
+                            if (!empty($body['slug'])) {
+                                $checkSlug = trim($body['slug']);
+                                $chkStmt = $pdo->prepare("SELECT `id` FROM `categories` WHERE `slug` = ? AND `id` != ? LIMIT 1");
+                                $chkStmt->execute([$checkSlug, $targetId]);
+                                if ($chkStmt->fetch()) {
+                                    $body['slug'] = $checkSlug . '-' . substr(md5(uniqid()), 0, 4);
+                                }
                             }
 
-                            // If category slug changed, cascade to products if column exists
-                            if (!empty($body['slug']) && $existingCat['slug'] !== $body['slug']) {
-                                try {
-                                    $pUpSlug = $pdo->prepare("UPDATE `products` SET `category_slug` = ? WHERE `category_slug` = ? OR `category_name` = ?");
-                                    $pUpSlug->execute([trim($body['slug']), $existingCat['slug'], $existingCat['name']]);
-                                } catch (Exception $e) {}
+                            $fields = [];
+                            $vals = [];
+                            $allowed = ['name', 'slug', 'level', 'parent_id', 'parent_name', 'image', 'banner_image', 'icon', 'active', 'featured', 'trending', 'display_order', 'description', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url'];
+
+                            foreach ($allowed as $f) {
+                                if (array_key_exists($f, $body) && isset($realCols[$f])) {
+                                    $fields[] = "`{$f}` = ?";
+                                    $vals[] = $body[$f];
+                                }
+                            }
+
+                            if (isset($body['bannerImage']) && !isset($body['banner_image']) && isset($realCols['banner_image'])) {
+                                $fields[] = "`banner_image` = ?";
+                                $vals[] = $body['bannerImage'];
+                            }
+                            if (isset($body['seo']['metaTitle']) && !isset($body['meta_title']) && isset($realCols['meta_title'])) {
+                                $fields[] = "`meta_title` = ?";
+                                $vals[] = $body['seo']['metaTitle'];
+                            }
+                            if (isset($body['seo']['metaDescription']) && !isset($body['meta_description']) && isset($realCols['meta_description'])) {
+                                $fields[] = "`meta_description` = ?";
+                                $vals[] = $body['seo']['metaDescription'];
+                            }
+                            if (isset($body['seo']['metaKeywords']) && !isset($body['meta_keywords']) && isset($realCols['meta_keywords'])) {
+                                $fields[] = "`meta_keywords` = ?";
+                                $vals[] = $body['seo']['metaKeywords'];
+                            }
+                            if (isset($body['seo']['canonicalUrl']) && !isset($body['canonical_url']) && isset($realCols['canonical_url'])) {
+                                $fields[] = "`canonical_url` = ?";
+                                $vals[] = $body['seo']['canonicalUrl'];
+                            }
+
+                            if (!empty($fields)) {
+                                $vals[] = $targetId;
+                                $upStmt = $pdo->prepare("UPDATE `categories` SET " . implode(', ', $fields) . " WHERE `id` = ?");
+                                $upStmt->execute($vals);
+
+                                // Cascade category name changes to products and subcategories
+                                if (!empty($body['name']) && $existingCat['name'] !== $body['name']) {
+                                    try {
+                                        $oldName = $existingCat['name'];
+                                        $newName = trim($body['name']);
+                                        $pUp = $pdo->prepare("UPDATE `products` SET `category_name` = ? WHERE `category_name` = ? OR `category_id` = ?");
+                                        $pUp->execute([$newName, $oldName, $targetId]);
+
+                                        $cUp = $pdo->prepare("UPDATE `categories` SET `parent_name` = ? WHERE `parent_id` = ? OR `parent_name` = ?");
+                                        $cUp->execute([$newName, $targetId, $oldName]);
+                                    } catch (Exception $e) {}
+                                }
+
+                                // If category slug changed, cascade to products if column exists
+                                if (!empty($body['slug']) && $existingCat['slug'] !== $body['slug']) {
+                                    try {
+                                        $pUpSlug = $pdo->prepare("UPDATE `products` SET `category_slug` = ? WHERE `category_slug` = ? OR `category_name` = ?");
+                                        $pUpSlug->execute([trim($body['slug']), $existingCat['slug'], $existingCat['name']]);
+                                    } catch (Exception $e) {}
+                                }
                             }
 
                             $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? LIMIT 1");
@@ -3122,20 +3143,20 @@ try {
                             $updated = $fetchStmt->fetch();
 
                             if ($updated) {
-                                $updated['parentId'] = $updated['parent_id'];
-                                $updated['parentName'] = $updated['parent_name'];
-                                $updated['bannerImage'] = $updated['banner_image'];
+                                $updated['parentId'] = $updated['parent_id'] ?? null;
+                                $updated['parentName'] = $updated['parent_name'] ?? null;
+                                $updated['bannerImage'] = $updated['banner_image'] ?? ($updated['image'] ?? '');
                                 $updated['productCount'] = (int)($updated['product_count'] ?? 0);
                                 $updated['productsCount'] = (int)($updated['product_count'] ?? 0);
                                 $updated['orderIndex'] = (int)($updated['display_order'] ?? 0);
                                 $updated['active'] = (bool)$updated['active'];
-                                $updated['featured'] = (bool)$updated['featured'];
-                                $updated['trending'] = (bool)$updated['trending'];
+                                $updated['featured'] = (bool)($updated['featured'] ?? 0);
+                                $updated['trending'] = (bool)($updated['trending'] ?? 0);
                                 $lvl = (int)($updated['level'] ?? 1);
                                 $updated['level'] = $lvl === 2 ? 'sub' : ($lvl === 3 ? 'child' : 'root');
                                 $updated['seo'] = [
                                     'metaTitle' => $updated['meta_title'] ?? ($updated['name'] . ' | JANANI AGRO'),
-                                    'metaDescription' => $updated['meta_description'] ?? $updated['description'] ?? '',
+                                    'metaDescription' => $updated['meta_description'] ?? ($updated['description'] ?? ''),
                                     'metaKeywords' => $updated['meta_keywords'] ?? '',
                                     'canonicalUrl' => $updated['canonical_url'] ?? ('https://jananiagro.com/categories/' . $updated['slug']),
                                     'ogImage' => $updated['image'] ?? ''
@@ -3144,17 +3165,17 @@ try {
 
                             echo json_encode([
                                 'success' => true,
-                                'message' => 'Category updated successfully in MySQL',
+                                'message' => 'Category updated successfully in MySQL database',
                                 'data' => $updated,
                                 'category' => $updated
                             ]);
                             exit;
-                        } elseif (!$existingCat) {
+                        } else {
                             $cName = $body['name'] ?? 'New Category';
-                            $cSlug = !empty($body['slug']) ? $body['slug'] : (!empty($id) ? $id : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $cName), '-')));
-                            $cId = !empty($id) ? $id : ('cat-' . $cSlug);
+                            $cSlug = !empty($body['slug']) ? trim($body['slug']) : (!empty($id) ? $id : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $cName), '-')));
+                            $cId = !empty($body['id']) ? $body['id'] : (!empty($id) ? $id : ('cat-' . $cSlug));
                             $cLevel = isset($body['level']) ? (int)$body['level'] : 1;
-                            $cParentId = $body['parent_id'] ?? null;
+                            $cParentId = !empty($body['parent_id']) ? $body['parent_id'] : null;
                             $cParentName = $body['parent_name'] ?? null;
                             $cImage = $body['image'] ?? '/images/categories/placeholder.webp';
                             $cBanner = $body['bannerImage'] ?? ($body['banner_image'] ?? $cImage);
@@ -3165,11 +3186,34 @@ try {
                             $cOrder = isset($body['display_order']) ? (int)$body['display_order'] : 0;
                             $cDesc = $body['description'] ?? '';
 
-                            $insStmt = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `banner_image`, `icon`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)");
-                            $insStmt->execute([
-                                $cId, $cName, $cSlug, $cLevel, $cParentId, $cParentName, $cImage, $cBanner, $cIcon,
-                                $cActive, $cFeatured, $cTrending, $cOrder, $cDesc
-                            ]);
+                            $insCols = ['`id`', '`name`', '`slug`'];
+                            $insVals = [$cId, $cName, $cSlug];
+                            $insMarks = ['?', '?', '?'];
+
+                            $map = [
+                                'level' => $cLevel,
+                                'parent_id' => $cParentId,
+                                'parent_name' => $cParentName,
+                                'image' => $cImage,
+                                'banner_image' => $cBanner,
+                                'icon' => $cIcon,
+                                'active' => $cActive,
+                                'featured' => $cFeatured,
+                                'trending' => $cTrending,
+                                'display_order' => $cOrder,
+                                'description' => $cDesc
+                            ];
+
+                            foreach ($map as $col => $val) {
+                                if (isset($realCols[$col])) {
+                                    $insCols[] = "`{$col}`";
+                                    $insVals[] = $val;
+                                    $insMarks[] = '?';
+                                }
+                            }
+
+                            $insStmt = $pdo->prepare("INSERT INTO `categories` (" . implode(', ', $insCols) . ") VALUES (" . implode(', ', $insMarks) . ")");
+                            $insStmt->execute($insVals);
 
                             $fetchStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
                             $fetchStmt->execute([$cId, $cSlug]);
@@ -3177,7 +3221,7 @@ try {
 
                             echo json_encode([
                                 'success' => true,
-                                'message' => 'Category saved successfully in MySQL',
+                                'message' => 'Category saved successfully in MySQL database',
                                 'data' => $created,
                                 'category' => $created
                             ]);
@@ -4837,7 +4881,7 @@ try {
                         'customerEmail' => 'suresh.reddy@gmail.com',
                         'customerPhone' => '+91 98489 11223',
                         'cartAmount' => 1450.00,
-                        'cartItems' => 'Organic Cold-Pressed Groundnut Oil (2L) × 1',
+                        'cartItems' => 'Harit (1 L) × 2 + Bhumi Shakti (1 L) × 1',
                         'failureReason' => 'Bank OTP timeout / Network drop',
                         'errorCode' => 'BAD_REQUEST_ERROR',
                         'failedAt' => date('d M Y, H:i', strtotime('-2 hours')),
@@ -5656,7 +5700,7 @@ try {
             } catch (Exception $e) {}
 
             // Top product
-            $topProdName = "Cold Pressed Groundnut Oil";
+            $topProdName = "Harit Bio-Fungicide";
             try {
                 $tp = $pdo->query("SELECT name FROM `products` WHERE active = 1 AND status != 'Trash' ORDER BY price DESC LIMIT 1")->fetch();
                 if ($tp && !empty($tp['name'])) $topProdName = $tp['name'];
@@ -5766,13 +5810,13 @@ try {
                     'brandPrimaryColor' => '#15803d',
                     'brandSecondaryColor' => '#ca8a04',
                     'emailHeaderBannerUrl' => '/images/email-banner.png',
-                    'invoiceWatermarkText' => 'JANANI AGRO PRODUCTS - CERTIFIED ORGANIC',
+                    'invoiceWatermarkText' => 'JANANI AGRO PRODUCTS - CERTIFIED BIO-INPUTS',
                     'customerAppBanner' => '/images/app-banner.webp'
                 ]),
                 'seo' => $settings['settings_seo'] ?? ($settings['seo'] ?? [
-                    'metaTitle' => 'Janani Agro Products | 100% Certified Organic Farm-to-Fork Staples',
-                    'metaDescription' => 'Shop certified cold-pressed oils, single-origin desi spices, organic pulses, pure A2 Gir cow bilona ghee, and unpolished heirloom grains straight from regenerative Gujarat farms.',
-                    'metaKeywords' => 'organic cold pressed oil, gir cow ghee, organic spices, wood pressed oil, raw honey, chemical free pulses',
+                    'metaTitle' => 'Janani Agro Products | Certified Bio-Fertilizers & Crop Formulations',
+                    'metaDescription' => 'Shop certified bio-fertilizers, bio-pesticides, Trichoderma viride, humic acid, bio-stimulants, and organic agricultural formulations for sustainable farming and bumper yields.',
+                    'metaKeywords' => 'bio fertilizers, bio pesticides, trichoderma viride, humic acid, neem oil 1000 ppm, organic farming, agricultural inputs, crop nutrition',
                     'canonicalBaseUrl' => 'https://jananiagroproducts.com',
                     'ogImageUrl' => 'https://jananiagroproducts.com/og-image.jpg',
                     'ogType' => 'website',

@@ -279,7 +279,7 @@ function DashboardPage() {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
-            <Link to="/login">Sign In / Register with OTP</Link>
+            <Link to="/login" search={{ redirect: "/dashboard" }}>Sign In / Register with OTP</Link>
           </Button>
           <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
             <Link to="/products">Explore Harvest Products</Link>
@@ -335,6 +335,7 @@ function DashboardPage() {
           ) : (
             <Link
               to="/login"
+              search={{ redirect: "/dashboard" }}
               className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-white/25 active:bg-white/30 border border-white/35 hover:border-white/60 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
             >
               <User className="size-3.5 text-white/90 group-hover:scale-110 transition-transform duration-200" />
@@ -434,9 +435,9 @@ function DashboardPage() {
                     <ShoppingBag className="size-8" />
                   </div>
                   <div>
-                    <h3 className="font-display text-lg font-bold text-foreground">No Harvest Orders Yet</h3>
+                    <h3 className="font-display text-lg font-bold text-foreground">No Crop Orders Yet</h3>
                     <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
-                      Explore our single-origin cold-pressed oils, bio-inputs, and certified organic agricultural staples.
+                      Explore our certified bio-fertilizers, bio-fungicides, and agricultural crop protection inputs.
                     </p>
                   </div>
                   <Button asChild variant="gold" size="sm" className="rounded-full px-6 font-bold shadow-md">
@@ -675,7 +676,7 @@ function DashboardPage() {
             paymentMethod: selectedInvoiceOrder.paymentMethod || "Razorpay (Online)",
             customerName: selectedInvoiceOrder.address?.fullName || userName || "Valued Patron",
             customerPhone: selectedInvoiceOrder.address?.phone || userPhone || "",
-            customerEmail: selectedInvoiceOrder.customerEmail || selectedInvoiceOrder.address?.email || user?.email || "",
+            customerEmail: selectedInvoiceOrder.customerEmail || (selectedInvoiceOrder.address as any)?.email || user?.email || "",
             customerAddress: selectedInvoiceOrder.address
               ? `${selectedInvoiceOrder.address.streetAddress || ""}, ${selectedInvoiceOrder.address.city || ""}, ${selectedInvoiceOrder.address.state || ""} - ${selectedInvoiceOrder.address.pincode || ""}`
               : "Registered Delivery Address",

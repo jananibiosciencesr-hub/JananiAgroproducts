@@ -46,7 +46,7 @@ function BecomeDistributorPage() {
     message: "",
   });
 
-  const [errors, setErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
+  const [errors, setErrors] = useState<{ phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined }>({});
   const [touched, setTouched] = useState<{ phone: boolean; email: boolean }>({
     phone: false,
     email: false,
@@ -131,7 +131,7 @@ function BecomeDistributorPage() {
     const phoneRes = validatePhone(form.phone);
     const emailRes = validateEmail(form.email);
 
-    const newErrors: { phone?: string; email?: string; emailSuggestion?: string } = {};
+    const newErrors: { phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined } = {};
     if (!phoneRes.isValid) newErrors.phone = phoneRes.error;
     if (!emailRes.isValid) {
       newErrors.email = emailRes.error;
@@ -199,8 +199,8 @@ function BecomeDistributorPage() {
     <>
       <PageHero
         eyebrow="Commercial Partnership"
-        title="Distribute Pure Organic Harvests"
-        copy="Join India's fastest growing premium organic agriculture brand. Expand your business with certified pure grains, cold-pressed oils, native pulses, and spices sourced directly from Gujarat."
+        title="Distribute Certified Agricultural Bio-Inputs"
+        copy="Join India's fastest growing agricultural bio-inputs network. Expand your dealership with certified Trichoderma viride bio-fungicides, humic soil conditioners, and botanical pest deterrents manufactured in Gujarat."
         image={heroImage}
       >
         <div className="flex flex-wrap gap-4">

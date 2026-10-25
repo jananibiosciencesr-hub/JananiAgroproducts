@@ -193,9 +193,9 @@ export function AdminOverview({
   ].filter(p => p.value > 0 || liveOrders.length === 0);
 
   const defaultTopCategories = charts?.topCategories || [
-    { category: "Cold Pressed Oils", revenue: Math.round(totalSales * 0.45), units: Math.max(1, totalOrdersCount) },
-    { category: "A2 Vedic Ghee", revenue: Math.round(totalSales * 0.35), units: Math.max(1, totalOrdersCount) },
-    { category: "Organic Staples", revenue: Math.round(totalSales * 0.20), units: Math.max(1, totalOrdersCount) }
+    { category: "Bio-Fertilizers & Stimulants", revenue: Math.round(totalSales * 0.45), units: Math.max(1, totalOrdersCount) },
+    { category: "Bio-Pesticides & Fungicides", revenue: Math.round(totalSales * 0.35), units: Math.max(1, totalOrdersCount) },
+    { category: "Micro Nutrients & Sprays", revenue: Math.round(totalSales * 0.20), units: Math.max(1, totalOrdersCount) }
   ];
 
   const defaultWeeklySales = charts?.weeklySales || [
@@ -654,10 +654,10 @@ export function AdminOverview({
             {(liveReviews.length > 0
               ? liveReviews.slice(0, 4)
               : [
-                  { productName: "A2 Vedic Gir Cow Ghee", author: "Pooja Hegde", rating: 5, comment: "Authentic bilona aroma and golden grainy texture. Truly traditional." },
-                  { productName: "Cold Pressed Groundnut Oil", author: "Arun Verma", rating: 5, comment: "Pure unrefined quality. Great smoking point for traditional cooking." },
-                  { productName: "Lakadong Turmeric Powder", author: "Narayanan S.", rating: 5, comment: "High curcumin potency and rich golden color." },
-                  { productName: "Royal Aged Basmati Rice", author: "Divya Nair", rating: 5, comment: "Extraordinary aroma and pristine elongation. Best organic basmati." }
+                  { productName: "Harit (1 L) — Trichoderma Viride", author: "Ramesh Patel", rating: 5, comment: "Controlled root rot completely in our groundnut fields. High spore count." },
+                  { productName: "Bhumi Shakti (1 L) — Soil Conditioner", author: "Suresh Reddy", rating: 5, comment: "Excellent humus and root aeration. Chilli foliage is vigorous and deep green." },
+                  { productName: "Neem Oil 1000 PPM (1 L) — Pest Shield", author: "Balram Choudhary", rating: 5, comment: "High azadirachtin potency. Repelled whiteflies and thrips effectively." },
+                  { productName: "Dharani (1 L) — Root Growth Promoter", author: "Venkatesh Rao", rating: 5, comment: "Dense feeder root development in paddy nursery within 7 days." }
                 ]
             ).map((r: any, idx: number) => (
               <div key={idx} className="p-4 rounded-2xl bg-muted/30 border border-border/60 flex flex-col justify-between">

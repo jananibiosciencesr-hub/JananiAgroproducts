@@ -1002,7 +1002,7 @@ export function ReportsManagement({ searchQuery: propSearchQuery }: { searchQuer
           <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
             <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               <Building className="w-4 h-4 text-emerald-600" />
-              <span>HSN Code Wise Tax Breakdown (Oils, Millets, Rice, Honey, Ghee, Jaggery)</span>
+              <span>HSN Code Wise Tax Breakdown (Bio-Fertilizers 3105, Bio-Pesticides 3808, Agro Formulations)</span>
             </h4>
 
             <div className="overflow-x-auto">
