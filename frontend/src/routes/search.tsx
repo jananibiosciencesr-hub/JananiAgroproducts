@@ -9,8 +9,7 @@ import {
   X,
   Mic,
   Clock,
-  Flame,
-  Sparkles,
+Sparkles,
   Boxes,
   Tag,
   Star,
@@ -46,25 +45,6 @@ export const Route = createFileRoute("/search")({
   }),
   component: SearchPage,
 });
-
-const trendingSearches = [
-  "Bhumi Shakti",
-  "Harit Trichoderma",
-  "Neem Oil 1000 PPM",
-  "Pushkal Fruit Set",
-  "Dharani KMB",
-  "Balavan Bacillus",
-  "Bio Fertilizers",
-  "Bio Fungicides",
-];
-
-const aiCropSuggestions = [
-  { label: "Paddy Blast & Blight", query: "Harit", badge: "Trichoderma Viride" },
-  { label: "Soil Carbon & Roots", query: "Bhumi Shakti", badge: "Humic & Fulvic Acid" },
-  { label: "Sucking Pest Defense", query: "Neem Oil 1000 PPM", badge: "Botanical Azadirachtin" },
-  { label: "Flower & Fruit Setting", query: "Pushkal", badge: "Seaweed Biostimulant" },
-  { label: "Potassium Uptake", query: "Dharani KMB", badge: "K-Mobilizing Bio-Fertilizer" },
-];
 
 const allBrands = [
   "Janani Agro Products",
@@ -245,21 +225,10 @@ function SearchPage() {
     (query ? 1 : 0);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-      {/* Search Header Hero */}
-      <div className="mx-auto max-w-3xl text-center space-y-3">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3.5 py-1 text-xs font-bold uppercase tracking-wider">
-          <Sparkles className="size-3.5" /> AI Smart Agronomy & Product Discovery
-        </span>
-        <h1 className="font-display text-3xl font-bold sm:text-4xl text-foreground">
-          Find Certified Bio-Inputs & Crop Solutions
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground max-w-none mx-auto lg:whitespace-nowrap hyphens-none">
-          Search with real-time text, voice recognition, or AI crop suggestions across certified bio-fertilizers, pesticides, and biostimulants.
-        </p>
-
-        {/* Global Smart Search Bar */}
-        <div className="relative mt-8">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 sm:pb-16">
+      {/* Global Smart Search Bar */}
+      <div className="mx-auto max-w-3xl">
+        <div className="relative">
           <SearchIcon className="absolute left-5 top-4 size-5 text-brand-leaf" />
           <input
             type="text"
@@ -277,7 +246,7 @@ function SearchPage() {
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+                className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition cursor-pointer"
                 title="Clear input"
               >
                 <X className="size-4" />
@@ -287,97 +256,19 @@ function SearchPage() {
             {/* Voice Search Button */}
             <button
               onClick={() => setIsVoiceOpen(true)}
-              className="size-9 rounded-full bg-primary/10 text-brand-leaf hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition shadow-xs"
+              className="size-9 rounded-full bg-primary/10 text-brand-leaf hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition shadow-xs cursor-pointer"
               title="Voice Search"
             >
               <Mic className="size-4.5" />
             </button>
           </div>
         </div>
-
-        {/* Recent Searches Pills (if any) */}
-        {recentSearches.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-            <span className="text-muted-foreground flex items-center gap-1 font-semibold">
-              <Clock className="size-3.5 text-brand-leaf" /> Recent:
-            </span>
-            {recentSearches.map((item) => (
-              <div
-                key={item}
-                className="inline-flex items-center rounded-full border border-border bg-card px-3 py-0.5 text-xs font-medium text-foreground hover:border-primary transition"
-              >
-                <button onClick={() => handleApplyQuery(item)} className="mr-1.5 hover:text-primary">
-                  {item}
-                </button>
-                <button
-                  onClick={() => removeRecent(item)}
-                  className="text-muted-foreground hover:text-destructive"
-                  title="Remove"
-                >
-                  <X className="size-2.5" />
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={clearRecents}
-              className="text-[11px] text-muted-foreground hover:text-destructive underline ml-1"
-            >
-              Clear
-            </button>
-          </div>
-        )}
-
-        {/* Trending Searches Row */}
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs">
-          <span className="text-muted-foreground flex items-center gap-1 font-semibold">
-            <Flame className="size-3.5 text-amber-500 fill-amber-500" /> Trending:
-          </span>
-          {trendingSearches.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => handleApplyQuery(tag)}
-              className={`rounded-full border px-3 py-0.5 text-xs font-medium transition ${
-                query.toLowerCase() === tag.toLowerCase()
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border bg-secondary/70 text-foreground/80 hover:bg-primary hover:text-primary-foreground"
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-
-        {/* AI Crop Health Recommendation Strip */}
-        <div className="mt-6 rounded-3xl border border-primary/20 bg-primary/5 p-4 text-left">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="size-4 text-brand-gold" />
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">
-              AI Crop Health & Disease Solutions
-            </span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {aiCropSuggestions.map((s) => (
-              <button
-                key={s.label}
-                onClick={() => handleApplyQuery(s.query)}
-                className="flex flex-col p-2.5 rounded-2xl border border-border bg-card hover:bg-primary hover:text-primary-foreground transition group text-left"
-              >
-                <span className="text-xs font-bold text-foreground group-hover:text-primary-foreground">
-                  {s.label}
-                </span>
-                <span className="text-[10px] text-muted-foreground group-hover:text-primary-foreground/80 mt-0.5 truncate">
-                  {s.badge}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Main Content Area: Sidebar Filters & Results */}
-      <div className="mt-12 grid gap-8 lg:grid-cols-[260px_1fr] items-start">
+      <div className="mt-6 sm:mt-8 grid gap-6 sm:gap-8 lg:grid-cols-[260px_1fr] items-start">
         {/* Desktop Filter Sidebar */}
-        <aside className="space-y-6 rounded-3xl border border-border bg-card p-6 shadow-soft h-fit sticky top-28">
+        <aside className="space-y-6 rounded-3xl border border-border bg-card p-6 shadow-soft h-fit sticky-sidebar lg:sticky lg:top-24 self-start z-10" style={{ position: "sticky", top: "5.5rem", alignSelf: "flex-start" }}>
           <div className="flex items-center justify-between border-b border-border pb-3">
             <h3 className="flex items-center gap-2 font-display font-semibold text-base">
               <SlidersHorizontal className="size-4 text-primary" /> Search Filters
