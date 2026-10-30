@@ -623,14 +623,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           });
           return;
         }
+        const idStr = String(id).trim();
+        const baseId = idStr.includes("__") ? idStr.split("__")[0] : idStr;
+        const numId = Number(baseId);
+
+        const matched =
+          liveProducts.find((p) => (!isNaN(numId) && Number(p.id) === numId) || String(p.id).toLowerCase() === baseId.toLowerCase() || p.slug.toLowerCase() === baseId.toLowerCase()) ||
+          initialProducts.find((p) => (!isNaN(numId) && Number(p.id) === numId) || String(p.id).toLowerCase() === baseId.toLowerCase() || p.slug.toLowerCase() === baseId.toLowerCase());
+
+        const possibleKeys = new Set();
+        possibleKeys.add(idStr.toLowerCase());
+        possibleKeys.add(baseId.toLowerCase());
+        if (!isNaN(numId)) possibleKeys.add(String(numId));
+        if (matched) {
+          possibleKeys.add(String(matched.id).toLowerCase());
+          possibleKeys.add(matched.slug.toLowerCase());
+        }
+
         setWishlist((current) => {
-          const isPresent = current.some((item) => String(item) === String(id) || Number(item) === Number(id));
+          const isPresent = current.some((item) => {
+            const itemStr = String(item).toLowerCase().trim();
+            const itemBase = itemStr.includes("__") ? itemStr.split("__")[0] : itemStr;
+            return possibleKeys.has(itemStr) || possibleKeys.has(itemBase);
+          });
           if (isPresent) {
             toast.info("Removed from your saved wishlist");
-            return current.filter((item) => String(item) !== String(id) && Number(item) !== Number(id));
+            return current.filter((item) => {
+              const itemStr = String(item).toLowerCase().trim();
+              const itemBase = itemStr.includes("__") ? itemStr.split("__")[0] : itemStr;
+              return !possibleKeys.has(itemStr) && !possibleKeys.has(itemBase);
+            });
           } else {
             toast.success("Saved to your wishlist!");
-            return [...current, id];
+            return [...current, matched ? matched.id : id];
           }
         });
       },

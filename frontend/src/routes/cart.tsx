@@ -151,9 +151,14 @@ export function CartPage() {
 
     return availableIds
       .map((id) => {
-        const catalogProd = allProducts.find((p) => p.id === id);
+        const rawIdStr = String(id).trim();
+        const baseId = rawIdStr.includes("__") ? rawIdStr.split("__")[0]! : rawIdStr;
+        const numBaseId = Number(baseId);
+        const catalogProd =
+          allProducts.find((p) => (!isNaN(numBaseId) && Number(p.id) === numBaseId) || String(p.id).toLowerCase() === baseId.toLowerCase() || p.slug.toLowerCase() === baseId.toLowerCase()) ||
+          products.find((p) => (!isNaN(numBaseId) && Number(p.id) === numBaseId) || String(p.id).toLowerCase() === baseId.toLowerCase() || p.slug.toLowerCase() === baseId.toLowerCase());
         if (catalogProd) return catalogProd;
-        const pesticide = ALL_PESTICIDES.find((p) => p.catalogId === id);
+        const pesticide = ALL_PESTICIDES.find((p) => (!isNaN(numBaseId) && Number(p.catalogId) === numBaseId) || String(p.catalogId).toLowerCase() === baseId.toLowerCase() || p.slug.toLowerCase() === baseId.toLowerCase());
         if (pesticide) {
           return {
             id: pesticide.catalogId,

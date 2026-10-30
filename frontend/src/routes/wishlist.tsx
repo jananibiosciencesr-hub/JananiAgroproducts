@@ -23,6 +23,69 @@ import {
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { products, type Product, getProductImage, pantryImage, formatProductName } from "@/lib/catalog";
+import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
+
+function resolveWishlistProduct(id: number | string, allProducts: Product[]): Product | null {
+  if (id === null || id === undefined) return null;
+  const rawIdStr = String(id).trim();
+  const baseId = rawIdStr.includes("__") ? rawIdStr.split("__")[0]! : rawIdStr;
+  const numBaseId = Number(baseId);
+
+  // 1. Check allProducts (live store products from API)
+  const catalogProd = allProducts.find(
+    (p) =>
+      (!isNaN(numBaseId) && Number(p.id) === numBaseId) ||
+      String(p.id).toLowerCase() === baseId.toLowerCase() ||
+      p.slug.toLowerCase() === baseId.toLowerCase()
+  );
+  if (catalogProd) return catalogProd;
+
+  // 2. Check catalog fallback products
+  const fallbackProd = products.find(
+    (p) =>
+      (!isNaN(numBaseId) && Number(p.id) === numBaseId) ||
+      String(p.id).toLowerCase() === baseId.toLowerCase() ||
+      p.slug.toLowerCase() === baseId.toLowerCase()
+  );
+  if (fallbackProd) return fallbackProd;
+
+  // 3. Check ALL_PESTICIDES crop protection catalog
+  const pesticide = ALL_PESTICIDES.find(
+    (p) =>
+      (!isNaN(numBaseId) && Number(p.catalogId) === numBaseId) ||
+      String(p.catalogId).toLowerCase() === baseId.toLowerCase() ||
+      p.slug.toLowerCase() === baseId.toLowerCase()
+  );
+  if (pesticide) {
+    return {
+      id: pesticide.catalogId,
+      slug: pesticide.slug,
+      name: pesticide.title,
+      subtitle: pesticide.technicalName,
+      category: pesticide.category,
+      brand: pesticide.brand,
+      price: pesticide.price,
+      oldPrice: pesticide.oldPrice,
+      discount: pesticide.discount,
+      unit: "Unit",
+      rating: pesticide.rating,
+      reviews: pesticide.reviewsCount,
+      inStock: pesticide.inStock,
+      stockCount: 50,
+      badge: pesticide.badge || "Popular",
+      image: pesticide.image,
+      description: pesticide.description,
+      origin: "Janani Agro",
+      dietaryTags: [],
+      certifications: ["Certified Biological Formulations"],
+      popularity: 90,
+      isNew: false,
+      variants: [],
+    };
+  }
+
+  return null;
+}
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
@@ -85,7 +148,7 @@ export function WishlistPage() {
   // Fetch product objects corresponding to wishlist IDs
   const rawSavedProducts = useMemo(() => {
     return wishlist
-      .map((id) => allProducts.find((p) => p.id === id))
+      .map((id) => resolveWishlistProduct(id, allProducts))
       .filter((p): p is Product => Boolean(p));
   }, [wishlist, allProducts]);
 
@@ -157,8 +220,9 @@ export function WishlistPage() {
 
   // Recommended staples for Empty State or Upselling
   const recommendedStaples = useMemo(() => {
-    return products.filter((p) => !wishlist.includes(p.id)).slice(0, 4);
-  }, [wishlist]);
+    const savedIds = new Set(rawSavedProducts.map((p) => String(p.id)));
+    return products.filter((p) => !savedIds.has(String(p.id))).slice(0, 4);
+  }, [rawSavedProducts]);
 
   return (
     <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12">
