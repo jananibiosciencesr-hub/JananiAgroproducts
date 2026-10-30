@@ -24,7 +24,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     ctaText: "Explore Our Products",
     desktopPosition: "md:object-[center_55%]",
-    mobilePosition: "object-[center_35%]",
+    mobilePosition: "object-top",
   },
   {
     id: "organic-biocare",
@@ -35,7 +35,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     alt: "Janani Agro Products - Shield Your Crops Naturally",
     ctaText: "Explore Bio-Care",
     desktopPosition: "md:object-[center_55%]",
-    mobilePosition: "object-[center_35%]",
+    mobilePosition: "object-top",
   },
   {
     id: "organic-soilcare",
@@ -46,7 +46,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     alt: "Janani Agro Products - Nourish From Root To Harvest",
     ctaText: "Explore Soil-Care",
     desktopPosition: "md:object-[center_55%]",
-    mobilePosition: "object-[center_35%]",
+    mobilePosition: "object-top",
   },
 ];
 
@@ -101,8 +101,8 @@ export function HeroBannerCarousel() {
       onTouchEnd={handleTouchEnd}
       aria-label="Janani Agro Featured Campaigns"
     >
-      {/* Slides Container - Balanced height preventing top & bottom cropping across all desktop screens */}
-      <div className="relative w-full aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/8.2] lg:aspect-[16/8] md:min-h-[420px] max-h-[58vh] sm:max-h-[60vh] md:max-h-[480px] lg:max-h-[520px] xl:max-h-[540px] overflow-hidden">
+      {/* Slides Container - Dedicated 9:16 portrait on mobile and balanced 16:8.2 on desktop to prevent any cropping */}
+      <div className="relative w-full aspect-[9/16] sm:aspect-[16/10] md:aspect-[16/8.2] lg:aspect-[16/8] md:min-h-[420px] md:max-h-[480px] lg:max-h-[520px] xl:max-h-[540px] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -121,7 +121,7 @@ export function HeroBannerCarousel() {
                 {/* Responsive Picture: Portrait for mobile screens, Landscape for desktop */}
                 <picture className="w-full h-full block">
                   <source
-                    media="(max-width: 768px)"
+                    media="(max-width: 640px)"
                     srcSet={slide.mobileImage}
                   />
                   <img
@@ -129,7 +129,7 @@ export function HeroBannerCarousel() {
                     alt={slide.alt}
                     loading={idx === 0 ? "eager" : "lazy"}
                     className={`w-full h-full object-cover block transition-transform duration-700 group-hover:scale-[1.01] ${
-                      slide.mobilePosition || "object-center"
+                      slide.mobilePosition || "object-top"
                     } ${slide.desktopPosition || "md:object-[center_55%]"}`}
                   />
                 </picture>
