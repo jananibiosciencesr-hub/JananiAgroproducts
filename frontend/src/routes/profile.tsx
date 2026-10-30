@@ -40,9 +40,23 @@ type ProfileTab = "edit" | "addresses" | "saved";
 export function ProfilePage() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("edit");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  React.useEffect(() => { setIsMounted(true); }, []);
   const { user, wishlist } = useStore();
 
   // If user is not signed in, prompt clean Sign In
+    if (!isMounted) {
+    return (
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-8 lg:py-12 pb-28 sm:pb-16 space-y-6" suppressHydrationWarning>
+        <div className="rounded-2xl sm:rounded-[2.5rem] bg-secondary/80 animate-pulse h-36 p-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8">
+          <div className="h-56 rounded-3xl bg-secondary/80 animate-pulse hidden lg:block" />
+          <div className="h-96 rounded-3xl bg-secondary/80 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6 animate-in fade-in duration-300">
@@ -70,7 +84,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-24 lg:pb-16 space-y-4 sm:space-y-8 animate-in fade-in duration-300">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-20 lg:pb-16 space-y-4 sm:space-y-8 animate-in fade-in duration-300">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
         <Link to="/" className="hover:text-brand-leaf transition flex items-center gap-1">
@@ -155,11 +169,11 @@ export function ProfilePage() {
         </aside>
 
         {/* Right: Active Tab Content */}
-        <main className="space-y-6">
+        <div className="space-y-6">
           {activeTab === "edit" && <EditProfileTab />}
           {activeTab === "addresses" && <AddressManagerTab />}
           {activeTab === "saved" && <SavedProductsTab />}
-        </main>
+        </div>
       </div>
 
       {/* Feature 9: Account Delete Request Modal */}

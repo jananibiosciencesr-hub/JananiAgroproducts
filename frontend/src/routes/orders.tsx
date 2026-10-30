@@ -53,7 +53,8 @@ export function MyOrdersPage() {
   const { user } = useStore();
 
   // Orders state scoped to current user
-  const [ordersList, setOrdersList] = useState<CustomerOrder[]>(() => loadCustomerOrders(user?.email || user?.phone));
+  const [isMounted, setIsMounted] = useState(false);
+  const [ordersList, setOrdersList] = useState<CustomerOrder[]>([]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -76,6 +77,7 @@ export function MyOrdersPage() {
 
   // Real-time server sync from MySQL backend strictly scoped to current user
   useEffect(() => {
+    setIsMounted(true);
     // Immediately load cached orders for this specific customer
     const userScopedOrders = loadCustomerOrders(user?.email || user?.phone);
     setOrdersList(userScopedOrders);
@@ -338,8 +340,21 @@ export function MyOrdersPage() {
     updateOrdersState(updated);
   };
 
+    if (!isMounted) {
+    return (
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-20 lg:pb-16 space-y-6" suppressHydrationWarning>
+        <div className="h-28 rounded-3xl bg-secondary/80 animate-pulse" />
+        <div className="h-12 rounded-2xl bg-secondary/80 animate-pulse" />
+        <div className="space-y-4">
+          <div className="h-48 rounded-3xl bg-secondary/80 animate-pulse" />
+          <div className="h-48 rounded-3xl bg-secondary/80 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-24 lg:pb-16 space-y-4 sm:space-y-8 animate-in fade-in duration-300">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-20 lg:pb-16 space-y-4 sm:space-y-8 animate-in fade-in duration-300">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
         <Link to="/" className="hover:text-brand-leaf transition flex items-center gap-1">

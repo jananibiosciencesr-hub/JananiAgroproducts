@@ -69,37 +69,37 @@ export function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(null);
 
   // 2. Coupon State
-  const [appliedCoupon, setAppliedCoupon] = useState<CouponRule | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("janani_applied_coupon");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          const c = parsed.coupon;
-          if (c) {
-            const isFree =
-              c.type === "free_shipping" ||
-              Boolean(c.isFreeShipping) ||
-              c.code?.toUpperCase().includes("FREESHIP") ||
-              c.code?.toUpperCase().includes("FREEDEL");
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponRule | null>(null);
+  // Restore applied coupon post-mount to eliminate React #418 hydration mismatch
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("janani_applied_coupon");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const c = parsed.coupon;
+        if (c) {
+          const isFree =
+            c.type === "free_shipping" ||
+            Boolean(c.isFreeShipping) ||
+            c.code?.toUpperCase().includes("FREESHIP") ||
+            c.code?.toUpperCase().includes("FREEDEL");
 
-            return {
-              code: c.code,
-              title: c.title || (isFree ? "Free Priority Delivery" : `${c.code} Promo`),
-              description: c.description || "",
-              type: isFree ? "free_delivery" : (c.type === "flat" ? "flat" : "percentage"),
-              value: isFree ? 60 : c.discount,
-              maxDiscount: c.maxDiscount || undefined,
-              minSubtotal: c.minCart || 0,
-              expiry: c.expiryDate || "31 Dec 2026",
-              badge: isFree ? "FREE DELIVERY" : c.type === "percentage" ? `${c.discount}% OFF` : `FLAT ₹${c.discount} OFF`,
-            };
-          }
+          setAppliedCoupon({
+            code: c.code,
+            title: c.title || (isFree ? "Free Priority Delivery" : `${c.code} Promo`),
+            description: c.description || "",
+            type: isFree ? "free_delivery" : (c.type === "flat" ? "flat" : "percentage"),
+            value: isFree ? 60 : c.discount,
+            maxDiscount: c.maxDiscount || undefined,
+            minSubtotal: c.minCart || 0,
+            expiry: c.expiryDate || "31 Dec 2026",
+            badge: isFree ? "FREE DELIVERY" : c.type === "percentage" ? `${c.discount}% OFF` : `FLAT ₹${c.discount} OFF`,
+          });
         }
-      } catch (e) {}
-    }
-    return null;
-  });
+      }
+    } catch (e) {}
+  }, []);
+
 
   const handleApplyCoupon = (coupon: CouponRule | null) => {
     setAppliedCoupon(coupon);

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   ArrowRight,
   Heart,
@@ -112,6 +112,10 @@ export function WishlistPage() {
   const [sort, setSort] = useState<SortOption>("recent");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  useEffect(() => {
+    if (typeof window !== "undefined") setShareUrl(window.location.href);
+  }, []);
   const [notifiedItems, setNotifiedItems] = useState<Record<string | number, boolean>>({});
   const [priceAlertActive, setPriceAlertActive] = useState<Record<string | number, boolean>>({
     1: true, // Harit price alert active by default
@@ -225,7 +229,7 @@ export function WishlistPage() {
   }, [rawSavedProducts]);
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16">
       {/* Wishlist Header & Summary Bar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-8 border-b border-border">
         <div>
@@ -570,7 +574,7 @@ export function WishlistPage() {
               <input
                 type="text"
                 readOnly
-                value={typeof window !== "undefined" ? window.location.href : ""}
+                value={shareUrl}
                 className="w-full h-9 rounded-xl border border-input bg-muted px-3 text-xs font-mono text-muted-foreground outline-none"
               />
             </div>

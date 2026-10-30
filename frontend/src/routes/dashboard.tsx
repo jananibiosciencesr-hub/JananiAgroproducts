@@ -63,24 +63,16 @@ function DashboardErrorFallback({ error, reset }: { error: any; reset: () => voi
 function DashboardPage() {
   const navigate = useNavigate();
   const { wishlist, addToCart, user, logoutUser, updateUserProfile, refreshUserProfile } = useStore();
+  const [isMounted, setIsMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
 
   // Real-time dynamic customer orders list strictly scoped to current user
-  const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>(() => {
-    try {
-      const list = loadCustomerOrders(user?.email || user?.phone);
-      return Array.isArray(list) ? list.filter((o) => o && typeof o === "object") : [];
-    } catch (e) {
-      console.warn("Failed to load initial customer orders:", e);
-      return [];
-    }
-  });
+  // Initialized safely to empty array to ensure 100% SSR hydration parity (React #418 prevention)
+  const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<CustomerOrder | null>(null);
 
   // Saved addresses state scoped strictly to the current logged-in user
-  const [savedAddresses, setSavedAddresses] = useState<any[]>(() => {
-    return loadUserSavedAddresses(user?.email || user?.id);
-  });
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
 
   // Profile Form State
   const [profileName, setProfileName] = useState(user?.name || "");
@@ -89,6 +81,7 @@ function DashboardPage() {
 
   // Refresh orders and addresses when user changes or component mounts
   useEffect(() => {
+    setIsMounted(true);
     try {
       const list = loadCustomerOrders(user?.email || user?.phone);
       if (Array.isArray(list)) {
@@ -263,9 +256,33 @@ function DashboardPage() {
     .join("")
     .toUpperCase() || "JP";
 
+  // SSR-Safe Mounted Gate: Guaranteed identical SSR and initial client tree (Fixes React error #418)
+  if (!isMounted) {
+    return (
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-8 lg:py-12 pb-28 sm:pb-16 lg:pb-12 space-y-6" suppressHydrationWarning>
+        {/* Header Skeleton */}
+        <div className="rounded-2xl sm:rounded-[2.5rem] bg-[#075B32]/10 border border-[#075B32]/15 animate-pulse h-32 sm:h-44 p-4 sm:p-8 flex items-center gap-4">
+          <div className="size-12 sm:size-16 rounded-full bg-[#075B32]/20 shrink-0" />
+          <div className="space-y-2.5 flex-1 min-w-0">
+            <div className="h-5 w-36 sm:w-48 bg-[#075B32]/25 rounded-md" />
+            <div className="h-3.5 w-48 sm:w-64 bg-[#075B32]/15 rounded-md" />
+          </div>
+        </div>
+        {/* Content Skeleton */}
+        <div className="grid gap-6 lg:grid-cols-[260px_1fr] items-start">
+          <div className="h-56 rounded-3xl bg-secondary/80 animate-pulse hidden lg:block" />
+          <div className="space-y-4">
+            <div className="h-44 rounded-2xl sm:rounded-3xl bg-secondary/80 animate-pulse" />
+            <div className="h-44 rounded-2xl sm:rounded-3xl bg-secondary/80 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6 animate-in fade-in duration-300">
+      <div className="mx-auto max-w-lg px-4 py-16 sm:py-24 text-center space-y-6 animate-in fade-in duration-300 pb-28 sm:pb-16">
         <div className="size-20 mx-auto rounded-3xl bg-brand-leaf/10 text-brand-leaf grid place-items-center shadow-inner">
           <Package className="size-10" />
         </div>
@@ -290,36 +307,36 @@ function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16 lg:pb-12 space-y-6">
       {/* Profile Header Card */}
-      <div className="rounded-[2.5rem] bg-forest p-6 sm:p-10 text-primary-foreground shadow-luxe flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4 sm:gap-5">
-          <span className="grid size-16 sm:size-18 place-items-center rounded-full bg-brand-gold text-forest font-display text-2xl font-bold shadow-md shrink-0">
+      <div className="rounded-2xl sm:rounded-[2.5rem] bg-forest p-4 sm:p-8 lg:p-10 text-primary-foreground shadow-luxe flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
+          <span className="grid size-14 sm:size-18 place-items-center rounded-full bg-brand-gold text-forest font-display text-xl sm:text-2xl font-bold shadow-md shrink-0">
             {initials || "JP"}
           </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-gold bg-brand-gold/15 px-2.5 py-0.5 rounded-full">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-gold bg-brand-gold/15 px-2.5 py-0.5 rounded-full shrink-0">
                 {user?.tier || "Janani Member"}
               </span>
               {user && (
-                <span className="text-[10px] text-emerald-300 font-semibold flex items-center gap-1">
+                <span className="text-[10px] text-emerald-300 font-semibold flex items-center gap-1 shrink-0">
                   <CheckCircle2 className="size-3" /> Verified Account
                 </span>
               )}
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-semibold mt-1">{userName}</h1>
-            <p className="text-xs text-primary-foreground/75 mt-0.5">{userEmail} {userPhone ? `· ${userPhone}` : ""}</p>
+            <h1 className="font-display text-xl sm:text-3xl font-semibold mt-1 truncate">{userName}</h1>
+            <p className="text-xs text-primary-foreground/75 mt-0.5 truncate">{userEmail} {userPhone ? `· ${userPhone}` : ""}</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
           <Link
             to="/products"
-            className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-black tracking-wide text-[#05321A] bg-gradient-to-b from-[#FFE072] via-[#F5B723] to-[#D4910B] border border-[#FFF4B8]/90 shadow-[0_4px_18px_rgba(217,154,18,0.48),inset_0_1.5px_1px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(150,90,0,0.25)] hover:shadow-[0_8px_26px_rgba(245,183,35,0.65),inset_0_1.5px_1.5px_rgba(255,255,255,1)] hover:from-[#FFF099] hover:via-[#F9C33F] hover:to-[#DE9E16] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden"
+            className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-black tracking-wide text-[#05321A] bg-gradient-to-b from-[#FFE072] via-[#F5B723] to-[#D4910B] border border-[#FFF4B8]/90 shadow-[0_4px_18px_rgba(217,154,18,0.48),inset_0_1.5px_1px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(150,90,0,0.25)] hover:shadow-[0_8px_26px_rgba(245,183,35,0.65),inset_0_1.5px_1.5px_rgba(255,255,255,1)] hover:from-[#FFF099] hover:via-[#F9C33F] hover:to-[#DE9E16] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden"
           >
             <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-            <ShoppingBag className="size-4 stroke-[2.4] text-[#05321A] group-hover:scale-110 transition-transform duration-200" />
+            <ShoppingBag className="size-3.5 sm:size-4 stroke-[2.4] text-[#05321A] group-hover:scale-110 transition-transform duration-200" />
             <span className="relative z-10 font-black">Shop Harvest</span>
           </Link>
 
@@ -327,7 +344,7 @@ function DashboardPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-white/35 hover:border-rose-300/70 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] hover:shadow-[0_6px_24px_rgba(244,63,94,0.4),inset_0_1px_1.5px_rgba(255,255,255,0.6)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
+              className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-white/35 hover:border-rose-300/70 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] hover:shadow-[0_6px_24px_rgba(244,63,94,0.4),inset_0_1px_1.5px_rgba(255,255,255,0.6)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
             >
               <LogOut className="size-3.5 stroke-[2.2] text-white/90 group-hover:text-rose-200 group-hover:-translate-x-1 transition-all duration-200" />
               <span className="group-hover:text-rose-100 transition-colors">Sign Out</span>
@@ -336,7 +353,7 @@ function DashboardPage() {
             <Link
               to="/login"
               search={{ redirect: "/dashboard" }}
-              className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-white/25 active:bg-white/30 border border-white/35 hover:border-white/60 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
+              className="group relative inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-white/25 active:bg-white/30 border border-white/35 hover:border-white/60 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
             >
               <User className="size-3.5 text-white/90 group-hover:scale-110 transition-transform duration-200" />
               <span>Sign In / Register</span>
@@ -345,10 +362,51 @@ function DashboardPage() {
         </div>
       </div>
 
+      {/* Mobile Horizontal Scrolling Tabs (< 1024px) for Instant Fast Switching */}
+      <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
+        {[
+          { id: "orders", label: "Orders", icon: Package, count: customerOrders.length },
+          { id: "addresses", label: "Addresses", icon: MapPin, count: savedAddresses.length },
+          { id: "profile", label: "Profile", icon: User },
+        ].map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id as any)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shrink-0 ${
+                isActive
+                  ? "bg-[#075B32] text-white shadow-sm ring-1 ring-[#075B32]"
+                  : "bg-secondary text-foreground hover:bg-secondary/80"
+              }`}
+            >
+              <Icon className="size-3.5" />
+              <span>{item.label}</span>
+              {item.count !== undefined && (
+                <span className={`rounded-full px-1.5 py-0.2 text-[9.5px] font-mono ${isActive ? "bg-white/25 text-white" : "bg-muted text-muted-foreground"}`}>
+                  {item.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+        <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-bold gap-1 shrink-0 h-8 px-3">
+          <Link to="/orders">
+            <Truck className="size-3 text-brand-leaf" /> Orders Hub
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-bold gap-1 shrink-0 h-8 px-3">
+          <Link to="/wishlist">
+            <Heart className="size-3 text-brand-leaf" /> Wishlist ({wishlist.length})
+          </Link>
+        </Button>
+      </div>
+
       {/* Main Content Layout */}
-      <div className="mt-8 sm:mt-10 grid gap-8 lg:grid-cols-[260px_1fr] items-start">
-        {/* Navigation Tabs */}
-        <aside className="space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft h-fit lg:sticky lg:top-24 self-start z-10">
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[260px_1fr] items-start">
+        {/* Desktop Navigation Tabs (>= 1024px) */}
+        <aside className="hidden lg:block space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft h-fit sticky top-24 self-start z-10">
           {[
             { id: "orders", label: "My Orders & Shipments", icon: Package, count: customerOrders.length },
             { id: "addresses", label: "Saved Addresses", icon: MapPin, count: savedAddresses.length },
@@ -403,15 +461,15 @@ function DashboardPage() {
         </aside>
 
         {/* Tab Panels */}
-        <div>
+        <div className="min-w-0">
           {/* 1. Orders Tab */}
           {activeTab === "orders" && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                    <Package className="size-5 text-brand-leaf" />
-                    My Harvest Orders & Shipments
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3 sm:pb-4">
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-semibold text-foreground flex items-center gap-2">
+                    <Package className="size-5 text-brand-leaf shrink-0" />
+                    <span>My Harvest Orders & Shipments</span>
                   </h2>
                   <span className="text-xs text-muted-foreground">
                     {customerOrders.length > 0
@@ -420,7 +478,7 @@ function DashboardPage() {
                   </span>
                 </div>
                 {customerOrders.length > 0 && (
-                  <Button asChild variant="gold" size="sm" className="rounded-full text-xs font-bold gap-1.5 shadow-sm self-start sm:self-auto">
+                  <Button asChild variant="gold" size="sm" className="rounded-full text-xs font-bold gap-1.5 shadow-sm self-start sm:self-auto shrink-0">
                     <Link to="/orders">
                       <Truck className="size-3.5" /> Full Orders Hub & Tracking
                     </Link>
@@ -430,7 +488,7 @@ function DashboardPage() {
 
               {customerOrders.length === 0 ? (
                 /* Clean Empty State */
-                <div className="rounded-3xl border border-dashed border-border bg-card/60 p-10 text-center space-y-4">
+                <div className="rounded-2xl sm:rounded-3xl border border-dashed border-border bg-card/60 p-8 sm:p-10 text-center space-y-4">
                   <div className="size-16 mx-auto rounded-full bg-brand-leaf/10 text-brand-leaf grid place-items-center">
                     <ShoppingBag className="size-8" />
                   </div>
@@ -448,7 +506,7 @@ function DashboardPage() {
                 </div>
               ) : (
                 /* Orders List */
-                <div className="space-y-5">
+                <div className="space-y-4 sm:space-y-5">
                   {customerOrders.filter(Boolean).map((o, idx) => {
                     const orderNum = o.number || o.orderNumber || `ORD-${idx + 1}`;
                     const orderTotal = o.total ?? o.finalTotal ?? 0;
@@ -463,14 +521,14 @@ function DashboardPage() {
                     return (
                       <div
                         key={o.id || orderNum || idx}
-                        className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-soft transition hover:shadow-md space-y-4"
+                        className="rounded-2xl sm:rounded-3xl border border-border bg-card p-3.5 sm:p-6 shadow-soft transition hover:shadow-md space-y-3 sm:space-y-4 min-w-0"
                       >
                         {/* Order Header */}
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
-                          <div>
-                            <div className="flex items-center gap-3">
-                              <strong className="font-mono text-base font-bold text-foreground">{orderNum}</strong>
-                              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 sm:pb-4">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <strong className="font-mono text-sm sm:text-base font-bold text-foreground truncate">{orderNum}</strong>
+                              <span className={`rounded-full px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold shrink-0 ${
                                 o.status === "Delivered"
                                   ? "bg-brand-leaf/15 text-brand-leaf"
                                   : o.status === "Cancelled"
@@ -480,34 +538,39 @@ function DashboardPage() {
                                 ● {o.status || "Processing"}
                               </span>
                             </div>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground leading-normal break-words">
                               Placed on <strong className="text-foreground">{o.date || "Recent"}</strong> · {orderItems.length || 1} distinct products · Paid via {o.paymentMethod || "Online"}
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-between sm:justify-end gap-3 pt-1 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                            <span className="text-[11px] text-muted-foreground sm:hidden">Total Amount:</span>
                             <div className="text-right">
-                              <span className="text-[11px] text-muted-foreground block">Total Amount</span>
-                              <strong className="text-lg font-bold text-foreground">₹{orderTotal}</strong>
+                              <span className="text-[11px] text-muted-foreground hidden sm:block">Total Amount</span>
+                              <strong className="text-base sm:text-lg font-bold text-foreground">₹{orderTotal}</strong>
                             </div>
                           </div>
                         </div>
 
                         {/* Items Preview */}
                         {orderItems.length > 0 && (
-                          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 bg-secondary/40 p-3.5 rounded-2xl border border-border/70">
+                          <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 bg-secondary/40 p-2.5 sm:p-3.5 rounded-2xl border border-border/70">
                             {orderItems.map((item, itemIdx) => (
-                              <div key={itemIdx} className="flex items-center gap-3">
-                                {item?.image && (
+                              <div key={itemIdx} className="flex items-center gap-2.5 min-w-0">
+                                {item?.image ? (
                                   <img
                                     src={item.image}
                                     alt={item.name || "Product"}
-                                    className="size-12 rounded-xl object-cover border border-border shrink-0 bg-white"
+                                    className="size-10 sm:size-12 rounded-xl object-cover border border-border shrink-0 bg-white"
                                   />
+                                ) : (
+                                  <div className="size-10 sm:size-12 rounded-xl border border-border shrink-0 bg-white grid place-items-center text-muted-foreground">
+                                    <Package className="size-5" />
+                                  </div>
                                 )}
                                 <div className="min-w-0 flex-1 text-xs">
-                                  <p className="font-semibold text-foreground truncate">{item?.name || "Organic Product"}</p>
-                                  <p className="text-[11px] text-muted-foreground">
+                                  <p className="font-semibold text-foreground text-xs leading-tight line-clamp-1 break-words">{item?.name || "Organic Product"}</p>
+                                  <p className="text-[10.5px] text-muted-foreground mt-0.5">
                                     Qty: {item?.quantity || 1} × ₹{item?.price || 0}
                                   </p>
                                 </div>
@@ -517,33 +580,33 @@ function DashboardPage() {
                         )}
 
                         {/* Delivery Address & Status Info */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-muted-foreground pt-1">
-                          <div className="flex items-start sm:items-center gap-2">
-                            <MapPin className="size-4 text-brand-leaf shrink-0 mt-0.5 sm:mt-0" />
-                            <span>
+                        <div className="flex flex-col gap-2 text-xs text-muted-foreground pt-1">
+                          <div className="flex items-start gap-2 min-w-0">
+                            <MapPin className="size-3.5 sm:size-4 text-brand-leaf shrink-0 mt-0.5" />
+                            <p className="min-w-0 flex-1 leading-relaxed break-words text-[11px] sm:text-xs">
                               Deliver to: <strong className="text-foreground">{orderAddress?.fullName || userName}</strong> ({orderAddress?.city || "Ahmedabad"}, {orderAddress?.pincode || "380054"})
-                            </span>
+                            </p>
                           </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <Truck className="size-4 text-brand-leaf shrink-0" />
-                            <span>{o.courier || "Delhivery Air Express"}</span>
+                          <div className="flex items-center gap-2 text-[11px] sm:text-xs min-w-0">
+                            <Truck className="size-3.5 sm:size-4 text-brand-leaf shrink-0" />
+                            <span className="truncate">{o.courier || "Delhivery Air Express & Janani Fleet"}</span>
                           </div>
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-border">
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => setSelectedInvoiceOrder(o)}
-                            className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                            className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground px-2.5"
                           >
                             <FileText className="size-3.5 text-brand-leaf" /> View GST Invoice
                           </Button>
 
-                          <div className="flex items-center gap-2.5">
-                            <Button onClick={() => handleReorder(o)} variant="gold" size="sm" className="h-8 text-xs gap-1.5 rounded-xl font-bold">
+                          <div className="flex items-center gap-2">
+                            <Button onClick={() => handleReorder(o)} variant="gold" size="sm" className="h-8 text-xs gap-1.5 rounded-xl font-bold px-3">
                               <RefreshCw className="size-3" /> Reorder
                             </Button>
                           </div>
@@ -558,19 +621,19 @@ function DashboardPage() {
 
           {/* 2. Addresses Tab */}
           {activeTab === "addresses" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-border pb-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">Saved Delivery Addresses</h2>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3 sm:pb-4">
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-semibold text-foreground">Saved Delivery Addresses</h2>
                   <span className="text-xs text-muted-foreground">Manage doorstep addresses for fast 1-click checkout</span>
                 </div>
-                <Button size="sm" variant="gold" asChild className="rounded-full text-xs font-bold">
+                <Button size="sm" variant="gold" asChild className="rounded-full text-xs font-bold self-start sm:self-auto shrink-0">
                   <Link to="/checkout">+ Add / Manage at Checkout</Link>
                 </Button>
               </div>
 
               {savedAddresses.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-border bg-card/60 p-8 text-center space-y-3">
+                <div className="rounded-2xl sm:rounded-3xl border border-dashed border-border bg-card/60 p-6 sm:p-8 text-center space-y-3">
                   <MapPin className="size-10 text-muted-foreground mx-auto" />
                   <p className="text-sm font-semibold text-foreground">No saved addresses yet</p>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -578,11 +641,11 @@ function DashboardPage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
                   {savedAddresses.filter(Boolean).map((addr: any, idx: number) => (
                     <div
                       key={addr?.id || idx}
-                      className={`rounded-3xl border p-6 shadow-soft relative bg-card ${
+                      className={`rounded-2xl sm:rounded-3xl border p-4 sm:p-6 shadow-soft relative bg-card break-words ${
                         addr?.isDefault ? "border-brand-leaf/50 ring-1 ring-brand-leaf/20" : "border-border"
                       }`}
                     >
@@ -592,9 +655,9 @@ function DashboardPage() {
                         </span>
                       )}
                       <p className="font-semibold text-sm capitalize flex items-center gap-1.5">
-                        <MapPin className="size-4 text-brand-leaf" /> {addr?.type || "Home"} Address
+                        <MapPin className="size-4 text-brand-leaf shrink-0" /> {addr?.type || "Home"} Address
                       </p>
-                      <p className="mt-2 text-xs text-muted-foreground leading-6">
+                      <p className="mt-2 text-xs text-muted-foreground leading-6 break-words">
                         <strong className="text-foreground">{addr?.fullName || addr?.name || userName}</strong><br />
                         {[addr?.houseFlat, addr?.street, addr?.landmark].filter(Boolean).join(", ") || addr?.streetAddress || addr?.addressLine1 || "Registered Address"}<br />
                         {addr?.city || "Ahmedabad"}, {addr?.state || "Gujarat"} – {addr?.pincode || "380054"}<br />
@@ -609,9 +672,9 @@ function DashboardPage() {
 
           {/* 3. Profile Tab */}
           {activeTab === "profile" && (
-            <form onSubmit={handleSaveProfile} className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-soft space-y-6">
-              <div className="border-b border-border pb-4">
-                <h2 className="text-xl font-semibold text-foreground">
+            <form onSubmit={handleSaveProfile} className="rounded-2xl sm:rounded-3xl border border-border bg-card p-4 sm:p-8 shadow-soft space-y-5 sm:space-y-6">
+              <div className="border-b border-border pb-3 sm:pb-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground">
                   Personal Information & Profile
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -620,7 +683,7 @@ function DashboardPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 text-xs">
-                <label className="grid gap-1.5 font-semibold text-foreground">
+                <label className="grid gap-1.5 font-semibold text-foreground min-w-0">
                   <span>Full Name</span>
                   <input
                     type="text"
@@ -628,20 +691,20 @@ function DashboardPage() {
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
                     placeholder="e.g. Rahul Sharma"
-                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-brand-leaf text-foreground"
+                    className="h-10 sm:h-11 rounded-xl sm:rounded-2xl border border-input bg-background px-3 sm:px-4 text-xs sm:text-sm outline-none focus:border-brand-leaf text-foreground w-full"
                   />
                 </label>
-                <label className="grid gap-1.5 font-semibold text-foreground">
+                <label className="grid gap-1.5 font-semibold text-foreground min-w-0">
                   <span>Mobile Number</span>
                   <input
                     type="tel"
                     value={profilePhone}
                     onChange={(e) => setProfilePhone(e.target.value)}
                     placeholder="+91 98480 22338"
-                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-brand-leaf text-foreground"
+                    className="h-10 sm:h-11 rounded-xl sm:rounded-2xl border border-input bg-background px-3 sm:px-4 text-xs sm:text-sm outline-none focus:border-brand-leaf text-foreground w-full"
                   />
                 </label>
-                <label className="grid gap-1.5 font-semibold text-foreground sm:col-span-2">
+                <label className="grid gap-1.5 font-semibold text-foreground sm:col-span-2 min-w-0">
                   <span>Email Address</span>
                   <input
                     type="email"
@@ -649,13 +712,13 @@ function DashboardPage() {
                     value={profileEmail}
                     onChange={(e) => setProfileEmail(e.target.value)}
                     placeholder="youremail@gmail.com"
-                    className="h-11 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-brand-leaf text-foreground"
+                    className="h-10 sm:h-11 rounded-xl sm:rounded-2xl border border-input bg-background px-3 sm:px-4 text-xs sm:text-sm outline-none focus:border-brand-leaf text-foreground w-full"
                   />
                 </label>
               </div>
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" size="sm" variant="gold" className="rounded-2xl px-6 font-bold">
+                <Button type="submit" size="sm" variant="gold" className="rounded-xl sm:rounded-2xl px-6 font-bold text-xs">
                   Save Profile Changes
                 </Button>
               </div>

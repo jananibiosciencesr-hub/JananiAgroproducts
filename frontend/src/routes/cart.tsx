@@ -67,31 +67,28 @@ export function CartPage() {
   const [isAllCouponsModalOpen, setIsAllCouponsModalOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("janani_applied_coupon");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          return parsed.label || parsed.code || null;
-        }
-      } catch (e) {}
-    }
-    return null;
-  });
-  const [appliedCouponObj, setAppliedCouponObj] = useState<AdminCoupon | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("janani_applied_coupon");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          return parsed.coupon || null;
-        }
-      } catch (e) {}
-    }
-    return null;
-  });
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCouponObj, setAppliedCouponObj] = useState<AdminCoupon | null>(null);
   const [isCouponsDropdownOpen, setIsCouponsDropdownOpen] = useState(false);
+  // Restore cart stored preferences post-mount to eliminate React #418 hydration mismatch
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("janani_applied_coupon");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.label || parsed.code) setAppliedCoupon(parsed.label || parsed.code);
+        if (parsed.coupon) setAppliedCouponObj(parsed.coupon);
+      }
+    } catch (e) {}
+    try {
+      const stored = localStorage.getItem("janani_saved_for_later");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) setSavedForLater(parsed);
+      }
+    } catch (e) {}
+  }, []);
+
 
   // Fetch active database coupons on mount
   useEffect(() => {
@@ -114,17 +111,7 @@ export function CartPage() {
 
 
   // Save for Later State (Persisted in localStorage)
-  const [savedForLater, setSavedForLater] = useState<(number | string)[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("janani_saved_for_later");
-        if (stored) return JSON.parse(stored);
-      } catch (e) {
-        // ignore
-      }
-    }
-    return [];
-  });
+  const [savedForLater, setSavedForLater] = useState<(number | string)[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -418,7 +405,7 @@ export function CartPage() {
   }, [cartItems]);
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16">
       {/* Header */}
       <div className="border-b border-border pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
