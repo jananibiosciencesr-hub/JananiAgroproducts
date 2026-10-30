@@ -589,7 +589,11 @@ export function CartPage() {
           </div>
 
           {/* Right Column: Price Summary Sidebar & Coupon Engine */}
-          <div className="space-y-6 lg:sticky lg:top-28">
+          <div
+            className="space-y-6 sticky-sidebar lg:sticky lg:top-24 self-start h-fit z-20"
+            data-sticky-sidebar="true"
+            style={{ position: "sticky", top: "5.5rem", alignSelf: "flex-start" }}
+          >
             <div className="rounded-[2.5rem] border border-border bg-card p-6 sm:p-7 shadow-soft space-y-6">
               <h2 className="text-lg font-bold font-display text-foreground border-b border-border pb-4">
                 Price Summary
@@ -859,6 +863,29 @@ export function CartPage() {
                 <span>100% Safe & Encrypted Razorpay Checkout</span>
               </div>
             </div>
+          {/* Mobile Bottom Sticky Checkout Bar (< 768px) */}
+          <div className="md:hidden fixed inset-x-0 bottom-14 z-30 bg-white/98 backdrop-blur-xl border-t border-border p-3 px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.12)] flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-200">
+            <div className="min-w-0">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block leading-tight">Total Payable</span>
+              <div className="flex items-baseline gap-1.5">
+                <strong className="text-lg font-black font-display font-mono text-primary leading-tight">₹{finalTotal}</strong>
+                {actualCartCount > 0 && (
+                  <span className="text-[10px] text-muted-foreground font-medium">({actualCartCount} {actualCartCount === 1 ? "item" : "items"})</span>
+                )}
+              </div>
+            </div>
+            <Button
+              asChild
+              size="default"
+              variant="gold"
+              className="rounded-full px-5 h-10 text-xs font-bold shadow-md shrink-0 gap-1.5"
+            >
+              <Link to={user ? "/checkout" : "/login"} search={user ? undefined : ({ redirect: "/checkout" } as any)}>
+                Checkout <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
+          </div>
+
           </div>
         </div>
       ) : (

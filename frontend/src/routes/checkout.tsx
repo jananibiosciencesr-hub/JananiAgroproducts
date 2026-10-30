@@ -553,7 +553,11 @@ export function CheckoutPage() {
         </div>
 
         {/* Right Column: Sticky Rail Summary */}
-        <div className="space-y-4">
+        <div
+          className="space-y-4 sticky-sidebar lg:sticky lg:top-24 self-start h-fit z-20"
+          data-sticky-sidebar="true"
+          style={{ position: "sticky", top: "5.5rem", alignSelf: "flex-start" }}
+        >
           {/* Order Items Preview */}
           <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
             <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground border-b border-border pb-2 flex justify-between">
