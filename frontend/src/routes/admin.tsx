@@ -766,7 +766,7 @@ function AdminDashboardPage() {
   const safeReviews = Array.isArray(reviews) ? reviews : [];
 
   return (
-    <div className="flex min-h-screen w-full max-w-full overflow-x-clip bg-muted/20 text-foreground font-sans antialiased">
+    <div className="flex min-h-screen w-full max-w-full overflow-x-hidden bg-muted/20 text-foreground font-sans antialiased">
       {/* Collapsible Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
@@ -787,7 +787,7 @@ function AdminDashboardPage() {
       />
 
       {/* Main Content Area */}
-      <div className={`flex flex-1 flex-col min-w-0 w-full max-w-full overflow-x-clip transition-all duration-300 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
+      <div className={`flex flex-1 flex-col min-w-0 w-full max-w-full overflow-x-hidden transition-all duration-300 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
         {/* Top Navbar */}
         <AdminNavbar
           onOpenMobileSidebar={() => setMobileOpen(true)}
@@ -806,7 +806,7 @@ function AdminDashboardPage() {
         />
 
         {/* Dynamic View Body */}
-        <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 max-w-[1600px] xl:max-w-[1800px] w-full mx-auto overflow-x-hidden">
+        <main className="flex-1 min-w-0 p-2.5 sm:p-6 lg:p-8 max-w-[1600px] xl:max-w-[1800px] w-full mx-auto overflow-x-hidden">
           {activeTab === "dashboard" && (
             <AdminOverview
               stats={stats}

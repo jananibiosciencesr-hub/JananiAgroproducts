@@ -34,23 +34,23 @@ export const SEARCHABLE_NAV_MODULES: Array<{
   keywords: string[];
   icon: any;
 }> = [
-  { id: "dashboard", title: "Dashboard Overview", desc: "Live sales metrics & KPI performance", keywords: ["dashboard", "home", "metrics", "kpi", "sales", "overview", "analytics"], icon: ShoppingBag },
-  { id: "orders", title: "Orders Manager", desc: "All customer orders, dispatch & invoices", keywords: ["orders", "sales", "dispatch", "invoices", "order", "ord"], icon: ShoppingBag },
-  { id: "products", title: "Products Catalog", desc: "Manage catalog, stock & pricing", keywords: ["products", "items", "catalog", "sku", "harit", "biofertilizer", "humic"], icon: Package },
-  { id: "categories", title: "Categories & Hierarchy", desc: "Bio-fertilizer, pesticide & stimulant classifications", keywords: ["categories", "category", "hierarchy", "slugs"], icon: Package },
-  { id: "customers", title: "Customers & Patrons", desc: "Patron profiles, wallets & addresses", keywords: ["customers", "patrons", "users", "profiles", "wallets"], icon: UserCheck },
-  { id: "inquiries", title: "Customer Inquiries", desc: "B2B, dealership & contact requests", keywords: ["inquiries", "inquiry", "messages", "dealership", "contact", "support"], icon: MessageSquare },
-  { id: "inventory", title: "Inventory & Restock", desc: "Warehouse stock levels & alerts", keywords: ["inventory", "stock", "restock", "warehouse", "threshold", "units"], icon: AlertTriangle },
-  { id: "payments", title: "Payments & Settlements", desc: "Razorpay, UPI & transaction records", keywords: ["payments", "transactions", "razorpay", "upi", "settlements", "gateway"], icon: CheckCircle2 },
-  { id: "coupons", title: "Coupons & Discounts", desc: "Promo codes & cart percentage offers", keywords: ["coupons", "discounts", "offers", "promo", "voucher"], icon: Sparkles },
-  { id: "shipping", title: "Shipping & Logistics", desc: "Shiprocket AWBs & courier dispatches", keywords: ["shipping", "shiprocket", "courier", "awb", "bluedart", "delhivery"], icon: ExternalLink },
-  { id: "reviews", title: "Customer Reviews", desc: "Testimonials & organic harvest ratings", keywords: ["reviews", "review", "ratings", "feedback", "testimonials", "stars"], icon: Sparkles },
-  { id: "returns", title: "Returns & Refunds", desc: "Return requests, replacements & refunds", keywords: ["returns", "return", "refunds", "refund", "replacement"], icon: AlertTriangle },
-  { id: "reports", title: "Reports & Financials", desc: "Sales trends, revenue velocity & GST", keywords: ["reports", "report", "revenue", "analytics", "gst", "financial", "velocity", "today revenue", "monthly revenue"], icon: TrendingUp },
-  { id: "referrals", title: "Referrals & Rewards", desc: "Patron affiliate earnings & commissions", keywords: ["referrals", "referral", "rewards", "affiliate", "commissions", "patron rewards"], icon: Sparkles },
-  { id: "cms", title: "Banners & CMS", desc: "Storefront banners & notices", keywords: ["cms", "banners", "hero", "announcements", "media"], icon: Package },
-  { id: "settings", title: "Store Settings", desc: "Store branding & business configuration", keywords: ["settings", "branding", "logo", "business"], icon: Sparkles },
-];
+    { id: "dashboard", title: "Dashboard Overview", desc: "Live sales metrics & KPI performance", keywords: ["dashboard", "home", "metrics", "kpi", "sales", "overview", "analytics"], icon: ShoppingBag },
+    { id: "orders", title: "Orders Manager", desc: "All customer orders, dispatch & invoices", keywords: ["orders", "sales", "dispatch", "invoices", "order", "ord"], icon: ShoppingBag },
+    { id: "products", title: "Products Catalog", desc: "Manage catalog, stock & pricing", keywords: ["products", "items", "catalog", "sku", "harit", "biofertilizer", "humic"], icon: Package },
+    { id: "categories", title: "Categories & Hierarchy", desc: "Bio-fertilizer, pesticide & stimulant classifications", keywords: ["categories", "category", "hierarchy", "slugs"], icon: Package },
+    { id: "customers", title: "Customers & Patrons", desc: "Patron profiles, wallets & addresses", keywords: ["customers", "patrons", "users", "profiles", "wallets"], icon: UserCheck },
+    { id: "inquiries", title: "Customer Inquiries", desc: "B2B, dealership & contact requests", keywords: ["inquiries", "inquiry", "messages", "dealership", "contact", "support"], icon: MessageSquare },
+    { id: "inventory", title: "Inventory & Restock", desc: "Warehouse stock levels & alerts", keywords: ["inventory", "stock", "restock", "warehouse", "threshold", "units"], icon: AlertTriangle },
+    { id: "payments", title: "Payments & Settlements", desc: "Razorpay, UPI & transaction records", keywords: ["payments", "transactions", "razorpay", "upi", "settlements", "gateway"], icon: CheckCircle2 },
+    { id: "coupons", title: "Coupons & Discounts", desc: "Promo codes & cart percentage offers", keywords: ["coupons", "discounts", "offers", "promo", "voucher"], icon: Sparkles },
+    { id: "shipping", title: "Shipping & Logistics", desc: "Shiprocket AWBs & courier dispatches", keywords: ["shipping", "shiprocket", "courier", "awb", "bluedart", "delhivery"], icon: ExternalLink },
+    { id: "reviews", title: "Customer Reviews", desc: "Testimonials & organic harvest ratings", keywords: ["reviews", "review", "ratings", "feedback", "testimonials", "stars"], icon: Sparkles },
+    { id: "returns", title: "Returns & Refunds", desc: "Return requests, replacements & refunds", keywords: ["returns", "return", "refunds", "refund", "replacement"], icon: AlertTriangle },
+    { id: "reports", title: "Reports & Financials", desc: "Sales trends, revenue velocity & GST", keywords: ["reports", "report", "revenue", "analytics", "gst", "financial", "velocity", "today revenue", "monthly revenue"], icon: TrendingUp },
+    { id: "referrals", title: "Referrals & Rewards", desc: "Patron affiliate earnings & commissions", keywords: ["referrals", "referral", "rewards", "affiliate", "commissions", "patron rewards"], icon: Sparkles },
+    { id: "cms", title: "Banners & CMS", desc: "Storefront banners & notices", keywords: ["cms", "banners", "hero", "announcements", "media"], icon: Package },
+    { id: "settings", title: "Store Settings", desc: "Store branding & business configuration", keywords: ["settings", "branding", "logo", "business"], icon: Sparkles },
+  ];
 
 interface AdminNavbarProps {
   onOpenMobileSidebar: () => void;
@@ -167,46 +167,46 @@ export function AdminNavbar({
 
   const matchingNavs = cleanTerm
     ? SEARCHABLE_NAV_MODULES.filter((m) =>
-        m.title.toLowerCase().includes(cleanTerm) ||
-        m.desc.toLowerCase().includes(cleanTerm) ||
-        m.keywords.some((k) => k.toLowerCase().includes(cleanTerm)) ||
-        m.id.toLowerCase().includes(cleanTerm)
-      )
+      m.title.toLowerCase().includes(cleanTerm) ||
+      m.desc.toLowerCase().includes(cleanTerm) ||
+      m.keywords.some((k) => k.toLowerCase().includes(cleanTerm)) ||
+      m.id.toLowerCase().includes(cleanTerm)
+    )
     : [];
 
   const matchingOrders = cleanTerm
     ? orders
-        .filter((o) => {
-          const id = String(o?.number || o?.id || "").toLowerCase();
-          const cust = String(o?.customer?.name || "").toLowerCase();
-          const phone = String(o?.customer?.phone || "").toLowerCase();
-          const city = String(o?.customer?.city || "").toLowerCase();
-          const status = String(o?.orderStatus || o?.status || "").toLowerCase();
-          return id.includes(cleanTerm) || cust.includes(cleanTerm) || phone.includes(cleanTerm) || city.includes(cleanTerm) || status.includes(cleanTerm);
-        })
-        .slice(0, 4)
+      .filter((o) => {
+        const id = String(o?.number || o?.id || "").toLowerCase();
+        const cust = String(o?.customer?.name || "").toLowerCase();
+        const phone = String(o?.customer?.phone || "").toLowerCase();
+        const city = String(o?.customer?.city || "").toLowerCase();
+        const status = String(o?.orderStatus || o?.status || "").toLowerCase();
+        return id.includes(cleanTerm) || cust.includes(cleanTerm) || phone.includes(cleanTerm) || city.includes(cleanTerm) || status.includes(cleanTerm);
+      })
+      .slice(0, 4)
     : [];
 
   const matchingProducts = cleanTerm
     ? products
-        .filter((p) => {
-          const name = String(p?.name || "").toLowerCase();
-          const sku = String(p?.sku || "").toLowerCase();
-          const cat = String(p?.category || "").toLowerCase();
-          return name.includes(cleanTerm) || sku.includes(cleanTerm) || cat.includes(cleanTerm);
-        })
-        .slice(0, 4)
+      .filter((p) => {
+        const name = String(p?.name || "").toLowerCase();
+        const sku = String(p?.sku || "").toLowerCase();
+        const cat = String(p?.category || "").toLowerCase();
+        return name.includes(cleanTerm) || sku.includes(cleanTerm) || cat.includes(cleanTerm);
+      })
+      .slice(0, 4)
     : [];
 
   const matchingInquiries = cleanTerm
     ? liveInquiries
-        .filter((i) => {
-          const name = String(i?.name || "").toLowerCase();
-          const phone = String(i?.phone || "").toLowerCase();
-          const msg = String(i?.message || i?.service || "").toLowerCase();
-          return name.includes(cleanTerm) || phone.includes(cleanTerm) || msg.includes(cleanTerm);
-        })
-        .slice(0, 3)
+      .filter((i) => {
+        const name = String(i?.name || "").toLowerCase();
+        const phone = String(i?.phone || "").toLowerCase();
+        const msg = String(i?.message || i?.service || "").toLowerCase();
+        return name.includes(cleanTerm) || phone.includes(cleanTerm) || msg.includes(cleanTerm);
+      })
+      .slice(0, 3)
     : [];
 
   const totalQuickMatches = matchingNavs.length + matchingOrders.length + matchingProducts.length + matchingInquiries.length;
@@ -237,7 +237,7 @@ export function AdminNavbar({
         if (mounted && Array.isArray(inqs)) {
           setLiveInquiries(inqs);
         }
-      } catch (e) {}
+      } catch (e) { }
     };
 
     fetchLatestInquiries();
@@ -259,7 +259,7 @@ export function AdminNavbar({
           if (parsed && typeof parsed === "object" && parsed.role !== "Customer") return parsed;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     return { name: "Janani Admin (Root)", email: "jananibiosciences.r@gmail.com", role: "Super Admin" };
   })();
 
@@ -286,52 +286,52 @@ export function AdminNavbar({
   const dynamicNotifications = [
     ...(unreadInquiries.length > 0
       ? [
-          {
-            id: `inq-alert-${unreadInquiries[0]?.id || "top"}`,
-            title: `New Inquiry: ${unreadInquiries[0]?.name || "Customer Lead"}`,
-            desc: unreadInquiries[0]?.message || unreadInquiries[0]?.service || "New customer inquiry received",
-            time: formatRelativeTime(unreadInquiries[0]?.createdAt || unreadInquiries[0]?.created_at),
-            icon: MessageSquare,
-            color: "text-blue-500 bg-blue-500/10",
-            tab: "inquiries" as AdminTab,
-          },
-        ]
+        {
+          id: `inq-alert-${unreadInquiries[0]?.id || "top"}`,
+          title: `New Inquiry: ${unreadInquiries[0]?.name || "Customer Lead"}`,
+          desc: unreadInquiries[0]?.message || unreadInquiries[0]?.service || "New customer inquiry received",
+          time: formatRelativeTime(unreadInquiries[0]?.createdAt || unreadInquiries[0]?.created_at),
+          icon: MessageSquare,
+          color: "text-blue-500 bg-blue-500/10",
+          tab: "inquiries" as AdminTab,
+        },
+      ]
       : []),
     ...(orders.some((o) => o?.orderStatus === "Pending" || o?.orderStatus === "Processing")
       ? [
-          {
-            id: "order-alert-1",
-            title: `New Order #${orders.find((o) => o?.orderStatus === "Pending" || o?.orderStatus === "Processing")?.orderNumber || "ORD-94812"}`,
-            desc: `₹${(orders.find((o) => o?.orderStatus === "Pending" || o?.orderStatus === "Processing")?.totalAmount || 4040).toLocaleString("en-IN")} via UPI`,
-            time: "Recent",
-            icon: ShoppingBag,
-            color: "text-emerald-500 bg-emerald-500/10",
-            tab: "orders" as AdminTab,
-          },
-        ]
+        {
+          id: "order-alert-1",
+          title: `New Order #${orders.find((o) => o?.orderStatus === "Pending" || o?.orderStatus === "Processing")?.orderNumber || "ORD-94812"}`,
+          desc: `₹${(orders.find((o) => o?.orderStatus === "Pending" || o?.orderStatus === "Processing")?.totalAmount || 4040).toLocaleString("en-IN")} via UPI`,
+          time: "Recent",
+          icon: ShoppingBag,
+          color: "text-emerald-500 bg-emerald-500/10",
+          tab: "orders" as AdminTab,
+        },
+      ]
       : [
-          {
-            id: "order-default-1",
-            title: "Storefront Orders Active",
-            desc: "Ready to fulfill orders and generate Shiprocket AWBs",
-            time: "Live",
-            icon: ShoppingBag,
-            color: "text-emerald-500 bg-emerald-500/10",
-            tab: "orders" as AdminTab,
-          },
-        ]),
+        {
+          id: "order-default-1",
+          title: "Storefront Orders Active",
+          desc: "Ready to fulfill orders and generate Shiprocket AWBs",
+          time: "Live",
+          icon: ShoppingBag,
+          color: "text-emerald-500 bg-emerald-500/10",
+          tab: "orders" as AdminTab,
+        },
+      ]),
     ...(inventory.some((i) => (i?.stock ?? 45) < 20)
       ? [
-          {
-            id: "inv-alert-1",
-            title: "Critical Low Stock Alert",
-            desc: `${inventory.find((i) => (i?.stock ?? 45) < 20)?.name || "Harit Biofungicide (1L)"} has low stock units`,
-            time: "Today",
-            icon: AlertTriangle,
-            color: "text-rose-500 bg-rose-500/10",
-            tab: "inventory" as AdminTab,
-          },
-        ]
+        {
+          id: "inv-alert-1",
+          title: "Critical Low Stock Alert",
+          desc: `${inventory.find((i) => (i?.stock ?? 45) < 20)?.name || "Harit Biofungicide (1L)"} has low stock units`,
+          time: "Today",
+          icon: AlertTriangle,
+          color: "text-rose-500 bg-rose-500/10",
+          tab: "inventory" as AdminTab,
+        },
+      ]
       : []),
     {
       id: "sys-ready",
@@ -345,23 +345,22 @@ export function AdminNavbar({
   ];
 
   return (
-    <header className={`sticky top-0 z-40 flex h-16 sm:h-20 w-full max-w-full items-center justify-between border-b backdrop-blur-xl transition-all duration-200 px-3 sm:px-4 lg:px-8 ${
-      isScrolled ? "bg-card/95 border-border shadow-sm" : "bg-card/85 border-border/70"
-    }`}>
+    <header className={`sticky top-0 z-40 flex h-14 sm:h-20 w-full max-w-full items-center justify-between border-b backdrop-blur-xl transition-all duration-200 px-2.5 sm:px-4 lg:px-8 ${isScrolled ? "bg-card/95 border-border shadow-sm" : "bg-card/85 border-border/70"
+      }`}>
       {/* Left Area: Mobile Menu, Dynamic Search & Contextual Add */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-2xl min-w-0 mr-2">
+      <div className="flex items-center gap-1.5 sm:gap-3 flex-1 max-w-2xl min-w-0 mr-1.5 sm:mr-2">
         <button
           onClick={onOpenMobileSidebar}
-          className="lg:hidden flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border bg-background text-foreground hover:bg-accent shrink-0 cursor-pointer"
+          className="lg:hidden flex size-8 sm:size-10 items-center justify-center rounded-lg sm:rounded-2xl border border-border bg-background text-foreground hover:bg-accent shrink-0 cursor-pointer"
           aria-label="Open Sidebar Menu"
         >
-          <Menu className="size-5" />
+          <Menu className="size-4 sm:size-5" />
         </button>
 
         {/* Dynamic Contextual Search Bar */}
         <div ref={searchContainerRef} className="relative flex-1 max-w-md min-w-0">
           <div className="relative flex items-center w-full rounded-xl sm:rounded-2xl border border-border/80 bg-background/80 shadow-sm transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-background hover:border-emerald-500/40">
-            <Search className="absolute left-3 sm:left-3.5 size-4 text-muted-foreground pointer-events-none shrink-0" />
+            <Search className="absolute left-2.5 sm:left-3.5 size-3.5 sm:size-4 text-muted-foreground pointer-events-none shrink-0" />
             <input
               type="text"
               value={searchTerm}
@@ -376,7 +375,7 @@ export function AdminNavbar({
                 }
               }}
               placeholder={getSearchPlaceholder(activeTab)}
-              className="w-full bg-transparent py-2 sm:py-2.5 pl-9 sm:pl-10 pr-16 sm:pr-20 text-xs text-foreground placeholder:text-muted-foreground outline-none font-medium truncate"
+              className="w-full bg-transparent py-1.5 sm:py-2.5 pl-8 sm:pl-10 pr-6 sm:pr-20 text-[11px] sm:text-xs text-foreground placeholder:text-muted-foreground outline-none font-medium truncate"
             />
             <div className="absolute right-2 flex items-center gap-1">
               {searchTerm ? (
@@ -594,38 +593,38 @@ export function AdminNavbar({
       </div>
 
       {/* Right Controls Area */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
 
         {/* Dark/Light Toggle */}
         <button
           onClick={toggleTheme}
-          className="flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer"
+          className="flex size-8 sm:size-10 items-center justify-center rounded-lg sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer shrink-0"
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
         >
-          {theme === "light" ? <Moon className="size-4 text-amber-600" /> : <Sun className="size-4 text-amber-400" />}
+          {theme === "light" ? <Moon className="size-3.5 sm:size-4 text-amber-600" /> : <Sun className="size-3.5 sm:size-4 text-amber-400" />}
         </button>
 
         {/* Messages Dropdown */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => {
               setMessagesOpen(!messagesOpen);
               setNotificationsOpen(false);
               setProfileOpen(false);
             }}
-            className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer"
+            className="relative flex size-8 sm:size-10 items-center justify-center rounded-lg sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer shrink-0"
             title="Customer Inquiries & Messages"
           >
-            <MessageSquare className="size-4 sm:size-4.5" />
+            <MessageSquare className="size-3.5 sm:size-4.5" />
             {unreadMessagesCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow">
+              <span className="absolute -top-1 -right-1 flex size-3.5 sm:size-4 items-center justify-center rounded-full bg-blue-600 text-[9px] sm:text-[10px] font-bold text-white shadow">
                 {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
               </span>
             )}
           </button>
 
           {messagesOpen && (
-            <div className="absolute right-0 mt-3 w-72 sm:w-96 rounded-2xl sm:rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 mt-2 sm:mt-3 w-[calc(100vw-1.5rem)] sm:w-96 max-w-[360px] rounded-2xl sm:rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Customer Inquiries</h3>
@@ -696,24 +695,24 @@ export function AdminNavbar({
         </div>
 
         {/* Notifications Dropdown */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => {
               setNotificationsOpen(!notificationsOpen);
               setMessagesOpen(false);
               setProfileOpen(false);
             }}
-            className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer"
+            className="relative flex size-8 sm:size-10 items-center justify-center rounded-lg sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer shrink-0"
             title="Notifications"
           >
-            <Bell className="size-4 sm:size-4.5" />
-            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow">
+            <Bell className="size-3.5 sm:size-4.5" />
+            <span className="absolute -top-1 -right-1 flex size-3.5 sm:size-4 items-center justify-center rounded-full bg-rose-500 text-[9px] sm:text-[10px] font-bold text-white shadow">
               {dynamicNotifications.length}
             </span>
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-3 w-72 sm:w-96 rounded-2xl sm:rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 mt-2 sm:mt-3 w-[calc(100vw-1.5rem)] sm:w-96 max-w-[360px] rounded-2xl sm:rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Notifications</h3>
@@ -777,7 +776,7 @@ export function AdminNavbar({
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 mt-3 w-64 rounded-2xl sm:rounded-3xl border border-border bg-card p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 mt-2 sm:mt-3 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl sm:rounded-3xl border border-border bg-card p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95">
               <div className="p-3 border-b border-border">
                 <p className="text-xs font-bold text-foreground">{currentAdmin.name || "Janani Admin"}</p>
                 <p className="text-[11px] text-muted-foreground truncate">{currentAdmin.email || "jananibiosciences.r@gmail.com"}</p>
