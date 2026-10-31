@@ -19,6 +19,9 @@ export function getCategoryImage(nameOrSlug: string = "", customImage?: string):
     ) {
       return trimmed;
     }
+    if (trimmed.includes(".jpg") || trimmed.includes(".jpeg") || trimmed.includes(".png") || trimmed.includes(".webp") || trimmed.includes(".svg")) {
+      return `/${trimmed}`;
+    }
   }
   const s = (nameOrSlug || "").toLowerCase();
   if (s.includes("fertilizer") || s.includes("bio-fertilizer")) {

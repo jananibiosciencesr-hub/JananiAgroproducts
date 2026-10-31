@@ -63,6 +63,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) {}
 
+    try {
+      const storedCats = localStorage.getItem("janani_admin_categories") || localStorage.getItem("janani_admin_categories_v3");
+      if (storedCats) {
+        const parsed = JSON.parse(storedCats);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const cleanCats = parsed.filter((cat: any) => {
+            const n = (cat.name || "").toLowerCase();
+            const s = (cat.slug || "").toLowerCase();
+            if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+            return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((t) => n.includes(t) || s.includes(t));
+          });
+          if (cleanCats.length > 0) {
+            setLiveCategories(cleanCats);
+          }
+        }
+      }
+    } catch (e) {}
+
     // Allow state hydration to commit before enabling localStorage persistence to prevent overwriting with {}
     setTimeout(() => {
       isCartHydratedRef.current = true;

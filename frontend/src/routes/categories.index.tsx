@@ -245,7 +245,9 @@ function CategoriesIndexPage() {
                   p.category.toLowerCase() === cat.name.toLowerCase() ||
                   p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))
               ).length;
-              const catImg = getCategoryImage(cat.slug || cat.name, cat.image);
+              const catImg = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
+                ? getCategoryImage(cat.slug || cat.name, cat.image)
+                : getCategoryImage(cat.slug || cat.name);
 
               return (
                 <div

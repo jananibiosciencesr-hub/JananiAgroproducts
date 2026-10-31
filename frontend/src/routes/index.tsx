@@ -151,7 +151,9 @@ export function HomePage() {
       .map((cat: any) => {
         const slug = cat.slug || slugs(cat.name || "");
         const title = cat.name || cat.title || "Category";
-        const image = getCategoryImage(slug || title, cat.image);
+        const image = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
+          ? getCategoryImage(slug || title, cat.image)
+          : getCategoryImage(slug || title);
         const link = `/categories/${slug}`;
         const description = cat.description || "Natural, biological, and effective solutions for every stage of crop growth.";
         const count = cat.count || cat.productsCount || 1;
@@ -377,6 +379,9 @@ export function HomePage() {
                     <img
                       src={cat.image}
                       alt={cat.title}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                      }}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       loading="lazy"
                     />

@@ -443,12 +443,18 @@ export async function getCategories() {
       if (FORBIDDEN_CATEGORIES.has(s) || FORBIDDEN_CATEGORIES.has(n) || FORBIDDEN_CATEGORIES.has(i)) continue;
 
       const key = s;
+      const resolvedImg = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
+        ? cat.image.trim()
+        : getCategoryImage(cat.slug || cat.name);
+      const resolvedBanner = cat.banner_image || cat.bannerImage || resolvedImg;
+
       map.set(key, {
         id: cat.id || `cat-${cat.slug || key}`,
         name: cat.name || cat.slug || key,
         slug: cat.slug || key,
         count: Number(cat.product_count || cat.productsCount || cat.count) || 0,
-        image: cat.image || getCategoryImage(cat.slug || cat.name),
+        image: resolvedImg,
+        bannerImage: resolvedBanner,
         description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
         icon: cat.icon || "🌾",
         active: true
@@ -459,12 +465,16 @@ export async function getCategories() {
     for (const cat of categories) {
       const key = cat.slug.toLowerCase().trim();
       if (FORBIDDEN_CATEGORIES.has(key) || FORBIDDEN_CATEGORIES.has(cat.name.toLowerCase().trim())) continue;
+      const catImg = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
+        ? cat.image.trim()
+        : getCategoryImage(cat.slug || cat.name);
       map.set(key, {
         id: `cat-${cat.slug}`,
         name: cat.name,
         slug: cat.slug,
         count: cat.count || 1,
-        image: getCategoryImage(cat.slug || cat.name),
+        image: catImg,
+        bannerImage: (cat as any).bannerImage || (cat as any).banner_image || catImg,
         description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
         icon: "🌾",
         active: true
@@ -486,7 +496,27 @@ export async function getCategories() {
       existing.count = Number(cat.product_count || cat.productsCount || cat.count) || existing.count;
       if (cat.name) existing.name = cat.name;
       if (cat.description) existing.description = cat.description;
-      existing.image = getCategoryImage(cat.slug || cat.name);
+      if (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0) {
+        existing.image = cat.image.trim();
+      }
+      if (cat.bannerImage || cat.banner_image) {
+        existing.bannerImage = cat.bannerImage || cat.banner_image;
+      }
+    } else {
+      const catImg = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
+        ? cat.image.trim()
+        : getCategoryImage(cat.slug || cat.name);
+      map.set(key, {
+        id: cat.id || `cat-${cat.slug || key}`,
+        name: cat.name || cat.slug || key,
+        slug: cat.slug || key,
+        count: Number(cat.product_count || cat.productsCount || cat.count) || 0,
+        image: catImg,
+        bannerImage: cat.bannerImage || cat.banner_image || catImg,
+        description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
+        icon: cat.icon || "🌾",
+        active: true
+      });
     }
   }
 

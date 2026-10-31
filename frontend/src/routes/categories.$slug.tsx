@@ -13,7 +13,7 @@ import {
   Package,
   ArrowRight
 } from "lucide-react";
-import { categories, products, type Product } from "@/lib/catalog";
+import { categories, products, getCategoryImage, type Product } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -368,32 +368,40 @@ function CategoryDetailPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4 w-full">
-            {categories
-              .filter((c) => c.slug !== category.slug)
-              .map((c) => (
-                <Link
-                  key={c.slug}
-                  to="/categories/$slug"
-                  params={{ slug: c.slug }}
-                  className="group flex items-center gap-3.5 p-3.5 sm:p-4 rounded-3xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-                >
-                  <div className="size-16 sm:size-18 rounded-full overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
-                    <img
-                      src={c.image}
-                      alt={c.name}
-                      className="size-full object-cover group-hover:scale-105 transition duration-300"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors truncate">
-                      {c.name}
-                    </h4>
-                    <span className="text-[11px] text-[#0B6B35] font-semibold mt-0.5 block">
-                      {c.count} formulations
-                    </span>
-                  </div>
-                </Link>
-              ))}
+            {allCats
+              .filter((c: any) => c.slug !== category.slug)
+              .map((c: any) => {
+                const cImg = (c.image && typeof c.image === "string" && c.image.trim().length > 0)
+                  ? getCategoryImage(c.slug || c.name, c.image)
+                  : getCategoryImage(c.slug || c.name);
+                return (
+                  <Link
+                    key={c.slug}
+                    to="/categories/$slug"
+                    params={{ slug: c.slug }}
+                    className="group flex items-center gap-3.5 p-3.5 sm:p-4 rounded-3xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                  >
+                    <div className="size-16 sm:size-18 rounded-full overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
+                      <img
+                        src={cImg}
+                        alt={c.name}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                        }}
+                        className="size-full object-cover group-hover:scale-105 transition duration-300"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors truncate">
+                        {c.name}
+                      </h4>
+                      <span className="text-[11px] text-[#0B6B35] font-semibold mt-0.5 block">
+                        {c.count || (c as any).productsCount || 2} formulations
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
           </div>
         </section>
       </div>
