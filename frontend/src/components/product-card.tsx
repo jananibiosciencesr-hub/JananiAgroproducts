@@ -13,7 +13,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, list = false, onQuickView }: ProductCardProps) {
-  const { cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart } = useStore();
+  const { cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, products: storeProducts } = useStore();
 
   const variants = useMemo(() => resolveProductVariants(product), [product]);
 
@@ -49,12 +49,49 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
   // Image dynamically switches between 1L bottle and 5L can
   const currentImage = selectedVariant.image || getProductVariantImage(product, variantNormId) || product.image;
 
-  // Track cart qty for this specific selected pack size
-  const cartQty =
-    (cart[canonicalKey] ?? 0) +
-    (variantNormId === "1l"
-      ? (cart[product.id] ?? (cart as any)[String(product.id)] ?? (cart as any)[Number(product.id)] ?? 0)
-      : 0);
+  // Track cart qty for this specific selected pack size across all key representations & database IDs
+  const cartQty = useMemo(() => {
+    let count = 0;
+    count += cart[canonicalKey] ?? 0;
+    if (product.slug) count += cart[`${product.slug}__${variantNormId}`] ?? 0;
+    if (variantNormId === "1l") {
+      count +=
+        (cart[product.id] ??
+          (cart as any)[String(product.id)] ??
+          (cart as any)[Number(product.id)] ??
+          (product.slug ? cart[product.slug] ?? 0 : 0));
+    }
+    for (const [k, qty] of Object.entries(cart)) {
+      if (
+        k === canonicalKey ||
+        (product.slug && k === `${product.slug}__${variantNormId}`) ||
+        k === String(product.id) ||
+        k === product.slug
+      ) {
+        continue;
+      }
+      const parts = k.split("__");
+      const kBase = parts[0]!;
+      const kV = (parts[1] || "1l").toLowerCase().includes("5") ? "5l" : "1l";
+      if (kV !== variantNormId) continue;
+
+      if (product.slug && kBase.toLowerCase() === product.slug.toLowerCase()) {
+        count += qty;
+      } else if (product.aliases?.some((a) => a.toLowerCase() === kBase.toLowerCase())) {
+        count += qty;
+      } else if (storeProducts && Array.isArray(storeProducts)) {
+        const matchedInStore = storeProducts.find((p) => String(p.id) === kBase || Number(p.id) === Number(kBase));
+        if (
+          matchedInStore &&
+          (matchedInStore.slug === product.slug ||
+            matchedInStore.name.toLowerCase() === product.name.toLowerCase())
+        ) {
+          count += qty;
+        }
+      }
+    }
+    return count;
+  }, [cart, canonicalKey, product, variantNormId, storeProducts]);
 
   const isWishlisted = wishlist.some((item) => String(item) === String(product.id) || Number(item) === Number(product.id));
 
@@ -96,14 +133,28 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
     e.stopPropagation();
     if (cartQty <= 1) {
       removeFromCart(canonicalKey);
+      if (product.slug) removeFromCart(`${product.slug}__${variantNormId}`);
       if (variantNormId === "1l") {
         removeFromCart(product.id);
         removeFromCart(String(product.id));
         if (!isNaN(Number(product.id))) removeFromCart(Number(product.id));
+        if (product.slug) removeFromCart(product.slug);
+      }
+      if (storeProducts && Array.isArray(storeProducts)) {
+        const dbProd = storeProducts.find((p) => p.slug === product.slug || p.name.toLowerCase() === product.name.toLowerCase());
+        if (dbProd) {
+          removeFromCart(`${dbProd.id}__${variantNormId}`);
+          if (variantNormId === "1l") removeFromCart(dbProd.id);
+        }
       }
       toast.info(`Removed ${formatProductName(product.name)} (${selectedVariant.label || selectedVariant.unit}) from cart`);
     } else {
       updateQuantity(canonicalKey, cartQty - 1);
+      if (product.slug && cart[`${product.slug}__${variantNormId}`]) removeFromCart(`${product.slug}__${variantNormId}`);
+      if (storeProducts && Array.isArray(storeProducts)) {
+        const dbProd = storeProducts.find((p) => p.slug === product.slug);
+        if (dbProd && cart[`${dbProd.id}__${variantNormId}`]) removeFromCart(`${dbProd.id}__${variantNormId}`);
+      }
     }
   };
 

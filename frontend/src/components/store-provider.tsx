@@ -52,7 +52,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (e) {}
-    isCartHydratedRef.current = true;
 
     try {
       const storedWishlist = localStorage.getItem("janani_wishlist");
@@ -63,7 +62,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (e) {}
-    isWishlistHydratedRef.current = true;
+
+    // Allow state hydration to commit before enabling localStorage persistence to prevent overwriting with {}
+    setTimeout(() => {
+      isCartHydratedRef.current = true;
+      isWishlistHydratedRef.current = true;
+    }, 100);
 
     try {
       const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
@@ -309,6 +313,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!isCartHydratedRef.current) return;
     if (typeof window !== "undefined") {
       localStorage.setItem("janani_cart", JSON.stringify(cart));
+      window.dispatchEvent(new Event("janani-cart-updated"));
     }
   }, [cart]);
 
@@ -492,9 +497,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!allProds || allProds.length === 0) return;
 
     setCart((current) => {
+      if (!current || Object.keys(current).length === 0) return current;
       const parsedItems = parseCartItems(current, allProds);
-      const cleaned: Record<string, number> = {};
+      // Guard: If parsed items is empty but current has items, do NOT wipe! Wait for full catalog hydration
+      if (parsedItems.length === 0 && Object.keys(current).length > 0) {
+        return current;
+      }
 
+      const cleaned: Record<string, number> = {};
       for (const item of parsedItems) {
         cleaned[item.cartKey] = item.qty;
       }
@@ -540,22 +550,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           vId = parts[1] || variantId;
         }
 
+        const baseNum = Number(baseId);
+        // Comprehensive product lookup across liveProducts, initialProducts, and static products
         const prod =
-          allProds.find((p) => String(p.id) === baseId || Number(p.id) === Number(baseId) || p.slug === baseId);
+          allProds.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId) ||
+          initialProducts.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId) ||
+          products.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId) ||
+          allProds.find((p) => p.slug.toLowerCase() === baseId.toLowerCase()) ||
+          products.find((p) => p.slug.toLowerCase() === baseId.toLowerCase());
 
         if (!prod || quantity <= 0) return;
 
-        const canonicalProdId = String(prod.id);
         const normalizedVariantId = vId.toLowerCase().includes("5") ? "5l" : "1l";
-        const cartKey = `${canonicalProdId}__${normalizedVariantId}`;
+        // Preserve baseId so cards bound to static product.id (e.g. 3) or slug match instantly
+        const cartKey = `${baseId}__${normalizedVariantId}`;
 
         setCart((current) => {
-          const legacyQty = normalizedVariantId === "1l" ? (Number(current[canonicalProdId]) || Number((current as any)[Number(canonicalProdId)]) || 0) : 0;
+          const legacyQty = normalizedVariantId === "1l" ? (Number(current[baseId]) || Number((current as any)[Number(baseId)]) || 0) : 0;
           const currentVariantQty = Number(current[cartKey]) || 0;
           const next = { ...current };
           if (legacyQty > 0) {
-            delete next[canonicalProdId];
-            delete (next as any)[Number(canonicalProdId)];
+            delete next[baseId];
+            delete (next as any)[Number(baseId)];
           }
           next[cartKey] = currentVariantQty + legacyQty + quantity;
           return next;
@@ -671,12 +687,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           baseId = parts[0]!;
           vId = parts[1] || variantId;
         }
+        const baseNum = Number(baseId);
         const prod =
-          allProds.find((p) => String(p.id) === baseId || Number(p.id) === Number(baseId) || p.slug === baseId);
+          allProds.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId) ||
+          initialProducts.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId) ||
+          products.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId);
 
         const canonicalProdId = prod ? String(prod.id) : baseId;
         const normalizedVariantId = vId.toLowerCase().includes("5") ? "5l" : "1l";
-        const cartKey = `${canonicalProdId}__${normalizedVariantId}`;
+        const cartKey = `${baseId}__${normalizedVariantId}`;
 
         setCart((current) => ({ ...current, [cartKey]: (current[cartKey] ?? 0) + quantity }));
         setWishlist((current) => current.filter((item) => String(item) !== String(id) && Number(item) !== Number(id)));

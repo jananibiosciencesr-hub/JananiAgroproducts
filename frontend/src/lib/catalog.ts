@@ -336,9 +336,13 @@ export function parseCartItems(
       variantId = parts[1] || "1l";
     }
 
+    // Comprehensive resolution: match by ID, slug, or static catalog item
+    const baseNum = Number(baseId);
     const prod =
-      allProducts.find((p) => String(p.id) === baseId || Number(p.id) === Number(baseId) || p.slug === baseId) ||
-      products.find((p) => String(p.id) === baseId || Number(p.id) === Number(baseId) || p.slug === baseId);
+      allProducts.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId) ||
+      products.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId) ||
+      allProducts.find((p) => p.slug.toLowerCase() === baseId.toLowerCase()) ||
+      products.find((p) => p.slug.toLowerCase() === baseId.toLowerCase());
 
     if (!prod) continue;
 
@@ -368,11 +372,13 @@ export function parseCartItems(
       matchedVariant.image = getProductVariantImage(prod, variantId);
     }
 
-    const canonicalProdId = String(prod.id);
     const normalizedVariantId = matchedVariant.id.toLowerCase().includes("5") || matchedVariant.unit.includes("5") ? "5l" : "1l";
-    const canonicalKey = `${canonicalProdId}__${normalizedVariantId}`;
+    // Group identical items together by slug and variant so quantities combine smoothly
+    const groupKey = `${prod.slug || prod.id}__${normalizedVariantId}`;
+    // Retain the caller's key format so key lookups in product-card and cart are guaranteed to match
+    const cartKey = key.includes("__") ? key : `${baseId}__${normalizedVariantId}`;
 
-    const existing = itemMap.get(canonicalKey);
+    const existing = itemMap.get(groupKey);
     if (existing) {
       existing.qty += qty;
       existing.lineTotal = existing.qty * existing.price;
@@ -381,8 +387,8 @@ export function parseCartItems(
       const unitOldPrice = Number(matchedVariant.oldPrice) || Number(prod.oldPrice) || Math.round(unitPrice * 1.2);
       const displayUnit = matchedVariant.unit || matchedVariant.label || (normalizedVariantId === "5l" ? "5 L" : "1 L");
 
-      itemMap.set(canonicalKey, {
-        cartKey: canonicalKey,
+      itemMap.set(groupKey, {
+        cartKey,
         product: prod,
         variant: matchedVariant,
         variantId: normalizedVariantId,

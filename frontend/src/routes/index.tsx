@@ -422,7 +422,13 @@ export function HomePage() {
             >
               {featuredProductsList.map((prod) => {
                 const isWishlisted = wishlist.includes(prod.numId);
-                const cartQty = cart[prod.numId] || (cart as any)[String(prod.numId)] || (cart as any)[prod.id] || 0;
+                const cartQty =
+                  cart[`${prod.numId}__1l`] ??
+                  cart[`${prod.id}__1l`] ??
+                  cart[prod.numId] ??
+                  (cart as any)[String(prod.numId)] ??
+                  (cart as any)[prod.id] ??
+                  0;
                 const discountVal = prod.oldPrice
                   ? Math.round(((prod.oldPrice - prod.price) / prod.oldPrice) * 100)
                   : 12;
@@ -518,10 +524,13 @@ export function HomePage() {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 if (cartQty <= 1) {
+                                  removeFromCart(`${prod.numId}__1l`);
+                                  removeFromCart(`${prod.id}__1l`);
                                   removeFromCart(prod.numId);
                                   removeFromCart(prod.id);
                                   toast.info(`Removed ${prod.name} from cart`);
                                 } else {
+                                  updateQuantity(`${prod.numId}__1l`, cartQty - 1);
                                   updateQuantity(prod.numId, cartQty - 1);
                                 }
                               }}
