@@ -311,8 +311,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             id: srv.id || prev.id,
             name: (srv.name && !srv.name.includes("@") && srv.name !== "Valued Patron" && srv.name !== "Customer") ? srv.name : (prev.name || srv.name),
             phone: srv.phone || prev.phone,
-            walletBalance: srv.walletBalance !== undefined ? Number(srv.walletBalance) : (srv.wallet_balance !== undefined ? Number(srv.wallet_balance) : prev.walletBalance),
-            loyaltyPoints: srv.loyaltyPoints !== undefined ? Number(srv.loyaltyPoints) : (srv.loyalty_points !== undefined ? Number(srv.loyalty_points) : prev.loyaltyPoints),
+            walletBalance: srv.walletBalance !== undefined ? Number(srv.walletBalance) : (srv.wallet_balance !== undefined ? Number(srv.wallet_balance) : Number(prev.walletBalance ?? 0)),
+            loyaltyPoints: srv.loyaltyPoints !== undefined ? Number(srv.loyaltyPoints) : (srv.loyalty_points !== undefined ? Number(srv.loyalty_points) : Number(prev.loyaltyPoints ?? 0)),
           };
           localStorage.setItem("janani_user", JSON.stringify(merged));
           localStorage.setItem("janani_auth_user", JSON.stringify(merged));

@@ -7370,26 +7370,26 @@ export interface AuthUser {
   name: string;
   email: string;
   phone: string;
-  avatar?: string;
+  avatar?: string | undefined;
   role: string;
   walletBalance: number;
   referralCode: string;
   isVerified: boolean;
-  tier?: string;
-  gender?: string;
-  dob?: string;
-  bio?: string;
-  address?: string;
-  houseFlat?: string;
-  street?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  latitude?: number;
-  longitude?: number;
-  loyaltyPoints?: number;
-  status?: string;
-  preferences?: UserPreferences;
+  tier?: string | undefined;
+  gender?: string | undefined;
+  dob?: string | undefined;
+  bio?: string | undefined;
+  address?: string | undefined;
+  houseFlat?: string | undefined;
+  street?: string | undefined;
+  city?: string | undefined;
+  state?: string | undefined;
+  pincode?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
+  loyaltyPoints?: number | undefined;
+  status?: string | undefined;
+  preferences?: UserPreferences | undefined;
 }
 
 export interface AuthResponse {
