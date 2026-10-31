@@ -32,7 +32,8 @@ import {
   Send,
   Flag,
   ChevronRight,
-  Maximize2
+  Maximize2,
+  Upload
 } from "lucide-react";
 import {
   getAdminReviews,
@@ -398,9 +399,12 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
                     {/* Left: Product & Customer info */}
                     <div className="flex items-start gap-3">
                       <img
-                        src={review.customerAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"}
+                        src={review.customerAvatar || "/images/farmer_ramesh.jpg"}
                         alt={review.customerName}
-                        className="size-11 rounded-full object-cover border border-border shadow-xs"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/images/farmer_ramesh.jpg";
+                        }}
+                        className="size-11 rounded-full object-cover border border-border shadow-xs shrink-0"
                       />
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -1504,6 +1508,23 @@ function CreateReviewModal({
   const [verifiedPurchase, setVerifiedPurchase] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Image file must be under 8MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setCustomAvatarUrl(dataUrl);
+      setCustomerAvatar(dataUrl);
+      toast.success("Farmer image loaded successfully!");
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName.trim() || !comment.trim()) {
@@ -1612,40 +1633,82 @@ function CreateReviewModal({
             </div>
           </div>
 
-          {/* Farmer Photo Preset Selection */}
-          <div>
-            <label className="text-xs font-semibold text-foreground block mb-1.5">
-              Farmer Photo / Avatar (Choose Preset or Custom URL)
-            </label>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none flex-wrap">
-              {farmerPresets.map(preset => {
-                const isSelected = customerAvatar === preset.avatar && !customAvatarUrl.trim();
-                return (
-                  <button
-                    key={preset.avatar}
-                    type="button"
-                    onClick={() => {
-                      setCustomerAvatar(preset.avatar);
-                      setCustomAvatarUrl("");
+          {/* Farmer Photo Upload, Preview & Preset Selection */}
+          <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <ImageIcon className="size-3.5 text-emerald-600" />
+                Farmer Photo / Avatar (Upload File, Preset or URL)
+              </label>
+              {(customAvatarUrl || customerAvatar) && (
+                <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <img
+                    src={customAvatarUrl.trim() || customerAvatar}
+                    alt="Preview"
+                    className="size-4.5 rounded-full object-cover border border-emerald-600 shadow-2xs"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/images/farmer_ramesh.jpg";
                     }}
-                    className={`flex items-center gap-1.5 p-1 rounded-xl border text-[10px] font-semibold transition shrink-0 ${
-                      isSelected
-                        ? "border-[#075B32] bg-[#075B32]/10 text-[#075B32] ring-2 ring-[#075B32]/30"
-                        : "border-border bg-muted/40 hover:bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    <img src={preset.avatar} alt={preset.name} className="size-6 rounded-full object-cover" />
-                    <span>{preset.name.split(" ")[0]}</span>
-                  </button>
-                );
-              })}
+                  />
+                  <span>Photo Ready</span>
+                </div>
+              )}
             </div>
+
+            {/* Direct Device File Upload Button */}
+            <div>
+              <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-emerald-600/50 bg-emerald-50/70 hover:bg-emerald-100/70 text-[#075B32] font-bold text-xs cursor-pointer transition active:scale-[0.99] shadow-2xs">
+                <Upload className="size-4 text-[#075B32]" />
+                <span>Choose Photo from Device (JPG, PNG, WebP)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Presets List */}
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground block mb-1">
+                Or pick an authentic farmer portrait preset:
+              </span>
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-wrap">
+                {farmerPresets.map(preset => {
+                  const isSelected = (customerAvatar === preset.avatar || customAvatarUrl === preset.avatar);
+                  return (
+                    <button
+                      key={preset.avatar}
+                      type="button"
+                      onClick={() => {
+                        setCustomerAvatar(preset.avatar);
+                        setCustomAvatarUrl(preset.avatar);
+                      }}
+                      className={`flex items-center gap-1.5 p-1 rounded-xl border text-[10px] font-semibold transition shrink-0 cursor-pointer ${
+                        isSelected
+                          ? "border-[#075B32] bg-[#075B32]/10 text-[#075B32] ring-2 ring-[#075B32]/30 font-bold"
+                          : "border-border bg-card hover:bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <img src={preset.avatar} alt={preset.name} className="size-5 rounded-full object-cover" />
+                      <span>{preset.name.split(" ")[0]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Direct URL input */}
             <input
               type="text"
               value={customAvatarUrl}
-              onChange={e => setCustomAvatarUrl(e.target.value)}
+              onChange={e => {
+                setCustomAvatarUrl(e.target.value);
+                if (e.target.value.trim()) setCustomerAvatar(e.target.value.trim());
+              }}
               placeholder="Or paste custom image URL (/images/... or https://...)"
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-brand-leaf focus:outline-none font-mono"
+              className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-brand-leaf focus:outline-none font-mono"
             />
           </div>
 
@@ -1776,9 +1839,12 @@ function ReviewInspectorDrawer({
         <div className="rounded-xl border border-border bg-muted/30 p-4">
           <div className="flex items-center gap-3">
             <img
-              src={review.customerAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"}
+              src={review.customerAvatar || "/images/farmer_ramesh.jpg"}
               alt={review.customerName}
-              className="size-12 rounded-full object-cover border border-border"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/images/farmer_ramesh.jpg";
+              }}
+              className="size-12 rounded-full object-cover border border-border shrink-0"
             />
             <div>
               <h3 className="text-sm font-bold text-foreground">{review.customerName}</h3>

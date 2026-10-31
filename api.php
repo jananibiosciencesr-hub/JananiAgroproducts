@@ -934,27 +934,59 @@ function ensureReviewsTableSchema($pdo) {
           `customer_id` VARCHAR(64) DEFAULT NULL,
           `customer_name` VARCHAR(255) NOT NULL,
           `customer_email` VARCHAR(255) DEFAULT NULL,
+          `customer_avatar` LONGTEXT DEFAULT NULL,
+          `location` VARCHAR(255) DEFAULT 'Organic Farmer',
           `rating` INT(11) DEFAULT 5,
           `title` VARCHAR(255) DEFAULT NULL,
           `comment` TEXT DEFAULT NULL,
           `verified_purchase` TINYINT(1) DEFAULT 1,
           `status` VARCHAR(50) DEFAULT 'Approved',
+          `is_featured` TINYINT(1) DEFAULT 1,
           `helpful_count` INT(11) DEFAULT 0,
+          `images` LONGTEXT DEFAULT NULL,
           `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Dynamically add missing columns if table already existed in MySQL
+        $columns = [
+            'customer_avatar' => 'LONGTEXT DEFAULT NULL',
+            'location' => "VARCHAR(255) DEFAULT 'Organic Farmer'",
+            'is_featured' => 'TINYINT(1) DEFAULT 1',
+            'images' => 'LONGTEXT DEFAULT NULL'
+        ];
+        foreach ($columns as $col => $type) {
+            $check = $pdo->query("SHOW COLUMNS FROM `reviews` LIKE '{$col}'")->fetch();
+            if (!$check) {
+                $pdo->exec("ALTER TABLE `reviews` ADD COLUMN `{$col}` {$type}");
+            }
+        }
+
+        // Backfill avatars for seeded/known reviews if null or dicebear
+        $avatarSeeds = [
+            'Ramesh Kumar' => '/images/farmer_ramesh.jpg',
+            'Srinivas Reddy' => '/images/farmer_srinivas.jpg',
+            'Mahesh Patel' => '/images/farmer_mahesh.jpg',
+            'Suresh Patil' => '/images/farmer_suresh.jpg',
+            'Baldev Singh' => '/images/farmer_baldev.jpg',
+            'Radhika K.' => '/images/farmer_radhika.jpg',
+            'Suresh Narayanan' => '/images/farmer_suresh.jpg',
+        ];
+        foreach ($avatarSeeds as $name => $avatar) {
+            $pdo->prepare("UPDATE `reviews` SET `customer_avatar` = ? WHERE (`customer_avatar` IS NULL OR `customer_avatar` = '' OR `customer_avatar` LIKE '%dicebear%') AND LOWER(`customer_name`) = ?")->execute([$avatar, strtolower($name)]);
+        }
 
         $cnt = (int)$pdo->query("SELECT COUNT(*) FROM `reviews`")->fetchColumn();
         if ($cnt === 0) {
             $seeds = [
-                ['REV-101', 'prod-bhumi-shakti', 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant', 'CUST-1001', 'Ramesh Kumar', 'ramesh.kumar@gmail.com', 5, 'Increased soil health and bumper yield', 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!', 1, 'Approved', 42],
-                ['REV-102', 'prod-harit', 'HARIT — Trichoderma Viride Liquid Biofungicide', 'CUST-1002', 'Srinivas Reddy', 'srinivas.reddy@gmail.com', 5, 'Root rot under complete control', 'HARIT helped in controlling root rot and my plants are now much healthier.', 1, 'Approved', 29],
-                ['REV-103', 'prod-suraksha', 'SURAKSHA — Bio Pesticide & Crop Shield', 'CUST-1003', 'Mahesh Patel', 'mahesh.patel@gmail.com', 5, 'Excellent cotton crop improvement', 'Good quality products and excellent results. My cotton crop showed great improvement.', 1, 'Approved', 18],
-                ['REV-104', 'prod-pushkal', 'PUSHKAL — Flowering & Fruit Set Biostimulant', 'CUST-1004', 'Suresh Patil', 'suresh.patil@gmail.com', 5, 'Thicker stalks and higher sugar recovery', 'Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!', 1, 'Approved', 15],
-                ['REV-105', 'prod-annada', 'ANNADA — Fish Amino Acid Organic Growth Promoter', 'CUST-1005', 'Baldev Singh', 'baldev.singh@gmail.com', 5, 'Zero chemical residue and vigorous tillering', 'Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.', 1, 'Approved', 21],
-                ['REV-106', 'prod-neem-oil', 'NEEM OIL — Cold Pressed Azadirachtin Formulation', 'CUST-1006', 'Radhika K.', 'radhika.k@gmail.com', 5, 'Authentic aroma and pure traditional extraction!', 'The fragrance and texture of this Neem formulation are completely unmatched compared to commercially refined market brands.', 1, 'Approved', 24],
-                ['REV-107', 'prod-dharani', 'DHARANI — Complete Organic Bio Fertilizer', 'CUST-1007', 'Suresh Narayanan', 'suresh.n@gmail.com', 5, 'Clean packing, fast delivery and authentic results', 'Ordered the farm pack. Eco-packaging is top notch, no leakage, and crops show vigorous healthy canopy within 10 days.', 1, 'Approved', 19]
+                ['REV-101', 'prod-bhumi-shakti', 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant', 'CUST-1001', 'Ramesh Kumar', 'ramesh.kumar@gmail.com', '/images/farmer_ramesh.jpg', 'Mango Farmer, Andhra Pradesh', 5, 'Increased soil health and bumper yield', 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!', 1, 'Approved', 1, 42],
+                ['REV-102', 'prod-harit', 'HARIT — Trichoderma Viride Liquid Biofungicide', 'CUST-1002', 'Srinivas Reddy', 'srinivas.reddy@gmail.com', '/images/farmer_srinivas.jpg', 'Vegetable Farmer, Telangana', 5, 'Root rot under complete control', 'HARIT helped in controlling root rot and my plants are now much healthier.', 1, 'Approved', 1, 29],
+                ['REV-103', 'prod-suraksha', 'SURAKSHA — Bio Pesticide & Crop Shield', 'CUST-1003', 'Mahesh Patel', 'mahesh.patel@gmail.com', '/images/farmer_mahesh.jpg', 'Cotton Farmer, Gujarat', 5, 'Excellent cotton crop improvement', 'Good quality products and excellent results. My cotton crop showed great improvement.', 1, 'Approved', 1, 18],
+                ['REV-104', 'prod-pushkal', 'PUSHKAL — Flowering & Fruit Set Biostimulant', 'CUST-1004', 'Suresh Patil', 'suresh.patil@gmail.com', '/images/farmer_suresh.jpg', 'Sugarcane Farmer, Maharashtra', 5, 'Thicker stalks and higher sugar recovery', 'Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!', 1, 'Approved', 1, 15],
+                ['REV-105', 'prod-annada', 'ANNADA — Fish Amino Acid Organic Growth Promoter', 'CUST-1005', 'Baldev Singh', 'baldev.singh@gmail.com', '/images/farmer_baldev.jpg', 'Wheat & Paddy Farmer, Punjab', 5, 'Zero chemical residue and vigorous tillering', 'Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.', 1, 'Approved', 1, 21],
+                ['REV-106', 'prod-neem-oil', 'NEEM OIL — Cold Pressed Azadirachtin Formulation', 'CUST-1006', 'Radhika K.', 'radhika.k@gmail.com', '/images/farmer_radhika.jpg', 'Spice Farmer, Kerala', 5, 'Authentic aroma and pure traditional extraction!', 'The fragrance and texture of this Neem formulation are completely unmatched compared to commercially refined market brands.', 1, 'Approved', 1, 24],
+                ['REV-107', 'prod-dharani', 'DHARANI — Complete Organic Bio Fertilizer', 'CUST-1007', 'Suresh Narayanan', 'suresh.n@gmail.com', '/images/farmer_suresh.jpg', 'Bio Fertilizer & Protection', 5, 'Clean packing, fast delivery and authentic results', 'Ordered the farm pack. Eco-packaging is top notch, no leakage, and crops show vigorous healthy canopy within 10 days.', 1, 'Approved', 1, 19]
             ];
-            $stmt = $pdo->prepare("INSERT IGNORE INTO `reviews` (`id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `customer_email`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `helpful_count`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT IGNORE INTO `reviews` (`id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `customer_email`, `customer_avatar`, `location`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `is_featured`, `helpful_count`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             foreach ($seeds as $s) {
                 $stmt->execute($s);
             }
@@ -4516,11 +4548,24 @@ try {
                     'Mahesh Patel' => '/images/farmer_mahesh.jpg',
                     'Suresh Patil' => '/images/farmer_suresh.jpg',
                     'Baldev Singh' => '/images/farmer_baldev.jpg',
+                    'Radhika K.' => '/images/farmer_radhika.jpg',
+                    'Suresh Narayanan' => '/images/farmer_suresh.jpg',
                 ];
 
                 $mapped = array_map(function($r) use ($avatarMap) {
                     $cName = $r['customer_name'] ?? 'Verified Farmer';
-                    $avatar = $avatarMap[$cName] ?? ('https://api.dicebear.com/7.x/bottts/svg?seed=' . urlencode($cName));
+                    $cNameKey = ucwords(strtolower(trim($cName)));
+                    $dbAvatar = !empty($r['customer_avatar']) ? trim($r['customer_avatar']) : '';
+                    if (!empty($dbAvatar) && strpos($dbAvatar, 'dicebear') === false) {
+                        $avatar = $dbAvatar;
+                    } else {
+                        $avatar = $avatarMap[$cNameKey] ?? ($avatarMap[$cName] ?? '/images/farmer_ramesh.jpg');
+                    }
+                    $parsedImages = [];
+                    if (!empty($r['images'])) {
+                        $parsedImages = is_string($r['images']) ? (json_decode($r['images'], true) ?: []) : $r['images'];
+                    }
+
                     return [
                         'id' => (string)$r['id'],
                         'productId' => (string)$r['product_id'],
@@ -4536,17 +4581,20 @@ try {
                         'customerEmail' => $r['customer_email'] ?: 'farmer@jananiagro.com',
                         'customer_email' => $r['customer_email'] ?: 'farmer@jananiagro.com',
                         'customerAvatar' => $avatar,
+                        'customer_avatar' => $avatar,
+                        'location' => !empty($r['location']) ? $r['location'] : 'Organic Farmer',
                         'rating' => (int)($r['rating'] ?? 5),
                         'title' => $r['title'] ?: 'Verified Customer Experience',
                         'comment' => $r['comment'] ?: '',
                         'verifiedPurchase' => !empty($r['verified_purchase']),
                         'verified_purchase' => !empty($r['verified_purchase']) ? 1 : 0,
                         'status' => ucfirst(strtolower($r['status'] ?: 'Approved')),
-                        'isFeatured' => true,
+                        'isFeatured' => isset($r['is_featured']) ? (bool)$r['is_featured'] : true,
+                        'is_featured' => isset($r['is_featured']) ? (bool)$r['is_featured'] : true,
                         'helpfulCount' => (int)($r['helpful_count'] ?? 0),
                         'abuseReportsCount' => 0,
                         'abuseReports' => [],
-                        'images' => [],
+                        'images' => $parsedImages,
                         'customerReplies' => [],
                         'createdAt' => $r['created_at'],
                         'created_at' => $r['created_at'],
@@ -4613,9 +4661,17 @@ try {
                     $comment = $body['comment'] ?? '';
                     $verified = isset($body['verified_purchase']) ? ($body['verified_purchase'] ? 1 : 0) : 1;
                     $status = $body['status'] ?? 'Approved';
+                    $location = $body['location'] ?? 'Organic Farmer';
+                    $isFeatured = isset($body['is_featured']) ? ($body['is_featured'] ? 1 : 0) : (isset($body['isFeatured']) ? ($body['isFeatured'] ? 1 : 0) : 1);
+                    $custAvatar = $body['customer_avatar'] ?? ($body['customerAvatar'] ?? ($body['avatar'] ?? null));
+                    if (empty($custAvatar)) {
+                        $cNameKey = ucwords(strtolower(trim($custName)));
+                        $custAvatar = $avatarMap[$cNameKey] ?? '/images/farmer_ramesh.jpg';
+                    }
+                    $images = isset($body['images']) ? (is_array($body['images']) ? json_encode($body['images']) : $body['images']) : null;
 
-                    $stmt = $pdo->prepare("INSERT INTO `reviews` (`id`, `product_id`, `product_name`, `customer_name`, `customer_email`, `rating`, `title`, `comment`, `verified_purchase`, `status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([$revId, $prodId, $prodName, $custName, $custEmail, $rating, $title, $comment, $verified, $status]);
+                    $stmt = $pdo->prepare("INSERT INTO `reviews` (`id`, `product_id`, `product_name`, `customer_name`, `customer_email`, `customer_avatar`, `location`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `is_featured`, `images`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$revId, $prodId, $prodName, $custName, $custEmail, $custAvatar, $location, $rating, $title, $comment, $verified, $status, $isFeatured, $images]);
 
                     $createdReview = [
                         'id' => $revId,
@@ -4627,12 +4683,18 @@ try {
                         'customer_name' => $custName,
                         'customerEmail' => $custEmail,
                         'customer_email' => $custEmail,
+                        'customerAvatar' => $custAvatar,
+                        'customer_avatar' => $custAvatar,
+                        'location' => $location,
                         'rating' => $rating,
                         'title' => $title,
                         'comment' => $comment,
                         'verifiedPurchase' => (bool)$verified,
                         'verified_purchase' => $verified,
                         'status' => $status,
+                        'isFeatured' => (bool)$isFeatured,
+                        'is_featured' => (bool)$isFeatured,
+                        'images' => !empty($images) ? (is_string($images) ? json_decode($images, true) : $images) : [],
                         'createdAt' => date('Y-m-d H:i:s'),
                         'created_at' => date('Y-m-d H:i:s')
                     ];
@@ -4649,6 +4711,17 @@ try {
                     $id = $parts[0];
                     $sub = $parts[1] ?? '';
 
+                    if (isset($body['customer_avatar']) || isset($body['customerAvatar'])) {
+                        $av = $body['customer_avatar'] ?? $body['customerAvatar'];
+                        $pdo->prepare("UPDATE `reviews` SET `customer_avatar` = ? WHERE `id` = ?")->execute([$av, $id]);
+                    }
+                    if (isset($body['location'])) {
+                        $pdo->prepare("UPDATE `reviews` SET `location` = ? WHERE `id` = ?")->execute([$body['location'], $id]);
+                    }
+                    if (isset($body['is_featured']) || isset($body['isFeatured'])) {
+                        $feat = isset($body['is_featured']) ? ($body['is_featured'] ? 1 : 0) : ($body['isFeatured'] ? 1 : 0);
+                        $pdo->prepare("UPDATE `reviews` SET `is_featured` = ? WHERE `id` = ?")->execute([$feat, $id]);
+                    }
                     if ($sub === 'status' || isset($body['status'])) {
                         $newStatus = ucfirst(strtolower($body['status'] ?? 'Approved'));
                         $pdo->prepare("UPDATE `reviews` SET `status` = ? WHERE `id` = ?")->execute([$newStatus, $id]);

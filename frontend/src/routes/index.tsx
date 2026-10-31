@@ -83,35 +83,59 @@ export function HomePage() {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   const scrollTestimonials = (direction: "left" | "right") => {
-    if (testimonialsScrollRef.current) {
-      const container = testimonialsScrollRef.current;
-      const scrollAmount = container.clientWidth > 768 ? 400 : 310;
-      container.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
+    setActiveTestimonial((curr) => {
+      const next = direction === "left" ? curr - 1 : curr + 1;
+      const bounded = Math.max(0, Math.min(next, testimonials.length - 1));
+      if (testimonialsScrollRef.current) {
+        const container = testimonialsScrollRef.current;
+        const cards = Array.from(container.children) as HTMLElement[];
+        const targetCard = cards[bounded];
+        if (targetCard) {
+          const scrollOffset = targetCard.offsetLeft - container.offsetLeft - (container.clientWidth - targetCard.clientWidth) / 2;
+          container.scrollTo({
+            left: Math.max(0, scrollOffset),
+            behavior: "smooth",
+          });
+        }
+      }
+      return bounded;
+    });
   };
 
   const handleTestimonialScroll = () => {
     if (testimonialsScrollRef.current) {
       const container = testimonialsScrollRef.current;
-      const scrollLeft = container.scrollLeft;
-      const cardWidth = container.clientWidth > 768 ? 400 : 310;
-      const idx = Math.round(scrollLeft / cardWidth);
-      setActiveTestimonial(Math.min(Math.max(0, idx), 4));
+      const scrollCenter = container.scrollLeft + container.clientWidth / 2;
+      const cards = Array.from(container.children) as HTMLElement[];
+      if (cards.length === 0) return;
+      let closestIdx = 0;
+      let minDiff = Infinity;
+      cards.forEach((card, idx) => {
+        const cardCenter = card.offsetLeft - container.offsetLeft + card.clientWidth / 2;
+        const diff = Math.abs(scrollCenter - cardCenter);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = idx;
+        }
+      });
+      setActiveTestimonial(closestIdx);
     }
   };
 
   const scrollToTestimonialIndex = (idx: number) => {
     if (testimonialsScrollRef.current) {
       const container = testimonialsScrollRef.current;
-      const cardWidth = container.clientWidth > 768 ? 400 : 310;
-      container.scrollTo({
-        left: idx * cardWidth,
-        behavior: "smooth",
-      });
-      setActiveTestimonial(idx);
+      const cards = Array.from(container.children) as HTMLElement[];
+      const targetIdx = Math.max(0, Math.min(idx, testimonials.length - 1));
+      const targetCard = cards[targetIdx];
+      if (targetCard) {
+        const scrollOffset = targetCard.offsetLeft - container.offsetLeft - (container.clientWidth - targetCard.clientWidth) / 2;
+        container.scrollTo({
+          left: Math.max(0, scrollOffset),
+          behavior: "smooth",
+        });
+        setActiveTestimonial(targetIdx);
+      }
     }
   };
 
@@ -254,9 +278,15 @@ export function HomePage() {
       if (revs && revs.length > 0) {
         const mapped = revs.map((r: any, idx: number) => ({
           id: r.id || idx + 1,
-          name: r.customerName || "Farmer",
+          name: r.customerName || r.customer_name || "Farmer",
           location: r.location || r.productCategory || "Organic Farmer",
-          image: r.customerAvatar || "/images/farmer_ramesh.jpg",
+          image:
+            r.customerAvatar ||
+            r.customer_avatar ||
+            (r.images && r.images.length > 0
+              ? (typeof r.images[0] === "string" ? r.images[0] : r.images[0]?.url)
+              : undefined) ||
+            "/images/farmer_ramesh.jpg",
           quote: r.comment || r.title || "Excellent agro inputs from Janani.",
           stars: r.rating || 5,
         }));
@@ -670,55 +700,58 @@ export function HomePage() {
 
           {/* Testimonial Cards Carousel Container */}
           <div className="relative">
-            {/* Left Nav Arrow Button */}
+            {/* Desktop Left Nav Arrow Button */}
             <button
               type="button"
               onClick={() => scrollTestimonials("left")}
               aria-label="Previous Testimonials"
-              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+              className="hidden sm:flex absolute -left-4 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-white text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-slate-200"
             >
               <ChevronLeft className="size-5" />
             </button>
 
-            {/* Right Nav Arrow Button */}
+            {/* Desktop Right Nav Arrow Button */}
             <button
               type="button"
               onClick={() => scrollTestimonials("right")}
               aria-label="Next Testimonials"
-              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+              className="hidden sm:flex absolute -right-4 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-white text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-slate-200"
             >
               <ChevronRight className="size-5" />
             </button>
 
-            {/* Scrollable Testimonials Strip */}
+            {/* Scrollable Testimonials Strip with Smooth Touch & Mouse Drag */}
             <div
               ref={testimonialsScrollRef}
               onScroll={handleTestimonialScroll}
-              className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none snap-x snap-mandatory"
+              className="flex items-stretch gap-3.5 sm:gap-5 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none snap-x snap-mandatory touch-pan-x select-none"
             >
               {testimonials.map((t) => (
                 <div
                   key={t.id}
-                  className="snap-start flex-none w-[290px] sm:w-[350px] md:w-[380px] flex flex-col justify-between p-6 rounded-3xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1"
+                  className="snap-center sm:snap-start flex-none w-[calc(100vw-56px)] max-w-[340px] sm:w-[350px] md:w-[380px] flex flex-col justify-between p-5 sm:p-6 rounded-3xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1 border border-emerald-950/5"
                 >
                   <div>
                     {/* Farmer Headshot + Rating Stars */}
-                    <div className="flex items-center gap-3.5 mb-4">
+                    <div className="flex items-center gap-3.5 mb-3.5">
                       <img
-                        src={t.image}
+                        src={t.image || "/images/farmer_ramesh.jpg"}
                         alt={t.name}
                         loading="lazy"
                         decoding="async"
-                        className="size-14 rounded-full object-cover shadow-xs"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/images/farmer_ramesh.jpg";
+                        }}
+                        className="size-13 sm:size-14 rounded-full object-cover shadow-xs border border-emerald-900/10 shrink-0"
                       />
                       <div>
                         {/* 5 Stars */}
                         <div className="flex items-center gap-1 text-[#E7A91A]">
-                          {Array.from({ length: t.stars }).map((_, s) => (
+                          {Array.from({ length: t.stars || 5 }).map((_, s) => (
                             <Star key={s} className="size-3.5 fill-current" />
                           ))}
                         </div>
-                        <h3 className="text-sm font-bold text-[#075B32] mt-0.5">
+                        <h3 className="text-sm font-bold text-[#075B32] mt-0.5 leading-snug">
                           {t.name}
                         </h3>
                         <p className="text-[11px] text-slate-500 font-medium">
@@ -737,21 +770,41 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Slider Pagination Indicator Dots */}
-          <div className="mt-2 flex items-center justify-center gap-2">
-            {testimonials.map((t, idx) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => scrollToTestimonialIndex(idx)}
-                aria-label={`Go to testimonial ${idx + 1}`}
-                className={`transition-all duration-300 rounded-full h-2 cursor-pointer ${
-                  activeTestimonial === idx
-                    ? "w-6 bg-[#075B32]"
-                    : "w-2 bg-slate-300 hover:bg-slate-400"
-                }`}
-              />
-            ))}
+          {/* Slider Pagination Controls: Mobile & Desktop Navigation Bar */}
+          <div className="mt-3 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => scrollTestimonials("left")}
+              aria-label="Previous Testimonials"
+              className="size-7.5 sm:size-8 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] hover:text-[#4FAE2A] flex items-center justify-center transition active:scale-90 shadow-2xs cursor-pointer border border-slate-200"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              {testimonials.map((t, idx) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => scrollToTestimonialIndex(idx)}
+                  aria-label={`Go to testimonial ${idx + 1}`}
+                  className={`transition-all duration-300 rounded-full h-2 cursor-pointer ${
+                    activeTestimonial === idx
+                      ? "w-6 bg-[#075B32]"
+                      : "w-2 bg-slate-300 hover:bg-slate-400"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => scrollTestimonials("right")}
+              aria-label="Next Testimonials"
+              className="size-7.5 sm:size-8 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] hover:text-[#4FAE2A] flex items-center justify-center transition active:scale-90 shadow-2xs cursor-pointer border border-slate-200"
+            >
+              <ChevronRight className="size-4" />
+            </button>
           </div>
         </div>
       </section>

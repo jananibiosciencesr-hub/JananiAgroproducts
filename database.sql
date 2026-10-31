@@ -171,12 +171,16 @@ CREATE TABLE IF NOT EXISTS `reviews` (
   `customer_id` VARCHAR(64) DEFAULT NULL,
   `customer_name` VARCHAR(255) NOT NULL,
   `customer_email` VARCHAR(255) DEFAULT NULL,
+  `customer_avatar` LONGTEXT DEFAULT NULL,
+  `location` VARCHAR(255) DEFAULT 'Organic Farmer',
   `rating` INT(11) DEFAULT '5',
   `title` VARCHAR(255) DEFAULT NULL,
   `comment` TEXT DEFAULT NULL,
   `verified_purchase` TINYINT(1) DEFAULT '1',
   `status` VARCHAR(50) DEFAULT 'Approved',
+  `is_featured` TINYINT(1) DEFAULT '1',
   `helpful_count` INT(11) DEFAULT '0',
+  `images` LONGTEXT DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

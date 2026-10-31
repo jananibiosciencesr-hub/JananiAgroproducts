@@ -2525,7 +2525,14 @@ export async function getAdminReviews(params?: ReviewQueryParams) {
       customerId: r.customerId || r.customer_id || "CUST-1001",
       customerName: r.customerName || r.customer_name || "Verified Farmer",
       customerEmail: r.customerEmail || r.customer_email || "farmer@jananiagro.com",
-      customerAvatar: r.customerAvatar || (r.customer_name ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(r.customer_name)}` : undefined),
+      customerAvatar:
+        r.customerAvatar ||
+        r.customer_avatar ||
+        (r.images && r.images.length > 0 ? (typeof r.images[0] === "string" ? r.images[0] : r.images[0]?.url) : undefined) ||
+        "/images/farmer_ramesh.jpg",
+      location: r.location || "Organic Farmer",
+      isFeatured: r.isFeatured !== undefined ? !!r.isFeatured : (r.is_featured !== undefined ? !!r.is_featured : true),
+      images: Array.isArray(r.images) ? r.images : [],
       rating: Number(r.rating || 5),
       title: r.title || "Verified Experience",
       comment: r.comment || "",
