@@ -345,28 +345,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Auto-sync & auto-create database tables/columns in the background
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const initDb = async () => {
-        try {
-          if (sessionStorage.getItem("janani_db_synced")) return;
-          
-          // Trigger Hostinger PHP migration engine
-          const res = await fetch("/db_init.php");
-          if (res.ok) {
-            sessionStorage.setItem("janani_db_synced", "true");
-            console.log(" Janani Agro Database & Columns automatically verified/created.");
-          } else {
-            // Fallback to Express endpoint
-            await fetch("/api/db/init").catch(() => {});
-          }
-        } catch (e) {
-          fetch("/api/db/init").catch(() => {});
-        }
-      };
+    if (typeof window === "undefined") return;
 
-      const timer = setTimeout(initDb, 500);
-      return () => clearTimeout(timer);
-    }
+    const initDb = async () => {
+      try {
+        if (sessionStorage.getItem("janani_db_synced")) return;
+        
+        // Trigger Hostinger PHP migration engine
+        const res = await fetch("/db_init.php");
+        if (res.ok) {
+          sessionStorage.setItem("janani_db_synced", "true");
+          console.log(" Janani Agro Database & Columns automatically verified/created.");
+        } else {
+          // Fallback to Express endpoint
+          await fetch("/api/db/init").catch(() => {});
+        }
+      } catch (e) {
+        fetch("/api/db/init").catch(() => {});
+      }
+    };
+
+    const timer = setTimeout(initDb, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const loginUser = (newUser: AuthUser, token?: string) => {
