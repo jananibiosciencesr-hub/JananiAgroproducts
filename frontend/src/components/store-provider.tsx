@@ -658,7 +658,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return;
         }
         const idStr = String(id).trim();
-        const baseId = idStr.includes("__") ? idStr.split("__")[0] : idStr;
+        const baseId = (idStr.includes("__") ? idStr.split("__")[0] : idStr) || idStr;
         const numId = Number(baseId);
 
         const matched =
@@ -677,14 +677,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setWishlist((current) => {
           const isPresent = current.some((item) => {
             const itemStr = String(item).toLowerCase().trim();
-            const itemBase = itemStr.includes("__") ? itemStr.split("__")[0] : itemStr;
+            const itemBase = (itemStr.includes("__") ? itemStr.split("__")[0] : itemStr) || itemStr;
             return possibleKeys.has(itemStr) || possibleKeys.has(itemBase);
           });
           if (isPresent) {
             toast.info("Removed from your saved wishlist");
             return current.filter((item) => {
               const itemStr = String(item).toLowerCase().trim();
-              const itemBase = itemStr.includes("__") ? itemStr.split("__")[0] : itemStr;
+              const itemBase = (itemStr.includes("__") ? itemStr.split("__")[0] : itemStr) || itemStr;
               return !possibleKeys.has(itemStr) && !possibleKeys.has(itemBase);
             });
           } else {
