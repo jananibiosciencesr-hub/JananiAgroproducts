@@ -297,6 +297,8 @@ export const DEFAULT_CUSTOMERS = [
     id: "CUST-KAMESWARI",
     name: "Kameswari Pachipulusu",
     email: "kameswarip98@gmail.com",
+    password: "Sravs@98",
+    passwordHash: "Sravs@98",
     phone: "+91 98480 22338",
     tier: "Silver Member",
     status: "Active",

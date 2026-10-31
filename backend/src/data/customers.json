@@ -4,8 +4,8 @@
     "name": "Kameswari Pachipulusu",
     "email": "kameswarip98@gmail.com",
     "phone": "+91 98480 22338",
-    "passwordHash": "demo1234",
-    "password": "demo1234",
+    "passwordHash": "Sravs@98",
+    "password": "Sravs@98",
     "avatar": "https://api.dicebear.com/7.x/initials/svg?seed=Kameswari%20Pachipulusu",
     "role": "customer",
     "walletBalance": 250,
@@ -15,9 +15,16 @@
     "memberSince": "2026-10-13",
     "tier": "Silver Member",
     "preferences": {
-      "dietary": ["Bio Fertilizers", "Bio Stimulants"],
+      "dietary": [
+        "Bio Fertilizers",
+        "Bio Stimulants"
+      ],
       "pinCode": "530001",
-      "notifications": { "email": true, "sms": true, "whatsapp": true }
+      "notifications": {
+        "email": true,
+        "sms": true,
+        "whatsapp": true
+      }
     },
     "addresses": [
       {
@@ -50,7 +57,11 @@
     "preferences": {
       "dietary": [],
       "pinCode": "560066",
-      "notifications": { "email": true, "sms": true, "whatsapp": true }
+      "notifications": {
+        "email": true,
+        "sms": true,
+        "whatsapp": true
+      }
     },
     "addresses": []
   },
@@ -72,7 +83,11 @@
     "preferences": {
       "dietary": [],
       "pinCode": "560038",
-      "notifications": { "email": true, "sms": true, "whatsapp": true }
+      "notifications": {
+        "email": true,
+        "sms": true,
+        "whatsapp": true
+      }
     },
     "addresses": []
   },
@@ -94,7 +109,11 @@
     "preferences": {
       "dietary": [],
       "pinCode": "560038",
-      "notifications": { "email": true, "sms": true, "whatsapp": true }
+      "notifications": {
+        "email": true,
+        "sms": true,
+        "whatsapp": true
+      }
     },
     "addresses": []
   },
@@ -116,7 +135,11 @@
     "preferences": {
       "dietary": [],
       "pinCode": "360005",
-      "notifications": { "email": true, "sms": true, "whatsapp": true }
+      "notifications": {
+        "email": true,
+        "sms": true,
+        "whatsapp": true
+      }
     },
     "addresses": []
   }

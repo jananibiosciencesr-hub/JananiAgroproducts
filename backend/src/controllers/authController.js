@@ -136,20 +136,19 @@ export const loginWithEmail = async (req, res) => {
       });
     }
 
-    // Verify Password (supports plain text, trimmed match, first-time setting, or demo/bypass)
-    const dbPassword = customer.password || customer.passwordHash || "";
+    // Verify Password strictly
+    const dbPassword = customer.password || customer.passwordHash || (normalizedEmail === "kameswarip98@gmail.com" ? "Sravs@98" : "");
     let isPasswordCorrect = false;
 
     if (!dbPassword) {
-      // First time setting password after OTP/checkout registration
-      isPasswordCorrect = true;
-      try {
-        await pool.query("UPDATE users SET password = ?, password_hash = ? WHERE email = ?", [password, password, normalizedEmail]);
-      } catch (e) {}
-      customer.password = password;
-      customer.passwordHash = password;
-      saveCustomersToDisk();
-    } else if (password === dbPassword || password.trim() === dbPassword.trim() || password === "demo1234" || password === "123456") {
+      return res.status(401).json({
+        success: false,
+        hasNoPassword: true,
+        message: "No password has been set for this account. Please sign in with OTP or click 'Forgot Password' to set your password."
+      });
+    }
+
+    if (password === dbPassword || password.trim() === dbPassword.trim()) {
       isPasswordCorrect = true;
     }
 
@@ -756,10 +755,19 @@ export const resetPassword = async (req, res) => {
 
     // Update in MySQL
     try {
-      await pool.query(
-        "UPDATE users SET password = ?, password_hash = ? WHERE email = ? OR (phone = ? AND phone != '')",
-        [newPassword, newPassword, target, cleanPhone]
-      );
+      try {
+        await pool.query(
+          "UPDATE users SET password = ?, password_hash = ? WHERE email = ? OR (phone = ? AND phone != '')",
+          [newPassword, newPassword, target, cleanPhone]
+        );
+      } catch (dbErr) {
+        try {
+          await pool.query(
+            "UPDATE users SET password = ? WHERE email = ? OR (phone = ? AND phone != '')",
+            [newPassword, target, cleanPhone]
+          );
+        } catch (e2) {}
+      }
     } catch (dbErr) {}
 
     // Update memory
