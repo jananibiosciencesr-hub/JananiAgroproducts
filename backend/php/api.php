@@ -1003,6 +1003,9 @@ function ensureCategoriesTableSchema($pdo) {
         if (isset($existingCols['image']) && strpos($existingCols['image'], 'varchar') !== false) {
             try { $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `image` MEDIUMTEXT NULL"); } catch (Exception $e) {}
         }
+        if (isset($existingCols['banner_image']) && strpos($existingCols['banner_image'], 'varchar') !== false) {
+            try { $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `banner_image` MEDIUMTEXT NULL"); } catch (Exception $e) {}
+        }
         if (isset($existingCols['description']) && strpos($existingCols['description'], 'varchar') !== false) {
             try { $pdo->exec("ALTER TABLE `categories` MODIFY COLUMN `description` MEDIUMTEXT NULL"); } catch (Exception $e) {}
         }
@@ -2845,6 +2848,7 @@ try {
                         }
                         $c['parentId'] = $c['parent_id'];
                         $c['parentName'] = $c['parent_name'];
+                        $c['bannerImage'] = !empty($c['banner_image']) ? $c['banner_image'] : (!empty($c['image']) ? $c['image'] : '');
                         $c['productsCount'] = (int)($c['product_count'] ?? 0);
                         $c['productCount'] = (int)($c['product_count'] ?? 0);
                         $c['orderIndex'] = (int)($c['display_order'] ?? 0);

@@ -50,6 +50,7 @@ function CategoryDetailPage() {
   }, [rawCats]);
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
   const category = allCats.find((c) => c.slug === slug || (slug === "bio-fungicides" && c.slug === "fungicides")) ?? allCats[0];
+  const heroBanner = category?.bannerImage || (category as any)?.banner_image || category?.image;
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
   const [list, setList] = useState(false);
@@ -130,6 +131,31 @@ function CategoryDetailPage() {
               {category.name}
             </span>
           </nav>
+
+          {/* Hero Banner Feature if available */}
+          {heroBanner && (
+            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl h-36 sm:h-52 lg:h-64 mb-4 border border-border/70 shadow-md bg-slate-950">
+              <img
+                src={heroBanner}
+                alt={category.name}
+                className="absolute inset-0 size-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-950/50 to-transparent p-5 sm:p-7 lg:p-8 flex flex-col justify-end text-white">
+                <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-amber-400 drop-shadow">
+                  <Leaf className="size-3.5" /> Certified Pure Harvest Category
+                </span>
+                <h2 className="text-xl sm:text-3xl lg:text-4xl font-black mt-1 tracking-tight text-white drop-shadow">
+                  {category.name}
+                </h2>
+                <p className="text-xs sm:text-sm text-white/90 mt-1 max-w-xl line-clamp-2 drop-shadow">
+                  {category.description || `Certified biological and organic ${category.name.toLowerCase()} formulated for disease protection, balanced nutrition, and high yields.`}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Title Row + Badge + Description */}
           <div className="mb-3.5">

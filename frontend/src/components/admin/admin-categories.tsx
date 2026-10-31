@@ -450,8 +450,15 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="size-11 rounded-2xl bg-muted/80 border border-border/80 overflow-hidden flex items-center justify-center font-bold text-lg shrink-0 shadow-sm">
-                          {cat.image && cat.image.startsWith("http") ? (
-                            <img src={cat.image} alt={cat.name} className="size-full object-cover" />
+                          {cat.image && (cat.image.startsWith("http") || cat.image.startsWith("data:") || cat.image.startsWith("/")) ? (
+                            <img
+                              src={cat.image}
+                              alt={cat.name}
+                              className="size-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                              }}
+                            />
                           ) : (
                             cat.icon || "🌾"
                           )}
@@ -700,6 +707,41 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 // -------------------------------------------------------------
 // Category Add / Edit Tabbed Modal
 // -------------------------------------------------------------
+function processCategoryMediaFile(file: File, maxWidth = 1200, maxHeight = 800): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (!src) return resolve("");
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.85);
+          resolve(compressed);
+        } else {
+          resolve(src);
+        }
+      };
+      img.onerror = () => resolve(src);
+      img.src = src;
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
 function CategoryFormModal({
   isOpen,
   onClose,
@@ -737,6 +779,35 @@ function CategoryFormModal({
     }
   });
 
+  const handleUploadMediaFile = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "bannerImage") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image file is too large. Please select a photo under 10MB.");
+      return;
+    }
+
+    try {
+      toast.loading("Processing and optimizing image for database...", { id: "cat-upload" });
+      const maxWidth = field === "bannerImage" ? 1600 : 1000;
+      const maxHeight = field === "bannerImage" ? 800 : 1000;
+      const dataUrl = await processCategoryMediaFile(file, maxWidth, maxHeight);
+      if (dataUrl) {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: dataUrl,
+          ...(field === "image" && !prev.bannerImage ? { bannerImage: dataUrl } : {})
+        }));
+        toast.success(`Successfully uploaded ${field === "image" ? "card thumbnail" : "hero banner"}!`, { id: "cat-upload" });
+      }
+    } catch (err) {
+      toast.error("Failed to process image file", { id: "cat-upload" });
+    } finally {
+      e.target.value = "";
+    }
+  };
+
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -746,8 +817,8 @@ function CategoryFormModal({
         parentId: initialData.parentId || "",
         description: initialData.description || "",
         icon: initialData.icon || "🌾",
-        image: initialData.image && initialData.image.startsWith("/images/categories/") ? initialData.image : "/images/categories/bio-fertilizers.jpg",
-        bannerImage: initialData.bannerImage && initialData.bannerImage.startsWith("/images/categories/") ? initialData.bannerImage : "/images/categories/bio-fertilizers.jpg",
+        image: initialData.image || "/images/categories/bio-fertilizers.jpg",
+        bannerImage: initialData.bannerImage || initialData.image || "/images/categories/bio-fertilizers.jpg",
         featured: Boolean(initialData.featured),
         trending: Boolean(initialData.trending),
         active: initialData.active !== undefined ? Boolean(initialData.active) : true,
@@ -917,36 +988,169 @@ function CategoryFormModal({
             </div>
           )}
 
-          {/* TAB 2: Media & Images */}
+          {/* TAB 2: Media & Images (Upload from Device + Direct URL) */}
           {activeTab === "media" && (
             <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Card Thumbnail URL</label>
-                <input
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="/images/cat-rice.jpg"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                />
+              {/* 1. Category Card Thumbnail */}
+              <div className="rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <ImageIcon className="size-4 text-emerald-600" />
+                    <span>Card Thumbnail</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">(Used in category cards & grids)</span>
+                  </label>
+                  {formData.image && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, image: "" }))}
+                      className="text-[11px] text-rose-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                    >
+                      <Trash2 className="size-3" /> Clear Image
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Upload from Computer / Device */}
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                      📁 Option 1: Upload from Device
+                    </span>
+                    <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-border hover:border-emerald-500 bg-muted/20 hover:bg-emerald-500/5 cursor-pointer transition-colors p-2 text-center group">
+                      <Upload className="size-5 text-muted-foreground group-hover:text-emerald-600 mb-1 transition-transform group-hover:-translate-y-0.5" />
+                      <span className="text-xs font-bold text-foreground">Click to Browse Thumbnail</span>
+                      <span className="text-[10px] text-muted-foreground">PNG, JPG, WEBP, SVG</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleUploadMediaFile(e, "image")}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Direct URL input */}
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                      🔗 Option 2: Direct Image URL
+                    </span>
+                    <div className="flex flex-col justify-between h-24">
+                      <input
+                        value={formData.image}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, image: e.target.value }))}
+                        placeholder="/images/categories/bio-fertilizers.jpg or https://..."
+                        className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Supports local paths, HTTPS links, or uploaded Base64 image data.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Thumbnail Preview Bar */}
+                {formData.image && (
+                  <div className="flex items-center gap-3 pt-2.5 border-t border-border/60">
+                    <div className="size-12 rounded-xl border border-border overflow-hidden bg-muted shrink-0 shadow-xs">
+                      <img
+                        src={formData.image}
+                        alt="Thumbnail preview"
+                        className="size-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                        }}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-bold text-foreground block truncate">Active Card Thumbnail</span>
+                      <span className="text-[10px] font-mono text-muted-foreground truncate block">
+                        {formData.image.startsWith("data:") ? "Local Image File Uploaded (Stored in SQL)" : formData.image}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Category Landing Hero Banner URL</label>
-                <input
-                  value={formData.bannerImage}
-                  onChange={(e) => setFormData({ ...formData, bannerImage: e.target.value })}
-                  placeholder="/images/banner-rice.jpg"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                />
+              {/* 2. Category Landing Hero Banner */}
+              <div className="rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <ImageIcon className="size-4 text-emerald-600" />
+                    <span>Category Landing Hero Banner</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">(Top banner on category page)</span>
+                  </label>
+                  {formData.bannerImage && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, bannerImage: "" }))}
+                      className="text-[11px] text-rose-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                    >
+                      <Trash2 className="size-3" /> Clear Banner
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Upload from Computer / Device */}
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                      📁 Option 1: Upload from Device
+                    </span>
+                    <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-border hover:border-emerald-500 bg-muted/20 hover:bg-emerald-500/5 cursor-pointer transition-colors p-2 text-center group">
+                      <Upload className="size-5 text-muted-foreground group-hover:text-emerald-600 mb-1 transition-transform group-hover:-translate-y-0.5" />
+                      <span className="text-xs font-bold text-foreground">Click to Browse Banner</span>
+                      <span className="text-[10px] text-muted-foreground">Recommended 1920x600 or 1200x400</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleUploadMediaFile(e, "bannerImage")}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Direct URL input */}
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                      🔗 Option 2: Direct Banner URL
+                    </span>
+                    <div className="flex flex-col justify-between h-24">
+                      <input
+                        value={formData.bannerImage}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, bannerImage: e.target.value }))}
+                        placeholder="/images/categories/bio-fertilizers.jpg or https://..."
+                        className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Leave blank to automatically use the card thumbnail as hero banner.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Preview Box */}
+              {/* Live Banner Preview Box with real image */}
               <div className="rounded-2xl border border-border bg-muted/40 p-4">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-2">Banner Preview:</span>
-                <div className="h-28 w-full rounded-xl bg-muted border border-border overflow-hidden relative flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/80 to-transparent p-4 flex flex-col justify-end text-white">
-                    <span className="text-xl">{formData.icon}</span>
-                    <h4 className="font-bold text-base">{formData.name || "Category Title"}</h4>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-2 flex items-center gap-1.5">
+                  <Eye className="size-3.5 text-emerald-600" /> Live Storefront Banner Preview:
+                </span>
+                <div className="h-32 w-full rounded-2xl border border-border overflow-hidden relative flex items-center justify-center bg-slate-900 shadow-inner">
+                  {(formData.bannerImage || formData.image) && (
+                    <img
+                      src={formData.bannerImage || formData.image}
+                      alt="Banner Preview"
+                      className="absolute inset-0 size-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                      }}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-950/50 to-transparent p-4 flex flex-col justify-end text-white">
+                    <span className="text-2xl drop-shadow">{formData.icon || "🌾"}</span>
+                    <h4 className="font-bold text-base sm:text-lg drop-shadow">{formData.name || "Category Title"}</h4>
+                    <p className="text-xs text-white/90 line-clamp-1 drop-shadow">
+                      {formData.description || "Biological crop protection & soil health formulations"}
+                    </p>
                   </div>
                 </div>
               </div>

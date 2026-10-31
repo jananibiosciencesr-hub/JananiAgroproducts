@@ -7,8 +7,18 @@ export { heroImage, productsImage, storyImage, pantryImage };
 
 // Smart Category Image Resolver with verified organic photography (matches Image 1 exactly)
 export function getCategoryImage(nameOrSlug: string = "", customImage?: string): string {
-  if (customImage && typeof customImage === "string" && customImage.startsWith("/images/categories/")) {
-    return customImage;
+  if (customImage && typeof customImage === "string" && customImage.trim().length > 0) {
+    const trimmed = customImage.trim();
+    if (
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("data:") ||
+      trimmed.startsWith("blob:") ||
+      trimmed.startsWith("/") ||
+      trimmed.startsWith("./")
+    ) {
+      return trimmed;
+    }
   }
   const s = (nameOrSlug || "").toLowerCase();
   if (s.includes("fertilizer") || s.includes("bio-fertilizer")) {
