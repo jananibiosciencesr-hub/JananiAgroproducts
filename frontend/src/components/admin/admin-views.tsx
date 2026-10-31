@@ -150,7 +150,7 @@ export function ProductsView({
       </div>
 
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] relative">
+        <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
@@ -206,6 +206,22 @@ export function ProductsView({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Inventory Summary Footer */}
+        <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3.5 border-t border-border bg-muted/20 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span>Showing <strong className="text-foreground font-bold">{filteredInventory.length}</strong> inventory products</span>
+            {cleanSearch && (
+              <span className="text-[11px] italic text-muted-foreground">
+                (filtered by "{searchQuery}")
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-4 text-[11px]">
+            <span>Safety Reorder Threshold: <strong className="text-foreground">20 units</strong></span>
+            <span>Warehouse Database Sync: <strong className="text-emerald-600 font-bold">Active</strong></span>
+          </div>
         </div>
       </div>
     </div>
@@ -266,7 +282,7 @@ export function OrdersView({
       </div>
 
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] relative">
+        <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
@@ -431,11 +447,48 @@ export function InventoryView({
     return name.includes(cleanSearch) || sku.includes(cleanSearch) || cat.includes(cleanSearch) || status.includes(cleanSearch);
   });
 
-  return (
-    <div className="space-y-6 min-w-0 max-w-full">
+  const healthyStockCount = filteredInventory.filter((i) => (i?.stock ?? 45) >= 20).length;
+  const lowStockCount = filteredInventory.filter((i) => (i?.stock ?? 45) > 0 && (i?.stock ?? 45) < 20).length;
+  const outOfStockCount = filteredInventory.filter((i) => (i?.stock ?? 45) === 0).length;
 
-      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden min-w-0">
-        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] w-full relative">
+  return (
+    <div className="flex-1 flex flex-col min-h-0 space-y-4 min-w-0 max-w-full">
+      {/* Inventory Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
+            Warehouse Inventory & Stock
+            <span className="rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-extrabold">
+              {filteredInventory.length} Items
+            </span>
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Monitor real-time warehouse stock, safety reorder thresholds, and restock actions
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-700 dark:text-emerald-400">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            {healthyStockCount} In Stock
+          </span>
+          {lowStockCount > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-bold text-amber-700 dark:text-amber-400">
+              <span className="size-2 rounded-full bg-amber-500" />
+              {lowStockCount} Low Stock
+            </span>
+          )}
+          {outOfStockCount > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 font-bold text-rose-700 dark:text-rose-400">
+              <span className="size-2 rounded-full bg-rose-500" />
+              {outOfStockCount} Out of Stock
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Main Table Card - fills the height to eliminate bottom gap */}
+      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden min-w-0 flex-1 flex flex-col min-h-[calc(100vh-210px)]">
+        <div className="overflow-auto flex-1 w-full relative">
           <table className="w-full text-left text-xs min-w-[600px] border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>

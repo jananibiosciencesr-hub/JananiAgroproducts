@@ -377,7 +377,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
       {/* Main Categories Table */}
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <div className="overflow-auto max-h-[calc(100vh-240px)] min-h-[420px] relative">
+        <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
