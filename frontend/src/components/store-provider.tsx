@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
-import { products as initialProducts, categories as initialCategories, type Product, parseCartItems } from "@/lib/catalog";
+import { products, products as initialProducts, categories as initialCategories, type Product, parseCartItems } from "@/lib/catalog";
 import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories, updateUserProfileApi } from "@/lib/api";
 
 type StoreContextValue = {
