@@ -217,56 +217,56 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       refreshUserProfile();
     };
 
-    if (typeof window !== "undefined") {
-      window.addEventListener("janani-products-updated", handleSync);
-      window.addEventListener("janani-categories-updated", handleSync);
-      window.addEventListener("storage", handleSync);
-      window.addEventListener("focus", handleSync);
+    if (typeof window === "undefined") return;
 
-      try {
-        // Always purge legacy un-scoped shared orders and addresses to prevent cross-account pollution
-        localStorage.removeItem("janani_saved_addresses");
-        localStorage.removeItem("janani_customer_orders");
+    window.addEventListener("janani-products-updated", handleSync);
+    window.addEventListener("janani-categories-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("focus", handleSync);
 
-        const latestOrderRaw = localStorage.getItem("janani_latest_order");
-        if (latestOrderRaw) {
-          try {
-            const latest = JSON.parse(latestOrderRaw);
-            const currentUserStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
-            const parsedUser = currentUserStr ? JSON.parse(currentUserStr) : null;
-            const currentEmail = (parsedUser?.email || "").toLowerCase().trim();
-            const orderEmail = (latest?.customerEmail || "").toLowerCase().trim();
-            if (currentEmail && orderEmail && currentEmail !== orderEmail) {
-              localStorage.removeItem("janani_latest_order");
-            }
-          } catch (e) {
+    try {
+      // Always purge legacy un-scoped shared orders and addresses to prevent cross-account pollution
+      localStorage.removeItem("janani_saved_addresses");
+      localStorage.removeItem("janani_customer_orders");
+
+      const latestOrderRaw = localStorage.getItem("janani_latest_order");
+      if (latestOrderRaw) {
+        try {
+          const latest = JSON.parse(latestOrderRaw);
+          const currentUserStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+          const parsedUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+          const currentEmail = (parsedUser?.email || "").toLowerCase().trim();
+          const orderEmail = (latest?.customerEmail || "").toLowerCase().trim();
+          if (currentEmail && orderEmail && currentEmail !== orderEmail) {
             localStorage.removeItem("janani_latest_order");
           }
+        } catch (e) {
+          localStorage.removeItem("janani_latest_order");
         }
+      }
 
-        const legacyKeys = ["janani_pending_checkout"];
-        legacyKeys.forEach((key) => {
-          const item = localStorage.getItem(key);
-          if (item && (item.toLowerCase().includes("neha") || item.toLowerCase().includes("example.com") || item.includes("9311416225"))) {
-            localStorage.removeItem(key);
-          }
-        });
-
-        // Clean obsolete demo grocery products if present
-        const storedProducts = localStorage.getItem("janani_admin_products");
-        if (storedProducts && (storedProducts.includes("unpolished-toor-dal") || storedProducts.includes("lakadong-turmeric"))) {
-          localStorage.removeItem("janani_admin_products");
-          localStorage.removeItem("janani_admin_categories");
+      const legacyKeys = ["janani_pending_checkout"];
+      legacyKeys.forEach((key) => {
+        const item = localStorage.getItem(key);
+        if (item && (item.toLowerCase().includes("neha") || item.toLowerCase().includes("example.com") || item.includes("9311416225"))) {
+          localStorage.removeItem(key);
         }
-      } catch (e) {}
+      });
 
-      return () => {
-        window.removeEventListener("janani-products-updated", handleSync);
-        window.removeEventListener("janani-categories-updated", handleSync);
-        window.removeEventListener("storage", handleSync);
-        window.removeEventListener("focus", handleSync);
-      };
-    }
+      // Clean obsolete demo grocery products if present
+      const storedProducts = localStorage.getItem("janani_admin_products");
+      if (storedProducts && (storedProducts.includes("unpolished-toor-dal") || storedProducts.includes("lakadong-turmeric"))) {
+        localStorage.removeItem("janani_admin_products");
+        localStorage.removeItem("janani_admin_categories");
+      }
+    } catch (e) {}
+
+    return () => {
+      window.removeEventListener("janani-products-updated", handleSync);
+      window.removeEventListener("janani-categories-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("focus", handleSync);
+    };
   }, []);
 
   // Sync customer user changes to localStorage (Customer only)
