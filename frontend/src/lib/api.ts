@@ -7387,6 +7387,8 @@ export interface AuthUser {
   pincode?: string;
   latitude?: number;
   longitude?: number;
+  loyaltyPoints?: number;
+  status?: string;
   preferences?: UserPreferences;
 }
 
