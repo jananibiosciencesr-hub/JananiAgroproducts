@@ -121,6 +121,8 @@ export type Product = {
   stockCount: number;
   badge?: string | undefined;
   image: string;
+  videoUrl?: string;
+  video_url?: string;
   description: string;
   origin: string;
   dietaryTags: string[];
@@ -143,6 +145,58 @@ export type Product = {
 };
 
 export const slugs = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+/**
+ * Parses and normalizes video URLs (YouTube, Vimeo, MP4/WebM direct URLs, blob/data URLs).
+ */
+export function getVideoEmbedInfo(url?: string): {
+  isEmbeddable: boolean;
+  embedUrl: string;
+  isDirectVideo: boolean;
+  rawUrl: string;
+} {
+  if (!url || typeof url !== "string") {
+    return { isEmbeddable: false, embedUrl: "", isDirectVideo: false, rawUrl: "" };
+  }
+  const clean = url.trim();
+  if (!clean) {
+    return { isEmbeddable: false, embedUrl: "", isDirectVideo: false, rawUrl: "" };
+  }
+
+  // 1. YouTube: watch?v=ID, youtu.be/ID, embed/ID, shorts/ID
+  const ytMatch = clean.match(
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([^"&?\/\s]{11})/i
+  );
+  if (ytMatch && ytMatch[1]) {
+    return {
+      isEmbeddable: true,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0`,
+      isDirectVideo: false,
+      rawUrl: clean,
+    };
+  }
+
+  // 2. Vimeo: vimeo.com/ID
+  const vimeoMatch = clean.match(
+    /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)(?:$|\/|\?)/i
+  );
+  if (vimeoMatch && vimeoMatch[3]) {
+    return {
+      isEmbeddable: true,
+      embedUrl: `https://player.vimeo.com/video/${vimeoMatch[3]}?autoplay=1`,
+      isDirectVideo: false,
+      rawUrl: clean,
+    };
+  }
+
+  // 3. Direct Video URLs (MP4, WebM, OGG, blob, data:video)
+  return {
+    isEmbeddable: false,
+    embedUrl: clean,
+    isDirectVideo: true,
+    rawUrl: clean,
+  };
+}
 
 /**
  * Resolves the appropriate variant image (1L bottle vs 5L can) for a product.
@@ -448,6 +502,8 @@ export const products: Product[] = [
     stockCount: 150,
     badge: "Best Seller",
     image: "/products/harit.jpg",
+    videoUrl: "https://www.youtube.com/watch?v=k3G_29e6j-w",
+    video_url: "https://www.youtube.com/watch?v=k3G_29e6j-w",
     description: "HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases.",
     origin: "Tal. Lodhika GIDC, Gujarat",
     dietaryTags: ["Trichoderma Viride", "Biofungicide", "Wilt Protection", "Root Rot Control", "Rhizosphere Health"],

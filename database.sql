@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   `reviews_count` INT(11) DEFAULT '0',
   `badge` VARCHAR(100) DEFAULT NULL,
   `image` VARCHAR(500) DEFAULT NULL,
+  `video_url` MEDIUMTEXT DEFAULT NULL,
   `description` TEXT DEFAULT NULL,
   `origin` VARCHAR(255) DEFAULT 'Lodhika GIDC, Gujarat',
   `certification` VARCHAR(255) DEFAULT 'Certified Organic & NPOP Verified',

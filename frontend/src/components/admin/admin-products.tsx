@@ -35,7 +35,9 @@ import {
   ChevronDown,
   Info,
   ListPlus,
-  MessageSquare
+  MessageSquare,
+  Video,
+  Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -56,7 +58,7 @@ import {
   getAdminFullCategories,
   getCategories
 } from "@/lib/api";
-import { formatProductName } from "@/lib/catalog";
+import { formatProductName, getVideoEmbedInfo } from "@/lib/catalog";
 import { matchesProductSearch } from "@/lib/search-helper";
 
 export interface ProductVariant {
@@ -1142,6 +1144,7 @@ function ProductFormModal({
     description: "",
     harvestOrigin: "Janani Bio Sciences Cluster, Gujarat",
     image: "",
+    videoUrl: "",
     gallery: [] as string[],
     variants: [] as ProductVariant[],
     organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
@@ -1278,6 +1281,7 @@ function ProductFormModal({
         description: initialData.description || "",
         harvestOrigin: initialData.harvestOrigin || "Janani Bio Sciences Cluster, Gujarat",
         image: initialData.image || "",
+        videoUrl: (initialData as any).videoUrl || (initialData as any).video_url || rawData.video_url || rawData.videoUrl || "",
         gallery: (initialData.gallery && initialData.gallery.length > 0)
           ? initialData.gallery
           : (initialData.image ? [initialData.image] : []),
@@ -1326,6 +1330,7 @@ function ProductFormModal({
         description: "",
         harvestOrigin: "Janani Bio Sciences Cluster, Gujarat",
         image: "",
+        videoUrl: "",
         gallery: [],
         variants: [
           { id: `VAR-1`, name: "500 ml Pack", label: "500 ml Pack", unit: "500 ml", sku: `JAP-500ML`, price: 250, originalPrice: 290, oldPrice: 290, stock: 25, inStock: true },
@@ -1554,6 +1559,35 @@ function ProductFormModal({
     e.target.value = "";
   };
 
+  // Upload product showcase video file
+  const handleUploadVideoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.warning("Video file exceeds 15 MB. For optimal storefront playback speed, we recommend pasting a YouTube link or using a video under 15 MB.");
+      return;
+    }
+
+    toast.info(`Uploading video "${file.name}"...`);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setFormData((prev) => ({
+          ...prev,
+          videoUrl: dataUrl
+        }));
+        toast.success(`Video "${file.name}" loaded successfully!`);
+      }
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read video file");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -1576,7 +1610,7 @@ function ProductFormModal({
             { id: "general", label: "1. Info" },
             { id: "pricing", label: "2. Pricing & Stock" },
             { id: "variants", label: "3. Variants" },
-            { id: "gallery", label: "4. Gallery" },
+            { id: "gallery", label: "4. Gallery & Video" },
             { id: "specs", label: "5. Agro Specs & Tabs" },
             { id: "seo", label: "6. SEO" },
             { id: "toggles", label: "7. Toggles" }
@@ -2016,6 +2050,138 @@ function ProductFormModal({
                     })}
                   </div>
                 )}
+              </div>
+
+              {/* Product Showcase Video Section (User Storefront Position 3) */}
+              <div className="pt-4 border-t border-border/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                      <Video className="size-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        Product Video Showcase
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">
+                          Storefront Gallery #3
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        Displays in 3rd thumbnail position with a Play badge. Supports YouTube, Vimeo &amp; direct MP4/WebM uploads.
+                      </p>
+                    </div>
+                  </div>
+                  {formData.videoUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, videoUrl: "" }));
+                        toast.info("Product video removed");
+                      }}
+                      className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] h-7 px-2.5 rounded-xl cursor-pointer"
+                    >
+                      <X className="size-3 mr-1" /> Remove Video
+                    </Button>
+                  )}
+                </div>
+
+                {/* Video Inputs: Upload & URL */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+                  <div className="sm:col-span-8 flex gap-2">
+                    <input
+                      value={formData.videoUrl}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, videoUrl: e.target.value }))}
+                      placeholder="Paste YouTube watch/shorts URL, Vimeo, or MP4 link..."
+                      className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
+                    />
+                  </div>
+                  <div className="sm:col-span-4 flex items-center gap-1.5">
+                    <label className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-2xl border border-border bg-card hover:bg-accent text-foreground text-xs font-bold cursor-pointer transition-colors shadow-sm">
+                      <Upload className="size-3.5 text-brand-leaf" />
+                      <span>Upload Video</span>
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                        className="hidden"
+                        onChange={handleUploadVideoFile}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Quick Presets for Demo */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Quick Sample Links:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoUrl: "https://www.youtube.com/watch?v=k3G_29e6j-w"
+                      }));
+                      toast.success("Loaded Harit Bio-Fungicide Demo video!");
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
+                  >
+                    <Play className="size-3 text-emerald-600 fill-emerald-600" />
+                    Harit Field Application Demo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                      }));
+                      toast.success("Loaded General Demo Video link!");
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
+                  >
+                    <Play className="size-3 text-emerald-600 fill-emerald-600" />
+                    Janani Organic Farming Story
+                  </button>
+                </div>
+
+                {/* Live Video Preview Box */}
+                <div className="rounded-2xl border border-border bg-muted/30 p-3">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-2 flex items-center gap-1">
+                    <Eye className="size-3.5 text-emerald-600" /> Live Video Preview Player:
+                  </span>
+                  {formData.videoUrl ? (
+                    (() => {
+                      const vInfo = getVideoEmbedInfo(formData.videoUrl);
+                      return (
+                        <div className="w-full aspect-video max-h-56 rounded-xl border border-border overflow-hidden bg-black flex items-center justify-center shadow-inner relative">
+                          {vInfo.isEmbeddable ? (
+                            <iframe
+                              src={vInfo.embedUrl}
+                              title="Product Video Preview"
+                              className="size-full border-0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <video
+                              src={vInfo.rawUrl}
+                              controls
+                              className="size-full object-contain"
+                            />
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="h-28 rounded-xl border border-dashed border-border/80 flex flex-col items-center justify-center text-center p-3 text-muted-foreground">
+                      <Video className="size-6 mb-1 text-muted-foreground/40" />
+                      <p className="text-xs font-semibold">No video attached to this product</p>
+                      <p className="text-[10px]">Add a YouTube / Vimeo URL or upload an MP4 video above to activate the video thumbnail on the storefront.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -2613,6 +2779,8 @@ function ProductFormModal({
 
               const payload = {
                 ...formData,
+                videoUrl: formData.videoUrl || "",
+                video_url: formData.videoUrl || "",
                 variants: cleanVariants,
                 rating: Number(formData.rating) || 4.8,
                 reviewsCount: Number(formData.reviewsCount) || 53,

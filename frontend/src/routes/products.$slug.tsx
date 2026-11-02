@@ -37,7 +37,7 @@ import {
   Heart,
   MessageSquarePlus
 } from "lucide-react";
-import { products, categories, type Product, type ProductVariant, formatProductName, getProductVariantImage } from "@/lib/catalog";
+import { products, categories, type Product, type ProductVariant, formatProductName, getProductVariantImage, getVideoEmbedInfo } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 import { getStorefrontReviews, createAdminReview } from "@/lib/api";
 import { toast } from "sonner";
@@ -354,10 +354,10 @@ function ProductDetailPage() {
 
   // Gallery Images List: dynamically loaded from variant (1L bottle / 5L can), backend product.image & gallery
   const galleryImages = useMemo(() => {
-    const list: { id: string; src: string; label: string; isVideo?: boolean }[] = [];
+    const list: { id: string; src: string; label: string; isVideo?: boolean; videoUrl?: string }[] = [];
     const seen = new Set<string>();
 
-    const addImg = (src?: string, label?: string, isVideo = false) => {
+    const addImg = (src?: string, label?: string, isVideo = false, vidUrl?: string) => {
       if (!src || typeof src !== "string") return;
       const clean = src.trim();
       if (!clean || seen.has(clean) || clean.toLowerCase().includes("-label.png")) return;
@@ -367,6 +367,7 @@ function ProductDetailPage() {
         src: clean,
         label: label || `${product.name} - View ${list.length + 1}`,
         isVideo,
+        videoUrl: vidUrl,
       });
     };
 
@@ -384,19 +385,33 @@ function ProductDetailPage() {
       addImg(otherVarImg, `${product.name} - ${otherNormId.toUpperCase()} Pack`);
     }
 
-    // 3. Fallback product image if distinct
+    // 3. Product Video Demo (Position 3 in Gallery Strip)
+    const rawVideo = (product as any).video_url || product.videoUrl;
+    if (rawVideo && typeof rawVideo === "string" && rawVideo.trim() !== "") {
+      const vClean = rawVideo.trim();
+      const poster = product.image || activeVarImg || otherVarImg || "/products/harit.jpg";
+      list.push({
+        id: "prod-gallery-video",
+        src: poster,
+        label: `${product.name} - Official Video Demo`,
+        isVideo: true,
+        videoUrl: vClean,
+      });
+    }
+
+    // 4. Fallback product image if distinct
     if (product.image) {
       addImg(product.image, `${product.name} - Front View`);
     }
 
-    // 4. Additional gallery images added in the backend
+    // 5. Additional gallery images added in the backend
     if (Array.isArray(product.gallery) && product.gallery.length > 0) {
       product.gallery.forEach((g, idx) => {
         addImg(g, `${product.name} - Gallery ${idx + 1}`);
       });
     }
 
-    // 5. Default fallback if empty
+    // 6. Default fallback if empty
     if (list.length === 0) {
       addImg("/products/dharani.jpg", product.name);
     }
@@ -631,11 +646,10 @@ function ProductDetailPage() {
                       key={img.id}
                       onClick={() => {
                         setActiveImageIndex(idx);
-                        if (img.isVideo) setIsVideoModalOpen(true);
                       }}
                       className={`relative size-14 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1.5 flex items-center justify-center cursor-pointer ${
                         isActive
-                          ? "border-[#075B32] shadow-sm ring-1 ring-[#075B32]/30"
+                          ? "border-[#075B32] shadow-sm ring-2 ring-[#075B32]/30"
                           : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
                       }`}
                     >
@@ -645,8 +659,10 @@ function ProductDetailPage() {
                         className="w-full h-full object-contain"
                       />
                       {img.isVideo && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <Play className="size-4 text-white fill-white" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center transition-colors hover:bg-black/30">
+                          <div className="size-6 sm:size-7 rounded-full bg-[#075B32] flex items-center justify-center shadow-md">
+                            <Play className="size-3.5 sm:size-4 text-white fill-white ml-0.5" />
+                          </div>
                         </div>
                       )}
                     </button>
@@ -657,18 +673,45 @@ function ProductDetailPage() {
 
             {/* Main Big Image Viewport */}
             <div className="relative flex-1 w-full aspect-square max-h-[520px] rounded-2xl border border-gray-200/90 bg-white p-4 sm:p-6 flex items-center justify-center overflow-hidden group shadow-xs">
-              <img
-                src={galleryImages[activeImageIndex]?.src || product.image}
-                alt={product.name}
-                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
-              />
+              {galleryImages[activeImageIndex]?.isVideo ? (
+                (() => {
+                  const vInfo = getVideoEmbedInfo(galleryImages[activeImageIndex]?.videoUrl);
+                  return (
+                    <div className="relative w-full h-full rounded-xl overflow-hidden bg-black flex items-center justify-center shadow-inner">
+                      {vInfo.isEmbeddable ? (
+                        <iframe
+                          src={vInfo.embedUrl}
+                          title={`${product.name} Video Demo`}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <video
+                          src={vInfo.rawUrl}
+                          controls
+                          autoPlay
+                          playsInline
+                          className="w-full h-full object-contain"
+                        />
+                      )}
+                    </div>
+                  );
+                })()
+              ) : (
+                <img
+                  src={galleryImages[activeImageIndex]?.src || product.image}
+                  alt={product.name}
+                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                />
+              )}
 
               {/* Prev Arrow */}
               {galleryImages.length > 1 && (
                 <button
                   onClick={handlePrevImage}
                   aria-label="Previous Image"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/95 shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition cursor-pointer"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/95 shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition cursor-pointer z-10"
                 >
                   <ChevronLeft className="size-5" />
                 </button>
@@ -679,17 +722,23 @@ function ProductDetailPage() {
                 <button
                   onClick={handleNextImage}
                   aria-label="Next Image"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/95 shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/95 shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-[#075B32] hover:text-white transition cursor-pointer z-10"
                 >
                   <ChevronRight className="size-5" />
                 </button>
               )}
 
-              {/* Expand Lightbox Button (Bottom Right) */}
+              {/* Expand Lightbox / Video Modal Button (Bottom Right) */}
               <button
-                onClick={() => setIsLightboxOpen(true)}
-                title="Expand Full View"
-                className="absolute bottom-3 right-3 size-8 rounded-lg bg-white/90 border border-gray-200 flex items-center justify-center text-gray-600 hover:text-[#075B32] hover:bg-white shadow-xs transition cursor-pointer"
+                onClick={() => {
+                  if (galleryImages[activeImageIndex]?.isVideo) {
+                    setIsVideoModalOpen(true);
+                  } else {
+                    setIsLightboxOpen(true);
+                  }
+                }}
+                title={galleryImages[activeImageIndex]?.isVideo ? "Open Fullscreen Video Player" : "Expand Full View"}
+                className="absolute bottom-3 right-3 size-8 rounded-lg bg-white/90 border border-gray-200 flex items-center justify-center text-gray-600 hover:text-[#075B32] hover:bg-white shadow-xs transition cursor-pointer z-10"
               >
                 <Maximize2 className="size-4" />
               </button>
@@ -1441,28 +1490,57 @@ function ProductDetailPage() {
           onClick={() => setIsVideoModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-2xl bg-black rounded-2xl overflow-hidden shadow-2xl p-4"
+            className="relative w-full max-w-4xl bg-black rounded-2xl overflow-hidden shadow-2xl p-3 sm:p-4 border border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setIsVideoModalOpen(false)}
-              className="absolute top-3 right-3 size-8 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition z-10"
+              className="absolute top-3 right-3 size-9 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition z-20 cursor-pointer"
             >
-              <X className="size-4" />
+              <X className="size-5" />
             </button>
             <div className="aspect-video w-full rounded-xl overflow-hidden bg-neutral-900 flex items-center justify-center">
-              <div className="text-center p-6 space-y-3">
-                <div className="size-16 rounded-full bg-[#075B32] text-white flex items-center justify-center mx-auto shadow-lg animate-pulse">
-                  <Play className="size-7 fill-white ml-0.5" />
-                </div>
-                <h4 className="text-white font-bold text-base font-display">
-                  {product.name} - Application & Field Results Demo
-                </h4>
-                <p className="text-neutral-400 text-xs max-w-md mx-auto">
-                  Demonstrating seed treatment, seedling root dip, and drip fertigation best practices for
-                  maximum root health.
-                </p>
-              </div>
+              {(() => {
+                const activeItem = galleryImages[activeImageIndex];
+                const rawVid = (activeItem?.isVideo && activeItem?.videoUrl) || (product as any).video_url || product.videoUrl;
+                const vInfo = getVideoEmbedInfo(rawVid);
+                if (vInfo.isEmbeddable) {
+                  return (
+                    <iframe
+                      src={vInfo.embedUrl}
+                      title={`${product.name} Video Demo`}
+                      className="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  );
+                }
+                if (vInfo.isDirectVideo) {
+                  return (
+                    <video
+                      src={vInfo.rawUrl}
+                      controls
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-contain"
+                    />
+                  );
+                }
+                return (
+                  <div className="text-center p-6 space-y-3">
+                    <div className="size-16 rounded-full bg-[#075B32] text-white flex items-center justify-center mx-auto shadow-lg animate-pulse">
+                      <Play className="size-7 fill-white ml-0.5" />
+                    </div>
+                    <h4 className="text-white font-bold text-base font-display">
+                      {product.name} - Application &amp; Field Results Demo
+                    </h4>
+                    <p className="text-neutral-400 text-xs max-w-md mx-auto">
+                      Demonstrating seed treatment, seedling root dip, and drip fertigation best practices for
+                      maximum root health.
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

@@ -246,6 +246,8 @@ export function normalizeProduct(raw: any): Product {
     stockCount: stock,
     badge: raw.badge || (discount > 15 ? "Special Offer" : undefined),
     image: getProductImage(raw.name || raw.category_name || raw.category, raw.image),
+    videoUrl: raw.video_url || raw.videoUrl || (raw.slug === "harit" ? "https://www.youtube.com/watch?v=k3G_29e6j-w" : undefined),
+    video_url: raw.video_url || raw.videoUrl || (raw.slug === "harit" ? "https://www.youtube.com/watch?v=k3G_29e6j-w" : undefined),
     description: raw.description || "100% Certified Organic Harvest directly from Indian farms.",
     origin: raw.origin || "Lodhika GIDC, Gujarat",
     dietaryTags: Array.isArray(raw.tags) ? raw.tags : (typeof raw.tags === "string" ? JSON.parse(raw.tags) : ["Organic", "Chemical Free", "Farm Fresh"]),
@@ -1592,6 +1594,8 @@ export function normalizeAdminProduct(raw: any) {
     rating: Number(raw.rating) || 4.8,
     reviewsCount: Number(raw.reviews_count || raw.reviewsCount || raw.reviews) || 35,
     image: raw.image || `/images/products/${raw.slug}.webp`,
+    videoUrl: raw.video_url || raw.videoUrl || (raw.slug === "harit" ? "https://www.youtube.com/watch?v=k3G_29e6j-w" : ""),
+    video_url: raw.video_url || raw.videoUrl || (raw.slug === "harit" ? "https://www.youtube.com/watch?v=k3G_29e6j-w" : ""),
     gallery: Array.isArray(raw.gallery) ? raw.gallery : [],
     variants: parseProductVariants(raw.variants, price, raw.unit || "1 L", stock),
     description: raw.description || "",
@@ -1746,6 +1750,8 @@ export async function createAdminProduct(productData: any) {
     unit: productData.unit || "1 L",
     badge: productData.badge || "",
     image: productData.image || (Array.isArray(productData.gallery) && productData.gallery[0]) || "",
+    video_url: productData.video_url || productData.videoUrl || "",
+    videoUrl: productData.video_url || productData.videoUrl || "",
     gallery: Array.isArray(productData.gallery) ? productData.gallery : (productData.gallery ? [productData.gallery] : (productData.image ? [productData.image] : [])),
     variants: productData.variants !== undefined
       ? parseProductVariants(productData.variants, Number(productData.price) || 0, productData.unit || "1 L", stockVal !== undefined ? Number(stockVal) : 50)
@@ -1824,6 +1830,8 @@ export async function updateAdminProduct(id: string, productData: any) {
     unit: productData.unit,
     badge: productData.badge,
     image: productData.image,
+    video_url: productData.video_url !== undefined ? productData.video_url : productData.videoUrl,
+    videoUrl: productData.videoUrl !== undefined ? productData.videoUrl : productData.video_url,
     gallery: Array.isArray(productData.gallery) ? productData.gallery : (productData.gallery ? [productData.gallery] : (productData.image ? [productData.image] : undefined)),
     variants: productData.variants !== undefined
       ? parseProductVariants(productData.variants, Number(productData.price) || 0, productData.unit || "1 L", stockVal !== undefined ? Number(stockVal) : 50)

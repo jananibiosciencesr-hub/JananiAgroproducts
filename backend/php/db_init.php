@@ -163,6 +163,7 @@ $schema = [
             'reviews_count' => 'INT DEFAULT 0',
             'badge' => 'VARCHAR(100) DEFAULT NULL',
             'image' => 'VARCHAR(500) DEFAULT NULL',
+            'video_url' => 'MEDIUMTEXT DEFAULT NULL',
             'gallery' => 'JSON DEFAULT NULL',
             'description' => 'TEXT DEFAULT NULL',
             'features' => 'JSON DEFAULT NULL',

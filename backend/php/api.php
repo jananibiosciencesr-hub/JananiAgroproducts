@@ -1121,6 +1121,7 @@ function ensureProductsTableSchema($pdo) {
             'methodOfApplication' => 'TEXT NULL',
             'compatibility' => 'TEXT NULL',
             'storageNotice' => 'TEXT NULL',
+            'video_url' => 'MEDIUMTEXT NULL',
             'faqs' => 'LONGTEXT NULL'
         ];
         foreach ($needed as $colName => $colDef) {
@@ -1299,6 +1300,11 @@ function ensureJananiCatalogSynced($pdo) {
         try {
             $pdo->exec("UPDATE `users` SET `phone` = '' WHERE `phone` = '+91 98480 22338' AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
             $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
+        } catch (Exception $e) {}
+
+        // Auto-seed default video demo URL for flagship Harit if empty
+        try {
+            $pdo->exec("UPDATE `products` SET `video_url` = 'https://www.youtube.com/watch?v=k3G_29e6j-w' WHERE (`slug` = 'harit' OR `name` LIKE '%Harit%') AND (`video_url` IS NULL OR `video_url` = '')");
         } catch (Exception $e) {}
     } catch (Exception $e) {}
 }
@@ -2262,6 +2268,7 @@ try {
                     $image = $body['image'] ?? '/images/products/placeholder.webp';
                     $description = $body['description'] ?? '';
                     $sku = $body['sku'] ?? ('JAP-' . rand(1000, 9999));
+                    $videoUrl = $body['video_url'] ?? ($body['videoUrl'] ?? null);
                     $gallery = isset($body['gallery']) ? (is_array($body['gallery']) ? json_encode($body['gallery'], JSON_UNESCAPED_SLASHES) : $body['gallery']) : json_encode([$image], JSON_UNESCAPED_SLASHES);
                     $variants = isset($body['variants']) ? (is_array($body['variants']) ? json_encode($body['variants'], JSON_UNESCAPED_SLASHES) : $body['variants']) : null;
                     $subtitle = $body['subtitle'] ?? null;
@@ -2275,7 +2282,7 @@ try {
                     $storageNotice = $body['storageNotice'] ?? null;
                     $faqs = isset($body['faqs']) ? (is_array($body['faqs']) ? json_encode($body['faqs'], JSON_UNESCAPED_SLASHES) : $body['faqs']) : null;
 
-                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`, `gallery`, `variants`, `subtitle`, `benefits`, `specifications`, `crops`, `recommendedCrops`, `dosage`, `methodOfApplication`, `compatibility`, `storageNotice`, `faqs`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `video_url`, `description`, `origin`, `certification`, `active`, `status`, `sku`, `gallery`, `variants`, `subtitle`, `benefits`, `specifications`, `crops`, `recommendedCrops`, `dosage`, `methodOfApplication`, `compatibility`, `storageNotice`, `faqs`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $slug,
                         $name,
@@ -2286,6 +2293,7 @@ try {
                         $stock,
                         $badge,
                         $image,
+                        $videoUrl,
                         $description,
                         $origin,
                         $cert,
@@ -2519,6 +2527,9 @@ try {
                     if (isset($body['harvestOrigin']) && !isset($body['origin'])) {
                         $body['origin'] = $body['harvestOrigin'];
                     }
+                    if (isset($body['videoUrl']) && !isset($body['video_url'])) {
+                        $body['video_url'] = $body['videoUrl'];
+                    }
                     if (isset($body['organicCertifications']) && is_array($body['organicCertifications']) && !isset($body['certification'])) {
                         $body['certification'] = implode(', ', $body['organicCertifications']);
                     }
@@ -2549,7 +2560,7 @@ try {
                     $vals = [];
                     $allowed = [
                         'name', 'slug', 'category_name', 'category_id', 'price', 'old_price',
-                        'unit', 'stock', 'rating', 'reviews_count', 'badge', 'image',
+                        'unit', 'stock', 'rating', 'reviews_count', 'badge', 'image', 'video_url',
                         'description', 'origin', 'certification', 'active', 'status', 'sku',
                         'gallery', 'variants', 'subtitle', 'benefits', 'specifications',
                         'crops', 'recommendedCrops', 'dosage', 'methodOfApplication',
