@@ -2111,40 +2111,11 @@ function ProductFormModal({
                   </div>
                 </div>
 
-                {/* Quick Presets for Demo */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Quick Sample Links:
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoUrl: "https://www.youtube.com/watch?v=k3G_29e6j-w"
-                      }));
-                      toast.success("Loaded Harit Bio-Fungicide Demo video!");
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
-                  >
-                    <Play className="size-3 text-emerald-600 fill-emerald-600" />
-                    Harit Field Application Demo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                      }));
-                      toast.success("Loaded General Demo Video link!");
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
-                  >
-                    <Play className="size-3 text-emerald-600 fill-emerald-600" />
-                    Janani Organic Farming Story
-                  </button>
-                </div>
+                {/* Help tip for video format */}
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  <Play className="size-3 text-emerald-600 fill-emerald-600 shrink-0" />
+                  <span>Supports public YouTube links (e.g. <code className="font-mono bg-muted px-1 rounded">https://www.youtube.com/watch?v=...</code> or <code className="font-mono bg-muted px-1 rounded">https://youtu.be/...</code>), Vimeo links, or uploaded MP4/WebM video files.</span>
+                </p>
 
                 {/* Live Video Preview Box */}
                 <div className="rounded-2xl border border-border bg-muted/30 p-3">

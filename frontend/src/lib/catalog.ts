@@ -502,8 +502,6 @@ export const products: Product[] = [
     stockCount: 150,
     badge: "Best Seller",
     image: "/products/harit.jpg",
-    videoUrl: "https://www.youtube.com/watch?v=k3G_29e6j-w",
-    video_url: "https://www.youtube.com/watch?v=k3G_29e6j-w",
     description: "HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases.",
     origin: "Tal. Lodhika GIDC, Gujarat",
     dietaryTags: ["Trichoderma Viride", "Biofungicide", "Wilt Protection", "Root Rot Control", "Rhizosphere Health"],
