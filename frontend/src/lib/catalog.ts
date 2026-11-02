@@ -2,8 +2,10 @@ import heroImage from "@/assets/janani-hero.jpg";
 import productsImage from "@/assets/janani-products.jpg";
 import storyImage from "@/assets/janani-story.jpg";
 import pantryImage from "@/assets/janani-pantry.jpg";
+import haritDemoVideo from "@/assets/videos/harit-demo.mp4";
 
-export { heroImage, productsImage, storyImage, pantryImage };
+export { heroImage, productsImage, storyImage, pantryImage, haritDemoVideo };
+export const SAMPLE_PRODUCT_VIDEO = haritDemoVideo;
 
 // Smart Category Image Resolver with verified organic photography (matches Image 1 exactly)
 export function getCategoryImage(nameOrSlug: string = "", customImage?: string): string {
@@ -502,6 +504,8 @@ export const products: Product[] = [
     stockCount: 150,
     badge: "Best Seller",
     image: "/products/harit.jpg",
+    videoUrl: haritDemoVideo,
+    video_url: haritDemoVideo,
     description: "HARIT contains beneficial Trichoderma viride, a naturally occurring beneficial fungus used in agricultural and horticultural production. It helps establish a healthy rhizosphere and supports favourable soil and root-zone conditions. HARIT helps suppress harmful soil-borne fungal pathogens associated with wilt, damping-off, root rot, collar rot and other root-zone diseases.",
     origin: "Tal. Lodhika GIDC, Gujarat",
     dietaryTags: ["Trichoderma Viride", "Biofungicide", "Wilt Protection", "Root Rot Control", "Rhizosphere Health"],

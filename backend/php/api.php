@@ -1302,9 +1302,9 @@ function ensureJananiCatalogSynced($pdo) {
             $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
         } catch (Exception $e) {}
 
-        // Purge dummy demo video link so products strictly show videos added by the admin
+        // Auto-seed verified sample agricultural demo video for Harit if empty or dead
         try {
-            $pdo->exec("UPDATE `products` SET `video_url` = NULL WHERE `video_url` LIKE '%k3G_29e6j-w%'");
+            $pdo->exec("UPDATE `products` SET `video_url` = 'https://www.youtube.com/watch?v=TihdID6918Q' WHERE (`slug` = 'harit' OR `name` LIKE '%Harit%') AND (`video_url` IS NULL OR `video_url` = '' OR `video_url` LIKE '%k3G_29e6j-w%')");
         } catch (Exception $e) {}
     } catch (Exception $e) {}
 }

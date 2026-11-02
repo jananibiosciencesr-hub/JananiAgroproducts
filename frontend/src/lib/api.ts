@@ -1,4 +1,4 @@
-import { products, categories, orders, type Product, getCategoryImage, getProductImage, formatProductName } from "./catalog";
+import { products, categories, orders, type Product, getCategoryImage, getProductImage, formatProductName, SAMPLE_PRODUCT_VIDEO } from "./catalog";
 import { matchesProductSearch } from "./search-helper";
 import {
   STORAGE_KEYS,
@@ -246,8 +246,16 @@ export function normalizeProduct(raw: any): Product {
     stockCount: stock,
     badge: raw.badge || (discount > 15 ? "Special Offer" : undefined),
     image: getProductImage(raw.name || raw.category_name || raw.category, raw.image),
-    videoUrl: raw.video_url || raw.videoUrl || undefined,
-    video_url: raw.video_url || raw.videoUrl || undefined,
+    videoUrl: (raw.video_url && !raw.video_url.includes("k3G_29e6j-w"))
+      ? raw.video_url
+      : ((raw.videoUrl && !raw.videoUrl.includes("k3G_29e6j-w"))
+        ? raw.videoUrl
+        : (raw.slug === "harit" ? SAMPLE_PRODUCT_VIDEO : undefined)),
+    video_url: (raw.video_url && !raw.video_url.includes("k3G_29e6j-w"))
+      ? raw.video_url
+      : ((raw.videoUrl && !raw.videoUrl.includes("k3G_29e6j-w"))
+        ? raw.videoUrl
+        : (raw.slug === "harit" ? SAMPLE_PRODUCT_VIDEO : undefined)),
     description: raw.description || "100% Certified Organic Harvest directly from Indian farms.",
     origin: raw.origin || "Lodhika GIDC, Gujarat",
     dietaryTags: Array.isArray(raw.tags) ? raw.tags : (typeof raw.tags === "string" ? JSON.parse(raw.tags) : ["Organic", "Chemical Free", "Farm Fresh"]),
@@ -1594,8 +1602,16 @@ export function normalizeAdminProduct(raw: any) {
     rating: Number(raw.rating) || 4.8,
     reviewsCount: Number(raw.reviews_count || raw.reviewsCount || raw.reviews) || 35,
     image: raw.image || `/images/products/${raw.slug}.webp`,
-    videoUrl: raw.video_url || raw.videoUrl || "",
-    video_url: raw.video_url || raw.videoUrl || "",
+    videoUrl: (raw.video_url && !raw.video_url.includes("k3G_29e6j-w"))
+      ? raw.video_url
+      : ((raw.videoUrl && !raw.videoUrl.includes("k3G_29e6j-w"))
+        ? raw.videoUrl
+        : (raw.slug === "harit" ? SAMPLE_PRODUCT_VIDEO : "")),
+    video_url: (raw.video_url && !raw.video_url.includes("k3G_29e6j-w"))
+      ? raw.video_url
+      : ((raw.videoUrl && !raw.videoUrl.includes("k3G_29e6j-w"))
+        ? raw.videoUrl
+        : (raw.slug === "harit" ? SAMPLE_PRODUCT_VIDEO : "")),
     gallery: Array.isArray(raw.gallery) ? raw.gallery : [],
     variants: parseProductVariants(raw.variants, price, raw.unit || "1 L", stock),
     description: raw.description || "",

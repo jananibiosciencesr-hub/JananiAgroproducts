@@ -58,7 +58,7 @@ import {
   getAdminFullCategories,
   getCategories
 } from "@/lib/api";
-import { formatProductName, getVideoEmbedInfo } from "@/lib/catalog";
+import { formatProductName, getVideoEmbedInfo, SAMPLE_PRODUCT_VIDEO } from "@/lib/catalog";
 import { matchesProductSearch } from "@/lib/search-helper";
 
 export interface ProductVariant {
@@ -2116,6 +2116,41 @@ function ProductFormModal({
                   <Play className="size-3 text-emerald-600 fill-emerald-600 shrink-0" />
                   <span>Supports public YouTube links (e.g. <code className="font-mono bg-muted px-1 rounded">https://www.youtube.com/watch?v=...</code> or <code className="font-mono bg-muted px-1 rounded">https://youtu.be/...</code>), Vimeo links, or uploaded MP4/WebM video files.</span>
                 </p>
+
+                {/* Quick Client Demo Preset Buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Quick Sample Presets:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoUrl: SAMPLE_PRODUCT_VIDEO
+                      }));
+                      toast.success("Loaded built-in Janani Agro sample video!");
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
+                  >
+                    <Play className="size-3 text-emerald-600 fill-emerald-600" />
+                    Janani Agro Sample Demo (Direct MP4)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoUrl: "https://www.youtube.com/watch?v=TihdID6918Q"
+                      }));
+                      toast.success("Loaded Organic Farming Trichoderma YouTube Demo!");
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
+                  >
+                    <Play className="size-3 text-emerald-600 fill-emerald-600" />
+                    Trichoderma Viride Organic Farming Demo (YouTube)
+                  </button>
+                </div>
 
                 {/* Live Video Preview Box */}
                 <div className="rounded-2xl border border-border bg-muted/30 p-3">

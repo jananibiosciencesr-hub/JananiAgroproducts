@@ -691,6 +691,8 @@ function ProductDetailPage() {
                           src={vInfo.rawUrl}
                           controls
                           autoPlay
+                          muted
+                          loop
                           playsInline
                           className="w-full h-full object-contain"
                         />
