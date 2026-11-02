@@ -1,0 +1,1 @@
+import{r as e}from"./rolldown-runtime-XKyaHtl9.js";import{i as t}from"./matchContext-BcgBxdmo.js";import{t as n}from"./react-BZk3575t.js";var r=e(n(),1);function i(e){let n=t();return r.useCallback(t=>n.navigate({...t,from:t.from??e?.from}),[e?.from,n])}export{i as t};
