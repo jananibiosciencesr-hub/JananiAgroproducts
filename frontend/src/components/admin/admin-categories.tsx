@@ -21,7 +21,6 @@ import {
   FileSpreadsheet,
   Layers,
   Sparkles,
-  Eye,
   GripVertical,
   Globe,
   ImageIcon,
@@ -1125,32 +1124,6 @@ function CategoryFormModal({
                         Leave blank to automatically use the card thumbnail as hero banner.
                       </p>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Live Banner Preview Box with real image */}
-              <div className="rounded-2xl border border-border bg-muted/40 p-4">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-2 flex items-center gap-1.5">
-                  <Eye className="size-3.5 text-emerald-600" /> Live Storefront Banner Preview:
-                </span>
-                <div className="h-32 w-full rounded-2xl border border-border overflow-hidden relative flex items-center justify-center bg-slate-900 shadow-inner">
-                  {(formData.bannerImage || formData.image) && (
-                    <img
-                      src={formData.bannerImage || formData.image}
-                      alt="Banner Preview"
-                      className="absolute inset-0 size-full object-cover"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
-                      }}
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-950/50 to-transparent p-4 flex flex-col justify-end text-white">
-                    <span className="text-2xl drop-shadow">{formData.icon || "🌾"}</span>
-                    <h4 className="font-bold text-base sm:text-lg drop-shadow">{formData.name || "Category Title"}</h4>
-                    <p className="text-xs text-white/90 line-clamp-1 drop-shadow">
-                      {formData.description || "Biological crop protection & soil health formulations"}
-                    </p>
                   </div>
                 </div>
               </div>
