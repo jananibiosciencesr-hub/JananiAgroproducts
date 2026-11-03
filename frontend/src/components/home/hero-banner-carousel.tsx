@@ -202,9 +202,8 @@ export function HeroBannerCarousel() {
                     src={slide.desktopImage}
                     alt={slide.alt || slide.title}
                     loading={idx === 0 ? "eager" : "lazy"}
-                    className={`w-full h-full object-cover block transition-transform duration-700 ${
-                      slide.mobilePosition || "object-center"
-                    } ${slide.desktopPosition || "md:object-center"}`}
+                    className={`w-full h-full object-cover block transition-transform duration-700 ${slide.mobilePosition || "object-center"
+                      } ${slide.desktopPosition || "md:object-center"}`}
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
                       if (!target.src.includes("hero_healthier_tomorrow")) {
@@ -311,11 +310,10 @@ export function HeroBannerCarousel() {
                 type="button"
                 onClick={() => setCurrent(idx)}
                 aria-label={`Jump to slide ${idx + 1}`}
-                className={`transition-all duration-300 rounded-full cursor-pointer ${
-                  current === idx
+                className={`transition-all duration-300 rounded-full cursor-pointer ${current === idx
                     ? "w-7 sm:w-8 h-2 bg-[#E7A91A] shadow-xs"
                     : "w-2 h-2 bg-white/70 hover:bg-white"
-                }`}
+                  }`}
               />
             ))}
           </div>
