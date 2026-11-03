@@ -304,6 +304,18 @@ function ProductsPage() {
     return sortedProducts.slice(start, start + itemsPerPage);
   }, [sortedProducts, currentPage, itemsPerPage]);
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    if (typeof window !== "undefined") {
+      const topElement = document.getElementById("products-grid-top");
+      if (topElement) {
+        topElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        window.scrollTo({ top: 140, behavior: "smooth" });
+      }
+    }
+  };
+
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
@@ -586,7 +598,7 @@ function ProductsPage() {
           {/* Right Main Content Area */}
           <div className="flex-1 w-full min-w-0">
             {/* Top Toolbar - Sticky Bar */}
-            <div className="sticky top-16 sm:top-20 z-20 bg-white/95 backdrop-blur-md py-2.5 sm:py-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-xl border border-gray-100 shadow-xs mb-3 sm:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 transition-all">
+            <div id="products-grid-top" className="sticky top-16 sm:top-20 z-20 bg-white/95 backdrop-blur-md py-2.5 sm:py-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-xl border border-gray-100 shadow-xs mb-3 sm:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 transition-all">
               {/* Left: Product count & Mobile filter trigger */}
               <div className="flex items-center justify-between sm:justify-start gap-3">
                 <button
@@ -738,42 +750,72 @@ function ProductsPage() {
               </div>
             )}
 
-            {/* Pagination Controls (< 1 >) */}
+            {/* Premium Responsive Pagination Controls */}
             {sortedProducts.length > 0 && totalPages > 1 && (
-              <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="size-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#075B32] hover:text-[#075B32] transition"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
+              <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Left: Informative Page Count Indicator */}
+                <div className="flex items-center gap-2.5 text-xs text-gray-500 font-medium">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-[#075B32] font-bold border border-emerald-100 text-[11px] shadow-2xs">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <span className="hidden sm:inline">
+                    Showing <strong className="text-gray-900 font-bold">{(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, sortedProducts.length)}</strong> of <strong className="text-gray-900 font-bold">{sortedProducts.length}</strong> products
+                  </span>
+                </div>
 
-                {[...Array(totalPages)].map((_, i) => {
-                  const pNum = i + 1;
-                  const isActive = currentPage === pNum;
-                  return (
-                    <button
-                      key={pNum}
-                      onClick={() => setCurrentPage(pNum)}
-                      className={`size-8 rounded-lg text-xs font-bold transition ${
-                        isActive
-                          ? "bg-[#075B32] text-white shadow-xs"
-                          : "border border-gray-200 text-gray-700 hover:border-[#075B32] hover:text-[#075B32]"
-                      }`}
-                    >
-                      {pNum}
-                    </button>
-                  );
-                })}
-
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="size-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#075B32] hover:text-[#075B32] transition"
+                {/* Right / Center: Premium Rounded Dock */}
+                <nav
+                  aria-label="Products pagination"
+                  className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-white border border-gray-200/90 shadow-sm"
                 >
-                  <ChevronRight className="size-4" />
-                </button>
+                  {/* Previous Button */}
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/70 border border-transparent hover:border-emerald-200/60 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 cursor-pointer select-none active:scale-95"
+                    aria-label="Previous Page"
+                  >
+                    <ChevronLeft className="size-4 shrink-0 transition-transform group-hover:-translate-x-0.5 text-gray-500 group-hover:text-[#075B32]" />
+                    <span className="hidden sm:inline font-semibold">Previous</span>
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {[...Array(totalPages)].map((_, i) => {
+                      const pNum = i + 1;
+                      const isActive = currentPage === pNum;
+                      return (
+                        <button
+                          key={pNum}
+                          type="button"
+                          onClick={() => handlePageChange(pNum)}
+                          className={`size-9 sm:size-10 rounded-xl font-bold font-mono text-xs flex items-center justify-center transition-all duration-200 cursor-pointer select-none active:scale-95 ${
+                            isActive
+                              ? "bg-gradient-to-br from-[#075B32] via-[#064e2b] to-[#043d21] text-white shadow-md shadow-[#075B32]/30 ring-2 ring-[#075B32]/30 scale-105 font-black"
+                              : "bg-white text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/80 border border-gray-200 hover:border-[#075B32]/40 shadow-2xs"
+                          }`}
+                          aria-current={isActive ? "page" : undefined}
+                          aria-label={`Page ${pNum}`}
+                        >
+                          {pNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/70 border border-transparent hover:border-emerald-200/60 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 cursor-pointer select-none active:scale-95"
+                    aria-label="Next Page"
+                  >
+                    <span className="hidden sm:inline font-semibold">Next</span>
+                    <ChevronRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 text-gray-500 group-hover:text-[#075B32]" />
+                  </button>
+                </nav>
               </div>
             )}
           </div>
