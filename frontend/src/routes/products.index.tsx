@@ -596,83 +596,23 @@ function ProductsPage() {
           </aside>
 
           {/* Right Main Content Area */}
-          <div className="flex-1 w-full min-w-0">
-            {/* Top Toolbar - Sticky Bar */}
-            <div id="products-grid-top" className="sticky top-16 sm:top-20 z-20 bg-white/95 backdrop-blur-md py-2.5 sm:py-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-xl border border-gray-100 shadow-xs mb-3 sm:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 transition-all">
-              {/* Left: Product count & Mobile filter trigger */}
-              <div className="flex items-center justify-between sm:justify-start gap-3">
-                <button
-                  onClick={() => setIsMobileFilterOpen(true)}
-                  className="lg:hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition cursor-pointer"
-                >
-                  <Filter className="size-3.5 text-[#075B32]" />
-                  Filters
-                  {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000) && (
-                    <span className="size-2 rounded-full bg-[#075B32]" />
-                  )}
-                </button>
-
-                <p className="text-xs text-gray-600 font-medium">
-                  Showing{" "}
-                  <strong className="text-gray-900 font-bold">
-                    {sortedProducts.length === 0
-                      ? "0"
-                      : `${(currentPage - 1) * itemsPerPage + 1}–${Math.min(
-                          currentPage * itemsPerPage,
-                          sortedProducts.length
-                        )}`}
-                  </strong>{" "}
-                  of <strong className="text-gray-900 font-bold">{sortedProducts.length}</strong> products
-                </p>
-              </div>
-
-              {/* Right: Clear Filters + Search + Sort Dropdown */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Clear Filters Button */}
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 hover:border-[#075B32] text-gray-700 hover:text-[#075B32] text-xs font-semibold transition bg-white cursor-pointer shadow-2xs"
-                >
-                  Clear Filters
-                </button>
-
-                {/* Search */}
-                <div className="relative w-40 sm:w-48">
-                  <Search className="absolute left-2.5 top-2.5 size-3.5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search products..."
-                    className="w-full h-8 pl-8 pr-7 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-[#075B32] transition"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Sort Dropdown */}
-                <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                  <span className="hidden sm:inline">Sort by:</span>
-                  <select
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value as SortOption)}
-                    className="h-8 pl-2.5 pr-6 text-xs font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 focus:outline-none focus:border-[#075B32] cursor-pointer"
-                  >
-                    <option value="featured">Featured</option>
-                    <option value="newest">Newest</option>
-                    <option value="price_asc">Price: Low to High</option>
-                    <option value="price_desc">Price: High to Low</option>
-                    <option value="rating">Top Rated</option>
-                  </select>
-                </div>
-              </div>
+          <div id="products-grid-top" className="flex-1 w-full min-w-0">
+            {/* Mobile Filters Trigger (Only on mobile/tablet where sidebar is hidden) */}
+            <div className="lg:hidden flex items-center justify-between mb-4">
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition cursor-pointer bg-white shadow-2xs"
+              >
+                <Filter className="size-3.5 text-[#075B32]" />
+                Filters
+                {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000) && (
+                  <span className="size-2 rounded-full bg-[#075B32]" />
+                )}
+              </button>
+              <span className="text-xs text-gray-500 font-medium">
+                {sortedProducts.length} Products
+              </span>
             </div>
 
             {/* Active Filters Pills */}
