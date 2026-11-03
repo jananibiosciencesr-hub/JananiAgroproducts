@@ -179,7 +179,7 @@ function ContactPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-80px)] py-3 sm:py-10 px-3 sm:px-6 lg:px-8 flex items-start sm:items-center justify-center overflow-hidden">
+    <div className="relative min-h-[calc(100vh-80px)] py-4 sm:py-10 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 flex items-start sm:items-center justify-center overflow-y-auto">
       {/* Agricultural Background Image: High-resolution sunrise over terraced fields */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -188,7 +188,7 @@ function ContactPage() {
       {/* Ambient Gradient Overlay: Semi-dark emerald gradient so lush fields & sunrise remain visible while text & form pop with clarity */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-emerald-950/50 to-black/70 backdrop-blur-[0.5px]" />
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl">
+      <div className="relative z-10 mx-auto w-full max-w-6xl 2xl:max-w-7xl 3xl:max-w-[1536px]">
         <div className="grid gap-5 lg:grid-cols-12 items-start">
           
           {/* Left Column: Direct Coordinates (5 Cols) */}

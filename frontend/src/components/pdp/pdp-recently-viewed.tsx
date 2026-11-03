@@ -20,15 +20,15 @@ export function PdpRecentlyViewed({ currentProductId }: PdpRecentlyViewedProps) 
       localStorage.setItem("janani_recently_viewed", JSON.stringify(ids));
 
       // Filter out current product for the display list
-      const otherIds = ids.filter((id) => id !== currentProductId);
+      const otherIds = ids.filter((id) => String(id) !== String(currentProductId));
       let items = otherIds
-        .map((id) => products.find((p) => p.id === id))
+        .map((id) => products.find((p) => String(p.id) === String(id)))
         .filter((p): p is Product => Boolean(p));
 
       // If user has viewed fewer than 4 other items, pad with popular suggestions
       if (items.length < 4) {
         const fallback = products
-          .filter((p) => p.id !== currentProductId && !otherIds.includes(p.id))
+          .filter((p) => String(p.id) !== String(currentProductId) && !otherIds.some((oid) => String(oid) === String(p.id)))
           .slice(0, 4 - items.length);
         items = [...items, ...fallback];
       }

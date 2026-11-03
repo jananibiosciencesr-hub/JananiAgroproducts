@@ -153,11 +153,13 @@ export function HeroCarousel({
 
   // Touch Swipe Gesture Handling
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
+    const t = e.targetTouches[0];
+    if (t) setTouchStart(t.clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    const t = e.targetTouches[0];
+    if (t) setTouchEnd(t.clientX);
   };
 
   const handleTouchEnd = () => {
@@ -173,7 +175,7 @@ export function HeroCarousel({
     setTouchEnd(null);
   };
 
-  const active = slides[currentSlide];
+  const active: HeroSlideData = slides[currentSlide] || slides[0] || DEFAULT_SLIDES[0]!;
   const isRightAlign = active.contentAlign === "right";
   const isCenterAlign = active.contentAlign === "center";
 
@@ -197,30 +199,27 @@ export function HeroCarousel({
           return (
             <div
               key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                isCurrent ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
-              }`}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${isCurrent ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
+                }`}
             >
               {/* High-Definition Vivid Photography with Headroom Protection */}
               <img
                 src={slide.bgImage}
                 alt={`${slide.headlinePrefix || ""} ${slide.headlineMain}`}
-                className={`h-full w-full object-cover transition-transform duration-[10000ms] ease-out transform ${
-                  slide.id === "slide-crop-protection"
+                className={`h-full w-full object-cover transition-transform duration-[10000ms] ease-out transform ${slide.id === "slide-crop-protection"
                     ? "object-[center_18%]"
                     : "object-center"
-                } ${isCurrent ? "scale-[1.02]" : "scale-100"}`}
+                  } ${isCurrent ? "scale-[1.02]" : "scale-100"}`}
               />
 
               {/* Directional Vignette Scrim (Protects text legibility on text side while keeping right side 100% radiant) */}
               <div
-                className={`absolute inset-0 pointer-events-none ${
-                  alignCenter
+                className={`absolute inset-0 pointer-events-none ${alignCenter
                     ? "bg-[radial-gradient(ellipse_at_center,_rgba(2,6,23,0.72)_0%,_rgba(2,6,23,0.35)_45%,_transparent_72%)]"
                     : alignRight
-                    ? "bg-gradient-to-l from-slate-950/85 via-slate-950/45 md:via-slate-950/30 to-transparent"
-                    : "bg-gradient-to-r from-slate-950/80 via-slate-950/45 md:via-slate-950/20 to-transparent"
-                }`}
+                      ? "bg-gradient-to-l from-slate-950/85 via-slate-950/45 md:via-slate-950/30 to-transparent"
+                      : "bg-gradient-to-r from-slate-950/80 via-slate-950/45 md:via-slate-950/20 to-transparent"
+                  }`}
               />
 
               {/* Subtle top & bottom shadow gradient for navigation & header contrast */}
@@ -232,23 +231,21 @@ export function HeroCarousel({
 
         {/* Foreground Content: Sleek Luxury Typography */}
         <div
-          className={`relative z-20 mx-auto flex h-full max-w-7xl items-center px-4 sm:px-12 lg:px-16 pt-3 pb-16 sm:py-4 ${
-            isCenterAlign
+          className={`relative z-20 mx-auto flex h-full max-w-7xl items-center px-4 sm:px-12 lg:px-16 pt-3 pb-16 sm:py-4 ${isCenterAlign
               ? "justify-center text-center"
               : isRightAlign
-              ? "justify-center sm:justify-end text-center sm:text-right"
-              : "justify-center sm:justify-start text-center sm:text-left"
-          }`}
+                ? "justify-center sm:justify-end text-center sm:text-right"
+                : "justify-center sm:justify-start text-center sm:text-left"
+            }`}
         >
           <div
             key={active.id}
-            className={`max-w-xl lg:max-w-2xl animate-in fade-in slide-in-from-bottom-3 duration-700 select-none py-1 sm:py-4 ${
-              isCenterAlign
+            className={`max-w-xl lg:max-w-2xl animate-in fade-in slide-in-from-bottom-3 duration-700 select-none py-1 sm:py-4 ${isCenterAlign
                 ? "mx-auto text-center"
                 : isRightAlign
-                ? "sm:items-end text-center sm:text-right"
-                : "sm:items-start text-center sm:text-left"
-            }`}
+                  ? "sm:items-end text-center sm:text-right"
+                  : "sm:items-start text-center sm:text-left"
+              }`}
           >
             {/* 1. Eco-Safe Pill Badge */}
             {active.badge && (
@@ -292,13 +289,12 @@ export function HeroCarousel({
 
             {/* 5. Luxury Action Buttons */}
             <div
-              className={`mt-4 sm:mt-6 flex flex-wrap items-center gap-2.5 sm:gap-4 ${
-                isCenterAlign
+              className={`mt-4 sm:mt-6 flex flex-wrap items-center gap-2.5 sm:gap-4 ${isCenterAlign
                   ? "justify-center"
                   : isRightAlign
-                  ? "justify-center sm:justify-end"
-                  : "justify-center sm:justify-start"
-              }`}
+                    ? "justify-center sm:justify-end"
+                    : "justify-center sm:justify-start"
+                }`}
             >
               {/* Primary Explore Products Button */}
               <Link
@@ -355,9 +351,8 @@ export function HeroCarousel({
                 type="button"
                 onClick={() => goToSlide(index)}
                 aria-label={`Go to slide ${index + 1}`}
-                className={`relative group flex items-center justify-center rounded-full transition-all duration-300 ${
-                  isActive ? "w-7 sm:w-11 h-1.5 sm:h-2 bg-white/20" : "size-1.5 sm:size-2 bg-white/40 hover:bg-white/80"
-                }`}
+                className={`relative group flex items-center justify-center rounded-full transition-all duration-300 ${isActive ? "w-7 sm:w-11 h-1.5 sm:h-2 bg-white/20" : "size-1.5 sm:size-2 bg-white/40 hover:bg-white/80"
+                  }`}
               >
                 {isActive && (
                   <span

@@ -575,7 +575,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       await saveOnboardingPreferences({
         userId: user.id,
-        dietary: preferences.dietary,
+        dietary: preferences.dietary || [],
         pinCode: preferences.pinCode,
         ...(preferences.notifications ? { notifications: preferences.notifications } : {})
       });

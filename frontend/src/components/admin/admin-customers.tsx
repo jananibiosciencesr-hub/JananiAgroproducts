@@ -1261,8 +1261,8 @@ function AddCustomerModal({
     initialLoyalty: 100,
   });
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string; server?: string }>({});
-  const [touched, setTouched] = useState<{ email?: boolean; phone?: boolean }>({});
+  const [errors, setErrors] = useState<{ name?: string | undefined; email?: string | undefined; phone?: string | undefined; server?: string | undefined }>({});
+  const [touched, setTouched] = useState<{ email?: boolean | undefined; phone?: boolean | undefined }>({});
 
   // Real-time duplicate email check
   const duplicateEmailCustomer = formData.email.trim()

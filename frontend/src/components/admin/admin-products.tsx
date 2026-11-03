@@ -230,6 +230,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
         window.removeEventListener("janani-categories-updated", handleCategoryUpdate);
       };
     }
+    return undefined;
   }, []);
 
   // Modals & Drawers

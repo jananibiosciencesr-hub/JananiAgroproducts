@@ -549,7 +549,7 @@ function ProductsPage() {
 
   return (
     <div className="bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-5 lg:py-6">
+      <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-2 sm:py-5 lg:py-6">
         {/* Breadcrumb (NO top banner as requested) */}
         <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-2 sm:mb-4 lg:mb-6 font-medium">
           <Link to="/" className="hover:text-[#075B32] transition">
@@ -560,9 +560,9 @@ function ProductsPage() {
         </nav>
 
         {/* Main 2-Column Layout */}
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 xl:gap-10 items-start">
           {/* Left Sidebar (Desktop) - Sticky Filter Rail */}
-          <aside className="hidden lg:block w-64 xl:w-72 shrink-0 lg:sticky lg:top-20 self-start z-10">
+          <aside className="hidden lg:block w-64 xl:w-72 2xl:w-80 shrink-0 lg:sticky lg:top-20 self-start z-10">
             <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
               {filterSidebarContent}
             </div>
@@ -695,9 +695,9 @@ function ProductsPage() {
               </div>
             )}
 
-            {/* 4-Column Product Grid: 2 columns on mobile, 3 on md, 4 on xl - No Curves Sharp Style */}
+            {/* Product Grid: 2 columns on mobile, 3 on tablet, 4 on laptop, 5 on wide/large screens - Sharp Luxe Style */}
             {paginatedProducts.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5 gap-2.5 sm:gap-4 md:gap-5 xl:gap-6">
                 {paginatedProducts.map((p) => (
                   <ProductCard
                     key={p.id}

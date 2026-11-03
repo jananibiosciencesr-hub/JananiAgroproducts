@@ -229,7 +229,7 @@ export function WishlistPage() {
   }, [rawSavedProducts]);
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16">
+    <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16">
       {/* Wishlist Header & Summary Bar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-8 border-b border-border">
         <div>
@@ -292,11 +292,10 @@ export function WishlistPage() {
           <div className="flex items-center gap-3 text-xs">
             <button
               onClick={() => setInStockOnly(!inStockOnly)}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border font-semibold transition ${
-                inStockOnly
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border font-semibold transition ${inStockOnly
                   ? "bg-emerald-500/10 border-emerald-500 text-emerald-700"
                   : "bg-background border-border text-muted-foreground hover:bg-muted"
-              }`}
+                }`}
             >
               <span className={`size-2 rounded-full ${inStockOnly ? "bg-emerald-500" : "bg-muted-foreground"}`} />
               In Stock Only ({inStockCount})
@@ -320,9 +319,9 @@ export function WishlistPage() {
         </div>
       )}
 
-      {/* Wishlist Items Grid: 2 columns on mobile, 3/4 on desktop */}
+      {/* Wishlist Items Grid: 2 columns on mobile, 3 on tablet, 4 on laptop, 5 on wide displays */}
       {savedProducts.length > 0 ? (
-        <div className="mt-6 sm:mt-8 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-6">
+        <div className="mt-6 sm:mt-8 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5 gap-2.5 sm:gap-6">
           {savedProducts.map((product) => {
             const hasPriceDrop = typeof product.id === "number" ? product.id % 2 === 0 : false;
             const isAlertActive = priceAlertActive[product.id];
@@ -428,11 +427,10 @@ export function WishlistPage() {
                       {/* Price Drop Alert Trigger */}
                       <button
                         onClick={() => handleTogglePriceAlert(product.id, product.name)}
-                        className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium transition ${
-                          isAlertActive
+                        className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium transition ${isAlertActive
                             ? "text-[#075B32] font-bold"
                             : "text-gray-400 hover:text-gray-700"
-                        }`}
+                          }`}
                         title="Get notified when price drops"
                       >
                         {isAlertActive ? (

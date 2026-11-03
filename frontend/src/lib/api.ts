@@ -68,7 +68,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
         const action = parts[0] === "admin" ? parts[1] : parts[0];
         const id = parts[0] === "admin" ? parts.slice(2).join("/") : parts.slice(1).join("/");
         const fallbackUrl = `/api.php?action=${action}${id ? `&id=${encodeURIComponent(id)}` : ""}${qs ? `&${qs}` : ""}`;
-        
+
         try {
           const retryRes = await fetch(fallbackUrl, {
             headers: {
@@ -80,7 +80,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
           if (retryRes.headers.get("content-type")?.includes("application/json")) {
             return (await retryRes.json()) as T;
           }
-        } catch {}
+        } catch { }
       }
 
       return null;
@@ -276,7 +276,7 @@ export function normalizeProduct(raw: any): Product {
     gallery: Array.isArray(raw.gallery)
       ? raw.gallery
       : typeof raw.gallery === "string" && raw.gallery.trim() !== ""
-      ? (() => {
+        ? (() => {
           try {
             const parsed = JSON.parse(raw.gallery);
             return Array.isArray(parsed) ? parsed : [raw.gallery];
@@ -284,7 +284,7 @@ export function normalizeProduct(raw: any): Product {
             return raw.gallery.includes(",") ? raw.gallery.split(",").map((s: string) => s.trim()) : [raw.gallery];
           }
         })()
-      : (raw.image ? [raw.image] : [])
+        : (raw.image ? [raw.image] : [])
   };
 }
 
@@ -322,7 +322,7 @@ export async function getProducts(params?: { category?: string; search?: string;
           localProducts = parsed.map(normalizeProduct);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Unified Merge Map: Static 18 products -> Local Admin Products -> Live MySQL Products
@@ -433,7 +433,7 @@ export async function getCategories() {
           localStorage.setItem("janani_admin_categories_v3", JSON.stringify(storedList));
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   const FORBIDDEN_CATEGORIES = new Set([
@@ -605,7 +605,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
   const sgst = orderPayload.sgst ?? (gstAmount - cgst);
   const deliveryFee = orderPayload.deliveryFee ?? orderPayload.shippingFee ?? (subtotal >= 799 ? 0 : 60);
   const total = orderPayload.finalTotal ?? orderPayload.total ?? Math.max(0, subtotal + gstAmount - couponDiscount - walletDeduction + deliveryFee);
-  
+
   const generatedId = orderPayload.orderNumber || orderPayload.number || orderPayload.id || `JAP-${Math.floor(100000 + Math.random() * 900000)}`;
   const custName = orderPayload.customer.name || `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim() || "Valued Patron";
   const custEmail = orderPayload.customer.email || "patron@jananiagro.com";
@@ -758,7 +758,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     if (data?.success && data.order) {
       return data.order;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 3. Resilient cache fallback
   const newOrder = {
@@ -829,7 +829,7 @@ export async function trackOrder(query: string) {
         );
         if (match) return match;
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
@@ -887,7 +887,7 @@ export async function submitCommercialInquiry(inquiryData: {
       const phpData = await phpRes.json();
       if (phpData?.success) return phpData;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   return await fetchJson<{ success: boolean; message: string }>(`/inquiries`, {
     method: "POST",
@@ -925,7 +925,7 @@ export async function submitDealerApplication(dealerData: {
       const phpData = await phpRes.json();
       if (phpData?.success) return phpData;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   return await fetchJson<{ success: boolean; message: string }>(`/inquiries/dealers`, {
     method: "POST",
@@ -966,7 +966,7 @@ export async function sendContactMessage(contactData: {
   try {
     const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
     setStored(STORAGE_KEYS.INQUIRIES, [newInq, ...stored]);
-  } catch (e) {}
+  } catch (e) { }
 
   // 2. Sync to PHP / MySQL backend if available
   try {
@@ -986,7 +986,7 @@ export async function sendContactMessage(contactData: {
       const phpData = await phpRes.json();
       if (phpData?.success) return phpData;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 3. Sync to Node API if available
   try {
@@ -1058,7 +1058,7 @@ export async function subscribeNewsletter(email: string) {
       const phpData = await phpRes.json();
       if (phpData?.success) return phpData;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 5. Send to Node backend API if available
   try {
@@ -1097,7 +1097,7 @@ export async function getAdminStats() {
   const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
   const storedUsers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
   const storedProds = getStored<any[]>(STORAGE_KEYS.PRODUCTS, []);
-  
+
   const totalRev = storedOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
   const pendingCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Pending" || (o.orderStatus || o.status) === "Processing").length;
   const deliveredCnt = storedOrders.filter((o) => (o.orderStatus || o.status) === "Delivered").length;
@@ -1309,11 +1309,11 @@ export async function getAdminOrders(params?: OrderQueryParams) {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(locOrd)
-            }).catch(() => {});
+            }).catch(() => { });
           }
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     return res;
   }
 
@@ -1683,7 +1683,7 @@ export async function getAdminProducts(params?: {
           localProducts = parsed.map(normalizeAdminProduct);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Merge map: DEFAULT_PRODUCTS (all 18 flagship items) -> Local Storage items -> Remote MySQL items
@@ -1711,7 +1711,7 @@ export async function getAdminProducts(params?: {
   if (typeof window !== "undefined" && list.length > 0) {
     try {
       localStorage.setItem("janani_admin_products", JSON.stringify(list));
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Apply filters on the normalized unified list
@@ -1721,17 +1721,17 @@ export async function getAdminProducts(params?: {
   }
   if (params?.category && params.category !== "all") {
     const catQ = params.category.toLowerCase().trim();
-    list = list.filter((p) => 
-      p.category.toLowerCase() === catQ || 
+    list = list.filter((p) =>
+      p.category.toLowerCase() === catQ ||
       p.category.toLowerCase().replace(/[^a-z0-9]/g, "") === catQ.replace(/[^a-z0-9]/g, "") ||
       p.category.toLowerCase().includes(catQ)
     );
   }
   if (params?.search) {
     const q = params.search.toLowerCase().trim();
-    list = list.filter((p) => 
-      p.name.toLowerCase().includes(q) || 
-      p.sku?.toLowerCase().includes(q) || 
+    list = list.filter((p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.sku?.toLowerCase().includes(q) ||
       p.slug?.toLowerCase().includes(q) ||
       p.category?.toLowerCase().includes(q)
     );
@@ -1825,7 +1825,7 @@ export async function createAdminProduct(productData: any) {
       const updated = [createdProd, ...currentList.filter((p: any) => p.slug !== createdProd.slug && p.id !== createdProd.id)];
       localStorage.setItem("janani_admin_products", JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent("janani-products-updated", { detail: createdProd }));
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return res || { success: true, message: "Product created successfully", data: createdProd, product: createdProd };
@@ -1916,7 +1916,7 @@ export async function updateAdminProduct(id: string, productData: any) {
         localStorage.setItem("janani_admin_products", JSON.stringify(updated));
         window.dispatchEvent(new CustomEvent("janani-products-updated", { detail: payload }));
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return res || { success: true, message: "Product updated successfully in database", data: payload };
@@ -2270,7 +2270,7 @@ export async function updateUserProfileApi(userIdOrEmail: string, updates: any) 
         return data;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 2. Direct PHP API action=update-profile
   try {
@@ -2286,7 +2286,7 @@ export async function updateUserProfileApi(userIdOrEmail: string, updates: any) 
         return data;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 3. Node Express API fallback
   try {
@@ -2298,7 +2298,7 @@ export async function updateUserProfileApi(userIdOrEmail: string, updates: any) 
       syncMockCustomer(userIdOrEmail, updates);
       return res;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   syncMockCustomer(userIdOrEmail, updates);
   return { success: true, message: "Customer profile updated successfully.", data: payload };
@@ -2320,7 +2320,7 @@ function syncMockCustomer(userIdOrEmail: string, updates: any) {
       return c;
     });
     setStored(STORAGE_KEYS.CUSTOMERS, updated);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 export async function toggleCustomerStatus(id: string, status?: string, reason?: string) {
@@ -2625,7 +2625,7 @@ export async function createAdminReview(payload: Partial<AdminReview>) {
       const list = stored ? JSON.parse(stored) : [];
       const updated = [reviewResult, ...list.filter((r: any) => r.id !== reviewResult.id)];
       localStorage.setItem("janani_admin_reviews", JSON.stringify(updated));
-    } catch (e) {}
+    } catch (e) { }
   }
   return res || { success: true, message: "Review created in database", data: payload as AdminReview };
 }
@@ -2639,7 +2639,7 @@ export async function getStorefrontReviews(): Promise<AdminReview[]> {
       }
       return adminRes.data;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   try {
     const res = await fetchJson<{ success: boolean; data: AdminReview[] }>("/reviews");
@@ -2649,7 +2649,7 @@ export async function getStorefrontReviews(): Promise<AdminReview[]> {
       }
       return res.data;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (typeof window !== "undefined") {
     try {
@@ -2658,7 +2658,7 @@ export async function getStorefrontReviews(): Promise<AdminReview[]> {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return [];
@@ -2786,7 +2786,7 @@ export async function deleteAdminReview(id: string) {
         const list = JSON.parse(stored);
         localStorage.setItem("janani_admin_reviews", JSON.stringify(list.filter((r: any) => r.id !== id)));
       }
-    } catch (e) {}
+    } catch (e) { }
   }
   return res || { success: true, message: "Review deleted from database" };
 }
@@ -2887,7 +2887,7 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
         localStorage.setItem("janani_admin_categories", JSON.stringify(list));
         localStorage.setItem("janani_admin_categories_v3", JSON.stringify(list));
         setStored(STORAGE_KEYS.CATEGORIES, list);
-      } catch {}
+      } catch { }
     }
   }
 
@@ -3018,7 +3018,7 @@ export async function createAdminCategory(payload: any) {
       const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
       const filtered = stored.filter((c: any) => c.id !== cat.id && c.slug !== cat.slug);
       setStored(STORAGE_KEYS.CATEGORIES, [cat, ...filtered]);
-    } catch {}
+    } catch { }
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("janani-categories-updated"));
       window.dispatchEvent(new CustomEvent("janani-products-updated"));
@@ -3042,7 +3042,7 @@ export async function createAdminCategory(payload: any) {
       window.dispatchEvent(new CustomEvent("janani-products-updated"));
     }
     return { success: true, message: "Category created (saved locally)", data: normalizeAdminCategory(newCat) };
-  } catch {}
+  } catch { }
 
   const errorMsg = res?.message || res?.error || "Could not create category in database";
   return { success: false, message: errorMsg, error: errorMsg };
@@ -3227,7 +3227,7 @@ export async function deleteAdminCategory(id: string) {
       });
       window.dispatchEvent(new CustomEvent("janani-categories-updated"));
       window.dispatchEvent(new CustomEvent("janani-products-updated"));
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return res || { success: true, message: "Category deleted from database" };
@@ -3293,7 +3293,7 @@ export async function permanentDeleteAdminCategory(id: string) {
       });
       window.dispatchEvent(new CustomEvent("janani-categories-updated"));
       window.dispatchEvent(new CustomEvent("janani-products-updated"));
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return res || { success: true, message: "Category permanently deleted from database" };
@@ -3754,8 +3754,8 @@ export async function getPaymentTransactions(params?: PaymentQueryParams) {
   const storedList: PaymentTransaction[] = Array.isArray(rawStored)
     ? rawStored
     : Array.isArray(rawStored?.transactions)
-    ? rawStored.transactions
-    : [];
+      ? rawStored.transactions
+      : [];
   let list = [...storedList];
 
   if (params?.status && params.status !== "all") {
@@ -3806,8 +3806,8 @@ export async function getPaymentTransactionById(id: string) {
   const storedList: PaymentTransaction[] = Array.isArray(rawStored)
     ? rawStored
     : Array.isArray(rawStored?.transactions)
-    ? rawStored.transactions
-    : [];
+      ? rawStored.transactions
+      : [];
   return storedList.find((t) => t.id === id) || null;
 }
 
@@ -3843,8 +3843,8 @@ export async function processPaymentRefund(payload: {
   const storedList: PaymentTransaction[] = Array.isArray(rawStored)
     ? rawStored
     : Array.isArray(rawStored?.transactions)
-    ? rawStored.transactions
-    : [];
+      ? rawStored.transactions
+      : [];
   let updatedTx: any = null;
   const updated = storedList.map((t) => {
     if (t.id === payload.transactionId) {
@@ -7297,7 +7297,7 @@ export async function getAdminInquiries(): Promise<AdminInquiry[]> {
         return nodeData.inquiries;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
   return stored;
@@ -7393,7 +7393,7 @@ export async function createAdminInquiry(payload: Partial<AdminInquiry>): Promis
         return { success: true, message: "Inquiry recorded in MySQL", inquiry: newInq };
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   const newInq: AdminInquiry = {
     id: `INQ-${Date.now()}`,
@@ -7421,13 +7421,13 @@ export async function createAdminInquiry(payload: Partial<AdminInquiry>): Promis
 // ==========================================
 
 export interface UserPreferences {
-  dietary: string[];
+  dietary?: string[] | undefined;
   pinCode: string;
   notifications?: {
     email: boolean;
     sms: boolean;
     whatsapp: boolean;
-  };
+  } | undefined;
 }
 
 export interface AuthUser {
@@ -7499,7 +7499,7 @@ export async function checkCustomerExists(emailOrPhone: string): Promise<{ exist
         return data;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 2. Check Node API
   try {
@@ -7507,7 +7507,7 @@ export async function checkCustomerExists(emailOrPhone: string): Promise<{ exist
     if (nodeRes && typeof nodeRes.exists === "boolean") {
       return nodeRes;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 3. Local fallback check
   if (typeof window !== "undefined") {
@@ -7531,7 +7531,7 @@ export async function checkCustomerExists(emailOrPhone: string): Promise<{ exist
           return { exists: true, user: curUser };
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return { exists: false };
@@ -7597,7 +7597,7 @@ export function getCurrentUser(): AuthUser | null {
       }
       return parsed;
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 }
 
@@ -7623,7 +7623,7 @@ export function getAdminUser(): any | null {
         return parsed;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 }
 
@@ -7683,7 +7683,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
         return res;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 3. Admin credentials check
   const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail.includes("admin@jananiagro.com");
@@ -7830,7 +7830,7 @@ export async function sendAuthOtp(payload: { phone?: string | undefined; email?:
         return res;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 3. Local fallback check for purpose === "login" vs "signup"
   const target = (payload.email || payload.phone || "").trim().toLowerCase();
@@ -7923,7 +7923,7 @@ export async function verifyAuthOtp(payload: { phone?: string | undefined; email
         return res;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 3. Fallback bypass for test codes "123456", "1234", "000000", "999999" (Strictly for customers only - NEVER for admin)
   const cleanOtp = (payload.otp || "").trim();
@@ -8056,9 +8056,9 @@ export function saveUserSavedAddresses(userEmailOrId: string | null | undefined,
                 localStorage.setItem("janani_auth_user", JSON.stringify(u));
               }
             }
-          } catch (err) {}
+          } catch (err) { }
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   } catch (e) {
     console.warn("Failed to save user addresses:", e);
@@ -8098,7 +8098,7 @@ export async function signupCustomer(payload: {
         return data;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 2. Try Node API
   const res = await fetchJson<AuthResponse>("/auth/signup", {
@@ -8239,7 +8239,7 @@ export async function forgotPassword(payload: { identifier: string }) {
         return phpData;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 2. Try Node API
   try {
@@ -8248,7 +8248,7 @@ export async function forgotPassword(payload: { identifier: string }) {
       body: JSON.stringify(payload)
     });
     if (res?.success) return res;
-  } catch (e) {}
+  } catch (e) { }
 
   return {
     success: true,
@@ -8272,7 +8272,7 @@ export async function resetPassword(payload: { phone?: string; identifier?: stri
         return phpData;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 2. Try Node API
   try {
@@ -8281,7 +8281,7 @@ export async function resetPassword(payload: { phone?: string; identifier?: stri
       body: JSON.stringify(payload)
     });
     if (res) return res;
-  } catch (e) {}
+  } catch (e) { }
 
   return { success: true, message: "Password updated successfully. You can now log in with your new credentials." };
 }
@@ -8295,7 +8295,7 @@ export async function getAuthProfile() {
     if (raw) {
       try {
         return { success: true, user: JSON.parse(raw) as AuthUser };
-      } catch (e) {}
+      } catch (e) { }
     }
   }
   return null;
@@ -8324,7 +8324,7 @@ export async function saveOnboardingPreferences(payload: {
           notifications: payload.notifications
         };
         localStorage.setItem("janani_auth_user", JSON.stringify(u));
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 

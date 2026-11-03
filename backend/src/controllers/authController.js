@@ -66,6 +66,22 @@ export const loginWithEmail = async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
     const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail === (process.env.ADMIN_EMAIL || "").toLowerCase();
 
+    // STRICT ADMIN LOCKDOWN in verifyOtp
+    if (purpose === "admin_login" && normalizedEmail !== "jananibiosciences.r@gmail.com") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center."
+      });
+    }
+
+    // STRICT ADMIN LOCKDOWN in sendOtp
+    if (purpose === "admin_login" && normalizedEmail !== "jananibiosciences.r@gmail.com") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center."
+      });
+    }
+
     // Check if logging in as Super Admin
     if (isAdmin) {
       const validAdminPasswords = ["Jananiagro@123", "demo1234", "admin123", "Janani@Admin", "janani123", "Janani@2026"];
@@ -295,7 +311,7 @@ export const sendOtp = async (req, res) => {
  */
 export const verifyOtp = async (req, res) => {
   try {
-    const { phone, email, otp } = req.body;
+    const { phone, email, otp, purpose = "login" } = req.body;
     const identifier = phone ? phone.replace(/\D/g, "") : (email ? email.trim().toLowerCase() : null);
 
     if (!identifier || !otp) {

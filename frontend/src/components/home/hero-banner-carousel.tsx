@@ -72,11 +72,13 @@ export function HeroBannerCarousel() {
 
   // Touch swipe handling for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.targetTouches[0].clientX;
+    const touch = e.targetTouches[0];
+    if (touch) touchStartX.current = touch.clientX;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.targetTouches[0].clientX;
+    const touch = e.targetTouches[0];
+    if (touch) touchEndX.current = touch.clientX;
   };
 
   const handleTouchEnd = () => {

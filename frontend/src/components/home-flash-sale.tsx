@@ -18,7 +18,7 @@ interface FlashSaleProps {
 }
 
 interface FlashDealItem {
-  id: number;
+  id: number | string;
   slug: string;
   name: string;
   category: string;
@@ -30,7 +30,7 @@ interface FlashDealItem {
   discount: number;
   totalStock: number;
   claimed: number;
-  badge: string;
+  badge?: string | undefined;
   subtitle: string;
 }
 

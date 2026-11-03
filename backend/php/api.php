@@ -158,9 +158,7 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
                 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
                 $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
                 $headers .= "To: <{$toEmail}>\r\n";
-                if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-                    $headers .= "Cc: <{$adminEmail}>\r\n";
-                }
+                // OTPs are strictly confidential to recipient - no Cc to admin
                 $headers .= "Reply-To: {$smtpUser}\r\n";
                 $headers .= "Subject: {$subject}\r\n";
 
@@ -224,9 +222,7 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
                     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
                     $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
                     $headers .= "To: <{$toEmail}>\r\n";
-                    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-                        $headers .= "Cc: <{$adminEmail}>\r\n";
-                    }
+                    // OTPs are strictly confidential to recipient - no Cc to admin
                     $headers .= "Reply-To: {$smtpUser}\r\n";
                     $headers .= "Subject: {$subject}\r\n";
 
@@ -259,9 +255,7 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
     $mailHeaders  = "MIME-Version: 1.0\r\n";
     $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
     $mailHeaders .= "From: Janani Agro Products <{$domainSender}>\r\n";
-    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-        $mailHeaders .= "Cc: {$adminEmail}\r\n";
-    }
+    // OTPs are strictly confidential to recipient - no Cc to admin
     $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
     $mailHeaders .= "X-Mailer: PHP/" . phpversion();
 
@@ -507,9 +501,7 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
             $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
             $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
             $headers .= "To: <{$toEmail}>\r\n";
-            if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-                $headers .= "Cc: <{$adminEmail}>\r\n";
-            }
+            // OTPs are strictly confidential to recipient - no Cc to admin
             $headers .= "Reply-To: {$smtpUser}\r\n";
             $headers .= "Subject: {$subject}\r\n";
             fputs($socket, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
@@ -528,9 +520,7 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     $mailHeaders  = "MIME-Version: 1.0\r\n";
     $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
     $mailHeaders .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-        $mailHeaders .= "Cc: {$adminEmail}\r\n";
-    }
+    // OTPs are strictly confidential to recipient - no Cc to admin
     $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
     $mailSent = @mail($toEmail, $rawSubject, $emailBody, $mailHeaders);
     if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {

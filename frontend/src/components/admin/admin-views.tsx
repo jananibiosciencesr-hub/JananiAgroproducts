@@ -211,10 +211,10 @@ export function ProductsView({
         {/* Inventory Summary Footer */}
         <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3.5 border-t border-border bg-muted/20 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span>Showing <strong className="text-foreground font-bold">{filteredInventory.length}</strong> inventory products</span>
-            {cleanSearch && (
+            <span>Showing <strong className="text-foreground font-bold">{filtered.length}</strong> inventory products</span>
+            {search.trim() && (
               <span className="text-[11px] italic text-muted-foreground">
-                (filtered by "{searchQuery}")
+                (filtered by "{search.trim()}")
               </span>
             )}
           </div>

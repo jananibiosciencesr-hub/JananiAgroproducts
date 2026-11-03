@@ -405,7 +405,7 @@ export function CartPage() {
   }, [cartItems]);
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16">
+    <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16">
       {/* Header */}
       <div className="border-b border-border pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -425,7 +425,7 @@ export function CartPage() {
       </div>
 
       {actualCartCount > 0 ? (
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_400px] items-start">
+        <div className="mt-6 sm:mt-8 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_390px] xl:grid-cols-[1fr_420px] 2xl:grid-cols-[1fr_460px] items-start">
           {/* Left Column: Cart Items List, Gift Wrap, Save for Later */}
           <div className="space-y-6">
             {/* Cart Items List */}

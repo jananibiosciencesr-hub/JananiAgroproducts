@@ -85,12 +85,12 @@ export function SavedProductsTab() {
 
   const inStockItems = useMemo(() => savedItems.filter((p) => p.inStock), [savedItems]);
 
-  const handleRemove = (productId: number, productName: string) => {
-    if (wishlist.includes(productId)) {
-      toggleWishlist(productId);
+  const handleRemove = (productId: number | string, productName: string) => {
+    if (wishlist.some((w) => String(w) === String(productId))) {
+      toggleWishlist(productId as any);
     }
     setSavedForLater((prev) => {
-      const updated = prev.filter((id) => id !== productId);
+      const updated = prev.filter((id) => String(id) !== String(productId));
       if (typeof window !== "undefined") {
         localStorage.setItem("janani_saved_for_later", JSON.stringify(updated));
       }
@@ -99,8 +99,8 @@ export function SavedProductsTab() {
     toast.info(`Removed ${productName} from saved products`);
   };
 
-  const handleMoveToBasket = (productId: number, productName: string) => {
-    addToCart(productId, 1);
+  const handleMoveToBasket = (productId: number | string, productName: string) => {
+    addToCart(productId as any, 1);
     toast.success(`Added ${productName} to your basket!`);
   };
 

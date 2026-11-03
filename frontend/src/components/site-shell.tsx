@@ -153,7 +153,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Desktop View: Side Aligned Single Line with Utility Links */}
-          <div className="hidden md:flex w-full items-center justify-between px-4 sm:px-6 max-w-7xl mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap">
+          <div className="hidden md:flex w-full items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap">
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-extrabold text-[10.5px] uppercase tracking-wider">
                 <Sparkles className="size-3 fill-current" />
@@ -193,7 +193,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         }`}
         style={{ top: 0 }}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
           {/* Brand Logo with Ambient Halo */}
           <Brand />
 
@@ -336,7 +336,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                 asChild
                 className="ml-1.5 hidden lg:inline-flex rounded-full font-black text-xs h-9.5 px-5 shadow-[0_4px_14px_rgba(217,154,18,0.35)] hover:shadow-[0_6px_20px_rgba(217,154,18,0.45)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-r from-[#D99A12] via-[#E7A91A] to-[#D99A12] hover:from-[#c98e10] hover:to-[#D99A12] text-[#1E3A1E] border border-[#FDE68A]/60 transition-all duration-200"
               >
-                <Link to="/login" className="flex items-center gap-1.5 whitespace-nowrap">
+                <Link to="/login" search={{ redirect: undefined }} className="flex items-center gap-1.5 whitespace-nowrap">
                   <User className="size-3.5 stroke-[2.5]" />
                   <span>Sign In / Register</span>
                 </Link>
@@ -405,7 +405,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                     <p className="text-[10px] text-emerald-200/90 mt-0.5 leading-tight truncate">Sign in for orders & rewards</p>
                   </div>
                   <Button asChild size="sm" className="h-6.5 px-2 text-[10.5px] font-bold bg-[#E7A91A] hover:bg-[#d89b14] text-slate-900 rounded-lg shrink-0 shadow-xs">
-                    <Link to="/login" onClick={() => setMenu(false)}>Sign In</Link>
+                    <Link to="/login" search={{ redirect: undefined }} onClick={() => setMenu(false)}>Sign In</Link>
                   </Button>
                 </div>
               </div>
@@ -537,7 +537,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                 </Button>
               ) : (
                 <Button asChild size="sm" className="w-full h-7.5 text-xs font-bold bg-[#075B32] hover:bg-[#054324] text-white rounded-xl">
-                  <Link to="/login" onClick={() => setMenu(false)}>Sign In / Register</Link>
+                  <Link to="/login" search={{ redirect: undefined }} onClick={() => setMenu(false)}>Sign In / Register</Link>
                 </Button>
               )}
             </div>
@@ -545,7 +545,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main>{children}</main>
+      <main className={!isCheckoutFlow && pathname !== "/login" ? "site-main-with-bottom-bar" : ""}>{children}</main>
       
       {!isCheckoutFlow && pathname !== "/order-success" && pathname !== "/login" && <Footer />}
 
@@ -553,14 +553,14 @@ function Shell({ children }: { children: React.ReactNode }) {
         <a
           href="https://wa.me/919311416225"
           aria-label="Chat on WhatsApp"
-          className="fixed bottom-20 right-4 z-30 grid size-12 place-items-center rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xl transition-all hover:scale-110 active:scale-95 md:bottom-6"
+          className="fixed bottom-20 right-3 sm:right-6 z-30 grid size-12 place-items-center rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xl transition-all hover:scale-110 active:scale-95 md:bottom-6"
         >
           <WhatsAppIcon className="size-6" />
         </a>
       )}
 
       {!isCheckoutFlow && pathname !== "/login" && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-white/98 px-2 py-2 backdrop-blur-lg md:hidden shadow-lg">
+        <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-white/98 px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] backdrop-blur-lg md:hidden shadow-lg">
           {[
             { Icon: Home, label: "Home", to: "/" },
             { Icon: Grid2X2, label: "Categories", to: "/categories" },
@@ -673,8 +673,8 @@ function Footer() {
         </svg>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-6 pb-6 border-b border-[#0B6B35]/50">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 pt-4 sm:pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-4 gap-6 lg:gap-8 pb-6 border-b border-[#0B6B35]/50">
           {/* Column 1: Brand & About */}
           <div className="space-y-4">
             <Link

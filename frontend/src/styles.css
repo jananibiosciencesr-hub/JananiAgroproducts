@@ -20,6 +20,9 @@
  */
 
 @theme inline {
+  --breakpoint-xs: 375px;
+  --breakpoint-3xl: 1920px;
+  --breakpoint-4xl: 2560px;
   --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-button: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -239,8 +242,33 @@ header.sticky,
 /* Global Zero-Gap & Compact Layout System */
 main {
   margin: 0 !important;
-  padding: 0 !important;
+  padding: 0;
   overflow: visible !important;
+}
+
+/* Ensure mobile fixed bottom bar never overlaps page content */
+@media (max-width: 767px) {
+  .site-main-with-bottom-bar {
+    padding-bottom: 4.5rem !important;
+  }
+}
+
+/* Responsive Container for Laptops (13" to 18") and Large Displays */
+.responsive-shell-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 80rem; /* 1280px standard */
+}
+@media (min-width: 1536px) {
+  .responsive-shell-container {
+    max-width: 96rem; /* 1536px */
+  }
+}
+@media (min-width: 1920px) {
+  .responsive-shell-container {
+    max-width: 107.5rem; /* 1720px */
+  }
 }
 
 main > section,

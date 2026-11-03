@@ -5,9 +5,9 @@
 
 export interface ValidationResult {
   isValid: boolean;
-  error?: string;
-  suggestion?: string;
-  cleanValue?: string;
+  error?: string | undefined;
+  suggestion?: string | undefined;
+  cleanValue?: string | undefined;
 }
 
 /**

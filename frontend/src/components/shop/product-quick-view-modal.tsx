@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   X,
@@ -204,7 +204,7 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
                     Select Pack Size / Quantity
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {resolvedVariants.map((v) => {
+                    {resolvedVariants.map((v: ProductVariant) => {
                       const isSelected = selectedVariant.id === v.id;
                       return (
                         <button

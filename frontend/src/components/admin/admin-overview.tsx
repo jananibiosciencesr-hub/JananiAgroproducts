@@ -604,13 +604,13 @@ export function AdminOverview({
                         return String(cust.name || "").toLowerCase().includes(q) || String(cust.email || "").toLowerCase().includes(q) || String(cust.phone || "").toLowerCase().includes(q);
                       }).map(o => {
                         const cust = getOrderCustomer(o);
-                        return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: cust.tier || "Active Patron", walletBalance: 0 };
+                        return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: (cust as any)?.tier || "Active Patron", walletBalance: 0 };
                       }))
                 : (liveCustomers.length > 0
                     ? liveCustomers
                     : liveOrders.map(o => {
                         const cust = getOrderCustomer(o);
-                        return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: cust.tier || "Active Patron", walletBalance: 0 };
+                        return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: (cust as any)?.tier || "Active Patron", walletBalance: 0 };
                       }))
               ).slice(0, 4).map((c, idx) => (
                 <div key={idx} className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-muted/40 border border-border/40 text-xs min-w-0 gap-2">

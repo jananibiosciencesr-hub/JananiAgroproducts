@@ -133,8 +133,8 @@ export function calculateProductRelevance(p: Product | any, query: string): numb
   // Exact phrase and word-start bonuses (ranks prefix matches like 'N' -> 'Neem Oil' highest)
   if (nameLower === q) score += 150;
   else if (nameLower.startsWith(q)) score += 100;
-  else if (nameWords.some((w) => w.startsWith(q))) score += 80;
-  else if (catWords.some((w) => w.startsWith(q))) score += 50;
+  else if (nameWords.some((w: string) => w.startsWith(q))) score += 80;
+  else if (catWords.some((w: string) => w.startsWith(q))) score += 50;
   else if (nameLower.includes(q)) score += 40;
 
   if (subLower.includes(q)) score += 40;

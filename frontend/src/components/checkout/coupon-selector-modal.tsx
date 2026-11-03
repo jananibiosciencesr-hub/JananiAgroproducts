@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Tag, Sparkles, Check, X, ArrowRight, ShieldCheck, Percent, HelpCircle, Clock } from "lucide-react";
+import { Tag, Sparkles, Check, X, ArrowRight, ShieldCheck, Percent, HelpCircle, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getStorefrontCoupons, type AdminCoupon } from "@/lib/api";
@@ -10,10 +10,10 @@ export interface CouponRule {
   description: string;
   type: "percentage" | "flat" | "free_delivery";
   value: number; // e.g. 20 for 20%, 100 for ₹100
-  maxDiscount?: number;
+  maxDiscount?: number | undefined;
   minSubtotal: number;
   expiry: string;
-  badge?: string;
+  badge?: string | undefined;
 }
 
 export const AVAILABLE_COUPONS: CouponRule[] = [

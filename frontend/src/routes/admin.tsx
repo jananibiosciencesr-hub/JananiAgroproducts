@@ -186,7 +186,7 @@ function AdminDashboardPage() {
   }, []);
 
   // Admin Login Portal Form State
-  const [adminEmail, setAdminEmail] = useState("jananibiosciences.r@gmail.com");
+  const [adminEmail] = useState("jananibiosciences.r@gmail.com");
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -666,12 +666,14 @@ function AdminDashboardPage() {
                     <Mail className="ml-4 size-5 text-[#075B32] shrink-0" />
                     <input
                       type="email"
-                      required
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
-                      placeholder="jananibiosciences.r@gmail.com"
-                      className="h-13 w-full rounded-r-2xl bg-transparent px-3.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+                      readOnly
+                      value="jananibiosciences.r@gmail.com"
+                      className="h-13 w-full rounded-r-2xl bg-transparent px-3.5 text-sm font-bold text-slate-900 outline-none cursor-default selection:bg-transparent"
                     />
+                    <div className="mr-3 flex items-center gap-1 px-2.5 py-1 bg-[#075B32]/10 text-[#075B32] rounded-full text-[11px] font-bold shrink-0">
+                      <Lock className="size-3" />
+                      <span>Root Admin</span>
+                    </div>
                   </div>
                   {adminEmail.trim().toLowerCase() !== "jananibiosciences.r@gmail.com" ? (
                     <div className="mt-2.5 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-2.5 flex items-center gap-2">
@@ -717,9 +719,10 @@ function AdminDashboardPage() {
                       setIsOtpStep(false);
                       setOtpDigits(["", "", "", "", "", ""]);
                     }}
-                    className="text-xs font-bold text-[#075B32] hover:underline cursor-pointer shrink-0"
+                    className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer shrink-0 inline-flex items-center gap-1"
                   >
-                    Change Email
+                    <ArrowLeft className="size-3" />
+                    <span>Back</span>
                   </button>
                 </div>
 
@@ -835,7 +838,7 @@ function AdminDashboardPage() {
         />
 
         {/* Dynamic View Body */}
-        <main className="flex-1 flex flex-col min-w-0 p-2.5 sm:p-5 lg:p-6 max-w-[1600px] xl:max-w-[1800px] w-full mx-auto overflow-x-hidden">
+        <main className="flex-1 flex flex-col min-w-0 p-2.5 sm:p-5 lg:p-6 xl:p-8 max-w-[1600px] xl:max-w-[1800px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] w-full mx-auto overflow-x-hidden">
           {activeTab === "dashboard" && (
             <AdminOverview
               stats={stats}

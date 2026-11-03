@@ -36,7 +36,7 @@ export function Brand({
           <span className="text-[9px] sm:text-[10.5px] font-extrabold uppercase tracking-[0.2em] bg-gradient-to-r from-[#D99A12] via-[#E7A91A] to-[#B87B08] bg-clip-text text-transparent">
             PRODUCTS
           </span>
-          <span className="text-[7.5px] sm:text-[9px] font-semibold text-[#0B6B35]/85 tracking-wide flex items-center gap-0.5">
+          <span className="text-[7.5px] sm:text-[9px] font-semibold text-[#0B6B35]/85 tracking-wide hidden xs:flex items-center gap-0.5">
             <span className="text-[#D99A12] font-black leading-none">•</span>
             <Sparkles className="size-2 text-[#D99A12] fill-current" />
             Pure Soil to Soul

@@ -40,8 +40,8 @@ function AboutPage() {
   return (
     <>
       {/* Story & Roots */}
-      <section className="px-6 py-14 sm:py-16">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2">
+      <section className="px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-10 sm:py-16">
+        <div className="mx-auto grid max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] items-center gap-10 lg:gap-14 lg:grid-cols-2">
           <div>
             <SectionHeading
               eyebrow="Our Mission & Origin"
@@ -82,8 +82,8 @@ function AboutPage() {
       </section>
 
       {/* Product Categories & Capabilities */}
-      <section className="bg-secondary/40 px-6 py-20 border-y border-border">
-        <div className="mx-auto max-w-7xl">
+      <section className="bg-secondary/40 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 sm:py-16 lg:py-20 border-y border-border">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
           <SectionHeading
             eyebrow="Complete Crop Solutions"
             title="Comprehensive Agro Input Portfolio"
@@ -180,8 +180,8 @@ function AboutPage() {
       </section>
 
       {/* Facility & Location info */}
-      <section className="px-6 py-12 pb-20">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 rounded-[3rem] bg-forest p-8 text-primary-foreground sm:p-14 lg:grid-cols-2 shadow-xl">
+      <section className="px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-10 sm:py-12 pb-16 sm:pb-20">
+        <div className="mx-auto grid max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] items-center gap-8 sm:gap-12 rounded-[2.5rem] sm:rounded-[3rem] bg-forest p-6 sm:p-14 lg:grid-cols-2 shadow-xl">
           <div>
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">Infrastructure & Operations</span>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl font-display">State-of-the-Art Production & Distribution</h2>

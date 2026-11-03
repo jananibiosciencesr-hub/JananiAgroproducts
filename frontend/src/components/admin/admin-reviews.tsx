@@ -1537,9 +1537,9 @@ function CreateReviewModal({
     setSaving(true);
     try {
       const res = await createAdminReview({
-        productId: selectedProduct.id,
-        productName: selectedProduct.name,
-        productCategory: selectedProduct.cat,
+        productId: selectedProduct?.id || "1",
+        productName: selectedProduct?.name || "Agro Product",
+        productCategory: selectedProduct?.cat || "Biologicals",
         location: location.trim() || "Organic Farmer",
         customerName: customerName.trim(),
         customerEmail: customerEmail.trim() || `${customerName.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
@@ -1594,7 +1594,7 @@ function CreateReviewModal({
           <div>
             <label className="text-xs font-semibold text-foreground">Associated Agro Product *</label>
             <select
-              value={selectedProduct.id}
+              value={selectedProduct?.id || ""}
               onChange={e => {
                 const p = agroProducts.find(x => x.id === e.target.value) || agroProducts[0];
                 setSelectedProduct(p);

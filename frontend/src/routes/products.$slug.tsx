@@ -354,7 +354,7 @@ function ProductDetailPage() {
 
   // Gallery Images List: dynamically loaded from variant (1L bottle / 5L can), backend product.image & gallery
   const galleryImages = useMemo(() => {
-    const list: { id: string; src: string; label: string; isVideo?: boolean; videoUrl?: string }[] = [];
+    const list: { id: string; src: string; label: string; isVideo?: boolean | undefined; videoUrl?: string | undefined }[] = [];
     const seen = new Set<string>();
 
     const addImg = (src?: string, label?: string, isVideo = false, vidUrl?: string) => {
@@ -614,7 +614,7 @@ function ProductDetailPage() {
 
   return (
     <div className="bg-white min-h-screen text-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-4 sm:py-8">
         {/* 1. Breadcrumbs Strip */}
         <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-4 sm:mb-6 font-medium flex-wrap">
           <Link to="/" className="hover:text-[#075B32] transition">

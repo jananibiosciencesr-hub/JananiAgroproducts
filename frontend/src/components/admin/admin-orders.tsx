@@ -269,6 +269,13 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
   const [packingSlipOrder, setPackingSlipOrder] = useState<any | null>(null);
   const [shippingLabelOrder, setShippingLabelOrder] = useState<any | null>(null);
 
+  const copyToClipboard = (text: string, label: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      toast.success(`Copied ${label} to clipboard!`);
+    }
+  };
+
   const [warehouseModalOrder, setWarehouseModalOrder] = useState<any | null>(null);
   const [shiprocketModalOrder, setShiprocketModalOrder] = useState<any | null>(null);
   const [cancelModalOrder, setCancelModalOrder] = useState<any | null>(null);

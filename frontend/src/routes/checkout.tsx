@@ -380,7 +380,7 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-6 lg:py-8 pb-32 lg:pb-12">
+    <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-3 sm:py-6 lg:py-8 pb-32 lg:pb-12">
       {/* Header with Breadcrumb & Trust Ticker */}
       <div className="border-b border-border pb-3 sm:pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
@@ -403,7 +403,7 @@ export function CheckoutPage() {
       </div>
 
       {/* Main Grid: Left Steps + Right Rail Summary */}
-      <div className="mt-5 sm:mt-8 grid gap-5 sm:gap-8 lg:grid-cols-[1fr_420px] items-start">
+      <div className="mt-5 sm:mt-8 grid gap-5 sm:gap-8 lg:grid-cols-[1fr_390px] xl:grid-cols-[1fr_420px] 2xl:grid-cols-[1fr_460px] items-start">
         {/* Left Column: Sequential Checkout Steps */}
         <div className="space-y-4 sm:space-y-6">
           {/* USER PROFILE INFO BANNER */}

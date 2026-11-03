@@ -43,8 +43,8 @@ export function EditProfileTab() {
     bio: user?.bio || "",
   });
 
-  const [errors, setErrors] = useState<{ phone?: string; email?: string; emailSuggestion?: string }>({});
-  const [touched, setTouched] = useState<{ phone?: boolean; email?: boolean }>({});
+  const [errors, setErrors] = useState<{ phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined }>({});
+  const [touched, setTouched] = useState<{ phone?: boolean | undefined; email?: boolean | undefined }>({});
 
   const resetFormToUser = () => {
     if (user) {
@@ -203,8 +203,9 @@ export function EditProfileTab() {
         dob: formData.dob,
         bio: formData.bio,
         preferences: {
-          ...(user?.preferences || {}),
+          dietary: user?.preferences?.dietary || [],
           pinCode: user?.preferences?.pinCode || "380054",
+          ...(user?.preferences || {}),
         },
       });
 

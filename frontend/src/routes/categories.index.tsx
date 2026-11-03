@@ -133,8 +133,8 @@ function CategoriesIndexPage() {
   return (
     <>
       {/* Compact Categories Header */}
-      <div className="border-b border-border/70 bg-gradient-to-b from-[#075B32]/10 via-background to-background pt-3 pb-3 sm:pt-6 sm:pb-6 px-3 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+      <div className="border-b border-border/70 bg-gradient-to-b from-[#075B32]/10 via-background to-background pt-3 pb-3 sm:pt-6 sm:pb-6 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <nav
@@ -176,7 +176,7 @@ function CategoriesIndexPage() {
         </div>
 
         {/* Search & Filter Pill Bar */}
-        <div className="mx-auto max-w-7xl mt-5 pt-4 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mt-5 pt-4 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Quick Search */}
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
@@ -203,11 +203,10 @@ function CategoriesIndexPage() {
               <button
                 key={tag.id}
                 onClick={() => setSelectedTag(tag.id)}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
-                  selectedTag === tag.id
+                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${selectedTag === tag.id
                     ? "bg-[#075B32] text-white shadow-xs"
                     : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
+                  }`}
               >
                 {tag.label}
               </button>
@@ -217,7 +216,7 @@ function CategoriesIndexPage() {
       </div>
 
       {/* Categories Grid (Restored Large Card Layout) */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 sm:py-8">
         {filteredCategories.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-border/80 p-8 shadow-xs">
             <Layers className="size-10 mx-auto text-muted-foreground/60 mb-3" />
@@ -238,7 +237,7 @@ function CategoriesIndexPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5">
             {filteredCategories.map((cat) => {
               const count = allProds.filter(
                 (p) =>
@@ -269,7 +268,7 @@ function CategoriesIndexPage() {
                       className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-                    
+
                     <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-[#075B32]/90 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm shadow-xs">
                       <Package className="size-3" />
                       {count > 0 ? `${count} Products` : `${cat.count || 2} Products`}

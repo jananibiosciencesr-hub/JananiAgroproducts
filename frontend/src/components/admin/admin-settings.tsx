@@ -597,7 +597,11 @@ export function SettingsManagement({ defaultTab = "store_branding" }: SettingsMa
     try {
       const res = await terminateLoginSession(id);
       if (res?.success) {
-        setLoginSessions((prev) => prev.map((s) => (s.id === id ? res.session : s)));
+        if ("session" in res && res.session) {
+          setLoginSessions((prev) => prev.map((s) => (s.id === id ? res.session : s)));
+        } else {
+          setLoginSessions((prev) => prev.filter((s) => s.id !== id));
+        }
         toast.success(`Session for ${userName} terminated successfully.`);
       }
     } catch (err) {
