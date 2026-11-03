@@ -1263,6 +1263,43 @@ function ensureOrdersTableSchema($pdo) {
     } catch (Exception $e) {}
 }
 
+
+function generateNextCustomerId($pdo) {
+    if (!$pdo) {
+        return 'CUST-001';
+    }
+    try {
+        $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(id, 6) AS UNSIGNED)) AS max_num FROM \`users\` WHERE \`id\` REGEXP '^CUST-[0-9]{1,4}$'");
+        $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
+        if ($maxNum <= 0) {
+            $cStmt = $pdo->query("SELECT COUNT(*) FROM \`users\` WHERE \`role\` != 'Super Admin' AND \`id\` != 'ADMIN-ROOT'");
+            $maxNum = $cStmt ? (int)$cStmt->fetchColumn() : 0;
+        }
+        $nextNum = max(1, $maxNum + 1);
+        return 'CUST-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
+    } catch (Exception $e) {
+        return 'CUST-001';
+    }
+}
+
+function generateNextOrderNumber($pdo) {
+    if (!$pdo) {
+        return 'JAP-001';
+    }
+    try {
+        $stmt = $pdo->query("SELECT MAX(num) AS max_num FROM (
+            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM \`orders\` WHERE \`number\` REGEXP '^(JAP|ORD)-[0-9]{1,4}$'
+            UNION
+            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM \`orders\` WHERE \`id\` REGEXP '^(JAP|ORD)-[0-9]{1,4}$'
+        ) AS t");
+        $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
+        $nextNum = max(1, $maxNum + 1);
+        return 'JAP-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
+    } catch (Exception $e) {
+        return 'JAP-001';
+    }
+}
+
 function ensureJananiCatalogSynced($pdo) {
     static $synced = false;
     if ($synced) return;
@@ -1629,7 +1666,7 @@ try {
                     exit;
                 }
 
-                $userId = 'CUST-' . rand(100, 999);
+                $userId = generateNextCustomerId($pdo);
 
                 $user = [
                     'id' => $userId,
@@ -1907,7 +1944,7 @@ try {
                 // Check if admin
                 $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false || ($existingUser && in_array($existingUser['role'], ['Super Admin', 'Admin', 'Staff'])));
 
-                $userId = $existingUser ? $existingUser['id'] : ($isAdmin ? 'ADMIN-ROOT' : 'CUST-' . rand(100, 999));
+                $userId = $existingUser ? $existingUser['id'] : ($isAdmin ? 'ADMIN-ROOT' : generateNextCustomerId($pdo));
                 $inputName = trim($body['name'] ?? '');
                 $userName = !empty($inputName) 
                     ? $inputName 
@@ -3686,6 +3723,16 @@ try {
                 $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `expected_delivery` VARCHAR(100) DEFAULT NULL");
                 $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `timeline` LONGTEXT DEFAULT NULL");
 
+                
+                // Auto-normalize legacy orders to sequential JAP-001 format
+                try {
+                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-001', \`id\` = 'JAP-001' WHERE (\`number\` LIKE '%356429%' OR \`id\` LIKE '%356429%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-001') AS _tmp)");
+                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-002', \`id\` = 'JAP-002' WHERE (\`number\` LIKE '%709853%' OR \`id\` LIKE '%709853%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-002') AS _tmp)");
+                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-003', \`id\` = 'JAP-003' WHERE (\`number\` LIKE '%845461%' OR \`id\` LIKE '%845461%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-003') AS _tmp)");
+                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-004', \`id\` = 'JAP-004' WHERE (\`number\` LIKE '%849201%' OR \`id\` LIKE '%849201%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-004') AS _tmp)");
+                    $pdo->exec("UPDATE \`users\` SET \`id\` = 'CUST-001' WHERE \`email\` = 'kameswarip98@gmail.com' AND \`id\` != 'CUST-001'");
+                } catch (Exception $ex) {}
+
                 // Auto-repair any legacy mock rows with empty/generic names
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'K. Suresh Reddy', `customer_email` = 'suresh.reddy@gmail.com', `customer_phone` = '+91 98489 11223' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
                 $pdo->exec("UPDATE `orders` SET `customer_name` = 'Ananya Sharma', `customer_email` = 'ananya.s@gmail.com', `customer_phone` = '+91 99123 44556' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
@@ -3949,8 +3996,13 @@ try {
 
                 if (!$isUpdateAction) {
                     // Create Flipkart-grade Order
-                    $orderNum = !empty($body['number']) ? $body['number'] : (!empty($body['orderNumber']) ? $body['orderNumber'] : ('JAP-' . rand(100000, 999999)));
-                    $orderId = !empty($body['id']) ? $body['id'] : $orderNum;
+                    $incomingNumber = !empty($body['number']) ? $body['number'] : (!empty($body['orderNumber']) ? $body['orderNumber'] : '');
+                    if (empty($incomingNumber) || preg_match('/^(JAP|ORD)-[0-9]{5,}$/i', $incomingNumber)) {
+                        $orderNum = generateNextOrderNumber($pdo);
+                    } else {
+                        $orderNum = $incomingNumber;
+                    }
+                    $orderId = (!empty($body['id']) && !preg_match('/^(JAP|ORD)-[0-9]{5,}$/i', $body['id'])) ? $body['id'] : $orderNum;
                     $orderDate = $body['order_date'] ?? ($body['date'] ?? date('d M Y, H:i'));
 
                     $sAddrObj = $body['shipping_address'] ?? ($body['shippingAddress'] ?? ($body['address'] ?? []));
@@ -4371,7 +4423,7 @@ try {
 
                 if (empty($rawId) && empty($body['email']) && empty($body['name'])) {
                     // Create customer
-                    $custId = !empty($body['id']) ? $body['id'] : ('CUST-' . rand(100, 999));
+                    $custId = !empty($body['id']) ? $body['id'] : generateNextCustomerId($pdo);
                     $name = $body['name'] ?? 'New Patron';
                     $email = strtolower(trim($body['email'] ?? ($custId . '@janani.customer')));
                     $phone = $body['phone'] ?? '';
@@ -4511,7 +4563,7 @@ try {
 
                     if (!empty($fields)) {
                         if (!$existingUser) {
-                            $newId = !empty($searchId) && !strpos($searchId, '@') ? $searchId : ('CUST-' . rand(100, 999));
+                            $newId = (!empty($searchId) && !strpos($searchId, '@')) ? $searchId : generateNextCustomerId($pdo);
                             $newName = trim($body['name'] ?? ($body['fullName'] ?? 'Valued Patron'));
                             $newEmail = $searchEmail ?: ($newId . '@janani.customer');
                             $newPhone = $formattedPhone ?? trim($body['phone'] ?? '');

@@ -51,12 +51,13 @@ export const createOrder = (req, res) => {
     const shippingFee = subtotal >= 799 ? 0 : 60;
     const finalTotal = Math.max(0, subtotal - discount + shippingFee);
 
-    const newOrderNumber = `JAP-${Math.floor(100000 + Math.random() * 900000)}`;
+    const nextNum = orders.length + 1;
+    const newOrderNumber = `JAP-${String(nextNum).padStart(3, "0")}`;
     const now = new Date();
     const formattedDate = `${now.getDate().toString().padStart(2, "0")} ${now.toLocaleString("en-US", { month: "short" })} ${now.getFullYear()}`;
 
     const newOrder = {
-      id: orders.length + 1,
+      id: `ORD-${String(nextNum).padStart(3, "0")}`,
       number: newOrderNumber,
       date: formattedDate,
       subtotal,

@@ -1,3 +1,14 @@
+
+function getNextSequentialCustomerId(db) {
+  const nums = (db || [])
+    .map(c => {
+      const match = String(c.id || "").match(/CUST-(\d+)/i) || String(c.id || "").match(/^(\d+)$/);
+      return match ? parseInt(match[1], 10) : 0;
+    })
+    .filter(n => !isNaN(n) && n > 0 && n < 10000);
+  const nextNum = nums.length > 0 ? Math.max(...nums) + 1 : (db && db.length > 0 ? db.length + 1 : 1);
+  return `CUST-${String(nextNum).padStart(3, "0")}`;
+}
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -389,7 +400,7 @@ export const verifyOtp = async (req, res) => {
     let isNewUser = false;
     if (!customer) {
       isNewUser = true;
-      const newId = `cust-${Date.now().toString().slice(-4)}`;
+      const newId = getNextSequentialCustomerId(customersDatabase);
       customer = {
         id: newId,
         name: phone ? `Janani Patron (${identifier.slice(-4)})` : identifier.split("@")[0],
@@ -520,7 +531,7 @@ export const signupCustomer = async (req, res) => {
       formattedPhone = `+91 ${cleanPhone.slice(2, 7)} ${cleanPhone.slice(7)}`;
     }
 
-    const newId = `cust-${Date.now().toString().slice(-4)}`;
+    const newId = getNextSequentialCustomerId(customersDatabase);
     const newCustomer = {
       id: newId,
       name: name.trim(),
@@ -604,7 +615,7 @@ export const loginWithGoogle = async (req, res) => {
 
     if (!customer) {
       isNewUser = true;
-      const newId = `cust-${Date.now().toString().slice(-4)}`;
+      const newId = getNextSequentialCustomerId(customersDatabase);
       customer = {
         id: newId,
         name: userName,

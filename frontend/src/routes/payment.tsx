@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { generateNextOrderNumber } from "@/lib/api";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   ShieldCheck,
@@ -84,7 +85,7 @@ export function PaymentPage() {
     amount: number;
     failureReason?: string;
   }>({
-    orderNumber: checkoutData?.orderNumber || `JAP-${Math.floor(100000 + Math.random() * 900000)}`,
+    orderNumber: checkoutData?.orderNumber || generateNextOrderNumber(),
     transactionId: "",
     method: "Razorpay Standard Gateway",
     amount: checkoutData?.finalTotal || (subtotal > 0 ? subtotal : 420),

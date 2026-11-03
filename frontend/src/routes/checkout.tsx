@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { generateNextOrderNumber } from "@/lib/api";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   ArrowRight,
@@ -212,7 +213,7 @@ export function CheckoutPage() {
     }
 
     const pendingCheckout = {
-      orderNumber: `JAP-${Math.floor(100000 + Math.random() * 900000)}`,
+      orderNumber: generateNextOrderNumber(),
       customerName: selectedAddress.fullName || user?.name || "Valued Patron",
       customerEmail: user?.email || "patron@jananiagro.com",
       customerPhone: selectedAddress.phone || user?.phone || "",

@@ -595,6 +595,46 @@ export interface CreateOrderPayload {
   timeline?: any[];
 }
 
+
+export function generateNextCustomerId(): string {
+  const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
+  let nextNum = 1;
+  if (Array.isArray(stored) && stored.length > 0) {
+    const nums = stored
+      .map(c => {
+        const match = String(c.id || "").match(/CUST-(\d+)/i) || String(c.id || "").match(/^(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(n => !isNaN(n) && n > 0 && n < 10000);
+    if (nums.length > 0) {
+      nextNum = Math.max(...nums) + 1;
+    } else {
+      nextNum = stored.length + 1;
+    }
+  }
+  return `CUST-${String(nextNum).padStart(3, "0")}`;
+}
+
+export function generateNextOrderNumber(): string {
+  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  let nextOrderNum = 1;
+  if (Array.isArray(storedOrders) && storedOrders.length > 0) {
+    const nums = storedOrders
+      .map(o => {
+        const val = String(o.number || o.orderNumber || o.id || "");
+        const match = val.match(/(?:JAP|ORD)-(\d+)/i) || val.match(/^(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(n => !isNaN(n) && n > 0 && n < 10000);
+    if (nums.length > 0) {
+      nextOrderNum = Math.max(...nums) + 1;
+    } else {
+      nextOrderNum = storedOrders.length + 1;
+    }
+  }
+  return `JAP-${String(nextOrderNum).padStart(3, "0")}`;
+}
+
 export async function createOrder(orderPayload: CreateOrderPayload) {
   const subtotal = orderPayload.subtotal ?? orderPayload.items.reduce((sum, item) => sum + item.price * (item.quantity || item.qty || 1), 0);
   const couponDiscount = orderPayload.couponDiscount ?? (orderPayload.couponCode ? (orderPayload.discount ?? 0) : 0);
@@ -606,7 +646,11 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
   const deliveryFee = orderPayload.deliveryFee ?? orderPayload.shippingFee ?? (subtotal >= 799 ? 0 : 60);
   const total = orderPayload.finalTotal ?? orderPayload.total ?? Math.max(0, subtotal + gstAmount - couponDiscount - walletDeduction + deliveryFee);
 
-  const generatedId = orderPayload.orderNumber || orderPayload.number || orderPayload.id || `JAP-${Math.floor(100000 + Math.random() * 900000)}`;
+  const nextSeqOrderNum = generateNextOrderNumber();
+  let generatedId = orderPayload.orderNumber || orderPayload.number || orderPayload.id;
+  if (!generatedId || /^(?:JAP|ORD)-\d{5,}$/i.test(generatedId)) {
+    generatedId = nextSeqOrderNum;
+  }
   const custName = orderPayload.customer.name || `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim() || "Valued Patron";
   const custEmail = orderPayload.customer.email || "patron@jananiagro.com";
   const streetAddr = orderPayload.customer.streetAddress || orderPayload.customer.address || orderPayload.customer.street || "";
@@ -767,7 +811,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
     isoDate: new Date().toISOString().split("T")[0]!,
     customer: {
-      id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
+      id: (orderPayload.customer as any)?.id || generateNextCustomerId(),
       name: custName,
       phone: orderPayload.customer.phone,
       email: custEmail
@@ -2208,7 +2252,7 @@ export async function createAdminCustomer(customerData: any) {
   }
 
   const newCustomer = {
-    id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
+    id: customerData.id || generateNextCustomerId(),
     joinedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
     ordersCount: 0,
     ltv: 0,
@@ -7775,7 +7819,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
   }
 
   const user: AuthUser = {
-    id: check.user?.id || `CUST-${Math.floor(100 + Math.random() * 900)}`,
+    id: check.user?.id || generateNextCustomerId(),
     name: check.user?.name || (normalizedEmail.split("@")[0] ?? "User").replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
     email: normalizedEmail,
     phone: check.user?.phone || "",
@@ -7948,7 +7992,7 @@ export async function verifyAuthOtp(payload: { phone?: string | undefined; email
 
   if (!isAdmin && (cleanOtp === "123456" || cleanOtp === "1234" || cleanOtp === "000000" || cleanOtp === "999999")) {
     const user: AuthUser = {
-      id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
+      id: generateNextCustomerId(),
       name: payload.name?.trim() || (payload.phone ? `Customer (${payload.phone.slice(-4)})` : (payload.email?.split("@")[0] || "Valued Patron")),
       email: payload.email || (payload.phone ? `${payload.phone}@janani.customer` : "patron@jananiagro.com"),
       phone: payload.phone || "",
@@ -8126,7 +8170,7 @@ export async function signupCustomer(payload: {
   const fullAddr = [payload.houseFlat, payload.street, payload.city, payload.state, payload.pincode].filter(Boolean).join(", ");
 
   const user: AuthUser = {
-    id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
+    id: generateNextCustomerId(),
     name: payload.name,
     email: payload.email,
     phone: payload.phone,

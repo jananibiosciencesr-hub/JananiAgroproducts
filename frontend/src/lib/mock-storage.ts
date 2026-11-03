@@ -115,8 +115,8 @@ export const DEFAULT_CATEGORIES = catalogCategories.map((c, idx) => ({
 
 export const DEFAULT_ORDERS = [
   {
-    id: "ORD-94812",
-    number: "JAP-94812",
+    id: "ORD-001",
+    number: "JAP-001",
     date: "2026-09-15 10:45 AM",
     orderStatus: "Delivered",
     status: "Delivered",
@@ -163,8 +163,8 @@ export const DEFAULT_ORDERS = [
     ]
   },
   {
-    id: "ORD-94811",
-    number: "JAP-94811",
+    id: "ORD-002",
+    number: "JAP-002",
     date: "2026-09-16 03:20 PM",
     orderStatus: "Shipped",
     status: "Shipped",
@@ -207,8 +207,8 @@ export const DEFAULT_ORDERS = [
     ]
   },
   {
-    id: "ORD-94810",
-    number: "JAP-94810",
+    id: "ORD-003",
+    number: "JAP-003",
     date: "2026-09-17 11:10 AM",
     orderStatus: "Processing",
     status: "Processing",
@@ -250,8 +250,8 @@ export const DEFAULT_ORDERS = [
     ]
   },
   {
-    id: "ORD-94809",
-    number: "JAP-94809",
+    id: "ORD-004",
+    number: "JAP-004",
     date: "2026-09-17 01:45 PM",
     orderStatus: "Pending",
     status: "Pending",
@@ -294,7 +294,7 @@ export const DEFAULT_ORDERS = [
 
 export const DEFAULT_CUSTOMERS = [
   {
-    id: "CUST-KAMESWARI",
+    id: "CUST-001",
     name: "Kameswari Pachipulusu",
     email: "kameswarip98@gmail.com",
     password: "Sravs@98",
@@ -310,9 +310,7 @@ export const DEFAULT_CUSTOMERS = [
     joinedDate: "2026-10-13",
     avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kameswari%20Pachipulusu"
   },
-  {
-    id: "CUST-001",
-    name: "Ananya Sharma",
+  { id: "CUST-002", name: "Ananya Sharma",
     email: "ananya.s@gmail.com",
     phone: "+91 98451 22345",
     tier: "Platinum Gold",
@@ -325,9 +323,7 @@ export const DEFAULT_CUSTOMERS = [
     joinedDate: "2025-11-12",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80"
   },
-  {
-    id: "CUST-002",
-    name: "Suresh Patwardhan",
+  { id: "CUST-003", name: "Suresh Patwardhan",
     email: "suresh.p@yahoo.co.in",
     phone: "+91 94220 89123",
     tier: "Silver Patron",
@@ -340,9 +336,7 @@ export const DEFAULT_CUSTOMERS = [
     joinedDate: "2026-01-20",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80"
   },
-  {
-    id: "CUST-003",
-    name: "Kavitha Ranganathan",
+  { id: "CUST-004", name: "Kavitha Ranganathan",
     email: "kavitha.r@outlook.com",
     phone: "+91 98410 44231",
     tier: "Gold Harvest Member",
@@ -355,9 +349,7 @@ export const DEFAULT_CUSTOMERS = [
     joinedDate: "2025-12-04",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80"
   },
-  {
-    id: "CUST-004",
-    name: "Rameshwar Patel",
+  { id: "CUST-005", name: "Rameshwar Patel",
     email: "ramesh.patel@gmail.com",
     phone: "+91 98251 10928",
     tier: "New Harvest Patron",
@@ -902,8 +894,8 @@ export const DEFAULT_CMS = {
 export const DEFAULT_PAYMENTS = {
   transactions: [
     {
-      id: "TXN-94812",
-      orderId: "ORD-94812",
+      id: "TXN-001",
+      orderId: "ORD-001",
       customer: { name: "Ananya Sharma", email: "ananya.s@gmail.com", phone: "+91 98451 22345", avatar: "" },
       amount: 3477,
       currency: "INR",
@@ -919,8 +911,8 @@ export const DEFAULT_PAYMENTS = {
       net: 3477
     },
     {
-      id: "TXN-94811",
-      orderId: "ORD-94811",
+      id: "TXN-002",
+      orderId: "ORD-002",
       customer: { name: "Suresh Patwardhan", email: "suresh.p@yahoo.co.in", phone: "+91 94220 89123", avatar: "" },
       amount: 1305,
       currency: "INR",
@@ -936,8 +928,8 @@ export const DEFAULT_PAYMENTS = {
       net: 1274.20
     },
     {
-      id: "TXN-94810",
-      orderId: "ORD-94810",
+      id: "TXN-003",
+      orderId: "ORD-003",
       customer: { name: "Kavitha Ranganathan", email: "kavitha.r@outlook.com", phone: "+91 98410 44231", avatar: "" },
       amount: 1044,
       currency: "INR",
@@ -953,8 +945,8 @@ export const DEFAULT_PAYMENTS = {
       net: 1044
     },
     {
-      id: "TXN-94809",
-      orderId: "ORD-94809",
+      id: "TXN-004",
+      orderId: "ORD-004",
       customer: { name: "Rameshwar Patel", email: "ramesh.patel@gmail.com", phone: "+91 98251 10928", avatar: "" },
       amount: 848,
       currency: "INR",
@@ -995,7 +987,7 @@ export const DEFAULT_AUDIT_LOGS = [
     id: "LOG-102",
     timestamp: "2026-09-17 11:40 AM",
     actor: { id: "STAFF-002", name: "Suresh Patwardhan", email: "operations@jananiagro.com", role: "Logistics Manager" },
-    action: "Generated Shiprocket AWB for ORD-94811",
+    action: "Generated Shiprocket AWB for ORD-002",
     module: "Shipping & Orders",
     severity: "low" as const,
     ipAddress: "115.99.12.84",

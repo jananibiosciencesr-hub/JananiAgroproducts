@@ -301,7 +301,7 @@ export function AdminNavbar({
       ? [
         {
           id: "order-alert-1",
-          title: `New Order #${orders.find((o) => o?.orderStatus === "Pending" || o?.orderStatus === "Processing")?.orderNumber || "ORD-94812"}`,
+          title: `New Order #${orders.find((o) => o?.orderStatus === "Pending" || o?.orderStatus === "Processing")?.orderNumber || "ORD-001"}`,
           desc: `₹${(orders.find((o) => o?.orderStatus === "Pending" || o?.orderStatus === "Processing")?.totalAmount || 4040).toLocaleString("en-IN")} via UPI`,
           time: "Recent",
           icon: ShoppingBag,
