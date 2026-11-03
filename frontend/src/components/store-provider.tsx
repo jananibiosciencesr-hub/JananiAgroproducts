@@ -89,7 +89,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     try {
       const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+      const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
+
       if (storedUser) {
+        // 24-hour Auto-Logout check for Customer session
+        if (userAuthTime) {
+          const elapsed = Date.now() - parseInt(userAuthTime, 10);
+          if (elapsed > 24 * 60 * 60 * 1000) {
+            localStorage.removeItem("janani_user");
+            localStorage.removeItem("janani_auth_user");
+            localStorage.removeItem("janani_token");
+            localStorage.removeItem("janani_auth_token");
+            localStorage.removeItem("janani_user_auth_time");
+            localStorage.removeItem("janani_auth_time");
+            setUser(null);
+            return;
+          }
+        } else {
+          // Initialize auth time for active session so it auto-expires after 24 hours
+          const nowStr = Date.now().toString();
+          localStorage.setItem("janani_user_auth_time", nowStr);
+          localStorage.setItem("janani_auth_time", nowStr);
+        }
+
         const parsed = JSON.parse(storedUser);
         if (
           parsed?.role !== "Super Admin" &&
@@ -110,6 +132,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem("janani_auth_user");
           localStorage.removeItem("janani_token");
           localStorage.removeItem("janani_auth_token");
+          localStorage.removeItem("janani_user_auth_time");
+          localStorage.removeItem("janani_auth_time");
         }
       }
     } catch (e) {}
@@ -280,6 +304,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("janani_auth_user");
         localStorage.removeItem("janani_token");
         localStorage.removeItem("janani_auth_token");
+        localStorage.removeItem("janani_user_auth_time");
+        localStorage.removeItem("janani_auth_time");
         localStorage.removeItem("janani_wishlist");
         setWishlist([]);
       }
@@ -326,6 +352,53 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.email]);
 
+  // Active Heartbeat: 24-Hour Auto-Logout for Customer and Admin
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkAutoLogout = () => {
+      try {
+        const now = Date.now();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+        // 1. Customer 24-hour auto-logout check
+        const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
+        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+        if (storedUser && userAuthTime) {
+          const elapsed = now - parseInt(userAuthTime, 10);
+          if (elapsed > TWENTY_FOUR_HOURS) {
+            logoutUser();
+            toast.info("Your customer session has expired (24 hours). Please sign in again.");
+          }
+        }
+
+        // 2. Admin 24-hour auto-logout check
+        const adminSession = localStorage.getItem("janani_admin_session");
+        const adminAuthTime = localStorage.getItem("janani_admin_auth_time");
+        if (adminSession === "true" && adminAuthTime) {
+          const elapsed = now - parseInt(adminAuthTime, 10);
+          if (elapsed > TWENTY_FOUR_HOURS) {
+            localStorage.removeItem("janani_admin_session");
+            localStorage.removeItem("janani_admin_user");
+            localStorage.removeItem("janani_admin_token");
+            localStorage.removeItem("janani_admin_auth_time");
+            window.dispatchEvent(new Event("janani-admin-session-expired"));
+          }
+        }
+      } catch (e) {}
+    };
+
+    const intervalId = setInterval(checkAutoLogout, 30 * 1000);
+    window.addEventListener("focus", checkAutoLogout);
+    document.addEventListener("visibilitychange", checkAutoLogout);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", checkAutoLogout);
+      document.removeEventListener("visibilitychange", checkAutoLogout);
+    };
+  }, [user]);
+
   // Sync cart to localStorage reliably (never overwrite with initial empty state before hydration)
   useEffect(() => {
     if (!isCartHydratedRef.current) return;
@@ -370,6 +443,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginUser = (newUser: AuthUser, token?: string) => {
+    const nowStr = Date.now().toString();
     const isAdmin =
       newUser?.role === "Super Admin" ||
       newUser?.role === "Admin" ||
@@ -381,6 +455,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined") {
         localStorage.setItem("janani_admin_user", JSON.stringify(newUser));
         localStorage.setItem("janani_admin_session", "true");
+        localStorage.setItem("janani_admin_auth_time", nowStr);
         if (token) localStorage.setItem("janani_admin_token", token);
       }
       return;
@@ -390,6 +465,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       localStorage.setItem("janani_user", JSON.stringify(newUser));
       localStorage.setItem("janani_auth_user", JSON.stringify(newUser));
+      localStorage.setItem("janani_user_auth_time", nowStr);
+      localStorage.setItem("janani_auth_time", nowStr);
       if (token) {
         localStorage.setItem("janani_token", token);
         localStorage.setItem("janani_auth_token", token);
@@ -406,6 +483,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("janani_auth_token");
         localStorage.removeItem("janani_user");
         localStorage.removeItem("janani_auth_user");
+        localStorage.removeItem("janani_user_auth_time");
+        localStorage.removeItem("janani_auth_time");
         localStorage.removeItem("janani_cart");
         localStorage.removeItem("janani_saved_for_later");
         localStorage.removeItem("janani_pending_checkout");

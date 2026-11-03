@@ -166,8 +166,13 @@ function AdminDashboardPage() {
             localStorage.removeItem("janani_admin_token");
             localStorage.removeItem("janani_admin_user");
             localStorage.removeItem("janani_admin_auth_time");
+            setAdminUser(null);
+            setIsAuthenticated(false);
             return;
           }
+        } else {
+          // Initialize admin session timestamp if missing
+          localStorage.setItem("janani_admin_auth_time", Date.now().toString());
         }
         const parsed = JSON.parse(storedAdmin);
         if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || parsed.role === "Staff" || parsed.role === "Manager")) {
@@ -409,6 +414,43 @@ function AdminDashboardPage() {
     setOtpDigits(["", "", "", "", "", ""]);
     toast.info("Logged out of Admin Command Center");
   };
+
+
+  // Active Heartbeat: 24-Hour Auto-Logout for Admin session while tab is open
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkAdminExpiry = () => {
+      try {
+        const sessionActive = localStorage.getItem("janani_admin_session");
+        const sessionTime = localStorage.getItem("janani_admin_auth_time");
+        if (sessionActive === "true" && sessionTime) {
+          const elapsed = Date.now() - parseInt(sessionTime, 10);
+          if (elapsed > 24 * 60 * 60 * 1000) {
+            handleLogout();
+            toast.info("Admin session expired after 24 hours. Please log in again.");
+          }
+        }
+      } catch (e) {}
+    };
+
+    const handleExpiredEvent = () => {
+      handleLogout();
+      toast.info("Admin session expired after 24 hours. Please log in again.");
+    };
+
+    const intervalId = setInterval(checkAdminExpiry, 30 * 1000);
+    window.addEventListener("focus", checkAdminExpiry);
+    document.addEventListener("visibilitychange", checkAdminExpiry);
+    window.addEventListener("janani-admin-session-expired", handleExpiredEvent);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", checkAdminExpiry);
+      document.removeEventListener("visibilitychange", checkAdminExpiry);
+      window.removeEventListener("janani-admin-session-expired", handleExpiredEvent);
+    };
+  }, []);
 
   // Load all initial data from backend API
   const loadData = async () => {

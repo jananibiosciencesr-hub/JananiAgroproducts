@@ -319,6 +319,7 @@ export function AuthenticationPage() {
         const isAdmin = res.user.role === "Super Admin" || res.user.role === "Admin" || (typeof res.user.email === "string" && res.user.email.toLowerCase() === "jananibiosciences.r@gmail.com");
         if (isAdmin) {
           localStorage.setItem("janani_admin_session", "true");
+          localStorage.setItem("janani_admin_auth_time", Date.now().toString());
           localStorage.setItem("janani_admin_user", JSON.stringify(res.user));
           if (res.token) localStorage.setItem("janani_admin_token", res.token);
           toast.success("Welcome Super Admin! Redirecting to Command Center...");
@@ -480,6 +481,7 @@ export function AuthenticationPage() {
 
             if (isAdmin) {
               localStorage.setItem("janani_admin_session", "true");
+          localStorage.setItem("janani_admin_auth_time", Date.now().toString());
               localStorage.setItem("janani_admin_user", JSON.stringify(res.user));
               if (res.token) localStorage.setItem("janani_admin_token", res.token);
               toast.success("Welcome Super Admin! Redirecting to Command Center...");

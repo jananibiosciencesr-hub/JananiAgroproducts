@@ -7508,14 +7508,18 @@ export function persistAuthSession(user: AuthUser, token?: string) {
       (user.email.toLowerCase() === "jananibiosciences.r@gmail.com" ||
         user.email.toLowerCase().includes("admin@jananiagro.com")));
 
+  const nowStr = Date.now().toString();
   if (isAdmin) {
     localStorage.setItem("janani_admin_user", JSON.stringify(user));
     localStorage.setItem("janani_admin_session", "true");
+    localStorage.setItem("janani_admin_auth_time", nowStr);
     if (token) localStorage.setItem("janani_admin_token", token);
     // Note: NEVER touch or overwrite customer session (janani_user / janani_cart)
   } else {
     localStorage.setItem("janani_user", JSON.stringify(user));
     localStorage.setItem("janani_auth_user", JSON.stringify(user));
+    localStorage.setItem("janani_user_auth_time", nowStr);
+    localStorage.setItem("janani_auth_time", nowStr);
     if (token) {
       localStorage.setItem("janani_token", token);
       localStorage.setItem("janani_auth_token", token);
@@ -7527,6 +7531,20 @@ export function persistAuthSession(user: AuthUser, token?: string) {
 export function getCurrentUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
   try {
+    // 24-hour expiration check for customer in getCurrentUser
+    const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
+    if (userAuthTime) {
+      const elapsed = Date.now() - parseInt(userAuthTime, 10);
+      if (elapsed > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem("janani_user");
+        localStorage.removeItem("janani_auth_user");
+        localStorage.removeItem("janani_token");
+        localStorage.removeItem("janani_auth_token");
+        localStorage.removeItem("janani_user_auth_time");
+        localStorage.removeItem("janani_auth_time");
+        return null;
+      }
+    }
     const userStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
     if (userStr) {
       const parsed = JSON.parse(userStr);
@@ -7542,6 +7560,18 @@ export function getCurrentUser(): AuthUser | null {
 export function getAdminUser(): any | null {
   if (typeof window === "undefined") return null;
   try {
+    // 24-hour expiration check for admin in getAdminUser
+    const adminAuthTime = localStorage.getItem("janani_admin_auth_time");
+    if (adminAuthTime) {
+      const elapsed = Date.now() - parseInt(adminAuthTime, 10);
+      if (elapsed > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem("janani_admin_session");
+        localStorage.removeItem("janani_admin_user");
+        localStorage.removeItem("janani_admin_token");
+        localStorage.removeItem("janani_admin_auth_time");
+        return null;
+      }
+    }
     const adminStr = localStorage.getItem("janani_admin_user");
     if (adminStr) {
       const parsed = JSON.parse(adminStr);

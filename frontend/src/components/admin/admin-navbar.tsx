@@ -825,6 +825,7 @@ export function AdminNavbar({
                       localStorage.removeItem("janani_admin_session");
                       localStorage.removeItem("janani_admin_user");
                       localStorage.removeItem("janani_admin_token");
+                      localStorage.removeItem("janani_admin_auth_time");
                       window.location.reload();
                     }
                   }}
