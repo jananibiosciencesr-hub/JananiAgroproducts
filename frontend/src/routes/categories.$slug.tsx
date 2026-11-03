@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import {
+  ChevronLeft,
   ChevronRight,
   Grid2X2,
   List,
@@ -55,6 +56,14 @@ function CategoryDetailPage() {
   const [list, setList] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const otherCategoriesScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollOtherCategories = (direction: "left" | "right") => {
+    if (otherCategoriesScrollRef.current) {
+      const scrollAmount = direction === "left" ? -300 : 300;
+      otherCategoriesScrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
 
   if (!category) {
     return (
@@ -298,7 +307,7 @@ function CategoryDetailPage() {
           </div>
         </div>
 
-        {/* Other Categories Carousel Strip */}
+        {/* Other Categories Single-Line Carousel Strip */}
         <section className="mt-16 sm:mt-20 border-t border-border/80 pt-10 sm:pt-12 w-full">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
@@ -309,48 +318,76 @@ function CategoryDetailPage() {
                 Discover biological crop protection, soil biostimulants, and organic plant nutrients.
               </p>
             </div>
-            <Button asChild variant="ghost" className="text-xs font-bold text-[#075B32] hover:text-[#0B6B35] self-start sm:self-auto">
-              <Link to="/categories">
-                View All Categories <ChevronRight className="size-3.5 ml-1" />
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2.5 self-start sm:self-auto">
+              {/* Carousel Navigation Arrows */}
+              <div className="flex items-center gap-1.5 mr-1">
+                <button
+                  type="button"
+                  onClick={() => scrollOtherCategories("left")}
+                  aria-label="Previous categories"
+                  className="size-8 rounded-full border border-border bg-white text-muted-foreground hover:text-[#075B32] hover:border-[#075B32]/40 hover:bg-emerald-50/50 flex items-center justify-center transition-all cursor-pointer shadow-2xs active:scale-95"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollOtherCategories("right")}
+                  aria-label="Next categories"
+                  className="size-8 rounded-full border border-border bg-white text-muted-foreground hover:text-[#075B32] hover:border-[#075B32]/40 hover:bg-emerald-50/50 flex items-center justify-center transition-all cursor-pointer shadow-2xs active:scale-95"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+
+              <Button asChild variant="ghost" className="text-xs font-bold text-[#075B32] hover:text-[#0B6B35]">
+                <Link to="/categories">
+                  View All Categories <ChevronRight className="size-3.5 ml-1" />
+                </Link>
+              </Button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4 w-full">
-            {allCats
-              .filter((c: any) => c.slug !== category.slug)
-              .map((c: any) => {
-                const cImg = (c.image && typeof c.image === "string" && c.image.trim().length > 0)
-                  ? getCategoryImage(c.slug || c.name, c.image)
-                  : getCategoryImage(c.slug || c.name);
-                return (
-                  <Link
-                    key={c.slug}
-                    to="/categories/$slug"
-                    params={{ slug: c.slug }}
-                    className="group flex items-center gap-3.5 p-3.5 sm:p-4 rounded-3xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-                  >
-                    <div className="size-16 sm:size-18 rounded-full overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
-                      <img
-                        src={cImg}
-                        alt={c.name}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
-                        }}
-                        className="size-full object-cover group-hover:scale-105 transition duration-300"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors truncate">
-                        {c.name}
-                      </h4>
-                      <span className="text-[11px] text-[#0B6B35] font-semibold mt-0.5 block">
-                        {c.count || (c as any).productsCount || 2} formulations
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
+          {/* Single-Line Scrollable Strip */}
+          <div className="relative w-full overflow-hidden">
+            <div
+              ref={otherCategoriesScrollRef}
+              className="flex items-center gap-3.5 sm:gap-4 overflow-x-auto scrollbar-none pb-3 pt-1 px-1 no-scrollbar w-full snap-x snap-mandatory"
+            >
+              {allCats
+                .filter((c: any) => c.slug !== category.slug)
+                .map((c: any) => {
+                  const cImg = (c.image && typeof c.image === "string" && c.image.trim().length > 0)
+                    ? getCategoryImage(c.slug || c.name, c.image)
+                    : getCategoryImage(c.slug || c.name);
+                  return (
+                    <Link
+                      key={c.slug}
+                      to="/categories/$slug"
+                      params={{ slug: c.slug }}
+                      className="group flex-none shrink-0 w-[225px] sm:w-[245px] snap-start flex items-center gap-3 p-3 sm:p-3.5 rounded-3xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      <div className="size-14 sm:size-16 rounded-full overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
+                        <img
+                          src={cImg}
+                          alt={c.name}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                          }}
+                          className="size-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors truncate">
+                          {c.name}
+                        </h4>
+                        <span className="text-[11px] text-[#0B6B35] font-semibold mt-0.5 block">
+                          {c.count || (c as any).productsCount || 2} formulations
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+            </div>
           </div>
         </section>
       </div>
