@@ -134,7 +134,11 @@ export function CmsManagement() {
 
       if (cmsData) {
         setSections(cmsData.sections && cmsData.sections.length > 0 ? cmsData.sections : defaultSecs);
-        setHeroBanners(cmsData.heroBanners && cmsData.heroBanners.length > 0 ? cmsData.heroBanners : defaultHeros);
+        const hasBottle = cmsData.heroBanners?.some((b: any) => {
+          const img = b.desktopImageUrl || b.desktopImage || "";
+          return img.includes("/products/harit") || img.includes("/products/suraksha") || img.includes("/products/bhumi") || img.includes("neem-oil");
+        });
+        setHeroBanners(cmsData.heroBanners && cmsData.heroBanners.length > 0 && !hasBottle ? cmsData.heroBanners : defaultHeros);
         setOfferBanners(cmsData.offerBanners && cmsData.offerBanners.length > 0 ? cmsData.offerBanners : defaultOffers);
         setCategoryBanners(cmsData.categoryBanners || []);
         setFlashSaleBanners(cmsData.flashSaleBanners || []);

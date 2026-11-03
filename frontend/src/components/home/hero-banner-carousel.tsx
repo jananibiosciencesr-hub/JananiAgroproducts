@@ -67,26 +67,31 @@ export function HeroBannerCarousel() {
     try {
       const cmsBanners = await getHeroBanners();
       if (Array.isArray(cmsBanners) && cmsBanners.length > 0) {
-        const active = cmsBanners.filter((b: HeroBanner) => b.active !== false);
+        // Filter out any stale product bottle cutouts if previously cached
+        const validCmsBanners = cmsBanners.filter((b: HeroBanner) => {
+          const img = b.desktopImageUrl || (b as any).desktopImage || "";
+          return !img.includes("/products/harit") && !img.includes("/products/suraksha") && !img.includes("/products/bhumi") && !img.includes("neem-oil");
+        });
+        const active = (validCmsBanners.length > 0 ? validCmsBanners : HERO_SLIDES).filter((b: any) => b.active !== false);
         if (active.length > 0) {
-          const mapped: BannerSlide[] = active.map((b: HeroBanner) => {
-            const desktop = b.desktopImageUrl || (b as any).desktopImage || (b as any).image || "/banners/hero_healthier_tomorrow_desktop.jpg";
-            const mobile = b.mobileImageUrl || (b as any).mobileImage || desktop;
+          const mapped: BannerSlide[] = active.map((b: any) => {
+            const desktop = b.desktopImageUrl || b.desktopImage || b.image || "/banners/hero_healthier_tomorrow_desktop.jpg";
+            const mobile = b.mobileImageUrl || b.mobileImage || desktop;
             return {
               id: b.id,
               title: b.title || "Natural Solutions For A Healthier Tomorrow",
-              link: b.primaryCtaUrl || (b as any).link || "/products",
+              link: b.primaryCtaUrl || b.link || "/products",
               desktopImage: desktop,
               mobileImage: mobile,
               alt: b.title || "Janani Agro Products - Grow Healthy Crops With Natural Care",
-              ctaText: b.primaryCtaLabel || (b as any).ctaText || "Explore Products",
+              ctaText: b.primaryCtaLabel || b.ctaText || "Explore Products",
               eyebrow: b.eyebrow,
               badgeText: b.badgeText,
               subtitle: b.subtitle,
               secondaryCtaLabel: b.secondaryCtaLabel,
               secondaryCtaUrl: b.secondaryCtaUrl,
-              desktopPosition: "md:object-center",
-              mobilePosition: "object-center",
+              desktopPosition: b.desktopPosition || "md:object-center",
+              mobilePosition: b.mobilePosition || "object-center",
             };
           });
           setSlides(mapped);
@@ -177,12 +182,21 @@ export function HeroBannerCarousel() {
         >
           {slides.map((slide, idx) => {
             const isCurrent = current === idx;
-            const hasTextContent = Boolean(
-              (slide.eyebrow && slide.eyebrow.trim()) ||
-              (slide.subtitle && slide.subtitle.trim()) ||
-              (slide.badgeText && slide.badgeText.trim()) ||
-              (slide.title && !slide.desktopImage.includes("/banners/hero_"))
-            );
+            const isGraphicBanner =
+              slide.desktopImage.includes("/banners/hero_") ||
+              slide.desktopImage.includes("/banners/banner_") ||
+              slide.id === "healthier-tomorrow" ||
+              slide.id === "organic-biocare" ||
+              slide.id === "organic-soilcare";
+
+            const hasTextContent =
+              !isGraphicBanner &&
+              Boolean(
+                (slide.eyebrow && slide.eyebrow.trim()) ||
+                (slide.subtitle && slide.subtitle.trim()) ||
+                (slide.badgeText && slide.badgeText.trim()) ||
+                (slide.title && slide.title.trim())
+              );
             const mobileSrc = slide.mobileImage && slide.mobileImage.trim() ? slide.mobileImage : slide.desktopImage;
 
             return (

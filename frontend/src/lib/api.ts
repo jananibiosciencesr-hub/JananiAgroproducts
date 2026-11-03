@@ -4834,17 +4834,29 @@ export async function getHomepageCms(): Promise<HomepageCmsData> {
   try {
     const res = await fetchJson<any>(`/api.php?action=cms&id=all`);
     if (res?.success && res.data && Array.isArray(res.data.sections) && res.data.sections.length > 0) {
+      // Auto-migrate stale bottle banners out of database response if present
+      const resStr = JSON.stringify(res.data.heroBanners || []);
+      if (resStr.includes("/products/harit") || resStr.includes("/products/suraksha") || resStr.includes("/products/bhumi") || resStr.includes("Neem Oil 1000 PPM")) {
+        res.data.heroBanners = DEFAULT_CMS.heroBanners;
+      }
       // Synchronize MySQL source of truth to localStorage
       setStored(STORAGE_KEYS.CMS, res.data);
       return res.data;
     }
   } catch (e) {}
 
-  // Verify localStorage is not contaminated with stale grocery data (Gir Cow, Vedic, Millets)
+  // Verify localStorage is not contaminated with stale grocery data or stale bottle cutouts
   const stored = getStored<any>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   const storedStr = JSON.stringify(stored || {});
   const isStaleGrocery = storedStr.includes("Gir Cow") || storedStr.includes("Vedic A2") || storedStr.includes("Organic Harvest");
-  if (isStaleGrocery) {
+  const isStaleBottle = storedStr.includes("/products/harit") || storedStr.includes("/products/suraksha") || storedStr.includes("Neem Oil 1000 PPM") || storedStr.includes("slide-1");
+
+  if (isStaleGrocery || isStaleBottle) {
+    if (stored && typeof stored === 'object') {
+      stored.heroBanners = DEFAULT_CMS.heroBanners;
+      setStored(STORAGE_KEYS.CMS, stored);
+      return stored as any;
+    }
     setStored(STORAGE_KEYS.CMS, DEFAULT_CMS);
     return DEFAULT_CMS as any;
   }
@@ -4894,10 +4906,14 @@ export async function getHeroBanners() {
       : null;
 
   if (banners) {
+    const bannersStr = JSON.stringify(banners);
+    const validBanners = (bannersStr.includes("/products/harit") || bannersStr.includes("/products/suraksha") || bannersStr.includes("Neem Oil 1000 PPM"))
+      ? DEFAULT_CMS.heroBanners
+      : banners;
     const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-    currentCms.heroBanners = banners;
+    currentCms.heroBanners = validBanners;
     setStored(STORAGE_KEYS.CMS, currentCms);
-    return banners;
+    return validBanners;
   }
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
