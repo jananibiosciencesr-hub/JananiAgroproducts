@@ -32,7 +32,7 @@ function TermsPage() {
 
         <p className="text-xs text-gray-500 mb-8">Last Updated: October 2026</p>
 
-        <div className="prose prose-sm max-w-none space-y-6 text-gray-700 leading-relaxed">
+        <div className="prose prose-sm max-w-none space-y-6 text-gray-700 leading-relaxed text-justify">
           <section className="space-y-2">
             <h2 className="text-lg font-bold text-gray-900">1. Acceptance of Terms</h2>
             <p className="text-sm">

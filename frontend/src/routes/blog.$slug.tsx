@@ -91,7 +91,7 @@ function BlogPostPage() {
       </div>
 
       {/* Article Body Content */}
-      <div className="mt-12 space-y-7 text-sm leading-8 text-foreground/85 sm:text-base">
+      <div className="mt-12 space-y-7 text-sm leading-8 text-foreground/85 sm:text-base text-justify">
         <p>
           At <strong>JANANI AGRO PRODUCTS</strong>, our relationship with crops starts deep in the soil. Unlike intensive modern agricultural models that prioritize excessive yield at the cost of nutrient degradation, sustainable agro-ecological practices preserve the complex microbiome of agricultural lands.
         </p>

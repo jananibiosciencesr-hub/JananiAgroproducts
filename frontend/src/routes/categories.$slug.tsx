@@ -155,7 +155,7 @@ function CategoryDetailPage() {
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 max-w-none text-left lg:whitespace-nowrap hyphens-none">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 max-w-none text-justify hyphens-none">
               {category.description || `Certified biological and organic ${category.name.toLowerCase()} formulated for disease protection, balanced nutrition, and high yields.`}
             </p>
           </div>

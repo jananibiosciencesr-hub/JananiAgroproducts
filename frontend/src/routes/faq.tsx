@@ -64,7 +64,7 @@ function FaqPage() {
                 <AccordionTrigger className="text-left font-semibold text-base sm:text-lg hover:text-primary">
                   {q}
                 </AccordionTrigger>
-                <AccordionContent className="text-sm leading-8 text-muted-foreground pt-2">
+                <AccordionContent className="text-sm leading-8 text-muted-foreground pt-2 text-justify">
                   {a}
                 </AccordionContent>
               </AccordionItem>

@@ -50,7 +50,7 @@ function AboutPage() {
               align="left"
               titleClassName="text-xl sm:text-2xl lg:text-[1.85rem]"
             />
-            <div className="mt-8 space-y-4 text-sm leading-8 text-muted-foreground">
+            <div className="mt-8 space-y-4 text-sm leading-8 text-muted-foreground text-justify">
               <p>
                 Decades of intensive synthetic chemical application have depleted organic carbon in our soils, resulting in declining crop yields, pest resistance, and rising input costs for farmers. At <strong>Janani Agro Products</strong>, we engineer biological alternatives that work in harmony with nature.
               </p>
@@ -118,7 +118,7 @@ function AboutPage() {
                   <Icon className="size-6" />
                 </span>
                 <h3 className="text-base font-bold text-foreground mb-2">{title}</h3>
-                <p className="text-xs leading-relaxed text-muted-foreground">{desc}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground text-justify">{desc}</p>
               </div>
             ))}
           </div>
@@ -172,7 +172,7 @@ function AboutPage() {
                   <Icon className="size-6" />
                 </span>
                 <h3 className="mt-5 text-xl font-semibold">{title}</h3>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">{desc}</p>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground text-justify">{desc}</p>
               </div>
             ))}
           </div>
@@ -185,7 +185,7 @@ function AboutPage() {
           <div>
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">Infrastructure & Operations</span>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl font-display">State-of-the-Art Production & Distribution</h2>
-            <p className="mt-4 text-sm leading-8 text-primary-foreground/85">
+            <p className="mt-4 text-sm leading-8 text-primary-foreground/85 text-justify">
               Janani Agro Products operates a centralized manufacturing and blending hub equipped with industrial fermentation units, automated powder and liquid packaging systems, and nationwide logistics connectivity.
             </p>
             <div className="mt-6 space-y-2.5 text-xs text-primary-foreground/80">

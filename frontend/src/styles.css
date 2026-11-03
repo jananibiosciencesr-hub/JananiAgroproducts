@@ -339,15 +339,31 @@ html, body {
 }
 
 /* ========================================================= */
-/* LONG-FORM EDITORIAL CONTENT TEXT JUSTIFICATION            */
+/* COMPREHENSIVE EDITORIAL & CONTENT TEXT JUSTIFICATION      */
 /* ========================================================= */
+.text-justify,
 .prose p,
+.prose,
+article p,
 .blog-content p,
 .about-content p,
 .faq-content p,
 .policy-content p,
 .lead,
-.text-justify {
+.accordion-content,
+[data-radix-accordion-content],
+.content-body p,
+.product-description,
+.product-description p,
+.card-description {
+  text-align: justify !important;
+  text-justify: inter-word !important;
+}
+
+/* Ensure descriptive body paragraphs in main and article sections are justified */
+main p:not(.text-center):not(.text-right):not(.text-left):not([class*="text-center"]):not([class*="text-right"]):not([class*="text-left"]):not(.flex),
+article p:not(.text-center):not(.text-right):not(.text-left):not([class*="text-center"]):not([class*="text-right"]):not([class*="text-left"]):not(.flex),
+section p:not(.text-center):not(.text-right):not(.text-left):not([class*="text-center"]):not([class*="text-right"]):not([class*="text-left"]):not(.flex) {
   text-align: justify;
   text-justify: inter-word;
 }
