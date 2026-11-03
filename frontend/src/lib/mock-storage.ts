@@ -862,10 +862,13 @@ export const DEFAULT_CMS = {
   offerBanners: [
     {
       id: "offer-1",
+      type: "promo_strip",
+      headline: "Biological Crop Shield Combo",
       title: "Biological Crop Shield Combo",
       subtitle: "Save flat 20% on Harit Trichoderma + 5L Bhumi Shakti Soil Booster",
       badge: "Limited Seasonal Batch",
       ctaText: "Claim Bundle Offer",
+      ctaLabel: "Claim Bundle Offer",
       ctaUrl: "/products",
       imageUrl: "/products/harit.jpg",
       active: true,
@@ -873,18 +876,21 @@ export const DEFAULT_CMS = {
     },
     {
       id: "offer-2",
+      type: "promo_strip",
+      headline: "Complimentary Free Shipping",
       title: "Complimentary Free Shipping",
       subtitle: "No delivery charges on all retail orders above ₹799",
       badge: "All India Fast Courier",
       ctaText: "Shop Free Shipping",
+      ctaLabel: "Shop Free Shipping",
       ctaUrl: "/products",
       imageUrl: "/assets/janani-products.jpg",
       active: true,
       order: 2
     }
   ],
-  categoryBanners: [],
-  flashSaleBanners: [],
+  categoryBanners: [] as any[],
+  flashSaleBanners: [] as any[],
   curatedProductSections: {
     featured: { heading: "Featured Collection", productIds: [1, 2, 3, 6, 7, 9], maxDisplayCount: 8, layout: "grid", active: true },
     trending: { heading: "Trending This Week", productIds: [1, 6, 3, 10], maxDisplayCount: 8, layout: "grid", active: true },

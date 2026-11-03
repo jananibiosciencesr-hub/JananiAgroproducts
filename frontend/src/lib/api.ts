@@ -4707,13 +4707,17 @@ export interface HeroBanner {
 
 export interface OfferBanner {
   id: string;
-  type: "ticker" | "promo_strip" | "coupon_highlight";
+  type: "ticker" | "promo_strip" | "coupon_highlight" | string;
   headline: string;
+  title?: string;
   subtitle?: string;
   couponCode?: string;
   ctaLabel?: string;
+  ctaText?: string;
   ctaUrl?: string;
   badge?: string;
+  imageUrl?: string;
+  order?: number;
   backgroundColor?: string;
   textColor?: string;
   active: boolean;
