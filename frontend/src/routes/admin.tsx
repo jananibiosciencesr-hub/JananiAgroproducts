@@ -660,7 +660,7 @@ function AdminDashboardPage() {
               <form onSubmit={handleSendOtp} className="mt-8 text-left space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
-                    AUTHORIZED ROOT ADMIN EMAIL
+                    AUTHORIZED ADMIN EMAIL
                   </label>
                   <div className="relative flex items-center rounded-2xl border border-slate-200 bg-slate-50/70 focus-within:bg-white focus-within:border-[#075B32] focus-within:ring-2 focus-within:ring-[#075B32]/15 transition-all">
                     <Mail className="ml-4 size-5 text-[#075B32] shrink-0" />
@@ -675,21 +675,14 @@ function AdminDashboardPage() {
                       <span>Root Admin</span>
                     </div>
                   </div>
-                  {adminEmail.trim().toLowerCase() !== "jananibiosciences.r@gmail.com" ? (
-                    <div className="mt-2.5 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-2.5 flex items-center gap-2">
-                      <AlertCircle className="size-4 shrink-0 text-rose-500" />
-                      <span>Access Denied: Only <strong>jananibiosciences.r@gmail.com</strong> can log in as Admin.</span>
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-400 mt-2">
-                      Verification OTP will be dispatched exclusively to <strong>jananibiosciences.r@gmail.com</strong> via Gmail SMTP.
-                    </p>
-                  )}
+                  <p className="text-[11px] text-slate-400 mt-2">
+                    A 6-digit verification code will be dispatched to the authorized administrator email via Gmail SMTP.
+                  </p>
                 </div>
 
                 <Button
                   type="submit"
-                  disabled={sendingOtp || adminEmail.trim().toLowerCase() !== "jananibiosciences.r@gmail.com"}
+                  disabled={sendingOtp}
                   className="w-full h-12 rounded-2xl bg-[#075B32] hover:bg-[#064B29] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-5"
                 >
                   {sendingOtp ? (
