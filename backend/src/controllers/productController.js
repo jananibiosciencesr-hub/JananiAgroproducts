@@ -34,7 +34,7 @@ export const getProducts = async (req, res) => {
 
     if (isDbConnected()) {
       try {
-        let sql = "SELECT * FROM products WHERE active = 1";
+        let sql = "SELECT * FROM products WHERE (active = 1 OR active IS NULL) AND (status != 'Trash' OR status IS NULL)";
         const params = [];
 
         if (category && category !== "All") {

@@ -110,9 +110,19 @@ function getCategoryIcon(name: string) {
 }
 
 function ProductsPage() {
-  const { cart, addToCart, updateQuantity, removeFromCart, wishlist, toggleWishlist } = useStore();
-  // Strictly use our authentic Janani Agro products from catalog (all 18 genuine items)
-  const activeProductList = products;
+  const { products: storeProducts, categories: storeCategories, cart, addToCart, updateQuantity, removeFromCart, wishlist, toggleWishlist } = useStore();
+  // Dynamic live product list synced from MySQL & Admin (with catalog fallback)
+  const activeProductList = (storeProducts && storeProducts.length > 0) ? storeProducts : products;
+  const activeCategories = useMemo(() => {
+    const rawCats = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
+    return rawCats.filter((cat: any) => {
+      if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") return false;
+      const n = (cat.name || "").toLowerCase().trim();
+      const s = (cat.slug || "").toLowerCase().trim();
+      if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+      return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet", "grocery", "pantry"].some((term) => n.includes(term) || s.includes(term));
+    });
+  }, [storeCategories]);
 
   // Filter States
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -151,11 +161,11 @@ function ProductsPage() {
         const catNorms = urlCat
           .split(",")
           .map((c) => c.trim().toLowerCase().replace(/[^a-z0-9]/g, ""));
-        const matched = categories
+        const matched = activeCategories
           .filter(
             (c) =>
               catNorms.includes(c.name.toLowerCase().replace(/[^a-z0-9]/g, "")) ||
-              catNorms.includes(c.slug.toLowerCase().replace(/[^a-z0-9]/g, ""))
+              catNorms.includes((c.slug || "").toLowerCase().replace(/[^a-z0-9]/g, ""))
           )
           .map((c) => c.name);
         if (matched.length > 0) {
@@ -167,7 +177,7 @@ function ProductsPage() {
         setSearchQuery(urlSearch.trim());
       }
     }
-  }, []);
+  }, [activeCategories]);
 
   const toggleCategory = (catName: string) => {
     setSelectedCategories((prev) => {
@@ -226,8 +236,11 @@ function ProductsPage() {
         const selNorms = selectedCategories.map((c) =>
           c.toLowerCase().replace(/[^a-z0-9]/g, "")
         );
-        const pNorm = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        if (!selNorms.includes(pNorm)) return false;
+        const pNorm = (p.category || (p as any).category_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const match = selNorms.some(
+          (sn) => sn === pNorm || pNorm.includes(sn) || sn.includes(pNorm)
+        );
+        if (!match) return false;
       }
 
       // 2. Price (only filter if user set appliedMaxPrice below catalog maximum of 6000)
@@ -369,17 +382,17 @@ function ProductsPage() {
               >
                 {selectedCategories.length === 1 && selectedCategories[0]
                   ? activeProductList.filter((p) => {
-                      const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                      const pCat = (p.category || (p as any).category_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
                       const cName = (selectedCategories[0] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                      return pCat === cName;
+                      return pCat === cName || pCat.includes(cName) || cName.includes(pCat);
                     }).length
                   : selectedCategories.length > 1
                   ? activeProductList.filter((p) => {
                       const selNorms = selectedCategories.map((c) =>
                         c.toLowerCase().replace(/[^a-z0-9]/g, "")
                       );
-                      const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                      return selNorms.includes(pCat);
+                      const pCat = (p.category || (p as any).category_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                      return selNorms.some((sn) => sn === pCat || pCat.includes(sn) || sn.includes(pCat));
                     }).length
                   : activeProductList.length}
               </span>
@@ -424,15 +437,17 @@ function ProductsPage() {
               </label>
 
               {/* Individual Categories Checkbox Options */}
-              {categories.map((cat) => {
+              {activeCategories.map((cat: any) => {
+                const cNameNorm = (cat.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                const cSlugNorm = (cat.slug || "").toLowerCase().replace(/[^a-z0-9]/g, "");
                 const count = activeProductList.filter((p) => {
-                  const pCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                  const cName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-                  return pCat === cName;
+                  const pCat = (p.category || (p as any).category_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                  return pCat === cNameNorm || (cSlugNorm && pCat === cSlugNorm) || pCat.includes(cNameNorm) || (cNameNorm && cNameNorm.includes(pCat));
                 }).length;
-                const isSelected = selectedCategories.some(
-                  (sc) => sc.toLowerCase().replace(/[^a-z0-9]/g, "") === cat.name.toLowerCase().replace(/[^a-z0-9]/g, "")
-                );
+                const isSelected = selectedCategories.some((sc) => {
+                  const scNorm = sc.toLowerCase().replace(/[^a-z0-9]/g, "");
+                  return scNorm === cNameNorm || scNorm === cSlugNorm || (cNameNorm && cNameNorm.includes(scNorm));
+                });
 
                 return (
                   <label

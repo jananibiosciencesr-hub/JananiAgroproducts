@@ -336,14 +336,14 @@ export async function getProducts(params?: { category?: string; search?: string;
 
   // 2. Local admin products
   localProducts.forEach((p) => {
-    if (p.inStock !== false && (p as any).status !== "Trash") {
+    if ((p as any).status !== "Trash" && (p as any).active !== 0 && (p as any).active !== false) {
       mergedMap.set(p.slug || String(p.id), p);
     }
   });
 
   // 3. MySQL Live fetched products (highest authority)
   fetchedList.forEach((p) => {
-    if (p.inStock !== false && (p as any).status !== "Trash") {
+    if ((p as any).status !== "Trash" && (p as any).active !== 0 && (p as any).active !== false) {
       mergedMap.set(p.slug || String(p.id), p);
     }
   });

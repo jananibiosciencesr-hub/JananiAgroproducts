@@ -1378,7 +1378,7 @@ function ensureJananiCatalogSynced($pdo) {
 
         // Update category product counts dynamically
         try {
-            $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE p.active = 1 AND p.status != 'Trash' AND (p.category_name = c.name OR p.category_id = c.id OR LOWER(p.category_name) = LOWER(c.name)))");
+            $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR LOWER(p.category_name) = LOWER(c.name)))");
         } catch (Exception $e) {}
 
         // Auto-clean any duplicated store support numbers from customer rows in users table
@@ -2318,14 +2318,14 @@ try {
 
                 if ($isAdmin) {
                     if ($status === 'active') {
-                        $query .= " AND `active` = 1 AND `status` != 'Trash'";
+                        $query .= " AND (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL)";
                     } elseif ($status === 'trash') {
                         $query .= " AND (`active` = 0 OR `status` = 'Trash')";
                     }
                     // if status is 'all' or empty in admin, return all products
                 } else {
                     // Public storefront: only show active, non-trash products
-                    $query .= " AND `active` = 1 AND `status` != 'Trash'";
+                    $query .= " AND (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL)";
                 }
 
                 if ($category && $category !== 'All' && $category !== 'all') {
@@ -2347,7 +2347,7 @@ try {
                 $activeCount = 0;
                 $trashCount = 0;
                 try {
-                    $countStmt = $pdo->query("SELECT SUM(CASE WHEN `active` = 1 AND `status` != 'Trash' THEN 1 ELSE 0 END) as active_cnt, SUM(CASE WHEN `active` = 0 OR `status` = 'Trash' THEN 1 ELSE 0 END) as trash_cnt FROM `products`");
+                    $countStmt = $pdo->query("SELECT SUM(CASE WHEN (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL) THEN 1 ELSE 0 END) as active_cnt, SUM(CASE WHEN `active` = 0 OR `status` = 'Trash' THEN 1 ELSE 0 END) as trash_cnt FROM `products`");
                     $counts = $countStmt->fetch();
                     $activeCount = (int)($counts['active_cnt'] ?? count($products));
                     $trashCount = (int)($counts['trash_cnt'] ?? 0);
@@ -2822,7 +2822,7 @@ try {
         case 'inventory':
             ensureJananiCatalogSynced($pdo);
             if ($method === 'GET') {
-                $stmt = $pdo->query("SELECT `id`, `name`, `slug`, `sku`, `category_name`, `price`, `stock`, `low_stock_threshold`, `image` FROM `products` WHERE `active` = 1 AND `status` != 'Trash' ORDER BY `id` ASC");
+                $stmt = $pdo->query("SELECT `id`, `name`, `slug`, `sku`, `category_name`, `price`, `stock`, `low_stock_threshold`, `image` FROM `products` WHERE (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL) ORDER BY `id` ASC");
                 $items = $stmt->fetchAll();
                 $inventory = array_map(function($p) {
                     $stk = (int)($p['stock'] ?? 0);
@@ -2959,7 +2959,7 @@ try {
 
                 // Sync live product count for each category from products table
                 try {
-                    $pCounts = $pdo->query("SELECT `category_name`, COUNT(*) as cnt FROM `products` WHERE `active` = 1 AND `status` != 'Trash' GROUP BY `category_name`")->fetchAll();
+                    $pCounts = $pdo->query("SELECT `category_name`, COUNT(*) as cnt FROM `products` WHERE (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL) GROUP BY `category_name`")->fetchAll();
                     $catMap = [];
                     foreach ($pCounts as $pc) {
                         $catMap[strtolower($pc['category_name'])] = (int)$pc['cnt'];
@@ -5923,7 +5923,7 @@ try {
 
         case 'inventory':
             if ($method === 'GET') {
-                $stmt = $pdo->query("SELECT `id`, `sku`, `name`, `category_name`, `image`, `price`, `stock`, `status`, `active` FROM `products` WHERE `active` = 1 AND `status` != 'Trash' ORDER BY `stock` ASC");
+                $stmt = $pdo->query("SELECT `id`, `sku`, `name`, `category_name`, `image`, `price`, `stock`, `status`, `active` FROM `products` WHERE (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL) ORDER BY `stock` ASC");
                 $prods = $stmt->fetchAll();
                 $inventory = [];
                 foreach ($prods as $p) {
@@ -5972,14 +5972,14 @@ try {
                 $todayOrders = $orderCount;
             }
 
-            $productCount = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE active = 1 AND status != 'Trash'")->fetchColumn();
+            $productCount = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE (active = 1 OR active IS NULL) AND (status != 'Trash' OR status IS NULL)")->fetchColumn();
             $customerCount = (int)$pdo->query("SELECT COUNT(*) FROM `users` WHERE role = 'Customer' OR role = 'customer'")->fetchColumn();
             $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE order_status = 'Processing' OR order_status = 'Pending'")->fetchColumn();
             $deliveredCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE order_status = 'Delivered'")->fetchColumn();
             $cancelledCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE order_status = 'Cancelled'")->fetchColumn();
             $refundRequests = (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE payment_status = 'Refunded' OR order_status = 'Returned'")->fetchColumn();
-            $outOfStock = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE stock <= 0 AND active = 1 AND status != 'Trash'")->fetchColumn();
-            $lowStock = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE stock > 0 AND stock <= 10 AND active = 1 AND status != 'Trash'")->fetchColumn();
+            $outOfStock = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE stock <= 0 AND (active = 1 OR active IS NULL) AND (status != 'Trash' OR status IS NULL)")->fetchColumn();
+            $lowStock = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE stock > 0 AND stock <= 10 AND (active = 1 OR active IS NULL) AND (status != 'Trash' OR status IS NULL)")->fetchColumn();
             $couponsCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE coupon_code IS NOT NULL AND coupon_code != ''")->fetchColumn();
             $walletTotal = (float)$pdo->query("SELECT COALESCE(SUM(wallet_balance), 0) FROM `users` WHERE role = 'Customer'")->fetchColumn();
 
@@ -6065,7 +6065,7 @@ try {
             // 4. Top Categories
             $topCats = [];
             try {
-                $catStmt = $pdo->query("SELECT category_name as category, SUM(price * stock) as revenue, COUNT(*) as units FROM `products` WHERE active = 1 AND status != 'Trash' GROUP BY category_name ORDER BY revenue DESC LIMIT 5");
+                $catStmt = $pdo->query("SELECT category_name as category, SUM(price * stock) as revenue, COUNT(*) as units FROM `products` WHERE (active = 1 OR active IS NULL) AND (status != 'Trash' OR status IS NULL) GROUP BY category_name ORDER BY revenue DESC LIMIT 5");
                 $topCats = $catStmt->fetchAll();
                 foreach ($topCats as &$tc) {
                     $tc['revenue'] = (float)$tc['revenue'];
@@ -6122,14 +6122,14 @@ try {
             // Low inventory list from MySQL
             $lowItems = [];
             try {
-                $lowStmt = $pdo->query("SELECT id, name, stock, 10 as threshold, CASE WHEN stock <= 0 THEN 'Out of Stock' ELSE 'Low Stock' END as status FROM `products` WHERE stock <= 10 AND active = 1 AND status != 'Trash' ORDER BY stock ASC LIMIT 4");
+                $lowStmt = $pdo->query("SELECT id, name, stock, 10 as threshold, CASE WHEN stock <= 0 THEN 'Out of Stock' ELSE 'Low Stock' END as status FROM `products` WHERE stock <= 10 AND (active = 1 OR active IS NULL) AND (status != 'Trash' OR status IS NULL) ORDER BY stock ASC LIMIT 4");
                 $lowItems = $lowStmt->fetchAll();
             } catch (Exception $e) {}
 
             // Top product
             $topProdName = "Harit Bio-Fungicide";
             try {
-                $tp = $pdo->query("SELECT name FROM `products` WHERE active = 1 AND status != 'Trash' ORDER BY price DESC LIMIT 1")->fetch();
+                $tp = $pdo->query("SELECT name FROM `products` WHERE (active = 1 OR active IS NULL) AND (status != 'Trash' OR status IS NULL) ORDER BY price DESC LIMIT 1")->fetch();
                 if ($tp && !empty($tp['name'])) $topProdName = $tp['name'];
             } catch (Exception $e) {}
 
