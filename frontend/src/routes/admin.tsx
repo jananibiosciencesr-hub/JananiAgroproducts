@@ -459,20 +459,26 @@ function AdminDashboardPage() {
         getAdminInquiries().catch(() => [])
       ]);
 
+      const rawCategories: any = categoriesData;
+      const rawInventory: any = inventoryData;
+      const rawReturns: any = returnsData;
+      const rawRoles: any = rolesData;
+      const rawInquiries: any = inquiriesData;
+
       setStats(statsData || null);
       setCharts(chartsData || null);
       setWidgets(widgetsData || null);
       setOrders(ordersData?.data || (Array.isArray(ordersData) ? ordersData : []));
       setProducts(productsData?.data || (Array.isArray(productsData) ? productsData : []));
-      setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData?.data || []));
+      setCategories(Array.isArray(rawCategories) ? rawCategories : (rawCategories?.data || []));
       setCustomers(customersData?.data || (Array.isArray(customersData) ? customersData : []));
-      setInventory(Array.isArray(inventoryData) ? inventoryData : (inventoryData?.data || []));
+      setInventory(Array.isArray(rawInventory) ? rawInventory : (rawInventory?.data || []));
       setCoupons(couponsData?.data || (Array.isArray(couponsData) ? couponsData : []));
       setReviews(reviewsData?.data || (Array.isArray(reviewsData) ? reviewsData : []));
-      setReturns(Array.isArray(returnsData) ? returnsData : (returnsData?.data || []));
-      setRoles(Array.isArray(rolesData) ? rolesData : (rolesData?.data || []));
+      setReturns(Array.isArray(rawReturns) ? rawReturns : (rawReturns?.data || []));
+      setRoles(Array.isArray(rawRoles) ? rawRoles : (rawRoles?.data || []));
       setSettings(settingsData || {});
-      setInquiries(Array.isArray(inquiriesData) ? inquiriesData : (inquiriesData?.inquiries || inquiriesData?.data || []));
+      setInquiries(Array.isArray(rawInquiries) ? rawInquiries : (rawInquiries?.inquiries || rawInquiries?.data || []));
     } catch (err) {
       console.error("Failed to load admin data:", err);
     } finally {
@@ -704,7 +710,9 @@ function AdminDashboardPage() {
                     {otpDigits.map((digit, idx) => (
                       <input
                         key={idx}
-                        ref={(el) => (otpRefs.current[idx] = el)}
+                        ref={(el) => {
+                          otpRefs.current[idx] = el;
+                        }}
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
