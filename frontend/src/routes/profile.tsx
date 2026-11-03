@@ -1,186 +1,43 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import React, { useState } from "react";
-import {
-  User,
-  MapPin,
-  Trash2,
-  LogOut,
-  ShoppingBag,
-  ShieldAlert,
-  Home,
-  CheckCircle2,
-  ChevronRight,
-  Bookmark,
-  Heart
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import React, { useEffect } from "react";
 import { useStore } from "@/components/store-provider";
 
-import { ProfileHeader } from "@/components/profile/profile-header";
-import { EditProfileTab } from "@/components/profile/edit-profile-tab";
-import { AddressManagerTab } from "@/components/profile/address-manager-tab";
-import { SavedProductsTab } from "@/components/profile/saved-products-tab";
-import { AccountDeleteModal } from "@/components/profile/account-delete-modal";
-
 export const Route = createFileRoute("/profile")({
+  beforeLoad: () => {
+    throw redirect({
+      to: "/dashboard",
+      search: { tab: "profile" },
+      replace: true,
+    });
+  },
   head: () => ({
     meta: [
-      { title: "Profile & Account Settings — JANANI AGRO PRODUCTS" },
+      { title: "My Account Dashboard — JANANI AGRO PRODUCTS" },
       {
         name: "description",
         content: "Manage personal details, saved shipping addresses, saved products, and account security.",
       },
     ],
   }),
-  component: ProfilePage,
+  component: ProfileRedirectFallback,
 });
 
-type ProfileTab = "edit" | "addresses" | "saved";
+function ProfileRedirectFallback() {
+  const navigate = useNavigate();
+  const { user } = useStore();
 
-export function ProfilePage() {
-  const [activeTab, setActiveTab] = useState<ProfileTab>("edit");
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  React.useEffect(() => { setIsMounted(true); }, []);
-  const { user, wishlist } = useStore();
-
-  // If user is not signed in, prompt clean Sign In
-    if (!isMounted) {
-    return (
-      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-8 lg:py-12 pb-28 sm:pb-16 space-y-6" suppressHydrationWarning>
-        <div className="rounded-2xl sm:rounded-[2.5rem] bg-secondary/80 animate-pulse h-36 p-6" />
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8">
-          <div className="h-56 rounded-3xl bg-secondary/80 animate-pulse hidden lg:block" />
-          <div className="h-96 rounded-3xl bg-secondary/80 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6 animate-in fade-in duration-300">
-        <div className="size-20 mx-auto rounded-3xl bg-brand-leaf/10 text-brand-leaf grid place-items-center shadow-inner">
-          <User className="size-10" />
-        </div>
-        <div className="space-y-2">
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-            Sign In to Access Your Profile
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-none mx-auto lg:whitespace-nowrap hyphens-none">
-            Please sign in with your Email OTP to manage your personal details, saved items, and delivery addresses.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
-            <Link to="/login" search={{ redirect: "/profile" }}>Sign In / Register with OTP</Link>
-          </Button>
-          <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
-            <Link to="/">Explore Storefront</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (user) {
+      navigate({ to: "/dashboard", search: { tab: "profile" }, replace: true });
+    } else {
+      navigate({ to: "/login", search: { redirect: "/dashboard?tab=profile" }, replace: true });
+    }
+  }, [user, navigate]);
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-20 lg:pb-16 space-y-4 sm:space-y-8 animate-in fade-in duration-300">
-      {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-        <Link to="/" className="hover:text-brand-leaf transition flex items-center gap-1">
-          <Home className="size-3.5" /> Home
-        </Link>
-        <span>/</span>
-        <Link to="/dashboard" className="hover:text-brand-leaf transition">Account</Link>
-        <span>/</span>
-        <span className="text-brand-leaf font-bold">Profile Settings</span>
-      </div>
-
-      {/* Profile Header Card */}
-      <ProfileHeader />
-
-      {/* Main Content Layout: Sidebar Navigation Tabs + Tab Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 items-start">
-        {/* Left: Navigation Tabs */}
-        <aside className="space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft h-fit lg:sticky lg:top-24 self-start z-10">
-          {[
-            { id: "edit", label: "Personal Information", icon: User, desc: "View & edit details" },
-            { id: "addresses", label: "Saved Addresses", icon: MapPin, desc: "Shipping locations" },
-            { id: "saved", label: "Saved Products", icon: Bookmark, desc: "Wishlist & favourites", count: wishlist?.length },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveTab(item.id as ProfileTab)}
-                className={`flex w-full items-start justify-between gap-3 rounded-2xl p-3.5 text-left transition ${
-                  isActive
-                    ? "bg-brand-leaf text-white shadow-sm"
-                    : "text-foreground hover:bg-secondary"
-                }`}
-              >
-                <div className="flex items-start gap-3 min-w-0">
-                  <Icon className={`size-4.5 mt-0.5 shrink-0 ${isActive ? "text-white" : "text-brand-leaf"}`} />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold leading-tight truncate">{item.label}</p>
-                    <p className={`text-[10px] mt-0.5 truncate ${isActive ? "text-white/80" : "text-muted-foreground"}`}>
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
-                {item.count !== undefined && item.count > 0 && (
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono shrink-0 ${
-                      isActive ? "bg-white text-brand-leaf" : "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    {item.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-
-          <div className="border-t border-border pt-3 mt-3 space-y-1">
-            <Link
-              to="/orders"
-              className="flex w-full items-center justify-between rounded-2xl p-3 text-xs font-semibold text-foreground hover:bg-secondary transition"
-            >
-              <span className="flex items-center gap-2.5">
-                <ShoppingBag className="size-4 text-brand-gold" /> My Orders Hub
-              </span>
-              <ChevronRight className="size-3.5 text-muted-foreground" />
-            </Link>
-          </div>
-
-          {/* Danger Zone: Account Deletion Trigger */}
-          <div className="border-t border-border pt-3 mt-3">
-            <button
-              type="button"
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="flex w-full items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-destructive hover:bg-destructive/10 transition"
-            >
-              <Trash2 className="size-3.5" />
-              <span>Delete Account</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* Right: Active Tab Content */}
-        <div className="space-y-6">
-          {activeTab === "edit" && <EditProfileTab />}
-          {activeTab === "addresses" && <AddressManagerTab />}
-          {activeTab === "saved" && <SavedProductsTab />}
-        </div>
-      </div>
-
-      {/* Feature 9: Account Delete Request Modal */}
-      <AccountDeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-      />
+    <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-4">
+      <div className="size-10 mx-auto rounded-full border-2 border-brand-leaf border-t-transparent animate-spin" />
+      <p className="text-sm font-semibold text-muted-foreground">Opening your Account Dashboard...</p>
     </div>
   );
 }

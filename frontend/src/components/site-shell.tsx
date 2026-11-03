@@ -320,7 +320,8 @@ function Shell({ children }: { children: React.ReactNode }) {
             {/* User Account / Sign In */}
             {user ? (
               <Link
-                to="/profile"
+                to="/dashboard"
+                search={{ tab: "profile" }}
                 className="ml-1 hidden items-center gap-2 rounded-full border border-[#075B32]/15 bg-[#F8FAF4] hover:bg-[#F0F7ED] py-1 pl-1.5 pr-3 shadow-2xs transition hover:border-[#075B32]/35 lg:inline-flex shrink-0"
               >
                 <div className="grid size-6.5 place-items-center rounded-full bg-gradient-to-tr from-[#D99A12] to-[#F5B726] text-[10px] font-black text-[#1E3A1E] shadow-2xs">
@@ -398,7 +399,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
                 <Button asChild size="sm" variant="ghost" className="h-6.5 px-2 text-[10.5px] font-semibold text-emerald-800 hover:bg-emerald-200/50 rounded-lg shrink-0">
-                  <Link to="/profile" onClick={() => setMenu(false)}>Profile</Link>
+                  <Link to="/dashboard" search={{ tab: "profile" }} onClick={() => setMenu(false)}>Account</Link>
                 </Button>
               </div>
             ) : (
@@ -473,7 +474,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                     { label: "My Orders", to: "/orders", Icon: PackageCheck },
                     { label: "Track Order", to: "/track-order", Icon: Truck },
                     { label: "Saved Wishlist", to: "/wishlist", Icon: Heart },
-                    { label: "Profile Settings", to: "/profile", Icon: User },
+                    { label: "Account Dashboard", to: "/dashboard", Icon: User },
                   ].map(({ label, to, Icon }) => {
                     const isActive = pathname.startsWith(to);
                     return (
@@ -570,7 +571,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             { Icon: Grid2X2, label: "Categories", to: "/categories" },
             { Icon: Heart, label: "Wishlist", to: "/wishlist" },
             { Icon: ShoppingBag, label: "Cart", to: "/cart" },
-            { Icon: User, label: "Account", to: user ? "/profile" : "/login" },
+            { Icon: User, label: "Account", to: user ? "/dashboard" : "/login" },
           ].map(({ Icon, label, to }) => {
             const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (

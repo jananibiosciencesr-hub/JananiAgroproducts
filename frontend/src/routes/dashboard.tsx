@@ -16,7 +16,10 @@ import {
   FileText,
   Clock,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Bookmark,
+  Trash2,
+  Home
 } from "lucide-react";
 import { useStore } from "@/components/store-provider";
 import { Button } from "@/components/ui/button";
@@ -24,12 +27,23 @@ import { loadCustomerOrders, saveCustomerOrders } from "@/components/orders/orde
 import { CustomerOrder } from "@/components/orders/types";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
 import { loadUserSavedAddresses } from "@/lib/api";
+import { EditProfileTab } from "@/components/profile/edit-profile-tab";
+import { AddressManagerTab } from "@/components/profile/address-manager-tab";
+import { SavedProductsTab } from "@/components/profile/saved-products-tab";
+import { AccountDeleteModal } from "@/components/profile/account-delete-modal";
+
+type TabType = "orders" | "profile" | "addresses" | "wishlist";
 
 export const Route = createFileRoute("/dashboard")({
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => {
+    return {
+      tab: typeof search["tab"] === "string" ? search["tab"] : undefined,
+    };
+  },
   head: () => ({
     meta: [
-      { title: "My Account & Orders — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Customer portal to manage orders, real-time tracking, GST invoices, and saved delivery addresses." },
+      { title: "My Account Dashboard — JANANI AGRO PRODUCTS" },
+      { name: "description", content: "Customer portal to manage orders, real-time tracking, personal details, GST invoices, and saved delivery addresses." },
     ],
   }),
   component: DashboardPage,
@@ -43,7 +57,7 @@ function DashboardErrorFallback({ error, reset }: { error: any; reset: () => voi
         <AlertCircle className="size-10" />
       </div>
       <div className="space-y-2">
-        <h2 className="font-display text-2xl font-bold text-foreground">Dashboard Temporary Notice</h2>
+        <h2 className="font-display text-2xl font-bold text-foreground">Dashboard Notice</h2>
         <p className="text-xs text-muted-foreground">
           We encountered an issue reading your cached account session. You can retry or refresh to continue.
         </p>
@@ -62,22 +76,32 @@ function DashboardErrorFallback({ error, reset }: { error: any; reset: () => voi
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { wishlist, addToCart, user, logoutUser, updateUserProfile, refreshUserProfile } = useStore();
+  const search = Route.useSearch();
+  const { wishlist, addToCart, user, logoutUser } = useStore();
   const [isMounted, setIsMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
+
+  const initialTab: TabType = (search.tab === "profile" || search.tab === "addresses" || search.tab === "wishlist" || search.tab === "saved")
+    ? (search.tab === "saved" ? "wishlist" : (search.tab as TabType))
+    : "orders";
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Sync activeTab when query param changes
+  useEffect(() => {
+    if (search.tab) {
+      const resolved = search.tab === "saved" ? "wishlist" : (search.tab as TabType);
+      if (resolved === "orders" || resolved === "profile" || resolved === "addresses" || resolved === "wishlist") {
+        setActiveTab(resolved);
+      }
+    }
+  }, [search.tab]);
 
   // Real-time dynamic customer orders list strictly scoped to current user
-  // Initialized safely to empty array to ensure 100% SSR hydration parity (React #418 prevention)
   const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<CustomerOrder | null>(null);
 
   // Saved addresses state scoped strictly to the current logged-in user
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-
-  // Profile Form State
-  const [profileName, setProfileName] = useState(user?.name || "");
-  const [profilePhone, setProfilePhone] = useState(user?.phone || "");
-  const [profileEmail, setProfileEmail] = useState(user?.email || "");
 
   // Refresh orders and addresses when user changes or component mounts
   useEffect(() => {
@@ -92,31 +116,7 @@ function DashboardPage() {
     }
 
     if (user) {
-      setProfileName(user.name || "");
-      setProfilePhone(user.phone || "");
-      setProfileEmail(user.email || "");
       setSavedAddresses(loadUserSavedAddresses(user.email || user.id));
-
-      // Live fetch fresh profile from MySQL backend to guarantee phone & name sync
-      const fetchLiveProfile = async () => {
-        try {
-          const identifier = user.email || user.id;
-          if (!identifier) return;
-          const res = await fetch(`/api.php?action=customers&id=${encodeURIComponent(identifier)}`);
-          if (res.ok) {
-            const data = await res.json();
-            const serverUser = data?.customer || data?.user || data?.data;
-            if (serverUser) {
-              if (serverUser.phone) setProfilePhone(serverUser.phone);
-              if (serverUser.name) setProfileName(serverUser.name);
-              if (serverUser.email) setProfileEmail(serverUser.email);
-            }
-          }
-        } catch (e) {
-          console.warn("Failed to fetch customer profile in dashboard:", e);
-        }
-      };
-      fetchLiveProfile();
 
       if (user.email || user.phone) {
         // Live fetch from MySQL server for this specific user
@@ -184,6 +184,13 @@ function DashboardPage() {
     }
   }, [user]);
 
+  // Keep address count updated when switching tabs
+  useEffect(() => {
+    if (user) {
+      setSavedAddresses(loadUserSavedAddresses(user.email || user.id));
+    }
+  }, [user, activeTab]);
+
   const handleLogout = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -198,9 +205,6 @@ function DashboardPage() {
     if (!user) {
       setCustomerOrders([]);
       setSavedAddresses([]);
-      setProfileName("");
-      setProfilePhone("");
-      setProfileEmail("");
       setSelectedInvoiceOrder(null);
     }
   }, [user]);
@@ -209,15 +213,21 @@ function DashboardPage() {
     const onLogout = () => {
       setCustomerOrders([]);
       setSavedAddresses([]);
-      setProfileName("");
-      setProfilePhone("");
-      setProfileEmail("");
       setSelectedInvoiceOrder(null);
       navigate({ to: "/" });
     };
     window.addEventListener("janani-customer-logged-out", onLogout);
     return () => window.removeEventListener("janani-customer-logged-out", onLogout);
   }, [navigate]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    navigate({
+      to: "/dashboard",
+      search: { tab: tab === "orders" ? undefined : tab },
+      replace: true,
+    });
+  };
 
   const handleReorder = (order: CustomerOrder) => {
     if (order?.items && Array.isArray(order.items) && order.items.length > 0) {
@@ -235,16 +245,6 @@ function DashboardPage() {
     }
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateUserProfile({
-      name: profileName.trim(),
-      phone: profilePhone.trim(),
-      email: profileEmail.trim(),
-    });
-    toast.success("Profile updated successfully!");
-  };
-
   const userName = user?.name || "Valued Patron";
   const userEmail = user?.email || "";
   const userPhone = user?.phone || "";
@@ -256,7 +256,7 @@ function DashboardPage() {
     .join("")
     .toUpperCase() || "JP";
 
-  // SSR-Safe Mounted Gate: Guaranteed identical SSR and initial client tree (Fixes React error #418)
+  // SSR-Safe Mounted Gate
   if (!isMounted) {
     return (
       <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-8 lg:py-12 pb-28 sm:pb-16 lg:pb-12 space-y-6" suppressHydrationWarning>
@@ -288,10 +288,10 @@ function DashboardPage() {
         </div>
         <div className="space-y-2">
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-            Sign In to View Your Orders & Account
+            Sign In to View Your Account Dashboard
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
-            Sign in with your Email OTP to manage your orders, live tracking status, GST tax invoices, and saved delivery addresses.
+            Sign in with your Email OTP to manage your orders, live tracking status, personal details, GST tax invoices, and saved delivery addresses.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -306,31 +306,55 @@ function DashboardPage() {
     );
   }
 
+  const TABS: { id: TabType; label: string; icon: any; desc: string; count?: number }[] = [
+    { id: "orders", label: "My Orders & Shipments", icon: Package, desc: "Track, invoices & reorder", count: customerOrders.length },
+    { id: "profile", label: "Personal Information", icon: User, desc: "Patron details & credentials" },
+    { id: "addresses", label: "Saved Addresses", icon: MapPin, desc: "Shipping locations", count: savedAddresses.length },
+    { id: "wishlist", label: "Saved Products", icon: Bookmark, desc: "Wishlist & favourites", count: wishlist?.length },
+  ];
+
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16 lg:pb-12 space-y-6">
-      {/* Profile Header Card */}
-      <div className="rounded-2xl sm:rounded-[2.5rem] bg-forest p-4 sm:p-8 lg:p-10 text-primary-foreground shadow-luxe flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
-          <span className="grid size-14 sm:size-18 place-items-center rounded-full bg-brand-gold text-forest font-display text-xl sm:text-2xl font-bold shadow-md shrink-0">
-            {initials || "JP"}
-          </span>
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16 lg:pb-12 space-y-5 sm:space-y-6 animate-in fade-in duration-300">
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+        <Link to="/" className="hover:text-brand-leaf transition flex items-center gap-1">
+          <Home className="size-3.5" /> Home
+        </Link>
+        <span>/</span>
+        <span className="text-brand-leaf font-bold">My Account Dashboard</span>
+      </div>
+
+      {/* Account Hero Card */}
+      <div className="rounded-2xl sm:rounded-[2.5rem] bg-forest p-4 sm:p-8 lg:p-10 text-primary-foreground shadow-luxe flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between relative overflow-hidden">
+        <div className="absolute -right-12 -bottom-12 size-48 rounded-full bg-brand-gold/10 blur-3xl pointer-events-none" />
+
+        <div className="flex items-center gap-3.5 sm:gap-5 min-w-0 relative z-10">
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt={userName}
+              className="size-14 sm:size-18 rounded-full object-cover border-2 border-brand-gold shadow-md shrink-0"
+            />
+          ) : (
+            <span className="grid size-14 sm:size-18 place-items-center rounded-full bg-brand-gold text-forest font-display text-xl sm:text-2xl font-bold shadow-md shrink-0">
+              {initials || "JP"}
+            </span>
+          )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-gold bg-brand-gold/15 px-2.5 py-0.5 rounded-full shrink-0">
-                {user?.tier || "Janani Member"}
+                {user?.tier || "Silver Member"}
               </span>
-              {user && (
-                <span className="text-[10px] text-emerald-300 font-semibold flex items-center gap-1 shrink-0">
-                  <CheckCircle2 className="size-3" /> Verified Account
-                </span>
-              )}
+              <span className="text-[10px] text-emerald-300 font-semibold flex items-center gap-1 shrink-0">
+                <CheckCircle2 className="size-3" /> Verified Patron
+              </span>
             </div>
             <h1 className="font-display text-xl sm:text-3xl font-semibold mt-1 truncate">{userName}</h1>
             <p className="text-xs text-primary-foreground/75 mt-0.5 truncate">{userEmail} {userPhone ? `· ${userPhone}` : ""}</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0 relative z-10">
           <Link
             to="/products"
             className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-black tracking-wide text-[#05321A] bg-gradient-to-b from-[#FFE072] via-[#F5B723] to-[#D4910B] border border-[#FFF4B8]/90 shadow-[0_4px_18px_rgba(217,154,18,0.48),inset_0_1.5px_1px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(150,90,0,0.25)] hover:shadow-[0_8px_26px_rgba(245,183,35,0.65),inset_0_1.5px_1.5px_rgba(255,255,255,1)] hover:from-[#FFF099] hover:via-[#F9C33F] hover:to-[#DE9E16] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden"
@@ -340,41 +364,27 @@ function DashboardPage() {
             <span className="relative z-10 font-black">Shop Harvest</span>
           </Link>
 
-          {user ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-white/35 hover:border-rose-300/70 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] hover:shadow-[0_6px_24px_rgba(244,63,94,0.4),inset_0_1px_1.5px_rgba(255,255,255,0.6)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
-            >
-              <LogOut className="size-3.5 stroke-[2.2] text-white/90 group-hover:text-rose-200 group-hover:-translate-x-1 transition-all duration-200" />
-              <span className="group-hover:text-rose-100 transition-colors">Sign Out</span>
-            </button>
-          ) : (
-            <Link
-              to="/login"
-              search={{ redirect: "/dashboard" }}
-              className="group relative inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-white/25 active:bg-white/30 border border-white/35 hover:border-white/60 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
-            >
-              <User className="size-3.5 text-white/90 group-hover:scale-110 transition-transform duration-200" />
-              <span>Sign In / Register</span>
-            </Link>
-          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold tracking-wide text-white bg-white/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-white/35 hover:border-rose-300/70 shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.5)] hover:shadow-[0_6px_24px_rgba(244,63,94,0.4),inset_0_1px_1.5px_rgba(255,255,255,0.6)] backdrop-blur-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 cursor-pointer"
+          >
+            <LogOut className="size-3.5 stroke-[2.2] text-white/90 group-hover:text-rose-200 group-hover:-translate-x-1 transition-all duration-200" />
+            <span className="group-hover:text-rose-100 transition-colors">Sign Out</span>
+          </button>
         </div>
       </div>
 
-      {/* Mobile Horizontal Scrolling Tabs (< 1024px) for Instant Fast Switching */}
+      {/* Mobile Horizontal Scrolling Tabs (< 1024px) */}
       <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
-        {[
-          { id: "orders", label: "Orders", icon: Package, count: customerOrders.length },
-          { id: "addresses", label: "Addresses", icon: MapPin, count: savedAddresses.length },
-          { id: "profile", label: "Profile", icon: User },
-        ].map((item) => {
+        {TABS.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
+              type="button"
+              onClick={() => handleTabChange(item.id)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shrink-0 ${
                 isActive
                   ? "bg-[#075B32] text-white shadow-sm ring-1 ring-[#075B32]"
@@ -382,8 +392,8 @@ function DashboardPage() {
               }`}
             >
               <Icon className="size-3.5" />
-              <span>{item.label}</span>
-              {item.count !== undefined && (
+              <span>{item.label.replace("My ", "").replace(" & Shipments", "")}</span>
+              {item.count !== undefined && item.count > 0 && (
                 <span className={`rounded-full px-1.5 py-0.2 text-[9.5px] font-mono ${isActive ? "bg-white/25 text-white" : "bg-muted text-muted-foreground"}`}>
                   {item.count}
                 </span>
@@ -396,39 +406,41 @@ function DashboardPage() {
             <Truck className="size-3 text-brand-leaf" /> Orders Hub
           </Link>
         </Button>
-        <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-bold gap-1 shrink-0 h-8 px-3">
-          <Link to="/wishlist">
-            <Heart className="size-3 text-brand-leaf" /> Wishlist ({wishlist.length})
-          </Link>
-        </Button>
       </div>
 
-      {/* Main Content Layout */}
+      {/* Main Content Layout: Sidebar + Active Tab Panel */}
       <div className="grid gap-6 sm:gap-8 lg:grid-cols-[260px_1fr] items-start">
         {/* Desktop Navigation Tabs (>= 1024px) */}
         <aside className="hidden lg:block space-y-2 rounded-3xl border border-border bg-card p-4 shadow-soft h-fit sticky top-24 self-start z-10">
-          {[
-            { id: "orders", label: "My Orders & Shipments", icon: Package, count: customerOrders.length },
-            { id: "addresses", label: "Saved Addresses", icon: MapPin, count: savedAddresses.length },
-            { id: "profile", label: "Personal Information", icon: User },
-          ].map((item) => {
+          {TABS.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
-                className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-xs font-semibold transition ${
+                type="button"
+                onClick={() => handleTabChange(item.id)}
+                className={`flex w-full items-start justify-between gap-3 rounded-2xl p-3.5 text-left transition ${
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "bg-brand-leaf text-white shadow-sm"
                     : "text-foreground hover:bg-secondary"
                 }`}
               >
-                <span className="flex items-center gap-2.5">
-                  <Icon className="size-4" /> {item.label}
-                </span>
-                {item.count !== undefined && (
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                <div className="flex items-start gap-3 min-w-0">
+                  <Icon className={`size-4.5 mt-0.5 shrink-0 ${isActive ? "text-white" : "text-brand-leaf"}`} />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold leading-tight truncate">{item.label}</p>
+                    <p className={`text-[10px] mt-0.5 truncate ${isActive ? "text-white/80" : "text-muted-foreground"}`}>
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+                {item.count !== undefined && item.count > 0 && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono shrink-0 ${
+                      isActive ? "bg-white text-brand-leaf" : "bg-primary/10 text-primary"
+                    }`}
+                  >
                     {item.count}
                   </span>
                 )}
@@ -439,24 +451,25 @@ function DashboardPage() {
           <div className="border-t border-border pt-3 mt-3 space-y-1">
             <Link
               to="/orders"
-              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-xs font-semibold text-foreground hover:bg-secondary transition"
+              className="flex w-full items-center justify-between rounded-2xl p-3 text-xs font-semibold text-foreground hover:bg-secondary transition"
             >
               <span className="flex items-center gap-2.5">
-                <Truck className="size-4 text-brand-leaf" /> Orders Hub & Tracking
+                <Truck className="size-4 text-brand-gold" /> My Orders Hub & Tracking
               </span>
               <ChevronRight className="size-3.5 text-muted-foreground" />
             </Link>
-            <Link
-              to="/wishlist"
-              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-xs font-semibold text-foreground hover:bg-secondary transition"
+          </div>
+
+          {/* Account Deletion Trigger */}
+          <div className="border-t border-border pt-3 mt-3">
+            <button
+              type="button"
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="flex w-full items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-destructive hover:bg-destructive/10 transition"
             >
-              <span className="flex items-center gap-2.5">
-                <Heart className="size-4 text-brand-leaf" /> My Wishlist
-              </span>
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
-                {wishlist.length}
-              </span>
-            </Link>
+              <Trash2 className="size-3.5" />
+              <span>Delete Account</span>
+            </button>
           </div>
         </aside>
 
@@ -619,110 +632,25 @@ function DashboardPage() {
             </div>
           )}
 
-          {/* 2. Addresses Tab */}
-          {activeTab === "addresses" && (
-            <div className="space-y-4 sm:space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3 sm:pb-4">
-                <div className="min-w-0">
-                  <h2 className="text-lg sm:text-xl font-semibold text-foreground">Saved Delivery Addresses</h2>
-                  <span className="text-xs text-muted-foreground">Manage doorstep addresses for fast 1-click checkout</span>
-                </div>
-                <Button size="sm" variant="gold" asChild className="rounded-full text-xs font-bold self-start sm:self-auto shrink-0">
-                  <Link to="/checkout">+ Add / Manage at Checkout</Link>
-                </Button>
-              </div>
-
-              {savedAddresses.length === 0 ? (
-                <div className="rounded-2xl sm:rounded-3xl border border-dashed border-border bg-card/60 p-6 sm:p-8 text-center space-y-3">
-                  <MapPin className="size-10 text-muted-foreground mx-auto" />
-                  <p className="text-sm font-semibold text-foreground">No saved addresses yet</p>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Addresses added during registration or checkout with GPS auto-fill will appear here automatically.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
-                  {savedAddresses.filter(Boolean).map((addr: any, idx: number) => (
-                    <div
-                      key={addr?.id || idx}
-                      className={`rounded-2xl sm:rounded-3xl border p-4 sm:p-6 shadow-soft relative bg-card break-words ${
-                        addr?.isDefault ? "border-brand-leaf/50 ring-1 ring-brand-leaf/20" : "border-border"
-                      }`}
-                    >
-                      {addr?.isDefault && (
-                        <span className="absolute right-4 top-4 rounded-full bg-brand-leaf/10 px-2.5 py-0.5 text-[10px] font-bold text-brand-leaf">
-                          Default
-                        </span>
-                      )}
-                      <p className="font-semibold text-sm capitalize flex items-center gap-1.5">
-                        <MapPin className="size-4 text-brand-leaf shrink-0" /> {addr?.type || "Home"} Address
-                      </p>
-                      <p className="mt-2 text-xs text-muted-foreground leading-6 break-words">
-                        <strong className="text-foreground">{addr?.fullName || addr?.name || userName}</strong><br />
-                        {[addr?.houseFlat, addr?.street, addr?.landmark].filter(Boolean).join(", ") || addr?.streetAddress || addr?.addressLine1 || "Registered Address"}<br />
-                        {addr?.city || "Ahmedabad"}, {addr?.state || "Gujarat"} – {addr?.pincode || "380054"}<br />
-                        Phone: <span className="text-foreground font-mono">{addr?.phone || userPhone}</span>
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {/* 2. Personal Information Tab */}
+          {activeTab === "profile" && (
+            <div className="space-y-4">
+              <EditProfileTab />
             </div>
           )}
 
-          {/* 3. Profile Tab */}
-          {activeTab === "profile" && (
-            <form onSubmit={handleSaveProfile} className="rounded-2xl sm:rounded-3xl border border-border bg-card p-4 sm:p-8 shadow-soft space-y-5 sm:space-y-6">
-              <div className="border-b border-border pb-3 sm:pb-4">
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground">
-                  Personal Information & Profile
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Update your contact details for SMS delivery alerts and invoice receipts.
-                </p>
-              </div>
+          {/* 3. Saved Addresses Tab */}
+          {activeTab === "addresses" && (
+            <div className="space-y-4">
+              <AddressManagerTab />
+            </div>
+          )}
 
-              <div className="grid gap-4 sm:grid-cols-2 text-xs">
-                <label className="grid gap-1.5 font-semibold text-foreground min-w-0">
-                  <span>Full Name</span>
-                  <input
-                    type="text"
-                    required
-                    value={profileName}
-                    onChange={(e) => setProfileName(e.target.value)}
-                    placeholder="e.g. Rahul Sharma"
-                    className="h-10 sm:h-11 rounded-xl sm:rounded-2xl border border-input bg-background px-3 sm:px-4 text-xs sm:text-sm outline-none focus:border-brand-leaf text-foreground w-full"
-                  />
-                </label>
-                <label className="grid gap-1.5 font-semibold text-foreground min-w-0">
-                  <span>Mobile Number</span>
-                  <input
-                    type="tel"
-                    value={profilePhone}
-                    onChange={(e) => setProfilePhone(e.target.value)}
-                    placeholder="+91 98480 22338"
-                    className="h-10 sm:h-11 rounded-xl sm:rounded-2xl border border-input bg-background px-3 sm:px-4 text-xs sm:text-sm outline-none focus:border-brand-leaf text-foreground w-full"
-                  />
-                </label>
-                <label className="grid gap-1.5 font-semibold text-foreground sm:col-span-2 min-w-0">
-                  <span>Email Address</span>
-                  <input
-                    type="email"
-                    required
-                    value={profileEmail}
-                    onChange={(e) => setProfileEmail(e.target.value)}
-                    placeholder="youremail@gmail.com"
-                    className="h-10 sm:h-11 rounded-xl sm:rounded-2xl border border-input bg-background px-3 sm:px-4 text-xs sm:text-sm outline-none focus:border-brand-leaf text-foreground w-full"
-                  />
-                </label>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" size="sm" variant="gold" className="rounded-xl sm:rounded-2xl px-6 font-bold text-xs">
-                  Save Profile Changes
-                </Button>
-              </div>
-            </form>
+          {/* 4. Saved Products / Wishlist Tab */}
+          {activeTab === "wishlist" && (
+            <div className="space-y-4">
+              <SavedProductsTab />
+            </div>
           )}
         </div>
       </div>
@@ -758,6 +686,12 @@ function DashboardPage() {
           }}
         />
       )}
+
+      {/* Account Deletion Request Modal */}
+      <AccountDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
     </div>
   );
 }
