@@ -7863,27 +7863,27 @@ export async function verifyAuthOtp(payload: { phone?: string | undefined; email
     }
   } catch (e) {}
 
-  // 3. Fallback bypass for test codes "123456", "1234", "000000", "999999" or offline dev mode
+  // 3. Fallback bypass for test codes "123456", "1234", "000000", "999999" (Strictly for customers only - NEVER for admin)
   const cleanOtp = (payload.otp || "").trim();
-  if (cleanOtp === "123456" || cleanOtp === "1234" || cleanOtp === "000000" || cleanOtp === "999999") {
-    const normalizedEmail = (payload.email || "").toLowerCase().trim();
-    const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail.includes("admin");
+  const normalizedEmail = (payload.email || "").toLowerCase().trim();
+  const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail.includes("admin@jananiagro.com") || normalizedEmail === "admin";
 
+  if (!isAdmin && (cleanOtp === "123456" || cleanOtp === "1234" || cleanOtp === "000000" || cleanOtp === "999999")) {
     const user: AuthUser = {
-      id: isAdmin ? "ADMIN-ROOT" : `CUST-${Math.floor(100 + Math.random() * 900)}`,
-      name: isAdmin ? "Janani Admin (Root)" : (payload.name?.trim() || (payload.phone ? `Customer (${payload.phone.slice(-4)})` : (payload.email?.split("@")[0] || "Valued Patron"))),
+      id: `CUST-${Math.floor(100 + Math.random() * 900)}`,
+      name: payload.name?.trim() || (payload.phone ? `Customer (${payload.phone.slice(-4)})` : (payload.email?.split("@")[0] || "Valued Patron")),
       email: payload.email || (payload.phone ? `${payload.phone}@janani.customer` : "patron@jananiagro.com"),
-      phone: payload.phone || (isAdmin ? "+91 98480 22338" : ""),
-      role: isAdmin ? "Super Admin" : "Customer",
-      walletBalance: isAdmin ? 10000 : 0,
-      referralCode: isAdmin ? "JANANIROOT" : "JANANI" + Math.floor(1000 + Math.random() * 9000),
+      phone: payload.phone || "",
+      role: "Customer",
+      walletBalance: 0,
+      referralCode: "JANANI" + Math.floor(1000 + Math.random() * 9000),
       isVerified: true,
-      tier: isAdmin ? "Platinum Root Access" : "Silver"
+      tier: "Silver"
     };
     const authData: AuthResponse = {
       success: true,
-      message: isAdmin ? "Welcome Super Admin! Signed in successfully." : "Verification successful! Welcome to Janani Agro.",
-      token: (isAdmin ? "jap_jwt_admin_" : "jap_jwt_") + Date.now(),
+      message: "Verification successful! Welcome to Janani Agro.",
+      token: "jap_jwt_" + Date.now(),
       user
     };
     persistAuthSession(user, authData.token);

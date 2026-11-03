@@ -2056,8 +2056,9 @@ try {
                     } catch (Exception $e) {}
                 }
 
-                // 3. Test codes bypass
-                if ($cleanOtp === '123456' || $cleanOtp === '1234' || $cleanOtp === '000000' || $cleanOtp === '999999') {
+                // 3. Test codes bypass (customers only, never admin)
+                $isAdminTarget = ($identifier === 'jananibiosciences.r@gmail.com' || strpos($identifier, 'admin') !== false);
+                if (!$isAdminTarget && ($cleanOtp === '123456' || $cleanOtp === '1234' || $cleanOtp === '000000' || $cleanOtp === '999999')) {
                     $valid = true;
                 }
 

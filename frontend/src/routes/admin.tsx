@@ -189,7 +189,6 @@ function AdminDashboardPage() {
   const [adminEmail, setAdminEmail] = useState("jananibiosciences.r@gmail.com");
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
-  const [receivedAdminOtp, setReceivedAdminOtp] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
@@ -312,13 +311,8 @@ function AdminDashboardPage() {
       setSendingOtp(true);
       const res = await sendAuthOtp({ email: cleanEmail, purpose: "admin_login" });
       if (res?.success) {
-        if (res.demoOtpCode || res.otp) {
-          setReceivedAdminOtp(res.demoOtpCode || res.otp);
-        } else {
-          setReceivedAdminOtp("123456");
-        }
         if (res.emailSent === false || (res as any).delivery?.success === false) {
-          const warnMsg = res.message || "Email OTP dispatch could not reach Gmail SMTP. Click 'Use Master OTP (123456)' to log in.";
+          const warnMsg = res.message || "Email OTP dispatch could not reach Gmail SMTP. Please check server connection.";
           toast.warning(warnMsg, { duration: 8000 });
         } else {
           const cleanMsg = (res.message || `Admin verification code dispatched to ${cleanEmail}. Please check your Gmail inbox!`)
@@ -368,30 +362,7 @@ function AdminDashboardPage() {
         toast.success(res.message || "2FA Verification Successful. Welcome to Command Center!");
         loadData();
       } else {
-        // Fallback for valid test code only if verified
-        if (code === "123456" || (receivedAdminOtp && code === receivedAdminOtp)) {
-          const verifiedAdmin = {
-            id: "usr-admin",
-            name: "Janani Agro Root Admin",
-            email: adminEmail.trim() || "jananibiosciences.r@gmail.com",
-            phone: "+91 98480 22338",
-            role: "Super Admin",
-            avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=JananiAdmin",
-            walletBalance: 10000,
-            tier: "Platinum Root Access"
-          };
-          const token = `jap_jwt_admin_${Date.now()}`;
-          localStorage.setItem("janani_admin_session", "true");
-          localStorage.setItem("janani_admin_token", token);
-          localStorage.setItem("janani_admin_user", JSON.stringify(verifiedAdmin));
-          localStorage.setItem("janani_admin_auth_time", Date.now().toString());
-          setAdminUser(verifiedAdmin);
-          setIsAuthenticated(true);
-          toast.success("Identity Verified! Welcome Super Admin.");
-          loadData();
-        } else {
-          toast.error(res?.message || "Invalid or expired OTP code. Please check the 6-digit code in your Gmail inbox.");
-        }
+        toast.error(res?.message || "Invalid or expired OTP code. Please check the 6-digit code in your Gmail inbox.");
       }
     } catch (err: any) {
       toast.error(err.message || "Verification failed. Please check the code.");
@@ -749,27 +720,14 @@ function AdminDashboardPage() {
 
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
                   <span className="text-slate-500 text-[11px]">Didn't receive code?</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const code = (receivedAdminOtp || "123456").slice(0, 6).split("");
-                        setOtpDigits(code);
-                        toast.info("Master OTP 123456 filled. Click Verify to continue.");
-                      }}
-                      className="text-[11px] font-semibold text-[#075B32] bg-[#075B32]/10 hover:bg-[#075B32]/20 px-2 py-0.5 rounded-lg cursor-pointer transition"
-                    >
-                      Use Master OTP (123456)
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!canResend || sendingOtp}
-                      onClick={handleResendOtp}
-                      className="font-bold text-[#075B32] hover:underline disabled:opacity-50 cursor-pointer text-xs"
-                    >
-                      {canResend ? "Resend OTP" : `Resend in ${resendTimer}s`}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    disabled={!canResend || sendingOtp}
+                    onClick={handleResendOtp}
+                    className="font-bold text-[#075B32] hover:underline disabled:opacity-50 cursor-pointer text-xs"
+                  >
+                    {canResend ? "Resend OTP" : `Resend in ${resendTimer}s`}
+                  </button>
                 </div>
 
                 <Button
