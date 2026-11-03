@@ -4951,14 +4951,25 @@ try {
                     if (!isset($newHero['active'])) $newHero['active'] = true;
                     if (empty($newHero['slideOrder'])) $newHero['slideOrder'] = count($cmsData['heroBanners']) + 1;
                     $cmsData['heroBanners'][] = $newHero;
+                    $saveCmsToDb($cmsData);
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Hero slide created and saved to MySQL database',
+                        'data' => $newHero,
+                        'heroBanners' => $cmsData['heroBanners'],
+                        'cms' => $cmsData
+                    ]);
+                    exit;
                 } elseif (strpos($reqId, 'hero-banners/') === 0) {
                     $parts = explode('/', $reqId);
                     $targetId = $parts[1] ?? '';
                     $actionType = $parts[2] ?? '';
+                    $updatedHero = null;
                     if ($actionType === 'toggle') {
                         foreach ($cmsData['heroBanners'] as &$b) {
                             if (($b['id'] ?? '') === $targetId) {
                                 $b['active'] = empty($b['active']);
+                                $updatedHero = $b;
                                 break;
                             }
                         }
@@ -4966,10 +4977,20 @@ try {
                         foreach ($cmsData['heroBanners'] as &$b) {
                             if (($b['id'] ?? '') === $targetId) {
                                 $b = array_merge($b, $body);
+                                $updatedHero = $b;
                                 break;
                             }
                         }
                     }
+                    $saveCmsToDb($cmsData);
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Hero slide updated and saved to MySQL database',
+                        'data' => $updatedHero ?? $body,
+                        'heroBanners' => $cmsData['heroBanners'],
+                        'cms' => $cmsData
+                    ]);
+                    exit;
                 } elseif (isset($body['sections']) || isset($body['heroBanners'])) {
                     $cmsData = array_merge($cmsData, $body);
                 }
@@ -4979,7 +5000,9 @@ try {
                 echo json_encode([
                     'success' => true,
                     'message' => 'CMS updated and persisted in MySQL database across all devices',
-                    'data' => $cmsData
+                    'data' => $cmsData,
+                    'heroBanners' => $cmsData['heroBanners'] ?? [],
+                    'cms' => $cmsData
                 ]);
                 exit;
             } elseif ($method === 'DELETE') {
@@ -4989,7 +5012,13 @@ try {
                     $targetId = $parts[1] ?? '';
                     $cmsData['heroBanners'] = array_values(array_filter($cmsData['heroBanners'], fn($b) => ($b['id'] ?? '') !== $targetId));
                     $saveCmsToDb($cmsData);
-                    echo json_encode(['success' => true, 'message' => 'Banner removed from MySQL database', 'data' => $cmsData['heroBanners']]);
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Banner removed from MySQL database',
+                        'data' => $cmsData['heroBanners'],
+                        'heroBanners' => $cmsData['heroBanners'],
+                        'cms' => $cmsData
+                    ]);
                     exit;
                 }
             }

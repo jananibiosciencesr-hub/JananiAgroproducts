@@ -1530,6 +1530,57 @@ export function CmsManagement() {
 // ----------------------------------------------------
 // HERO BANNER MODAL
 // ----------------------------------------------------
+function compressBannerMediaFile(file: File, maxWidth: number, maxHeight: number, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    if (file.type === "image/svg+xml" || file.type === "image/gif") {
+      const reader = new FileReader();
+      reader.onload = ev => resolve((ev.target?.result as string) || "");
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (!src) return resolve("");
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, width, height);
+          try {
+            const webp = canvas.toDataURL("image/webp", quality);
+            if (webp && webp.startsWith("data:image/webp")) {
+              return resolve(webp);
+            }
+          } catch (err) {}
+          const jpeg = canvas.toDataURL("image/jpeg", quality);
+          resolve(jpeg);
+        } else {
+          resolve(src);
+        }
+      };
+      img.onerror = () => resolve(src);
+      img.src = src;
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
 function HeroBannerModal({
   banner,
   onClose,
@@ -1565,7 +1616,7 @@ function HeroBannerModal({
             <ImageIcon className="w-5 h-5 text-emerald-600" />
             {banner ? "Edit Hero Carousel Slide" : "Add New Hero Carousel Slide"}
           </h3>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -1573,11 +1624,18 @@ function HeroBannerModal({
         <form
           onSubmit={e => {
             e.preventDefault();
-            if (!formData.title || !formData.desktopImageUrl) {
+            const desktopImg = formData.desktopImageUrl?.trim();
+            if (!formData.title?.trim() || !desktopImg) {
               toast.error("Please enter a title and desktop banner image URL.");
               return;
             }
-            onSave(formData);
+            const finalData: Partial<HeroBanner> = {
+              ...formData,
+              title: formData.title?.trim(),
+              desktopImageUrl: desktopImg,
+              mobileImageUrl: formData.mobileImageUrl?.trim() || desktopImg
+            };
+            onSave(finalData);
           }}
           className="p-6 space-y-4 max-h-[75vh] overflow-y-auto"
         >
@@ -1634,7 +1692,7 @@ function HeroBannerModal({
                   type="text"
                   required
                   value={formData.desktopImageUrl || ""}
-                  onChange={e => setFormData({ ...formData, desktopImageUrl: e.target.value })}
+                  onChange={e => setFormData({ ...formData, desktopImageUrl: e.target.value.trim() })}
                   className="flex-1 px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                   placeholder="https://... or upload local image"
                 />
@@ -1645,31 +1703,42 @@ function HeroBannerModal({
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={e => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = ev => {
-                        const dataUrl = ev.target?.result as string;
-                        if (dataUrl) {
-                          setFormData(prev => ({ ...prev, desktopImageUrl: dataUrl }));
-                          toast.success(`Uploaded ${file.name} for desktop banner!`);
+                      const toastId = toast.loading(`Optimizing and uploading ${file.name}...`);
+                      try {
+                        const compressed = await compressBannerMediaFile(file, 1920, 800, 0.85);
+                        if (compressed) {
+                          setFormData(prev => ({
+                            ...prev,
+                            desktopImageUrl: compressed,
+                            mobileImageUrl: prev.mobileImageUrl || compressed
+                          }));
+                          toast.success(`Successfully uploaded desktop banner!`, { id: toastId });
+                        } else {
+                          toast.error("Failed to read image file.", { id: toastId });
                         }
-                      };
-                      reader.readAsDataURL(file);
-                      e.target.value = "";
+                      } catch {
+                        toast.error("Failed to process image file.", { id: toastId });
+                      } finally {
+                        e.target.value = "";
+                      }
                     }}
                   />
                 </label>
               </div>
               {formData.desktopImageUrl && (
-                <div className="mt-2 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 aspect-[1920/800] max-h-24 flex items-center justify-center group">
+                <div className="mt-2 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 aspect-[1920/800] max-h-28 flex items-center justify-center group">
                   <img
                     src={formData.desktopImageUrl}
                     alt="Desktop Banner Preview"
                     className="w-full h-full object-cover"
                     onError={e => {
-                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
+                    }}
+                    onLoad={e => {
+                      (e.currentTarget as HTMLImageElement).style.opacity = "1";
                     }}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between px-3 text-[10px] text-white font-medium">
@@ -1692,7 +1761,7 @@ function HeroBannerModal({
                 <input
                   type="text"
                   value={formData.mobileImageUrl || ""}
-                  onChange={e => setFormData({ ...formData, mobileImageUrl: e.target.value })}
+                  onChange={e => setFormData({ ...formData, mobileImageUrl: e.target.value.trim() })}
                   className="flex-1 px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                   placeholder="https://... or upload local image"
                 />
@@ -1703,31 +1772,38 @@ function HeroBannerModal({
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={e => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = ev => {
-                        const dataUrl = ev.target?.result as string;
-                        if (dataUrl) {
-                          setFormData(prev => ({ ...prev, mobileImageUrl: dataUrl }));
-                          toast.success(`Uploaded ${file.name} for mobile banner!`);
+                      const toastId = toast.loading(`Optimizing and uploading ${file.name}...`);
+                      try {
+                        const compressed = await compressBannerMediaFile(file, 750, 1000, 0.85);
+                        if (compressed) {
+                          setFormData(prev => ({ ...prev, mobileImageUrl: compressed }));
+                          toast.success(`Successfully uploaded mobile banner!`, { id: toastId });
+                        } else {
+                          toast.error("Failed to read image file.", { id: toastId });
                         }
-                      };
-                      reader.readAsDataURL(file);
-                      e.target.value = "";
+                      } catch {
+                        toast.error("Failed to process image file.", { id: toastId });
+                      } finally {
+                        e.target.value = "";
+                      }
                     }}
                   />
                 </label>
               </div>
               {formData.mobileImageUrl && (
-                <div className="mt-2 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 aspect-[750/1000] max-h-24 w-fit flex items-center justify-center group">
+                <div className="mt-2 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 aspect-[750/1000] max-h-28 w-fit flex items-center justify-center group">
                   <img
                     src={formData.mobileImageUrl}
                     alt="Mobile Banner Preview"
-                    className="h-24 w-auto object-cover rounded-lg"
+                    className="h-28 w-auto object-cover rounded-lg"
                     onError={e => {
-                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
+                    }}
+                    onLoad={e => {
+                      (e.currentTarget as HTMLImageElement).style.opacity = "1";
                     }}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] text-white font-medium">
@@ -1792,13 +1868,13 @@ function HeroBannerModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"
+              className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-sm"
+              className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-sm cursor-pointer"
             >
               Save Hero Slide
             </button>

@@ -4883,79 +4883,123 @@ export async function getHeroBanners() {
     }
   } catch (e) {}
 
-  let res = await fetchJson<{ success: boolean; count: number; data: HeroBanner[] }>(`/api.php?action=cms&id=hero-banners`);
+  let res = await fetchJson<{ success: boolean; count: number; data: HeroBanner[]; heroBanners?: HeroBanner[] }>(`/api.php?action=cms&id=hero-banners`);
   if (!res?.success) {
-    res = await fetchJson<{ success: boolean; count: number; data: HeroBanner[] }>(`/admin/cms/hero-banners`);
+    res = await fetchJson<{ success: boolean; count: number; data: HeroBanner[]; heroBanners?: HeroBanner[] }>(`/admin/cms/hero-banners`);
   }
-  if (res?.success && Array.isArray(res.data) && res.data.length > 0) return res.data;
+  const banners = (res?.data && Array.isArray(res.data) && res.data.length > 0)
+    ? res.data
+    : (res?.heroBanners && Array.isArray(res.heroBanners) && res.heroBanners.length > 0)
+      ? res.heroBanners
+      : null;
+
+  if (banners) {
+    const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
+    currentCms.heroBanners = banners;
+    setStored(STORAGE_KEYS.CMS, currentCms);
+    return banners;
+  }
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   return currentCms.heroBanners || [];
 }
 
 export async function createHeroBanner(bannerData: Partial<HeroBanner>) {
-  let res = await fetchJson<{ success: boolean; message: string; data: HeroBanner }>(`/api.php?action=cms&id=hero-banners`, {
+  let res = await fetchJson<any>(`/api.php?action=cms&id=hero-banners`, {
     method: "POST",
     body: JSON.stringify(bannerData)
   });
   if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data: HeroBanner }>(`/admin/cms/hero-banners`, {
+    res = await fetchJson<any>(`/admin/cms/hero-banners`, {
       method: "POST",
       body: JSON.stringify(bannerData)
     });
   }
-  if (res?.success) return res;
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  const newBanner: HeroBanner = {
-    id: `hero-${Date.now()}`,
-    title: bannerData.title || "Certified Bio-Formulations & Biological Protection",
-    desktopImageUrl: bannerData.desktopImageUrl || "/images/banners/hero-bio-protection.webp",
-    slideOrder: (currentCms.heroBanners?.length || 0) + 1,
-    active: bannerData.active ?? true,
-    ...bannerData
-  };
-  currentCms.heroBanners = [...(currentCms.heroBanners || []), newBanner];
+  let newBanner: HeroBanner;
+
+  if (res?.success && res.data && res.data.id && (res.data.desktopImageUrl || res.data.desktopImage)) {
+    newBanner = {
+      ...res.data,
+      desktopImageUrl: res.data.desktopImageUrl || res.data.desktopImage,
+      mobileImageUrl: res.data.mobileImageUrl || res.data.mobileImage || res.data.desktopImageUrl || res.data.desktopImage
+    };
+  } else if (res?.success && Array.isArray(res.heroBanners) && res.heroBanners.length > 0) {
+    newBanner = res.heroBanners[res.heroBanners.length - 1];
+  } else if (res?.success && Array.isArray(res.data?.heroBanners) && res.data.heroBanners.length > 0) {
+    newBanner = res.data.heroBanners[res.data.heroBanners.length - 1];
+  } else {
+    newBanner = {
+      id: `hero-${Date.now()}`,
+      title: bannerData.title || "Sustainable Agriculture & Organic Formulations",
+      desktopImageUrl: bannerData.desktopImageUrl || "/banners/hero_healthier_tomorrow_desktop.jpg",
+      mobileImageUrl: bannerData.mobileImageUrl || bannerData.desktopImageUrl || "/banners/hero_healthier_tomorrow_mobile.jpg",
+      slideOrder: (currentCms.heroBanners?.length || 0) + 1,
+      active: bannerData.active ?? true,
+      ...bannerData
+    } as HeroBanner;
+  }
+
+  currentCms.heroBanners = [...(currentCms.heroBanners || []).filter(b => b.id !== newBanner.id), newBanner];
   setStored(STORAGE_KEYS.CMS, currentCms);
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("janani_cms_updated", { detail: { action: "create", banner: newBanner } }));
+  }
+
   return { success: true, message: "Hero banner created in database", data: newBanner };
 }
 
 export async function updateHeroBanner(id: string, bannerData: Partial<HeroBanner>) {
-  let res = await fetchJson<{ success: boolean; message: string; data: HeroBanner }>(`/api.php?action=cms&id=hero-banners/${encodeURIComponent(id)}`, {
+  let res = await fetchJson<any>(`/api.php?action=cms&id=hero-banners/${encodeURIComponent(id)}`, {
     method: "POST",
     body: JSON.stringify(bannerData)
   });
   if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data: HeroBanner }>(`/admin/cms/hero-banners/${id}`, {
+    res = await fetchJson<any>(`/admin/cms/hero-banners/${id}`, {
       method: "PUT",
       body: JSON.stringify(bannerData)
     });
   }
-  if (res?.success) return res;
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  let updatedBanner: any = null;
-  currentCms.heroBanners = (currentCms.heroBanners || []).map((b) => {
-    if (b.id === id) {
-      updatedBanner = { ...b, ...bannerData };
-      return updatedBanner;
-    }
-    return b;
-  });
+  let updatedBanner: HeroBanner;
+
+  if (res?.success && res.data && res.data.id && (res.data.desktopImageUrl || res.data.desktopImage)) {
+    updatedBanner = {
+      ...res.data,
+      desktopImageUrl: res.data.desktopImageUrl || res.data.desktopImage,
+      mobileImageUrl: res.data.mobileImageUrl || res.data.mobileImage || res.data.desktopImageUrl || res.data.desktopImage
+    };
+  } else if (res?.success && Array.isArray(res.heroBanners)) {
+    updatedBanner = res.heroBanners.find((b: any) => b.id === id) || ({ id, ...bannerData } as HeroBanner);
+  } else if (res?.success && Array.isArray(res.data?.heroBanners)) {
+    updatedBanner = res.data.heroBanners.find((b: any) => b.id === id) || ({ id, ...bannerData } as HeroBanner);
+  } else {
+    const existing = (currentCms.heroBanners || []).find(b => b.id === id);
+    updatedBanner = { ...(existing || {}), id, ...bannerData } as HeroBanner;
+  }
+
+  currentCms.heroBanners = (currentCms.heroBanners || []).map((b) => (b.id === id ? { ...b, ...updatedBanner } : b));
   setStored(STORAGE_KEYS.CMS, currentCms);
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("janani_cms_updated", { detail: { action: "update", banner: updatedBanner } }));
+  }
+
   return { success: true, message: "Hero banner updated in database", data: updatedBanner };
 }
 
 export async function toggleHeroBanner(id: string) {
-  let res = await fetchJson<{ success: boolean; message: string; data: HeroBanner }>(`/api.php?action=cms&id=hero-banners/${encodeURIComponent(id)}/toggle`, {
+  let res = await fetchJson<any>(`/api.php?action=cms&id=hero-banners/${encodeURIComponent(id)}/toggle`, {
     method: "POST"
   });
   if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string; data: HeroBanner }>(`/admin/cms/hero-banners/${id}/toggle`, {
+    res = await fetchJson<any>(`/admin/cms/hero-banners/${id}/toggle`, {
       method: "PATCH"
     });
   }
-  if (res?.success) return res;
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   let updatedBanner: any = null;
@@ -4967,23 +5011,32 @@ export async function toggleHeroBanner(id: string) {
     return b;
   });
   setStored(STORAGE_KEYS.CMS, currentCms);
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("janani_cms_updated", { detail: { action: "toggle", id } }));
+  }
+
   return { success: true, message: "Hero banner toggled in database", data: updatedBanner };
 }
 
 export async function deleteHeroBanner(id: string) {
-  let res = await fetchJson<{ success: boolean; message: string }>(`/api.php?action=cms&id=hero-banners/${encodeURIComponent(id)}`, {
+  let res = await fetchJson<any>(`/api.php?action=cms&id=hero-banners/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string }>(`/admin/cms/hero-banners/${id}`, {
+    res = await fetchJson<any>(`/admin/cms/hero-banners/${id}`, {
       method: "DELETE"
     });
   }
-  if (res?.success) return res;
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   currentCms.heroBanners = (currentCms.heroBanners || []).filter((b) => b.id !== id);
   setStored(STORAGE_KEYS.CMS, currentCms);
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("janani_cms_updated", { detail: { action: "delete", id } }));
+  }
+
   return { success: true, message: "Hero banner deleted from database" };
 }
 
