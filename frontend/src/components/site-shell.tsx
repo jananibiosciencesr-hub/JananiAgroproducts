@@ -153,29 +153,33 @@ function Shell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Desktop View: Side Aligned Single Line with Utility Links */}
-          <div className="hidden md:flex w-full items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-extrabold text-[10.5px] uppercase tracking-wider">
+          <div className="hidden md:flex w-full items-center justify-between px-3 sm:px-6 lg:px-6 xl:px-12 2xl:px-16 max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-extrabold text-[10.5px] uppercase tracking-wider shrink-0">
                 <Sparkles className="size-3 fill-current" />
                 PURE SOIL TO SOUL
               </span>
-              <span className="text-white/95 font-medium">
+              <span className="text-white/95 font-medium truncate hidden xl:inline">
                 "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture"
               </span>
-              <span className="text-[#F5B726]">•</span>
-              <span className="text-emerald-200 font-semibold">100% Certified Biological Formulations</span>
+              <span className="text-white/95 font-medium truncate inline xl:hidden">
+                "Nurturing Soil Health & Empowering Farmers"
+              </span>
+              <span className="text-[#F5B726] hidden 2xl:inline">•</span>
+              <span className="text-emerald-200 font-semibold hidden 2xl:inline">100% Certified Biological Formulations</span>
             </div>
 
-            <div className="flex items-center gap-4 text-[11px] text-emerald-200/90 font-medium">
+            <div className="flex items-center gap-3 sm:gap-4 text-[11px] text-emerald-200/90 font-medium shrink-0 ml-2">
               <a
                 href="tel:+919311416225"
                 className="hover:text-white transition-colors flex items-center gap-1"
               >
                 <Phone className="size-3 text-[#F5B726]" />
-                <span>Helpline: +91 93114 16225</span>
+                <span className="hidden lg:inline">Helpline: +91 93114 16225</span>
+                <span className="lg:hidden">+91 93114 16225</span>
               </a>
-              <span className="text-white/30">|</span>
-              <Link to="/track-order" className="hover:text-white transition-colors flex items-center gap-1">
+              <span className="text-white/30 hidden lg:inline">|</span>
+              <Link to="/track-order" className="hover:text-white transition-colors hidden lg:flex items-center gap-1">
                 <Truck className="size-3 text-[#F5B726]" />
                 <span>Track Order</span>
               </Link>
@@ -193,12 +197,12 @@ function Shell({ children }: { children: React.ReactNode }) {
         }`}
         style={{ top: 0 }}
       >
-        <div className="mx-auto flex max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+        <div className="mx-auto flex max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] items-center justify-between gap-1.5 sm:gap-3 lg:gap-2 xl:gap-4 px-3 sm:px-6 lg:px-4 xl:px-10 2xl:px-16 min-w-0">
           {/* Brand Logo with Ambient Halo */}
           <Brand />
 
           {/* Luxury Pill Navigation */}
-          <nav className="hidden items-center justify-center gap-1.5 lg:flex" aria-label="Main navigation">
+          <nav className="hidden items-center justify-center gap-1 xl:gap-1.5 lg:flex shrink min-w-0" aria-label="Main navigation">
             {links.map(([label, to]) => {
               const hasDropdown = label === "Products";
               const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -206,7 +210,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               return (
                 <div
                   key={label}
-                  className="relative py-1"
+                  className="relative py-1 shrink-0"
                   onMouseEnter={() => {
                     if (label === "Products") {
                       setIsMegaMenuOpen(true);
@@ -223,7 +227,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                   <Link
                     to={to}
                     onClick={() => setIsMegaMenuOpen(false)}
-                    className={`group relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13.5px] tracking-tight transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                    className={`group relative flex items-center gap-1 px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full text-[12.5px] xl:text-[13.5px] tracking-tight transition-all duration-200 cursor-pointer whitespace-nowrap ${
                       isActive
                         ? "text-[#075B32] font-black bg-[#F0F7ED] shadow-[inset_0_0_0_1px_rgba(7,91,50,0.14)]"
                         : "text-slate-700 font-bold hover:text-[#075B32] hover:bg-[#F4F8F1]"
@@ -255,14 +259,14 @@ function Shell({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Right Action Terminal: Quick Search Pill, Wishlist, Cart & Luxe Auth */}
-          <div className="flex items-center justify-end gap-1 sm:gap-2.5 shrink-0">
-            {/* Desktop Quick Search Pill */}
+          <div className="flex items-center justify-end gap-1 sm:gap-2 xl:gap-2.5 shrink-0">
+            {/* Desktop Quick Search Pill (expanded on xl screens and above) */}
             <button
               type="button"
               onClick={() => setIsGlobalSearchOpen(true)}
               aria-label="Quick Search"
               title="Search products..."
-              className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-[#075B32]/15 bg-[#F8FAF4] hover:bg-[#F0F7ED] hover:border-[#075B32]/35 text-slate-500 hover:text-[#075B32] transition-all duration-200 shadow-2xs group w-40 lg:w-48 text-left cursor-pointer"
+              className="hidden xl:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-[#075B32]/15 bg-[#F8FAF4] hover:bg-[#F0F7ED] hover:border-[#075B32]/35 text-slate-500 hover:text-[#075B32] transition-all duration-200 shadow-2xs group w-44 2xl:w-52 text-left cursor-pointer shrink-0"
             >
               <Search className="size-3.5 text-[#075B32]/75 group-hover:text-[#075B32] transition-colors" />
               <span className="text-xs font-semibold text-slate-500 group-hover:text-slate-700 truncate">
@@ -270,28 +274,28 @@ function Shell({ children }: { children: React.ReactNode }) {
               </span>
             </button>
 
-            {/* Mobile/Compact Search Icon Button */}
+            {/* Compact Search Icon Button (visible on mobile, tablet, and 1024px-1279px screens) */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsGlobalSearchOpen(true)}
               aria-label="Quick Search"
               title="Search Products"
-              className="md:hidden size-8.5 sm:size-10 rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED]"
+              className="xl:hidden size-8.5 sm:size-9 lg:size-9 rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] shrink-0"
             >
-              <Search className="size-4 sm:size-4.5" />
+              <Search className="size-4" />
             </Button>
             
             {/* Wishlist Button */}
             <Link
               to="/wishlist"
-              className="relative hidden sm:flex size-10 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-colors"
+              className="relative hidden sm:flex size-8.5 sm:size-9 lg:size-9.5 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-colors shrink-0"
               aria-label="Wishlist"
               title="Wishlist"
             >
-              <Heart className="size-4.5" />
+              <Heart className="size-4 sm:size-4.5" />
               {wishlist.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-[#E7A91A] px-1 text-[9px] font-black text-[#075B32] shadow-xs ring-2 ring-white">
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 sm:h-4.5 sm:min-w-4.5 items-center justify-center rounded-full bg-[#E7A91A] px-1 text-[8.5px] sm:text-[9px] font-black text-[#075B32] shadow-xs ring-2 ring-white">
                   {wishlist.length}
                 </span>
               )}
@@ -303,7 +307,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               onClick={() => setIsCartDrawerOpen(true)}
               aria-label="Open Shopping Cart"
               title="Shopping Cart"
-              className="relative flex size-8.5 sm:size-10 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-all cursor-pointer group"
+              className="relative flex size-8.5 sm:size-9 lg:size-9.5 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-all cursor-pointer group shrink-0"
             >
               <ShoppingBag className="size-4 sm:size-4.5 group-hover:scale-105 transition-transform" />
               {cartCount > 0 && (
@@ -317,16 +321,16 @@ function Shell({ children }: { children: React.ReactNode }) {
             {user ? (
               <Link
                 to="/profile"
-                className="ml-1.5 hidden items-center gap-2.5 rounded-full border border-[#075B32]/15 bg-[#F8FAF4] hover:bg-[#F0F7ED] py-1.5 pl-2 pr-3.5 shadow-2xs transition hover:border-[#075B32]/35 lg:inline-flex"
+                className="ml-1 hidden items-center gap-2 rounded-full border border-[#075B32]/15 bg-[#F8FAF4] hover:bg-[#F0F7ED] py-1 pl-1.5 pr-3 shadow-2xs transition hover:border-[#075B32]/35 lg:inline-flex shrink-0"
               >
-                <div className="grid size-7 place-items-center rounded-full bg-gradient-to-tr from-[#D99A12] to-[#F5B726] text-[11px] font-black text-[#1E3A1E] shadow-2xs">
+                <div className="grid size-6.5 place-items-center rounded-full bg-gradient-to-tr from-[#D99A12] to-[#F5B726] text-[10px] font-black text-[#1E3A1E] shadow-2xs">
                   {user.name ? user.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("") : "U"}
                 </div>
-                <div className="text-left leading-tight">
-                  <span className="block text-xs font-bold text-slate-800 truncate max-w-[105px]">
+                <div className="text-left leading-tight hidden xl:block">
+                  <span className="block text-xs font-bold text-slate-800 truncate max-w-[95px]">
                     {user.name ? user.name.split(" ")[0] : "Account"}
                   </span>
-                  <span className="block text-[9.5px] font-semibold text-[#075B32]">
+                  <span className="block text-[9px] font-semibold text-[#075B32]">
                     My Account
                   </span>
                 </div>
@@ -334,11 +338,11 @@ function Shell({ children }: { children: React.ReactNode }) {
             ) : (
               <Button
                 asChild
-                className="ml-1.5 hidden lg:inline-flex rounded-full font-black text-xs h-9.5 px-5 shadow-[0_4px_14px_rgba(217,154,18,0.35)] hover:shadow-[0_6px_20px_rgba(217,154,18,0.45)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-r from-[#D99A12] via-[#E7A91A] to-[#D99A12] hover:from-[#c98e10] hover:to-[#D99A12] text-[#1E3A1E] border border-[#FDE68A]/60 transition-all duration-200"
+                className="ml-1 hidden lg:inline-flex rounded-full font-black text-xs h-8.5 lg:h-9 px-3.5 xl:px-5 shadow-[0_4px_14px_rgba(217,154,18,0.35)] hover:shadow-[0_6px_20px_rgba(217,154,18,0.45)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-r from-[#D99A12] via-[#E7A91A] to-[#D99A12] hover:from-[#c98e10] hover:to-[#D99A12] text-[#1E3A1E] border border-[#FDE68A]/60 transition-all duration-200 shrink-0"
               >
                 <Link to="/login" search={{ redirect: undefined }} className="flex items-center gap-1.5 whitespace-nowrap">
                   <User className="size-3.5 stroke-[2.5]" />
-                  <span>Sign In / Register</span>
+                  <span>Sign In<span className="hidden xl:inline"> / Register</span></span>
                 </Link>
               </Button>
             )}
@@ -347,7 +351,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden size-8.5 sm:size-10 rounded-full text-[#075B32] hover:bg-[#F0F7ED]"
+              className="lg:hidden size-8.5 sm:size-10 rounded-full text-[#075B32] hover:bg-[#F0F7ED] shrink-0"
               onClick={() => setMenu(true)}
               aria-label="Open menu"
             >
