@@ -11,13 +11,13 @@ export interface BannerSlide {
   mobileImage: string;
   alt: string;
   ctaText: string;
-  eyebrow?: string;
-  badgeText?: string;
-  subtitle?: string;
-  secondaryCtaLabel?: string;
-  secondaryCtaUrl?: string;
-  desktopPosition?: string;
-  mobilePosition?: string;
+  eyebrow?: string | undefined;
+  badgeText?: string | undefined;
+  subtitle?: string | undefined;
+  secondaryCtaLabel?: string | undefined;
+  secondaryCtaUrl?: string | undefined;
+  desktopPosition?: string | undefined;
+  mobilePosition?: string | undefined;
 }
 
 export const HERO_SLIDES: BannerSlide[] = [
