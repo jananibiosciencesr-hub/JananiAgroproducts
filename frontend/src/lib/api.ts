@@ -610,7 +610,7 @@ export function generateNextCustomerId(): string {
     const nums = stored
       .map(c => {
         const match = String(c.id || "").match(/CUST-(\d+)/i) || String(c.id || "").match(/^(\d+)$/);
-        return match ? parseInt(match[1], 10) : 0;
+        return (match && match[1]) ? parseInt(match[1], 10) : 0;
       })
       .filter(n => !isNaN(n) && n > 0 && n < 10000);
     if (nums.length > 0) {
@@ -630,7 +630,7 @@ export function generateNextOrderNumber(): string {
       .map(o => {
         const val = String(o.number || o.orderNumber || o.id || "");
         const match = val.match(/(?:JAP|ORD)-(\d+)/i) || val.match(/^(\d+)$/);
-        return match ? parseInt(match[1], 10) : 0;
+        return (match && match[1]) ? parseInt(match[1], 10) : 0;
       })
       .filter(n => !isNaN(n) && n > 0 && n < 10000);
     if (nums.length > 0) {
