@@ -427,7 +427,11 @@ export function CartPage() {
       {actualCartCount > 0 ? (
         <div className="mt-6 sm:mt-8 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_390px] xl:grid-cols-[1fr_420px] 2xl:grid-cols-[1fr_460px] items-start">
           {/* Left Column: Cart Items List, Gift Wrap, Save for Later */}
-          <div className="space-y-6">
+          <div
+            className="space-y-6 lg:sticky lg:top-24 self-start h-fit z-10"
+            data-sticky-cart="true"
+            style={{ alignSelf: "flex-start" }}
+          >
             {/* Cart Items List */}
             <div className="divide-y divide-border rounded-[2rem] border border-border bg-card shadow-soft overflow-hidden">
               {cartItems.map((item) => (

@@ -393,13 +393,24 @@ button,
 
 
 
-/* Dedicated Sticky Sidebar Support Across All Browsers */
-.sticky-sidebar,
-[data-sticky-sidebar="true"] {
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 5.5rem !important;
-  align-self: flex-start !important;
-  height: fit-content !important;
-  z-index: 20 !important;
+/* Dedicated Sticky Sidebar & Cart Items Support Across All Browsers */
+@media (min-width: 1024px) {
+  .sticky-sidebar,
+  [data-sticky-sidebar="true"] {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 5.5rem !important;
+    align-self: flex-start !important;
+    height: fit-content !important;
+    z-index: 20 !important;
+  }
+
+  [data-sticky-cart="true"] {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 5.5rem !important;
+    align-self: flex-start !important;
+    height: fit-content !important;
+    z-index: 10 !important;
+  }
 }
