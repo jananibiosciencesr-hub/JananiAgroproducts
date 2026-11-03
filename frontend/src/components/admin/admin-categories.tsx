@@ -290,89 +290,51 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
   return (
     <div className="space-y-6">
-      {/* Filter Toolbar */}
-      <div className="rounded-3xl border border-border bg-card p-3.5 sm:p-4 shadow-soft space-y-3 min-w-0">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Level Filter Tabs */}
-          <div className="flex items-center rounded-2xl border border-border bg-muted/40 p-1 text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
-            {(["all", "root", "sub", "child"] as const).map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => {
-                  setLevelFilter(lvl);
-                  setCurrentPage(1);
-                }}
-                className={`rounded-xl px-3 py-1 capitalize transition-colors text-[11px] shrink-0 ${
-                  levelFilter === lvl
-                    ? "bg-card text-foreground shadow-sm font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {lvl === "all" ? "All Tiers" : `${lvl} Tier`}
-              </button>
-            ))}
+      {/* Bulk Action Bar (When 1+ rows selected) */}
+      {selectedIds.length > 0 && (
+        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 sm:p-4 shadow-soft flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <span className="rounded-xl bg-emerald-600 px-2.5 py-0.5 text-xs font-extrabold text-white">
+              {selectedIds.length} Selected
+            </span>
+            <span className="text-xs text-emerald-800 dark:text-emerald-300 font-semibold">
+              Bulk Actions Available:
+            </span>
           </div>
 
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
-            {/* Visibility Filter */}
-            <select
-              value={visibilityFilter}
-              onChange={(e) => setVisibilityFilter(e.target.value as any)}
-              className="h-10 rounded-2xl border border-border bg-card px-3 text-xs font-semibold outline-none focus:border-emerald-600 shrink-0"
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => handleBulkStatus(true)}
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-xl text-xs font-bold text-emerald-700 hover:bg-emerald-500/20"
             >
-              <option value="all">All Visibility</option>
-              <option value="featured">Featured on Homepage</option>
-              <option value="trending">Trending Harvest</option>
-            </select>
+              Mark Active
+            </Button>
+            <Button
+              onClick={() => handleBulkStatus(false)}
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-xl text-xs font-bold text-amber-700 hover:bg-amber-500/20"
+            >
+              Mark Inactive
+            </Button>
+            <Button
+              onClick={handleBulkDelete}
+              size="sm"
+              className="h-8 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold gap-1"
+            >
+              <Trash2 className="size-3.5" /> Move to Trash
+            </Button>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="text-xs text-muted-foreground hover:underline ml-2 cursor-pointer"
+            >
+              Deselect All
+            </button>
           </div>
         </div>
-
-        {/* Bulk Action Bar (When 1+ rows selected) */}
-        {selectedIds.length > 0 && (
-          <div className="flex items-center justify-between rounded-2xl bg-emerald-500/10 p-3 border border-emerald-500/30 animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <span className="rounded-xl bg-emerald-600 px-2.5 py-0.5 text-xs font-extrabold text-white">
-                {selectedIds.length} Selected
-              </span>
-              <span className="text-xs text-emerald-800 dark:text-emerald-300 font-semibold">
-                Bulk Actions Available:
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => handleBulkStatus(true)}
-                size="sm"
-                variant="outline"
-                className="h-8 rounded-xl text-xs font-bold text-emerald-700 hover:bg-emerald-500/20"
-              >
-                Mark Active
-              </Button>
-              <Button
-                onClick={() => handleBulkStatus(false)}
-                size="sm"
-                variant="outline"
-                className="h-8 rounded-xl text-xs font-bold text-amber-700 hover:bg-amber-500/20"
-              >
-                Mark Inactive
-              </Button>
-              <Button
-                onClick={handleBulkDelete}
-                size="sm"
-                className="h-8 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold gap-1"
-              >
-                <Trash2 className="size-3.5" /> Move to Trash
-              </Button>
-              <button
-                onClick={() => setSelectedIds([])}
-                className="text-xs text-muted-foreground hover:underline ml-2"
-              >
-                Deselect All
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Main Categories Table */}
       <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
