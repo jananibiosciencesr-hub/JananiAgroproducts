@@ -4775,15 +4775,24 @@ export interface HomepageCmsData {
 }
 
 export async function getHomepageCms(): Promise<HomepageCmsData> {
-  let res = await fetchJson<any>(`/api.php?action=cms&id=all`);
-  if (!res?.success) {
-    res = await fetchJson<any>(`/admin/cms/all`);
-  }
-  if (res?.success && res.data && Array.isArray(res.data.sections) && res.data.sections.length > 0) {
-    return res.data;
+  try {
+    const res = await fetchJson<any>(`/api.php?action=cms&id=all`);
+    if (res?.success && res.data && Array.isArray(res.data.sections) && res.data.sections.length > 0) {
+      // Synchronize MySQL source of truth to localStorage
+      setStored(STORAGE_KEYS.CMS, res.data);
+      return res.data;
+    }
+  } catch (e) {}
+
+  // Verify localStorage is not contaminated with stale grocery data (Gir Cow, Vedic, Millets)
+  const stored = getStored<any>(STORAGE_KEYS.CMS, DEFAULT_CMS);
+  const storedStr = JSON.stringify(stored || {});
+  const isStaleGrocery = storedStr.includes("Gir Cow") || storedStr.includes("Vedic A2") || storedStr.includes("Organic Harvest");
+  if (isStaleGrocery) {
+    setStored(STORAGE_KEYS.CMS, DEFAULT_CMS);
+    return DEFAULT_CMS as any;
   }
 
-  const stored = getStored<any>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   if (stored && Array.isArray(stored.sections) && stored.sections.length > 0 && Array.isArray(stored.heroBanners) && stored.heroBanners.length > 0) {
     return stored;
   }
@@ -4811,6 +4820,13 @@ export async function updateHomepageLayout(sections: CmsSection[]) {
 }
 
 export async function getHeroBanners() {
+  try {
+    const cms = await getHomepageCms();
+    if (cms && Array.isArray(cms.heroBanners) && cms.heroBanners.length > 0) {
+      return cms.heroBanners;
+    }
+  } catch (e) {}
+
   let res = await fetchJson<{ success: boolean; count: number; data: HeroBanner[] }>(`/api.php?action=cms&id=hero-banners`);
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; count: number; data: HeroBanner[] }>(`/admin/cms/hero-banners`);

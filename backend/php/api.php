@@ -4740,66 +4740,199 @@ try {
             }
             break;
 
-        case 'cms':
-            if ($method === 'GET') {
-                $type = $_GET['type'] ?? null;
-                $stmt = $pdo->query("SELECT * FROM `cms_banners` WHERE `active` = 1 ORDER BY `slide_order` ASC, `created_at` DESC");
-                $banners = $stmt->fetchAll();
+                case 'cms':
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS `settings` (`id` INT AUTO_INCREMENT PRIMARY KEY, `setting_key` VARCHAR(191) UNIQUE NOT NULL, `setting_value` LONGTEXT NOT NULL, `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            } catch (Exception $e) {}
 
-                // Also fetch rich CMS blocks from settings table
-                $cmsSettingsStmt = $pdo->query("SELECT `setting_key`, `setting_value` FROM `settings` WHERE `setting_key` LIKE 'cms_%'");
-                $cmsBlocks = [];
-                while ($r = $cmsSettingsStmt->fetch()) {
-                    $cmsBlocks[$r['setting_key']] = json_decode($r['setting_value'], true) ?: $r['setting_value'];
+            $defaultAgroCms = [
+                'sections' => [
+                    ['id' => 'sec_hero', 'name' => 'Hero Carousel Banners', 'type' => 'hero_slider', 'enabled' => true, 'active' => true, 'order' => 1, 'description' => 'Full-width responsive carousel with dual desktop/mobile banners & primary CTAs.'],
+                    ['id' => 'sec_trust', 'name' => 'Trust Badges & Value Strip', 'type' => 'trust_badges', 'enabled' => true, 'active' => true, 'order' => 2, 'description' => '100% Organic, Direct Farmer Sourced, Chemical Free, Fast Delivery badges.'],
+                    ['id' => 'sec_promo_strip', 'name' => 'Promotional Announcement Strip', 'type' => 'offer_strip', 'enabled' => true, 'active' => true, 'order' => 3, 'description' => 'Highlight seasonal coupons & sitewide free shipping thresholds.'],
+                    ['id' => 'sec_categories', 'name' => 'Shop by Category Cards', 'type' => 'category_grid', 'enabled' => true, 'active' => true, 'order' => 4, 'description' => 'Curated category cards for Bio-Fertilizers, Bio-Pesticides, Stimulants & Nutrients.'],
+                    ['id' => 'sec_flash_sale', 'name' => 'Urgent Flash Sale Ticker', 'type' => 'flash_sale', 'enabled' => true, 'active' => true, 'order' => 5, 'description' => 'Time-limited urgent deal box with live countdown timer & stock scarcity meter.'],
+                    ['id' => 'sec_featured', 'name' => 'Featured Organic Essentials', 'type' => 'product_showcase_featured', 'enabled' => true, 'active' => true, 'order' => 6, 'description' => 'Hand-picked organic staple products curated by admin.'],
+                    ['id' => 'sec_trending', 'name' => 'Trending This Harvest Week', 'type' => 'product_showcase_trending', 'enabled' => true, 'active' => true, 'order' => 7, 'description' => 'High velocity organic best-sellers and newly in-demand items.'],
+                    ['id' => 'sec_brand_story', 'name' => 'Janani Agro Farm Story', 'type' => 'brand_story', 'enabled' => true, 'active' => true, 'order' => 8, 'description' => 'Heritage mission, ethical farmer partnerships, and purity guarantee video/story.'],
+                    ['id' => 'sec_best_sellers', 'name' => 'Customer Top Favorites', 'type' => 'product_showcase_bestsellers', 'enabled' => true, 'active' => true, 'order' => 9, 'description' => 'Top-rated 5-star items loved by over 50,000+ happy households.'],
+                    ['id' => 'sec_new_arrivals', 'name' => 'Fresh Harvest Arrivals', 'type' => 'product_showcase_new', 'enabled' => true, 'active' => true, 'order' => 10, 'description' => 'Newly harvested bio fertilizers, micro nutrients and crop protection.'],
+                    ['id' => 'sec_testimonials', 'name' => 'Customer Reviews & UGC Showcase', 'type' => 'testimonials', 'enabled' => true, 'active' => true, 'order' => 11, 'description' => 'Verified customer photo reviews and field performance feedback.'],
+                    ['id' => 'sec_faq', 'name' => 'Frequently Asked Questions', 'type' => 'faq', 'enabled' => true, 'active' => true, 'order' => 12, 'description' => 'Organic certifications, application dosages, and crop compatibility FAQs.']
+                ],
+                'heroBanners' => [
+                    [
+                        'id' => 'slide-1',
+                        'eyebrow' => 'Biological Crop Protection & Soil Health',
+                        'title' => 'Sustainable Agriculture & Organic Formulations',
+                        'subtitle' => 'Trichoderma viride bio-fungicides, humic biostimulants, and cold-pressed botanical pest deterrents for zero-residue agriculture.',
+                        'primaryCtaLabel' => 'Explore Formulations',
+                        'primaryCtaUrl' => '/products',
+                        'secondaryCtaLabel' => 'Official Dosage Guide',
+                        'secondaryCtaUrl' => '/products/harit',
+                        'desktopImageUrl' => '/products/harit.jpg',
+                        'mobileImageUrl' => '/products/harit.jpg',
+                        'badgeText' => 'Certified Bio-Fungicides',
+                        'slideOrder' => 1,
+                        'active' => true
+                    ],
+                    [
+                        'id' => 'slide-2',
+                        'eyebrow' => 'Rhizosphere Rejuvenation & Root Care',
+                        'title' => 'Bhumi Shakti Humic & Fulvic Biostimulant',
+                        'subtitle' => 'Enriches soil microbiology, unlocks micro-nutrients, and establishes thriving feeder roots across paddy, cotton, and vegetables.',
+                        'primaryCtaLabel' => 'Shop Bhumi Shakti',
+                        'primaryCtaUrl' => '/products/bhumi-shakti',
+                        'secondaryCtaLabel' => 'Crop Guidance',
+                        'secondaryCtaUrl' => '/products',
+                        'desktopImageUrl' => '/products/bhumi-shakti.jpg',
+                        'mobileImageUrl' => '/products/bhumi-shakti.jpg',
+                        'badgeText' => 'Living Soil Rejuvenator',
+                        'slideOrder' => 2,
+                        'active' => true
+                    ],
+                    [
+                        'id' => 'slide-3',
+                        'eyebrow' => 'Botanical Integrated Pest Management',
+                        'title' => 'Neem Oil 1000 PPM Azadirachtin Extract',
+                        'subtitle' => 'Standardized biological insect growth regulator repelling aphids, caterpillars, whiteflies, and mites with zero chemical residues.',
+                        'primaryCtaLabel' => 'Order Neem Oil',
+                        'primaryCtaUrl' => '/products',
+                        'secondaryCtaLabel' => 'Contact Agricultural Agronomist',
+                        'secondaryCtaUrl' => '/contact',
+                        'desktopImageUrl' => '/products/suraksha.jpg',
+                        'mobileImageUrl' => '/products/suraksha.jpg',
+                        'badgeText' => 'Botanical IPM Shield',
+                        'slideOrder' => 3,
+                        'active' => true
+                    ]
+                ],
+                'offerBanners' => [
+                    [
+                        'id' => 'offer-1',
+                        'type' => 'seasonal_deal',
+                        'headline' => 'Special Season Promotion',
+                        'title' => 'Bio-Fertilizer Soil Vitality Bundle',
+                        'subtitle' => 'Save flat 20% on Harit Trichoderma + 5L Bhumi Shakti Soil Booster',
+                        'badge' => 'Save 20%',
+                        'ctaText' => 'Claim Farmer Bundle',
+                        'ctaUrl' => '/products',
+                        'imageUrl' => '/products/harit.jpg',
+                        'active' => true,
+                        'order' => 1
+                    ]
+                ],
+                'categoryBanners' => [],
+                'flashSaleBanners' => []
+            ];
+
+            // Helper to get MySQL CMS
+            $fetchCmsFromDb = function() use ($pdo, $defaultAgroCms) {
+                try {
+                    $stmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'homepage_cms_config' LIMIT 1");
+                    $stmt->execute();
+                    $row = $stmt->fetch();
+                    if ($row && !empty($row['setting_value'])) {
+                        $parsed = json_decode($row['setting_value'], true);
+                        // Ensure not contaminated with stale grocery data
+                        if ($parsed && !empty($parsed['heroBanners']) && stripos($row['setting_value'], 'Gir Cow') === false && stripos($row['setting_value'], 'Vedic A2') === false) {
+                            return $parsed;
+                        }
+                    }
+                } catch (Exception $e) {}
+
+                // Save default Agro CMS into MySQL
+                try {
+                    $ins = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('homepage_cms_config', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                    $ins->execute([json_encode($defaultAgroCms, JSON_UNESCAPED_SLASHES)]);
+                } catch (Exception $e) {}
+
+                return $defaultAgroCms;
+            };
+
+            $saveCmsToDb = function($data) use ($pdo) {
+                try {
+                    $ins = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('homepage_cms_config', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                    $ins->execute([json_encode($data, JSON_UNESCAPED_SLASHES)]);
+                    return true;
+                } catch (Exception $e) {
+                    return false;
                 }
+            };
+
+            $reqId = $_GET['id'] ?? '';
+
+            if ($method === 'GET') {
+                $cmsData = $fetchCmsFromDb();
+                if ($reqId === 'hero-banners') {
+                    echo json_encode([
+                        'success' => true,
+                        'count' => count($cmsData['heroBanners'] ?? []),
+                        'data' => $cmsData['heroBanners'] ?? [],
+                        'source' => 'mysql_settings'
+                    ]);
+                    exit;
+                }
+                echo json_encode([
+                    'success' => true,
+                    'data' => $cmsData,
+                    'sections' => $cmsData['sections'] ?? [],
+                    'heroBanners' => $cmsData['heroBanners'] ?? [],
+                    'offerBanners' => $cmsData['offerBanners'] ?? [],
+                    'source' => 'mysql_settings'
+                ]);
+                exit;
+            } elseif ($method === 'POST' || $method === 'PUT') {
+                $body = getJsonBody();
+                $cmsData = $fetchCmsFromDb();
+
+                if ($reqId === 'layout' && isset($body['sections'])) {
+                    $cmsData['sections'] = $body['sections'];
+                } elseif ($reqId === 'hero-banners') {
+                    $newHero = $body;
+                    if (empty($newHero['id'])) $newHero['id'] = 'hero-' . time();
+                    if (!isset($newHero['active'])) $newHero['active'] = true;
+                    if (empty($newHero['slideOrder'])) $newHero['slideOrder'] = count($cmsData['heroBanners']) + 1;
+                    $cmsData['heroBanners'][] = $newHero;
+                } elseif (strpos($reqId, 'hero-banners/') === 0) {
+                    $parts = explode('/', $reqId);
+                    $targetId = $parts[1] ?? '';
+                    $actionType = $parts[2] ?? '';
+                    if ($actionType === 'toggle') {
+                        foreach ($cmsData['heroBanners'] as &$b) {
+                            if (($b['id'] ?? '') === $targetId) {
+                                $b['active'] = empty($b['active']);
+                                break;
+                            }
+                        }
+                    } else {
+                        foreach ($cmsData['heroBanners'] as &$b) {
+                            if (($b['id'] ?? '') === $targetId) {
+                                $b = array_merge($b, $body);
+                                break;
+                            }
+                        }
+                    }
+                } elseif (isset($body['sections']) || isset($body['heroBanners'])) {
+                    $cmsData = array_merge($cmsData, $body);
+                }
+
+                $saveCmsToDb($cmsData);
 
                 echo json_encode([
                     'success' => true,
-                    'banners' => $banners,
-                    'blocks' => $cmsBlocks,
-                    'data' => [
-                        'heroSlides' => array_values(array_filter($banners, fn($b) => ($b['type'] ?? '') === 'hero')),
-                        'promoBanners' => array_values(array_filter($banners, fn($b) => ($b['type'] ?? '') === 'banner' || ($b['type'] ?? '') === 'promo')),
-                        'faqs' => $cmsBlocks['cms_faqs'] ?? [],
-                        'blogs' => $cmsBlocks['cms_blogs'] ?? [],
-                        'pages' => $cmsBlocks['cms_pages'] ?? [],
-                        'announcements' => $cmsBlocks['cms_announcements'] ?? []
-                    ]
+                    'message' => 'CMS updated and persisted in MySQL database across all devices',
+                    'data' => $cmsData
                 ]);
                 exit;
-            } elseif ($method === 'POST') {
-                $body = getJsonBody();
-                $section = $_GET['section'] ?? ($body['section'] ?? null);
-
-                if ($section) {
-                    $val = isset($body['content']) ? $body['content'] : (isset($body['data']) ? $body['data'] : $body);
-                    $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
-                    $stmt->execute(['cms_' . $section, json_encode($val)]);
-                    echo json_encode(['success' => true, 'message' => "CMS section {$section} saved in MySQL"]);
-                    exit;
-                }
-
-                // Handle single banner / slide
-                $id = !empty($body['id']) ? $body['id'] : ('banner-' . time());
-                $type = $body['type'] ?? 'hero';
-                $title = $body['title'] ?? 'Banner Title';
-                $subtitle = $body['subtitle'] ?? '';
-                $image = $body['image_url'] ?? ($body['image'] ?? '/images/hero-1.webp');
-                $ctaLabel = $body['cta_label'] ?? ($body['ctaLabel'] ?? 'Shop Now');
-                $ctaUrl = $body['cta_url'] ?? ($body['ctaUrl'] ?? '/products');
-                $badge = $body['badge'] ?? '';
-                $order = (int)($body['slide_order'] ?? ($body['order'] ?? 1));
-                $active = isset($body['active']) ? ($body['active'] ? 1 : 0) : 1;
-
-                $stmt = $pdo->prepare("INSERT INTO `cms_banners` (`id`, `type`, `title`, `subtitle`, `image_url`, `cta_label`, `cta_url`, `badge`, `slide_order`, `active`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `title` = VALUES(`title`), `subtitle` = VALUES(`subtitle`), `image_url` = VALUES(`image_url`), `cta_label` = VALUES(`cta_label`), `cta_url` = VALUES(`cta_url`), `active` = VALUES(`active`)");
-                $stmt->execute([$id, $type, $title, $subtitle, $image, $ctaLabel, $ctaUrl, $badge, $order, $active]);
-                echo json_encode(['success' => true, 'message' => 'CMS Banner saved in MySQL', 'id' => $id]);
-                exit;
             } elseif ($method === 'DELETE') {
-                $id = $_GET['id'] ?? null;
-                if ($id) {
-                    $pdo->prepare("DELETE FROM `cms_banners` WHERE `id` = ?")->execute([$id]);
-                    echo json_encode(['success' => true, 'message' => 'CMS Banner deleted from MySQL']);
+                $cmsData = $fetchCmsFromDb();
+                if (strpos($reqId, 'hero-banners/') === 0) {
+                    $parts = explode('/', $reqId);
+                    $targetId = $parts[1] ?? '';
+                    $cmsData['heroBanners'] = array_values(array_filter($cmsData['heroBanners'], fn($b) => ($b['id'] ?? '') !== $targetId));
+                    $saveCmsToDb($cmsData);
+                    echo json_encode(['success' => true, 'message' => 'Banner removed from MySQL database', 'data' => $cmsData['heroBanners']]);
                     exit;
                 }
             }
