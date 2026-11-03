@@ -64,7 +64,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       if (res.status === 404 && !endpoint.startsWith("http") && !endpoint.includes("api.php") && !endpoint.includes("db_init.php")) {
         const clean = endpoint.replace(/^\//, "").replace(/^api\//, "");
         const [path, qs] = clean.split("?");
-        const parts = path.split("/");
+        const parts = (path ?? "").split("/");
         const action = parts[0] === "admin" ? parts[1] : parts[0];
         const id = parts[0] === "admin" ? parts.slice(2).join("/") : parts.slice(1).join("/");
         const fallbackUrl = `/api.php?action=${action}${id ? `&id=${encodeURIComponent(id)}` : ""}${qs ? `&${qs}` : ""}`;
@@ -1759,7 +1759,7 @@ export async function createAdminProduct(productData: any) {
     ? productData.organicCertifications.join(", ")
     : (productData.certification || productData.organicCertifications);
 
-  const payload: Record<string, any> = {
+  const payload: any = {
     name: productData.name,
     category_name: productData.category || productData.category_name || "Bio Fertilizers",
     category: productData.category || productData.category_name || "Bio Fertilizers",
@@ -1838,7 +1838,7 @@ export async function updateAdminProduct(id: string, productData: any) {
     ? productData.organicCertifications.join(", ")
     : (productData.certification || productData.organicCertifications);
 
-  const payload: Record<string, any> = {
+  const payload: any = {
     id: id,
     name: productData.name,
     category_name: productData.category || productData.category_name,
@@ -3050,7 +3050,7 @@ export async function createAdminCategory(payload: any) {
 
 export async function updateAdminCategory(id: string, payload: any) {
   const levelNum = payload.level ? (payload.level === "sub" ? 2 : (payload.level === "child" ? 3 : 1)) : undefined;
-  const reqBody: Record<string, any> = {
+  const reqBody: any = {
     id,
     targetId: id,
     editingId: id,
@@ -4152,7 +4152,7 @@ export interface CouponValidationResult {
   valid: boolean;
   discount: number;
   message: string;
-  coupon?: AdminCoupon;
+  coupon?: AdminCoupon | undefined;
 }
 
 export async function validateCoupon(code: string, subtotal: number): Promise<CouponValidationResult> {
@@ -4260,7 +4260,7 @@ export async function createAdminCoupon(payload: Partial<AdminCoupon>) {
     discount: payload.discount || 10,
     minCart: payload.minCart || 499,
     maxDiscount: payload.maxDiscount || 250,
-    startDate: payload.startDate || new Date().toISOString().split("T")[0],
+    startDate: payload.startDate || (new Date().toISOString().split("T")[0] ?? ""),
     expiryDate: payload.expiryDate || "2026-12-31",
     uses: 0,
     maxUses: payload.maxUses || 500,
@@ -4365,7 +4365,7 @@ export async function generateBulkCoupons(payload: BulkCouponPayload) {
       discount: payload.discount,
       minCart: payload.minCart,
       maxDiscount: payload.maxDiscount,
-      startDate: new Date().toISOString().split("T")[0],
+      startDate: new Date().toISOString().split("T")[0] ?? "",
       expiryDate: payload.expiryDate,
       uses: 0,
       maxUses: payload.maxUsesPerCoupon,
@@ -7760,7 +7760,7 @@ export async function loginWithEmail(payload: { email: string; password: string;
 
   const user: AuthUser = {
     id: check.user?.id || `CUST-${Math.floor(100 + Math.random() * 900)}`,
-    name: check.user?.name || normalizedEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+    name: check.user?.name || (normalizedEmail.split("@")[0] ?? "User").replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
     email: normalizedEmail,
     phone: check.user?.phone || "",
     role: "Customer",
