@@ -3,7 +3,6 @@ import {
   User,
   Mail,
   Phone,
-  Calendar,
   Heart,
   Check,
   Save,
@@ -15,20 +14,12 @@ import {
   ShieldCheck,
   Sprout,
   FileText,
-  BadgeCheck,
-  UserCheck
+  BadgeCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { validateEmail, validatePhone } from "@/lib/validation";
-
-const GENDER_OPTIONS = [
-  { id: "female", label: "Female" },
-  { id: "male", label: "Male" },
-  { id: "non-binary", label: "Non-Binary" },
-  { id: "undisclosed", label: "Prefer not to say" },
-];
 
 export function EditProfileTab() {
   const { user, updateUserProfile } = useStore();
@@ -218,18 +209,6 @@ export function EditProfileTab() {
     }
   };
 
-  const formattedDob = user?.dob
-    ? new Date(user.dob).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "long",
-        year: "numeric"
-      })
-    : null;
-
-  const currentGenderLabel =
-    GENDER_OPTIONS.find((g) => g.id === user?.gender)?.label ||
-    (user?.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : null);
-
   const cleanPhoneDisplay = user?.phone
     ? user.phone.length === 10
       ? `+91 ${user.phone.slice(0, 5)} ${user.phone.slice(5)}`
@@ -318,31 +297,6 @@ export function EditProfileTab() {
             </p>
           </div>
 
-          {/* Date of Birth Card */}
-          <div className="rounded-2xl border border-border/80 bg-background/50 p-4 space-y-1.5 hover:border-brand-leaf/40 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="size-3.5 text-brand-leaf" /> Date of Birth
-              </span>
-              <span className="text-[10px] font-semibold text-brand-gold bg-brand-gold/10 px-2 py-0.5 rounded-full">
-                Birthday Perks
-              </span>
-            </div>
-            <p className="text-sm sm:text-base font-bold text-foreground">
-              {formattedDob || <span className="text-muted-foreground font-normal italic">Not specified</span>}
-            </p>
-          </div>
-
-          {/* Gender Card */}
-          <div className="rounded-2xl border border-border/80 bg-background/50 p-4 space-y-1.5 hover:border-brand-leaf/40 transition">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <UserCheck className="size-3.5 text-brand-leaf" /> Gender
-            </span>
-            <p className="text-sm sm:text-base font-bold text-foreground">
-              {currentGenderLabel || <span className="text-muted-foreground font-normal italic">Not specified</span>}
-            </p>
-          </div>
-
           {/* Membership Tier & Status */}
           <div className="rounded-2xl border border-border/80 bg-background/50 p-4 space-y-1.5 hover:border-brand-leaf/40 transition">
             <div className="flex items-center justify-between">
@@ -354,7 +308,7 @@ export function EditProfileTab() {
               </span>
             </div>
             <p className="text-sm sm:text-base font-bold text-foreground font-mono">
-              Patron ID: <span className="text-brand-leaf font-semibold">{user?.id || "JAP-USR-8821"}</span>
+              Patron ID: <span className="text-brand-leaf font-semibold">{user?.id || "CUST-001"}</span>
             </p>
           </div>
         </div>
@@ -496,7 +450,7 @@ export function EditProfileTab() {
         </div>
 
         {/* Phone Number with real-time Indian mobile validation */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 sm:col-span-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Phone className="size-3.5 text-brand-leaf" /> Mobile Number *
@@ -548,47 +502,7 @@ export function EditProfileTab() {
           ) : null}
         </div>
 
-        {/* Date of Birth */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Calendar className="size-3.5 text-brand-leaf" /> Date of Birth
-          </label>
-          <input
-            type="date"
-            value={formData.dob}
-            onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-            className="w-full h-11 rounded-2xl border border-input bg-card px-4 text-xs sm:text-sm text-foreground outline-none focus:border-brand-leaf font-medium transition"
-          />
-        </div>
 
-        {/* Gender */}
-        <div className="space-y-1.5 sm:col-span-2">
-          <label className="text-xs font-bold text-foreground uppercase tracking-wider">
-            Gender
-          </label>
-          <div className="flex flex-wrap items-center gap-3">
-            {GENDER_OPTIONS.map((g) => (
-              <label
-                key={g.id}
-                className={`flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs cursor-pointer transition ${
-                  formData.gender === g.id
-                    ? "border-brand-leaf bg-brand-leaf/10 font-bold text-foreground"
-                    : "border-border hover:bg-secondary text-muted-foreground"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="gender"
-                  value={g.id}
-                  checked={formData.gender === g.id}
-                  onChange={() => setFormData({ ...formData, gender: g.id })}
-                  className="accent-brand-leaf"
-                />
-                <span>{g.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
 
         {/* Bio */}
         <div className="space-y-1.5 sm:col-span-2">
