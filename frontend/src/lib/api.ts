@@ -403,9 +403,7 @@ export async function getCategories() {
   const FORBIDDEN_GROCERY_TERMS = [
     "rice", "grain", "grains", "pulse", "pulses", "dal", "dals", "spice", "spices",
     "ghee", "mustard oil", "cold pressed", "oil", "basmati", "wheat", "millet", "millets",
-    "flour", "atta", "sugar", "honey", "pantry", "grocery", "edible",
-    "biological-crop-protection", "organic-plant-nutrients", "soil-conditioners-biostimulants",
-    "organic-fertilizers", "cat-cropprot", "cat-nutrients", "cat-soil"
+    "flour", "atta", "sugar", "honey", "pantry", "grocery", "edible"
   ];
 
   const isGroceryCategory = (cat: any): boolean => {
@@ -413,7 +411,16 @@ export async function getCategories() {
     const name = (cat.name || "").toLowerCase();
     const slug = (cat.slug || "").toLowerCase();
     const id = (cat.id || "").toLowerCase();
-    if (name.includes("neem") || slug.includes("neem") || name.includes("botanical") || slug.includes("botanical")) {
+    if (
+      name.includes("neem") || slug.includes("neem") ||
+      name.includes("botanical") || slug.includes("botanical") ||
+      name.includes("bio") || slug.includes("bio") ||
+      name.includes("nutrient") || slug.includes("nutrient") ||
+      name.includes("fung") || slug.includes("fung") ||
+      name.includes("pest") || slug.includes("pest") ||
+      name.includes("crop") || slug.includes("crop") ||
+      name.includes("soil") || slug.includes("soil")
+    ) {
       return false;
     }
     return FORBIDDEN_GROCERY_TERMS.some((term) => name.includes(term) || slug.includes(term) || id.includes(term));
@@ -437,7 +444,7 @@ export async function getCategories() {
   }
 
   const FORBIDDEN_CATEGORIES = new Set([
-    "others", "cat-others", "termeric", "cat-termeric", "turmeric", "cat-turmeric"
+    "termeric", "cat-termeric", "turmeric", "cat-turmeric"
   ]);
 
   const map = new Map<string, any>();
@@ -2935,12 +2942,16 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
     }
   }
 
-  // Fallback to localStorage and 10 core catalog categories from Image 1 specification
+  // Fallback to localStorage and 15 core catalog categories synchronized with MySQL database
   if (list.length === 0) {
     const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
     const catalogSeed = [
       { id: "cat-bio-fertilizers", name: "Bio Fertilizers", slug: "bio-fertilizers", image: "/images/categories/bio-fertilizers.jpg", bannerImage: "/images/categories/bio-fertilizers.jpg", icon: "🌾", count: 2, description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
+      { id: "cat-crop-protection", name: "Biological Crop Protection", slug: "biological-crop-protection", image: "/images/categories/bio-pesticides.jpg", bannerImage: "/images/categories/bio-pesticides.jpg", icon: "🛡️", count: 2, description: "Targeted biological protection defending crops against fungal and bacterial pressures." },
       { id: "cat-bio-pesticides", name: "Bio Pesticides", slug: "bio-pesticides", image: "/images/categories/bio-pesticides.jpg", bannerImage: "/images/categories/bio-pesticides.jpg", icon: "🛡️", count: 1, description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
+      { id: "cat-plant-nutrients", name: "Organic Plant Nutrients", slug: "organic-plant-nutrients", image: "/images/categories/micro-nutrients.jpg", bannerImage: "/images/categories/micro-nutrients.jpg", icon: "🌱", count: 2, description: "Essential organic plant nutrients, chelated zinc, ferrous, and foliar sprays." },
+      { id: "cat-bio-fungicides", name: "Bio Fungicides", slug: "bio-fungicides", image: "/images/categories/fungicides.jpg", bannerImage: "/images/categories/fungicides.jpg", icon: "🍄", count: 2, description: "Protective biofungal formulations defending foliage and roots against wilt and root rot." },
+      { id: "cat-soil-conditioners", name: "Soil Conditioners & Biostimulants", slug: "soil-conditioners-biostimulants", image: "/images/categories/bio-stimulants.jpg", bannerImage: "/images/categories/bio-stimulants.jpg", icon: "⚡", count: 4, description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts for living soil." },
       { id: "cat-bio-stimulants", name: "Bio Stimulants", slug: "bio-stimulants", image: "/images/categories/bio-stimulants.jpg", bannerImage: "/images/categories/bio-stimulants.jpg", icon: "⚡", count: 4, description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
       { id: "cat-micro-nutrients", name: "Micro Nutrients", slug: "micro-nutrients", image: "/images/categories/micro-nutrients.jpg", bannerImage: "/images/categories/micro-nutrients.jpg", icon: "🌱", count: 2, description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
       { id: "cat-insecticides", name: "Insecticides", slug: "insecticides", image: "/images/categories/insecticides.jpg", bannerImage: "/images/categories/insecticides.jpg", icon: "🦗", count: 1, description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
@@ -2948,7 +2959,8 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
       { id: "cat-botanical-extracts", name: "Botanical Extracts", slug: "botanical-extracts", image: "/images/categories/botanical-extracts.jpg", bannerImage: "/images/categories/botanical-extracts.jpg", icon: "🌿", count: 1, description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
       { id: "cat-water-solubles", name: "Water Solubles", slug: "water-solubles", image: "/images/categories/water-solubles.jpg", bannerImage: "/images/categories/water-solubles.jpg", icon: "💧", count: 1, description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
       { id: "cat-agri-inputs", name: "Agri Inputs", slug: "agri-inputs", image: "/images/categories/agri-inputs.jpg", bannerImage: "/images/categories/agri-inputs.jpg", icon: "🚜", count: 2, description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
-      { id: "cat-others", name: "Others", slug: "others", image: "/images/categories/others.jpg", bannerImage: "/images/categories/others.jpg", icon: "📦", count: 1, description: "Speciality agricultural aids, spray activators, silicone spreaders, and farm adjuvants." }
+      { id: "cat-fungs", name: "fungicides", slug: "fungs", image: "/images/categories/fungicides.jpg", bannerImage: "/images/categories/fungicides.jpg", icon: "🍃", count: 3, description: "Curative and protective agricultural fungicides for sustainable disease management." },
+      { id: "cat-pestocides", name: "pestocides", slug: "pestocides", image: "/images/categories/bio-pesticides.jpg", bannerImage: "/images/categories/bio-pesticides.jpg", icon: "🛡️", count: 0, description: "Formulations for organic pest control and preventive crop health." }
     ].map((c, idx) => ({
       id: c.id,
       name: c.name,

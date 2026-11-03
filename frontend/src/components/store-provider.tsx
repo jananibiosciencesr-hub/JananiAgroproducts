@@ -71,7 +71,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const cleanCats = parsed.filter((cat: any) => {
             const n = (cat.name || "").toLowerCase();
             const s = (cat.slug || "").toLowerCase();
-            if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+            if (
+              n.includes("neem") || s.includes("neem") ||
+              n.includes("botanical") || s.includes("botanical") ||
+              n.includes("bio") || s.includes("bio") ||
+              n.includes("nutrient") || s.includes("nutrient") ||
+              n.includes("fung") || s.includes("fung") ||
+              n.includes("pest") || s.includes("pest") ||
+              n.includes("crop") || s.includes("crop") ||
+              n.includes("soil") || s.includes("soil")
+            ) return true;
             return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((t) => n.includes(t) || s.includes(t));
           });
           if (cleanCats.length > 0) {
@@ -159,7 +168,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const cleanCats = fetchedCats.value.filter((cat: any) => {
           const n = (cat.name || "").toLowerCase();
           const s = (cat.slug || "").toLowerCase();
-          if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+          if (
+            n.includes("neem") || s.includes("neem") ||
+            n.includes("botanical") || s.includes("botanical") ||
+            n.includes("bio") || s.includes("bio") ||
+            n.includes("nutrient") || s.includes("nutrient") ||
+            n.includes("fung") || s.includes("fung") ||
+            n.includes("pest") || s.includes("pest") ||
+            n.includes("crop") || s.includes("crop") ||
+            n.includes("soil") || s.includes("soil")
+          ) return true;
           return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((t) => n.includes(t) || s.includes(t));
         });
         setLiveCategories(cleanCats.length > 0 ? cleanCats : initialCategories);

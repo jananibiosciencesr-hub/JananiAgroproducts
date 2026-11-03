@@ -35,17 +35,7 @@ function CategoriesIndexPage() {
   const { categories: storeCats, products: storeProds } = useStore();
   const rawCats = storeCats && storeCats.length > 0 ? storeCats : categories;
   const allCats = useMemo(() => {
-    const legacyBlacklist = [
-      "biological-crop-protection",
-      "organic-plant-nutrients",
-      "soil-conditioners-biostimulants",
-      "organic-fertilizers",
-      "cat-cropprot",
-      "cat-nutrients",
-      "cat-soil",
-      "cat-biofert",
-      "others",
-      "cat-others",
+    const forbiddenKeys = [
       "termeric",
       "cat-termeric",
       "turmeric",
@@ -60,19 +50,19 @@ function CategoriesIndexPage() {
       const s = (cat.slug || "").toLowerCase().trim();
       const id = (cat.id || "").toString().toLowerCase().trim();
 
-      if (legacyBlacklist.some((b) => s === b || id === b || n === b)) return false;
+      if (forbiddenKeys.some((b) => s === b || id === b || n === b)) return false;
 
       if (
         [
           "rice", "grain", "pulse", "dal", "spice", "ghee", "basmati",
           "mustard oil", "cold pressed", "oil", "wheat", "millet",
           "grocery", "pantry", "flour", "atta", "sugar"
-        ].some((term) => (n.includes(term) || s.includes(term)) && !n.includes("neem") && !s.includes("neem"))
+        ].some((term) => (n.includes(term) || s.includes(term)) && !n.includes("neem") && !s.includes("neem") && !n.includes("bio") && !s.includes("bio") && !n.includes("nutrient") && !s.includes("nutrient") && !n.includes("fung") && !s.includes("fung") && !n.includes("pest") && !s.includes("pest") && !n.includes("crop") && !s.includes("crop") && !n.includes("soil") && !s.includes("soil"))
       ) {
         return false;
       }
 
-      const dedupeKey = s || n;
+      const dedupeKey = id || s || n;
       if (seen.has(dedupeKey)) return false;
       seen.add(dedupeKey);
       return true;
