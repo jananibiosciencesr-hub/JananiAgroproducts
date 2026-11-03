@@ -850,7 +850,7 @@ function CategoryFormModal({
             <h3 className="text-lg font-bold text-foreground">
               {initialData ? `Edit Category: ${initialData.name}` : "Create New Category"}
             </h3>
-            <p className="text-xs text-muted-foreground">3-Tier Hierarchy, SEO tags, and Image Banners</p>
+            <p className="text-xs text-muted-foreground">3-Tier Hierarchy, SEO tags, and Category Image</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-accent text-muted-foreground"><X className="size-4" /></button>
         </div>
@@ -859,7 +859,7 @@ function CategoryFormModal({
         <div className="flex rounded-2xl border border-border bg-muted/40 p-1 mt-4 text-xs font-bold shrink-0">
           {[
             { id: "general", label: "1. General & Hierarchy" },
-            { id: "media", label: "2. Images & Banners" },
+            { id: "media", label: "2. Category Image" },
             { id: "seo", label: "3. SEO & Meta Tags" },
             { id: "settings", label: "4. Storefront Toggles" }
           ].map((tab) => (
@@ -1030,64 +1030,6 @@ function CategoryFormModal({
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* 2. Category Landing Hero Banner */}
-              <div className="rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <ImageIcon className="size-4 text-emerald-600" />
-                    <span>Category Landing Hero Banner</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">(Top banner on category page)</span>
-                  </label>
-                  {formData.bannerImage && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, bannerImage: "" }))}
-                      className="text-[11px] text-rose-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
-                    >
-                      <Trash2 className="size-3" /> Clear Banner
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Upload from Computer / Device */}
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                      📁 Option 1: Upload from Device
-                    </span>
-                    <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-border hover:border-emerald-500 bg-muted/20 hover:bg-emerald-500/5 cursor-pointer transition-colors p-2 text-center group">
-                      <Upload className="size-5 text-muted-foreground group-hover:text-emerald-600 mb-1 transition-transform group-hover:-translate-y-0.5" />
-                      <span className="text-xs font-bold text-foreground">Click to Browse Banner</span>
-                      <span className="text-[10px] text-muted-foreground">Recommended 1920x600 or 1200x400</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleUploadMediaFile(e, "bannerImage")}
-                      />
-                    </label>
-                  </div>
-
-                  {/* Direct URL input */}
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                      🔗 Option 2: Direct Banner URL
-                    </span>
-                    <div className="flex flex-col justify-between h-24">
-                      <input
-                        value={formData.bannerImage}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, bannerImage: e.target.value }))}
-                        placeholder="/images/categories/bio-fertilizers.jpg or https://..."
-                        className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
-                      />
-                      <p className="text-[10px] text-muted-foreground">
-                        Leave blank to automatically use the card thumbnail as hero banner.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           )}
