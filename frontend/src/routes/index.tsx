@@ -73,7 +73,8 @@ export function HomePage() {
   const productsScrollRef = useRef<HTMLDivElement>(null);
   const scrollProducts = (direction: "left" | "right") => {
     if (productsScrollRef.current) {
-      const offset = direction === "left" ? -320 : 320;
+      const scrollAmount = productsScrollRef.current.clientWidth || 320;
+      const offset = direction === "left" ? -scrollAmount : scrollAmount;
       productsScrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
     }
   };
@@ -219,6 +220,16 @@ export function HomePage() {
       link: "/products/annada-fish-amino-acid-5l",
       price: 3600,
       oldPrice: 3999,
+    },
+    {
+      id: "dharani",
+      numId: 6,
+      name: "Dharani",
+      spec: "Potassium Mobilizing Biofertilizer & Rooting Formulation",
+      image: "/products/dharani.jpg",
+      link: "/products/dharani-potassium-mobilizing-biofertilizer-1l",
+      price: 390,
+      oldPrice: 460,
     },
   ];
 
@@ -416,44 +427,66 @@ export function HomePage() {
               </p>
             </div>
 
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="self-start sm:self-auto rounded-full font-bold text-xs border-0 bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32]"
-            >
-              <Link to="/products">
-                View All Products <ArrowRight className="size-3.5 ml-1 text-[#4FAE2A]" />
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {/* Mobile Carousel Navigation Arrows */}
+              <div className="flex items-center gap-1.5 sm:hidden">
+                <button
+                  type="button"
+                  onClick={() => scrollProducts("left")}
+                  aria-label="Previous Products"
+                  className="size-8 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollProducts("right")}
+                  aria-label="Next Products"
+                  className="size-8 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="rounded-full font-bold text-xs border-0 bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32]"
+              >
+                <Link to="/products">
+                  View All Products <ArrowRight className="size-3.5 ml-1 text-[#4FAE2A]" />
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Carousel Wrapper */}
           <div className="relative">
-            {/* Left Scroll Arrow */}
+            {/* Left Scroll Arrow (Desktop only) */}
             <button
               type="button"
               onClick={() => scrollProducts("left")}
               aria-label="Previous Products"
-              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+              className="hidden sm:flex absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
             >
               <ChevronLeft className="size-5" />
             </button>
 
-            {/* Right Scroll Arrow */}
+            {/* Right Scroll Arrow (Desktop only) */}
             <button
               type="button"
               onClick={() => scrollProducts("right")}
               aria-label="Next Products"
-              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+              className="hidden sm:flex absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
             >
               <ChevronRight className="size-5" />
             </button>
 
-            {/* Product Cards Row */}
+            {/* Product Cards Row: exactly 2 per row on mobile */}
             <div
               ref={productsScrollRef}
-              className="flex items-stretch gap-5 sm:gap-6 overflow-x-auto pb-4 pt-1 px-2 scrollbar-none snap-x snap-mandatory"
+              className="flex items-stretch gap-2.5 sm:gap-6 overflow-x-auto pb-4 pt-1 px-1 sm:px-2 scrollbar-none snap-x snap-mandatory"
             >
               {featuredProductsList.map((prod) => {
                 const isWishlisted = wishlist.includes(prod.numId);
@@ -471,7 +504,7 @@ export function HomePage() {
                 return (
                   <div
                     key={prod.id}
-                    className="snap-start flex-none w-[calc(50%-10px)] min-w-[155px] sm:w-[245px] flex flex-col justify-between rounded-2xl bg-[#f4f7f2] border-0 shadow-none hover:shadow-md transition-all duration-300 group overflow-hidden"
+                    className="snap-start flex-none w-[calc(50%-5px)] max-w-[calc(50%-5px)] sm:w-[245px] sm:max-w-none flex flex-col justify-between rounded-2xl bg-[#f4f7f2] border-0 shadow-none hover:shadow-md transition-all duration-300 group overflow-hidden"
                   >
                     {/* Bottle Image with natural backdrop */}
                     <div className="relative aspect-square w-full bg-white p-2 sm:p-2.5 overflow-hidden flex items-center justify-center">
