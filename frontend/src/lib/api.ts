@@ -990,10 +990,11 @@ export async function sendContactMessage(contactData: {
 
   // 3. Sync to Node API if available
   try {
-    return await fetchJson<{ success: boolean; message: string }>(`/contact/message`, {
+    const res = await fetchJson<{ success: boolean; message: string }>(`/contact/message`, {
       method: "POST",
       body: JSON.stringify(contactData),
     });
+    return res || { success: true, message: "Thank you! Your message has been sent and recorded in the Admin Dashboard." };
   } catch (e) {
     return { success: true, message: "Thank you! Your message has been sent and recorded in the Admin Dashboard." };
   }
@@ -3029,7 +3030,6 @@ export async function createAdminCategory(payload: any) {
   try {
     const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
     const newCat = {
-      id: catId,
       ...reqBody,
       level: payload.level || "root",
       productsCount: 0,
@@ -4752,11 +4752,12 @@ export interface CuratedSectionConfig {
   heading: string;
   subheading?: string;
   badge?: string;
-  productIds: string[];
+  productIds: (string | number)[];
   maxDisplayCount: number;
   viewAllUrl?: string;
-  layout: "grid" | "carousel";
+  layout: "grid" | "carousel" | string;
   active: boolean;
+  [key: string]: any;
 }
 
 export interface HomepageCmsData {
@@ -5980,98 +5981,128 @@ export interface ShiprocketSettings {
 
 export interface GstSettings {
   gstin: string;
-  legalName: string;
-  stateCode: string;
-  registeredState: string;
-  standardTaxRate: number;
-  ayurvedicTaxRate: number;
-  eWayBillThreshold: number;
-  compositionScheme: boolean;
-  eInvoiceApplicable: boolean;
-  lutArnNumber: string;
-  reverseChargeApplicable: boolean;
+  legalName?: string;
+  legalBusinessName?: string;
+  stateCode?: string;
+  registeredState?: string;
+  stateJurisdiction?: string;
+  filingFrequency?: string;
+  standardTaxRate?: number;
+  ayurvedicTaxRate?: number;
+  eWayBillThreshold?: number;
+  eInvoiceThreshold?: number;
+  compositionScheme?: boolean;
+  eInvoiceApplicable?: boolean;
+  lutArnNumber?: string;
+  lutArnForExports?: string;
+  reverseChargeApplicable?: boolean;
+  [key: string]: any;
 }
 
 export interface DeliveryChargesSettings {
-  freeDeliveryThreshold: number;
-  standardShippingFee: number;
-  expressAirShippingFee: number;
-  ruralRemotePinSurcharge: number;
-  codHandlingFee: number;
-  metroSameDaySurcharge: number;
-  estimatedStandardDays: string;
-  estimatedExpressDays: string;
+  freeDeliveryThreshold?: number;
+  freeShippingThreshold?: number;
+  standardShippingFee?: number;
+  standardFlatRate?: number;
+  expressAirShippingFee?: number;
+  expressFlatRate?: number;
+  ruralRemotePinSurcharge?: number;
+  remoteAreaSurcharge?: number;
+  codHandlingFee?: number;
+  metroSameDaySurcharge?: number;
+  estimatedStandardDays?: string;
+  estimatedExpressDays?: string;
+  [key: string]: any;
 }
 
 export interface ReferralRulesSettings {
-  programEnabled: boolean;
-  advocateRewardType: "wallet_cashback" | "flat_discount";
-  advocateRewardAmount: number;
-  friendDiscountType: "flat_discount" | "free_shipping";
-  friendDiscountAmount: number;
-  friendMinCartValue: number;
-  rewardTriggerEvent: string;
-  maxReferralsPerAdvocatePerMonth: number;
-  walletExpiryDays: number;
-  allowRewardStackingWithCoupons: boolean;
+  programEnabled?: boolean;
+  enabled?: boolean;
+  advocateRewardType?: "wallet_cashback" | "flat_discount";
+  advocateRewardAmount?: number;
+  referrerBonus?: number;
+  friendDiscountType?: "flat_discount" | "free_shipping";
+  friendDiscountAmount?: number;
+  refereeDiscount?: number;
+  friendMinCartValue?: number;
+  minOrderAmount?: number;
+  rewardTriggerEvent?: string;
+  maxReferralsPerAdvocatePerMonth?: number;
+  walletExpiryDays?: number;
+  allowRewardStackingWithCoupons?: boolean;
+  [key: string]: any;
 }
 
 export interface CouponRulesSettings {
-  maxCouponDiscountCap: number;
-  allowStackingWithCategoryDiscounts: boolean;
-  maxCouponsPerCart: number;
-  firstTimeBuyerWelcomePromoCode: string;
-  firstTimeDiscountAmount: number;
-  minFirstOrderSpend: number;
-  autoApplyBestCouponInCart: boolean;
-  fraudDetectionMaxRedemptionsPerIp: number;
+  maxCouponDiscountCap?: number;
+  maxCouponDiscountPerOrder?: number;
+  allowStackingWithCategoryDiscounts?: boolean;
+  allowMultipleCoupons?: boolean;
+  maxCouponsPerCart?: number;
+  firstTimeBuyerWelcomePromoCode?: string;
+  firstTimeDiscountAmount?: number;
+  minFirstOrderSpend?: number;
+  autoApplyBestCouponInCart?: boolean;
+  fraudDetectionMaxRedemptionsPerIp?: number;
+  [key: string]: any;
 }
 
 export interface SmtpSettings {
-  host: string;
-  port: number;
-  secure: boolean;
-  authRequired: boolean;
-  username: string;
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  authRequired?: boolean;
+  username?: string;
+  authEmail?: string;
   password?: string | undefined;
-  fromName: string;
-  fromEmail: string;
-  replyToEmail: string;
-  bccOrdersEmail: string;
-  tlsEncryption: string;
+  fromName?: string;
+  senderName?: string;
+  fromEmail?: string;
+  replyToEmail?: string;
+  bccOrdersEmail?: string;
+  tlsEncryption?: string;
   connectionStatus?: string | undefined;
+  [key: string]: any;
 }
 
 export interface SmsSettings {
-  provider: string;
-  senderId: string;
-  dltEntityId: string;
-  apiKey: string;
-  webhookUrl: string;
-  templates: {
-    orderConfirmationDltId: string;
-    orderDispatchDltId: string;
-    deliveryOtpDltId: string;
-    marketingPromoDltId: string;
+  provider?: string;
+  senderId?: string;
+  enabled?: boolean;
+  dltEntityId?: string;
+  apiKey?: string;
+  webhookUrl?: string;
+  templates?: {
+    orderConfirmationDltId?: string;
+    orderDispatchDltId?: string;
+    deliveryOtpDltId?: string;
+    marketingPromoDltId?: string;
+    [key: string]: any;
   };
-  route: string;
+  route?: string;
   connectionStatus?: string | undefined;
+  [key: string]: any;
 }
 
 export interface SecuritySettings {
-  mandatoryTwoFactorAuth: boolean;
-  sessionIdleTimeoutMinutes: number;
-  maxFailedLoginAttempts: number;
-  lockoutDurationMinutes: number;
-  passwordExpirationDays: number;
-  enforceStrongPassword: boolean;
-  allowIpWhitelistingOnly: boolean;
-  whitelistedIpAddresses: string[];
-  corsAllowedOrigins: string[];
-  cspHeadersEnabled: boolean;
-  sslTlsEnforced: boolean;
-  rateLimitingEnabled: boolean;
-  rateLimitRequestsPerMin: number;
+  mandatoryTwoFactorAuth?: boolean;
+  twoFactorEnforcedForAdmin?: boolean;
+  sessionIdleTimeoutMinutes?: number;
+  sessionTimeoutMinutes?: number;
+  maxFailedLoginAttempts?: number;
+  maxLoginAttempts?: number;
+  lockoutDurationMinutes?: number;
+  passwordExpirationDays?: number;
+  enforceStrongPassword?: boolean;
+  allowIpWhitelistingOnly?: boolean;
+  whitelistedIpAddresses?: string[];
+  ipWhitelist?: string[];
+  corsAllowedOrigins?: string[];
+  cspHeadersEnabled?: boolean;
+  sslTlsEnforced?: boolean;
+  rateLimitingEnabled?: boolean;
+  rateLimitRequestsPerMin?: number;
+  [key: string]: any;
 }
 
 export interface AdminSettingsData {
@@ -7215,8 +7246,11 @@ export interface AdminInquiry {
   status: "New" | "Contacted" | "In Progress" | "Resolved" | "Closed";
   createdAt?: string;
   created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
   priority?: "High" | "Medium" | "Low";
   internalNotes?: string;
+  [key: string]: any;
 }
 
 export async function getAdminInquiries(): Promise<AdminInquiry[]> {
@@ -7429,6 +7463,9 @@ export interface AuthResponse {
   isNewUser?: boolean;
   token: string;
   user: AuthUser;
+  notRegistered?: boolean;
+  not_registered?: boolean;
+  hasNoPassword?: boolean;
 }
 
 export interface OtpSendResponse {

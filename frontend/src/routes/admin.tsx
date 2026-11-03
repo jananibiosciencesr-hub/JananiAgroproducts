@@ -610,10 +610,10 @@ function AdminDashboardPage() {
               <Search className="size-4 mr-2 text-slate-400 shrink-0" />
               <span>Search products...</span>
             </div>
-            <Link to="/search" className="lg:hidden p-2 text-slate-600 hover:text-[#075B32]">
+            <Link to="/search" search={{ q: "" }} className="lg:hidden p-2 text-slate-600 hover:text-[#075B32]">
               <Search className="size-5" />
             </Link>
-            <Link to="/login" className="p-2 text-slate-600 hover:text-[#075B32]">
+            <Link to="/login" search={{ redirect: undefined }} className="p-2 text-slate-600 hover:text-[#075B32]">
               <User className="size-5" />
             </Link>
             <Link to="/wishlist" className="p-2 text-slate-600 hover:text-[#075B32]">
