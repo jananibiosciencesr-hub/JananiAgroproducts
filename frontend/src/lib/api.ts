@@ -7780,6 +7780,14 @@ export async function loginWithEmail(payload: { email: string; password: string;
 }
 
 export async function sendAuthOtp(payload: { phone?: string | undefined; email?: string | undefined; purpose?: string | undefined }): Promise<OtpSendResponse> {
+  const cleanEmail = (payload.email || "").trim().toLowerCase();
+  if (payload.purpose === "admin_login" && cleanEmail !== "jananibiosciences.r@gmail.com") {
+    return {
+      success: false,
+      message: "Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center."
+    };
+  }
+
   // 1. Prioritize Hostinger PHP API (which dispatches via Gmail SMTP with app password to user & admin)
   try {
     const phpRes = await fetch("/api.php?action=send-otp", {
@@ -7861,7 +7869,17 @@ export async function sendAuthOtp(payload: { phone?: string | undefined; email?:
   };
 }
 
-export async function verifyAuthOtp(payload: { phone?: string | undefined; email?: string | undefined; otp: string; name?: string | undefined }): Promise<AuthResponse> {
+export async function verifyAuthOtp(payload: { phone?: string | undefined; email?: string | undefined; otp: string; name?: string | undefined; purpose?: string | undefined }): Promise<AuthResponse> {
+  const cleanEmail = (payload.email || "").trim().toLowerCase();
+  if (payload.purpose === "admin_login" && cleanEmail !== "jananibiosciences.r@gmail.com") {
+    return {
+      success: false,
+      message: "Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.",
+      token: "",
+      user: null as any
+    };
+  }
+
   // 1. Prioritize Hostinger PHP API verification against database settings table
   try {
     const phpRes = await fetch("/api.php?action=verify-otp", {

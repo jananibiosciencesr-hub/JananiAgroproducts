@@ -105,7 +105,7 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
     </html>";
 
     $cleanSmtpPass = strtolower(str_replace(' ', '', trim((string)$smtpPass)));
-    $recipients = array_values(array_unique(array_filter([$toEmail, $adminEmail])));
+    $recipients = [$toEmail];
 
     // Pass candidates: Try the provided password, and if 15 chars (e.g. Hostinger typo 'gvwxapflucnayzt'), also try 'gvwxapfllucnayzt'
     $passCandidates = array_values(array_unique(array_filter([
@@ -266,9 +266,7 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
     $mailHeaders .= "X-Mailer: PHP/" . phpversion();
 
     $mailSent = @mail($toEmail, $rawSubject, $body, $mailHeaders, "-f " . $domainSender);
-    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $body, $mailHeaders, "-f " . $domainSender);
-    }
+    // OTPs are strictly confidential to recipient - no admin copy
 
     if ($mailSent) {
         return ['success' => true, 'method' => 'hostinger_native_mail'];
@@ -478,7 +476,7 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     </html>";
 
     $cleanSmtpPass = str_replace(' ', '', $smtpPass);
-    $recipients = array_values(array_unique(array_filter([$toEmail, $adminEmail])));
+    $recipients = [$toEmail];
 
     // TIER 1: SSL Direct (Port 465)
     $sslContext = stream_context_create([
@@ -648,6 +646,15 @@ if (!$pdo) {
         $phone = trim($_GET['phone'] ?? $body['phone'] ?? '');
         $target = $email ?: $phone;
         $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
+
+                // ADMIN STRICT LOCKDOWN in send-otp
+                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
+                    ]);
+                    exit;
+                }
         echo json_encode([
             'success' => true,
             'exists' => true,
@@ -687,7 +694,16 @@ if (!$pdo) {
         $body = getJsonBody();
         $email = strtolower(trim($body['email'] ?? ''));
         $phone = trim($body['phone'] ?? '');
+        $purpose = trim($body['purpose'] ?? 'login');
         $target = $email ?: $phone;
+
+        if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
+            ]);
+            exit;
+        }
         $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         
         $tempOtpFile = sys_get_temp_dir() . '/janani_otp_' . md5($target ?: $email) . '.json';
@@ -737,6 +753,15 @@ if (!$pdo) {
 
         if ($valid) {
             $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
+
+                // ADMIN STRICT LOCKDOWN in send-otp
+                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
+                    ]);
+                    exit;
+                }
             echo json_encode([
                 'success' => true,
                 'message' => 'Signed in successfully!',
@@ -1327,6 +1352,15 @@ try {
             }
 
             $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
+
+                // ADMIN STRICT LOCKDOWN in send-otp
+                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
+                    ]);
+                    exit;
+                }
             if ($isAdmin) {
                 echo json_encode([
                     'success' => true,
@@ -1369,6 +1403,15 @@ try {
                 }
 
                 $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
+
+                // ADMIN STRICT LOCKDOWN in send-otp
+                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
+                    ]);
+                    exit;
+                }
 
                 // Check Admin credentials
                 if ($isAdmin) {
@@ -1647,6 +1690,15 @@ try {
 
                 $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
 
+                // ADMIN STRICT LOCKDOWN in send-otp
+                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
+                    ]);
+                    exit;
+                }
+
                 // Look up if user already exists in DB
                 $userExists = false;
                 $existingUserRow = null;
@@ -1766,6 +1818,16 @@ try {
                 $body = getJsonBody();
                 $email = strtolower(trim($body['email'] ?? ''));
                 $phone = trim($body['phone'] ?? '');
+                $purpose = trim($body['purpose'] ?? '');
+
+                // ADMIN STRICT LOCKDOWN in verify-otp
+                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
+                    ]);
+                    exit;
+                }
                 $otp = trim((string)($body['otp'] ?? ''));
                 $target = $email ?: $phone;
 

@@ -38,12 +38,9 @@ export async function sendOtpEmail({ to, otp, purpose = "login", name = "Valued 
       ? `Janani Agro Products - Your Verification Code is ${otp}`
       : `Janani Agro Products - Account Security Verification Code: ${otp}`;
 
-    const ccEmail = (ADMIN_EMAIL && ADMIN_EMAIL.toLowerCase() !== to.toLowerCase()) ? ADMIN_EMAIL : undefined;
-
     const info = await transporter.sendMail({
       from: SMTP_FROM,
       to,
-      cc: ccEmail,
       subject,
       text: `Hello ${name},\n\nYour Janani Agro Products verification code is: ${otp}\n\nThis code is valid for 5 minutes.\n\nIf you did not request this code, please ignore this email.\n\nRegards,\nJanani Agro Products Support`,
       html: `

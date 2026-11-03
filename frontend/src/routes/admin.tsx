@@ -307,6 +307,10 @@ function AdminDashboardPage() {
       toast.error("Please enter your administrator email address.");
       return;
     }
+    if (cleanEmail !== "jananibiosciences.r@gmail.com") {
+      toast.error("Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) can access the Admin Command Center.");
+      return;
+    }
     try {
       setSendingOtp(true);
       const res = await sendAuthOtp({ email: cleanEmail, purpose: "admin_login" });
@@ -342,6 +346,11 @@ function AdminDashboardPage() {
 
   const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    const cleanEmail = adminEmail.trim().toLowerCase();
+    if (cleanEmail !== "jananibiosciences.r@gmail.com") {
+      toast.error("Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) can access the Admin Command Center.");
+      return;
+    }
     const code = otpDigits.join("").trim();
     if (code.length !== 6) {
       toast.error("Please enter the complete 6-digit verification code.");
@@ -349,9 +358,14 @@ function AdminDashboardPage() {
     }
     try {
       setVerifyingOtp(true);
-      const res = await verifyAuthOtp({ email: adminEmail.trim(), otp: code });
+      const res = await verifyAuthOtp({ email: cleanEmail, otp: code, purpose: "admin_login" });
       if (res?.success && res.user) {
         const user = res.user;
+        const isSuperAdmin = user && (user.role === "Super Admin" || user.role === "Admin" || user.email?.toLowerCase() === "jananibiosciences.r@gmail.com");
+        if (!isSuperAdmin) {
+          toast.error("Access Denied: You do not have administrator permissions.");
+          return;
+        }
         const token = res.token || `jap_jwt_admin_${Date.now()}`;
         localStorage.setItem("janani_admin_session", "true");
         localStorage.setItem("janani_admin_token", token);
@@ -646,27 +660,34 @@ function AdminDashboardPage() {
               <form onSubmit={handleSendOtp} className="mt-8 text-left space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
-                    AUTHORIZED ADMIN EMAIL
+                    AUTHORIZED ROOT ADMIN EMAIL
                   </label>
                   <div className="relative flex items-center rounded-2xl border border-slate-200 bg-slate-50/70 focus-within:bg-white focus-within:border-[#075B32] focus-within:ring-2 focus-within:ring-[#075B32]/15 transition-all">
-                    <Mail className="ml-4 size-5 text-slate-400 shrink-0" />
+                    <Mail className="ml-4 size-5 text-[#075B32] shrink-0" />
                     <input
                       type="email"
                       required
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
                       placeholder="jananibiosciences.r@gmail.com"
-                      className="h-13 w-full rounded-r-2xl bg-transparent px-3.5 text-sm text-slate-900 outline-none font-medium placeholder:text-slate-400"
+                      className="h-13 w-full rounded-r-2xl bg-transparent px-3.5 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
                     />
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-2">
-                    Verification OTP code will be sent to this email via Gmail SMTP.
-                  </p>
+                  {adminEmail.trim().toLowerCase() !== "jananibiosciences.r@gmail.com" ? (
+                    <div className="mt-2.5 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-2.5 flex items-center gap-2">
+                      <AlertCircle className="size-4 shrink-0 text-rose-500" />
+                      <span>Access Denied: Only <strong>jananibiosciences.r@gmail.com</strong> can log in as Admin.</span>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 mt-2">
+                      Verification OTP will be dispatched exclusively to <strong>jananibiosciences.r@gmail.com</strong> via Gmail SMTP.
+                    </p>
+                  )}
                 </div>
 
                 <Button
                   type="submit"
-                  disabled={sendingOtp || !adminEmail.trim()}
+                  disabled={sendingOtp || adminEmail.trim().toLowerCase() !== "jananibiosciences.r@gmail.com"}
                   className="w-full h-12 rounded-2xl bg-[#075B32] hover:bg-[#064B29] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-5"
                 >
                   {sendingOtp ? (
