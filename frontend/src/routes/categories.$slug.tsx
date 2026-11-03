@@ -159,31 +159,6 @@ function CategoryDetailPage() {
               {category.description || `Certified biological and organic ${category.name.toLowerCase()} formulated for disease protection, balanced nutrition, and high yields.`}
             </p>
           </div>
-
-          {/* Quick Category Switcher Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            <span className="text-xs font-bold text-slate-500 whitespace-nowrap mr-1 hidden sm:inline">
-              Categories:
-            </span>
-            {allCats.map((cat) => {
-              const isSelected = cat.slug === category.slug;
-              return (
-                <Link
-                  key={cat.slug}
-                  to="/categories/$slug"
-                  params={{ slug: cat.slug }}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ${
-                    isSelected
-                      ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/20 scale-[1.02]"
-                      : "bg-card border border-border/80 text-muted-foreground hover:text-foreground hover:bg-emerald-50/50 hover:border-emerald-200"
-                  }`}
-                >
-                  <Leaf className={`size-3 ${isSelected ? "text-amber-300" : "text-emerald-600"}`} />
-                  {cat.name}
-                </Link>
-              );
-            })}
-          </div>
         </div>
       </div>
 
