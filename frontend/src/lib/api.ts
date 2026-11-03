@@ -3975,6 +3975,7 @@ export interface AdminCoupon {
   maxDiscount: number;
   startDate: string;
   expiryDate: string;
+  expiry?: string;
   uses: number;
   maxUses: number;
   perUserLimit: number;
@@ -3985,6 +3986,8 @@ export interface AdminCoupon {
   userSpecificTier: string;
   userSpecificEmails: string[];
   active: boolean;
+  totalRedemptions?: number;
+  influencingRevenue?: number;
   createdAt?: string | undefined;
   usageHistory?: CouponUsageRecord[] | undefined;
 }
