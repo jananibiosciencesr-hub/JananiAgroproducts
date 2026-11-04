@@ -19,15 +19,44 @@ import { type AdminTab } from "./admin-sidebar";
 export function AddProductModal({
   isOpen,
   onClose,
-  onSubmit
+  onSubmit,
+  categories
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (productData: any) => void;
+  categories?: string[];
 }) {
+  const [activeCategories, setActiveCategories] = useState<string[]>(() => {
+    if (categories && categories.length > 0) return categories;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("janani_admin_categories");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const delRaw = localStorage.getItem("janani_deleted_categories");
+            const delList: string[] = delRaw ? JSON.parse(delRaw) : [];
+            return parsed
+              .filter((c: any) => c.active !== false && !c.deletedAt && !c.deleted_at && !delList.includes(String(c.name).toLowerCase()) && !delList.includes(String(c.id).toLowerCase()) && !delList.includes(String(c.slug).toLowerCase()))
+              .map((c: any) => (typeof c.name === "string" ? c.name.trim() : ""))
+              .filter(Boolean);
+          }
+        }
+      } catch { }
+    }
+    return ["Bio Fertilizers", "Bio Pesticides", "Bio Fungicides", "Bio Stimulants", "Micro Nutrients"];
+  });
+
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      setActiveCategories(categories);
+    }
+  }, [categories]);
+
   const [formData, setFormData] = useState({
     name: "",
-    category: "Bio Fertilizers",
+    category: activeCategories[0] || "Bio Fertilizers",
     price: "",
     originalPrice: "",
     stock: "50",
@@ -36,6 +65,12 @@ export function AddProductModal({
     description: "",
     unit: "1 L"
   });
+
+  useEffect(() => {
+    if (activeCategories.length > 0 && !activeCategories.includes(formData.category)) {
+      setFormData((prev) => ({ ...prev, category: activeCategories[0] || "Bio Fertilizers" }));
+    }
+  }, [activeCategories, formData.category]);
 
   if (!isOpen) return null;
 
@@ -74,17 +109,12 @@ export function AddProductModal({
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs font-semibold outline-none"
               >
-                <option value="Bio Fertilizers">Bio Fertilizers</option>
-                <option value="Bio Pesticides">Bio Pesticides</option>
-                <option value="Bio Fungicides">Bio Fungicides</option>
-                <option value="Bio Stimulants">Bio Stimulants</option>
-                <option value="Micro Nutrients">Micro Nutrients</option>
-                <option value="Insecticides">Insecticides</option>
-                <option value="Fungicides">Fungicides</option>
-                <option value="Botanical Extracts">Botanical Extracts</option>
-                <option value="Water Solubles">Water Solubles</option>
-                <option value="Agri Inputs">Agri Inputs</option>
-                <option value="Others">Others</option>
+                {formData.category && !activeCategories.includes(formData.category) && (
+                  <option value={formData.category}>{formData.category} (Current)</option>
+                )}
+                {activeCategories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
             </div>
             <div>

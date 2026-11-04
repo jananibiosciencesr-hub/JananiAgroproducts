@@ -3034,13 +3034,28 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
       createdAt: "2025-01-01"
     }));
 
-    const combined = [...stored];
-    for (const item of catalogSeed) {
-      if (!combined.some((x: any) => x.slug === item.slug || x.id === item.id)) {
-        combined.push(item);
-      }
+    if (stored && stored.length > 0) {
+      list = stored.map(normalizeAdminCategory).filter(Boolean);
+    } else {
+      list = catalogSeed.map(normalizeAdminCategory).filter(Boolean);
     }
-    list = combined.map(normalizeAdminCategory).filter(Boolean);
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      const delRaw = localStorage.getItem("janani_deleted_categories");
+      if (delRaw) {
+        const delArr: string[] = JSON.parse(delRaw);
+        if (Array.isArray(delArr) && delArr.length > 0) {
+          list = list.filter((c) => {
+            const idMatch = c.id && delArr.includes(String(c.id).toLowerCase());
+            const slugMatch = c.slug && delArr.includes(String(c.slug).toLowerCase());
+            const nameMatch = c.name && delArr.includes(String(c.name).toLowerCase());
+            return !idMatch && !slugMatch && !nameMatch;
+          });
+        }
+      }
+    } catch { }
   }
 
   if (params?.status === "active") {
@@ -3325,12 +3340,18 @@ export async function deleteAdminCategory(id: string) {
 
   if (typeof window !== "undefined") {
     try {
+      const delRaw = localStorage.getItem("janani_deleted_categories");
+      const delArr: string[] = delRaw ? JSON.parse(delRaw) : [];
+      const idLower = String(id).toLowerCase();
+      if (!delArr.includes(idLower)) delArr.push(idLower);
+      localStorage.setItem("janani_deleted_categories", JSON.stringify(delArr));
+
       ["janani_admin_categories", "janani_admin_categories_v3"].forEach((key) => {
         const stored = localStorage.getItem(key);
         if (stored) {
           const list = JSON.parse(stored);
           if (Array.isArray(list)) {
-            const updated = list.filter((c: any) => c.id !== id && c.slug !== id && c.name?.toLowerCase() !== id.toLowerCase());
+            const updated = list.filter((c: any) => c.id !== id && c.slug !== id && c.name?.toLowerCase() !== id.toLowerCase() && !delArr.includes(String(c.name).toLowerCase()) && !delArr.includes(String(c.slug).toLowerCase()));
             localStorage.setItem(key, JSON.stringify(updated));
           }
         }
@@ -3358,6 +3379,19 @@ export async function restoreAdminCategory(id: string) {
         method: "POST"
       }
     );
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      const delRaw = localStorage.getItem("janani_deleted_categories");
+      if (delRaw) {
+        const delArr: string[] = JSON.parse(delRaw);
+        const updated = delArr.filter((item) => item !== id.toLowerCase());
+        localStorage.setItem("janani_deleted_categories", JSON.stringify(updated));
+      }
+      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
+    } catch (e) { }
   }
 
   return res || { success: true, message: "Category restored" };
@@ -3391,12 +3425,18 @@ export async function permanentDeleteAdminCategory(id: string) {
 
   if (typeof window !== "undefined") {
     try {
+      const delRaw = localStorage.getItem("janani_deleted_categories");
+      const delArr: string[] = delRaw ? JSON.parse(delRaw) : [];
+      const idLower = String(id).toLowerCase();
+      if (!delArr.includes(idLower)) delArr.push(idLower);
+      localStorage.setItem("janani_deleted_categories", JSON.stringify(delArr));
+
       ["janani_admin_categories", "janani_admin_categories_v3"].forEach((key) => {
         const stored = localStorage.getItem(key);
         if (stored) {
           const list = JSON.parse(stored);
           if (Array.isArray(list)) {
-            const updated = list.filter((c: any) => c.id !== id && c.slug !== id && c.name?.toLowerCase() !== id.toLowerCase());
+            const updated = list.filter((c: any) => c.id !== id && c.slug !== id && c.name?.toLowerCase() !== id.toLowerCase() && !delArr.includes(String(c.name).toLowerCase()) && !delArr.includes(String(c.slug).toLowerCase()));
             localStorage.setItem(key, JSON.stringify(updated));
           }
         }

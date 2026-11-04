@@ -179,39 +179,67 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Dynamic Categories from DB / API
-  const [categoriesList, setCategoriesList] = useState<string[]>(JANANI_DEFAULT_CATEGORIES);
+  // Dynamic Categories strictly from active Categories Management
+  const [categoriesList, setCategoriesList] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("janani_admin_categories");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const delRaw = localStorage.getItem("janani_deleted_categories");
+            const delList: string[] = delRaw ? JSON.parse(delRaw) : [];
+            return parsed
+              .filter((c: any) => c.active !== false && !c.deletedAt && !c.deleted_at && !delList.includes(String(c.name).toLowerCase()) && !delList.includes(String(c.id).toLowerCase()) && !delList.includes(String(c.slug).toLowerCase()))
+              .map((c: any) => (typeof c.name === "string" ? c.name.trim() : ""))
+              .filter(Boolean);
+          }
+        }
+      } catch { }
+    }
+    return [];
+  });
 
   const loadCategories = async () => {
     try {
       const res = await getAdminFullCategories({ status: "active" });
-      const namesFromApi: string[] = [];
-      if (res?.success && Array.isArray(res.data)) {
-        res.data.forEach((c: any) => {
-          if (c.name && typeof c.name === "string" && c.name.trim()) {
-            namesFromApi.push(c.name.trim());
-          }
-        });
-      }
-
-      if (typeof window !== "undefined") {
+      let names: string[] = [];
+      if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+        names = res.data
+          .filter((c: any) => c.active !== false && !c.deletedAt && !c.deleted_at)
+          .map((c: any) => (typeof c.name === "string" ? c.name.trim() : ""))
+          .filter(Boolean);
+      } else if (typeof window !== "undefined") {
         try {
           const stored = localStorage.getItem("janani_admin_categories");
           if (stored) {
             const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed)) {
-              parsed.forEach((c: any) => {
-                if (c.name && typeof c.name === "string" && c.name.trim()) {
-                  namesFromApi.push(c.name.trim());
-                }
-              });
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              names = parsed
+                .filter((c: any) => c.active !== false && !c.deletedAt && !c.deleted_at)
+                .map((c: any) => (typeof c.name === "string" ? c.name.trim() : ""))
+                .filter(Boolean);
             }
           }
         } catch (e) { }
       }
 
-      const combined = Array.from(new Set([...namesFromApi, ...JANANI_DEFAULT_CATEGORIES])).filter(Boolean);
-      setCategoriesList(combined);
+      if (typeof window !== "undefined") {
+        try {
+          const delStored = localStorage.getItem("janani_deleted_categories");
+          if (delStored) {
+            const delList: string[] = JSON.parse(delStored);
+            if (Array.isArray(delList) && delList.length > 0) {
+              names = names.filter((n) => !delList.includes(n.toLowerCase()));
+            }
+          }
+        } catch { }
+      }
+
+      if (names.length > 0) {
+        const unique = Array.from(new Set(names));
+        setCategoriesList(unique);
+      }
     } catch (e) {
       console.warn("Could not load categories in ProductsManagement:", e);
     }
@@ -288,11 +316,10 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
     loadProducts();
   }, [statusFilter, categoryFilter, brandFilter, stockFilter]);
 
-  // Combined available categories for filters and forms
+  // Dynamic categories strictly reflecting the Categories management list
   const availableCategories = useMemo(() => {
-    const fromProds = products.map((p) => p.category).filter(Boolean);
-    return Array.from(new Set([...categoriesList, ...fromProds])).filter(Boolean);
-  }, [categoriesList, products]);
+    return categoriesList.filter(Boolean);
+  }, [categoriesList]);
 
   // Client-side Filter
   const filteredProducts = useMemo(() => {
@@ -658,8 +685,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                         <button
                           onClick={() => handleToggleField(p.id, "active")}
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold transition-colors ${p.active
-                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                              : "bg-muted text-muted-foreground"
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                            : "bg-muted text-muted-foreground"
                             }`}
                         >
                           <span className={`size-1.5 rounded-full ${p.active ? "bg-emerald-500" : "bg-muted-foreground"}`}></span>
@@ -1076,8 +1103,8 @@ function ProductPreviewDrawer({
                     key={v.id}
                     onClick={() => setSelectedVariant(v)}
                     className={`p-2.5 rounded-2xl border text-left text-xs transition-all ${selectedVariant?.id === v.id
-                        ? "border-emerald-600 bg-emerald-500/10 font-bold"
-                        : "border-border bg-card hover:bg-muted/40"
+                      ? "border-emerald-600 bg-emerald-500/10 font-bold"
+                      : "border-border bg-card hover:bg-muted/40"
                       }`}
                   >
                     <span className="block font-bold">{v.name || v.label || v.unit}</span>
@@ -1118,7 +1145,7 @@ function ProductFormModal({
   isOpen,
   onClose,
   initialData,
-  categories = JANANI_DEFAULT_CATEGORIES,
+  categories = [],
   onSave
 }: {
   isOpen: boolean;
@@ -1127,8 +1154,8 @@ function ProductFormModal({
   categories?: string[];
   onSave: (data: any) => void;
 }) {
-  const activeCategories = (categories && categories.length > 0) ? categories : JANANI_DEFAULT_CATEGORIES;
-  const defaultCategory = activeCategories[0] || "Bio Fertilizers";
+  const activeCategories = (categories && categories.length > 0) ? categories : [];
+  const defaultCategory = activeCategories[0] || initialData?.category || "";
 
   const [activeTab, setActiveTab] = useState<"general" | "pricing" | "variants" | "gallery" | "specs" | "seo" | "toggles">("general");
   const [specsSubTab, setSpecsSubTab] = useState<"desc" | "benefits" | "usage" | "crops" | "specs" | "reviews" | "faqs">("desc");
@@ -1686,8 +1713,8 @@ function ProductFormModal({
               type="button"
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 min-w-max px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all text-center whitespace-nowrap select-none ${activeTab === tab.id
-                  ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm border border-border/80 font-extrabold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm border border-border/80 font-extrabold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 }`}
             >
               {tab.label}
@@ -1742,6 +1769,9 @@ function ProductFormModal({
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
                   >
+                    {formData.category && !activeCategories.includes(formData.category) && (
+                      <option value={formData.category}>{formData.category} (Current)</option>
+                    )}
                     {activeCategories.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
@@ -2275,8 +2305,8 @@ function ProductFormModal({
                     type="button"
                     onClick={() => setSpecsSubTab(st.id as any)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${specsSubTab === st.id
-                        ? "bg-emerald-600 text-white shadow-xs"
-                        : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                       }`}
                   >
                     <st.icon className="size-3.5" />
@@ -2471,8 +2501,8 @@ function ProductFormModal({
                             type="button"
                             onClick={() => handleToggleCrop(crop)}
                             className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${isSelected
-                                ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
-                                : "bg-muted/40 border-border text-foreground hover:bg-muted"
+                              ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
+                              : "bg-muted/40 border-border text-foreground hover:bg-muted"
                               }`}
                           >
                             {isSelected ? <Check className="size-3.5" /> : "+"} {crop}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   FolderTree,
   Package,
@@ -102,6 +102,27 @@ export function ProductsView({
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
+  const categoryOptions = useMemo(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("janani_admin_categories");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const delRaw = localStorage.getItem("janani_deleted_categories");
+            const delList: string[] = delRaw ? JSON.parse(delRaw) : [];
+            const names = parsed
+              .filter((c: any) => c.active !== false && !c.deletedAt && !c.deleted_at && !delList.includes(String(c.name).toLowerCase()) && !delList.includes(String(c.id).toLowerCase()) && !delList.includes(String(c.slug).toLowerCase()))
+              .map((c: any) => (typeof c.name === "string" ? c.name.trim() : ""))
+              .filter(Boolean);
+            if (names.length > 0) return Array.from(new Set(names));
+          }
+        }
+      } catch { }
+    }
+    return Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
+  }, [products]);
+
   const filtered = products.filter((p) => {
     const matchSearch = p.name?.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase());
     const matchCat = categoryFilter === "all" || p.category?.toLowerCase() === categoryFilter.toLowerCase();
@@ -131,17 +152,9 @@ export function ProductsView({
             className="h-9 rounded-xl border border-border bg-card px-3 text-xs outline-none focus:border-emerald-600 font-medium"
           >
             <option value="all">All Categories</option>
-            <option value="Bio Fertilizers">Bio Fertilizers</option>
-            <option value="Bio Pesticides">Bio Pesticides</option>
-            <option value="Bio Fungicides">Bio Fungicides</option>
-            <option value="Bio Stimulants">Bio Stimulants</option>
-            <option value="Micro Nutrients">Micro Nutrients</option>
-            <option value="Insecticides">Insecticides</option>
-            <option value="Fungicides">Fungicides</option>
-            <option value="Botanical Extracts">Botanical Extracts</option>
-            <option value="Water Solubles">Water Solubles</option>
-            <option value="Agri Inputs">Agri Inputs</option>
-            <option value="Others">Others</option>
+            {categoryOptions.map((cat: string) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
           <Button onClick={onOpenAddProductModal} size="sm" className="rounded-xl bg-emerald-600 text-white font-bold text-xs gap-1.5 shadow-sm">
             <Plus className="size-4" /> Add Product
