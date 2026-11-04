@@ -104,6 +104,34 @@ export function AuthenticationPage() {
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [loginUnregisteredWarn, setLoginUnregisteredWarn] = useState<string | null>(null);
   const [signupAlreadyExistsWarn, setSignupAlreadyExistsWarn] = useState<string | null>(null);
+  const [unlockedInputs, setUnlockedInputs] = useState(false);
+
+  // Form input cleanup on initial page load to prevent unwanted browser autofill
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setName("");
+    setPhone("");
+    setUnlockedInputs(false);
+
+    const t1 = setTimeout(() => {
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+    }, 60);
+
+    const t2 = setTimeout(() => {
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+    }, 250);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
 
   // Validation State for Phone & Email
   const [formErrors, setFormErrors] = useState<{ phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined }>({});
@@ -118,6 +146,7 @@ export function AuthenticationPage() {
     setName("");
     setPassword("");
     setConfirmPassword("");
+    setUnlockedInputs(false);
     setFormTouched({ phone: false, email: false });
     setFormErrors({});
     setLoginUnregisteredWarn(null);
@@ -132,6 +161,7 @@ export function AuthenticationPage() {
     setName("");
     setPassword("");
     setConfirmPassword("");
+    setUnlockedInputs(false);
     setFormTouched({ phone: false, email: false });
     setFormErrors({});
     setLoginUnregisteredWarn(null);
@@ -935,7 +965,11 @@ export function AuthenticationPage() {
                       type="button"
                       onClick={() => {
                         setLoginMethod("email_otp");
+                        setEmail("");
                         setPassword("");
+                        setUnlockedInputs(false);
+                        setLoginUnregisteredWarn(null);
+                        setSignupAlreadyExistsWarn(null);
                       }}
                       className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition ${
                         loginMethod === "email_otp"
@@ -949,7 +983,11 @@ export function AuthenticationPage() {
                       type="button"
                       onClick={() => {
                         setLoginMethod("email");
+                        setEmail("");
                         setPassword("");
+                        setUnlockedInputs(false);
+                        setLoginUnregisteredWarn(null);
+                        setSignupAlreadyExistsWarn(null);
                       }}
                       className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition ${
                         loginMethod === "email"
@@ -963,7 +1001,10 @@ export function AuthenticationPage() {
 
                   {loginMethod === "email_otp" ? (
                     /* Email / Gmail OTP Login Form */
-                    <form onSubmit={(e) => handleRequestEmailOtp(undefined, e)} className="space-y-3.5">
+                    <form onSubmit={(e) => handleRequestEmailOtp(undefined, e)} autoComplete="off" className="space-y-3.5">
+                      <div className="sr-only opacity-0 absolute -top-[9999px] -left-[9999px] h-0 w-0 overflow-hidden pointer-events-none" aria-hidden="true" tabIndex={-1}>
+                        <input type="text" name="jap_decoy_otp_u" tabIndex={-1} autoComplete="off" defaultValue="" />
+                      </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                           <span>Email Address *</span>
@@ -979,8 +1020,17 @@ export function AuthenticationPage() {
                           <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                           <input
                             type="email"
-                            name="login_otp_email"
-                            autoComplete="email"
+                            name="jap_login_otp_email"
+                            autoComplete="off"
+                            readOnly={!unlockedInputs}
+                            onFocus={(e) => {
+                              e.currentTarget.readOnly = false;
+                              setUnlockedInputs(true);
+                            }}
+                            onMouseDown={(e) => {
+                              (e.currentTarget as HTMLInputElement).readOnly = false;
+                              setUnlockedInputs(true);
+                            }}
                             required
                             value={email}
                             onChange={(e) => {
@@ -997,9 +1047,21 @@ export function AuthenticationPage() {
                                 : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
                             }`}
                           />
-                          {isEmailValid && (
+                          {email.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEmail("");
+                                setFormErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
+                              }}
+                              title="Clear email"
+                              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted/80 transition"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          ) : isEmailValid ? (
                             <CheckCircle2 className="absolute right-3.5 top-3.5 size-4 text-emerald-600 pointer-events-none" />
-                          )}
+                          ) : null}
                         </div>
                         {formTouched.email && formErrors.email && (
                           <div className="mt-0.5 space-y-1">
@@ -1067,7 +1129,11 @@ export function AuthenticationPage() {
                     </form>
                   ) : (
                     /* Email & Password Login Form */
-                    <form onSubmit={handleEmailLogin} className="space-y-3.5">
+                    <form onSubmit={handleEmailLogin} autoComplete="off" className="space-y-3.5">
+                      <div className="sr-only opacity-0 absolute -top-[9999px] -left-[9999px] h-0 w-0 overflow-hidden pointer-events-none" aria-hidden="true" tabIndex={-1}>
+                        <input type="text" name="jap_decoy_user" tabIndex={-1} autoComplete="username" defaultValue="" />
+                        <input type="password" name="jap_decoy_pass" tabIndex={-1} autoComplete="current-password" defaultValue="" />
+                      </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-semibold text-foreground">Email Address *</label>
@@ -1081,8 +1147,17 @@ export function AuthenticationPage() {
                           <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                           <input
                             type="email"
-                            name="login_email"
-                            autoComplete="username"
+                            name="jap_auth_identifier"
+                            autoComplete="off"
+                            readOnly={!unlockedInputs}
+                            onFocus={(e) => {
+                              e.currentTarget.readOnly = false;
+                              setUnlockedInputs(true);
+                            }}
+                            onMouseDown={(e) => {
+                              (e.currentTarget as HTMLInputElement).readOnly = false;
+                              setUnlockedInputs(true);
+                            }}
                             required
                             value={email}
                             onChange={(e) => handleEmailChange(e.target.value)}
@@ -1096,9 +1171,21 @@ export function AuthenticationPage() {
                                 : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
                             }`}
                           />
-                          {isEmailValid && (
+                          {email.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEmail("");
+                                setFormErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
+                              }}
+                              title="Clear email"
+                              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted/80 transition"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          ) : isEmailValid ? (
                             <CheckCircle2 className="absolute right-3.5 top-3.5 size-4 text-emerald-600 pointer-events-none" />
-                          )}
+                          ) : null}
                         </div>
                         {formTouched.email && formErrors.email && (
                           <div className="mt-0.5 space-y-1">
@@ -1126,21 +1213,42 @@ export function AuthenticationPage() {
                           <Lock className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                           <input
                             type={showPassword ? "text" : "password"}
-                            name="login_password"
-                            autoComplete="current-password"
+                            name="jap_auth_secret_key"
+                            autoComplete="new-password"
+                            readOnly={!unlockedInputs}
+                            onFocus={(e) => {
+                              e.currentTarget.readOnly = false;
+                              setUnlockedInputs(true);
+                            }}
+                            onMouseDown={(e) => {
+                              (e.currentTarget as HTMLInputElement).readOnly = false;
+                              setUnlockedInputs(true);
+                            }}
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter your password"
-                            className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-11 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            className="h-11 w-full rounded-2xl border border-input bg-background/90 pl-10 pr-16 text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground"
-                          >
-                            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                          </button>
+                          <div className="absolute right-2.5 top-2.5 flex items-center gap-1">
+                            {password.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setPassword("")}
+                                title="Clear password"
+                                className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition"
+                              >
+                                <X className="size-3.5" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition"
+                            >
+                              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
@@ -1172,6 +1280,11 @@ export function AuthenticationPage() {
                 /* VIEW 3: CREATE ACCOUNT (Signup with Strength Meter)       */
                 /* ========================================================= */
                 <form onSubmit={handleSignupSubmit} autoComplete="off" className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
+                  {/* Trap Chrome password autofill into hidden decoys */}
+                  <div className="sr-only opacity-0 absolute -top-[9999px] -left-[9999px] h-0 w-0 overflow-hidden pointer-events-none" aria-hidden="true" tabIndex={-1}>
+                    <input type="text" name="jap_reg_decoy_u" tabIndex={-1} autoComplete="off" defaultValue="" />
+                    <input type="password" name="jap_reg_decoy_p" tabIndex={-1} autoComplete="new-password" defaultValue="" />
+                  </div>
                   {/* Row 1: Full Name & Mobile Number (2 Columns) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div className="space-y-1">
@@ -1180,8 +1293,17 @@ export function AuthenticationPage() {
                         <User className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type="text"
-                          name="register_name"
+                          name="jap_reg_user_fullname"
                           autoComplete="off"
+                          readOnly={!unlockedInputs}
+                          onFocus={(e) => {
+                            e.currentTarget.readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
+                          onMouseDown={(e) => {
+                            (e.currentTarget as HTMLInputElement).readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
                           required
                           value={name}
                           onChange={(e) => setName(e.target.value)}
@@ -1208,11 +1330,20 @@ export function AuthenticationPage() {
                         </span>
                         <input
                           type="tel"
-                          name="register_phone"
+                          name="jap_reg_user_mobile"
                           autoComplete="off"
                           inputMode="numeric"
                           pattern="[6-9][0-9]{9}"
                           maxLength={10}
+                          readOnly={!unlockedInputs}
+                          onFocus={(e) => {
+                            e.currentTarget.readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
+                          onMouseDown={(e) => {
+                            (e.currentTarget as HTMLInputElement).readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
                           required
                           value={phone}
                           onChange={(e) => handlePhoneChange(e.target.value)}
@@ -1247,13 +1378,22 @@ export function AuthenticationPage() {
                         <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type="email"
-                          name="register_email"
+                          name="jap_reg_user_mail"
                           autoComplete="off"
+                          readOnly={!unlockedInputs}
+                          onFocus={(e) => {
+                            e.currentTarget.readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
+                          onMouseDown={(e) => {
+                            (e.currentTarget as HTMLInputElement).readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
                           required
                           value={email}
                           onChange={(e) => handleEmailChange(e.target.value)}
                           onBlur={handleEmailBlur}
-                          placeholder="kameswarip98@gmail.com"
+                          placeholder="e.g. farmer.name@gmail.com"
                           className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none transition ${
                             formTouched.email && formErrors.email
                               ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
@@ -1262,9 +1402,21 @@ export function AuthenticationPage() {
                               : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
                           }`}
                         />
-                        {isEmailValid && (
+                        {email.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEmail("");
+                              setFormErrors((prev) => ({ ...prev, email: undefined, emailSuggestion: undefined }));
+                            }}
+                            title="Clear email"
+                            className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted/80 transition"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        ) : isEmailValid ? (
                           <CheckCircle2 className="absolute right-2.5 top-2.5 size-4 text-emerald-600 pointer-events-none" />
-                        )}
+                        ) : null}
                       </div>
                       {formTouched.email && formErrors.email && (
                         <div className="mt-0.5 space-y-0.5">
@@ -1305,13 +1457,22 @@ export function AuthenticationPage() {
                         <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type={showPassword ? "text" : "password"}
-                          name="register_password"
+                          name="jap_reg_user_pass_new"
                           autoComplete="new-password"
+                          readOnly={!unlockedInputs}
+                          onFocus={(e) => {
+                            e.currentTarget.readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
+                          onMouseDown={(e) => {
+                            (e.currentTarget as HTMLInputElement).readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
                           required
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Min 8 characters"
-                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none transition ${
+                          placeholder="Min 6 characters"
+                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-14 text-xs sm:text-sm outline-none transition ${
                             password.length > 0 && password.length < 6
                               ? "border-amber-500/70 focus:border-amber-600 ring-1 ring-amber-500/20"
                               : password.length >= 6
@@ -1319,13 +1480,25 @@ export function AuthenticationPage() {
                               : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
                           }`}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-                        >
-                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                        </button>
+                        <div className="absolute right-2 top-2 flex items-center gap-1">
+                          {password.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setPassword("")}
+                              title="Clear password"
+                              className="p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer rounded-full hover:bg-muted/80 transition"
+                          >
+                            {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -1347,13 +1520,22 @@ export function AuthenticationPage() {
                         <Lock className={`absolute left-3 top-2.5 size-4 ${isPasswordMismatch ? "text-destructive" : "text-muted-foreground"}`} />
                         <input
                           type={showConfirmPassword ? "text" : "password"}
-                          name="register_confirm_password"
+                          name="jap_reg_user_pass_conf"
                           autoComplete="new-password"
+                          readOnly={!unlockedInputs}
+                          onFocus={(e) => {
+                            e.currentTarget.readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
+                          onMouseDown={(e) => {
+                            (e.currentTarget as HTMLInputElement).readOnly = false;
+                            setUnlockedInputs(true);
+                          }}
                           required
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Re-enter password"
-                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none transition ${
+                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-14 text-xs sm:text-sm outline-none transition ${
                             isPasswordMismatch
                               ? "border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5 focus:border-destructive"
                               : isPasswordMatch
@@ -1361,13 +1543,25 @@ export function AuthenticationPage() {
                               : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
                           }`}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-                        >
-                          {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                        </button>
+                        <div className="absolute right-2 top-2 flex items-center gap-1">
+                          {confirmPassword.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmPassword("")}
+                              title="Clear password"
+                              className="p-0.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer rounded-full hover:bg-muted/80 transition"
+                          >
+                            {showConfirmPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                          </button>
+                        </div>
                       </div>
                       {isPasswordMismatch && (
                         <p className="text-[10.5px] text-destructive flex items-center gap-1 font-semibold mt-1 animate-in fade-in">
