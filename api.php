@@ -619,6 +619,40 @@ function getOrderCustomer($ord) {
     ];
 }
 
+function saveBase64ImageFile($dataUri, $folder = 'images/categories', $filePrefix = 'cat') {
+    if (!is_string($dataUri) || strpos($dataUri, 'data:image/') !== 0) {
+        return $dataUri;
+    }
+    try {
+        if (!preg_match('/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/', $dataUri, $matches)) {
+            return $dataUri;
+        }
+        $rawExt = strtolower($matches[1]);
+        $ext = 'jpg';
+        if ($rawExt === 'png') $ext = 'png';
+        elseif ($rawExt === 'webp') $ext = 'webp';
+        elseif ($rawExt === 'svg' || $rawExt === 'svg+xml') $ext = 'svg';
+        elseif ($rawExt === 'gif') $ext = 'gif';
+        
+        $base64Data = base64_decode($matches[2]);
+        if (!$base64Data) {
+            return $dataUri;
+        }
+        $targetDir = __DIR__ . '/' . trim($folder, '/');
+        if (!is_dir($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+        $cleanPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '', $filePrefix);
+        if (empty($cleanPrefix)) $cleanPrefix = 'cat';
+        $fileName = $cleanPrefix . '-' . time() . '-' . substr(md5(uniqid()), 0, 6) . '.' . $ext;
+        $filePath = $targetDir . '/' . $fileName;
+        if (@file_put_contents($filePath, $base64Data) !== false) {
+            return '/' . trim($folder, '/') . '/' . $fileName;
+        }
+    } catch (Exception $e) {}
+    return $dataUri;
+}
+
 // ---------------------------------------------------------
 // ZERO-500 RESILIENT FALLBACK HANDLER WHEN DATABASE IS OFFLINE
 // ---------------------------------------------------------
@@ -665,7 +699,7 @@ if (!$pdo) {
             'success' => true,
             'db_fallback' => true,
             'categories' => [
-                ['id' => 'cat-bio-fertilizers', 'name' => 'Bio Fertilizers', 'slug' => 'bio-fertilize', 'product_count' => 2, 'image' => '/products/dharani.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 1],
+                ['id' => 'cat-bio-fertilizers', 'name' => 'Bio Fertilizers', 'slug' => 'bio-fertilizers', 'product_count' => 2, 'image' => '/products/dharani.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 1],
                 ['id' => 'cat-crop-protection', 'name' => 'Biological Crop Protection', 'slug' => 'biological-crop-protection', 'product_count' => 2, 'image' => '/products/harit.jpg', 'icon' => '🛡️', 'active' => 1, 'featured' => 1],
                 ['id' => 'cat-bio-pesticides', 'name' => 'Bio Pesticides', 'slug' => 'bio-pesticides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🛡️', 'active' => 1, 'featured' => 1],
                 ['id' => 'cat-plant-nutrients', 'name' => 'Organic Plant Nutrients', 'slug' => 'organic-plant-nutrients', 'product_count' => 2, 'image' => '/products/annada.jpg', 'icon' => '🌱', 'active' => 1, 'featured' => 1],
@@ -3009,8 +3043,10 @@ try {
                         $levelVal = isset($body['level']) ? ($body['level'] === 'sub' ? 2 : ($body['level'] === 'child' ? 3 : 1)) : 1;
                         $parentId = !empty($body['parentId']) ? $body['parentId'] : (!empty($body['parent_id']) ? $body['parent_id'] : null);
                         $parentName = !empty($body['parentName']) ? $body['parentName'] : (!empty($body['parent_name']) ? $body['parent_name'] : null);
-                        $image = $body['image'] ?? '/images/categories/placeholder.webp';
-                        $bannerImage = $body['bannerImage'] ?? ($body['banner_image'] ?? $image);
+                        $rawImg = $body['image'] ?? '/images/categories/bio-fertilizers.jpg';
+                        $image = saveBase64ImageFile($rawImg, 'images/categories', $catId);
+                        $rawBanner = $body['bannerImage'] ?? ($body['banner_image'] ?? $image);
+                        $bannerImage = saveBase64ImageFile($rawBanner, 'images/categories', $catId . '-banner');
                         $icon = $body['icon'] ?? '🌾';
                         $active = isset($body['active']) ? (($body['active'] === true || $body['active'] === 1 || $body['active'] === '1' || $body['active'] === 'true') ? 1 : 0) : 1;
                         $featured = !empty($body['featured']) ? 1 : 0;
@@ -3270,6 +3306,22 @@ try {
                                 if ($chkStmt->fetch()) {
                                     $body['slug'] = $checkSlug . '-' . substr(md5(uniqid()), 0, 4);
                                 }
+                            }
+
+                            if (!empty($body['image'])) {
+                                $body['image'] = saveBase64ImageFile($body['image'], 'images/categories', $targetId);
+                            }
+                            if (!empty($body['banner_image'])) {
+                                $body['banner_image'] = saveBase64ImageFile($body['banner_image'], 'images/categories', $targetId . '-banner');
+                            }
+                            if (!empty($body['bannerImage'])) {
+                                $body['bannerImage'] = saveBase64ImageFile($body['bannerImage'], 'images/categories', $targetId . '-banner');
+                                if (!isset($body['banner_image'])) {
+                                    $body['banner_image'] = $body['bannerImage'];
+                                }
+                            }
+                            if (!empty($body['image']) && (empty($body['banner_image']) || $body['banner_image'] === ($existingCat['image'] ?? ''))) {
+                                $body['banner_image'] = $body['image'];
                             }
 
                             $fields = [];

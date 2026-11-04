@@ -188,10 +188,6 @@ $schema = [
             'customer_id' => 'VARCHAR(64) DEFAULT NULL',
             'customer_name' => 'VARCHAR(255) DEFAULT NULL',
             'customer_email' => 'VARCHAR(255) DEFAULT NULL',
-            'customer_avatar' => 'LONGTEXT DEFAULT NULL',
-            'location' => "VARCHAR(255) DEFAULT 'Organic Farmer'",
-            'is_featured' => 'TINYINT(1) DEFAULT 1',
-            'images' => 'LONGTEXT DEFAULT NULL',
             'customer_phone' => 'VARCHAR(50) DEFAULT NULL',
             'shipping_address' => 'JSON DEFAULT NULL',
             'billing_address' => 'JSON DEFAULT NULL',
@@ -428,18 +424,17 @@ $categories = [
 $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric') OR `active` = 0 OR `deleted_at` IS NOT NULL");
 $pdo->exec("UPDATE `products` SET `category_name` = 'Agri Inputs' WHERE `category_name` = 'Others' OR `category_id` = 'cat-others'");
 
-$stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE 
-    `name` = VALUES(`name`), 
-    `image` = VALUES(`image`), 
-    `active` = 1, 
-    `description` = VALUES(`description`)");
+// 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
+$catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
+if ($catCount === 0) {
+    $stmtCat = $pdo->prepare("INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-foreach ($categories as $cat) {
-    try { $stmtCat->execute($cat); } catch (Exception $e) {}
+    foreach ($categories as $cat) {
+        try { $stmtCat->execute($cat); } catch (Exception $e) {}
+    }
+    $response['seeds_inserted'][] = 'categories (10)';
 }
-$response['seeds_inserted'][] = 'categories (10)';
 
 // 2. Products - All 18 Janani Agro Flagship Formulations (including ROOT PLUS)
 $products = [
