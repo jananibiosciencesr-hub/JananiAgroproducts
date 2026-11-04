@@ -4759,6 +4759,8 @@ export interface HeroBanner {
   active: boolean;
   startDate?: string;
   endDate?: string;
+  desktopPosition?: string;
+  mobilePosition?: string;
 }
 
 export interface OfferBanner {

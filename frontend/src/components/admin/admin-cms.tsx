@@ -1857,6 +1857,19 @@ function HeroBannerModal({
             </div>
 
             <div>
+              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Image Vertical Alignment / Position</label>
+              <select
+                value={formData.desktopPosition || "object-top"}
+                onChange={e => setFormData({ ...formData, desktopPosition: e.target.value, mobilePosition: e.target.value })}
+                className="mt-1 w-full px-3.5 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                <option value="object-top">Top (Recommended: Prevents top headlines & logos from cropping)</option>
+                <option value="object-center">Center</option>
+                <option value="object-bottom">Bottom</option>
+              </select>
+            </div>
+
+            <div>
               <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Secondary CTA URL</label>
               <input
                 type="text"

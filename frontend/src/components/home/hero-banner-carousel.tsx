@@ -29,7 +29,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_healthier_tomorrow_mobile.jpg",
     alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     ctaText: "Explore Our Products",
-    desktopPosition: "md:object-[center_55%]",
+    desktopPosition: "md:object-top",
     mobilePosition: "object-top",
   },
   {
@@ -40,7 +40,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_biocare_mobile.jpg",
     alt: "Janani Agro Products - Shield Your Crops Naturally",
     ctaText: "Explore Bio-Care",
-    desktopPosition: "md:object-[center_55%]",
+    desktopPosition: "md:object-top",
     mobilePosition: "object-top",
   },
   {
@@ -51,7 +51,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_soilcare_mobile.jpg",
     alt: "Janani Agro Products - Nourish From Root To Harvest",
     ctaText: "Explore Soil-Care",
-    desktopPosition: "md:object-[center_55%]",
+    desktopPosition: "md:object-top",
     mobilePosition: "object-top",
   },
 ];
@@ -90,8 +90,10 @@ export function HeroBannerCarousel() {
               subtitle: b.subtitle,
               secondaryCtaLabel: b.secondaryCtaLabel,
               secondaryCtaUrl: b.secondaryCtaUrl,
-              desktopPosition: b.desktopPosition || "md:object-center",
-              mobilePosition: b.mobilePosition || "object-center",
+              desktopPosition: b.desktopPosition
+                ? (b.desktopPosition.startsWith("md:") ? b.desktopPosition : `md:${b.desktopPosition}`)
+                : "md:object-top",
+              mobilePosition: b.mobilePosition || "object-top",
             };
           });
           setSlides(mapped);
@@ -174,8 +176,8 @@ export function HeroBannerCarousel() {
       onTouchEnd={handleTouchEnd}
       aria-label="Janani Agro Featured Campaigns"
     >
-      {/* Slides Container - Dedicated 9:16 portrait on mobile and balanced 16:8.2 on desktop to prevent any cropping */}
-      <div className="relative w-full aspect-[9/16] sm:aspect-[16/10] md:aspect-[16/8.2] lg:aspect-[16/8] md:min-h-[420px] md:max-h-[480px] lg:max-h-[520px] xl:max-h-[540px] overflow-hidden">
+      {/* Slides Container - Dedicated 9:16 portrait on mobile and balanced 2.4:1 on desktop to prevent any cropping */}
+      <div className="relative w-full aspect-[9/16] sm:aspect-[16/10] md:aspect-[2.4/1] lg:aspect-[2.4/1] xl:aspect-[2.4/1] md:min-h-[380px] md:max-h-[580px] lg:max-h-[640px] xl:max-h-[720px] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -185,9 +187,13 @@ export function HeroBannerCarousel() {
             const isGraphicBanner =
               slide.desktopImage.includes("/banners/hero_") ||
               slide.desktopImage.includes("/banners/banner_") ||
+              slide.desktopImage.startsWith("data:image/") ||
               slide.id === "healthier-tomorrow" ||
               slide.id === "organic-biocare" ||
-              slide.id === "organic-soilcare";
+              slide.id === "organic-soilcare" ||
+              slide.title === "." ||
+              slide.title === "-" ||
+              !slide.title.trim();
 
             const hasTextContent =
               !isGraphicBanner &&
@@ -216,8 +222,11 @@ export function HeroBannerCarousel() {
                     src={slide.desktopImage}
                     alt={slide.alt || slide.title}
                     loading={idx === 0 ? "eager" : "lazy"}
-                    className={`w-full h-full object-cover block transition-transform duration-700 ${slide.mobilePosition || "object-center"
-                      } ${slide.desktopPosition || "md:object-center"}`}
+                    className={`w-full h-full object-cover block transition-transform duration-700 ${
+                      slide.mobilePosition ? (slide.mobilePosition.includes("object-") ? slide.mobilePosition : `object-${slide.mobilePosition}`) : "object-top"
+                    } ${
+                      slide.desktopPosition ? (slide.desktopPosition.includes("object-") ? (slide.desktopPosition.startsWith("md:") ? slide.desktopPosition : `md:${slide.desktopPosition}`) : `md:object-${slide.desktopPosition}`) : "md:object-top"
+                    }`}
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
                       if (!target.src.includes("hero_healthier_tomorrow")) {
