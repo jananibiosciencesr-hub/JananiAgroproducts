@@ -277,16 +277,14 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
             <button
               key={t.id}
               onClick={() => setStatusFilter(t.id)}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
-                statusFilter === t.id
+              className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${statusFilter === t.id
                   ? "bg-emerald-600 text-white shadow-xs"
                   : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
+                }`}
             >
               <span>{t.label}</span>
-              <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                statusFilter === t.id ? "bg-white/20 text-white" : "bg-border text-muted-foreground"
-              }`}>
+              <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${statusFilter === t.id ? "bg-white/20 text-white" : "bg-border text-muted-foreground"
+                }`}>
                 {t.count}
               </span>
             </button>
@@ -432,15 +430,14 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
                       <td className="px-3 py-4">
                         <div className="space-y-1">
                           <span
-                            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold shadow-xs ${
-                              isVip
+                            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold shadow-xs ${isVip
                                 ? "bg-gradient-to-r from-purple-900 to-indigo-900 text-purple-200 border border-purple-500/30"
                                 : isPlatinum
-                                ? "bg-gradient-to-r from-amber-600 to-yellow-600 text-white"
-                                : isGold
-                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
-                                : "bg-muted text-muted-foreground"
-                            }`}
+                                  ? "bg-gradient-to-r from-amber-600 to-yellow-600 text-white"
+                                  : isGold
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                                    : "bg-muted text-muted-foreground"
+                              }`}
                           >
                             {isVip && "👑"} {isPlatinum && "⭐"} {isGold && "🥇"} {c.tier || "Silver"}
                           </span>
@@ -480,18 +477,16 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
                       {/* Account Status */}
                       <td className="px-3 py-4">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                            c.status === "Active"
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${c.status === "Active"
                               ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
                               : c.status === "Suspended"
-                              ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20"
-                              : "bg-muted text-muted-foreground"
-                          }`}
+                                ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20"
+                                : "bg-muted text-muted-foreground"
+                            }`}
                         >
                           <span
-                            className={`size-1.5 rounded-full ${
-                              c.status === "Active" ? "bg-emerald-500" : c.status === "Suspended" ? "bg-rose-500" : "bg-muted-foreground"
-                            }`}
+                            className={`size-1.5 rounded-full ${c.status === "Active" ? "bg-emerald-500" : c.status === "Suspended" ? "bg-rose-500" : "bg-muted-foreground"
+                              }`}
                           />
                           <span>{c.status}</span>
                         </span>
@@ -523,11 +518,10 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
                           <button
                             onClick={() => handleToggleStatus(c)}
                             title={c.status === "Active" ? "Suspend user" : "Activate user"}
-                            className={`size-8 rounded-xl border border-border bg-card flex items-center justify-center transition-colors shadow-2xs ${
-                              c.status === "Active"
+                            className={`size-8 rounded-xl border border-border bg-card flex items-center justify-center transition-colors shadow-2xs ${c.status === "Active"
                                 ? "text-muted-foreground hover:text-rose-600 hover:border-rose-500"
                                 : "text-emerald-600 border-emerald-500/40 hover:bg-emerald-50"
-                            }`}
+                              }`}
                           >
                             {c.status === "Active" ? <Ban className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}
                           </button>
@@ -718,7 +712,7 @@ function CustomerProfileDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in">
       <div className="w-full max-w-3xl bg-card border-l border-border h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
-        
+
         {/* Drawer Header */}
         <div className="p-6 border-b border-border bg-muted/20 flex items-start justify-between">
           <div className="flex items-start gap-4">
@@ -734,11 +728,10 @@ function CustomerProfileDrawer({
                   {customer.id}
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                    customer.status === "Active"
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${customer.status === "Active"
                       ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
                       : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20"
-                  }`}
+                    }`}
                 >
                   <span className={`size-1.5 rounded-full ${customer.status === "Active" ? "bg-emerald-500" : "bg-rose-500"}`} />
                   {customer.status}
@@ -752,13 +745,12 @@ function CustomerProfileDrawer({
               </div>
 
               <div className="mt-2.5 flex items-center gap-2 flex-wrap">
-                <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[11px] font-bold ${
-                  isVip
+                <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[11px] font-bold ${isVip
                     ? "bg-purple-900 text-purple-200 border border-purple-500/30"
                     : isPlatinum
-                    ? "bg-amber-600 text-white"
-                    : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                }`}>
+                      ? "bg-amber-600 text-white"
+                      : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                  }`}>
                   {isVip ? "👑 VIP Patron" : isPlatinum ? "⭐ Platinum Gold" : "🥇 Gold Member"}
                 </span>
 
@@ -798,11 +790,10 @@ function CustomerProfileDrawer({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 whitespace-nowrap transition-all ${
-                  isActive
+                className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 whitespace-nowrap transition-all ${isActive
                     ? "border-emerald-600 text-emerald-600"
                     : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 <Icon className="size-3.5" />
                 <span>{tab.label}</span>
@@ -813,7 +804,7 @@ function CustomerProfileDrawer({
 
         {/* Drawer Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
+
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <div className="space-y-6 animate-in fade-in">
@@ -893,11 +884,10 @@ function CustomerProfileDrawer({
 
                   <button
                     onClick={onToggleStatus}
-                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold ${
-                      customer.status === "Active"
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold ${customer.status === "Active"
                         ? "border-rose-500/40 text-rose-600 hover:bg-rose-50"
                         : "border-emerald-500/40 text-emerald-600 hover:bg-emerald-50"
-                    }`}
+                      }`}
                   >
                     {customer.status === "Active" ? <Ban className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}
                     <span>{customer.status === "Active" ? "Suspend Patron" : "Reactivate Account"}</span>
@@ -931,15 +921,14 @@ function CustomerProfileDrawer({
                         <span className="font-extrabold text-foreground text-xs">{ord.id}</span>
                         <span className="text-[10px] text-muted-foreground">• {ord.date}</span>
                       </div>
-                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                        ord.orderStatus === "Delivered"
+                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${ord.orderStatus === "Delivered"
                           ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                           : ord.orderStatus === "Shipped"
-                          ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
-                          : ord.orderStatus === "Cancelled"
-                          ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                          : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                      }`}>
+                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                            : ord.orderStatus === "Cancelled"
+                              ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                        }`}>
                         {ord.orderStatus}
                       </span>
                     </div>
@@ -1096,9 +1085,8 @@ function CustomerProfileDrawer({
                     {customer.walletTransactions.map((tx: any) => (
                       <div key={tx.id} className="py-2.5 flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2.5">
-                          <div className={`size-8 rounded-xl flex items-center justify-center ${
-                            tx.type === "credit" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
-                          }`}>
+                          <div className={`size-8 rounded-xl flex items-center justify-center ${tx.type === "credit" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
+                            }`}>
                             {tx.type === "credit" ? <ArrowDownLeft className="size-4" /> : <ArrowUpRight className="size-4" />}
                           </div>
                           <div>
@@ -1216,17 +1204,17 @@ function AddCustomerModal({
   // Real-time duplicate email check
   const duplicateEmailCustomer = formData.email.trim()
     ? existingCustomers.find(
-        (c) => c.email && c.email.toLowerCase() === formData.email.trim().toLowerCase()
-      )
+      (c) => c.email && c.email.toLowerCase() === formData.email.trim().toLowerCase()
+    )
     : null;
 
   // Real-time duplicate phone check
   const cleanPhone = formData.phone.replace(/\D/g, "");
   const duplicatePhoneCustomer = cleanPhone && cleanPhone.length === 10
     ? existingCustomers.find((c) => {
-        const cPhone = (c.phone || "").replace(/\D/g, "");
-        return cPhone && cPhone.slice(-10) === cleanPhone && cPhone !== "9848022338";
-      })
+      const cPhone = (c.phone || "").replace(/\D/g, "");
+      return cPhone && cPhone.slice(-10) === cleanPhone && cPhone !== "9848022338";
+    })
     : null;
 
   const handleEmailChange = (val: string) => {
@@ -1374,11 +1362,10 @@ function AddCustomerModal({
                 value={formData.email}
                 onChange={(e) => handleEmailChange(e.target.value)}
                 placeholder="sravani@gmail.com"
-                className={`h-9 w-full rounded-xl border bg-background px-3 outline-none ${
-                  duplicateEmailCustomer || errors.email
+                className={`h-9 w-full rounded-xl border bg-background px-3 outline-none ${duplicateEmailCustomer || errors.email
                     ? "border-rose-500 focus:border-rose-600 bg-rose-50/20"
                     : "border-border focus:border-emerald-600"
-                }`}
+                  }`}
               />
               {duplicateEmailCustomer && (
                 <div className="mt-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-[10px] leading-tight">
@@ -1399,11 +1386,10 @@ function AddCustomerModal({
                 onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="9845112345"
                 maxLength={10}
-                className={`h-9 w-full rounded-xl border bg-background px-3 outline-none ${
-                  duplicatePhoneCustomer || errors.phone
+                className={`h-9 w-full rounded-xl border bg-background px-3 outline-none ${duplicatePhoneCustomer || errors.phone
                     ? "border-rose-500 focus:border-rose-600 bg-rose-50/20"
                     : "border-border focus:border-emerald-600"
-                }`}
+                  }`}
               />
               {duplicatePhoneCustomer && (
                 <div className="mt-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-[10px] leading-tight">
@@ -1582,11 +1568,10 @@ function WalletAdjustmentModal({
             <button
               type="button"
               onClick={() => setType("credit")}
-              className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                type === "credit"
+              className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${type === "credit"
                   ? "bg-emerald-600 text-white shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               <ArrowDownLeft className="size-3.5" />
               <span>Credit (+ Add Funds)</span>
@@ -1594,11 +1579,10 @@ function WalletAdjustmentModal({
             <button
               type="button"
               onClick={() => setType("debit")}
-              className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                type === "debit"
+              className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${type === "debit"
                   ? "bg-rose-600 text-white shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               <ArrowUpRight className="size-3.5" />
               <span>Debit (- Deduct Funds)</span>
