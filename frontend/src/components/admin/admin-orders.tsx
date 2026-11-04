@@ -261,7 +261,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerTab, setDrawerTab] = useState<"overview" | "timeline" | "logistics" | "documents" | "lifecycle">("overview");
+  const [drawerTab, setDrawerTab] = useState<"overview" | "logistics" | "documents" | "lifecycle">("overview");
 
   // Modals
   const [invoiceOrder, setInvoiceOrder] = useState<any | null>(null);
@@ -1353,8 +1353,8 @@ function OrderDetailDrawer({
   isOpen: boolean;
   order: any;
   onClose: () => void;
-  activeTab: "overview" | "timeline" | "logistics" | "documents" | "lifecycle";
-  setActiveTab: (tab: "overview" | "timeline" | "logistics" | "documents" | "lifecycle") => void;
+  activeTab: "overview" | "logistics" | "documents" | "lifecycle";
+  setActiveTab: (tab: "overview" | "logistics" | "documents" | "lifecycle") => void;
   onUpdateStatus: (id: string, st: string) => void;
   onOpenInvoice: () => void;
   onOpenPackingSlip: () => void;
@@ -1421,7 +1421,6 @@ function OrderDetailDrawer({
         <div className="flex flex-wrap items-center gap-2 px-6 pt-3 border-b border-border bg-card no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "overview", label: "Overview & Items", icon: ShoppingBag },
-            { id: "timeline", label: "Timeline & Tracking", icon: Clock },
             { id: "logistics", label: "Warehouse & Shiprocket", icon: Truck },
             { id: "documents", label: "Print Documents", icon: FileText },
             { id: "lifecycle", label: "Cancel / Refund / Return", icon: RotateCcw }
@@ -1731,70 +1730,7 @@ function OrderDetailDrawer({
             </div>
           )}
 
-          {/* TAB 2: TIMELINE & LIVE PIPELINE TRACKING */}
-          {activeTab === "timeline" && (
-            <div className="space-y-6">
-              <div className="p-4 rounded-xl border border-border bg-card shadow-sm">
-                <div className="flex items-center justify-between pb-3 border-b border-border">
-                  <div>
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-primary" />
-                      Live Shipment Pipeline
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Tracking Shiprocket AWB: <strong className="text-foreground">{order.trackingId || "Pending Generation"}</strong>
-                    </p>
-                  </div>
-                  <button
-                    onClick={onOpenShiprocketModal}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
-                  >
-                    Sync Courier Status
-                  </button>
-                </div>
-
-                {/* Vertical Timeline */}
-                <div className="mt-6 space-y-6 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-border">
-                  {order.timeline && order.timeline.length > 0 ? (
-                    order.timeline.map((event: any, idx: number) => (
-                      <div key={idx} className="relative flex items-start gap-4 pl-1">
-                        <div className="h-7 w-7 rounded-full bg-card border-2 border-primary text-primary flex items-center justify-center shrink-0 z-10 shadow-sm">
-                          <Check className="h-3.5 w-3.5" />
-                        </div>
-                        <div className="flex-1 bg-muted/30 p-3.5 rounded-xl border border-border">
-                          <div className="flex items-center justify-between flex-wrap gap-1">
-                            <span className="font-bold text-xs sm:text-sm text-foreground">
-                              {event.status || event.title}
-                            </span>
-                            <span className="text-[11px] text-muted-foreground font-medium">
-                              {event.time || event.date}
-                            </span>
-                          </div>
-                          {(event.note || event.description) && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {event.note || event.description}
-                            </p>
-                          )}
-                          {event.location && (
-                            <p className="text-[11px] text-primary/80 font-medium mt-1 flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {event.location}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-xs text-muted-foreground">
-                      No live events logged. Assign warehouse or generate Shiprocket AWB to initiate pipeline tracking.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: WAREHOUSE & SHIPROCKET LOGISTICS */}
+          {/* TAB 2: WAREHOUSE & SHIPROCKET LOGISTICS */}
           {activeTab === "logistics" && (
             <div className="space-y-6">
               {/* Warehouse Assignment Card */}
