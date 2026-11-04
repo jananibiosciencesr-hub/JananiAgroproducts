@@ -109,6 +109,35 @@ export function AuthenticationPage() {
   const [formErrors, setFormErrors] = useState<{ phone?: string | undefined; email?: string | undefined; emailSuggestion?: string | undefined }>({});
   const [formTouched, setFormTouched] = useState<{ phone: boolean; email: boolean }>({ phone: false, email: false });
 
+  // Mode Switch Handlers (ensures inputs are completely clean and reset)
+  const handleSwitchToLogin = () => {
+    setAuthMode("login");
+    setIsOtpStep(false);
+    setEmail("");
+    setPhone("");
+    setName("");
+    setPassword("");
+    setConfirmPassword("");
+    setFormTouched({ phone: false, email: false });
+    setFormErrors({});
+    setLoginUnregisteredWarn(null);
+    setSignupAlreadyExistsWarn(null);
+  };
+
+  const handleSwitchToSignup = () => {
+    setAuthMode("signup");
+    setIsOtpStep(false);
+    setEmail("");
+    setPhone("");
+    setName("");
+    setPassword("");
+    setConfirmPassword("");
+    setFormTouched({ phone: false, email: false });
+    setFormErrors({});
+    setLoginUnregisteredWarn(null);
+    setSignupAlreadyExistsWarn(null);
+  };
+
   const handlePhoneChange = (val: string) => {
     const digitsOnly = val.replace(/\D/g, "").slice(0, 10);
     setPhone(digitsOnly);
@@ -764,7 +793,7 @@ export function AuthenticationPage() {
                   <div className="inline-flex items-center rounded-xl bg-secondary/80 p-0.5 border border-border/60 shadow-xs w-full sm:w-auto shrink-0 self-start sm:self-center">
                     <button
                       type="button"
-                      onClick={() => { setAuthMode("login"); setIsOtpStep(false); }}
+                      onClick={handleSwitchToLogin}
                       className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                         authMode === "login"
                           ? "bg-card text-foreground shadow-sm font-bold"
@@ -775,7 +804,7 @@ export function AuthenticationPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setAuthMode("signup"); setIsOtpStep(false); }}
+                      onClick={handleSwitchToSignup}
                       className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                         authMode === "signup"
                           ? "bg-card text-foreground shadow-sm font-bold"
@@ -887,6 +916,7 @@ export function AuthenticationPage() {
                       onClick={() => {
                         setIsOtpStep(false);
                         setLoginMethod("email");
+                        setPassword("");
                       }}
                       className="text-muted-foreground hover:text-foreground hover:underline font-medium cursor-pointer"
                     >
@@ -903,7 +933,10 @@ export function AuthenticationPage() {
                   <div className="mb-4 grid grid-cols-2 rounded-xl bg-secondary/80 p-1 border border-border/50">
                     <button
                       type="button"
-                      onClick={() => setLoginMethod("email_otp")}
+                      onClick={() => {
+                        setLoginMethod("email_otp");
+                        setPassword("");
+                      }}
                       className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition ${
                         loginMethod === "email_otp"
                           ? "bg-card text-foreground shadow-sm"
@@ -914,7 +947,10 @@ export function AuthenticationPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setLoginMethod("email")}
+                      onClick={() => {
+                        setLoginMethod("email");
+                        setPassword("");
+                      }}
                       className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition ${
                         loginMethod === "email"
                           ? "bg-card text-foreground shadow-sm"
@@ -943,6 +979,8 @@ export function AuthenticationPage() {
                           <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                           <input
                             type="email"
+                            name="login_otp_email"
+                            autoComplete="email"
                             required
                             value={email}
                             onChange={(e) => {
@@ -1001,7 +1039,13 @@ export function AuthenticationPage() {
                             size="sm"
                             onClick={() => {
                               setAuthMode("signup");
-                              setEmail(loginUnregisteredWarn);
+                              setEmail(loginUnregisteredWarn || "");
+                              setPassword("");
+                              setConfirmPassword("");
+                              setName("");
+                              setPhone("");
+                              setFormTouched({ phone: false, email: false });
+                              setFormErrors({});
                               setLoginUnregisteredWarn(null);
                             }}
                             className="rounded-xl text-xs font-bold px-3.5 h-8.5 shadow-xs w-full"
@@ -1037,6 +1081,8 @@ export function AuthenticationPage() {
                           <Mail className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                           <input
                             type="email"
+                            name="login_email"
+                            autoComplete="username"
                             required
                             value={email}
                             onChange={(e) => handleEmailChange(e.target.value)}
@@ -1080,6 +1126,8 @@ export function AuthenticationPage() {
                           <Lock className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
                           <input
                             type={showPassword ? "text" : "password"}
+                            name="login_password"
+                            autoComplete="current-password"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -1123,7 +1171,7 @@ export function AuthenticationPage() {
                 /* ========================================================= */
                 /* VIEW 3: CREATE ACCOUNT (Signup with Strength Meter)       */
                 /* ========================================================= */
-                <form onSubmit={handleSignupSubmit} className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
+                <form onSubmit={handleSignupSubmit} autoComplete="off" className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
                   {/* Row 1: Full Name & Mobile Number (2 Columns) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div className="space-y-1">
@@ -1132,6 +1180,8 @@ export function AuthenticationPage() {
                         <User className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type="text"
+                          name="register_name"
+                          autoComplete="off"
                           required
                           value={name}
                           onChange={(e) => setName(e.target.value)}
@@ -1158,6 +1208,8 @@ export function AuthenticationPage() {
                         </span>
                         <input
                           type="tel"
+                          name="register_phone"
+                          autoComplete="off"
                           inputMode="numeric"
                           pattern="[6-9][0-9]{9}"
                           maxLength={10}
@@ -1195,6 +1247,8 @@ export function AuthenticationPage() {
                         <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type="email"
+                          name="register_email"
+                          autoComplete="off"
                           required
                           value={email}
                           onChange={(e) => handleEmailChange(e.target.value)}
@@ -1251,6 +1305,8 @@ export function AuthenticationPage() {
                         <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
                           type={showPassword ? "text" : "password"}
+                          name="register_password"
+                          autoComplete="new-password"
                           required
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
@@ -1291,6 +1347,8 @@ export function AuthenticationPage() {
                         <Lock className={`absolute left-3 top-2.5 size-4 ${isPasswordMismatch ? "text-destructive" : "text-muted-foreground"}`} />
                         <input
                           type={showConfirmPassword ? "text" : "password"}
+                          name="register_confirm_password"
+                          autoComplete="new-password"
                           required
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -1416,7 +1474,13 @@ export function AuthenticationPage() {
                         size="sm"
                         onClick={() => {
                           setAuthMode("login");
-                          setEmail(signupAlreadyExistsWarn);
+                          setEmail(signupAlreadyExistsWarn || "");
+                          setPassword("");
+                          setConfirmPassword("");
+                          setPhone("");
+                          setName("");
+                          setFormTouched({ phone: false, email: false });
+                          setFormErrors({});
                           setSignupAlreadyExistsWarn(null);
                         }}
                         className="rounded-lg text-xs font-bold px-3 h-7.5 shadow-xs w-full"
