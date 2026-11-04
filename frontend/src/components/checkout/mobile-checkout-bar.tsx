@@ -12,6 +12,7 @@ interface MobileCheckoutBarProps {
   walletDeduction: number;
   giftCardDeduction: number;
   isSubmitting: boolean;
+  paymentMethod?: "upi" | "card" | "cod";
   onPlaceOrder: (e: React.FormEvent) => void;
   disabled: boolean;
 }
@@ -26,6 +27,7 @@ export function MobileCheckoutBar({
   walletDeduction,
   giftCardDeduction,
   isSubmitting,
+  paymentMethod,
   onPlaceOrder,
   disabled,
 }: MobileCheckoutBarProps) {
@@ -114,7 +116,7 @@ export function MobileCheckoutBar({
             <span>Select Delivery Address</span>
           ) : (
             <>
-              Place Order
+              {paymentMethod === "cod" ? "Place COD Order" : "Place Order"}
               <ChevronRight className="size-4" />
             </>
           )}

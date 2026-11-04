@@ -71,6 +71,9 @@ export function PaymentPage() {
     return null;
   });
 
+  // Detect Cash on Delivery
+  const isCod = checkoutData?.paymentMethod === "cod";
+
   // UI States
   const [viewState, setViewState] = useState<"payment" | "success" | "failure">("payment");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -87,7 +90,7 @@ export function PaymentPage() {
   }>({
     orderNumber: checkoutData?.orderNumber || generateNextOrderNumber(),
     transactionId: "",
-    method: "Razorpay Standard Gateway",
+    method: checkoutData?.paymentMethod === "cod" ? "Cash on Delivery" : "Razorpay Standard Gateway",
     amount: checkoutData?.finalTotal || (subtotal > 0 ? subtotal : 420),
   });
 
@@ -162,7 +165,7 @@ export function PaymentPage() {
     const confirmedOrder = {
       orderNumber: effectiveOrderNumber,
       transactionId: details.transactionId,
-      paymentMethod: details.method || "Razorpay (All-In-One)",
+      paymentMethod: details.method || (isCod ? "Cash on Delivery" : "Razorpay (All-In-One)"),
       amount: effectiveAmount,
       deliveryDate,
       customerName,
@@ -223,8 +226,8 @@ export function PaymentPage() {
       deliveryFee: checkoutData?.shippingFee || 0,
       total: effectiveAmount,
       finalTotal: effectiveAmount,
-      paymentMethod: details.method || "Razorpay (Online)",
-      paymentStatus: "Paid",
+      paymentMethod: details.method || (isCod ? "Cash on Delivery" : "Razorpay (Online)"),
+      paymentStatus: details.method === "Cash on Delivery" || isCod ? "Pending (COD)" : "Paid",
       transactionId: details.transactionId,
       ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
       address: {
@@ -246,7 +249,7 @@ export function PaymentPage() {
       })),
       timeline: [
         {
-          title: "Order Placed & Payment Verified via Razorpay",
+          title: details.method === "Cash on Delivery" || isCod ? "Order Placed (Cash on Delivery)" : "Order Placed & Payment Verified via Razorpay",
           time: nowFormatted,
           location: "Regional Processing Hub, Lodhika Rajkot",
           done: true,
@@ -339,8 +342,8 @@ export function PaymentPage() {
         shippingFee: checkoutData?.shippingFee || 0,
         finalTotal: effectiveAmount,
         total: effectiveAmount,
-        paymentMethod: details.method || "Razorpay",
-        paymentStatus: details.method === "Cash on Delivery" ? "Pending (COD)" : "Paid",
+        paymentMethod: details.method || (isCod ? "Cash on Delivery" : "Razorpay"),
+        paymentStatus: details.method === "Cash on Delivery" || isCod ? "Pending (COD)" : "Paid",
         transactionId: details.transactionId,
         ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
         deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
@@ -390,7 +393,11 @@ export function PaymentPage() {
     }
     localStorage.removeItem("janani_pending_checkout");
 
-    toast.success(`Payment verified via Razorpay! Order ${effectiveOrderNumber} placed successfully.`);
+    if (details.method === "Cash on Delivery" || isCod) {
+      toast.success(`Cash on Delivery order ${effectiveOrderNumber} placed successfully!`);
+    } else {
+      toast.success(`Payment verified via Razorpay! Order ${effectiveOrderNumber} placed successfully.`);
+    }
     navigate({ to: "/order-success" });
   };
 
@@ -491,10 +498,10 @@ export function PaymentPage() {
             <span>/</span>
             <Link to="/checkout" className="hover:text-brand-leaf transition">Checkout</Link>
             <span>/</span>
-            <span className="text-brand-leaf">Razorpay Payment</span>
+            <span className="text-brand-leaf">{isCod ? "Cash on Delivery" : "Razorpay Payment"}</span>
           </div>
           <h1 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
-            Secure Razorpay Payment
+            {isCod ? "Cash on Delivery Confirmation" : "Secure Razorpay Payment"}
           </h1>
         </div>
 
@@ -502,7 +509,7 @@ export function PaymentPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-full border border-brand-leaf/30 bg-brand-leaf/5 px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-brand-leaf w-fit">
             <ShieldCheck className="size-4 shrink-0" />
-            <span>Razorpay 256-Bit SSL Encrypted</span>
+            <span>{isCod ? "Pay on Delivery • 100% Genuine Agro Care" : "Razorpay 256-Bit SSL Encrypted"}</span>
           </div>
         </div>
       </div>
@@ -519,26 +526,28 @@ export function PaymentPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-4 sm:pb-5">
               <div className="flex items-start sm:items-center gap-3">
                 <div className="size-11 sm:size-12 rounded-2xl bg-[#0c2340] text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0 mt-0.5 sm:mt-0">
-                  <Layers className="size-5 sm:size-6 text-emerald-400" />
+                  {isCod ? <Wallet className="size-5 sm:size-6 text-amber-400" /> : <Layers className="size-5 sm:size-6 text-emerald-400" />}
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">
-                      Razorpay Checkout Gateway
+                      {isCod ? "Cash on Delivery (COD)" : "Razorpay Checkout Gateway"}
                     </h2>
                     <span className="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 shrink-0">
-                      Official Partner
+                      {isCod ? "Pay at Doorstep" : "Official Partner"}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    100% Secure Instant Settlement • Live UPI, Cards & NetBanking
+                    {isCod
+                      ? "Zero advance payment required • Pay cash or UPI upon delivery"
+                      : "100% Secure Instant Settlement • Live UPI, Cards & NetBanking"}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-auto bg-secondary/80 px-2.5 sm:px-3 py-1.5 rounded-xl border border-border text-[11px] sm:text-xs font-mono font-bold text-foreground max-w-full truncate">
                 <Lock className="size-3.5 text-brand-leaf shrink-0" />
-                <span className="truncate">Test Mode Key: {RAZORPAY_KEY_ID.slice(0, 12)}...</span>
+                <span className="truncate">{isCod ? "Payment Mode: Cash on Delivery" : `Test Mode Key: ${RAZORPAY_KEY_ID.slice(0, 12)}...`}</span>
               </div>
             </div>
 
@@ -548,6 +557,12 @@ export function PaymentPage() {
                 <span className="shrink-0 font-medium">Paying Customer:</span>
                 <strong className="text-foreground font-semibold break-words sm:text-right">
                   {customerName} {customerPhone ? `(${customerPhone})` : ""}
+                </strong>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
+                <span className="shrink-0 font-medium">Payment Mode:</span>
+                <strong className="text-emerald-700 dark:text-emerald-400 font-bold uppercase sm:text-right">
+                  {isCod ? "Cash on Delivery (Pay upon arrival)" : "Online Pre-paid Gateway"}
                 </strong>
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
@@ -568,19 +583,35 @@ export function PaymentPage() {
             <div className="mt-6 sm:mt-8 space-y-3">
               <Button
                 type="button"
-                onClick={handleLaunchRazorpay}
+                onClick={() => {
+                  if (isCod) {
+                    setIsProcessing(true);
+                    handlePaymentSuccess({
+                      method: "Cash on Delivery",
+                      transactionId: `COD-${Date.now().toString().slice(-6)}`,
+                    });
+                  } else {
+                    handleLaunchRazorpay();
+                  }
+                }}
                 disabled={isProcessing}
                 className="w-full min-h-[3.25rem] sm:h-14 py-3 px-4 rounded-2xl bg-[#0c2340] hover:bg-[#153a66] text-white font-display text-sm sm:text-base font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 sm:gap-3 cursor-pointer text-center"
               >
                 {isProcessing ? (
                   <>
                     <div className="size-4 sm:size-5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                    <span className="truncate">Connecting to Razorpay...</span>
+                    <span className="truncate">{isCod ? "Confirming Cash on Delivery Order..." : "Connecting to Razorpay..."}</span>
                   </>
                 ) : (
                   <>
-                    <Lock className="size-4 sm:size-5 text-emerald-400 animate-pulse shrink-0" />
-                    <span className="break-words">Pay ₹{effectiveAmount} with Razorpay Secure</span>
+                    {isCod ? (
+                      <Wallet className="size-4 sm:size-5 text-amber-400 shrink-0" />
+                    ) : (
+                      <Lock className="size-4 sm:size-5 text-emerald-400 animate-pulse shrink-0" />
+                    )}
+                    <span className="break-words">
+                      {isCod ? `Confirm Cash on Delivery Order • Pay ₹${effectiveAmount}` : `Pay ₹${effectiveAmount} with Razorpay Secure`}
+                    </span>
                     <ArrowRight className="size-4 sm:size-5 shrink-0 hidden xs:inline-block" />
                   </>
                 )}
@@ -589,15 +620,17 @@ export function PaymentPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-muted-foreground px-1 pt-1">
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="size-4 text-brand-leaf shrink-0" />
-                  <span>Zero convenience fees • Instant refund guarantee</span>
+                  <span>{isCod ? "Zero advance fees • Inspect order packaging upon arrival" : "Zero convenience fees • Instant refund guarantee"}</span>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsRazorpayModalOpen(true)}
-                  className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto cursor-pointer"
-                >
-                  Alternate Gateway View
-                </button>
+                {!isCod && (
+                  <button
+                    type="button"
+                    onClick={() => setIsRazorpayModalOpen(true)}
+                    className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto cursor-pointer"
+                  >
+                    Alternate Gateway View
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -35,6 +35,7 @@ interface PaymentSummaryCardProps {
   selectedAddress: ShippingAddress | null;
   selectedSlot?: DeliverySlot | null;
   isSubmitting: boolean;
+  paymentMethod?: "upi" | "card" | "cod";
   onPlaceOrder: (e: React.FormEvent) => void;
 }
 
@@ -56,6 +57,7 @@ export function PaymentSummaryCard({
   selectedAddress,
   selectedSlot,
   isSubmitting,
+  paymentMethod,
   onPlaceOrder,
 }: PaymentSummaryCardProps) {
   // GST 5% breakdown (2.5% CGST + 2.5% SGST) added to items subtotal
@@ -228,7 +230,9 @@ export function PaymentSummaryCard({
             </span>
           ) : (
             <>
-              Place Order • ₹{finalTotal}
+              {paymentMethod === "cod"
+                ? `Confirm Cash on Delivery • ₹${finalTotal}`
+                : `Place Order • ₹${finalTotal}`}
               <ChevronRight className="size-4" />
             </>
           )}

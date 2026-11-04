@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { generateNextOrderNumber } from "@/lib/api";
+import { generateNextOrderNumber, createOrder } from "@/lib/api";
+import { saveCustomerOrders, loadCustomerOrders } from "@/components/orders/orders-seed";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   ArrowRight,
@@ -50,6 +51,7 @@ export function CheckoutPage() {
     subtotal,
     user,
     logoutUser,
+    clearCart,
     products: storeProducts,
   } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
@@ -239,6 +241,242 @@ export function CheckoutPage() {
       totalSavings,
       paymentMethod,
     };
+
+    if (paymentMethod === "cod") {
+      setIsSubmitting(true);
+      try {
+        const orderNumber = pendingCheckout.orderNumber;
+        const nowFormatted = new Date().toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const streetAddr = selectedAddress
+          ? [selectedAddress.houseFlat, selectedAddress.street, selectedAddress.landmark].filter(Boolean).join(", ") || "Registered Delivery Address"
+          : "Registered Delivery Address";
+
+        const confirmedOrder = {
+          orderNumber,
+          transactionId: `COD-${Date.now().toString().slice(-6)}`,
+          paymentMethod: "Cash on Delivery",
+          paymentStatus: "Pending (COD)",
+          amount: finalTotal,
+          deliveryDate: "2-3 Business Days",
+          customerName: pendingCheckout.customerName,
+          customerPhone: pendingCheckout.customerPhone,
+          customerEmail: pendingCheckout.customerEmail,
+          customerAddress: `${streetAddr}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`,
+          items: cartItems.map((item: any) => ({
+            product: {
+              id: item.product.id,
+              name: item.product.name,
+              price: item.price || item.product.price,
+              image: item.product.image || pantryImage,
+            },
+            qty: item.qty || 1,
+          })),
+          subtotal,
+          discount: couponDiscount,
+          couponCode: appliedCoupon?.code || "",
+          couponDiscount,
+          walletDeduction: 0,
+          deliveryFee: standardShippingFee,
+          finalTotal,
+          total: finalTotal,
+          slot: pendingCheckout.slot,
+          deliverySlot: pendingCheckout.deliverySlot,
+          address: {
+            fullName: pendingCheckout.customerName,
+            phone: pendingCheckout.customerPhone,
+            streetAddress: streetAddr,
+            city: selectedAddress.city,
+            state: selectedAddress.state || "Gujarat",
+            pincode: selectedAddress.pincode,
+          },
+        };
+
+        const newCustomerOrder = {
+          id: `ord-${Date.now()}`,
+          number: orderNumber,
+          orderNumber,
+          customerEmail: user?.email || pendingCheckout.customerEmail || "",
+          customerPhone: user?.phone || pendingCheckout.customerPhone || "",
+          date: nowFormatted,
+          isoDate: new Date().toISOString().split("T")[0]!,
+          status: "Processing" as const,
+          courier: "Delhivery Air Express & Janani Direct",
+          awb: `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+          expectedDelivery: "2-3 Business Days",
+          deliverySlot: "Standard Delivery (2-3 Business Days)",
+          subtotal,
+          discount: couponDiscount,
+          couponCode: appliedCoupon?.code || "",
+          couponDiscount,
+          walletDeduction: 0,
+          deliveryFee: standardShippingFee,
+          total: finalTotal,
+          finalTotal,
+          paymentMethod: "Cash on Delivery",
+          paymentStatus: "Pending (COD)",
+          transactionId: `COD-${Date.now().toString().slice(-6)}`,
+          address: {
+            fullName: pendingCheckout.customerName,
+            phone: pendingCheckout.customerPhone,
+            streetAddress: streetAddr,
+            city: selectedAddress.city,
+            state: selectedAddress.state || "Gujarat",
+            pincode: selectedAddress.pincode,
+          },
+          items: cartItems.map((item: any) => ({
+            productId: item.product.id,
+            name: item.product.name,
+            variant: item.variant?.name || "Standard Pack",
+            quantity: item.qty || 1,
+            qty: item.qty || 1,
+            price: item.price || item.product.price,
+            image: item.product.image || pantryImage,
+          })),
+          timeline: [
+            {
+              title: "Order Placed (Cash on Delivery)",
+              time: nowFormatted,
+              location: "Regional Processing Hub, Lodhika Rajkot",
+              done: true,
+              current: true,
+            },
+            {
+              title: "Quality Tested & Nitrogen Sealed",
+              time: "Within 4 hours",
+              location: "Rajkot Central Facility",
+              done: false,
+              current: false,
+            },
+            {
+              title: "Dispatched via Delhivery Air Express",
+              time: "Scheduled Tomorrow",
+              location: "Central Transit Gateway",
+              done: false,
+              current: false,
+            },
+            {
+              title: "Out for Doorstep Delivery",
+              time: "2-3 Business Days",
+              location: "Local Delivery Hub",
+              done: false,
+              current: false,
+            },
+            {
+              title: "Delivered to Recipient (Collect Cash)",
+              time: "Upon Arrival",
+              location: "Customer Doorstep",
+              done: false,
+              current: false,
+            },
+          ],
+        };
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem("janani_latest_order", JSON.stringify(confirmedOrder));
+          const userIdentifier = user?.email || pendingCheckout.customerEmail || user?.phone;
+          const existingUserOrders = loadCustomerOrders(userIdentifier);
+          const updatedOrders = [newCustomerOrder, ...existingUserOrders.filter((o: any) => o.number !== orderNumber && o.id !== newCustomerOrder.id)];
+          saveCustomerOrders(updatedOrders, userIdentifier);
+          localStorage.removeItem("janani_pending_checkout");
+        }
+
+        try {
+          await createOrder({
+            id: orderNumber,
+            number: orderNumber,
+            orderNumber,
+            items: cartItems.map((i: any) => ({
+              productId: i.product.id,
+              name: i.product.name,
+              price: i.price || i.product.price,
+              quantity: i.qty || 1,
+              image: i.product.image || pantryImage,
+            })),
+            customer: {
+              name: pendingCheckout.customerName,
+              firstName: pendingCheckout.customerName.split(" ")[0] || "Valued",
+              lastName: pendingCheckout.customerName.split(" ").slice(1).join(" ") || "Patron",
+              phone: user?.phone || pendingCheckout.customerPhone,
+              email: user?.email || pendingCheckout.customerEmail,
+              address: streetAddr,
+              streetAddress: streetAddr,
+              city: selectedAddress.city,
+              state: selectedAddress.state || "Gujarat",
+              pincode: selectedAddress.pincode,
+            },
+            subtotal,
+            gstAmount,
+            cgst,
+            sgst,
+            discount: couponDiscount,
+            couponCode: appliedCoupon?.code || "",
+            couponDiscount,
+            walletDeduction: 0,
+            deliveryFee: standardShippingFee,
+            shippingFee: standardShippingFee,
+            finalTotal,
+            total: finalTotal,
+            paymentMethod: "Cash on Delivery",
+            paymentStatus: "Pending (COD)",
+            transactionId: `COD-${Date.now().toString().slice(-6)}`,
+            deliverySlot: "Standard Delivery (2-3 Business Days)",
+            expectedDelivery: "2-3 Business Days",
+            timeline: newCustomerOrder.timeline,
+          });
+        } catch (apiErr) {
+          console.warn("Backend order creation sync note:", apiErr);
+        }
+
+        try {
+          fetch("/api.php?action=send-order-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              number: orderNumber,
+              orderNumber,
+              customer_name: pendingCheckout.customerName,
+              customer_email: user?.email || pendingCheckout.customerEmail,
+              customer_phone: user?.phone || pendingCheckout.customerPhone,
+              shipping_address: {
+                streetAddress: streetAddr,
+                city: selectedAddress.city,
+                state: selectedAddress.state || "Gujarat",
+                pincode: selectedAddress.pincode,
+              },
+              items: cartItems.map((i: any) => ({
+                name: i.product?.name || i.name,
+                price: i.price || i.product?.price,
+                quantity: i.qty || 1,
+              })),
+              subtotal,
+              gstAmount,
+              delivery_fee: standardShippingFee,
+              discount: couponDiscount,
+              total: finalTotal,
+              finalTotal,
+              payment_method: "Cash on Delivery",
+            }),
+          }).catch(() => {});
+        } catch (e) {}
+
+        clearCart();
+        toast.success(`Cash on Delivery order ${orderNumber} placed successfully!`);
+        navigate({ to: "/order-success" });
+      } catch (err) {
+        console.error("Failed to place Cash on Delivery order:", err);
+        toast.error("An error occurred while placing order. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     if (typeof window !== "undefined") {
       localStorage.setItem("janani_pending_checkout", JSON.stringify(pendingCheckout));
@@ -550,6 +788,11 @@ export function CheckoutPage() {
                 💡 Instant QR Code will generate immediately after you click <strong>Place Order</strong>.
               </div>
             )}
+            {paymentMethod === "cod" && (
+              <div className="rounded-2xl bg-emerald-500/10 p-3.5 text-center border border-emerald-500/30 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+                💵 <strong>Cash on Delivery selected:</strong> Pay ₹{finalTotal} with cash or UPI upon harvest arrival at your doorstep. No online payment needed now.
+              </div>
+            )}
           </section>
         </div>
 
@@ -618,6 +861,7 @@ export function CheckoutPage() {
             totalSavings={totalSavings}
             selectedAddress={selectedAddress}
             isSubmitting={isSubmitting}
+            paymentMethod={paymentMethod}
             onPlaceOrder={handlePlaceOrder}
           />
 
@@ -641,6 +885,7 @@ export function CheckoutPage() {
         walletDeduction={walletDeduction}
         giftCardDeduction={giftCardDeduction}
         isSubmitting={isSubmitting}
+        paymentMethod={paymentMethod}
         onPlaceOrder={handlePlaceOrder}
         disabled={!selectedAddress || cartItems.length === 0}
       />
