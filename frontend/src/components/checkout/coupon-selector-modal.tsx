@@ -153,7 +153,7 @@ export function CouponSelector({
           type: typeVal,
           value: isFree ? 60 : c.discount,
           maxDiscount: c.maxDiscount || undefined,
-          minSubtotal: c.minCart || 0,
+          minSubtotal: Number(c.minCart ?? (c as any).min_cart ?? (c as any).minSubtotal ?? 0),
           expiry: c.expiryDate || "31 Dec 2026",
           badge: isFree ? "FREE DELIVERY" : c.type === "percentage" ? `${c.discount}% OFF` : `FLAT ₹${c.discount} OFF`,
         };

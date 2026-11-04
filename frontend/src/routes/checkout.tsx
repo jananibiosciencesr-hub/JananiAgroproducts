@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { generateNextOrderNumber, createOrder } from "@/lib/api";
+import { generateNextOrderNumber, createOrder, normalizeCouponData } from "@/lib/api";
 import { saveCustomerOrders, loadCustomerOrders } from "@/components/orders/orders-seed";
 import React, { useState, useMemo, useEffect } from "react";
 import {
@@ -79,29 +79,36 @@ export function CheckoutPage() {
       const saved = localStorage.getItem("janani_applied_coupon");
       if (saved) {
         const parsed = JSON.parse(saved);
-        const c = parsed.coupon;
-        if (c) {
+        const rawCoupon = parsed.coupon;
+        if (rawCoupon) {
+          const normalized = normalizeCouponData(rawCoupon);
+          const minReq = Number(normalized.minCart ?? (normalized as any).min_cart ?? 0);
+          if (minReq > 0 && subtotal > 0 && subtotal < minReq) {
+            localStorage.removeItem("janani_applied_coupon");
+            setAppliedCoupon(null);
+            return;
+          }
           const isFree =
-            c.type === "free_shipping" ||
-            Boolean(c.isFreeShipping) ||
-            c.code?.toUpperCase().includes("FREESHIP") ||
-            c.code?.toUpperCase().includes("FREEDEL");
+            normalized.type === "free_shipping" ||
+            Boolean(normalized.isFreeShipping) ||
+            normalized.code?.toUpperCase().includes("FREESHIP") ||
+            normalized.code?.toUpperCase().includes("FREEDEL");
 
           setAppliedCoupon({
-            code: c.code,
-            title: c.title || (isFree ? "Free Priority Delivery" : `${c.code} Promo`),
-            description: c.description || "",
-            type: isFree ? "free_delivery" : (c.type === "flat" ? "flat" : "percentage"),
-            value: isFree ? 60 : c.discount,
-            maxDiscount: c.maxDiscount || undefined,
-            minSubtotal: c.minCart || 0,
-            expiry: c.expiryDate || "31 Dec 2026",
-            badge: isFree ? "FREE DELIVERY" : c.type === "percentage" ? `${c.discount}% OFF` : `FLAT ₹${c.discount} OFF`,
+            code: normalized.code,
+            title: normalized.title || (isFree ? "Free Priority Delivery" : `${normalized.code} Promo`),
+            description: normalized.description || "",
+            type: isFree ? "free_delivery" : (normalized.type === "flat" ? "flat" : "percentage"),
+            value: isFree ? 60 : normalized.discount,
+            maxDiscount: normalized.maxDiscount || undefined,
+            minSubtotal: minReq,
+            expiry: normalized.expiryDate || "31 Dec 2026",
+            badge: isFree ? "FREE DELIVERY" : normalized.type === "percentage" ? `${normalized.discount}% OFF` : `FLAT ₹${normalized.discount} OFF`,
           });
         }
       }
     } catch (e) {}
-  }, []);
+  }, [subtotal]);
 
 
   const handleApplyCoupon = (coupon: CouponRule | null) => {
@@ -135,12 +142,15 @@ export function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (appliedCoupon && appliedCoupon.minSubtotal > 0 && subtotal < appliedCoupon.minSubtotal) {
-      setAppliedCoupon(null);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("janani_applied_coupon");
+    if (appliedCoupon) {
+      const minRequired = Number(appliedCoupon.minSubtotal ?? (appliedCoupon as any).minCart ?? (appliedCoupon as any).min_cart ?? 0);
+      if (minRequired > 0 && subtotal < minRequired) {
+        setAppliedCoupon(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("janani_applied_coupon");
+        }
+        toast.warning(`Coupon ${appliedCoupon.code} removed because cart total is below ₹${minRequired}.`);
       }
-      toast.warning(`Coupon ${appliedCoupon.code} removed because cart total is below ₹${appliedCoupon.minSubtotal}.`);
     }
   }, [subtotal, appliedCoupon]);
 

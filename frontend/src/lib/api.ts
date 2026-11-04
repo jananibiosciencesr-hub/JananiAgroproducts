@@ -4257,22 +4257,29 @@ export async function getAdminCoupons(params?: CouponQueryParams) {
   };
 }
 
-export function normalizeCouponData(c: AdminCoupon): AdminCoupon {
+export function normalizeCouponData(c: any): AdminCoupon {
+  if (!c) return c;
   const isFree =
     c.type === "free_shipping" ||
     Boolean(c.isFreeShipping) ||
-    (c.code ? c.code.toUpperCase().includes("FREESHIP") || c.code.toUpperCase().includes("FREEDEL") : false);
+    Boolean(c.is_free_shipping) ||
+    (c.code ? String(c.code).toUpperCase().includes("FREESHIP") || String(c.code).toUpperCase().includes("FREEDEL") : false);
 
-  if (isFree) {
-    return {
-      ...c,
-      type: "free_shipping",
-      isFreeShipping: true,
-      discount: c.discount > 0 ? c.discount : 60,
-      title: c.title && !c.title.includes("Special Offer") ? c.title : "Free Priority Delivery",
-    };
-  }
-  return c;
+  const minCart = Number(c.minCart ?? c.min_cart ?? c.minSubtotal ?? c.minOrder ?? 0);
+  const maxDiscount = Number(c.maxDiscount ?? c.max_discount ?? 0);
+  const discount = isFree ? (Number(c.discount) > 0 ? Number(c.discount) : 60) : Number(c.discount ?? 0);
+
+  return {
+    ...c,
+    code: String(c.code || "").trim().toUpperCase(),
+    type: isFree ? "free_shipping" : (c.type || "percentage"),
+    isFreeShipping: isFree,
+    discount: isNaN(discount) ? 0 : discount,
+    minCart: isNaN(minCart) ? 0 : minCart,
+    maxDiscount: isNaN(maxDiscount) ? 0 : maxDiscount,
+    title: c.title && !c.title.includes("Special Offer") ? c.title : (isFree ? "Free Priority Delivery" : (c.title || `${c.code} Promo`)),
+    expiryDate: c.expiryDate || c.expiry_date || c.expiry || "2026-12-31",
+  };
 }
 
 export async function getStorefrontCoupons(): Promise<AdminCoupon[]> {

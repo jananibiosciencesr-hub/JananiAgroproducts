@@ -76,8 +76,26 @@ export function CartPage() {
       const saved = localStorage.getItem("janani_applied_coupon");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.label || parsed.code) setAppliedCoupon(parsed.label || parsed.code);
-        if (parsed.coupon) setAppliedCouponObj(parsed.coupon);
+        const rawCoupon = parsed.coupon;
+        if (rawCoupon) {
+          const normalized = normalizeCouponData(rawCoupon);
+          const minReq = Number(normalized.minCart ?? (normalized as any).min_cart ?? 0);
+          if (minReq > 0 && subtotal > 0 && subtotal < minReq) {
+            localStorage.removeItem("janani_applied_coupon");
+            setAppliedCoupon(null);
+            setAppliedCouponObj(null);
+            setDiscount(0);
+          } else {
+            setAppliedCouponObj(normalized);
+            if (parsed.label || parsed.code) setAppliedCoupon(parsed.label || parsed.code);
+            if (parsed.discount && Number(parsed.discount) > 0) setDiscount(Number(parsed.discount));
+          }
+        } else if (parsed.code) {
+          localStorage.removeItem("janani_applied_coupon");
+          setAppliedCoupon(null);
+          setAppliedCouponObj(null);
+          setDiscount(0);
+        }
       }
     } catch (e) {}
     try {
@@ -96,8 +114,28 @@ export function CartPage() {
     getStorefrontCoupons()
       .then((data) => {
         if (active) {
-          setAvailableCoupons(data || []);
+          const list = data || [];
+          setAvailableCoupons(list);
           setLoadingCoupons(false);
+
+          // Authoritative cross-check for stored coupon vs live requirements
+          try {
+            const saved = localStorage.getItem("janani_applied_coupon");
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              const code = String(parsed.code || parsed.coupon?.code || "").toUpperCase();
+              const matched = list.find((c) => c.code.toUpperCase() === code);
+              if (matched) {
+                const minReq = Number(matched.minCart ?? (matched as any).min_cart ?? 0);
+                if (minReq > 0 && subtotal > 0 && subtotal < minReq) {
+                  localStorage.removeItem("janani_applied_coupon");
+                  setAppliedCoupon(null);
+                  setAppliedCouponObj(null);
+                  setDiscount(0);
+                }
+              }
+            }
+          } catch (e) {}
         }
       })
       .catch((err) => {
@@ -190,7 +228,14 @@ export function CartPage() {
       appliedCouponObj.code.toUpperCase().includes("FREESHIP") ||
       appliedCouponObj.code.toUpperCase().includes("FREEDEL");
 
-    if (appliedCouponObj.minCart > 0 && subtotal < appliedCouponObj.minCart) {
+    const couponMinCart = Number(
+      appliedCouponObj.minCart ??
+      (appliedCouponObj as any).min_cart ??
+      (appliedCouponObj as any).minSubtotal ??
+      0
+    );
+
+    if (couponMinCart > 0 && subtotal < couponMinCart) {
       setDiscount(0);
       setAppliedCoupon(null);
       setAppliedCouponObj(null);
@@ -198,7 +243,7 @@ export function CartPage() {
         localStorage.removeItem("janani_applied_coupon");
       }
       toast.warning(
-        `Coupon ${appliedCouponObj.code} removed because cart subtotal is below the required ₹${appliedCouponObj.minCart}.`
+        `Coupon ${appliedCouponObj.code} removed because cart subtotal ₹${subtotal} is below required ₹${couponMinCart}.`
       );
       return;
     }
@@ -274,6 +319,16 @@ export function CartPage() {
     if (!code) {
       toast.error("Please enter a valid coupon code");
       return;
+    }
+
+    // Instant local check against available coupons
+    const matchedCoupon = availableCoupons.find((ac) => ac.code.toUpperCase() === code);
+    if (matchedCoupon) {
+      const minReq = Number(matchedCoupon.minCart ?? (matchedCoupon as any).min_cart ?? 0);
+      if (minReq > 0 && subtotal < minReq) {
+        toast.error(`${matchedCoupon.code} requires a minimum cart value of ₹${minReq}. Add ₹${minReq - subtotal} more to unlock.`);
+        return;
+      }
     }
 
     const res = await validateCoupon(code, subtotal);
@@ -732,11 +787,13 @@ export function CartPage() {
                               c.code.toUpperCase().includes("FREESHIP") ||
                               c.code.toUpperCase().includes("FREEDEL");
 
-                            const isApplied =
+                            const minRequired = Number(c.minCart ?? (c as any).min_cart ?? (c as any).minSubtotal ?? 0);
+                            const isEligible = subtotal >= minRequired;
+                            const diffToUnlock = Math.max(0, minRequired - subtotal);
+                            const isApplied = isEligible && (
                               appliedCouponObj?.code.toUpperCase() === c.code.toUpperCase() ||
-                              (appliedCoupon && appliedCoupon.toUpperCase().startsWith(c.code.toUpperCase()));
-                            const isEligible = subtotal >= (c.minCart || 0);
-                            const diffToUnlock = (c.minCart || 0) - subtotal;
+                              Boolean(appliedCoupon && appliedCoupon.toUpperCase().startsWith(c.code.toUpperCase()))
+                            );
 
                             let offerTitle = c.title;
                             if (!offerTitle || offerTitle.includes("Promo Offer") || offerTitle.includes("Special Offer")) {

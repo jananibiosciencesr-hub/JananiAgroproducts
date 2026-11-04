@@ -3616,6 +3616,13 @@ try {
                         $discount = min((float)$coupon['discount'], $subtotal);
                     }
 
+                    $coupon['minCart'] = (float)($coupon['min_cart'] ?? 0);
+                    $coupon['maxDiscount'] = (float)($coupon['max_discount'] ?? 0);
+                    $coupon['discount'] = (float)($coupon['discount'] ?? 0);
+                    $coupon['expiryDate'] = $coupon['expiry_date'] ?? null;
+                    $coupon['startDate'] = $coupon['start_date'] ?? null;
+                    $coupon['isFreeShipping'] = (bool)($coupon['is_free_shipping'] ?? 0) || $isFree;
+
                     echo json_encode([
                         'success' => true,
                         'valid' => true,
