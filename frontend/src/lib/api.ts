@@ -173,6 +173,8 @@ export function parseProductVariants(
     const sku = v.sku || `VAR-${idx + 1}`;
     const id = String(v.id || `VAR-${idx + 1}`);
 
+    const img = v.image && typeof v.image === "string" && v.image.trim() ? v.image.trim() : (v.imageUrl || v.img || "");
+
     return {
       id,
       name: nameOrLabel,
@@ -183,7 +185,8 @@ export function parseProductVariants(
       originalPrice: origPrice,
       oldPrice: origPrice,
       stock,
-      inStock: stock > 0
+      inStock: stock > 0,
+      image: img || undefined
     };
   });
 
@@ -213,7 +216,8 @@ export function parseProductVariants(
       originalPrice: op5,
       oldPrice: op5,
       stock: 50,
-      inStock: true
+      inStock: true,
+      image: undefined
     });
   }
 

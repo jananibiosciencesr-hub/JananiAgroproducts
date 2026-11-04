@@ -88,10 +88,28 @@ function ProductDetailPage() {
 
   // Resolved product variants guaranteeing both 1L and 5L pack sizes
   const resolvedVariants: ProductVariant[] = useMemo(() => {
-    const vars: ProductVariant[] =
-      Array.isArray(product.variants) && product.variants.length > 0
-        ? [...product.variants]
-        : [];
+    let rawList: any[] = [];
+    if (Array.isArray(product.variants)) {
+      rawList = product.variants;
+    } else if (typeof (product as any)?.variants === "string" && (product as any).variants.trim()) {
+      try {
+        const parsed = JSON.parse((product as any).variants);
+        if (Array.isArray(parsed)) rawList = parsed;
+      } catch {}
+    }
+
+    const vars: ProductVariant[] = rawList.map((v: any, idx: number) => ({
+      id: String(v.id || `var-${idx + 1}`),
+      name: v.name || v.label || v.unit || `Variant ${idx + 1}`,
+      label: v.label || v.name || v.unit || `Variant ${idx + 1}`,
+      unit: v.unit || v.name || v.label || "1 L",
+      price: Number(v.price) || Number(product.price) || 0,
+      originalPrice: Number(v.originalPrice ?? v.oldPrice) || Math.round((Number(v.price) || Number(product.price) || 0) * 1.2),
+      oldPrice: Number(v.oldPrice ?? v.originalPrice) || Math.round((Number(v.price) || Number(product.price) || 0) * 1.2),
+      stock: v.stock !== undefined ? Number(v.stock) : (product.stockCount || 50),
+      inStock: (v.stock !== undefined ? Number(v.stock) : (product.stockCount || 50)) > 0,
+      image: v.image && typeof v.image === "string" && v.image.trim() ? v.image.trim() : undefined,
+    }));
 
     const has5L = vars.some((v) => {
       const u = (v.unit || v.label || v.name || "").toLowerCase();
@@ -138,10 +156,12 @@ function ProductDetailPage() {
     };
 
     if (vars.length <= 1) {
-      const p1 = isProduct5L ? get1LPrice(basePrice) : basePrice;
-      const op1 = isProduct5L ? Math.round(p1 * 1.2) : baseOldPrice;
+      const p1 = isProduct5L ? get1LPrice(basePrice) : (vars[0]?.price || basePrice);
+      const op1 = isProduct5L ? Math.round(p1 * 1.2) : (vars[0]?.oldPrice || baseOldPrice);
       const p5 = isProduct5L ? basePrice : get5LPrice(basePrice);
       const op5 = isProduct5L ? baseOldPrice : Math.round(baseOldPrice * 4.5);
+      const img1L = (vars[0]?.image && !isProduct5L) ? vars[0].image : getProductVariantImage(product, "1l");
+      const img5L = (vars[0]?.image && isProduct5L) ? vars[0].image : getProductVariantImage(product, "5l");
 
       return [
         {
@@ -154,6 +174,7 @@ function ProductDetailPage() {
           oldPrice: op1,
           stock: product.stockCount || 100,
           inStock: true,
+          image: img1L,
         },
         {
           id: "5l",
@@ -165,6 +186,7 @@ function ProductDetailPage() {
           oldPrice: op5,
           stock: product.stockCount || 50,
           inStock: true,
+          image: img5L,
         },
       ];
     }
@@ -216,7 +238,10 @@ function ProductDetailPage() {
       });
     }
 
-    return vars;
+    return vars.map((v) => ({
+      ...v,
+      image: v.image || getProductVariantImage(product, v.id || v.unit || v.name || v.label),
+    }));
   }, [product]);
 
   // Variants setup
@@ -371,25 +396,28 @@ function ProductDetailPage() {
       });
     };
 
-    // 1. Primary image for currently selected variant (1L bottle or 5L can)
+    // 1. Primary image for currently selected variant (1L bottle, 5L can, or custom uploaded variant photo)
     const activeVarNormId = selectedVariant?.id?.toLowerCase().includes("5") || selectedVariant?.unit?.includes("5") ? "5l" : "1l";
-    const activeVarImg = selectedVariant?.image || getProductVariantImage(product, activeVarNormId);
+    const activeVarImg = selectedVariant?.image || getProductVariantImage(product, selectedVariant?.id || selectedVariant?.unit || activeVarNormId);
     if (activeVarImg) {
       addImg(activeVarImg, `${product.name} - ${selectedVariant?.label || selectedVariant?.unit || 'Pack'}`);
     }
 
-    // 2. The other variant image (e.g. if 1L selected, offer 5L can; if 5L selected, offer 1L bottle)
-    const otherNormId = activeVarNormId === "5l" ? "1l" : "5l";
-    const otherVarImg = getProductVariantImage(product, otherNormId);
-    if (otherVarImg && otherVarImg !== activeVarImg) {
-      addImg(otherVarImg, `${product.name} - ${otherNormId.toUpperCase()} Pack`);
+    // 2. Add images of all other variants for this product so user can view/click all variant photos
+    if (Array.isArray(resolvedVariants) && resolvedVariants.length > 0) {
+      resolvedVariants.forEach((v) => {
+        const vImg = v.image || getProductVariantImage(product, v.id || v.unit || v.name || v.label);
+        if (vImg && vImg !== activeVarImg) {
+          addImg(vImg, `${product.name} - ${v.label || v.name || v.unit || 'Pack'}`);
+        }
+      });
     }
 
     // 3. Product Video Demo (Position 3 in Gallery Strip)
     const rawVideo = (product as any).video_url || product.videoUrl;
     if (rawVideo && typeof rawVideo === "string" && rawVideo.trim() !== "") {
       const vClean = rawVideo.trim();
-      const poster = product.image || activeVarImg || otherVarImg || "/products/harit.jpg";
+      const poster = product.image || activeVarImg || "/products/harit.jpg";
       list.push({
         id: "prod-gallery-video",
         src: poster,
@@ -417,7 +445,7 @@ function ProductDetailPage() {
     }
 
     return list;
-  }, [product, selectedVariant]);
+  }, [product, selectedVariant, resolvedVariants]);
 
   const variantNormId = selectedVariant?.id?.toLowerCase().includes("5") || selectedVariant?.unit?.includes("5") ? "5l" : "1l";
   const canonicalCartKey = `${product.id}__${variantNormId}`;

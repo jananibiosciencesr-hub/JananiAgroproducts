@@ -72,6 +72,7 @@ export interface ProductVariant {
   unit?: string;
   oldPrice?: number;
   inStock?: boolean;
+  image?: string;
 }
 
 export const JANANI_DEFAULT_CATEGORIES = [
@@ -1317,7 +1318,8 @@ function ProductFormModal({
           originalPrice: Number(v.originalPrice ?? v.oldPrice) || Math.round((Number(v.price) || Number(initialData.price) || 0) * 1.2),
           oldPrice: Number(v.oldPrice ?? v.originalPrice) || Math.round((Number(v.price) || Number(initialData.price) || 0) * 1.2),
           stock: v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50),
-          inStock: (v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50)) > 0
+          inStock: (v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50)) > 0,
+          image: v.image ? String(v.image).trim() : ""
         }));
       } else if (typeof (initialData as any).variants === "string" && (initialData as any).variants.trim()) {
         try {
@@ -1333,7 +1335,8 @@ function ProductFormModal({
               originalPrice: Number(v.originalPrice ?? v.oldPrice) || Math.round((Number(v.price) || Number(initialData.price) || 0) * 1.2),
               oldPrice: Number(v.oldPrice ?? v.originalPrice) || Math.round((Number(v.price) || Number(initialData.price) || 0) * 1.2),
               stock: v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50),
-              inStock: (v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50)) > 0
+              inStock: (v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50)) > 0,
+              image: v.image ? String(v.image).trim() : ""
             }));
           }
         } catch { }
@@ -1351,7 +1354,8 @@ function ProductFormModal({
             originalPrice: Number(initialData.originalPrice) || Math.round((Number(initialData.price) || 450) * 1.2),
             oldPrice: Number(initialData.originalPrice) || Math.round((Number(initialData.price) || 450) * 1.2),
             stock: Number(initialData.stock || 50),
-            inStock: Number(initialData.stock || 50) > 0
+            inStock: Number(initialData.stock || 50) > 0,
+            image: initialData.image || ""
           }
         ];
       }
@@ -1591,7 +1595,8 @@ function ProductFormModal({
       originalPrice: Math.round(basePrice * 2.2),
       oldPrice: Math.round(basePrice * 2.2),
       stock: 20,
-      inStock: true
+      inStock: true,
+      image: ""
     };
     setFormData((prev) => ({
       ...prev,
@@ -1960,6 +1965,92 @@ function ProductFormModal({
                           }}
                           className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs outline-none"
                         />
+                      </div>
+                    </div>
+
+                    {/* Variant Specific Image Section */}
+                    <div className="pt-2 border-t border-border/60">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                          <ImageIcon className="size-3 text-emerald-600" />
+                          <span>Variant Specific Image (1L Bottle / 5L Can / Custom Size Photo)</span>
+                        </label>
+                        {v.image && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                              updated[i] = { ...v, image: "" };
+                              setFormData({ ...formData, variants: updated });
+                            }}
+                            className="text-[10px] text-rose-500 hover:text-rose-700 font-semibold cursor-pointer"
+                          >
+                            Clear Image
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Mini Thumbnail Preview */}
+                        <div className="size-9 rounded-xl border border-border bg-muted/40 overflow-hidden shrink-0 flex items-center justify-center">
+                          {v.image ? (
+                            <img
+                              src={v.image}
+                              alt={v.name || `Variant ${i + 1}`}
+                              className="size-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = "/products/placeholder.webp";
+                              }}
+                            />
+                          ) : (
+                            <ImageIcon className="size-4 text-muted-foreground/40" />
+                          )}
+                        </div>
+
+                        {/* Paste Image URL Input */}
+                        <input
+                          type="text"
+                          value={v.image || ""}
+                          placeholder="Paste Image URL (e.g. /products/harit-5l.jpg or web link)"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                            updated[i] = { ...v, image: val };
+                            setFormData({ ...formData, variants: updated });
+                          }}
+                          className="h-8 flex-1 rounded-xl border border-border bg-background px-2.5 text-xs font-mono outline-none focus:border-emerald-600"
+                        />
+
+                        {/* Upload Button */}
+                        <input
+                          type="file"
+                          id={`variant-upload-${i}`}
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const dataUrl = event.target?.result as string;
+                              if (dataUrl) {
+                                const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                                updated[i] = { ...v, image: dataUrl };
+                                setFormData({ ...formData, variants: updated });
+                                toast.success(`Variant image loaded for ${v.name || `Variant #${i + 1}`}!`);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                            e.target.value = "";
+                          }}
+                        />
+                        <label
+                          htmlFor={`variant-upload-${i}`}
+                          className="h-8 px-3 rounded-xl border border-emerald-600/30 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-xs"
+                        >
+                          <Upload className="size-3.5" />
+                          Upload
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -2824,6 +2915,7 @@ function ProductFormModal({
                 const st = v.stock !== undefined ? Number(v.stock) : (Number(formData.warehouseStock) || 50);
                 const n = v.name || v.label || v.unit || `Variant ${idx + 1}`;
                 const u = v.unit || v.name || v.label || formData.unit || "1 L";
+                const img = v.image && typeof v.image === "string" && v.image.trim() ? v.image.trim() : "";
                 return {
                   id: String(v.id || `VAR-${Date.now()}-${idx + 1}`),
                   name: n,
@@ -2834,7 +2926,8 @@ function ProductFormModal({
                   originalPrice: op,
                   oldPrice: op,
                   stock: st,
-                  inStock: st > 0
+                  inStock: st > 0,
+                  image: img
                 };
               });
 

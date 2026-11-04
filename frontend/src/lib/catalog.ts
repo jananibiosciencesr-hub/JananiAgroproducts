@@ -204,10 +204,50 @@ export function getVideoEmbedInfo(url?: string): {
  * Resolves the appropriate variant image (1L bottle vs 5L can) for a product.
  */
 export function getProductVariantImage(
-  product: { slug?: string; name?: string; image?: string; id?: any } | Product,
+  product: { slug?: string; name?: string; image?: string; id?: any; variants?: any } | Product,
   variantIdOrUnit: string = "1l"
 ): string {
-  const normKey = (variantIdOrUnit || "").toLowerCase();
+  const normKey = (variantIdOrUnit || "").toLowerCase().trim();
+
+  // 1. Check if product has explicit variants array/JSON containing a matching image
+  if (product) {
+    let pVars: any[] = [];
+    if (Array.isArray((product as any).variants)) {
+      pVars = (product as any).variants;
+    } else if (typeof (product as any).variants === "string" && (product as any).variants.trim()) {
+      try {
+        const parsed = JSON.parse((product as any).variants);
+        if (Array.isArray(parsed)) pVars = parsed;
+      } catch {}
+    }
+
+    if (pVars.length > 0) {
+      const match = pVars.find((v: any) => {
+        if (!v) return false;
+        const vid = String(v.id || "").toLowerCase().trim();
+        const vunit = String(v.unit || "").toLowerCase().trim();
+        const vname = String(v.name || "").toLowerCase().trim();
+        const vlabel = String(v.label || "").toLowerCase().trim();
+        const vsku = String(v.sku || "").toLowerCase().trim();
+
+        if (vid === normKey || vunit === normKey || vname === normKey || vlabel === normKey || vsku === normKey) {
+          return true;
+        }
+        if (normKey.includes("5l") || normKey.includes("5 l") || normKey === "5") {
+          return vid.includes("5") || vunit.includes("5") || vlabel.includes("5") || vname.includes("5");
+        }
+        if (normKey.includes("1l") || normKey.includes("1 l") || normKey === "1") {
+          return vid.includes("1") || vunit.includes("1") || vlabel.includes("1") || vname.includes("1");
+        }
+        return false;
+      });
+
+      if (match && match.image && typeof match.image === "string" && match.image.trim()) {
+        return match.image.trim();
+      }
+    }
+  }
+
   const slug = (product?.slug || "").toLowerCase();
   const name = (product?.name || "").toLowerCase();
   const is5L =
@@ -235,10 +275,28 @@ export function getProductVariantImage(
  * Resolves standard 1L and 5L variants for any product in the catalog.
  */
 export function resolveProductVariants(product: Product): ProductVariant[] {
-  const vars: ProductVariant[] =
-    Array.isArray(product.variants) && product.variants.length > 0
-      ? [...product.variants]
-      : [];
+  let rawList: any[] = [];
+  if (Array.isArray(product.variants)) {
+    rawList = product.variants;
+  } else if (typeof (product as any)?.variants === "string" && (product as any).variants.trim()) {
+    try {
+      const parsed = JSON.parse((product as any).variants);
+      if (Array.isArray(parsed)) rawList = parsed;
+    } catch {}
+  }
+
+  const vars: ProductVariant[] = rawList.map((v: any, idx: number) => ({
+    id: String(v.id || `var-${idx + 1}`),
+    name: v.name || v.label || v.unit || `Variant ${idx + 1}`,
+    label: v.label || v.name || v.unit || `Variant ${idx + 1}`,
+    unit: v.unit || v.name || v.label || "1 L",
+    price: Number(v.price) || Number(product.price) || 0,
+    originalPrice: Number(v.originalPrice ?? v.oldPrice) || Math.round((Number(v.price) || Number(product.price) || 0) * 1.2),
+    oldPrice: Number(v.oldPrice ?? v.originalPrice) || Math.round((Number(v.price) || Number(product.price) || 0) * 1.2),
+    stock: v.stock !== undefined ? Number(v.stock) : (product.stockCount || 50),
+    inStock: (v.stock !== undefined ? Number(v.stock) : (product.stockCount || 50)) > 0,
+    image: v.image && typeof v.image === "string" && v.image.trim() ? v.image.trim() : undefined,
+  }));
 
   const has5L = vars.some((v) => {
     const u = (v.unit || v.label || v.name || "").toLowerCase();
@@ -367,7 +425,7 @@ export function resolveProductVariants(product: Product): ProductVariant[] {
 
   return vars.map((v) => ({
     ...v,
-    image: v.image || getProductVariantImage(product, v.id || v.unit),
+    image: v.image || getProductVariantImage(product, v.id || v.unit || v.name || v.label),
   }));
 }
 
