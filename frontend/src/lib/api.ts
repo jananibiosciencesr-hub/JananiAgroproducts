@@ -334,16 +334,30 @@ export async function getProducts(params?: { category?: string; search?: string;
     mergedMap.set(norm.slug || String(norm.id), norm);
   });
 
-  // 2. Local admin products
+  // 2. Local admin products (Filter out any test copies or trash items)
   localProducts.forEach((p) => {
-    if ((p as any).status !== "Trash" && (p as any).active !== 0 && (p as any).active !== false) {
+    if (
+      (p as any).status !== "Trash" &&
+      (p as any).active !== 0 &&
+      (p as any).active !== false &&
+      !(p as any).name?.includes("(Copy)") &&
+      !(p as any).slug?.includes("-copy-") &&
+      !(p as any).sku?.includes("-CPY")
+    ) {
       mergedMap.set(p.slug || String(p.id), p);
     }
   });
 
-  // 3. MySQL Live fetched products (highest authority)
+  // 3. MySQL Live fetched products (highest authority, filter out copies/trash)
   fetchedList.forEach((p) => {
-    if ((p as any).status !== "Trash" && (p as any).active !== 0 && (p as any).active !== false) {
+    if (
+      (p as any).status !== "Trash" &&
+      (p as any).active !== 0 &&
+      (p as any).active !== false &&
+      !p.name?.includes("(Copy)") &&
+      !p.slug?.includes("-copy-") &&
+      !(p as any).sku?.includes("-CPY")
+    ) {
       mergedMap.set(p.slug || String(p.id), p);
     }
   });
@@ -1746,22 +1760,39 @@ export async function getAdminProducts(params?: {
     productMap.set(norm.slug || String(norm.id), norm);
   });
 
-  // 2. Local storage
+  // 2. Local storage (purging any legacy copies)
   localProducts.forEach((lp) => {
-    productMap.set(lp.slug || String(lp.id), lp);
+    if (!lp.name?.includes("(Copy)") && !lp.slug?.includes("-copy-") && !lp.sku?.includes("-CPY") && lp.status !== "Trash") {
+      productMap.set(lp.slug || String(lp.id), lp);
+    }
   });
 
   // 3. MySQL (highest authority)
   dbList.forEach((dbP) => {
-    productMap.set(dbP.slug || String(dbP.id), dbP);
+    if (dbP.status !== "Trash") {
+      productMap.set(dbP.slug || String(dbP.id), dbP);
+    } else {
+      productMap.delete(dbP.slug || String(dbP.id));
+    }
   });
+
+  // Purge any copies that are not explicitly present in active dbList
+  const activeDbSlugs = new Set(dbList.map((p) => p.slug || String(p.id)));
+  for (const [key, prod] of productMap.entries()) {
+    if (prod.name?.includes("(Copy)") || prod.slug?.includes("-copy-") || prod.sku?.includes("-CPY") || prod.status === "Trash") {
+      if (!activeDbSlugs.has(key)) {
+        productMap.delete(key);
+      }
+    }
+  }
 
   let list = Array.from(productMap.values());
 
-  // Keep localStorage up to date with merged list
-  if (typeof window !== "undefined" && list.length > 0) {
+  // Keep localStorage up to date with merged list (excluding any copies or trash)
+  if (typeof window !== "undefined") {
     try {
-      localStorage.setItem("janani_admin_products", JSON.stringify(list));
+      const cleanList = list.filter((p) => !p.name?.includes("(Copy)") && !p.slug?.includes("-copy-") && !p.sku?.includes("-CPY") && p.status !== "Trash");
+      localStorage.setItem("janani_admin_products", JSON.stringify(cleanList));
     } catch (e) { }
   }
 
@@ -2011,19 +2042,38 @@ export async function duplicateAdminProduct(id: string) {
 
 export async function deleteAdminProduct(id: string | number) {
   let res = await fetchJson<{ success: boolean; message: string }>(
-    `/api.php?action=products&id=${encodeURIComponent(String(id))}`,
+    `/api.php?action=products&id=${encodeURIComponent(String(id))}&permanent=1`,
     {
       method: "DELETE"
     }
   );
 
   if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/${id}`, {
-      method: "DELETE"
-    });
+    res = await fetchJson<{ success: boolean; message: string }>(
+      `/api.php?action=products&id=${encodeURIComponent(String(id))}`,
+      {
+        method: "DELETE"
+      }
+    );
   }
 
-  return res || { success: true, message: "Product moved to Trash" };
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_products");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter(
+            (p: any) => String(p.id) !== String(id) && p.slug !== String(id) && p.sku !== String(id)
+          );
+          localStorage.setItem("janani_admin_products", JSON.stringify(filtered));
+        }
+      }
+      window.dispatchEvent(new CustomEvent("janani-products-updated", { detail: { deletedId: id } }));
+    } catch (e) { }
+  }
+
+  return res || { success: true, message: "Product deleted from database" };
 }
 
 export async function restoreAdminProduct(id: string) {
@@ -2044,20 +2094,7 @@ export async function restoreAdminProduct(id: string) {
 }
 
 export async function permanentDeleteAdminProduct(id: string) {
-  let res = await fetchJson<{ success: boolean; message: string }>(
-    `/api.php?action=products&id=${encodeURIComponent(id)}&permanent=1`,
-    {
-      method: "DELETE"
-    }
-  );
-
-  if (!res?.success) {
-    res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/${id}/permanent`, {
-      method: "DELETE"
-    });
-  }
-
-  return res || { success: true, message: "Product permanently deleted from MySQL" };
+  return deleteAdminProduct(id);
 }
 
 export async function bulkUpdateProductStatus(ids: string[], active: boolean) {
@@ -2111,17 +2148,34 @@ export async function bulkUpdateProductStock(payload: { ids: string[]; quantity:
 export async function bulkDeleteAdminProducts(ids: string[]) {
   let res = await fetchJson<{ success: boolean; message: string }>(`/api.php?action=products&id=bulk-delete`, {
     method: "POST",
-    body: JSON.stringify({ ids })
+    body: JSON.stringify({ ids, permanent: true })
   });
 
   if (!res?.success) {
     res = await fetchJson<{ success: boolean; message: string }>(`/admin/products/bulk-delete`, {
       method: "POST",
-      body: JSON.stringify({ ids })
+      body: JSON.stringify({ ids, permanent: true })
     });
   }
 
-  return res || { success: true, message: `Deleted ${ids.length} products from MySQL` };
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("janani_admin_products");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const idSet = new Set(ids.map(String));
+          const filtered = parsed.filter(
+            (p: any) => !idSet.has(String(p.id)) && !idSet.has(p.slug) && !idSet.has(p.sku)
+          );
+          localStorage.setItem("janani_admin_products", JSON.stringify(filtered));
+        }
+      }
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
+    } catch (e) { }
+  }
+
+  return res || { success: true, message: "Deleted products from database" };
 }
 
 export async function importAdminProducts(products: any[]) {

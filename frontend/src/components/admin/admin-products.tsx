@@ -348,23 +348,17 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
     }
   };
 
-  // Soft Delete & Restore Handlers
+  // Delete & Restore Handlers
   const handleDelete = async (id: string) => {
-    if (statusFilter === "trash") {
-      await permanentDeleteAdminProduct(id);
-      await loadProducts();
-      toast.success("Product permanently deleted from database");
-    } else {
-      await deleteAdminProduct(id);
-      await loadProducts();
-      toast.success("Product moved to Trash Bin in database");
-    }
+    await deleteAdminProduct(id);
+    await loadProducts();
+    toast.success("Product deleted from database");
   };
 
   const handleRestore = async (id: string) => {
     await restoreAdminProduct(id);
     await loadProducts();
-    toast.success("Product restored to active catalog in database");
+    toast.success("Product restored in database");
   };
 
   // Bulk Operations
@@ -381,7 +375,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
     await bulkDeleteAdminProducts(selectedIds);
     setSelectedIds([]);
     await loadProducts();
-    toast.success(`Moved ${selectedIds.length} products to Trash Bin in database`);
+    toast.success(`Deleted ${selectedIds.length} products from database`);
   };
 
   // CSV Export
@@ -496,7 +490,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 size="sm"
                 className="h-8 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold gap-1 cursor-pointer"
               >
-                <Trash2 className="size-3.5" /> Move to Trash
+                <Trash2 className="size-3.5" /> Delete Selected
               </Button>
 
               <button
@@ -720,7 +714,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                               <button
                                 onClick={() => setDeleteConfirmTarget(p)}
                                 className="p-1.5 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-600 transition-colors cursor-pointer"
-                                title="Move to Trash"
+                                title="Delete Product"
                               >
                                 <Trash2 className="size-4" />
                               </button>
@@ -887,12 +881,12 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
             <div className="text-center space-y-1.5">
               <h3 className="text-lg font-bold text-foreground">
-                {statusFilter === "trash" ? "Permanently Delete Product?" : "Move Product to Trash?"}
+                Delete Product?
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Are you sure you want to {statusFilter === "trash" ? "permanently delete" : "move"}{" "}
+                Are you sure you want to delete{" "}
                 <strong className="text-foreground">{deleteConfirmTarget.name}</strong>{" "}
-                {statusFilter === "trash" ? "from the database? This cannot be undone." : "to the Trash Bin?"}
+                from the database? This cannot be undone.
               </p>
             </div>
 
@@ -919,7 +913,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 }}
                 className="px-5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow transition-all disabled:opacity-50 cursor-pointer"
               >
-                {isDeleting ? "Processing..." : statusFilter === "trash" ? "Yes, Delete Permanently" : "Yes, Move to Trash"}
+                {isDeleting ? "Deleting..." : "Yes, Delete Product"}
               </button>
             </div>
           </div>
@@ -936,10 +930,10 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
             <div className="text-center space-y-1.5">
               <h3 className="text-lg font-bold text-foreground">
-                Move {selectedIds.length} Products to Trash?
+                Delete {selectedIds.length} Products?
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Are you sure you want to move the selected <strong className="text-foreground">{selectedIds.length}</strong> products to the Trash Bin?
+                Are you sure you want to delete the selected <strong className="text-foreground">{selectedIds.length}</strong> products permanently from the database? This cannot be undone.
               </p>
             </div>
 
@@ -966,7 +960,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 }}
                 className="px-5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow transition-all disabled:opacity-50 cursor-pointer"
               >
-                {isDeleting ? "Moving..." : "Yes, Move to Trash"}
+                {isDeleting ? "Deleting..." : "Yes, Delete Permanently"}
               </button>
             </div>
           </div>

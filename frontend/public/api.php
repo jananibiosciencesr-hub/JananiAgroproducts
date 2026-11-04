@@ -1415,6 +1415,11 @@ function ensureJananiCatalogSynced($pdo) {
             $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR LOWER(p.category_name) = LOWER(c.name)))");
         } catch (Exception $e) {}
 
+        // Auto-purge any duplicate/copy products created via duplicate action and any trash items
+        try {
+            $pdo->exec("DELETE FROM `products` WHERE `name` LIKE '%(Copy)%' OR `slug` LIKE '%-copy-%' OR `sku` LIKE '%-CPY%' OR `status` = 'Trash' OR `active` = 0");
+        } catch (Exception $e) {}
+
         // Auto-clean any duplicated store support numbers from customer rows in users table
         try {
             $pdo->exec("UPDATE `users` SET `phone` = '' WHERE `phone` = '+91 98480 22338' AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
@@ -2552,13 +2557,13 @@ try {
                         if (!empty($ids) && is_array($ids)) {
                             foreach ($ids as $singleId) {
                                 if (is_numeric($singleId)) {
-                                    $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `id` = ?")->execute([(int)$singleId]);
+                                    $pdo->prepare("DELETE FROM `products` WHERE `id` = ?")->execute([(int)$singleId]);
                                 } else {
-                                    $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `slug` = ?")->execute([$singleId]);
+                                    $pdo->prepare("DELETE FROM `products` WHERE `slug` = ? OR `sku` = ?")->execute([$singleId, $singleId]);
                                 }
                             }
                         }
-                        echo json_encode(['success' => true, 'message' => "Moved " . count($ids) . " products to Trash in MySQL"]);
+                        echo json_encode(['success' => true, 'message' => "Deleted " . count($ids) . " products from MySQL"]);
                         exit;
                     }
 
@@ -2825,27 +2830,15 @@ try {
                 }
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
-                $permanent = isset($_GET['permanent']) && $_GET['permanent'] == 1;
                 if ($id) {
-                    if ($permanent) {
-                        if (is_numeric($id)) {
-                            $stmt = $pdo->prepare("DELETE FROM `products` WHERE `id` = ?");
-                            $stmt->execute([(int)$id]);
-                        } else {
-                            $stmt = $pdo->prepare("DELETE FROM `products` WHERE `slug` = ?");
-                            $stmt->execute([$id]);
-                        }
-                        echo json_encode(['success' => true, 'message' => 'Product permanently deleted from MySQL']);
+                    if (is_numeric($id)) {
+                        $stmt = $pdo->prepare("DELETE FROM `products` WHERE `id` = ?");
+                        $stmt->execute([(int)$id]);
                     } else {
-                        if (is_numeric($id)) {
-                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `id` = ?");
-                            $stmt->execute([(int)$id]);
-                        } else {
-                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `slug` = ?");
-                            $stmt->execute([$id]);
-                        }
-                        echo json_encode(['success' => true, 'message' => 'Product moved to Trash in MySQL']);
+                        $stmt = $pdo->prepare("DELETE FROM `products` WHERE `slug` = ? OR `sku` = ?");
+                        $stmt->execute([$id, $id]);
                     }
+                    echo json_encode(['success' => true, 'message' => 'Product permanently deleted from MySQL']);
                     exit;
                 }
                 echo json_encode(['success' => false, 'message' => 'Product ID required for deletion']);
