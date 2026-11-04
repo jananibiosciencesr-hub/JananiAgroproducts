@@ -296,36 +296,13 @@ export function HeroBannerCarousel() {
                     </div>
                   </div>
                 ) : (
-                  <>
-                    {/* Entire graphic banner acts as a clickable background link */}
-                    <Link
-                      to={slide.link || "/products"}
-                      className="absolute inset-0 z-10 cursor-pointer"
-                      tabIndex={isCurrent ? 0 : -1}
-                      aria-label={slide.title || "Janani Agro Banner"}
-                    />
-
-                    {/* Floating CTA Buttons on Graphic Banner */}
-                    <div className="absolute bottom-3 sm:bottom-4 md:bottom-4 left-5 sm:left-12 md:left-16 z-20 flex flex-wrap items-center gap-2.5 sm:gap-3 pointer-events-auto">
-                      <Link
-                        to={slide.link || "/products"}
-                        tabIndex={isCurrent ? 0 : -1}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-black/20 hover:shadow-xl transition-transform hover:scale-105 active:scale-95 cursor-pointer"
-                      >
-                        <span>{slide.ctaText || "Explore Products"}</span>
-                        <ArrowRight className="size-3.5 sm:size-4" />
-                      </Link>
-                      {slide.secondaryCtaLabel && (
-                        <Link
-                          to={slide.secondaryCtaUrl || "/contact"}
-                          tabIndex={isCurrent ? 0 : -1}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-950/40 hover:bg-white hover:text-slate-950 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-lg transition-all hover:scale-105 cursor-pointer"
-                        >
-                          <span>{slide.secondaryCtaLabel}</span>
-                        </Link>
-                      )}
-                    </div>
-                  </>
+                  /* Entire graphic banner acts as a clickable background link */
+                  <Link
+                    to={slide.link || "/products"}
+                    className="absolute inset-0 z-10 cursor-pointer"
+                    tabIndex={isCurrent ? 0 : -1}
+                    aria-label={slide.title || "Janani Agro Banner"}
+                  />
                 )}
               </div>
             );
