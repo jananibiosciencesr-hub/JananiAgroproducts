@@ -525,26 +525,6 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
         </div>
       )}
 
-      {/* Master Action Utilities */}
-      <div className="flex items-center justify-end flex-wrap gap-2.5">
-        <button
-          onClick={exportCouponsCsv}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/60 transition-colors shadow-sm cursor-pointer"
-          title="Download CSV database of all vouchers"
-        >
-          <Download className="w-3.5 h-3.5 text-muted-foreground" />
-          <span>Export CSV</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("generator")}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-800 dark:text-amber-300 border border-amber-300/40 dark:border-amber-700/50 transition-all shadow-sm cursor-pointer"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>Bulk Generator</span>
-        </button>
-      </div>
-
       {/* ========================================================================= */}
       {/* TAB 1: ALL COUPONS & VOUCHERS */}
       {/* ========================================================================= */}

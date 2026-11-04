@@ -2000,43 +2000,6 @@ function ProductFormModal({
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Add Image URL to Gallery</label>
-                <div className="flex gap-2">
-                  <input
-                    value={newGalleryUrl}
-                    onChange={(e) => setNewGalleryUrl(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddGalleryImage();
-                      }
-                    }}
-                    placeholder="Enter URL or paste image link (e.g. /images/categories/rice.webp)"
-                    className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => handleAddGalleryImage()}
-                    size="sm"
-                    className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 shadow-sm"
-                  >
-                    Add
-                  </Button>
-                  <label className="inline-flex items-center justify-center gap-1.5 px-3 rounded-2xl border border-border bg-card hover:bg-accent text-foreground text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-sm">
-                    <Upload className="size-3.5 text-brand-leaf" />
-                    <span>Upload File</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleUploadGalleryFile}
-                    />
-                  </label>
-                </div>
-              </div>
-
               {/* Quick Preset Images */}
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">

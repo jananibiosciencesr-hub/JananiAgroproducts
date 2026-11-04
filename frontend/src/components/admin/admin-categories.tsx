@@ -889,29 +889,15 @@ function CategoryFormModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">URL Slug *</label>
-                  <input
-                    required
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="bio-fertilizers"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-semibold text-emerald-600 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Taxonomy Tier *</label>
-                  <select
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: e.target.value as any, parentId: "" })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none"
-                  >
-                    <option value="root">Root Category (Tier 1)</option>
-                    <option value="sub">Sub Category (Tier 2)</option>
-                    <option value="child">Child Category (Tier 3)</option>
-                  </select>
-                </div>
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">URL Slug *</label>
+                <input
+                  required
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  placeholder="bio-fertilizers"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-semibold text-emerald-600 outline-none"
+                />
               </div>
 
               {formData.level !== "root" && (
