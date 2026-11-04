@@ -1,6 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -189,14 +188,29 @@
     overflow-x: clip;
     position: relative;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
     letter-spacing: 0;
   }
-  button, input, optgroup, select, textarea {
+
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
     font-family: inherit;
   }
-  ::selection { background: var(--brand-gold); color: var(--forest); }
+
+  ::selection {
+    background: var(--brand-gold);
+    color: var(--forest);
+  }
 }
 
 /* Ensure sticky navigation bar sticks reliably across all browsers without overflow clipping */
@@ -213,12 +227,38 @@ header.sticky,
   box-shadow: 0 4px 20px -2px rgba(7, 91, 50, 0.08) !important;
 }
 
-@keyframes float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-14px) rotate(3deg); } }
-@keyframes fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+
+  50% {
+    transform: translateY(-14px) rotate(3deg);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 @keyframes marquee {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-50%, 0, 0); }
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 .animate-marquee {
@@ -228,7 +268,8 @@ header.sticky,
   will-change: transform;
 }
 
-.animate-marquee:hover, .animate-marquee:active {
+.animate-marquee:hover,
+.animate-marquee:active {
   animation-play-state: paused;
 }
 
@@ -238,7 +279,15 @@ header.sticky,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Global Zero-Gap & Compact Layout System */
@@ -260,46 +309,77 @@ main {
   width: 100%;
   margin-left: auto;
   margin-right: auto;
-  max-width: 80rem; /* 1280px standard */
+  max-width: 80rem;
+  /* 1280px standard */
 }
+
 @media (min-width: 1536px) {
   .responsive-shell-container {
-    max-width: 96rem; /* 1536px */
-  }
-}
-@media (min-width: 1920px) {
-  .responsive-shell-container {
-    max-width: 107.5rem; /* 1720px */
+    max-width: 96rem;
+    /* 1536px */
   }
 }
 
-main > section,
+@media (min-width: 1920px) {
+  .responsive-shell-container {
+    max-width: 107.5rem;
+    /* 1720px */
+  }
+}
+
+main>section,
 main section {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
 
 /* Eliminate excessive section vertical paddings across all views */
-.py-12, .py-14, .py-16, .py-20, .py-24,
-.sm\:py-14, .sm\:py-16, .sm\:py-20, .sm\:py-24,
-.lg\:py-24, .lg\:py-28 {
+.py-12,
+.py-14,
+.py-16,
+.py-20,
+.py-24,
+.sm\:py-14,
+.sm\:py-16,
+.sm\:py-20,
+.sm\:py-24,
+.lg\:py-24,
+.lg\:py-28 {
   padding-top: clamp(0.75rem, 1.5vw, 1.25rem) !important;
   padding-bottom: clamp(0.75rem, 1.5vw, 1.25rem) !important;
 }
 
 /* Remove oversized margins and gaps between components */
-.mb-8, .mb-10, .mb-12, .mb-14, .mb-16,
-.sm\:mb-8, .sm\:mb-10, .sm\:mb-12 {
+.mb-8,
+.mb-10,
+.mb-12,
+.mb-14,
+.mb-16,
+.sm\:mb-8,
+.sm\:mb-10,
+.sm\:mb-12 {
   margin-bottom: 0.75rem !important;
 }
 
-.mt-8, .mt-10, .mt-12, .mt-14, .mt-16, .mt-20,
-.sm\:mt-8, .sm\:mt-10, .sm\:mt-12, .sm\:mt-14 {
+.mt-8,
+.mt-10,
+.mt-12,
+.mt-14,
+.mt-16,
+.mt-20,
+.sm\:mt-8,
+.sm\:mt-10,
+.sm\:mt-12,
+.sm\:mt-14 {
   margin-top: 0.75rem !important;
 }
 
-.gap-10, .gap-12, .gap-14, .gap-16,
-.lg\:gap-12, .lg\:gap-14 {
+.gap-10,
+.gap-12,
+.gap-14,
+.gap-16,
+.lg\:gap-12,
+.lg\:gap-14 {
   gap: 1rem !important;
 }
 
@@ -333,7 +413,8 @@ aside {
 }
 
 /* Ensure whole page never produces horizontal scrollbars while preserving position: sticky */
-html, body {
+html,
+body {
   max-width: 100vw;
   overflow-x: clip;
 }
@@ -395,6 +476,7 @@ button,
 
 /* Dedicated Sticky Sidebar & Cart Items Support Across All Browsers */
 @media (min-width: 1024px) {
+
   .sticky-sidebar,
   [data-sticky-sidebar="true"] {
     position: -webkit-sticky !important;
@@ -417,8 +499,8 @@ button,
 
 /* Chrome/Safari Autofill Neutralization */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-text-fill-color: currentColor !important;
   -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;

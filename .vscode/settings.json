@@ -41,6 +41,7 @@
     "tsconfig.json": true,
     "walkthrough.md": true,
     "package-lock.json": true
-  }
+  },
+  "css.lint.unknownAtRules": "ignore"
 }
 
