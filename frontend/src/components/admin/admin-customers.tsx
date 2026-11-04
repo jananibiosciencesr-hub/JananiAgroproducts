@@ -18,20 +18,17 @@ import {
   Wallet,
   Gift,
   Ticket,
-  Award,
   ArrowUpRight,
   ArrowDownLeft,
   Phone,
   Mail,
   Calendar,
   Clock,
-  ShieldAlert,
   ChevronRight,
   X,
   ExternalLink,
   Sparkles,
   TrendingUp,
-  DollarSign,
   AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
@@ -267,54 +264,6 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
 
   return (
     <div className="space-y-6">
-      {/* Top Stats Ribbon */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-soft">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total Patrons</span>
-            <Users className="size-4 text-emerald-600" />
-          </div>
-          <p className="mt-2 text-2xl font-black text-foreground">{stats.total}</p>
-          <span className="text-[10px] text-emerald-600 font-semibold">{stats.activeCount} Active accounts</span>
-        </div>
-
-        <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-soft">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Lifetime LTV</span>
-            <DollarSign className="size-4 text-teal-600" />
-          </div>
-          <p className="mt-2 text-2xl font-black text-foreground">₹{stats.totalLtv.toLocaleString('en-IN')}</p>
-          <span className="text-[10px] text-muted-foreground">Across total orders</span>
-        </div>
-
-        <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-soft">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Wallet Balance</span>
-            <Wallet className="size-4 text-amber-600" />
-          </div>
-          <p className="mt-2 text-2xl font-black text-foreground">₹{stats.totalWallet.toLocaleString('en-IN')}</p>
-          <span className="text-[10px] text-amber-600 font-semibold">Store credits in reserve</span>
-        </div>
-
-        <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-soft">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Loyalty Points</span>
-            <Award className="size-4 text-purple-600" />
-          </div>
-          <p className="mt-2 text-2xl font-black text-foreground">{stats.totalLoyalty.toLocaleString('en-IN')}</p>
-          <span className="text-[10px] text-purple-600 font-semibold">🪙 Reward coins issued</span>
-        </div>
-
-        <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-soft col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Suspended</span>
-            <ShieldAlert className="size-4 text-rose-500" />
-          </div>
-          <p className="mt-2 text-2xl font-black text-foreground">{stats.suspendedCount}</p>
-          <span className="text-[10px] text-rose-500 font-semibold">{stats.inactiveCount} Inactive accounts</span>
-        </div>
-      </div>
-
       {/* 3. Filter Bar & Search */}
       <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4 shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
         <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar max-w-full pb-0.5">
