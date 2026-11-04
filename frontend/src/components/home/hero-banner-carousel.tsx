@@ -29,6 +29,8 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_healthier_tomorrow_mobile.jpg",
     alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     ctaText: "Explore Our Products",
+    secondaryCtaLabel: "Enquire Now",
+    secondaryCtaUrl: "/contact",
     desktopPosition: "md:object-top",
     mobilePosition: "object-top",
   },
@@ -40,6 +42,8 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_biocare_mobile.jpg",
     alt: "Janani Agro Products - Shield Your Crops Naturally",
     ctaText: "Explore Bio-Care",
+    secondaryCtaLabel: "Crop Guidance",
+    secondaryCtaUrl: "/contact",
     desktopPosition: "md:object-top",
     mobilePosition: "object-top",
   },
@@ -51,6 +55,8 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_soilcare_mobile.jpg",
     alt: "Janani Agro Products - Nourish From Root To Harvest",
     ctaText: "Explore Soil-Care",
+    secondaryCtaLabel: "Dosage Guide",
+    secondaryCtaUrl: "/products",
     desktopPosition: "md:object-top",
     mobilePosition: "object-top",
   },
@@ -266,7 +272,8 @@ export function HeroBannerCarousel() {
                       <div className="mt-3 sm:mt-5 flex flex-wrap items-center gap-3">
                         <Link
                           to={slide.link || "/products"}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                          tabIndex={isCurrent ? 0 : -1}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-black/20 hover:shadow-xl transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                         >
                           <span>{slide.ctaText || "Explore Products"}</span>
                           <ArrowRight className="size-3.5 sm:size-4" />
@@ -274,7 +281,8 @@ export function HeroBannerCarousel() {
                         {slide.secondaryCtaLabel && (
                           <Link
                             to={slide.secondaryCtaUrl || "/contact"}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-950/40 hover:bg-white hover:text-slate-950 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:scale-105 cursor-pointer"
+                            tabIndex={isCurrent ? 0 : -1}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-950/40 hover:bg-white hover:text-slate-950 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-lg transition-all hover:scale-105 cursor-pointer"
                           >
                             <span>{slide.secondaryCtaLabel}</span>
                           </Link>
@@ -283,12 +291,36 @@ export function HeroBannerCarousel() {
                     </div>
                   </div>
                 ) : (
-                  <Link
-                    to={slide.link}
-                    className="absolute inset-0 z-10 cursor-pointer"
-                    tabIndex={isCurrent ? 0 : -1}
-                    aria-label={slide.title}
-                  />
+                  <>
+                    {/* Entire graphic banner acts as a clickable background link */}
+                    <Link
+                      to={slide.link || "/products"}
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      tabIndex={isCurrent ? 0 : -1}
+                      aria-label={slide.title || "Janani Agro Banner"}
+                    />
+
+                    {/* Floating CTA Buttons on Graphic Banner */}
+                    <div className="absolute bottom-5 sm:bottom-8 md:bottom-10 left-5 sm:left-12 md:left-16 z-20 flex flex-wrap items-center gap-2.5 sm:gap-3 pointer-events-auto">
+                      <Link
+                        to={slide.link || "/products"}
+                        tabIndex={isCurrent ? 0 : -1}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-black/20 hover:shadow-xl transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <span>{slide.ctaText || "Explore Products"}</span>
+                        <ArrowRight className="size-3.5 sm:size-4" />
+                      </Link>
+                      {slide.secondaryCtaLabel && (
+                        <Link
+                          to={slide.secondaryCtaUrl || "/contact"}
+                          tabIndex={isCurrent ? 0 : -1}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-950/40 hover:bg-white hover:text-slate-950 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-lg transition-all hover:scale-105 cursor-pointer"
+                        >
+                          <span>{slide.secondaryCtaLabel}</span>
+                        </Link>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             );
