@@ -45,17 +45,12 @@ export function GrowingPlantAnimation() {
 
   // Seamless continuous natural growth sequence
   useEffect(() => {
-    let s1: NodeJS.Timeout;
-    let s2: NodeJS.Timeout;
-    let s3: NodeJS.Timeout;
-    let sLoop: NodeJS.Timeout;
-
     setCurrentStage(0);
 
-    s1 = setTimeout(() => setCurrentStage(1), 1400);
-    s2 = setTimeout(() => setCurrentStage(2), 2800);
-    s3 = setTimeout(() => setCurrentStage(3), 4400);
-    sLoop = setTimeout(() => {
+    const s1 = setTimeout(() => setCurrentStage(1), 1400);
+    const s2 = setTimeout(() => setCurrentStage(2), 2800);
+    const s3 = setTimeout(() => setCurrentStage(3), 4400);
+    const sLoop = setTimeout(() => {
       setCycleKey((prev) => prev + 1);
     }, 8000);
 

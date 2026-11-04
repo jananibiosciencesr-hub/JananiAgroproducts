@@ -122,33 +122,6 @@ export function WishlistPage() {
     2: true, // Bhumi Shakti
   });
 
-  // If patron is not signed in, show clean Sign In prompt
-  if (!user) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6 animate-in fade-in duration-300">
-        <div className="size-20 mx-auto rounded-3xl bg-red-500/10 text-red-500 grid place-items-center shadow-inner">
-          <Heart className="size-10 fill-red-500/20 text-red-500" />
-        </div>
-        <div className="space-y-2">
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-            Sign In to Access Your Wishlist
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-none mx-auto lg:whitespace-nowrap hyphens-none">
-            Wishlist is only available for registered patrons. Please sign in or register with your email OTP to save and track your favourite crop solutions.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
-            <Link to="/login" search={{ redirect: "/wishlist" }}>Sign In / Register with OTP</Link>
-          </Button>
-          <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
-            <Link to="/products">Explore Products</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   // Fetch product objects corresponding to wishlist IDs
   const rawSavedProducts = useMemo(() => {
     return wishlist
@@ -158,7 +131,7 @@ export function WishlistPage() {
 
   // Filter & Sort
   const savedProducts = useMemo(() => {
-    let list = inStockOnly ? rawSavedProducts.filter((p) => p.inStock) : [...rawSavedProducts];
+    const list = inStockOnly ? rawSavedProducts.filter((p) => p.inStock) : [...rawSavedProducts];
 
     switch (sort) {
       case "price_asc":
@@ -175,6 +148,12 @@ export function WishlistPage() {
         return list;
     }
   }, [rawSavedProducts, inStockOnly, sort]);
+
+  // Recommended staples for Empty State or Upselling
+  const recommendedStaples = useMemo(() => {
+    const savedIds = new Set(rawSavedProducts.map((p) => String(p.id)));
+    return products.filter((p) => !savedIds.has(String(p.id))).slice(0, 4);
+  }, [rawSavedProducts]);
 
   const totalValue = savedProducts.reduce((sum, p) => sum + p.price, 0);
   const totalSavings = savedProducts.reduce((sum, p) => sum + (p.oldPrice - p.price), 0);
@@ -222,11 +201,32 @@ export function WishlistPage() {
     toast.success("Wishlist share link copied to clipboard!");
   };
 
-  // Recommended staples for Empty State or Upselling
-  const recommendedStaples = useMemo(() => {
-    const savedIds = new Set(rawSavedProducts.map((p) => String(p.id)));
-    return products.filter((p) => !savedIds.has(String(p.id))).slice(0, 4);
-  }, [rawSavedProducts]);
+  // If patron is not signed in, show clean Sign In prompt
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6 animate-in fade-in duration-300">
+        <div className="size-20 mx-auto rounded-3xl bg-red-500/10 text-red-500 grid place-items-center shadow-inner">
+          <Heart className="size-10 fill-red-500/20 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+            Sign In to Access Your Wishlist
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-none mx-auto lg:whitespace-nowrap hyphens-none">
+            Wishlist is only available for registered patrons. Please sign in or register with your email OTP to save and track your favourite crop solutions.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Button asChild variant="gold" size="default" className="rounded-full px-7 font-bold shadow-md">
+            <Link to="/login" search={{ redirect: "/wishlist" }}>Sign In / Register with OTP</Link>
+          </Button>
+          <Button asChild variant="outline" size="default" className="rounded-full px-6 font-semibold">
+            <Link to="/products">Explore Products</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-3 sm:py-8 lg:py-12 pb-28 sm:pb-16">

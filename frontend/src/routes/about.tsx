@@ -17,8 +17,6 @@ import {
 } from "lucide-react";
 import { SectionHeading } from "@/components/page-kit";
 import { Button } from "@/components/ui/button";
-import aboutSoilSprout from "@/assets/about_soil_sprout.jpg";
-import aboutLabFactory from "@/assets/about_lab_factory.jpg";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -62,7 +60,7 @@ function AboutPage() {
 
           <div className="relative">
             <img
-              src={aboutSoilSprout}
+              src="/images/about/about_soil_sprout.jpg"
               alt="Healthy green crops supported by Janani Agro biologicals"
               className="aspect-[4/3] w-full rounded-[3rem] object-cover shadow-luxe"
             />
@@ -213,7 +211,7 @@ function AboutPage() {
           </div>
           <div>
             <img
-              src={aboutLabFactory}
+              src="/images/about/about_lab_factory.jpg"
               alt="Janani Agro Products state-of-the-art biotechnology laboratory and manufacturing facility"
               className="rounded-3xl object-cover shadow-luxe w-full aspect-[4/3]"
             />

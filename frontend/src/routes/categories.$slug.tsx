@@ -65,17 +65,9 @@ function CategoryDetailPage() {
     }
   };
 
-  if (!category) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-28 text-center">
-        <div className="inline-block size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        <p className="mt-4 text-sm font-semibold text-muted-foreground">Loading category harvests...</p>
-      </div>
-    );
-  }
-
   // Products matching this category
   const categoryProducts = useMemo(() => {
+    if (!category) return [];
     const catName = category.name.toLowerCase().trim();
     const catSlug = (category.slug || "").toLowerCase().trim();
     const catNorm = catName.replace(/[^a-z0-9]/g, "");
@@ -119,6 +111,15 @@ function CategoryDetailPage() {
       return String(a.id).localeCompare(String(b.id));
     });
   }, [category, query, sort, inStockOnly, allProds]);
+
+  if (!category) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-28 text-center">
+        <div className="inline-block size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <p className="mt-4 text-sm font-semibold text-muted-foreground">Loading category harvests...</p>
+      </div>
+    );
+  }
 
   return (
     <>

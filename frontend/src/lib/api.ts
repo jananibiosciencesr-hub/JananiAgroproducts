@@ -37,7 +37,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       url = `${API_BASE_URL}${endpoint}`;
     }
 
-    let res = await fetch(url, {
+    const res = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
         ...(options?.headers || {}),
@@ -348,7 +348,7 @@ export async function getProducts(params?: { category?: string; search?: string;
     }
   });
 
-  let allProducts = Array.from(mergedMap.values());
+  const allProducts = Array.from(mergedMap.values());
 
   // Flexible filtering
   return allProducts.filter((p) => {

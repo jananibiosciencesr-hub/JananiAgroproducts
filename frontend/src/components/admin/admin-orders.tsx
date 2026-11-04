@@ -114,7 +114,7 @@ export function getOrderCustomer(order: any) {
   }
 
   // Email resolution
-  let rawEmail =
+  const rawEmail =
     order.customer?.email ||
     order.customerEmail ||
     order.customer_email ||
@@ -131,7 +131,7 @@ export function getOrderCustomer(order: any) {
   }
 
   // Phone resolution
-  let rawPhone =
+  const rawPhone =
     order.customer?.phone ||
     order.customerPhone ||
     order.customer_phone ||

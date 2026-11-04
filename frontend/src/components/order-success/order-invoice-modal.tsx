@@ -67,9 +67,9 @@ export function OrderInvoiceModal({
   paymentMethod,
   order,
 }: OrderInvoiceModalProps) {
-  if (!isOpen) return null;
-
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  if (!isOpen) return null;
 
   const resolvedOrderNumber = orderNumber || order?.orderNumber || order?.number || "JAP-202601";
   const resolvedInvoiceDate = invoiceDate || order?.invoiceDate || order?.order_date || order?.date || "Today";

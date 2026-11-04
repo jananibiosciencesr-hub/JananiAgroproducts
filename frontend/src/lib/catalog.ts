@@ -167,7 +167,7 @@ export function getVideoEmbedInfo(url?: string): {
 
   // 1. YouTube: watch?v=ID, youtu.be/ID, embed/ID, shorts/ID
   const ytMatch = clean.match(
-    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([^"&?\/\s]{11})/i
+    /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([^"&?/\s]{11})/i
   );
   if (ytMatch && ytMatch[1]) {
     return {
@@ -180,7 +180,7 @@ export function getVideoEmbedInfo(url?: string): {
 
   // 2. Vimeo: vimeo.com/ID
   const vimeoMatch = clean.match(
-    /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)(?:$|\/|\?)/i
+    /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)(?:$|\/|\?)/i
   );
   if (vimeoMatch && vimeoMatch[3]) {
     return {
@@ -235,7 +235,7 @@ export function getProductVariantImage(
  * Resolves standard 1L and 5L variants for any product in the catalog.
  */
 export function resolveProductVariants(product: Product): ProductVariant[] {
-  let vars: ProductVariant[] =
+  const vars: ProductVariant[] =
     Array.isArray(product.variants) && product.variants.length > 0
       ? [...product.variants]
       : [];

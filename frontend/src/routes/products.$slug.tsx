@@ -88,7 +88,7 @@ function ProductDetailPage() {
 
   // Resolved product variants guaranteeing both 1L and 5L pack sizes
   const resolvedVariants: ProductVariant[] = useMemo(() => {
-    let vars: ProductVariant[] =
+    const vars: ProductVariant[] =
       Array.isArray(product.variants) && product.variants.length > 0
         ? [...product.variants]
         : [];
