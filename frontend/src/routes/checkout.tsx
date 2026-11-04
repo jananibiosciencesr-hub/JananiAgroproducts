@@ -595,8 +595,8 @@ export function CheckoutPage() {
 
           <div className="flex flex-wrap justify-center gap-3">
             <Button asChild variant="gold" size="lg" className="rounded-2xl px-6 font-bold shadow-md">
-              <Link to="/track-order">
-                Track Live Dispatch <ArrowRight className="size-4 ml-1.5" />
+              <Link to="/dashboard">
+                View Orders in Dashboard <ArrowRight className="size-4 ml-1.5" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="rounded-2xl px-6 font-semibold">

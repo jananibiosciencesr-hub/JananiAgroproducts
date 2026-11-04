@@ -178,11 +178,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                 <span className="hidden lg:inline">Helpline: +91 93114 16225</span>
                 <span className="lg:hidden">+91 93114 16225</span>
               </a>
-              <span className="text-white/30 hidden lg:inline">|</span>
-              <Link to="/track-order" className="hover:text-white transition-colors hidden lg:flex items-center gap-1">
-                <Truck className="size-3 text-[#F5B726]" />
-                <span>Track Order</span>
-              </Link>
+
             </div>
           </div>
         </div>
@@ -472,7 +468,6 @@ function Shell({ children }: { children: React.ReactNode }) {
                 <nav className="space-y-0.5">
                   {[
                     { label: "My Orders", to: "/orders", Icon: PackageCheck },
-                    { label: "Track Order", to: "/track-order", Icon: Truck },
                     { label: "Saved Wishlist", to: "/wishlist", Icon: Heart },
                     { label: "Account Dashboard", to: "/dashboard", Icon: User },
                   ].map(({ label, to, Icon }) => {

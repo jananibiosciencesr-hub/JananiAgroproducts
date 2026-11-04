@@ -78,8 +78,8 @@ export function OrderDispatchTrackerPreview({
         </div>
 
         <Button asChild variant="gold" size="sm" className="rounded-full text-xs font-bold gap-1.5 shadow-sm sm:self-start">
-          <Link to="/track-order">
-            <span>Full Tracking Map</span>
+          <Link to="/dashboard">
+            <span>View My Orders</span>
             <ArrowRight className="size-3.5" />
           </Link>
         </Button>

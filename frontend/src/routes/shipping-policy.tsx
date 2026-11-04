@@ -35,7 +35,7 @@ function ShippingPolicyPage() {
         ],
         [
           "5. Real-Time Tracking & Shipment Notifications",
-          "Once your order is handed over to our logistics partner, an automated SMS and email containing the Air Waybill (AWB) number and live tracking link will be sent to your registered contact details. You can also track your order directly on our website using the Track Order page.",
+          "Once your order is handed over to our logistics partner, an automated SMS and email containing the Air Waybill (AWB) number and live tracking link will be sent to your registered contact details. You can also track your order status directly on our website through your Account Dashboard.",
         ],
         [
           "6. Damaged or Tampered Packaging",

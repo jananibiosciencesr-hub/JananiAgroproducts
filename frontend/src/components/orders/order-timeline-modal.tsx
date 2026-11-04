@@ -145,15 +145,8 @@ export function OrderTimelineModal({ order, isOpen, onClose }: OrderTimelineModa
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-border pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <Button asChild variant="gold" size="sm" className="w-full sm:w-auto rounded-full text-xs font-bold gap-1.5">
-            <Link to="/track-order">
-              <span>Dedicated Tracking Page</span>
-              <ExternalLink className="size-3.5" />
-            </Link>
-          </Button>
-
-          <Button type="button" variant="outline" size="sm" onClick={onClose} className="w-full sm:w-auto rounded-full text-xs">
+        <div className="border-t border-border pt-4 flex justify-end">
+          <Button type="button" variant="outline" size="sm" onClick={onClose} className="w-full sm:w-auto rounded-full text-xs font-bold">
             Close Tracker
           </Button>
         </div>

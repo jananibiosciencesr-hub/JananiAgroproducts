@@ -11,7 +11,8 @@ import {
   PhoneCall,
   Sparkles,
   ShoppingBag,
-  Receipt
+  Receipt,
+  PackageCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -114,8 +115,8 @@ export function PaymentSuccessView({
           </Button>
 
           <Button asChild variant="outline" size="lg" className="rounded-2xl px-5 text-xs font-bold gap-2 shadow-sm">
-            <Link to="/track-order">
-              <Truck className="size-4" /> Track Order Status
+            <Link to="/dashboard">
+              <PackageCheck className="size-4" /> View Orders in Dashboard
             </Link>
           </Button>
 

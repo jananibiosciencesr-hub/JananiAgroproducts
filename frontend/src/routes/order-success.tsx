@@ -244,9 +244,9 @@ export function OrderSuccessPage() {
             size="default"
             className="rounded-xl px-5 text-xs font-bold gap-2 bg-[#075B32] hover:bg-[#064e2b] text-white shadow-md transition"
           >
-            <Link to="/track-order" search={{ orderId: orderNumber } as any}>
-              <Truck className="size-4" />
-              <span>Track Live Order</span>
+            <Link to="/dashboard">
+              <PackageCheck className="size-4" />
+              <span>View Orders in Dashboard</span>
             </Link>
           </Button>
 
@@ -297,8 +297,8 @@ export function OrderSuccessPage() {
                   AWB: <strong className="text-foreground">{awbNumber}</strong>
                 </span>
                 <Button asChild variant="ghost" size="sm" className="h-8 text-xs font-bold text-brand-leaf hover:text-brand-leaf hover:bg-brand-leaf/10 rounded-lg">
-                  <Link to="/track-order" search={{ orderId: orderNumber } as any}>
-                    Track <ArrowRight className="size-3 ml-1" />
+                  <Link to="/dashboard">
+                    My Orders <ArrowRight className="size-3 ml-1" />
                   </Link>
                 </Button>
               </div>
