@@ -506,3 +506,8 @@ input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
   transition: background-color 99999s ease-in-out 0s !important;
 }
+
+@utility object-hero-center {
+  object-position: center 60%;
+}
+

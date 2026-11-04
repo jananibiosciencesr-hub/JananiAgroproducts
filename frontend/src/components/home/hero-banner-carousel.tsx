@@ -29,9 +29,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_healthier_tomorrow_mobile.jpg",
     alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     ctaText: "Explore Our Products",
-    secondaryCtaLabel: "Enquire Now",
-    secondaryCtaUrl: "/contact",
-    desktopPosition: "md:object-top",
+    desktopPosition: "md:object-hero-center",
     mobilePosition: "object-top",
   },
   {
@@ -42,9 +40,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_biocare_mobile.jpg",
     alt: "Janani Agro Products - Shield Your Crops Naturally",
     ctaText: "Explore Bio-Care",
-    secondaryCtaLabel: "Crop Guidance",
-    secondaryCtaUrl: "/contact",
-    desktopPosition: "md:object-top",
+    desktopPosition: "md:object-hero-center",
     mobilePosition: "object-top",
   },
   {
@@ -55,9 +51,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_soilcare_mobile.jpg",
     alt: "Janani Agro Products - Nourish From Root To Harvest",
     ctaText: "Explore Soil-Care",
-    secondaryCtaLabel: "Dosage Guide",
-    secondaryCtaUrl: "/products",
-    desktopPosition: "md:object-top",
+    desktopPosition: "md:object-hero-center",
     mobilePosition: "object-top",
   },
 ];
@@ -83,6 +77,19 @@ export function HeroBannerCarousel() {
           const mapped: BannerSlide[] = active.map((b: any) => {
             const desktop = b.desktopImageUrl || b.desktopImage || b.image || "/banners/hero_healthier_tomorrow_desktop.jpg";
             const mobile = b.mobileImageUrl || b.mobileImage || desktop;
+            const isBuiltinDefault =
+              b.id === "healthier-tomorrow" ||
+              b.id === "organic-biocare" ||
+              b.id === "organic-soilcare" ||
+              desktop.includes("/banners/hero_");
+
+            let desktopPos = b.desktopPosition;
+            if (!desktopPos || (isBuiltinDefault && (desktopPos === "md:object-top" || desktopPos === "object-top" || desktopPos === "md:object-center"))) {
+              desktopPos = isBuiltinDefault ? "md:object-hero-center" : "md:object-top";
+            } else if (!desktopPos.startsWith("md:")) {
+              desktopPos = `md:${desktopPos}`;
+            }
+
             return {
               id: b.id,
               title: b.title || "Natural Solutions For A Healthier Tomorrow",
@@ -94,11 +101,9 @@ export function HeroBannerCarousel() {
               eyebrow: b.eyebrow,
               badgeText: b.badgeText,
               subtitle: b.subtitle,
-              secondaryCtaLabel: b.secondaryCtaLabel,
-              secondaryCtaUrl: b.secondaryCtaUrl,
-              desktopPosition: b.desktopPosition
-                ? (b.desktopPosition.startsWith("md:") ? b.desktopPosition : `md:${b.desktopPosition}`)
-                : "md:object-top",
+              secondaryCtaLabel: isBuiltinDefault ? undefined : b.secondaryCtaLabel,
+              secondaryCtaUrl: isBuiltinDefault ? undefined : b.secondaryCtaUrl,
+              desktopPosition: desktopPos,
               mobilePosition: b.mobilePosition || "object-top",
             };
           });
@@ -182,8 +187,8 @@ export function HeroBannerCarousel() {
       onTouchEnd={handleTouchEnd}
       aria-label="Janani Agro Featured Campaigns"
     >
-      {/* Slides Container - Dedicated 9:16 portrait on mobile and balanced 2.4:1 on desktop to prevent any cropping */}
-      <div className="relative w-full aspect-[9/16] sm:aspect-[16/10] md:aspect-[2.4/1] lg:aspect-[2.4/1] xl:aspect-[2.4/1] md:min-h-[380px] md:max-h-[580px] lg:max-h-[640px] xl:max-h-[720px] overflow-hidden">
+      {/* Slides Container - Dedicated 9:16 portrait on mobile and balanced 16:8 on desktop to eliminate top gap and frame content cleanly */}
+      <div className="relative w-full aspect-[9/16] sm:aspect-[16/10] md:aspect-[16/8.2] lg:aspect-[16/8] xl:aspect-[16/8] md:min-h-[400px] md:max-h-[500px] lg:max-h-[540px] xl:max-h-[580px] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -231,7 +236,7 @@ export function HeroBannerCarousel() {
                     className={`w-full h-full object-cover block transition-transform duration-700 ${
                       slide.mobilePosition ? (slide.mobilePosition.includes("object-") ? slide.mobilePosition : `object-${slide.mobilePosition}`) : "object-top"
                     } ${
-                      slide.desktopPosition ? (slide.desktopPosition.includes("object-") ? (slide.desktopPosition.startsWith("md:") ? slide.desktopPosition : `md:${slide.desktopPosition}`) : `md:object-${slide.desktopPosition}`) : "md:object-top"
+                      slide.desktopPosition ? (slide.desktopPosition.includes("object-") ? (slide.desktopPosition.startsWith("md:") ? slide.desktopPosition : `md:${slide.desktopPosition}`) : `md:object-${slide.desktopPosition}`) : "md:object-hero-center"
                     }`}
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
@@ -301,7 +306,7 @@ export function HeroBannerCarousel() {
                     />
 
                     {/* Floating CTA Buttons on Graphic Banner */}
-                    <div className="absolute bottom-5 sm:bottom-8 md:bottom-10 left-5 sm:left-12 md:left-16 z-20 flex flex-wrap items-center gap-2.5 sm:gap-3 pointer-events-auto">
+                    <div className="absolute bottom-3 sm:bottom-4 md:bottom-4 left-5 sm:left-12 md:left-16 z-20 flex flex-wrap items-center gap-2.5 sm:gap-3 pointer-events-auto">
                       <Link
                         to={slide.link || "/products"}
                         tabIndex={isCurrent ? 0 : -1}
