@@ -7716,28 +7716,29 @@ export function persistAuthSession(user: AuthUser, token?: string) {
 export function getCurrentUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
   try {
-    // 24-hour expiration check for customer in getCurrentUser
-    const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
-    if (userAuthTime) {
-      const elapsed = Date.now() - parseInt(userAuthTime, 10);
-      if (elapsed > 24 * 60 * 60 * 1000) {
-        localStorage.removeItem("janani_user");
-        localStorage.removeItem("janani_auth_user");
-        localStorage.removeItem("janani_token");
-        localStorage.removeItem("janani_auth_token");
-        localStorage.removeItem("janani_user_auth_time");
-        localStorage.removeItem("janani_auth_time");
-        return null;
-      }
-    }
     const userStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
-    if (userStr) {
-      const parsed = JSON.parse(userStr);
-      if (parsed?.role === "Super Admin" || parsed?.role === "Admin" || parsed?.email?.toLowerCase() === "jananibiosciences.r@gmail.com") {
-        return null;
-      }
-      return parsed;
+    if (!userStr) return null;
+
+    // Strict 24-hour expiration check for customer
+    const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
+    const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+    if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+      localStorage.removeItem("janani_user");
+      localStorage.removeItem("janani_auth_user");
+      localStorage.removeItem("janani_token");
+      localStorage.removeItem("janani_auth_token");
+      localStorage.removeItem("janani_user_auth_time");
+      localStorage.removeItem("janani_auth_time");
+      return null;
     }
+
+    const parsed = JSON.parse(userStr);
+    if (parsed?.role === "Super Admin" || parsed?.role === "Admin" || parsed?.email?.toLowerCase() === "jananibiosciences.r@gmail.com") {
+      return null;
+    }
+    return parsed;
   } catch (e) { }
   return null;
 }
@@ -7745,18 +7746,22 @@ export function getCurrentUser(): AuthUser | null {
 export function getAdminUser(): any | null {
   if (typeof window === "undefined") return null;
   try {
-    // 24-hour expiration check for admin in getAdminUser
+    const adminSession = localStorage.getItem("janani_admin_session");
+    if (adminSession !== "true") return null;
+
+    // Strict 24-hour expiration check for admin
     const adminAuthTime = localStorage.getItem("janani_admin_auth_time");
-    if (adminAuthTime) {
-      const elapsed = Date.now() - parseInt(adminAuthTime, 10);
-      if (elapsed > 24 * 60 * 60 * 1000) {
-        localStorage.removeItem("janani_admin_session");
-        localStorage.removeItem("janani_admin_user");
-        localStorage.removeItem("janani_admin_token");
-        localStorage.removeItem("janani_admin_auth_time");
-        return null;
-      }
+    const authTimestamp = adminAuthTime ? parseInt(adminAuthTime, 10) : 0;
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+    if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+      localStorage.removeItem("janani_admin_session");
+      localStorage.removeItem("janani_admin_user");
+      localStorage.removeItem("janani_admin_token");
+      localStorage.removeItem("janani_admin_auth_time");
+      return null;
     }
+
     const adminStr = localStorage.getItem("janani_admin_user");
     if (adminStr) {
       const parsed = JSON.parse(adminStr);

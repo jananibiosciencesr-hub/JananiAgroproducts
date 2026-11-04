@@ -159,20 +159,16 @@ function AdminDashboardPage() {
       const sessionTime = localStorage.getItem("janani_admin_auth_time");
 
       if (sessionActive === "true" && sessionToken && storedAdmin) {
-        if (sessionTime) {
-          const elapsed = Date.now() - parseInt(sessionTime, 10);
-          if (elapsed > 24 * 60 * 60 * 1000) {
-            localStorage.removeItem("janani_admin_session");
-            localStorage.removeItem("janani_admin_token");
-            localStorage.removeItem("janani_admin_user");
-            localStorage.removeItem("janani_admin_auth_time");
-            setAdminUser(null);
-            setIsAuthenticated(false);
-            return;
-          }
-        } else {
-          // Initialize admin session timestamp if missing
-          localStorage.setItem("janani_admin_auth_time", Date.now().toString());
+        const authTimestamp = sessionTime ? parseInt(sessionTime, 10) : 0;
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+          localStorage.removeItem("janani_admin_session");
+          localStorage.removeItem("janani_admin_token");
+          localStorage.removeItem("janani_admin_user");
+          localStorage.removeItem("janani_admin_auth_time");
+          setAdminUser(null);
+          setIsAuthenticated(false);
+          return;
         }
         const parsed = JSON.parse(storedAdmin);
         if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || parsed.role === "Staff" || parsed.role === "Manager")) {
@@ -401,17 +397,19 @@ function AdminDashboardPage() {
   };
 
 
-  // Active Heartbeat: 24-Hour Auto-Logout for Admin session while tab is open
+  // Active Heartbeat: Strict 24-Hour Auto-Logout for Admin session while tab is open
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
     const checkAdminExpiry = () => {
       try {
         const sessionActive = localStorage.getItem("janani_admin_session");
         const sessionTime = localStorage.getItem("janani_admin_auth_time");
-        if (sessionActive === "true" && sessionTime) {
-          const elapsed = Date.now() - parseInt(sessionTime, 10);
-          if (elapsed > 24 * 60 * 60 * 1000) {
+        if (sessionActive === "true") {
+          const authTimestamp = sessionTime ? parseInt(sessionTime, 10) : 0;
+          if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
             handleLogout();
             toast.info("Admin session expired after 24 hours. Please log in again.");
           }
@@ -424,7 +422,10 @@ function AdminDashboardPage() {
       toast.info("Admin session expired after 24 hours. Please log in again.");
     };
 
-    const intervalId = setInterval(checkAdminExpiry, 30 * 1000);
+    // Run check immediately on mount!
+    checkAdminExpiry();
+
+    const intervalId = setInterval(checkAdminExpiry, 15 * 1000);
     window.addEventListener("focus", checkAdminExpiry);
     document.addEventListener("visibilitychange", checkAdminExpiry);
     window.addEventListener("janani-admin-session-expired", handleExpiredEvent);

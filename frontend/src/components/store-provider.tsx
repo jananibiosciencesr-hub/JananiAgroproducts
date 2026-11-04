@@ -101,24 +101,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
 
       if (storedUser) {
-        // 24-hour Auto-Logout check for Customer session
-        if (userAuthTime) {
-          const elapsed = Date.now() - parseInt(userAuthTime, 10);
-          if (elapsed > 24 * 60 * 60 * 1000) {
-            localStorage.removeItem("janani_user");
-            localStorage.removeItem("janani_auth_user");
-            localStorage.removeItem("janani_token");
-            localStorage.removeItem("janani_auth_token");
-            localStorage.removeItem("janani_user_auth_time");
-            localStorage.removeItem("janani_auth_time");
-            setUser(null);
-            return;
-          }
-        } else {
-          // Initialize auth time for active session so it auto-expires after 24 hours
-          const nowStr = Date.now().toString();
-          localStorage.setItem("janani_user_auth_time", nowStr);
-          localStorage.setItem("janani_auth_time", nowStr);
+        // Strict 24-hour Auto-Logout check for Customer session
+        const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+          localStorage.removeItem("janani_user");
+          localStorage.removeItem("janani_auth_user");
+          localStorage.removeItem("janani_token");
+          localStorage.removeItem("janani_auth_token");
+          localStorage.removeItem("janani_user_auth_time");
+          localStorage.removeItem("janani_auth_time");
+          setUser(null);
+          return;
         }
 
         const parsed = JSON.parse(storedUser);
@@ -392,9 +386,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // 1. Customer 24-hour auto-logout check
         const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
         const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
-        if (storedUser && userAuthTime) {
-          const elapsed = now - parseInt(userAuthTime, 10);
-          if (elapsed > TWENTY_FOUR_HOURS) {
+        if (storedUser) {
+          const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+          if (!authTimestamp || isNaN(authTimestamp) || now - authTimestamp > TWENTY_FOUR_HOURS) {
             logoutUser();
             toast.info("Your customer session has expired (24 hours). Please sign in again.");
           }
@@ -403,9 +397,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // 2. Admin 24-hour auto-logout check
         const adminSession = localStorage.getItem("janani_admin_session");
         const adminAuthTime = localStorage.getItem("janani_admin_auth_time");
-        if (adminSession === "true" && adminAuthTime) {
-          const elapsed = now - parseInt(adminAuthTime, 10);
-          if (elapsed > TWENTY_FOUR_HOURS) {
+        if (adminSession === "true") {
+          const adminTimestamp = adminAuthTime ? parseInt(adminAuthTime, 10) : 0;
+          if (!adminTimestamp || isNaN(adminTimestamp) || now - adminTimestamp > TWENTY_FOUR_HOURS) {
             localStorage.removeItem("janani_admin_session");
             localStorage.removeItem("janani_admin_user");
             localStorage.removeItem("janani_admin_token");
@@ -416,7 +410,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       } catch (e) {}
     };
 
-    const intervalId = setInterval(checkAutoLogout, 30 * 1000);
+    // Run immediately on mount
+    checkAutoLogout();
+
+    const intervalId = setInterval(checkAutoLogout, 15 * 1000);
     window.addEventListener("focus", checkAutoLogout);
     document.addEventListener("visibilitychange", checkAutoLogout);
 
