@@ -207,7 +207,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
               });
             }
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const combined = Array.from(new Set([...namesFromApi, ...JANANI_DEFAULT_CATEGORIES])).filter(Boolean);
@@ -539,9 +539,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                   return (
                     <tr
                       key={p.id}
-                      className={`hover:bg-accent/40 transition-colors ${
-                        selectedIds.includes(p.id) ? "bg-emerald-500/5" : ""
-                      }`}
+                      className={`hover:bg-accent/40 transition-colors ${selectedIds.includes(p.id) ? "bg-emerald-500/5" : ""
+                        }`}
                     >
                       {/* Select Checkbox */}
                       <td className="px-4 py-4 text-center">
@@ -614,9 +613,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                       <td className="px-4 py-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                              isOut ? "bg-rose-500/15 text-rose-600 border border-rose-500/30" : isLow ? "bg-amber-500/15 text-amber-600 border border-amber-500/30" : "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
-                            }`}>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${isOut ? "bg-rose-500/15 text-rose-600 border border-rose-500/30" : isLow ? "bg-amber-500/15 text-amber-600 border border-amber-500/30" : "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
+                              }`}>
                               {available} Avail
                             </span>
                             {p.reservedStock ? (
@@ -635,9 +633,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                       <td className="px-3 py-4 text-center">
                         <button
                           onClick={() => handleToggleField(p.id, "featured")}
-                          className={`p-1.5 rounded-xl transition-colors ${
-                            p.featured ? "bg-amber-500/15 text-amber-600" : "text-muted-foreground/40 hover:text-muted-foreground"
-                          }`}
+                          className={`p-1.5 rounded-xl transition-colors ${p.featured ? "bg-amber-500/15 text-amber-600" : "text-muted-foreground/40 hover:text-muted-foreground"
+                            }`}
                           title="Toggle Featured"
                         >
                           <Star className={`size-4 ${p.featured ? "fill-amber-500" : ""}`} />
@@ -648,9 +645,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                       <td className="px-3 py-4 text-center">
                         <button
                           onClick={() => handleToggleField(p.id, "trending")}
-                          className={`p-1.5 rounded-xl transition-colors ${
-                            p.trending ? "bg-rose-500/15 text-rose-600" : "text-muted-foreground/40 hover:text-muted-foreground"
-                          }`}
+                          className={`p-1.5 rounded-xl transition-colors ${p.trending ? "bg-rose-500/15 text-rose-600" : "text-muted-foreground/40 hover:text-muted-foreground"
+                            }`}
                           title="Toggle Trending"
                         >
                           <Flame className={`size-4 ${p.trending ? "fill-rose-500" : ""}`} />
@@ -661,11 +657,10 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                       <td className="px-4 py-4 text-center">
                         <button
                           onClick={() => handleToggleField(p.id, "active")}
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold transition-colors ${
-                            p.active
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold transition-colors ${p.active
                               ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                               : "bg-muted text-muted-foreground"
-                          }`}
+                            }`}
                         >
                           <span className={`size-1.5 rounded-full ${p.active ? "bg-emerald-500" : "bg-muted-foreground"}`}></span>
                           {p.active ? "Active" : "Draft"}
@@ -1016,9 +1011,8 @@ function ProductPreviewDrawer({
                 <button
                   key={i}
                   onClick={() => setSelectedImage(img)}
-                  className={`size-14 rounded-2xl border-2 overflow-hidden shrink-0 transition-all ${
-                    selectedImage === img ? "border-emerald-600 shadow-md" : "border-border/60 opacity-60 hover:opacity-100"
-                  }`}
+                  className={`size-14 rounded-2xl border-2 overflow-hidden shrink-0 transition-all ${selectedImage === img ? "border-emerald-600 shadow-md" : "border-border/60 opacity-60 hover:opacity-100"
+                    }`}
                 >
                   <img src={img} alt="thumb" className="size-full object-cover" />
                 </button>
@@ -1081,11 +1075,10 @@ function ProductPreviewDrawer({
                   <button
                     key={v.id}
                     onClick={() => setSelectedVariant(v)}
-                    className={`p-2.5 rounded-2xl border text-left text-xs transition-all ${
-                      selectedVariant?.id === v.id
+                    className={`p-2.5 rounded-2xl border text-left text-xs transition-all ${selectedVariant?.id === v.id
                         ? "border-emerald-600 bg-emerald-500/10 font-bold"
                         : "border-border bg-card hover:bg-muted/40"
-                    }`}
+                      }`}
                   >
                     <span className="block font-bold">{v.name || v.label || v.unit}</span>
                     <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">₹{v.price}</span>
@@ -1316,7 +1309,7 @@ function ProductFormModal({
               inStock: (v.stock !== undefined ? Number(v.stock) : Number(initialData.stock || 50)) > 0
             }));
           }
-        } catch {}
+        } catch { }
       }
 
       if (resolvedVariants.length === 0) {
@@ -1692,11 +1685,10 @@ function ProductFormModal({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 min-w-max px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all text-center whitespace-nowrap select-none ${
-                activeTab === tab.id
+              className={`flex-1 min-w-max px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all text-center whitespace-nowrap select-none ${activeTab === tab.id
                   ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm border border-border/80 font-extrabold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -2075,9 +2067,8 @@ function ProductFormModal({
                       return (
                         <div
                           key={i}
-                          className={`relative group rounded-2xl border bg-muted h-28 overflow-hidden shadow-sm transition-all ${
-                            isPrimary ? "ring-2 ring-emerald-600 border-emerald-600" : "border-border hover:border-foreground/40"
-                          }`}
+                          className={`relative group rounded-2xl border bg-muted h-28 overflow-hidden shadow-sm transition-all ${isPrimary ? "ring-2 ring-emerald-600 border-emerald-600" : "border-border hover:border-foreground/40"
+                            }`}
                         >
                           <img
                             src={img}
@@ -2283,11 +2274,10 @@ function ProductFormModal({
                     key={st.id}
                     type="button"
                     onClick={() => setSpecsSubTab(st.id as any)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-                      specsSubTab === st.id
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${specsSubTab === st.id
                         ? "bg-emerald-600 text-white shadow-xs"
                         : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     <st.icon className="size-3.5" />
                     <span>{st.label}</span>
@@ -2480,11 +2470,10 @@ function ProductFormModal({
                             key={crop}
                             type="button"
                             onClick={() => handleToggleCrop(crop)}
-                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-                              isSelected
+                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${isSelected
                                 ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
                                 : "bg-muted/40 border-border text-foreground hover:bg-muted"
-                            }`}
+                              }`}
                           >
                             {isSelected ? <Check className="size-3.5" /> : "+"} {crop}
                           </button>
@@ -2938,18 +2927,16 @@ function BulkPriceModal({
                 <button
                   type="button"
                   onClick={() => setMode("increase")}
-                  className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${
-                    mode === "increase" ? "border-emerald-600 bg-emerald-500/10 text-emerald-700" : "border-border"
-                  }`}
+                  className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${mode === "increase" ? "border-emerald-600 bg-emerald-500/10 text-emerald-700" : "border-border"
+                    }`}
                 >
                   + Increase
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode("decrease")}
-                  className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${
-                    mode === "decrease" ? "border-rose-600 bg-rose-500/10 text-rose-700" : "border-border"
-                  }`}
+                  className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${mode === "decrease" ? "border-rose-600 bg-rose-500/10 text-rose-700" : "border-border"
+                    }`}
                 >
                   - Decrease
                 </button>
@@ -3020,18 +3007,16 @@ function BulkStockModal({
               <button
                 type="button"
                 onClick={() => setOperation("add")}
-                className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${
-                  operation === "add" ? "border-emerald-600 bg-emerald-500/10 text-emerald-700" : "border-border"
-                }`}
+                className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${operation === "add" ? "border-emerald-600 bg-emerald-500/10 text-emerald-700" : "border-border"
+                  }`}
               >
                 + Add Inbound Stock
               </button>
               <button
                 type="button"
                 onClick={() => setOperation("set")}
-                className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${
-                  operation === "set" ? "border-emerald-600 bg-emerald-500/10 text-emerald-700" : "border-border"
-                }`}
+                className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${operation === "set" ? "border-emerald-600 bg-emerald-500/10 text-emerald-700" : "border-border"
+                  }`}
               >
                 Set Exact Quantity
               </button>
