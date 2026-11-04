@@ -625,9 +625,8 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                 toast.error(res?.message || `Failed to update category "${formData.name}"`);
                 return;
               }
-              if (res?.data) {
-                setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? res.data : c)));
-              }
+              const updatedData = res?.data || { ...editingCategory, ...formData };
+              setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? updatedData : c)));
               toast.success(res?.message || `Category "${formData.name}" updated successfully`);
             } else {
               const res = await createAdminCategory(formData);
@@ -635,9 +634,8 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                 toast.error(res?.message || `Failed to create category "${formData.name}"`);
                 return;
               }
-              if (res?.data) {
-                setCategories((prev) => [res.data, ...prev.filter((c) => c.id !== res.data.id)]);
-              }
+              const createdData = res?.data || formData;
+              setCategories((prev) => [createdData, ...prev.filter((c) => c.id !== createdData.id)]);
               toast.success(res?.message || `Category "${formData.name}" created successfully`);
             }
             await loadCategories();
@@ -758,7 +756,7 @@ function CategoryFormModal({
         setFormData((prev) => ({
           ...prev,
           [field]: dataUrl,
-          ...(field === "image" && !prev.bannerImage ? { bannerImage: dataUrl } : {})
+          ...(field === "image" ? { bannerImage: dataUrl } : {})
         }));
         toast.success(`Successfully uploaded ${field === "image" ? "card thumbnail" : "hero banner"}!`, { id: "cat-upload" });
       }
@@ -963,7 +961,7 @@ function CategoryFormModal({
                   {formData.image && (
                     <button
                       type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, image: "" }))}
+                      onClick={() => setFormData((prev) => ({ ...prev, image: "", bannerImage: "" }))}
                       className="text-[11px] text-rose-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
                     >
                       <Trash2 className="size-3" /> Clear Image
@@ -998,7 +996,10 @@ function CategoryFormModal({
                     <div className="flex flex-col justify-between h-24">
                       <input
                         value={formData.image}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, image: e.target.value }))}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData((prev) => ({ ...prev, image: val, bannerImage: val }));
+                        }}
                         placeholder="/images/categories/bio-fertilizers.jpg or https://..."
                         className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
                       />
@@ -1025,7 +1026,7 @@ function CategoryFormModal({
                     <div className="min-w-0 flex-1">
                       <span className="text-xs font-bold text-foreground block truncate">Active Card Thumbnail</span>
                       <span className="text-[10px] font-mono text-muted-foreground truncate block">
-                        {formData.image.startsWith("data:") ? "Local Image File Uploaded (Stored in SQL)" : formData.image}
+                        {formData.image.startsWith("data:") ? "Local Image File Selected (Ready to Save)" : formData.image}
                       </span>
                     </div>
                   </div>
