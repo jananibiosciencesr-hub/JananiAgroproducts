@@ -7815,21 +7815,6 @@ export function getCurrentUser(): AuthUser | null {
     const userStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
     if (!userStr) return null;
 
-    // Strict 24-hour expiration check for customer
-    const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
-    const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
-    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-
-    if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
-      localStorage.removeItem("janani_user");
-      localStorage.removeItem("janani_auth_user");
-      localStorage.removeItem("janani_token");
-      localStorage.removeItem("janani_auth_token");
-      localStorage.removeItem("janani_user_auth_time");
-      localStorage.removeItem("janani_auth_time");
-      return null;
-    }
-
     const parsed = JSON.parse(userStr);
     if (parsed?.role === "Super Admin" || parsed?.role === "Admin" || parsed?.email?.toLowerCase() === "jananibiosciences.r@gmail.com") {
       return null;

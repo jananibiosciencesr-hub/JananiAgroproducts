@@ -40,6 +40,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const isCartHydratedRef = useRef(false);
   const isWishlistHydratedRef = useRef(false);
+  const isUserHydratedRef = useRef(false);
 
   // Sync state from localStorage on client mount (prevents SSR React #418 hydration mismatch)
   useEffect(() => {
@@ -98,23 +99,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     try {
       const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
-      const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
 
       if (storedUser) {
-        // Strict 24-hour Auto-Logout check for Customer session
-        const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-        if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
-          localStorage.removeItem("janani_user");
-          localStorage.removeItem("janani_auth_user");
-          localStorage.removeItem("janani_token");
-          localStorage.removeItem("janani_auth_token");
-          localStorage.removeItem("janani_user_auth_time");
-          localStorage.removeItem("janani_auth_time");
-          setUser(null);
-          return;
-        }
-
         const parsed = JSON.parse(storedUser);
         if (
           parsed?.role !== "Super Admin" &&
@@ -146,7 +132,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem("janani_auth_time");
         }
       }
-    } catch (e) {}
+    } catch (e) {} finally {
+      isUserHydratedRef.current = true;
+    }
   }, []);
 
   const refreshProducts = async () => {
@@ -317,6 +305,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Sync customer user changes to localStorage (Customer only)
   useEffect(() => {
+    if (!isUserHydratedRef.current) return;
     if (typeof window !== "undefined") {
       if (user && user.role !== "Super Admin" && user.role !== "Admin") {
         localStorage.setItem("janani_user", JSON.stringify(user));
@@ -374,7 +363,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.email]);
 
-  // Active Heartbeat: 24-Hour Auto-Logout for Customer and Admin
+  // Active Heartbeat: 24-Hour Auto-Logout for Admin Session Only
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -383,18 +372,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const now = Date.now();
         const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-        // 1. Customer 24-hour auto-logout check
-        const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
-        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
-        if (storedUser) {
-          const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
-          if (!authTimestamp || isNaN(authTimestamp) || now - authTimestamp > TWENTY_FOUR_HOURS) {
-            logoutUser();
-            toast.info("Your customer session has expired (24 hours). Please sign in again.");
-          }
-        }
-
-        // 2. Admin 24-hour auto-logout check
+        // Admin 24-hour auto-logout check
         const adminSession = localStorage.getItem("janani_admin_session");
         const adminAuthTime = localStorage.getItem("janani_admin_auth_time");
         if (adminSession === "true") {
@@ -422,7 +400,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("focus", checkAutoLogout);
       document.removeEventListener("visibilitychange", checkAutoLogout);
     };
-  }, [user]);
+  }, []);
 
   // Sync cart to localStorage reliably (never overwrite with initial empty state before hydration)
   useEffect(() => {
@@ -486,6 +464,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    isUserHydratedRef.current = true;
     setUser(newUser);
     if (typeof window !== "undefined") {
       localStorage.setItem("janani_user", JSON.stringify(newUser));
