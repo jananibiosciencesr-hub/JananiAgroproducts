@@ -240,6 +240,9 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
   const [isBulkPriceOpen, setIsBulkPriceOpen] = useState(false);
   const [isBulkStockOpen, setIsBulkStockOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<AdminProductItem | null>(null);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Synchronize Add Product trigger from Top Navbar or custom event
   useEffect(() => {
@@ -489,9 +492,9 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
               </Button>
 
               <Button
-                onClick={handleBulkDelete}
+                onClick={() => setIsBulkDeleteModalOpen(true)}
                 size="sm"
-                className="h-8 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold gap-1"
+                className="h-8 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold gap-1 cursor-pointer"
               >
                 <Trash2 className="size-3.5" /> Move to Trash
               </Button>
@@ -528,7 +531,6 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Warehouse & Available</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Featured</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Trending</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">New</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4 text-center">Status</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Actions</th>
               </tr>
@@ -661,19 +663,6 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                         </button>
                       </td>
 
-                      {/* New Arrival (Sparkles) */}
-                      <td className="px-3 py-4 text-center">
-                        <button
-                          onClick={() => handleToggleField(p.id, "isNewArrival")}
-                          className={`p-1.5 rounded-xl transition-colors ${
-                            p.isNewArrival ? "bg-blue-500/15 text-blue-600" : "text-muted-foreground/40 hover:text-muted-foreground"
-                          }`}
-                          title="Toggle New Arrival"
-                        >
-                          <Sparkles className={`size-4 ${p.isNewArrival ? "fill-blue-500" : ""}`} />
-                        </button>
-                      </td>
-
                       {/* Active Status */}
                       <td className="px-4 py-4 text-center">
                         <button
@@ -702,8 +691,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                                 <RotateCcw className="size-3" /> Restore
                               </Button>
                               <button
-                                onClick={() => handleDelete(p.id)}
-                                className="p-1.5 rounded-lg hover:bg-rose-500/15 text-rose-600 transition-colors"
+                                onClick={() => setDeleteConfirmTarget(p)}
+                                className="p-1.5 rounded-lg hover:bg-rose-500/15 text-rose-600 transition-colors cursor-pointer"
                                 title="Delete Permanently"
                               >
                                 <Trash2 className="size-4" />
@@ -713,7 +702,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                             <>
                               <button
                                 onClick={() => setPreviewProduct(p)}
-                                className="p-1.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                                className="p-1.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                 title="Quick Storefront Preview"
                               >
                                 <Eye className="size-4" />
@@ -723,14 +712,14 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                                   setEditingProduct(p);
                                   setIsFormModalOpen(true);
                                 }}
-                                className="p-1.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                                className="p-1.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                 title="Edit Product & Variants"
                               >
                                 <Edit className="size-4" />
                               </button>
                               <button
-                                onClick={() => handleDelete(p.id)}
-                                className="p-1.5 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-600 transition-colors"
+                                onClick={() => setDeleteConfirmTarget(p)}
+                                className="p-1.5 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-600 transition-colors cursor-pointer"
                                 title="Move to Trash"
                               >
                                 <Trash2 className="size-4" />
@@ -744,7 +733,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 })
               ) : (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={9} className="py-12 text-center text-muted-foreground">
                     <Package className="size-10 mx-auto opacity-30 mb-2" />
                     <p className="text-sm font-bold text-foreground">No products match your filters</p>
                     <p className="text-xs text-muted-foreground mt-1">Reset your filters or add a new organic product</p>
@@ -887,6 +876,102 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
           toast.success(`Successfully imported ${importedList.length} products`);
         }}
       />
+
+      {/* Confirmation Modal: Single Product Delete */}
+      {deleteConfirmTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-card w-full max-w-md rounded-2xl border border-border shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="text-lg font-bold text-foreground">
+                {statusFilter === "trash" ? "Permanently Delete Product?" : "Move Product to Trash?"}
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Are you sure you want to {statusFilter === "trash" ? "permanently delete" : "move"}{" "}
+                <strong className="text-foreground">{deleteConfirmTarget.name}</strong>{" "}
+                {statusFilter === "trash" ? "from the database? This cannot be undone." : "to the Trash Bin?"}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeleteConfirmTarget(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted border border-border cursor-pointer transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    await handleDelete(deleteConfirmTarget.id);
+                    setDeleteConfirmTarget(null);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                className="px-5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isDeleting ? "Processing..." : statusFilter === "trash" ? "Yes, Delete Permanently" : "Yes, Move to Trash"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal: Bulk Delete */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-card w-full max-w-md rounded-2xl border border-border shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="text-lg font-bold text-foreground">
+                Move {selectedIds.length} Products to Trash?
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Are you sure you want to move the selected <strong className="text-foreground">{selectedIds.length}</strong> products to the Trash Bin?
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted border border-border cursor-pointer transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    await handleBulkDelete();
+                    setIsBulkDeleteModalOpen(false);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                className="px-5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isDeleting ? "Moving..." : "Yes, Move to Trash"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
