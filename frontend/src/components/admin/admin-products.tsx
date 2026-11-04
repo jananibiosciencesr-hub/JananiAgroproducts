@@ -719,13 +719,6 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                                 <Eye className="size-4" />
                               </button>
                               <button
-                                onClick={() => handleDuplicate(p.id)}
-                                className="p-1.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-                                title="Duplicate Product"
-                              >
-                                <Copy className="size-4" />
-                              </button>
-                              <button
                                 onClick={() => {
                                   setEditingProduct(p);
                                   setIsFormModalOpen(true);
