@@ -32,7 +32,6 @@ import {
   Plus,
   Trash2,
   Share2,
-  TrendingUp,
   DollarSign,
   Layers,
   ArrowUpRight,
@@ -459,81 +458,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
-      {/* 2. Key Metrics Ribbon */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3.5">
-        <div className="bg-card border border-border/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm hover:shadow transition-shadow">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Total Orders</span>
-            <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-black text-foreground mt-1">
-            {stats.total || orders.length}
-          </div>
-          <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Lifetime orders placed</p>
-        </div>
-
-        <div className="bg-card border border-amber-200 dark:border-amber-900/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-amber-500/5 to-transparent">
-          <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Pending</span>
-            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-300 mt-1">
-            {stats.pending}
-          </div>
-          <p className="text-[10px] sm:text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5 flex items-center gap-1 truncate">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping inline-block shrink-0"></span>
-            Needs warehouse dispatch
-          </p>
-        </div>
-
-        <div className="bg-card border border-blue-200 dark:border-blue-900/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-blue-500/5 to-transparent">
-          <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">In Transit</span>
-            <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-black text-blue-700 dark:text-blue-300 mt-1">
-            {stats.shipped}
-          </div>
-          <p className="text-[10px] sm:text-[11px] text-blue-600/80 dark:text-blue-400/80 mt-0.5 truncate">Shiprocket active</p>
-        </div>
-
-        <div className="bg-card border border-emerald-200 dark:border-emerald-900/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-emerald-500/5 to-transparent">
-          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Delivered</span>
-            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
-            {stats.delivered}
-          </div>
-          <p className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">99.2% success rate</p>
-        </div>
-
-        <div className="bg-card border border-rose-200 dark:border-rose-900/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-rose-500/5 to-transparent">
-          <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Cancelled</span>
-            <Ban className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-black text-rose-700 dark:text-rose-300 mt-1">
-            {stats.cancelled + stats.returned}
-          </div>
-          <p className="text-[10px] sm:text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5 truncate">
-            {stats.cancelled} Can. / {stats.returned} Ret.
-          </p>
-        </div>
-
-        <div className="bg-card border border-emerald-300/80 dark:border-emerald-700/60 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm bg-gradient-to-br from-primary/10 via-emerald-500/5 to-transparent">
-          <div className="flex items-center justify-between text-primary">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate">Gross Sales</span>
-            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-          </div>
-          <div className="text-xl sm:text-2xl font-black text-foreground mt-1 truncate">
-            ₹{stats.grossRevenue.toLocaleString("en-IN")}
-          </div>
-          <p className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium truncate">All active orders</p>
-        </div>
-      </div>
-
-      {/* 3. Filter Navigation Tabs & Toolbar */}
+      {/* Filter Navigation Tabs & Toolbar */}
       <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm space-y-3 sm:space-y-4 max-w-full overflow-hidden">
         {/* Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap min-w-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
