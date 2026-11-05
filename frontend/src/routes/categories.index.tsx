@@ -257,6 +257,7 @@ function CategoriesIndexPage() {
               return (
                 <div
                   key={cat.slug}
+                  data-card="category"
                   className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/80 bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[#075B32]/30"
                 >
                   {/* Clickable Image Header */}

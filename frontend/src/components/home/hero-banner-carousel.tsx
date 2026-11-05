@@ -179,7 +179,8 @@ export function HeroBannerCarousel() {
 
   return (
     <section
-      className="relative overflow-hidden bg-white select-none"
+      data-no-scroll-reveal="true"
+      className="relative overflow-hidden bg-white select-none hero-carousel-container"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}

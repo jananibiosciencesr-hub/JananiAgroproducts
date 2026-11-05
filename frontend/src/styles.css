@@ -511,3 +511,51 @@ input:-webkit-autofill:active {
   object-position: center 60%;
 }
 
+/* ========================================================= */
+/* BI-DIRECTIONAL SCROLL TRANSITIONS (CARDS & CONTENT)       */
+/* ========================================================= */
+
+/* Active only after client JS initializes, preserving full SSR visibility */
+html.scroll-animate-ready .scroll-reveal-left,
+html.scroll-animate-ready .scroll-reveal-top {
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto !important;
+}
+
+/* 1. Left to Right transition initial state */
+html.scroll-animate-ready .scroll-reveal-left {
+  transform: translate3d(-36px, 0, 0);
+}
+
+/* 2. Top to Bottom transition initial state */
+html.scroll-animate-ready .scroll-reveal-top {
+  transform: translate3d(0, -28px, 0);
+}
+
+/* In-View revealed state when scrolling UP and DOWN */
+html.scroll-animate-ready .scroll-reveal-left.is-revealed:not(:hover),
+html.scroll-animate-ready .scroll-reveal-top.is-revealed:not(:hover) {
+  opacity: 1 !important;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Retain full opacity while letting card hover transforms (e.g. hover:-translate-y-1) work cleanly */
+html.scroll-animate-ready .scroll-reveal-left.is-revealed:hover,
+html.scroll-animate-ready .scroll-reveal-top.is-revealed:hover {
+  opacity: 1 !important;
+}
+
+/* User accessibility preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html.scroll-animate-ready .scroll-reveal-left,
+  html.scroll-animate-ready .scroll-reveal-top {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+

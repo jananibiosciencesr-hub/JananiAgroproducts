@@ -174,6 +174,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
 
   return (
     <article
+      data-card="product"
       className={`group relative overflow-hidden rounded-none border-0 bg-white shadow-none transition duration-300 hover:shadow-md flex flex-col justify-between ${
         list ? "sm:grid sm:grid-cols-[220px_1fr]" : ""
       }`}

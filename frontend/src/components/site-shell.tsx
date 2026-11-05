@@ -35,6 +35,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { HomeMegaMenu } from "@/components/home-mega-menu";
 import { GlobalSearchModal } from "@/components/search/global-search-modal";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { ScrollRevealManager } from "@/components/scroll-reveal-manager";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -53,6 +54,7 @@ const links = [
 export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <StoreProvider>
+      <ScrollRevealManager />
       <Shell>{children}</Shell>
       <Toaster
         position="bottom-right"
