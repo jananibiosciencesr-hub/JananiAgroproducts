@@ -621,24 +621,19 @@ export function parseCartItems(
   return Array.from(itemMap.values());
 }
 
-// The 15 Core Agri Products Categories synchronized with MySQL database
+// The 11 Core Agri Products Categories strictly synchronized with MySQL database and Admin
 export const categories: { id: number; name: string; slug: string; count: number; image: string; description?: string }[] = [
   { id: 1, name: "Bio Fertilizers", slug: "bio-fertilizers", count: 2, image: "/images/categories/bio-fertilizers.jpg", description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
-  { id: 2, name: "Biological Crop Protection", slug: "biological-crop-protection", count: 2, image: "/images/categories/bio-pesticides.jpg", description: "Targeted biological protection defending crops against fungal and bacterial pressures." },
-  { id: 3, name: "Bio Pesticides", slug: "bio-pesticides", count: 1, image: "/images/categories/bio-pesticides.jpg", description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
-  { id: 4, name: "Organic Plant Nutrients", slug: "organic-plant-nutrients", count: 2, image: "/images/categories/micro-nutrients.jpg", description: "Essential organic plant nutrients, chelated zinc, ferrous, and foliar sprays." },
-  { id: 5, name: "Bio Fungicides", slug: "bio-fungicides", count: 2, image: "/images/categories/fungicides.jpg", description: "Protective biofungal formulations defending foliage and roots against wilt and root rot." },
-  { id: 6, name: "Soil Conditioners & Biostimulants", slug: "soil-conditioners-biostimulants", count: 4, image: "/images/categories/bio-stimulants.jpg", description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts for living soil." },
-  { id: 7, name: "Bio Stimulants", slug: "bio-stimulants", count: 4, image: "/images/categories/bio-stimulants.jpg", description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
-  { id: 8, name: "Micro Nutrients", slug: "micro-nutrients", count: 2, image: "/images/categories/micro-nutrients.jpg", description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
-  { id: 9, name: "Insecticides", slug: "insecticides", count: 1, image: "/images/categories/insecticides.jpg", description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
-  { id: 10, name: "Fungicides", slug: "fungicides", count: 1, image: "/images/categories/fungicides.jpg", description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
-  { id: 11, name: "Botanical Extracts", slug: "botanical-extracts", count: 1, image: "/images/categories/botanical-extracts.jpg", description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
-  { id: 12, name: "Water Solubles", slug: "water-solubles", count: 1, image: "/images/categories/water-solubles.jpg", description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
-  { id: 13, name: "Agri Inputs", slug: "agri-inputs", count: 2, image: "/images/categories/agri-inputs.jpg", description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
-  { id: 14, name: "fungicides", slug: "fungs", count: 3, image: "/images/categories/fungicides.jpg", description: "Curative and protective agricultural fungicides for sustainable disease management." },
-  { id: 15, name: "pestocides", slug: "pestocides", count: 0, image: "/images/categories/bio-pesticides.jpg", description: "Formulations for organic pest control and preventive crop health." },
-  { id: 16, name: "Other", slug: "other", count: 0, image: "/images/categories/others.jpg", description: "General and diverse sustainable agricultural formulations and inputs." }
+  { id: 2, name: "Bio Pesticides", slug: "bio-pesticides", count: 1, image: "/images/categories/bio-pesticides.jpg", description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
+  { id: 3, name: "Bio Fungicides", slug: "bio-fungicides", count: 2, image: "/images/categories/fungicides.jpg", description: "Protective biofungal formulations defending foliage and roots against wilt and root rot." },
+  { id: 4, name: "Bio Stimulants", slug: "bio-stimulants", count: 6, image: "/images/categories/bio-stimulants.jpg", description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
+  { id: 5, name: "Micro Nutrients", slug: "micro-nutrients", count: 3, image: "/images/categories/micro-nutrients.jpg", description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
+  { id: 6, name: "Insecticides", slug: "insecticides", count: 1, image: "/images/categories/insecticides.jpg", description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
+  { id: 7, name: "Fungicides", slug: "fungicides", count: 1, image: "/images/categories/fungicides.jpg", description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
+  { id: 8, name: "Botanical Extracts", slug: "botanical-extracts", count: 1, image: "/images/categories/botanical-extracts.jpg", description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
+  { id: 9, name: "Water Solubles", slug: "water-solubles", count: 1, image: "/images/categories/water-solubles.jpg", description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
+  { id: 10, name: "Agri Inputs", slug: "agri-inputs", count: 2, image: "/images/categories/agri-inputs.jpg", description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
+  { id: 11, name: "Soil Protection", slug: "soil-protection", count: 0, image: "/images/categories/others.jpg", description: "To protect the soils from the small ants, animals." }
 ];
 
 export const products: Product[] = [

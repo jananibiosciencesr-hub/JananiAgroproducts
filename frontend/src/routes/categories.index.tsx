@@ -39,7 +39,17 @@ function CategoriesIndexPage() {
       "termeric",
       "cat-termeric",
       "turmeric",
-      "cat-turmeric"
+      "cat-turmeric",
+      "biological-crop-protection",
+      "cat-biological-crop-protection",
+      "organic-plant-nutrients",
+      "cat-organic-plant-nutrients",
+      "soil-conditioners-biostimulants",
+      "cat-soil-conditioners-biostimulants",
+      "fungs",
+      "cat-fungs",
+      "pestocides",
+      "cat-pestocides"
     ];
     const seen = new Set<string>();
     const filtered = rawCats.filter((cat: any) => {

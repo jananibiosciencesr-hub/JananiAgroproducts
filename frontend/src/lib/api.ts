@@ -462,7 +462,12 @@ export async function getCategories() {
   }
 
   const FORBIDDEN_CATEGORIES = new Set([
-    "termeric", "cat-termeric", "turmeric", "cat-turmeric"
+    "termeric", "cat-termeric", "turmeric", "cat-turmeric",
+    "biological-crop-protection", "cat-biological-crop-protection",
+    "organic-plant-nutrients", "cat-organic-plant-nutrients",
+    "soil-conditioners-biostimulants", "cat-soil-conditioners-biostimulants",
+    "fungs", "cat-fungs",
+    "pestocides", "cat-pestocides"
   ]);
 
   const map = new Map<string, any>();
@@ -498,7 +503,7 @@ export async function getCategories() {
       });
     }
   } else {
-    // Fallback: Initialise with canonical categories, excluding forbidden/deleted
+    // Fallback: Initialise strictly with canonical categories (matching MySQL taxonomy)
     for (const cat of categories) {
       const key = cat.slug.toLowerCase().trim();
       if (FORBIDDEN_CATEGORIES.has(key) || FORBIDDEN_CATEGORIES.has(cat.name.toLowerCase().trim())) continue;
@@ -509,7 +514,7 @@ export async function getCategories() {
         id: `cat-${cat.slug}`,
         name: cat.name,
         slug: cat.slug,
-        count: cat.count || 1,
+        count: cat.count || 0,
         image: catImg,
         bannerImage: (cat as any).bannerImage || (cat as any).banner_image || catImg,
         description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
@@ -517,47 +522,30 @@ export async function getCategories() {
         active: true
       });
     }
-  }
 
-  // 2. Merge stored / local categories if admin edited locally
-  for (const cat of storedList) {
-    if (isGroceryCategory(cat)) continue;
-    const key = String(cat.slug || cat.name || cat.id).toLowerCase().trim();
-    if (FORBIDDEN_CATEGORIES.has(key) || cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") {
-      map.delete(key);
-      if (cat.slug) map.delete(String(cat.slug).toLowerCase().trim());
-      continue;
-    }
-    const existing = map.get(key) || (cat.slug ? map.get(String(cat.slug).toLowerCase().trim()) : null);
-    if (existing) {
-      existing.count = Number(cat.product_count || cat.productsCount || cat.count) || existing.count;
-      if (cat.name) existing.name = cat.name;
-      if (cat.description) existing.description = cat.description;
-      if (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0) {
-        existing.image = cat.image.trim();
+    // Only if backend is completely unavailable, merge local edits for existing categories
+    for (const cat of storedList) {
+      if (isGroceryCategory(cat)) continue;
+      const key = String(cat.slug || cat.name || cat.id).toLowerCase().trim();
+      if (FORBIDDEN_CATEGORIES.has(key) || cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") {
+        map.delete(key);
+        if (cat.slug) map.delete(String(cat.slug).toLowerCase().trim());
+        continue;
       }
-      if (cat.bannerImage || cat.banner_image) {
-        existing.bannerImage = cat.bannerImage || cat.banner_image;
+      const existing = map.get(key) || (cat.slug ? map.get(String(cat.slug).toLowerCase().trim()) : null);
+      if (existing) {
+        existing.count = Number(cat.product_count || cat.productsCount || cat.count) || existing.count;
+        if (cat.name) existing.name = cat.name;
+        if (cat.description) existing.description = cat.description;
+        if (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0) {
+          existing.image = cat.image.trim();
+        }
+        if (cat.bannerImage || cat.banner_image) {
+          existing.bannerImage = cat.bannerImage || cat.banner_image;
+        }
+        if (cat.featured !== undefined) (existing as any).featured = Boolean(cat.featured === 1 || cat.featured === "1" || cat.featured === true || cat.featured === "true");
+        if (cat.trending !== undefined) (existing as any).trending = Boolean(cat.trending === 1 || cat.trending === "1" || cat.trending === true || cat.trending === "true");
       }
-      if (cat.featured !== undefined) (existing as any).featured = Boolean(cat.featured === 1 || cat.featured === "1" || cat.featured === true || cat.featured === "true");
-      if (cat.trending !== undefined) (existing as any).trending = Boolean(cat.trending === 1 || cat.trending === "1" || cat.trending === true || cat.trending === "true");
-    } else {
-      const catImg = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
-        ? cat.image.trim()
-        : getCategoryImage(cat.slug || cat.name);
-      map.set(key, {
-        id: cat.id || `cat-${cat.slug || key}`,
-        name: cat.name || cat.slug || key,
-        slug: cat.slug || key,
-        count: Number(cat.product_count || cat.productsCount || cat.count) || 0,
-        image: catImg,
-        bannerImage: cat.bannerImage || cat.banner_image || catImg,
-        description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
-        icon: cat.icon || "🌾",
-        featured: Boolean(cat.featured === 1 || cat.featured === "1" || cat.featured === true || cat.featured === "true"),
-        trending: Boolean(cat.trending === 1 || cat.trending === "1" || cat.trending === true || cat.trending === "true"),
-        active: true
-      });
     }
   }
 
@@ -565,6 +553,12 @@ export async function getCategories() {
   FORBIDDEN_CATEGORIES.forEach((k) => map.delete(k));
 
   const result = Array.from(map.values()).filter((c) => !isGroceryCategory(c) && !FORBIDDEN_CATEGORIES.has(c.slug.toLowerCase()));
+  if (typeof window !== "undefined" && backendList.length > 0) {
+    try {
+      localStorage.setItem("janani_admin_categories", JSON.stringify(result));
+      localStorage.setItem("janani_admin_categories_v3", JSON.stringify(result));
+    } catch (e) {}
+  }
   return result;
 }
 

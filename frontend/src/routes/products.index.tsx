@@ -115,11 +115,21 @@ function ProductsPage() {
   const activeProductList = (storeProducts && storeProducts.length > 0) ? storeProducts : products;
   const activeCategories = useMemo(() => {
     const rawCats = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
+    const forbiddenSlugs = new Set([
+      "biological-crop-protection",
+      "organic-plant-nutrients",
+      "soil-conditioners-biostimulants",
+      "fungs",
+      "pestocides",
+      "termeric",
+      "turmeric"
+    ]);
     return rawCats.filter((cat: any) => {
       if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") return false;
       const n = (cat.name || "").toLowerCase().trim();
       const s = (cat.slug || "").toLowerCase().trim();
-      if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+      if (forbiddenSlugs.has(s) || forbiddenSlugs.has(n)) return false;
+      if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical") || n.includes("soil") || s.includes("soil")) return true;
       return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet", "grocery", "pantry"].some((term) => n.includes(term) || s.includes(term));
     });
   }, [storeCategories]);

@@ -69,7 +69,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (storedCats) {
         const parsed = JSON.parse(storedCats);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleanCats = parsed.filter((cat: any) => !isGroceryCategory(cat));
+          const cleanCats = parsed.filter((cat: any) => {
+            if (isGroceryCategory(cat)) return false;
+            const slug = (cat.slug || "").toLowerCase().trim();
+            const name = (cat.name || "").toLowerCase().trim();
+            if (
+              slug === "biological-crop-protection" ||
+              slug === "organic-plant-nutrients" ||
+              slug === "soil-conditioners-biostimulants" ||
+              slug === "fungs" ||
+              slug === "pestocides" ||
+              name === "fungs" ||
+              name === "pestocides" ||
+              name === "termeric" ||
+              slug === "termeric"
+            ) {
+              return false;
+            }
+            return true;
+          });
           if (cleanCats.length > 0) {
             setLiveCategories(cleanCats);
           }

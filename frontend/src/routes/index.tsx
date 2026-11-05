@@ -142,7 +142,25 @@ export function HomePage() {
 
   // Dynamic Agri Products Categories (only Trending if set, or all valid)
   const categoryCards = useMemo(() => {
-    const validCats = allCategories.filter((cat: any) => !isGroceryCategory(cat));
+    const validCats = allCategories.filter((cat: any) => {
+      if (isGroceryCategory(cat)) return false;
+      const s = (cat.slug || "").toLowerCase().trim();
+      const n = (cat.name || "").toLowerCase().trim();
+      if (
+        s === "biological-crop-protection" ||
+        s === "organic-plant-nutrients" ||
+        s === "soil-conditioners-biostimulants" ||
+        s === "fungs" ||
+        s === "pestocides" ||
+        n === "fungs" ||
+        n === "pestocides" ||
+        s === "termeric" ||
+        n === "termeric"
+      ) {
+        return false;
+      }
+      return true;
+    });
 
     const trendingOnly = validCats.filter((cat: any) =>
       Boolean(cat.trending === true || cat.trending === 1 || cat.trending === "1" || cat.trending === "true")
