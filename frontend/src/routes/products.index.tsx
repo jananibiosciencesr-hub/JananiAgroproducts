@@ -71,6 +71,87 @@ const ALL_CROPS = [
   "All Crops",
 ];
 
+const CROP_SYNONYMS: Record<string, string[]> = {
+  vegetables: [
+    "vegetable", "vegetables", "tomato", "chilli", "chili", "brinjal",
+    "potato", "onion", "ginger", "turmeric", "garlic", "okra", "bhindi",
+    "cabbage", "cauliflower", "horticulture", "horticultural"
+  ],
+  fruits: [
+    "fruit", "fruits", "fruit crops", "orchard", "orchards", "mango",
+    "banana", "pomegranate", "grapes", "grape", "citrus", "papaya",
+    "apple", "guava", "horticulture", "horticultural", "plantation"
+  ],
+  cereals: [
+    "cereal", "cereals", "paddy", "rice", "wheat", "maize", "corn",
+    "millet", "millets", "grain", "grains", "sorghum", "barley"
+  ],
+  pulses: [
+    "pulse", "pulses", "gram", "chickpea", "pigeonpea", "lentil",
+    "lentils", "dal", "beans", "blackgram", "greengram"
+  ],
+  oilseeds: [
+    "oilseed", "oilseeds", "groundnut", "peanut", "soyabean", "soybean",
+    "mustard", "sunflower", "sesame"
+  ],
+  cotton: ["cotton", "kapas"],
+  sugarcane: ["sugarcane", "cane"]
+};
+
+export function isProductSuitableForCrop(p: any, cropFilter: string): boolean {
+  if (!p || !cropFilter) return false;
+  const cleanFilter = cropFilter.trim();
+  if (cleanFilter === "All Crops") return true;
+
+  // 1. Check if product is explicitly suitable for "All Crops"
+  const cropsList: string[] = Array.isArray(p.crops)
+    ? p.crops
+    : typeof p.crops === "string"
+    ? (p.crops.startsWith("[")
+        ? (() => {
+            try {
+              const parsed = JSON.parse(p.crops);
+              return Array.isArray(parsed) ? parsed : p.crops.split(",");
+            } catch {
+              return p.crops.split(",");
+            }
+          })()
+        : p.crops.split(","))
+    : [];
+
+  const cleanCropsList = cropsList.map((c: any) => String(c).trim()).filter(Boolean);
+  const recCrops = String(p.recommendedCrops || p.recommended_crops || "").toLowerCase();
+  const desc = String(p.description || "").toLowerCase();
+
+  const isForAll =
+    cleanCropsList.some((c) => c.toLowerCase().includes("all crop")) ||
+    recCrops.includes("all crop") ||
+    recCrops.includes("all agricultural crop") ||
+    desc.includes("all crop") ||
+    desc.includes("all agricultural crop");
+
+  if (isForAll) return true;
+
+  // 2. Direct match in crops list (case-insensitive & singular-plural tolerant)
+  const filterKey = cleanFilter.toLowerCase();
+  const directMatch = cleanCropsList.some((c) => {
+    const cLower = c.toLowerCase();
+    if (cLower === filterKey) return true;
+    if (cLower.replace(/s$/, "") === filterKey.replace(/s$/, "")) return true;
+    return false;
+  });
+  if (directMatch) return true;
+
+  // 3. Synonym / Keyword check across crops, recommendedCrops, description
+  const keywords = CROP_SYNONYMS[filterKey] || [filterKey];
+  const combinedText = `${cleanCropsList.join(" ")} ${recCrops} ${desc}`.toLowerCase();
+
+  return keywords.some((kw) => {
+    const regex = new RegExp(`\\b${kw}\\b`, "i");
+    return regex.test(combinedText);
+  });
+}
+
 function getCategoryIcon(name: string) {
   const n = name.toLowerCase();
   if (n.includes("fertilizer")) {
@@ -221,9 +302,15 @@ function ProductsPage() {
 
   // Handle Crop Toggle
   const toggleCrop = (crop: string) => {
-    setSelectedCrops((prev) =>
-      prev.includes(crop) ? prev.filter((c) => c !== crop) : [...prev, crop]
-    );
+    setSelectedCrops((prev) => {
+      if (crop === "All Crops") {
+        return prev.includes("All Crops") ? [] : ["All Crops"];
+      }
+      const withoutAll = prev.filter((c) => c !== "All Crops");
+      return withoutAll.includes(crop)
+        ? withoutAll.filter((c) => c !== crop)
+        : [...withoutAll, crop];
+    });
   };
 
   // Clear all filters
@@ -254,10 +341,7 @@ function ProductsPage() {
 
       // 3. Crops
       if (selectedCrops.length > 0) {
-        const prodCrops = p.crops || [];
-        const hasMatch = selectedCrops.some((c) =>
-          c === "All Crops" ? true : prodCrops.includes(c)
-        );
+        const hasMatch = selectedCrops.some((c) => isProductSuitableForCrop(p, c));
         if (!hasMatch) return false;
       }
 
@@ -815,21 +899,32 @@ function ProductsPage() {
                   <Filter className="size-4 text-[#075B32]" />
                   Filters
                 </h2>
-                <button
-                  onClick={() => setIsMobileFilterOpen(false)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700"
-                >
-                  <X className="size-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
+                    <button
+                      type="button"
+                      onClick={handleClearFilters}
+                      className="text-xs text-red-600 hover:text-red-700 font-semibold cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 cursor-pointer"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
               </div>
 
               {filterSidebarContent}
             </div>
 
-            <div className="pt-6 border-t border-gray-100 mt-6">
+            <div className="pt-4 border-t border-gray-100 mt-6 sticky bottom-0 bg-white">
               <button
                 onClick={() => setIsMobileFilterOpen(false)}
-                className="w-full bg-[#075B32] text-white text-xs font-bold py-2.5 rounded-xl shadow-xs"
+                className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-xs font-bold py-3 rounded-xl shadow-xs transition cursor-pointer"
               >
                 Show Results ({sortedProducts.length})
               </button>

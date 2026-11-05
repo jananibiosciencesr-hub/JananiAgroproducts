@@ -1414,6 +1414,37 @@ function ensureJananiCatalogSynced($pdo) {
             }
         }
 
+        // Auto-enrich products with official crops & recommendedCrops if null or empty in MySQL
+        try {
+            $defaultProductCrops = [
+                'harit' => [["Fruits", "Vegetables", "Cereals", "Pulses", "Cotton", "Sugarcane", "All Crops"], "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, plantation crops, nursery plants and horticultural crops."],
+                'bhumi-shakti' => [["Fruits", "Vegetables", "Cereals", "Pulses", "Oilseeds", "Cotton", "Sugarcane", "All Crops"], "Suitable for vegetables, fruits, paddy, cereals, pulses, oilseeds, cotton, sugarcane, flowers, plantation crops and horticultural crops."],
+                'neem-oil-1000-ppm' => [["Fruits", "Vegetables", "Cotton", "Pulses", "Cereals", "All Crops"], "Suitable for vegetables, fruits, cotton, pulses, cereals, tea, spices, floriculture and greenhouse horticultural crops."],
+                'pushkal' => [["Fruits", "Vegetables", "Cotton", "Cereals", "Sugarcane"], "Cotton, Sugarcane, Chilli, Tomato, Pomegranate, Banana, Grapes, Paddy, Wheat, Maize."],
+                'annada' => [["Vegetables", "Fruits", "Cereals", "Pulses", "All Crops"], "All agricultural crops, open-field vegetables, orchards and protected cultivation greenhouses."],
+                'dharani' => [["Vegetables", "Cereals", "Pulses", "Cotton", "Sugarcane"], "Paddy, Cotton, Tomato, Chilli, Onion, Sugarcane, Banana, Papaya, Mango, Potato."],
+                'balavan' => [["Fruits", "Vegetables", "Cotton", "Pulses", "Oilseeds"], "Vegetables, Cotton, Pomegranate, Citrus, Mango, Paddy, Pulses."],
+                'dhanya' => [["Fruits", "Vegetables", "Cereals", "Cotton", "Sugarcane"], "Cotton, Paddy, Sugarcane, Vegetables, Citrus, Apple, Banana, Grapes."],
+                'suraksha' => [["Vegetables", "Fruits", "Cereals", "Pulses", "Oilseeds"], "Tomato, Chilli, Potato, Groundnut, Ginger, Turmeric, Cumin, Mustard, Grapes."],
+                'pushkal-bottle' => [["Fruits", "Vegetables", "Cotton", "Sugarcane", "All Crops"], "Cotton, Sugarcane, Vegetables, Orchards, Cereals and Cash Crops."],
+                'balavan-bottle' => [["Cereals", "Pulses", "Cotton", "Sugarcane", "All Crops"], "Sugarcane, Cotton, Banana, Paddy, Maize, Wheat, Horticultural Soils."],
+                'annada-bottle' => [["Vegetables", "Fruits", "Cotton", "Cereals", "All Crops"], "Vegetables, Fruit Orchards, Cotton, Spices, Floriculture, Tea and Coffee."],
+                'balavan-bacillus-subtilis-5l' => [["Paddy", "Cotton", "Chilli", "Tomato", "Pomegranate", "All Crops"], "Paddy, Cotton, Chilli, Tomato, Pomegranate, Groundnut, Sugarcane."],
+                'suraksha-pseudomonas-fluorescens-5l' => [["Paddy", "Vegetables", "Ginger", "Turmeric", "Banana", "All Crops"], "Rice, Chilli, Cotton, Banana, Vegetables, Ginger, Turmeric."],
+                'dharani-kmb-potassium-mobilizing-biofertilizer-5l' => [["Sugarcane", "Cotton", "Banana", "Potato", "Paddy", "Grapes", "All Crops"], "Sugarcane, Banana, Potato, Cotton, Vegetables, Paddy, Fruit Orchards."],
+                'pushkal-flowering-fruit-set-biostimulant-1l' => [["Chilli", "Cotton", "Tomato", "Pomegranate", "Mango", "All Crops"], "Chilli, Cotton, Tomato, Brinjal, Pomegranate, Citrus, Grapes, Mango."],
+                'annada-fish-amino-acid-5l' => [["Paddy", "Cotton", "Chilli", "Vegetables", "Horticulture", "All Crops"], "Paddy, Cotton, Chilli, Sugarcane, Vegetables, Banana, Orchards."],
+                'agri-stick-silicone-spreader-activator' => [["All Crops", "Vegetables", "Cotton", "Paddy", "Orchards"], "Suitable for tank mixing with all agricultural foliar sprays across all crops."]
+            ];
+
+            $updateCropsStmt = $pdo->prepare("UPDATE `products` SET `crops` = ?, `recommendedCrops` = ? WHERE `slug` = ? AND (`crops` IS NULL OR `crops` = '' OR `crops` = '[]')");
+            foreach ($defaultProductCrops as $slug => $data) {
+                try {
+                    $updateCropsStmt->execute([json_encode($data[0], JSON_UNESCAPED_SLASHES), $data[1], $slug]);
+                } catch (Exception $e) {}
+            }
+        } catch (Exception $e) {}
+
         // Auto-consolidate 'Other' and 'Other Categories' into the primary user other category
         try {
             $primaryOther = $pdo->query("SELECT * FROM `categories` 

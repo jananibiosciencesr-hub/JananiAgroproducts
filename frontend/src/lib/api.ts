@@ -234,9 +234,41 @@ export function normalizeProduct(raw: any): Product {
   const stock = typeof raw.stock === "number" ? raw.stock : (Number(raw.stockCount || raw.stock) || 50);
   const unit = raw.unit || "1 kg";
 
+  const rawSlug = raw.slug || `prod-${raw.id}`;
+  const catalogProd = products.find(
+    (p) =>
+      (rawSlug && p.slug === rawSlug) ||
+      (raw.name && p.name.toLowerCase() === String(raw.name).toLowerCase())
+  );
+
+  let parsedCrops: string[] = [];
+  if (Array.isArray(raw.crops)) {
+    parsedCrops = raw.crops;
+  } else if (typeof raw.crops === "string" && raw.crops.trim() !== "") {
+    try {
+      const parsed = JSON.parse(raw.crops);
+      if (Array.isArray(parsed)) parsedCrops = parsed;
+      else parsedCrops = raw.crops.split(",").map((s: string) => s.trim()).filter(Boolean);
+    } catch {
+      parsedCrops = raw.crops.split(",").map((s: string) => s.trim()).filter(Boolean);
+    }
+  }
+  if (parsedCrops.length === 0 && catalogProd?.crops) {
+    parsedCrops = [...catalogProd.crops];
+  }
+
+  const recommendedCrops = raw.recommendedCrops || raw.recommended_crops || catalogProd?.recommendedCrops || "";
+  const benefits = raw.benefits || catalogProd?.benefits;
+  const specifications = raw.specifications || catalogProd?.specifications;
+  const dosage = raw.dosage || catalogProd?.dosage;
+  const methodOfApplication = raw.methodOfApplication || catalogProd?.methodOfApplication;
+  const compatibility = raw.compatibility || catalogProd?.compatibility;
+  const storageNotice = raw.storageNotice || catalogProd?.storageNotice;
+  const targetDiseases = raw.targetDiseases || catalogProd?.targetDiseases;
+
   return {
     id: Number(raw.id),
-    slug: raw.slug || `prod-${raw.id}`,
+    slug: rawSlug,
     name: formatProductName(raw.name || "Organic Product"),
     category: raw.category_name || raw.category || "Bio-Fertilizers",
     brand: raw.brand || "Janani Agro Products",
@@ -260,22 +292,23 @@ export function normalizeProduct(raw: any): Product {
       : ((raw.videoUrl && !raw.videoUrl.includes("k3G_29e6j-w"))
         ? raw.videoUrl
         : (raw.slug === "harit" ? SAMPLE_PRODUCT_VIDEO : undefined)),
-    description: raw.description || "100% Certified Organic Harvest directly from Indian farms.",
+    description: raw.description || catalogProd?.description || "100% Certified Organic Harvest directly from Indian farms.",
     origin: raw.origin || "Lodhika GIDC, Gujarat",
     dietaryTags: Array.isArray(raw.tags) ? raw.tags : (typeof raw.tags === "string" ? JSON.parse(raw.tags) : ["Organic", "Chemical Free", "Farm Fresh"]),
     certifications: ["Certified Organic & NPOP Verified", "FSSAI 10724026000048"],
     popularity: Number(raw.popularity) || (raw.badge ? 95 : 75),
     isNew: raw.isNew ?? false,
     variants: parseProductVariants(raw.variants, price, unit, stock),
-    subtitle: raw.subtitle,
-    crops: raw.crops,
-    benefits: raw.benefits,
-    specifications: raw.specifications,
-    recommendedCrops: raw.recommendedCrops,
-    dosage: raw.dosage,
-    methodOfApplication: raw.methodOfApplication,
-    compatibility: raw.compatibility,
-    storageNotice: raw.storageNotice,
+    subtitle: raw.subtitle || catalogProd?.subtitle,
+    crops: parsedCrops.length > 0 ? parsedCrops : undefined,
+    benefits: benefits,
+    specifications: specifications,
+    recommendedCrops: recommendedCrops,
+    dosage: dosage,
+    methodOfApplication: methodOfApplication,
+    compatibility: compatibility,
+    storageNotice: storageNotice,
+    targetDiseases: targetDiseases,
     netContent: raw.netContent,
     gallery: Array.isArray(raw.gallery)
       ? raw.gallery
@@ -1660,10 +1693,17 @@ export function normalizeAdminProduct(raw: any) {
   else if (stock <= lowThreshold) status = "Low Stock";
   if (raw.status === "Draft" || raw.status === "Trash") status = raw.status;
 
+  const rawSlug = raw.slug || `product-${raw.id}`;
+  const catalogProd = products.find(
+    (p) =>
+      (rawSlug && p.slug === rawSlug) ||
+      (raw.name && p.name.toLowerCase() === String(raw.name).toLowerCase())
+  );
+
   return {
     id: String(raw.id),
     name: formatProductName(raw.name || "Organic Product"),
-    slug: raw.slug || `product-${raw.id}`,
+    slug: rawSlug,
     sku: raw.sku || `JAP-SKU-${raw.id}`,
     category: raw.category_name || raw.category || "Bio Fertilizers",
     brand: raw.brand || "Janani Agro Products",
@@ -1698,17 +1738,21 @@ export function normalizeAdminProduct(raw: any) {
     description: raw.description || "",
     harvestOrigin: raw.origin || raw.harvestOrigin || "Janani Bio Sciences, Gujarat",
     organicCertifications: raw.organicCertifications || ["Certified Organic & NPOP Verified"],
-    subtitle: raw.subtitle || "",
-    crops: Array.isArray(raw.crops) ? raw.crops : typeof raw.crops === "string" ? raw.crops.split(",").map((s: string) => s.trim()) : undefined,
-    benefits: Array.isArray(raw.benefits) ? raw.benefits : typeof raw.benefits === "string" ? raw.benefits.split("\n").map((s: string) => s.trim()).filter(Boolean) : undefined,
-    specifications: typeof raw.specifications === "object" ? raw.specifications : undefined,
-    recommendedCrops: raw.recommendedCrops || "",
-    dosage: raw.dosage || "",
-    methodOfApplication: raw.methodOfApplication || "",
-    compatibility: raw.compatibility || "",
-    storageNotice: raw.storageNotice || "",
+    subtitle: raw.subtitle || catalogProd?.subtitle || "",
+    crops: Array.isArray(raw.crops)
+      ? raw.crops
+      : typeof raw.crops === "string"
+        ? (raw.crops.startsWith("[") ? (() => { try { const p = JSON.parse(raw.crops); return Array.isArray(p) ? p : raw.crops.split(",").map((s: string) => s.trim()); } catch { return raw.crops.split(",").map((s: string) => s.trim()); } })() : raw.crops.split(",").map((s: string) => s.trim()))
+        : (catalogProd?.crops || undefined),
+    benefits: Array.isArray(raw.benefits) ? raw.benefits : typeof raw.benefits === "string" ? raw.benefits.split("\n").map((s: string) => s.trim()).filter(Boolean) : (catalogProd?.benefits || undefined),
+    specifications: typeof raw.specifications === "object" ? raw.specifications : (catalogProd?.specifications || undefined),
+    recommendedCrops: raw.recommendedCrops || catalogProd?.recommendedCrops || "",
+    dosage: raw.dosage || catalogProd?.dosage || "",
+    methodOfApplication: raw.methodOfApplication || catalogProd?.methodOfApplication || "",
+    compatibility: raw.compatibility || catalogProd?.compatibility || "",
+    storageNotice: raw.storageNotice || catalogProd?.storageNotice || "",
     netContent: raw.netContent || "",
-    targetDiseases: raw.targetDiseases || "",
+    targetDiseases: raw.targetDiseases || catalogProd?.targetDiseases || "",
     faqs: Array.isArray(raw.faqs) ? raw.faqs : undefined,
     seo: raw.seo || {
       metaTitle: raw.name,
