@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { getStorefrontReviews } from "@/lib/api";
-import { products, categories, getCategoryImage, slugs, type Product } from "@/lib/catalog";
+import { products, categories, getCategoryImage, slugs, isProductInCategory, type Product } from "@/lib/catalog";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { HeroBannerCarousel } from "@/components/home/hero-banner-carousel";
@@ -140,98 +140,64 @@ export function HomePage() {
     }
   };
 
-  // Dynamic Agri Products Categories (from Image 1 specification)
+  // Dynamic Agri Products Categories (only Trending if set, or all valid)
   const categoryCards = useMemo(() => {
-    return allCategories
-      .filter((cat: any) => {
-        const n = (cat.name || cat.title || "").toLowerCase();
-        const s = (cat.slug || "").toLowerCase();
-        if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
-        return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((term) => n.includes(term) || s.includes(term));
-      })
-      .map((cat: any) => {
-        const slug = cat.slug || slugs(cat.name || "");
-        const title = cat.name || cat.title || "Category";
-        const image = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
-          ? getCategoryImage(slug || title, cat.image)
-          : getCategoryImage(slug || title);
-        const link = `/categories/${slug}`;
-        const description = cat.description || "Natural, biological, and effective solutions for every stage of crop growth.";
-        const count = cat.count || cat.productsCount || 1;
-        return {
-          id: cat.id || slug,
-          title,
-          image,
-          link,
-          description,
-          count,
-        };
-      });
-  }, [allCategories]);
+    const validCats = allCategories.filter((cat: any) => {
+      const n = (cat.name || cat.title || "").toLowerCase();
+      const s = (cat.slug || "").toLowerCase();
+      if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
+      return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((term) => n.includes(term) || s.includes(term));
+    });
 
-  // 5 Featured Products (From Mockup)
-  const featuredProductsList = [
-    {
-      id: "harit",
-      numId: 1,
-      name: "Harit",
-      spec: "Trichoderma Viride Liquid Biofungal Formulation",
-      image: "/products/harit.jpg",
-      link: "/products/harit-trichoderma-viride-liquid-biofungal-formulation-1l",
-      price: 950,
-      oldPrice: 1100,
-    },
-    {
-      id: "bhumi-shakti",
-      numId: 2,
-      name: "Bhumi Shakti",
-      spec: "Humic & Fulvic Based Soil Conditioner Biostimulant",
-      image: "/products/bhumi-shakti.jpg",
-      link: "/products/bhumi-shakti-humic-fulvic-biostimulant-5l",
-      price: 3900,
-      oldPrice: 4400,
-    },
-    {
-      id: "neem-oil",
-      numId: 3,
-      name: "Neem Oil 1000 PPM",
-      spec: "Containing Azadirachtin 1000 PPM",
-      image: "/products/neem-oil.jpg",
-      link: "/products/neem-oil-1000-ppm-azadirachtin-1l",
-      price: 599,
-      oldPrice: 750,
-    },
-    {
-      id: "pushkal",
-      numId: 4,
-      name: "Pushkal",
-      spec: "Plant Growth Promoter",
-      image: "/products/pushkal.jpg",
-      link: "/products/pushkal-flowering-fruit-set-biostimulant-1l",
-      price: 999,
-      oldPrice: 1200,
-    },
-    {
-      id: "annada",
-      numId: 5,
-      name: "Annada",
-      spec: "Organic Soil Enhancer & Micro Nutrients",
-      image: "/products/annada.jpg",
-      link: "/products/annada-fish-amino-acid-5l",
-      price: 3600,
-      oldPrice: 3999,
-    },
-    {
-      id: "dharani",
-      numId: 6,
-      name: "Dharani",
-      spec: "Potassium Mobilizing Biofertilizer & Rooting Formulation",
-      image: "/products/dharani.jpg",
-      link: "/products/dharani-potassium-mobilizing-biofertilizer-1l",
-      price: 390,
-      oldPrice: 460,
-    },
-  ];
+    const trendingOnly = validCats.filter((cat: any) =>
+      Boolean(cat.trending === true || cat.trending === 1 || cat.trending === "1" || cat.trending === "true")
+    );
+    const pool = trendingOnly.length > 0 ? trendingOnly : validCats;
+
+    return pool.map((cat: any) => {
+      const slug = cat.slug || slugs(cat.name || "");
+      const title = cat.name || cat.title || "Category";
+      const image = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
+        ? getCategoryImage(slug || title, cat.image)
+        : getCategoryImage(slug || title);
+      const link = `/categories/${slug}`;
+      const description = cat.description || "Natural, biological, and effective solutions for every stage of crop growth.";
+      const count = allProducts.filter((p: any) => isProductInCategory(p, cat)).length || cat.count || cat.productsCount || 1;
+      return {
+        id: cat.id || slug,
+        title,
+        image,
+        link,
+        description,
+        count,
+      };
+    });
+  }, [allCategories, allProducts]);
+
+    // Dynamic Featured / Trending Products
+  const featuredProductsList = useMemo(() => {
+    const activeProds = allProducts.filter((p: any) => p.active !== false && p.status !== "Trash");
+    const trendingProds = activeProds.filter((p: any) =>
+      Boolean(
+        p.trending === true || p.trending === 1 || p.trending === "1" || p.trending === "true" ||
+        p.featured === true || p.featured === 1 || p.featured === "1" || p.featured === "true" ||
+        (p.badge && (p.badge.toLowerCase().includes("popular") || p.badge.toLowerCase().includes("best") || p.badge.toLowerCase().includes("trending")))
+      )
+    );
+    const pool = trendingProds.length > 0 ? trendingProds : activeProds;
+    return pool.slice(0, 10).map((p: any) => ({
+      id: p.slug || String(p.id),
+      numId: Number(p.id) || 1,
+      name: p.name,
+      spec: p.subtitle || p.category || "Organic Formulation",
+      image: p.image || "/products/harit.jpg",
+      link: `/products/${p.slug}`,
+      price: Number(p.price) || 450,
+      oldPrice: Number(p.oldPrice || p.old_price) || Math.round((Number(p.price) || 450) * 1.2),
+      badge: p.badge,
+      rating: p.rating,
+    }));
+  }, [allProducts]);
 
   // 5 Real Indian Farmer Testimonials (default authentic fallback)
   const defaultTestimonials = [

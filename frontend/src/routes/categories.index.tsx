@@ -13,7 +13,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { categories, products, getCategoryImage } from "@/lib/catalog";
+import { categories, products, getCategoryImage, isProductInCategory } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 
 export const Route = createFileRoute("/categories/")({
@@ -229,11 +229,7 @@ function CategoriesIndexPage() {
         ) : (
           <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5">
             {filteredCategories.map((cat) => {
-              const count = allProds.filter(
-                (p) =>
-                  p.category.toLowerCase() === cat.name.toLowerCase() ||
-                  p.category.toLowerCase().includes(cat.slug.replace(/-/g, " "))
-              ).length;
+              const count = allProds.filter((p: any) => isProductInCategory(p, cat)).length;
               const catImg = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
                 ? getCategoryImage(cat.slug || cat.name, cat.image)
                 : getCategoryImage(cat.slug || cat.name);
@@ -261,7 +257,7 @@ function CategoriesIndexPage() {
 
                     <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-[#075B32]/90 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm shadow-xs">
                       <Package className="size-3" />
-                      {count > 0 ? `${count} Products` : `${cat.count || 2} Products`}
+                      {count > 0 ? `${count} Products` : `${cat.count || 0} Products`}
                     </span>
                   </Link>
 

@@ -31,7 +31,7 @@ import {
   Plus,
   Minus
 } from "lucide-react";
-import { products, categories, type Product, formatProductName } from "@/lib/catalog";
+import { products, categories, type Product, formatProductName, isProductInCategory } from "@/lib/catalog";
 import { matchesProductSearch, calculateProductRelevance } from "@/lib/search-helper";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
@@ -233,13 +233,7 @@ function ProductsPage() {
     return activeProductList.filter((p) => {
       // 1. Category
       if (selectedCategories.length > 0) {
-        const selNorms = selectedCategories.map((c) =>
-          c.toLowerCase().replace(/[^a-z0-9]/g, "")
-        );
-        const pNorm = (p.category || (p as any).category_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        const match = selNorms.some(
-          (sn) => sn === pNorm || pNorm.includes(sn) || sn.includes(pNorm)
-        );
+        const match = selectedCategories.some((sc) => isProductInCategory(p, sc));
         if (!match) return false;
       }
 
@@ -393,19 +387,9 @@ function ProductsPage() {
                 }`}
               >
                 {selectedCategories.length === 1 && selectedCategories[0]
-                  ? activeProductList.filter((p) => {
-                      const pCat = (p.category || (p as any).category_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                      const cName = (selectedCategories[0] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                      return pCat === cName || pCat.includes(cName) || cName.includes(pCat);
-                    }).length
+                  ? activeProductList.filter((p) => isProductInCategory(p, selectedCategories[0])).length
                   : selectedCategories.length > 1
-                  ? activeProductList.filter((p) => {
-                      const selNorms = selectedCategories.map((c) =>
-                        c.toLowerCase().replace(/[^a-z0-9]/g, "")
-                      );
-                      const pCat = (p.category || (p as any).category_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                      return selNorms.some((sn) => sn === pCat || pCat.includes(sn) || sn.includes(pCat));
-                    }).length
+                  ? activeProductList.filter((p) => selectedCategories.some((sc) => isProductInCategory(p, sc))).length
                   : activeProductList.length}
               </span>
               <ChevronDown
@@ -452,14 +436,8 @@ function ProductsPage() {
               {activeCategories.map((cat: any) => {
                 const cNameNorm = (cat.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
                 const cSlugNorm = (cat.slug || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                const count = activeProductList.filter((p) => {
-                  const pCat = (p.category || (p as any).category_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-                  return pCat === cNameNorm || (cSlugNorm && pCat === cSlugNorm) || pCat.includes(cNameNorm) || (cNameNorm && cNameNorm.includes(pCat));
-                }).length;
-                const isSelected = selectedCategories.some((sc) => {
-                  const scNorm = sc.toLowerCase().replace(/[^a-z0-9]/g, "");
-                  return scNorm === cNameNorm || scNorm === cSlugNorm || (cNameNorm && cNameNorm.includes(scNorm));
-                });
+                const count = activeProductList.filter((p) => isProductInCategory(p, cat)).length;
+                const isSelected = selectedCategories.some((sc) => isProductInCategory({ category: sc, category_name: sc, category_slug: sc }, cat));
 
                 return (
                   <label

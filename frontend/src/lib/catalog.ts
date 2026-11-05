@@ -71,6 +71,49 @@ export function getProductImage(nameOrCategory: string = "", customImage?: strin
  * Formats product names from ALL CAPS to Title Case (e.g., "HARIT" -> "Harit", "BHUMI SHAKTI" -> "Bhumi Shakti")
  * Preserves standard units and acronyms like PPM, WDG, NPK, KMB, CFU/ml, IPM.
  */
+
+/**
+ * Accurately determines if a product belongs to a given category without cross-category substring leakage.
+ * Avoids incorrectly matching "Fungicides" into "Bio Fungicides", or "Pesticides" into "Bio Pesticides".
+ */
+export function isProductInCategory(product: any, category: any): boolean {
+  if (!product || !category) return false;
+
+  const pCat = String(product.category || product.category_name || "").toLowerCase().trim();
+  const pSlug = String(product.category_slug || product.categorySlug || "").toLowerCase().trim();
+  const pCatId = product.category_id || product.categoryId ? String(product.category_id || product.categoryId).trim() : "";
+
+  const cName = String(typeof category === "string" ? category : (category.name || "")).toLowerCase().trim();
+  const cSlug = String(typeof category === "string" ? category.toLowerCase().replace(/[^a-z0-9]+/g, "-") : (category.slug || "")).toLowerCase().trim();
+  const cId = typeof category === "object" && category?.id ? String(category.id).trim() : "";
+
+  // 1. Exact ID match if IDs are available
+  if (cId && pCatId && (cId === pCatId || cId === `cat-${pCatId}` || `cat-${cId}` === pCatId)) {
+    return true;
+  }
+
+  // 2. Direct string equality (case-insensitive)
+  if (pCat && cName && pCat === cName) return true;
+  if (pSlug && cSlug && pSlug === cSlug) return true;
+
+  // 3. Normalized alphanumeric equality (e.g. "bio-fungicides" === "Bio Fungicides")
+  const pNorm = pCat.replace(/[^a-z0-9]/g, "");
+  const pSlugNorm = pSlug.replace(/[^a-z0-9]/g, "");
+  const cNorm = cName.replace(/[^a-z0-9]/g, "");
+  const sNorm = cSlug.replace(/[^a-z0-9]/g, "");
+
+  if (pNorm && (pNorm === cNorm || pNorm === sNorm)) return true;
+  if (pSlugNorm && (pSlugNorm === cNorm || pSlugNorm === sNorm)) return true;
+
+  // 4. Singular / Plural match without substring bleeding (e.g. "bio-fungicide" vs "bio-fungicides")
+  const pSingular = pNorm.replace(/s$/, "");
+  const cSingular = cNorm.replace(/s$/, "");
+  const sSingular = sNorm.replace(/s$/, "");
+  if (pSingular && (pSingular === cSingular || pSingular === sSingular)) return true;
+
+  return false;
+}
+
 export function formatProductName(name: string = ""): string {
   if (!name || typeof name !== "string") return "";
   const trimmed = name.trim();

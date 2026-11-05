@@ -14,7 +14,7 @@ import {
   Package,
   ArrowRight
 } from "lucide-react";
-import { categories, products, getCategoryImage, type Product } from "@/lib/catalog";
+import { categories, products, getCategoryImage, isProductInCategory, type Product } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,16 @@ function CategoryDetailPage() {
     });
   }, [rawCats]);
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
-  const category = allCats.find((c) => c.slug === slug || (slug === "bio-fungicides" && c.slug === "fungicides")) ?? allCats[0];
+  const category = useMemo(() => {
+    const slugLower = (slug || "").toLowerCase().trim();
+    const slugNorm = slugLower.replace(/[^a-z0-9]/g, "");
+    return (
+      allCats.find((c: any) => (c.slug || "").toLowerCase().trim() === slugLower) ||
+      allCats.find((c: any) => (c.slug || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slugNorm) ||
+      allCats.find((c: any) => (c.name || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slugNorm) ||
+      allCats[0]
+    );
+  }, [allCats, slug]);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
   const [list, setList] = useState(false);
@@ -68,22 +77,10 @@ function CategoryDetailPage() {
   // Products matching this category
   const categoryProducts = useMemo(() => {
     if (!category) return [];
-    const catName = category.name.toLowerCase().trim();
-    const catSlug = (category.slug || "").toLowerCase().trim();
-    const catNorm = catName.replace(/[^a-z0-9]/g, "");
-    const slugNorm = catSlug.replace(/[^a-z0-9]/g, "");
 
-    let items = allProds.filter((p) => {
-      const pCat = (p.category || "").toLowerCase().trim();
-      const pCatNorm = pCat.replace(/[^a-z0-9]/g, "");
-      return (
-        pCat === catName ||
-        pCatNorm === catNorm ||
-        pCatNorm === slugNorm ||
-        pCat.includes(catName) ||
-        catName.includes(pCat) ||
-        (slugNorm && pCatNorm.includes(slugNorm))
-      );
+    let items = allProds.filter((p: any) => {
+      if (p.active === false || p.status === "Trash") return false;
+      return isProductInCategory(p, category);
     });
 
     // Search inside category
@@ -382,7 +379,7 @@ function CategoryDetailPage() {
                           {c.name}
                         </h4>
                         <span className="text-[11px] text-[#0B6B35] font-semibold mt-0.5 block">
-                          {c.count || (c as any).productsCount || 2} formulations
+                          {allProds.filter((p: any) => isProductInCategory(p, c)).length || c.count || (c as any).productsCount || 0} formulations
                         </span>
                       </div>
                     </Link>

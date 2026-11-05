@@ -492,6 +492,8 @@ export async function getCategories() {
         bannerImage: resolvedBanner,
         description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
         icon: cat.icon || "🌾",
+        featured: Boolean(cat.featured === 1 || cat.featured === "1" || cat.featured === true || cat.featured === "true"),
+        trending: Boolean(cat.trending === 1 || cat.trending === "1" || cat.trending === true || cat.trending === "true"),
         active: true
       });
     }
@@ -537,6 +539,8 @@ export async function getCategories() {
       if (cat.bannerImage || cat.banner_image) {
         existing.bannerImage = cat.bannerImage || cat.banner_image;
       }
+      if (cat.featured !== undefined) (existing as any).featured = Boolean(cat.featured === 1 || cat.featured === "1" || cat.featured === true || cat.featured === "true");
+      if (cat.trending !== undefined) (existing as any).trending = Boolean(cat.trending === 1 || cat.trending === "1" || cat.trending === true || cat.trending === "true");
     } else {
       const catImg = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
         ? cat.image.trim()
@@ -550,6 +554,8 @@ export async function getCategories() {
         bannerImage: cat.bannerImage || cat.banner_image || catImg,
         description: cat.description || "Natural and certified organic bio-inputs for sustainable farming.",
         icon: cat.icon || "🌾",
+        featured: Boolean(cat.featured === 1 || cat.featured === "1" || cat.featured === true || cat.featured === "true"),
+        trending: Boolean(cat.trending === 1 || cat.trending === "1" || cat.trending === true || cat.trending === "true"),
         active: true
       });
     }
