@@ -158,6 +158,11 @@ export function isProductInCategory(product: any, category: any): boolean {
   const sSingular = sNorm.replace(/s$/, "");
   if (pSingular && (pSingular === cSingular || pSingular === sSingular)) return true;
 
+  // 5. Special match for "other" / "other-categories" / "others"
+  const isPOther = pNorm.startsWith("other") || pSlugNorm.startsWith("other") || pCatId.includes("other");
+  const isCOther = cNorm.startsWith("other") || sNorm.startsWith("other") || cId.includes("other");
+  if (isPOther && isCOther) return true;
+
   return false;
 }
 

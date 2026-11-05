@@ -619,6 +619,40 @@ function getOrderCustomer($ord) {
     ];
 }
 
+function saveBase64ImageFile($dataUri, $folder = 'images/categories', $filePrefix = 'cat') {
+    if (!is_string($dataUri) || strpos($dataUri, 'data:image/') !== 0) {
+        return $dataUri;
+    }
+    try {
+        if (!preg_match('/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/', $dataUri, $matches)) {
+            return $dataUri;
+        }
+        $rawExt = strtolower($matches[1]);
+        $ext = 'jpg';
+        if ($rawExt === 'png') $ext = 'png';
+        elseif ($rawExt === 'webp') $ext = 'webp';
+        elseif ($rawExt === 'svg' || $rawExt === 'svg+xml') $ext = 'svg';
+        elseif ($rawExt === 'gif') $ext = 'gif';
+        
+        $base64Data = base64_decode($matches[2]);
+        if (!$base64Data) {
+            return $dataUri;
+        }
+        $targetDir = __DIR__ . '/' . trim($folder, '/');
+        if (!is_dir($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+        $cleanPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '', $filePrefix);
+        if (empty($cleanPrefix)) $cleanPrefix = 'cat';
+        $fileName = $cleanPrefix . '-' . time() . '-' . substr(md5(uniqid()), 0, 6) . '.' . $ext;
+        $filePath = $targetDir . '/' . $fileName;
+        if (@file_put_contents($filePath, $base64Data) !== false) {
+            return '/' . trim($folder, '/') . '/' . $fileName;
+        }
+    } catch (Exception $e) {}
+    return $dataUri;
+}
+
 // ---------------------------------------------------------
 // ZERO-500 RESILIENT FALLBACK HANDLER WHEN DATABASE IS OFFLINE
 // ---------------------------------------------------------
@@ -665,21 +699,17 @@ if (!$pdo) {
             'success' => true,
             'db_fallback' => true,
             'categories' => [
-                ['id' => 'cat-bio-fertilizers', 'name' => 'Bio Fertilizers', 'slug' => 'bio-fertilize', 'product_count' => 2, 'image' => '/products/dharani.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-crop-protection', 'name' => 'Biological Crop Protection', 'slug' => 'biological-crop-protection', 'product_count' => 2, 'image' => '/products/harit.jpg', 'icon' => '🛡️', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-bio-pesticides', 'name' => 'Bio Pesticides', 'slug' => 'bio-pesticides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🛡️', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-plant-nutrients', 'name' => 'Organic Plant Nutrients', 'slug' => 'organic-plant-nutrients', 'product_count' => 2, 'image' => '/products/annada.jpg', 'icon' => '🌱', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-bio-fungicides', 'name' => 'Bio Fungicides', 'slug' => 'bio-fungicides', 'product_count' => 2, 'image' => '/products/harit.jpg', 'icon' => '🍄', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-soil-conditioners', 'name' => 'Soil Conditioners & Biostimulants', 'slug' => 'soil-conditioners-biostimulants', 'product_count' => 4, 'image' => '/products/bhumi-shakti.jpg', 'icon' => '⚡', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-bio-stimulants', 'name' => 'Bio Stimulants', 'slug' => 'bio-stimulants', 'product_count' => 4, 'image' => '/products/pushkal.jpg', 'icon' => '⚡', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-micro-nutrients', 'name' => 'Micro Nutrients', 'slug' => 'micro-nutrients', 'product_count' => 2, 'image' => '/products/annada.jpg', 'icon' => '🌱', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-insecticides', 'name' => 'Insecticides', 'slug' => 'insecticides', 'product_count' => 1, 'image' => '/products/balavan.jpg', 'icon' => '🦗', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-fungicides', 'name' => 'Fungicides', 'slug' => 'fungicides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🍃', 'active' => 1, 'featured' => 0],
-                ['id' => 'cat-botanical-extracts', 'name' => 'Botanical Extracts', 'slug' => 'botanical-extracts', 'product_count' => 1, 'image' => '/products/neem-oil.jpg', 'icon' => '🌿', 'active' => 1, 'featured' => 0],
-                ['id' => 'cat-water-solubles', 'name' => 'Water Solubles', 'slug' => 'water-solubles', 'product_count' => 1, 'image' => '/products/dhanya.jpg', 'icon' => '💧', 'active' => 1, 'featured' => 0],
-                ['id' => 'cat-agri-inputs', 'name' => 'Agri Inputs', 'slug' => 'agri-inputs', 'product_count' => 2, 'image' => '/products/bhumi-shakti.jpg', 'icon' => '🚜', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-fungs', 'name' => 'fungicides', 'slug' => 'fungs', 'product_count' => 3, 'image' => '/products/harit.jpg', 'icon' => '🍃', 'active' => 1, 'featured' => 0],
-                ['id' => 'cat-pestocides', 'name' => 'pestocides', 'slug' => 'pestocides', 'product_count' => 0, 'image' => '/products/suraksha.jpg', 'icon' => '🛡️', 'active' => 1, 'featured' => 0]
+                ['id' => 'cat-bio-fertilizers', 'name' => 'Bio Fertilizers', 'slug' => 'bio-fertilizers', 'product_count' => 2, 'image' => '/products/dharani.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-bio-pesticides', 'name' => 'Bio Pesticides', 'slug' => 'bio-pesticides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🛡️', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-bio-fungicides', 'name' => 'Bio Fungicides', 'slug' => 'bio-fungicides', 'product_count' => 2, 'image' => '/products/harit.jpg', 'icon' => '🍄', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-bio-stimulants', 'name' => 'Bio Stimulants', 'slug' => 'bio-stimulants', 'product_count' => 6, 'image' => '/products/pushkal.jpg', 'icon' => '⚡', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-micro-nutrients', 'name' => 'Micro Nutrients', 'slug' => 'micro-nutrients', 'product_count' => 3, 'image' => '/products/annada.jpg', 'icon' => '🌱', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-insecticides', 'name' => 'Insecticides', 'slug' => 'insecticides', 'product_count' => 1, 'image' => '/products/balavan.jpg', 'icon' => '🦗', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-fungicides', 'name' => 'Fungicides', 'slug' => 'fungicides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🍃', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-botanical-extracts', 'name' => 'Botanical Extracts', 'slug' => 'botanical-extracts', 'product_count' => 1, 'image' => '/products/neem-oil.jpg', 'icon' => '🌿', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-water-solubles', 'name' => 'Water Solubles', 'slug' => 'water-solubles', 'product_count' => 1, 'image' => '/products/dhanya.jpg', 'icon' => '💧', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-agri-inputs', 'name' => 'Agri Inputs', 'slug' => 'agri-inputs', 'product_count' => 2, 'image' => '/products/bhumi-shakti.jpg', 'icon' => '🚜', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-soil-protection', 'name' => 'Soil Protection', 'slug' => 'soil-protection', 'product_count' => 0, 'image' => '/images/categories/others.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 0, 'trending' => 0]
             ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;
@@ -1145,6 +1175,7 @@ function ensureProductsTableSchema($pdo) {
 
         $needed = [
             'category_id' => 'VARCHAR(64) NULL',
+            'category_slug' => 'VARCHAR(255) NULL',
             'old_price' => 'DECIMAL(10,2) NULL',
             'unit' => "VARCHAR(50) DEFAULT '1 kg'",
             'stock' => 'INT(11) DEFAULT 50',
@@ -1271,37 +1302,45 @@ function ensureOrdersTableSchema($pdo) {
 
 function generateNextCustomerId($pdo) {
     if (!$pdo) {
-        return 'CUST-001';
+        return 'CUST-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
     try {
-        $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(id, 6) AS UNSIGNED)) AS max_num FROM \`users\` WHERE \`id\` REGEXP '^CUST-[0-9]{1,4}$'");
+        $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(id, 6) AS UNSIGNED)) AS max_num FROM `users` WHERE `id` REGEXP '^CUST-[0-9]{1,6}$'");
         $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
         if ($maxNum <= 0) {
-            $cStmt = $pdo->query("SELECT COUNT(*) FROM \`users\` WHERE \`role\` != 'Super Admin' AND \`id\` != 'ADMIN-ROOT'");
+            $cStmt = $pdo->query("SELECT COUNT(*) FROM `users` WHERE `role` != 'Super Admin' AND `id` != 'ADMIN-ROOT'");
             $maxNum = $cStmt ? (int)$cStmt->fetchColumn() : 0;
         }
         $nextNum = max(1, $maxNum + 1);
-        return 'CUST-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
+        $candidate = 'CUST-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
+        
+        // Double check candidate uniqueness
+        $chkStmt = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
+        $chkStmt->execute([$candidate]);
+        if ((int)$chkStmt->fetchColumn() > 0) {
+            $candidate = 'CUST-' . str_pad((string)($nextNum + rand(1, 50)), 3, '0', STR_PAD_LEFT);
+        }
+        return $candidate;
     } catch (Exception $e) {
-        return 'CUST-001';
+        return 'CUST-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
 }
 
 function generateNextOrderNumber($pdo) {
     if (!$pdo) {
-        return 'JAP-001';
+        return 'JAP-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
     try {
         $stmt = $pdo->query("SELECT MAX(num) AS max_num FROM (
-            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM \`orders\` WHERE \`number\` REGEXP '^(JAP|ORD)-[0-9]{1,4}$'
+            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^(JAP|ORD)-[0-9]{1,6}$'
             UNION
-            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM \`orders\` WHERE \`id\` REGEXP '^(JAP|ORD)-[0-9]{1,4}$'
+            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^(JAP|ORD)-[0-9]{1,6}$'
         ) AS t");
         $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
         $nextNum = max(1, $maxNum + 1);
         return 'JAP-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
     } catch (Exception $e) {
-        return 'JAP-001';
+        return 'JAP-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
 }
 
@@ -1322,8 +1361,7 @@ function ensureJananiCatalogSynced($pdo) {
         }
 
         // Purge legacy unused dummy categories
-        $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric')");
-        $pdo->exec("UPDATE `products` SET `category_name` = 'Agri Inputs' WHERE `category_name` = 'Others' OR `category_id` = 'cat-others'");
+        $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('termeric', 'turmeric') OR `id` IN ('cat-termeric', 'cat-turmeric')");
 
         // 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
         $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
@@ -1376,15 +1414,73 @@ function ensureJananiCatalogSynced($pdo) {
             }
         }
 
+        // Auto-consolidate 'Other' and 'Other Categories' into the primary user other category
+        try {
+            $primaryOther = $pdo->query("SELECT * FROM `categories` 
+                WHERE (`slug` IN ('other-categories', 'other', 'others') OR LOWER(`name`) LIKE '%other%') 
+                  AND `deleted_at` IS NULL 
+                ORDER BY (`slug` = 'other-categories' OR `name` = 'Other Categories') DESC, (`id` != 'cat-other') DESC, `id` ASC 
+                LIMIT 1")->fetch();
+
+            if ($primaryOther) {
+                $primaryId = $primaryOther['id'];
+                $primaryName = $primaryOther['name'];
+                $primarySlug = $primaryOther['slug'];
+
+                // Reassign all products from any 'other' variation to the primary other category
+                $pdo->prepare("UPDATE `products` SET 
+                    `category_name` = ?, 
+                    `category_id` = ?, 
+                    `category_slug` = ? 
+                    WHERE `category_name` IN ('Other', 'Others', 'other', 'others', 'Other Categories') 
+                       OR `category_id` IN ('cat-other', 'cat-others', ?) 
+                       OR `category_slug` IN ('other', 'others', 'other-categories')")->execute([$primaryName, $primaryId, $primarySlug, $primaryId]);
+
+                // If primary is user-created (e.g. 'Other Categories'), purge redundant auto-created cat-other
+                if ($primaryId !== 'cat-other') {
+                    $pdo->exec("DELETE FROM `categories` WHERE `id` = 'cat-other' OR (`slug` = 'other' AND `name` = 'Other')");
+                }
+            }
+        } catch (Exception $e) {}
+
         // Update category product counts dynamically
         try {
-            $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR LOWER(p.category_name) = LOWER(c.name)))");
+            $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR p.category_slug = c.slug OR LOWER(p.category_name) = LOWER(c.name)))");
+        } catch (Exception $e) {}
+
+        // Auto-purge any duplicate/copy products created via duplicate action and any trash items
+        try {
+            $pdo->exec("DELETE FROM `products` WHERE `name` LIKE '%(Copy)%' OR `slug` LIKE '%-copy-%' OR `sku` LIKE '%-CPY%' OR `status` = 'Trash' OR `active` = 0");
         } catch (Exception $e) {}
 
         // Auto-clean any duplicated store support numbers from customer rows in users table
         try {
             $pdo->exec("UPDATE `users` SET `phone` = '' WHERE `phone` = '+91 98480 22338' AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
             $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
+        } catch (Exception $e) {}
+
+        // Auto-repair: Guarantee ramaofficial.d@gmail.com is correctly set for Sai Rama and clean legacy dummy dr.ananya
+        try {
+            $rHash = password_hash('Rama@123', PASSWORD_DEFAULT);
+            $pdo->prepare("UPDATE `users` SET 
+                `email` = 'ramaofficial.d@gmail.com', 
+                `name` = 'Sai Rama', 
+                `password` = 'Rama@123', 
+                `password_hash` = ?, 
+                `status` = 'Active' 
+                WHERE `email` = 'dr.ananya@heritagehealth.org' OR `name` = 'Sai Rama'")->execute([$rHash]);
+
+            $checkRama = (int)$pdo->query("SELECT COUNT(*) FROM `users` WHERE `email` = 'ramaofficial.d@gmail.com'")->fetchColumn();
+            if ($checkRama === 0) {
+                $nextId = generateNextCustomerId($pdo);
+                $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `is_verified`, `referral_code`) 
+                VALUES (?, 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999', 'Rama@123', ?, 'Customer', 0.00, 850, 'Silver', 'Active', 1, 'JANANI7788')")->execute([$nextId, $rHash]);
+            } else {
+                $pdo->prepare("UPDATE `users` SET `password` = 'Rama@123', `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash]);
+            }
+
+            $pdo->exec("DELETE FROM `users` WHERE `email` = 'dr.ananya@heritagehealth.org' AND `email` != 'ramaofficial.d@gmail.com'");
+            $pdo->exec("UPDATE `orders` SET `customer_email` = 'ramaofficial.d@gmail.com', `customer_name` = 'Sai Rama' WHERE `customer_email` = 'dr.ananya@heritagehealth.org'");
         } catch (Exception $e) {}
     } catch (Exception $e) {}
 }
@@ -1672,6 +1768,11 @@ try {
                 }
 
                 $userId = generateNextCustomerId($pdo);
+                $chkId = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
+                $chkId->execute([$userId]);
+                if ((int)$chkId->fetchColumn() > 0) {
+                    $userId = 'CUST-' . str_pad((string)rand(100, 9999), 3, '0', STR_PAD_LEFT);
+                }
 
                 $user = [
                     'id' => $userId,
@@ -1687,13 +1788,17 @@ try {
                 ];
 
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
-                        VALUES (?, ?, ?, ?, ?, 'Customer', ?, 'Silver', 'Active', 1, ?) 
+                    $hash = $password ? password_hash($password, PASSWORD_DEFAULT) : null;
+                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
+                        VALUES (?, ?, ?, ?, ?, ?, 'Customer', ?, 'Silver', 'Active', 1, ?) 
                         ON DUPLICATE KEY UPDATE 
                             `name` = VALUES(`name`), 
+                            `email` = VALUES(`email`),
                             `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
+                            `password` = IF(VALUES(`password`) != '', VALUES(`password`), `password`),
+                            `password_hash` = IF(VALUES(`password_hash`) != '', VALUES(`password_hash`), `password_hash`),
                             `status` = 'Active'");
-                    $stmt->execute([$userId, $name, $email, $phone, $password, $user['walletBalance'], $user['referralCode']]);
+                    $stmt->execute([$userId, $name, $email, $phone, $password, $hash, $user['walletBalance'], $user['referralCode']]);
                 } catch (Exception $e) {}
 
                 echo json_encode([
@@ -2033,6 +2138,7 @@ try {
                     $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', 1, ?) 
                         ON DUPLICATE KEY UPDATE 
+                            `email` = VALUES(`email`),
                             `role` = VALUES(`role`), 
                             `status` = 'Active', 
                             `tier` = VALUES(`tier`),
@@ -2329,9 +2435,19 @@ try {
                 }
 
                 if ($category && $category !== 'All' && $category !== 'all') {
-                    $query .= " AND (`category_name` = :cat OR `category_name` LIKE :catLike)";
-                    $params[':cat'] = $category;
-                    $params[':catLike'] = "%{$category}%";
+                    $catLookup = $pdo->prepare("SELECT `name`, `slug`, `id` FROM `categories` WHERE `slug` = ? OR `name` = ? OR `id` = ? LIMIT 1");
+                    $catLookup->execute([$category, $category, $category]);
+                    $foundCat = $catLookup->fetch();
+
+                    $catName = $foundCat ? $foundCat['name'] : $category;
+                    $catSlug = $foundCat ? $foundCat['slug'] : $category;
+                    $catId = $foundCat ? $foundCat['id'] : $category;
+
+                    $query .= " AND (LOWER(`category_name`) = LOWER(:catName) OR `category_id` = :catId OR LOWER(`category_name`) = LOWER(:catSlug) OR `category_name` LIKE :catLike)";
+                    $params[':catName'] = $catName;
+                    $params[':catId'] = $catId;
+                    $params[':catSlug'] = $catSlug;
+                    $params[':catLike'] = "%{$catName}%";
                 }
                 if ($search) {
                     $query .= " AND (`name` LIKE :search OR `description` LIKE :search OR `sku` LIKE :search OR `slug` LIKE :search)";
@@ -2518,13 +2634,13 @@ try {
                         if (!empty($ids) && is_array($ids)) {
                             foreach ($ids as $singleId) {
                                 if (is_numeric($singleId)) {
-                                    $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `id` = ?")->execute([(int)$singleId]);
+                                    $pdo->prepare("DELETE FROM `products` WHERE `id` = ?")->execute([(int)$singleId]);
                                 } else {
-                                    $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `slug` = ?")->execute([$singleId]);
+                                    $pdo->prepare("DELETE FROM `products` WHERE `slug` = ? OR `sku` = ?")->execute([$singleId, $singleId]);
                                 }
                             }
                         }
-                        echo json_encode(['success' => true, 'message' => "Moved " . count($ids) . " products to Trash in MySQL"]);
+                        echo json_encode(['success' => true, 'message' => "Deleted " . count($ids) . " products from MySQL"]);
                         exit;
                     }
 
@@ -2791,27 +2907,15 @@ try {
                 }
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
-                $permanent = isset($_GET['permanent']) && $_GET['permanent'] == 1;
                 if ($id) {
-                    if ($permanent) {
-                        if (is_numeric($id)) {
-                            $stmt = $pdo->prepare("DELETE FROM `products` WHERE `id` = ?");
-                            $stmt->execute([(int)$id]);
-                        } else {
-                            $stmt = $pdo->prepare("DELETE FROM `products` WHERE `slug` = ?");
-                            $stmt->execute([$id]);
-                        }
-                        echo json_encode(['success' => true, 'message' => 'Product permanently deleted from MySQL']);
+                    if (is_numeric($id)) {
+                        $stmt = $pdo->prepare("DELETE FROM `products` WHERE `id` = ?");
+                        $stmt->execute([(int)$id]);
                     } else {
-                        if (is_numeric($id)) {
-                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `id` = ?");
-                            $stmt->execute([(int)$id]);
-                        } else {
-                            $stmt = $pdo->prepare("UPDATE `products` SET `active` = 0, `status` = 'Trash' WHERE `slug` = ?");
-                            $stmt->execute([$id]);
-                        }
-                        echo json_encode(['success' => true, 'message' => 'Product moved to Trash in MySQL']);
+                        $stmt = $pdo->prepare("DELETE FROM `products` WHERE `slug` = ? OR `sku` = ?");
+                        $stmt->execute([$id, $id]);
                     }
+                    echo json_encode(['success' => true, 'message' => 'Product permanently deleted from MySQL']);
                     exit;
                 }
                 echo json_encode(['success' => false, 'message' => 'Product ID required for deletion']);
@@ -2874,6 +2978,42 @@ try {
         case 'categories':
             ensureCategoriesTableSchema($pdo);
             ensureJananiCatalogSynced($pdo);
+
+            // If any products are categorized under 'Other', ensure primary Other/Other Categories category exists and is active in MySQL
+            try {
+                $targetCat = $pdo->query("SELECT * FROM `categories` 
+                    WHERE (`slug` IN ('other-categories', 'other', 'others') OR LOWER(`name`) LIKE '%other%') 
+                      AND `deleted_at` IS NULL 
+                    ORDER BY (`slug` = 'other-categories' OR `name` = 'Other Categories') DESC, (`id` != 'cat-other') DESC, `id` ASC 
+                    LIMIT 1")->fetch();
+
+                if ($targetCat) {
+                    $targetId = $targetCat['id'];
+                    $targetName = $targetCat['name'];
+                    $targetSlug = $targetCat['slug'];
+
+                    // Sync products to this target
+                    $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ?, `category_slug` = ? 
+                        WHERE (`category_name` IN ('Other', 'Others', 'other', 'others', 'Other Categories') 
+                           OR `category_id` IN ('cat-other', 'cat-others', ?) 
+                           OR `category_slug` IN ('other', 'others', 'other-categories')) 
+                          AND (`category_name` != ? OR `category_id` != ? OR `category_slug` != ?)")
+                        ->execute([$targetName, $targetId, $targetSlug, $targetId, $targetName, $targetId, $targetSlug]);
+
+                    // If user created a custom other category (like Other Categories), eliminate redundant cat-other
+                    if ($targetId !== 'cat-other') {
+                        $pdo->exec("DELETE FROM `categories` WHERE `id` = 'cat-other' OR (`slug` = 'other' AND `name` = 'Other')");
+                    }
+                } else {
+                    $hasOtherProducts = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE LOWER(`category_name`) LIKE '%other%' OR `category_id` LIKE '%other%'")->fetchColumn();
+                    if ($hasOtherProducts > 0) {
+                        $pdo->exec("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `image`, `banner_image`, `icon`, `active`, `featured`, `trending`, `display_order`, `description`) 
+                        VALUES ('cat-other-categories', 'Other Categories', 'other-categories', 1, '/images/categories/others.jpg', '/images/categories/others.jpg', '📦', 1, 0, 0, 999, 'All remaining products are present in this categories')
+                        ON DUPLICATE KEY UPDATE `active` = 1, `deleted_at` = NULL");
+                    }
+                }
+            } catch (Exception $e) {}
+
             if ($method === 'GET') {
                 $status = strtolower(trim($_GET['status'] ?? ''));
                 $level = $_GET['level'] ?? null;
@@ -3009,8 +3149,10 @@ try {
                         $levelVal = isset($body['level']) ? ($body['level'] === 'sub' ? 2 : ($body['level'] === 'child' ? 3 : 1)) : 1;
                         $parentId = !empty($body['parentId']) ? $body['parentId'] : (!empty($body['parent_id']) ? $body['parent_id'] : null);
                         $parentName = !empty($body['parentName']) ? $body['parentName'] : (!empty($body['parent_name']) ? $body['parent_name'] : null);
-                        $image = $body['image'] ?? '/images/categories/placeholder.webp';
-                        $bannerImage = $body['bannerImage'] ?? ($body['banner_image'] ?? $image);
+                        $rawImg = $body['image'] ?? '/images/categories/bio-fertilizers.jpg';
+                        $image = saveBase64ImageFile($rawImg, 'images/categories', $catId);
+                        $rawBanner = $body['bannerImage'] ?? ($body['banner_image'] ?? $image);
+                        $bannerImage = saveBase64ImageFile($rawBanner, 'images/categories', $catId . '-banner');
                         $icon = $body['icon'] ?? '🌾';
                         $active = isset($body['active']) ? (($body['active'] === true || $body['active'] === 1 || $body['active'] === '1' || $body['active'] === 'true') ? 1 : 0) : 1;
                         $featured = !empty($body['featured']) ? 1 : 0;
@@ -3135,11 +3277,67 @@ try {
                     if ($id === 'bulk-delete') {
                         $ids = $body['ids'] ?? [];
                         if (!empty($ids) && is_array($ids)) {
+                            // Ensure target Other category exists in MySQL (prioritizing user's 'Other Categories')
+                            $otherStmt = $pdo->query("SELECT * FROM `categories` 
+                                WHERE (`slug` IN ('other-categories', 'other', 'others') OR LOWER(`name`) LIKE '%other%') 
+                                  AND `deleted_at` IS NULL 
+                                ORDER BY (`slug` = 'other-categories' OR `name` = 'Other Categories') DESC, (`id` != 'cat-other') DESC, `id` ASC 
+                                LIMIT 1");
+                            $otherCat = $otherStmt->fetch();
+                            if (!$otherCat) {
+                                $otherId = 'cat-other-categories';
+                                $otherName = 'Other Categories';
+                                $otherSlug = 'other-categories';
+                                try {
+                                    $pdo->exec("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `image`, `banner_image`, `icon`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES ('cat-other-categories', 'Other Categories', 'other-categories', 1, '/images/categories/others.jpg', '/images/categories/others.jpg', '📦', 1, 0, 0, 999, 'All remaining products are present in this categories')");
+                                } catch (Exception $e) {}
+                            } else {
+                                $otherId = $otherCat['id'];
+                                $otherName = $otherCat['name'];
+                                $otherSlug = $otherCat['slug'];
+                                try {
+                                    $pdo->prepare("UPDATE `categories` SET `active` = 1, `deleted_at` = NULL WHERE `id` = ?")->execute([$otherId]);
+                                } catch (Exception $e) {}
+                            }
+
+                            $chkCol = $pdo->query("SHOW COLUMNS FROM `products` LIKE 'category_slug'")->fetch();
                             foreach ($ids as $singleId) {
+                                $catFind = $pdo->prepare("SELECT `name`, `slug`, `id` FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                                $catFind->execute([$singleId, $singleId]);
+                                $cf = $catFind->fetch();
+                                $delName = $cf ? $cf['name'] : $singleId;
+                                $delSlug = $cf ? $cf['slug'] : $singleId;
+                                $delId = $cf ? $cf['id'] : $singleId;
+
+                                try {
+                                    if ($chkCol) {
+                                        $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ?, `category_slug` = ? WHERE `category_name` = ? OR `category_id` = ? OR `category_slug` = ? OR LOWER(`category_name`) = LOWER(?) OR LOWER(`category_name`) = LOWER(?)");
+                                        $pReassign->execute([$otherName, $otherId, $otherSlug, $delName, $delId, $delSlug, $delName, $delSlug]);
+                                    } else {
+                                        $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ? WHERE `category_name` = ? OR `category_id` = ? OR LOWER(`category_name`) = LOWER(?) OR LOWER(`category_name`) = LOWER(?)");
+                                        $pReassign->execute([$otherName, $otherId, $delName, $delId, $delName, $delSlug]);
+                                    }
+                                } catch (Exception $e) {}
+
                                 $pdo->prepare("UPDATE `categories` SET `active` = 0, `deleted_at` = CURRENT_TIMESTAMP WHERE `id` = ? OR `slug` = ?")->execute([$singleId, $singleId]);
                             }
+
+                            // Recalculate product counts
+                            try {
+                                $pCounts = $pdo->query("SELECT `category_name`, COUNT(*) as cnt FROM `products` WHERE (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL) GROUP BY `category_name`")->fetchAll();
+                                $catMap = [];
+                                foreach ($pCounts as $pc) {
+                                    $catMap[strtolower($pc['category_name'])] = (int)$pc['cnt'];
+                                }
+                                $allCats = $pdo->query("SELECT `id`, `name` FROM `categories`")->fetchAll();
+                                $upCountStmt = $pdo->prepare("UPDATE `categories` SET `product_count` = ? WHERE `id` = ?");
+                                foreach ($allCats as $ac) {
+                                    $cnt = $catMap[strtolower($ac['name'])] ?? 0;
+                                    $upCountStmt->execute([$cnt, $ac['id']]);
+                                }
+                            } catch (Exception $e) {}
                         }
-                        echo json_encode(['success' => true, 'message' => "Moved " . count($ids) . " categories to Trash in MySQL"]);
+                        echo json_encode(['success' => true, 'message' => "Moved " . count($ids) . " categories to Trash in MySQL, and associated products to 'Other'."]);
                         exit;
                     }
 
@@ -3270,6 +3468,22 @@ try {
                                 if ($chkStmt->fetch()) {
                                     $body['slug'] = $checkSlug . '-' . substr(md5(uniqid()), 0, 4);
                                 }
+                            }
+
+                            if (!empty($body['image'])) {
+                                $body['image'] = saveBase64ImageFile($body['image'], 'images/categories', $targetId);
+                            }
+                            if (!empty($body['banner_image'])) {
+                                $body['banner_image'] = saveBase64ImageFile($body['banner_image'], 'images/categories', $targetId . '-banner');
+                            }
+                            if (!empty($body['bannerImage'])) {
+                                $body['bannerImage'] = saveBase64ImageFile($body['bannerImage'], 'images/categories', $targetId . '-banner');
+                                if (!isset($body['banner_image'])) {
+                                    $body['banner_image'] = $body['bannerImage'];
+                                }
+                            }
+                            if (!empty($body['image']) && (empty($body['banner_image']) || $body['banner_image'] === ($existingCat['image'] ?? ''))) {
+                                $body['banner_image'] = $body['image'];
                             }
 
                             $fields = [];
@@ -3432,9 +3646,78 @@ try {
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
                 if ($id) {
+                    // 1. Locate category to delete
+                    $findStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                    $findStmt->execute([$id, $id]);
+                    $catToDelete = $findStmt->fetch();
+
+                    $delName = $catToDelete ? $catToDelete['name'] : $id;
+                    $delSlug = $catToDelete ? $catToDelete['slug'] : $id;
+                    $delId = $catToDelete ? $catToDelete['id'] : $id;
+
+                    // 2. Ensure target Other category exists in MySQL database (prioritizing user's 'Other Categories')
+                    $otherStmt = $pdo->query("SELECT * FROM `categories` 
+                        WHERE (`slug` IN ('other-categories', 'other', 'others') OR LOWER(`name`) LIKE '%other%') 
+                          AND `deleted_at` IS NULL 
+                        ORDER BY (`slug` = 'other-categories' OR `name` = 'Other Categories') DESC, (`id` != 'cat-other') DESC, `id` ASC 
+                        LIMIT 1");
+                    $otherCat = $otherStmt->fetch();
+
+                    if (!$otherCat) {
+                        $otherId = 'cat-other-categories';
+                        $otherName = 'Other Categories';
+                        $otherSlug = 'other-categories';
+                        try {
+                            $insOther = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `image`, `banner_image`, `icon`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, 1, '/images/categories/others.jpg', '/images/categories/others.jpg', '📦', 1, 0, 0, 999, 'All remaining products are present in this categories')");
+                            $insOther->execute([$otherId, $otherName, $otherSlug]);
+                        } catch (Exception $e) {}
+                    } else {
+                        $otherId = $otherCat['id'];
+                        $otherName = $otherCat['name'];
+                        $otherSlug = $otherCat['slug'];
+                        try {
+                            $pdo->prepare("UPDATE `categories` SET `active` = 1, `deleted_at` = NULL WHERE `id` = ?")->execute([$otherId]);
+                        } catch (Exception $e) {}
+                    }
+
+                    // 3. Move all products from deleted category to target other category in products table
+                    $reassignedCount = 0;
+                    try {
+                        $chkCol = $pdo->query("SHOW COLUMNS FROM `products` LIKE 'category_slug'")->fetch();
+                        if ($chkCol) {
+                            $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ?, `category_slug` = ? WHERE `category_name` = ? OR `category_id` = ? OR `category_slug` = ? OR LOWER(`category_name`) = LOWER(?) OR LOWER(`category_name`) = LOWER(?)");
+                            $pReassign->execute([$otherName, $otherId, $otherSlug, $delName, $delId, $delSlug, $delName, $delSlug]);
+                        } else {
+                            $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ? WHERE `category_name` = ? OR `category_id` = ? OR LOWER(`category_name`) = LOWER(?) OR LOWER(`category_name`) = LOWER(?)");
+                            $pReassign->execute([$otherName, $otherId, $delName, $delId, $delName, $delSlug]);
+                        }
+                        $reassignedCount = $pReassign->rowCount();
+                    } catch (Exception $e) {
+                        error_log("Failed to reassign products on category delete: " . $e->getMessage());
+                    }
+
+                    // 4. Reassign subcategories if parent was deleted
+                    try {
+                        $cReassign = $pdo->prepare("UPDATE `categories` SET `parent_id` = ?, `parent_name` = ? WHERE `parent_id` = ? OR `parent_name` = ?");
+                        $cReassign->execute([$otherId, $otherName, $delId, $delName]);
+                    } catch (Exception $e) {}
+
+                    // 5. Delete category from categories table
                     $stmt = $pdo->prepare("DELETE FROM `categories` WHERE `id` = ? OR `slug` = ?");
                     $stmt->execute([$id, $id]);
-                    echo json_encode(['success' => true, 'message' => 'Category permanently deleted from MySQL database']);
+
+                    // 6. Recalculate live product counts dynamically in categories table
+                    try {
+                        $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR p.category_slug = c.slug OR LOWER(p.category_name) = LOWER(c.name)))");
+                    } catch (Exception $e) {}
+
+                    echo json_encode([
+                        'success' => true,
+                        'message' => "Category '{$delName}' deleted from MySQL database. Associated products moved to '{$otherName}'.",
+                        'reassigned_count' => $reassignedCount,
+                        'reassigned_to' => $otherName,
+                        'deleted_id' => $id
+                    ]);
                     exit;
                 }
                 echo json_encode(['success' => false, 'message' => 'Category ID required for deletion']);
@@ -3580,6 +3863,13 @@ try {
                     } elseif ($coupon['type'] === 'flat') {
                         $discount = min((float)$coupon['discount'], $subtotal);
                     }
+
+                    $coupon['minCart'] = (float)($coupon['min_cart'] ?? 0);
+                    $coupon['maxDiscount'] = (float)($coupon['max_discount'] ?? 0);
+                    $coupon['discount'] = (float)($coupon['discount'] ?? 0);
+                    $coupon['expiryDate'] = $coupon['expiry_date'] ?? null;
+                    $coupon['startDate'] = $coupon['start_date'] ?? null;
+                    $coupon['isFreeShipping'] = (bool)($coupon['is_free_shipping'] ?? 0) || $isFree;
 
                     echo json_encode([
                         'success' => true,
@@ -3731,11 +4021,10 @@ try {
                 
                 // Auto-normalize legacy orders to sequential JAP-001 format
                 try {
-                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-001', \`id\` = 'JAP-001' WHERE (\`number\` LIKE '%356429%' OR \`id\` LIKE '%356429%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-001') AS _tmp)");
-                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-002', \`id\` = 'JAP-002' WHERE (\`number\` LIKE '%709853%' OR \`id\` LIKE '%709853%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-002') AS _tmp)");
-                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-003', \`id\` = 'JAP-003' WHERE (\`number\` LIKE '%845461%' OR \`id\` LIKE '%845461%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-003') AS _tmp)");
-                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-004', \`id\` = 'JAP-004' WHERE (\`number\` LIKE '%849201%' OR \`id\` LIKE '%849201%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-004') AS _tmp)");
-                    $pdo->exec("UPDATE \`users\` SET \`id\` = 'CUST-001' WHERE \`email\` = 'kameswarip98@gmail.com' AND \`id\` != 'CUST-001'");
+                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-001', `id` = 'JAP-001' WHERE (`number` LIKE '%356429%' OR `id` LIKE '%356429%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-001') AS _tmp)");
+                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-002', `id` = 'JAP-002' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-002') AS _tmp)");
+                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-003', `id` = 'JAP-003' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-003') AS _tmp)");
+                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-004', `id` = 'JAP-004' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-004') AS _tmp)");
                 } catch (Exception $ex) {}
 
                 // Auto-repair any legacy mock rows with empty/generic names
@@ -4882,10 +5171,9 @@ try {
                         'subtitle' => 'Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture with 100% Certified Eco-Safe Formulations.',
                         'primaryCtaLabel' => 'Explore Our Products',
                         'primaryCtaUrl' => '/products',
-                        'secondaryCtaLabel' => 'Enquire Now',
-                        'secondaryCtaUrl' => '/contact',
                         'desktopImageUrl' => '/banners/hero_healthier_tomorrow_desktop.jpg',
                         'mobileImageUrl' => '/banners/hero_healthier_tomorrow_mobile.jpg',
+                        'desktopPosition' => 'object-hero-center',
                         'badgeText' => '100% Certified Eco-Safe',
                         'slideOrder' => 1,
                         'active' => true
@@ -4897,10 +5185,9 @@ try {
                         'subtitle' => 'Shield Your Crops Naturally with Certified Biological Formulations, Zero Chemical Residues, and Maximum Efficacy.',
                         'primaryCtaLabel' => 'Explore Bio-Care',
                         'primaryCtaUrl' => '/categories/bio-fungicides',
-                        'secondaryCtaLabel' => 'Crop Guidance',
-                        'secondaryCtaUrl' => '/contact',
                         'desktopImageUrl' => '/banners/hero_biocare_desktop.jpg',
                         'mobileImageUrl' => '/banners/hero_biocare_mobile.jpg',
+                        'desktopPosition' => 'object-hero-center',
                         'badgeText' => 'Zero Chemical Residues',
                         'slideOrder' => 2,
                         'active' => true
@@ -4912,10 +5199,9 @@ try {
                         'subtitle' => 'Nourish From Root To Harvest with Bio-Fertilizers, Humic Biostimulants, and Living Microbial Nutrients.',
                         'primaryCtaLabel' => 'Explore Soil-Care',
                         'primaryCtaUrl' => '/categories/bio-fertilizers',
-                        'secondaryCtaLabel' => 'Dosage Guide',
-                        'secondaryCtaUrl' => '/products',
                         'desktopImageUrl' => '/banners/hero_soilcare_desktop.jpg',
                         'mobileImageUrl' => '/banners/hero_soilcare_mobile.jpg',
+                        'desktopPosition' => 'object-hero-center',
                         'badgeText' => 'Maximum Harvest Yield',
                         'slideOrder' => 3,
                         'active' => true

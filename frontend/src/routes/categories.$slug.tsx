@@ -70,7 +70,22 @@ function CategoryDetailPage() {
   const { categories: storeCats, products: storeProds } = useStore();
   const rawCats = storeCats && storeCats.length > 0 ? storeCats : categories;
   const allCats = useMemo(() => {
-    return rawCats.filter((cat: any) => !isGroceryCategory(cat));
+    const hasUserOther = rawCats.some((c: any) => {
+      const s = (c.slug || "").toLowerCase().trim();
+      const n = (c.name || "").toLowerCase().trim();
+      return (s === "other-categories" || n === "other categories") && !c.deleted_at && !c.deletedAt && c.active !== 0 && c.active !== false && c.active !== "0";
+    });
+    return rawCats.filter((cat: any) => {
+      if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") return false;
+      if (isGroceryCategory(cat)) return false;
+      const s = (cat.slug || "").toLowerCase().trim();
+      const n = (cat.name || "").toLowerCase().trim();
+      const id = (cat.id || "").toString().toLowerCase().trim();
+      if (hasUserOther && (s === "other" || s === "others" || n === "other" || n === "others" || id === "cat-other")) {
+        return false;
+      }
+      return true;
+    });
   }, [rawCats]);
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
   const [directCat, setDirectCat] = useState<any>(null);
@@ -105,9 +120,14 @@ function CategoryDetailPage() {
   const category = useMemo(() => {
     const slugLower = (slug || "").toLowerCase().trim();
     const slugNorm = slugLower.replace(/[^a-z0-9]/g, "");
-    const found = allCats.find((c: any) => (c.slug || "").toLowerCase().trim() === slugLower) ||
+    let found = allCats.find((c: any) => (c.slug || "").toLowerCase().trim() === slugLower) ||
       allCats.find((c: any) => (c.slug || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slugNorm) ||
       allCats.find((c: any) => (c.name || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slugNorm);
+
+    // If slug is any other variant (other, others, other-categories), match the active other category
+    if (!found && slugLower.includes("other")) {
+      found = allCats.find((c: any) => (c.slug || "").toLowerCase().includes("other") || (c.name || "").toLowerCase().includes("other"));
+    }
     return found || directCat || null;
   }, [allCats, slug, directCat]);
   const [query, setQuery] = useState("");

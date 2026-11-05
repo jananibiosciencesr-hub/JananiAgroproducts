@@ -195,6 +195,14 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
     const deletedCat = categories.find((c) => c.id === id);
     await permanentDeleteAdminCategory(id);
     
+    // Find destination category for reassignment (prefer user's Other Categories, then any other variant)
+    const existingOther = categories.find((c) => (c.slug === "other-categories" || c.name === "Other Categories") && c.id !== id) ||
+      categories.find((c) => ((c.slug || "").toLowerCase().includes("other") || (c.name || "").toLowerCase().includes("other")) && c.id !== id);
+
+    const targetOtherId = existingOther?.id || "cat-other-categories";
+    const targetOtherName = existingOther?.name || "Other Categories";
+    const targetOtherSlug = existingOther?.slug || "other-categories";
+
     // Reassign products locally in localStorage if any exist
     if (deletedCat && typeof window !== "undefined") {
       try {
@@ -207,7 +215,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
             const dSlug = (deletedCat.slug || "").toLowerCase().trim();
             if (pCat === dName || pCat === dSlug || String(p.category_id) === String(id)) {
               changed = true;
-              return { ...p, category: "Other", category_name: "Other", category_id: "cat-other", category_slug: "other" };
+              return { ...p, category: targetOtherName, category_name: targetOtherName, category_id: targetOtherId, category_slug: targetOtherSlug };
             }
             return p;
           });
@@ -220,16 +228,16 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
     setCategories((prev) => {
       const remaining = prev.filter((c) => c.id !== id);
-      const hasOther = remaining.some((c) => c.slug === "other" || c.name === "Other");
+      const hasOther = remaining.some((c) => (c.slug || "").toLowerCase().includes("other") || (c.name || "").toLowerCase().includes("other"));
       if (!hasOther) {
         remaining.push({
-          id: "cat-other",
-          name: "Other",
-          slug: "other",
+          id: targetOtherId,
+          name: targetOtherName,
+          slug: targetOtherSlug,
           parentId: null,
           level: "root",
-          description: "General and uncategorized sustainable farm inputs.",
-          icon: "🌾",
+          description: "All remaining products are present in this categories",
+          icon: "📦",
           image: "/images/categories/others.jpg",
           bannerImage: "/images/categories/others.jpg",
           featured: false,
@@ -255,7 +263,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
       window.dispatchEvent(new CustomEvent("janani-categories-updated"));
       window.dispatchEvent(new CustomEvent("janani-products-updated"));
     }
-    toast.success("Category deleted. Associated products moved to 'Other'.");
+    toast.success(`Category deleted. Associated products moved to '${targetOtherName}'.`);
   };
 
   const handleRestore = async (id: string) => {
@@ -282,6 +290,14 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
       await permanentDeleteAdminCategory(id);
     }
 
+    // Find destination category for reassignment (prefer user's Other Categories, then any other variant)
+    const existingOther = categories.find((c) => (c.slug === "other-categories" || c.name === "Other Categories") && !selectedIds.includes(c.id)) ||
+      categories.find((c) => ((c.slug || "").toLowerCase().includes("other") || (c.name || "").toLowerCase().includes("other")) && !selectedIds.includes(c.id));
+
+    const targetOtherId = existingOther?.id || "cat-other-categories";
+    const targetOtherName = existingOther?.name || "Other Categories";
+    const targetOtherSlug = existingOther?.slug || "other-categories";
+
     // Reassign products locally in localStorage if any exist
     if (deletedCats.length > 0 && typeof window !== "undefined") {
       try {
@@ -297,7 +313,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
             });
             if (matches) {
               changed = true;
-              return { ...p, category: "Other", category_name: "Other", category_id: "cat-other", category_slug: "other" };
+              return { ...p, category: targetOtherName, category_name: targetOtherName, category_id: targetOtherId, category_slug: targetOtherSlug };
             }
             return p;
           });
@@ -310,16 +326,16 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
     setCategories((prev) => {
       const remaining = prev.filter((c) => !selectedIds.includes(c.id));
-      const hasOther = remaining.some((c) => c.slug === "other" || c.name === "Other");
+      const hasOther = remaining.some((c) => (c.slug || "").toLowerCase().includes("other") || (c.name || "").toLowerCase().includes("other"));
       if (!hasOther) {
         remaining.push({
-          id: "cat-other",
-          name: "Other",
-          slug: "other",
+          id: targetOtherId,
+          name: targetOtherName,
+          slug: targetOtherSlug,
           parentId: null,
           level: "root",
-          description: "General and uncategorized sustainable farm inputs.",
-          icon: "🌾",
+          description: "All remaining products are present in this categories",
+          icon: "📦",
           image: "/images/categories/others.jpg",
           bannerImage: "/images/categories/others.jpg",
           featured: false,
@@ -345,9 +361,8 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
       window.dispatchEvent(new CustomEvent("janani-categories-updated"));
       window.dispatchEvent(new CustomEvent("janani-products-updated"));
     }
-    toast.success(`Deleted ${deletedCats.length} categories. Associated products moved to 'Other'.`);
+    toast.success(`Deleted ${deletedCats.length} categories. Associated products moved to '${targetOtherName}'.`);
     setSelectedIds([]);
-    toast.success(`Deleted ${selectedIds.length} categories. Associated products moved to 'Other'.`);
   };
 
   // Reordering (Sequence)

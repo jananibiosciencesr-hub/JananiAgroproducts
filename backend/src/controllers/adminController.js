@@ -3861,16 +3861,17 @@ export const deleteAdminCategory = (req, res) => {
   const delName = catToDelete ? catToDelete.name : id;
   const delSlug = catToDelete ? catToDelete.slug : id;
 
-  let otherCat = adminCategories.find(c => c.slug === 'other' || c.name === 'Other');
+  let otherCat = adminCategories.find(c => (c.slug === 'other-categories' || c.name === 'Other Categories') && c.id !== id && c.slug !== id) ||
+    adminCategories.find(c => (c.slug?.includes('other') || c.name?.toLowerCase().includes('other')) && c.id !== id && c.slug !== id);
   if (!otherCat) {
     otherCat = {
-      id: "cat-other",
-      name: "Other",
-      slug: "other",
+      id: "cat-other-categories",
+      name: "Other Categories",
+      slug: "other-categories",
       parentId: null,
       level: "root",
-      description: "General and uncategorized sustainable farm inputs.",
-      icon: "🌾",
+      description: "All remaining products are present in this categories",
+      icon: "📦",
       image: "/images/categories/others.jpg",
       bannerImage: "/images/categories/others.jpg",
       featured: false,
@@ -3886,10 +3887,10 @@ export const deleteAdminCategory = (req, res) => {
   adminProducts.forEach(p => {
     const pCat = (p.category || p.category_name || "").toLowerCase().trim();
     if (pCat === delName.toLowerCase().trim() || pCat === delSlug.toLowerCase().trim() || p.category_id === id) {
-      p.category = "Other";
-      p.category_name = "Other";
-      p.category_id = "cat-other";
-      p.category_slug = "other";
+      p.category = otherCat.name;
+      p.category_name = otherCat.name;
+      p.category_id = otherCat.id;
+      p.category_slug = otherCat.slug;
     }
   });
 
@@ -3912,16 +3913,17 @@ export const permanentDeleteAdminCategory = (req, res) => {
   const delName = catToDelete ? catToDelete.name : id;
   const delSlug = catToDelete ? catToDelete.slug : id;
 
-  let otherCat = adminCategories.find(c => c.slug === 'other' || c.name === 'Other');
+  let otherCat = adminCategories.find(c => (c.slug === 'other-categories' || c.name === 'Other Categories') && c.id !== id && c.slug !== id) ||
+    adminCategories.find(c => (c.slug?.includes('other') || c.name?.toLowerCase().includes('other')) && c.id !== id && c.slug !== id);
   if (!otherCat) {
     otherCat = {
-      id: "cat-other",
-      name: "Other",
-      slug: "other",
+      id: "cat-other-categories",
+      name: "Other Categories",
+      slug: "other-categories",
       parentId: null,
       level: "root",
-      description: "General and uncategorized sustainable farm inputs.",
-      icon: "🌾",
+      description: "All remaining products are present in this categories",
+      icon: "📦",
       image: "/images/categories/others.jpg",
       bannerImage: "/images/categories/others.jpg",
       featured: false,
@@ -3937,10 +3939,10 @@ export const permanentDeleteAdminCategory = (req, res) => {
   adminProducts.forEach(p => {
     const pCat = (p.category || p.category_name || "").toLowerCase().trim();
     if (pCat === delName.toLowerCase().trim() || pCat === delSlug.toLowerCase().trim() || p.category_id === id) {
-      p.category = "Other";
-      p.category_name = "Other";
-      p.category_id = "cat-other";
-      p.category_slug = "other";
+      p.category = otherCat.name;
+      p.category_name = otherCat.name;
+      p.category_id = otherCat.id;
+      p.category_slug = otherCat.slug;
     }
   });
 

@@ -51,6 +51,11 @@ function CategoriesIndexPage() {
       "pestocides",
       "cat-pestocides"
     ];
+    const hasUserOther = rawCats.some((c: any) => {
+      const s = (c.slug || "").toLowerCase().trim();
+      const n = (c.name || "").toLowerCase().trim();
+      return (s === "other-categories" || n === "other categories") && !c.deleted_at && !c.deletedAt && c.active !== 0 && c.active !== false && c.active !== "0";
+    });
     const seen = new Set<string>();
     const filtered = rawCats.filter((cat: any) => {
       if (cat.deleted_at || cat.deletedAt || cat.active === 0 || cat.active === false || cat.active === "0") {
@@ -64,6 +69,17 @@ function CategoriesIndexPage() {
 
       if (isGroceryCategory(cat)) {
         return false;
+      }
+
+      // If user created 'Other Categories', drop any redundant duplicate 'Other' or 'Others'
+      if (hasUserOther && (s === "other" || s === "others" || n === "other" || n === "others" || id === "cat-other")) {
+        return false;
+      }
+
+      const isOther = s.includes("other") || n.includes("other");
+      if (isOther) {
+        if (seen.has("deduped-other-category-card")) return false;
+        seen.add("deduped-other-category-card");
       }
 
       const dedupeKey = id || s || n;
