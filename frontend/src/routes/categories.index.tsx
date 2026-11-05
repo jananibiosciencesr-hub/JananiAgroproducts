@@ -194,8 +194,8 @@ function CategoriesIndexPage() {
                 key={tag.id}
                 onClick={() => setSelectedTag(tag.id)}
                 className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${selectedTag === tag.id
-                    ? "bg-[#075B32] text-white shadow-xs"
-                    : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-[#075B32] text-white shadow-xs"
+                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
               >
                 {tag.label}

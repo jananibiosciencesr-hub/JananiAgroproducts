@@ -755,48 +755,12 @@ export function AuthenticationPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/70 bg-card/60 backdrop-blur-2xl shadow-xl transition-all w-full">
           
           {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 4 cols) */}
-          <div className="relative hidden lg:flex lg:col-span-4 xl:col-span-4 flex-col justify-between overflow-hidden bg-gradient-to-br from-forest via-[#1e3a29] to-[#0f2418] p-4 lg:p-5 text-primary-foreground">
-            {/* Background Texture & Glow */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(217,160,54,0.18),transparent_60%)]" />
-            <div className="absolute -bottom-24 -left-24 size-72 rounded-full bg-brand-leaf/20 blur-3xl pointer-events-none" />
-            
-            {/* Top Brand Header */}
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-brand-gold backdrop-blur-md">
-                <Sparkles className="size-2.5 text-brand-gold animate-pulse" />
-                Pure Soil to Soul
-              </div>
-              <h2 className="mt-1.5 font-display text-base lg:text-lg font-bold leading-snug tracking-tight text-cream">
-                Empower Your Farmland With Biological Formulations.
-              </h2>
-              <p className="mt-1 text-[11px] text-primary-foreground/75 leading-relaxed line-clamp-3">
-                Join 50,000+ progressive farmers and agricultural dealers choosing certified bio-fertilizers and zero-residue crop solutions.
-              </p>
-            </div>
-
-            {/* Middle Floating Trust Badges */}
-            <div className="relative z-10 my-2 space-y-1.5">
-              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-md shadow-xs transition hover:bg-white/10">
-                <div className="grid size-7 place-items-center rounded-lg bg-brand-gold/20 text-brand-gold shrink-0">
-                  <Award className="size-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-semibold text-white">100% Certified Agricultural Formulations</h4>
-                  <p className="text-[9.5px] text-white/60">Zero synthetic toxins, bio-active microbial cultures, rhizosphere purity.</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-md shadow-xs transition hover:bg-white/10">
-                <div className="grid size-7 place-items-center rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0">
-                  <Truck className="size-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-semibold text-white">Farm Fresh Delivery</h4>
-                  <p className="text-[9.5px] text-white/60">Express dispatch directly from 450+ grower clusters.</p>
-                </div>
-              </div>
-
-            </div>
+          <div className="relative hidden lg:flex lg:col-span-4 xl:col-span-4 overflow-hidden bg-[#102318] items-center justify-center">
+            <img
+              src="/images/auth-banner.jpg"
+              alt="Janani Agro Products - Pure Soil to Soul"
+              className="size-full object-cover object-center scale-105"
+            />
           </div>
 
           {/* RIGHT PANE: Interactive Glassmorphism Form (8 cols) */}
