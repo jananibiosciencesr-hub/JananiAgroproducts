@@ -271,39 +271,39 @@ function BecomeDistributorPage() {
       </section>
 
       {/* Application Form */}
-      <section id="apply-form" className="bg-secondary/60 px-6 py-20 scroll-mt-20">
-        <div className="mx-auto max-w-4xl rounded-[3rem] border border-border bg-card p-8 shadow-luxe sm:p-14">
+      <section id="apply-form" className="bg-secondary/60 px-3 sm:px-6 py-8 sm:py-20 scroll-mt-20 overflow-hidden">
+        <div className="mx-auto max-w-4xl rounded-2xl sm:rounded-[3rem] border border-border bg-card p-4 sm:p-10 md:p-14 shadow-luxe overflow-hidden w-full max-w-full">
           <SectionHeading
             eyebrow="Application Form"
             title="Apply for Dealership or Distributorship"
             copy="Submit your company information and territory preferences. Our partnership committee reviews applications daily."
           />
 
-          <form onSubmit={handleSubmit} className="mt-10 grid gap-6 sm:grid-cols-2">
-            <label className="grid gap-1.5 text-xs font-semibold">
+          <form onSubmit={handleSubmit} className="mt-6 sm:mt-10 grid gap-4 sm:gap-6 sm:grid-cols-2 w-full max-w-full min-w-0">
+            <label className="grid gap-1.5 text-xs font-semibold w-full min-w-0 max-w-full">
               <span>Business / Firm Name *</span>
               <input
                 required
                 value={form.businessName}
                 onChange={(e) => setForm({ ...form, businessName: e.target.value })}
                 placeholder="e.g. Mahavir Agro Traders"
-                className="h-12 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
               />
             </label>
 
-            <label className="grid gap-1.5 text-xs font-semibold">
+            <label className="grid gap-1.5 text-xs font-semibold w-full min-w-0 max-w-full">
               <span>Key Contact Person *</span>
               <input
                 required
                 value={form.contactPerson}
                 onChange={(e) => setForm({ ...form, contactPerson: e.target.value })}
                 placeholder="e.g. Sanjay V. Patel"
-                className="h-12 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
               />
             </label>
 
             {/* Phone Number Field with real-time validation */}
-            <div className="grid gap-1.5 text-xs font-semibold">
+            <div className="grid gap-1.5 text-xs font-semibold w-full min-w-0 max-w-full">
               <div className="flex items-center justify-between">
                 <span>Phone / WhatsApp Number *</span>
                 {isPhoneValid && (
@@ -312,7 +312,7 @@ function BecomeDistributorPage() {
                   </span>
                 )}
               </div>
-              <div className="relative flex items-center">
+              <div className="relative flex items-center w-full min-w-0 max-w-full">
                 <div className="absolute left-3 flex items-center gap-1.5 text-xs text-muted-foreground font-semibold pointer-events-none select-none border-r border-border pr-2.5 whitespace-nowrap shrink-0">
                   <span className="text-sm leading-none shrink-0">🇮🇳</span>
                   <span className="shrink-0 font-semibold">+91</span>
@@ -327,7 +327,7 @@ function BecomeDistributorPage() {
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   onBlur={handlePhoneBlur}
                   placeholder="93114 16225"
-                  className={`h-12 w-full rounded-2xl border bg-background pl-16 pr-10 text-sm outline-none transition tracking-wide font-mono ${
+                  className={`h-12 w-full min-w-0 max-w-full rounded-2xl border bg-background pl-16 pr-10 text-sm outline-none transition tracking-wide font-mono ${
                     touched.phone && errors.phone
                       ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 bg-destructive/5 text-destructive"
                       : isPhoneValid
@@ -351,7 +351,7 @@ function BecomeDistributorPage() {
             </div>
 
             {/* Email Address / Gmail Field with real-time validation */}
-            <div className="grid gap-1.5 text-xs font-semibold">
+            <div className="grid gap-1.5 text-xs font-semibold w-full min-w-0 max-w-full">
               <div className="flex items-center justify-between">
                 <span>Email Address *</span>
                 {isEmailValid && (
@@ -360,7 +360,7 @@ function BecomeDistributorPage() {
                   </span>
                 )}
               </div>
-              <div className="relative">
+              <div className="relative w-full min-w-0 max-w-full">
                 <input
                   required
                   type="email"
@@ -368,7 +368,7 @@ function BecomeDistributorPage() {
                   onChange={(e) => handleEmailChange(e.target.value)}
                   onBlur={handleEmailBlur}
                   placeholder="sanjay@gmail.com"
-                  className={`h-12 w-full rounded-2xl border bg-background px-4 pr-10 text-sm outline-none transition ${
+                  className={`h-12 w-full min-w-0 max-w-full rounded-2xl border bg-background px-4 pr-10 text-sm outline-none transition ${
                     touched.email && errors.email
                       ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 bg-destructive/5 text-destructive"
                       : isEmailValid
@@ -398,33 +398,33 @@ function BecomeDistributorPage() {
               )}
             </div>
 
-            <label className="grid gap-1.5 text-xs font-semibold">
+            <label className="grid gap-1.5 text-xs font-semibold w-full min-w-0 max-w-full">
               <span>GST / Business Registration Number</span>
               <input
                 value={form.gst}
                 onChange={(e) => setForm({ ...form, gst: e.target.value })}
                 placeholder="24ABCDE1234F1Z5 (Optional)"
-                className="h-12 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
               />
             </label>
 
-            <label className="grid gap-1.5 text-xs font-semibold">
+            <label className="grid gap-1.5 text-xs font-semibold w-full min-w-0 max-w-full">
               <span>Target City & State *</span>
               <input
                 required
                 value={form.city}
                 onChange={(e) => setForm({ ...form, city: e.target.value })}
                 placeholder="e.g. Surat, Gujarat"
-                className="h-12 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
               />
             </label>
 
-            <label className="grid gap-1.5 text-xs font-semibold">
+            <label className="grid gap-1.5 text-xs font-semibold w-full min-w-0 max-w-full">
               <span>Dealership Type *</span>
               <select
                 value={form.tier}
                 onChange={(e) => setForm({ ...form, tier: e.target.value })}
-                className="h-12 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
               >
                 <option value="Retail Dealership">Retail Dealership (Store owner)</option>
                 <option value="Regional Super Stockist">Regional Super Stockist (City / District)</option>
@@ -433,12 +433,12 @@ function BecomeDistributorPage() {
               </select>
             </label>
 
-            <label className="grid gap-1.5 text-xs font-semibold">
+            <label className="grid gap-1.5 text-xs font-semibold w-full min-w-0 max-w-full">
               <span>Estimated Initial Investment *</span>
               <select
                 value={form.investment}
                 onChange={(e) => setForm({ ...form, investment: e.target.value })}
-                className="h-12 rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
+                className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
               >
                 <option value="₹50,000 - ₹1,00,000">₹50,000 - ₹1,00,000 (Trial Batch)</option>
                 <option value="₹1,00,000 - ₹3,00,000">₹1,00,000 - ₹3,00,000 (Store Partner)</option>
@@ -447,19 +447,19 @@ function BecomeDistributorPage() {
               </select>
             </label>
 
-            <label className="grid gap-1.5 text-xs font-semibold sm:col-span-2">
+            <label className="grid gap-1.5 text-xs font-semibold sm:col-span-2 w-full min-w-0 max-w-full">
               <span>Business Profile & Current Product Lines</span>
               <textarea
                 rows={4}
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 placeholder="Briefly describe your existing distribution network, retail footprint, or current FMCG brands..."
-                className="rounded-2xl border border-input bg-background p-4 text-sm outline-none focus:border-primary"
+                className="w-full min-w-0 max-w-full rounded-2xl border border-input bg-background p-4 text-sm outline-none focus:border-primary"
               />
             </label>
 
-            <div className="sm:col-span-2 text-center pt-2">
-              <Button type="submit" size="lg" variant="gold" disabled={loading} className="min-w-64">
+            <div className="sm:col-span-2 text-center pt-2 w-full max-w-full">
+              <Button type="submit" size="lg" variant="gold" disabled={loading} className="w-full sm:w-auto min-w-0 sm:min-w-64 max-w-full">
                 {loading ? "Submitting Application..." : "Submit Distributor Application"} <Send className="size-4 ml-2" />
               </Button>
             </div>

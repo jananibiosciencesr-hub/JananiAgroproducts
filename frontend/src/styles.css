@@ -558,4 +558,31 @@ html.scroll-animate-ready .scroll-reveal-top.is-revealed:hover {
   }
 }
 
+/* ========================================================= */
+/* UNIVERSAL RESPONSIVE GUARDS (ALL SCREENS & MOBILE PHONES) */
+/* ========================================================= */
+input,
+select,
+textarea {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Prevent CSS Grid items and labels from overflowing parent columns on mobile */
+.grid,
+.grid > *,
+label.grid,
+div.grid {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Form containers and sections stay within viewport */
+form {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+
 

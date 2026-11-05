@@ -276,20 +276,20 @@ function ContactPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-semibold">
+              <div className="grid gap-3 sm:grid-cols-2 w-full min-w-0 max-w-full">
+                <label className="grid gap-1 text-xs font-semibold w-full min-w-0 max-w-full">
                   <span>Your Name *</span>
                   <input
                     required
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="e.g. Priyesh Patel"
-                    className="h-10.5 rounded-xl border border-input bg-background/90 px-3.5 text-xs sm:text-sm outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/20"
+                    className="h-10.5 w-full min-w-0 max-w-full rounded-xl border border-input bg-background/90 px-3.5 text-xs sm:text-sm outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/20"
                   />
                 </label>
 
                 {/* Phone Number Field with real-time validation */}
-                <div className="grid gap-1 text-xs font-semibold">
+                <div className="grid gap-1 text-xs font-semibold w-full min-w-0 max-w-full">
                   <div className="flex items-center justify-between">
                     <span>Phone Number *</span>
                     {isPhoneValid && (
@@ -298,7 +298,7 @@ function ContactPage() {
                       </span>
                     )}
                   </div>
-                  <div className="relative flex items-center">
+                  <div className="relative flex items-center w-full min-w-0 max-w-full">
                     <div className="absolute left-3 flex items-center gap-1 text-xs text-muted-foreground font-semibold pointer-events-none select-none border-r border-border pr-2 whitespace-nowrap shrink-0">
                       <span className="text-xs leading-none shrink-0">🇮🇳</span>
                       <span className="shrink-0 font-bold text-[11px]">+91</span>
@@ -313,7 +313,7 @@ function ContactPage() {
                       onChange={(e) => handlePhoneChange(e.target.value)}
                       onBlur={handlePhoneBlur}
                       placeholder="93114 16225"
-                      className={`h-10.5 w-full rounded-xl border bg-background/90 pl-15 pr-9 text-xs sm:text-sm outline-none transition tracking-wide font-mono ${
+                      className={`h-10.5 w-full min-w-0 max-w-full rounded-xl border bg-background/90 pl-15 pr-9 text-xs sm:text-sm outline-none transition tracking-wide font-mono ${
                         touched.phone && errors.phone
                           ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 bg-destructive/5 text-destructive"
                           : isPhoneValid
@@ -337,9 +337,9 @@ function ContactPage() {
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 w-full min-w-0 max-w-full">
                 {/* Email Address / Gmail Field with real-time validation */}
-                <div className="grid gap-1 text-xs font-semibold">
+                <div className="grid gap-1 text-xs font-semibold w-full min-w-0 max-w-full">
                   <div className="flex items-center justify-between">
                     <span>Email Address *</span>
                     {isEmailValid && (
@@ -348,7 +348,7 @@ function ContactPage() {
                       </span>
                     )}
                   </div>
-                  <div className="relative">
+                  <div className="relative w-full min-w-0 max-w-full">
                     <input
                       required
                       type="email"
@@ -356,7 +356,7 @@ function ContactPage() {
                       onChange={(e) => handleEmailChange(e.target.value)}
                       onBlur={handleEmailBlur}
                       placeholder="priyesh@gmail.com"
-                      className={`h-10.5 w-full rounded-xl border bg-background/90 px-3.5 pr-9 text-xs sm:text-sm outline-none transition ${
+                      className={`h-10.5 w-full min-w-0 max-w-full rounded-xl border bg-background/90 px-3.5 pr-9 text-xs sm:text-sm outline-none transition ${
                         touched.email && errors.email
                           ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 bg-destructive/5 text-destructive"
                           : isEmailValid
@@ -386,12 +386,12 @@ function ContactPage() {
                   )}
                 </div>
 
-                <label className="grid gap-1 text-xs font-semibold">
+                <label className="grid gap-1 text-xs font-semibold w-full min-w-0 max-w-full">
                   <span>Subject *</span>
                   <select
                     value={form.subject}
                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="h-10.5 rounded-xl border border-input bg-background/90 px-3.5 text-xs sm:text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                    className="h-10.5 w-full min-w-0 max-w-full rounded-xl border border-input bg-background/90 px-3.5 text-xs sm:text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                   >
                     <option value="General Inquiry">General Inquiry</option>
                     <option value="Product Sourcing">Product Sourcing & Quality</option>
@@ -402,7 +402,7 @@ function ContactPage() {
                 </label>
               </div>
 
-              <label className="grid gap-1 text-xs font-semibold">
+              <label className="grid gap-1 text-xs font-semibold w-full min-w-0 max-w-full">
                 <span>Your Message *</span>
                 <textarea
                   required
@@ -410,7 +410,7 @@ function ContactPage() {
                   value={form.message}
                   onChange={(e) => setForm({ ...form, message: e.target.value })}
                   placeholder="How can we assist you today?"
-                  className="rounded-xl border border-input bg-background/90 p-3 text-xs sm:text-sm outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/20"
+                  className="w-full min-w-0 max-w-full rounded-xl border border-input bg-background/90 p-3 text-xs sm:text-sm outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/20"
                 />
               </label>
 

@@ -41,9 +41,9 @@ export function ScrollRevealManager() {
         ".stat-card",
         ".testimonial-card",
         ".pantry-card",
-        // Category cards and grid items
-        ".grid > div",
-        ".grid > article",
+        // Category cards and grid items (excluding form elements)
+        "main section .grid > div:not(form):not(label)",
+        "main section .grid > article",
         // Section headers, badges and titles
         "section > div > h1",
         "section > div > h2",
@@ -61,10 +61,17 @@ export function ScrollRevealManager() {
       elements.forEach((el, index) => {
         if (trackedElements.has(el)) return;
 
-        // Strictly exclude navigation, sticky elements, modals, drawers, toasts, hero carousel
+        // Strictly exclude navigation, forms, inputs, labels, sticky elements, modals, drawers, toasts, hero carousel
         if (
           el.closest("header") ||
           el.closest("nav") ||
+          el.closest("form") ||
+          el.tagName === "FORM" ||
+          el.tagName === "INPUT" ||
+          el.tagName === "SELECT" ||
+          el.tagName === "TEXTAREA" ||
+          el.tagName === "LABEL" ||
+          el.closest("label") ||
           el.closest("[role='dialog']") ||
           el.closest("[role='menu']") ||
           el.closest("[aria-modal='true']") ||
