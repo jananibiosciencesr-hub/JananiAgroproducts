@@ -1175,6 +1175,7 @@ function ensureProductsTableSchema($pdo) {
 
         $needed = [
             'category_id' => 'VARCHAR(64) NULL',
+            'category_slug' => 'VARCHAR(255) NULL',
             'old_price' => 'DECIMAL(10,2) NULL',
             'unit' => "VARCHAR(50) DEFAULT '1 kg'",
             'stock' => 'INT(11) DEFAULT 50',
@@ -1352,8 +1353,7 @@ function ensureJananiCatalogSynced($pdo) {
         }
 
         // Purge legacy unused dummy categories
-        $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric')");
-        $pdo->exec("UPDATE `products` SET `category_name` = 'Agri Inputs' WHERE `category_name` = 'Others' OR `category_id` = 'cat-others'");
+        $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('termeric', 'turmeric') OR `id` IN ('cat-termeric', 'cat-turmeric')");
 
         // 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
         $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
@@ -2364,9 +2364,19 @@ try {
                 }
 
                 if ($category && $category !== 'All' && $category !== 'all') {
-                    $query .= " AND (`category_name` = :cat OR `category_name` LIKE :catLike)";
-                    $params[':cat'] = $category;
-                    $params[':catLike'] = "%{$category}%";
+                    $catLookup = $pdo->prepare("SELECT `name`, `slug`, `id` FROM `categories` WHERE `slug` = ? OR `name` = ? OR `id` = ? LIMIT 1");
+                    $catLookup->execute([$category, $category, $category]);
+                    $foundCat = $catLookup->fetch();
+
+                    $catName = $foundCat ? $foundCat['name'] : $category;
+                    $catSlug = $foundCat ? $foundCat['slug'] : $category;
+                    $catId = $foundCat ? $foundCat['id'] : $category;
+
+                    $query .= " AND (LOWER(`category_name`) = LOWER(:catName) OR `category_id` = :catId OR LOWER(`category_name`) = LOWER(:catSlug) OR `category_name` LIKE :catLike)";
+                    $params[':catName'] = $catName;
+                    $params[':catId'] = $catId;
+                    $params[':catSlug'] = $catSlug;
+                    $params[':catLike'] = "%{$catName}%";
                 }
                 if ($search) {
                     $query .= " AND (`name` LIKE :search OR `description` LIKE :search OR `sku` LIKE :search OR `slug` LIKE :search)";
@@ -2897,6 +2907,20 @@ try {
         case 'categories':
             ensureCategoriesTableSchema($pdo);
             ensureJananiCatalogSynced($pdo);
+
+            // If any products are categorized under 'Other', ensure 'Other' category exists and is active in MySQL
+            try {
+                $hasOtherProducts = (int)$pdo->query("SELECT COUNT(*) FROM `products` WHERE LOWER(`category_name`) = 'other' OR `category_id` = 'cat-other'")->fetchColumn();
+                if ($hasOtherProducts > 0) {
+                    $checkOtherCat = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE (`slug` = 'other' OR `name` = 'Other') AND `deleted_at` IS NULL")->fetchColumn();
+                    if ($checkOtherCat === 0) {
+                        $pdo->exec("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `image`, `banner_image`, `icon`, `active`, `featured`, `trending`, `display_order`, `description`) 
+                        VALUES ('cat-other', 'Other', 'other', 1, '/images/categories/others.jpg', '/images/categories/others.jpg', '🌾', 1, 0, 0, 999, 'General and uncategorized sustainable farm inputs.')
+                        ON DUPLICATE KEY UPDATE `active` = 1, `deleted_at` = NULL");
+                    }
+                }
+            } catch (Exception $e) {}
+
             if ($method === 'GET') {
                 $status = strtolower(trim($_GET['status'] ?? ''));
                 $level = $_GET['level'] ?? null;
@@ -3160,11 +3184,63 @@ try {
                     if ($id === 'bulk-delete') {
                         $ids = $body['ids'] ?? [];
                         if (!empty($ids) && is_array($ids)) {
+                            // Ensure "Other" category exists in MySQL
+                            $otherStmt = $pdo->query("SELECT `id`, `name`, `slug` FROM `categories` WHERE `slug` = 'other' OR `slug` = 'others' OR `name` = 'Other' OR `name` = 'Others' LIMIT 1");
+                            $otherCat = $otherStmt->fetch();
+                            if (!$otherCat) {
+                                $otherId = 'cat-other';
+                                $otherName = 'Other';
+                                $otherSlug = 'other';
+                                try {
+                                    $pdo->exec("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `image`, `banner_image`, `icon`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES ('cat-other', 'Other', 'other', 1, '/images/categories/others.jpg', '/images/categories/others.jpg', '🌾', 1, 0, 0, 999, 'General and uncategorized sustainable farm inputs.')");
+                                } catch (Exception $e) {}
+                            } else {
+                                $otherId = $otherCat['id'];
+                                $otherName = $otherCat['name'];
+                                $otherSlug = $otherCat['slug'];
+                                try {
+                                    $pdo->prepare("UPDATE `categories` SET `active` = 1, `deleted_at` = NULL WHERE `id` = ?")->execute([$otherId]);
+                                } catch (Exception $e) {}
+                            }
+
+                            $chkCol = $pdo->query("SHOW COLUMNS FROM `products` LIKE 'category_slug'")->fetch();
                             foreach ($ids as $singleId) {
+                                $catFind = $pdo->prepare("SELECT `name`, `slug`, `id` FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                                $catFind->execute([$singleId, $singleId]);
+                                $cf = $catFind->fetch();
+                                $delName = $cf ? $cf['name'] : $singleId;
+                                $delSlug = $cf ? $cf['slug'] : $singleId;
+                                $delId = $cf ? $cf['id'] : $singleId;
+
+                                try {
+                                    if ($chkCol) {
+                                        $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ?, `category_slug` = ? WHERE `category_name` = ? OR `category_id` = ? OR `category_slug` = ? OR LOWER(`category_name`) = LOWER(?) OR LOWER(`category_name`) = LOWER(?)");
+                                        $pReassign->execute([$otherName, $otherId, $otherSlug, $delName, $delId, $delSlug, $delName, $delSlug]);
+                                    } else {
+                                        $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ? WHERE `category_name` = ? OR `category_id` = ? OR LOWER(`category_name`) = LOWER(?) OR LOWER(`category_name`) = LOWER(?)");
+                                        $pReassign->execute([$otherName, $otherId, $delName, $delId, $delName, $delSlug]);
+                                    }
+                                } catch (Exception $e) {}
+
                                 $pdo->prepare("UPDATE `categories` SET `active` = 0, `deleted_at` = CURRENT_TIMESTAMP WHERE `id` = ? OR `slug` = ?")->execute([$singleId, $singleId]);
                             }
+
+                            // Recalculate product counts
+                            try {
+                                $pCounts = $pdo->query("SELECT `category_name`, COUNT(*) as cnt FROM `products` WHERE (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL) GROUP BY `category_name`")->fetchAll();
+                                $catMap = [];
+                                foreach ($pCounts as $pc) {
+                                    $catMap[strtolower($pc['category_name'])] = (int)$pc['cnt'];
+                                }
+                                $allCats = $pdo->query("SELECT `id`, `name` FROM `categories`")->fetchAll();
+                                $upCountStmt = $pdo->prepare("UPDATE `categories` SET `product_count` = ? WHERE `id` = ?");
+                                foreach ($allCats as $ac) {
+                                    $cnt = $catMap[strtolower($ac['name'])] ?? 0;
+                                    $upCountStmt->execute([$cnt, $ac['id']]);
+                                }
+                            } catch (Exception $e) {}
                         }
-                        echo json_encode(['success' => true, 'message' => "Moved " . count($ids) . " categories to Trash in MySQL"]);
+                        echo json_encode(['success' => true, 'message' => "Moved " . count($ids) . " categories to Trash in MySQL, and associated products to 'Other'."]);
                         exit;
                     }
 
@@ -3498,15 +3574,26 @@ try {
                         $otherId = $otherCat['id'];
                         $otherName = $otherCat['name'];
                         $otherSlug = $otherCat['slug'];
+                        try {
+                            $pdo->prepare("UPDATE `categories` SET `active` = 1, `deleted_at` = NULL WHERE `id` = ?")->execute([$otherId]);
+                        } catch (Exception $e) {}
                     }
 
                     // 3. Move all products from deleted category to 'Other' in products table
                     $reassignedCount = 0;
                     try {
-                        $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ? WHERE `category_name` = ? OR `category_id` = ? OR `category_slug` = ? OR `category_name` = ?");
-                        $pReassign->execute([$otherName, $otherId, $delName, $delId, $delSlug, $delSlug]);
+                        $chkCol = $pdo->query("SHOW COLUMNS FROM `products` LIKE 'category_slug'")->fetch();
+                        if ($chkCol) {
+                            $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ?, `category_slug` = ? WHERE `category_name` = ? OR `category_id` = ? OR `category_slug` = ? OR LOWER(`category_name`) = LOWER(?) OR LOWER(`category_name`) = LOWER(?)");
+                            $pReassign->execute([$otherName, $otherId, $otherSlug, $delName, $delId, $delSlug, $delName, $delSlug]);
+                        } else {
+                            $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ? WHERE `category_name` = ? OR `category_id` = ? OR LOWER(`category_name`) = LOWER(?) OR LOWER(`category_name`) = LOWER(?)");
+                            $pReassign->execute([$otherName, $otherId, $delName, $delId, $delName, $delSlug]);
+                        }
                         $reassignedCount = $pReassign->rowCount();
-                    } catch (Exception $e) {}
+                    } catch (Exception $e) {
+                        error_log("Failed to reassign products on category delete: " . $e->getMessage());
+                    }
 
                     // 4. Reassign subcategories if parent was deleted
                     try {

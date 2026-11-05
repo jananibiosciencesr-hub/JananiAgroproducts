@@ -3857,6 +3857,42 @@ export const toggleAdminCategory = (req, res) => {
 
 export const deleteAdminCategory = (req, res) => {
   const { id } = req.params;
+  const catToDelete = adminCategories.find(c => c.id === id || c.slug === id);
+  const delName = catToDelete ? catToDelete.name : id;
+  const delSlug = catToDelete ? catToDelete.slug : id;
+
+  let otherCat = adminCategories.find(c => c.slug === 'other' || c.name === 'Other');
+  if (!otherCat) {
+    otherCat = {
+      id: "cat-other",
+      name: "Other",
+      slug: "other",
+      parentId: null,
+      level: "root",
+      description: "General and uncategorized sustainable farm inputs.",
+      icon: "🌾",
+      image: "/images/categories/others.jpg",
+      bannerImage: "/images/categories/others.jpg",
+      featured: false,
+      trending: false,
+      active: true,
+      orderIndex: 999,
+      productsCount: 0,
+      deletedAt: null
+    };
+    adminCategories.push(otherCat);
+  }
+
+  adminProducts.forEach(p => {
+    const pCat = (p.category || p.category_name || "").toLowerCase().trim();
+    if (pCat === delName.toLowerCase().trim() || pCat === delSlug.toLowerCase().trim() || p.category_id === id) {
+      p.category = "Other";
+      p.category_name = "Other";
+      p.category_id = "cat-other";
+      p.category_slug = "other";
+    }
+  });
+
   adminCategories = adminCategories.filter(c => c.id !== id && c.slug !== id);
   res.json({ success: true, message: "Category permanently deleted" });
 };
@@ -3872,12 +3908,50 @@ export const restoreAdminCategory = (req, res) => {
 
 export const permanentDeleteAdminCategory = (req, res) => {
   const { id } = req.params;
+  const catToDelete = adminCategories.find(c => c.id === id || c.slug === id);
+  const delName = catToDelete ? catToDelete.name : id;
+  const delSlug = catToDelete ? catToDelete.slug : id;
+
+  let otherCat = adminCategories.find(c => c.slug === 'other' || c.name === 'Other');
+  if (!otherCat) {
+    otherCat = {
+      id: "cat-other",
+      name: "Other",
+      slug: "other",
+      parentId: null,
+      level: "root",
+      description: "General and uncategorized sustainable farm inputs.",
+      icon: "🌾",
+      image: "/images/categories/others.jpg",
+      bannerImage: "/images/categories/others.jpg",
+      featured: false,
+      trending: false,
+      active: true,
+      orderIndex: 999,
+      productsCount: 0,
+      deletedAt: null
+    };
+    adminCategories.push(otherCat);
+  }
+
+  adminProducts.forEach(p => {
+    const pCat = (p.category || p.category_name || "").toLowerCase().trim();
+    if (pCat === delName.toLowerCase().trim() || pCat === delSlug.toLowerCase().trim() || p.category_id === id) {
+      p.category = "Other";
+      p.category_name = "Other";
+      p.category_id = "cat-other";
+      p.category_slug = "other";
+    }
+  });
+
   adminCategories = adminCategories.filter(c => c.id !== id);
   res.json({ success: true, message: "Category permanently deleted" });
 };
 
 export const bulkUpdateCategoryStatus = (req, res) => {
   const { ids = [], active = true } = req.body;
+
+
   adminCategories.forEach(c => {
     if (ids.includes(c.id)) {
       c.active = Boolean(active);
@@ -3888,6 +3962,8 @@ export const bulkUpdateCategoryStatus = (req, res) => {
 
 export const bulkDeleteCategories = (req, res) => {
   const { ids = [] } = req.body;
+
+
   adminCategories.forEach(c => {
     if (ids.includes(c.id)) {
       c.deletedAt = new Date().toISOString();

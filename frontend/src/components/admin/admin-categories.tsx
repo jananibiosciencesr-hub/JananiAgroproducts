@@ -253,6 +253,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
     }
     toast.success("Category deleted. Associated products moved to 'Other'.");
   };
@@ -342,7 +343,9 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+      window.dispatchEvent(new CustomEvent("janani-products-updated"));
     }
+    toast.success(`Deleted ${deletedCats.length} categories. Associated products moved to 'Other'.`);
     setSelectedIds([]);
     toast.success(`Deleted ${selectedIds.length} categories. Associated products moved to 'Other'.`);
   };

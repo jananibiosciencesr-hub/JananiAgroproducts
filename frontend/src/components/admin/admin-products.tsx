@@ -37,7 +37,8 @@ import {
   ListPlus,
   MessageSquare,
   Video,
-  Play
+  Play,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -317,10 +318,36 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
     loadProducts();
   }, [statusFilter, categoryFilter, brandFilter, stockFilter]);
 
-  // Dynamic categories strictly reflecting the Categories management list
+  // Synchronize category & product updates dynamically
+  useEffect(() => {
+    const handleUpdate = () => {
+      loadProducts();
+      loadCategories();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("janani-products-updated", handleUpdate);
+      window.addEventListener("janani-categories-updated", handleUpdate);
+      return () => {
+        window.removeEventListener("janani-products-updated", handleUpdate);
+        window.removeEventListener("janani-categories-updated", handleUpdate);
+      };
+    }
+  }, []);
+
+  // Dynamic categories strictly reflecting the Categories management list + any categories in products (guaranteeing 'Other')
   const availableCategories = useMemo(() => {
-    return categoriesList.filter(Boolean);
-  }, [categoriesList]);
+    const list = [...categoriesList];
+    products.forEach((p) => {
+      const cat = p.category || (p as any).category_name;
+      if (cat && !list.some((c) => c.toLowerCase() === cat.toLowerCase())) {
+        list.push(cat);
+      }
+    });
+    if (!list.some((c) => c.toLowerCase() === "other")) {
+      list.push("Other");
+    }
+    return Array.from(new Set(list.filter(Boolean)));
+  }, [categoriesList, products]);
 
   // Client-side Filter
   const filteredProducts = useMemo(() => {
@@ -328,10 +355,15 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
       const matchSearch = !search.trim() || matchesProductSearch(p, search);
       const matchMin = !minPrice || p.price >= Number(minPrice);
       const matchMax = !maxPrice || p.price <= Number(maxPrice);
+      const matchCategory =
+        categoryFilter === "all" ||
+        (p.category && p.category.toLowerCase() === categoryFilter.toLowerCase()) ||
+        ((p as any).category_name && (p as any).category_name.toLowerCase() === categoryFilter.toLowerCase()) ||
+        ((p as any).category_id && String((p as any).category_id).toLowerCase() === categoryFilter.toLowerCase());
 
-      return matchSearch && matchMin && matchMax;
+      return matchSearch && matchMin && matchMax && matchCategory;
     });
-  }, [products, search, minPrice, maxPrice]);
+  }, [products, search, minPrice, maxPrice, categoryFilter]);
 
   // Pagination Slicing
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
@@ -461,7 +493,102 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
   return (
     <div className="space-y-6">
+      {/* Top Filter and Actions Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border bg-card p-4 shadow-soft">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Status Tabs: Active / Trash */}
+          <div className="flex items-center rounded-2xl border border-border bg-muted/40 p-1">
+            <button
+              onClick={() => {
+                setStatusFilter("active");
+                setCurrentPage(1);
+              }}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === "active"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => {
+                setStatusFilter("trash");
+                setCurrentPage(1);
+              }}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === "trash"
+                  ? "bg-rose-500/10 text-rose-600 font-extrabold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Trash
+            </button>
+          </div>
 
+          {/* Category Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-muted-foreground hidden sm:flex items-center gap-1">
+              <Filter className="size-3.5 text-emerald-600" /> Category:
+            </span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-9 rounded-2xl border border-border bg-card px-3 text-xs font-bold text-foreground outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer shadow-xs"
+            >
+              <option value="all">All Categories ({products.length})</option>
+              {availableCategories.map((c) => {
+                const count = products.filter(
+                  (p) =>
+                    (p.category && p.category.toLowerCase() === c.toLowerCase()) ||
+                    ((p as any).category_name && (p as any).category_name.toLowerCase() === c.toLowerCase())
+                ).length;
+                return (
+                  <option key={c} value={c}>
+                    {c} {count > 0 ? `(${count})` : ""}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {categoryFilter !== "all" && (
+            <button
+              onClick={() => {
+                setCategoryFilter("all");
+                setCurrentPage(1);
+              }}
+              className="rounded-xl bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              Clear Filter ✕
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={exportCSV}
+            variant="outline"
+            size="sm"
+            className="h-9 rounded-2xl text-xs font-bold gap-1.5 cursor-pointer"
+          >
+            <Download className="size-3.5" /> Export CSV
+          </Button>
+          <Button
+            onClick={() => {
+              setEditingProduct(null);
+              setIsFormModalOpen(true);
+            }}
+            size="sm"
+            className="h-9 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold gap-1.5 shadow-soft cursor-pointer"
+          >
+            <Plus className="size-4" /> Add Product
+          </Button>
+        </div>
+      </div>
 
       {/* Bulk Action Toolbar */}
       {selectedIds.length > 0 && (
