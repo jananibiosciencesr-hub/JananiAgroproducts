@@ -1,11 +1,10 @@
-import { products, categories, orders, type Product, getCategoryImage, getProductImage, formatProductName, SAMPLE_PRODUCT_VIDEO } from "./catalog";
+import { products, categories, type Product, getCategoryImage, getProductImage, formatProductName, SAMPLE_PRODUCT_VIDEO } from "./catalog";
 import { matchesProductSearch } from "./search-helper";
 import {
   STORAGE_KEYS,
   getStored,
   setStored,
   DEFAULT_PRODUCTS,
-  DEFAULT_CATEGORIES,
   DEFAULT_ORDERS,
   DEFAULT_CUSTOMERS,
   DEFAULT_COUPONS,
@@ -15,8 +14,7 @@ import {
   DEFAULT_CMS,
   DEFAULT_PAYMENTS,
   DEFAULT_AUDIT_LOGS,
-  DEFAULT_BACKUPS,
-  DEFAULT_INQUIRIES
+  DEFAULT_BACKUPS
 } from "./mock-storage";
 
 const API_BASE_URL = typeof window !== "undefined" && window.location.hostname === "localhost"
@@ -300,7 +298,7 @@ export function normalizeProduct(raw: any): Product {
     isNew: raw.isNew ?? false,
     variants: parseProductVariants(raw.variants, price, unit, stock),
     subtitle: raw.subtitle || catalogProd?.subtitle,
-    crops: parsedCrops.length > 0 ? parsedCrops : undefined,
+    ...(parsedCrops.length > 0 ? { crops: parsedCrops } : {}),
     benefits: benefits,
     specifications: specifications,
     recommendedCrops: recommendedCrops,
