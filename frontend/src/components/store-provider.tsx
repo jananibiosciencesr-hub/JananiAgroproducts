@@ -283,6 +283,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("janani_admin_products");
         localStorage.removeItem("janani_admin_categories");
       }
+
+      // Replace any legacy demo dr.ananya customer in local storage with ramaofficial.d@gmail.com
+      for (const k of ["jap_customers", "janani_customers", "janani_admin_customers"]) {
+        const custRaw = localStorage.getItem(k);
+        if (custRaw && custRaw.includes("heritagehealth.org")) {
+          const cleaned = custRaw.replace(/dr\.ananya@heritagehealth\.org/g, "ramaofficial.d@gmail.com").replace(/Dr\. Ananya Iyer/g, "Sai Rama");
+          localStorage.setItem(k, cleaned);
+        }
+      }
     } catch (e) { }
 
     return () => {

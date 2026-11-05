@@ -448,7 +448,7 @@ export async function initDatabase() {
       console.log(`🌱 [MySQL Seed] Seeding default users...`);
       const usersSeed = [
         ["STAFF-001", "Rajesh Varma", "admin@jananiagro.com", "+91 98480 22338", "Super Admin", 250.0, 500, "Platinum", "Active", "JANANI8492"],
-        ["CUST-001", "Dr. Ananya Iyer", "dr.ananya@heritagehealth.org", "+91 98450 11223", "Customer", 420.0, 850, "Gold", "Active", "JANANI3821"],
+        ["CUST-001", "Sai Rama", "ramaofficial.d@gmail.com", "+91 99999 99999", "Customer", 0.0, 850, "Silver", "Active", "JANANI3821"],
         ["CUST-002", "Vikramaditya Rao", "vikram.rao@technocorp.in", "+91 99800 44556", "Customer", 150.0, 320, "Silver", "Active", "JANANI9104"]
       ];
       for (const [id, name, email, phone, role, wallet, points, tier, status, ref] of usersSeed) {
@@ -482,9 +482,9 @@ export async function initDatabase() {
           "JAP-849202",
           "JAP-849202",
           "10 Sep 2026, 18:45",
-          "Dr. Ananya Iyer",
-          "dr.ananya@heritagehealth.org",
-          "+91 98450 11223",
+          "Sai Rama",
+          "ramaofficial.d@gmail.com",
+          "+91 99999 99999",
           JSON.stringify({ name: "Dr. Ananya Iyer", street: "Villa 14, Palm Meadows, Whitefield", city: "Bengaluru", state: "Karnataka", pincode: "560066" }),
           JSON.stringify([{ productId: 2, title: "Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner", price: 380, quantity: 2, subtotal: 760 }]),
           3890.0, 583.0, 0.0, 3307.0,

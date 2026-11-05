@@ -1302,37 +1302,45 @@ function ensureOrdersTableSchema($pdo) {
 
 function generateNextCustomerId($pdo) {
     if (!$pdo) {
-        return 'CUST-001';
+        return 'CUST-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
     try {
-        $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(id, 6) AS UNSIGNED)) AS max_num FROM \`users\` WHERE \`id\` REGEXP '^CUST-[0-9]{1,4}$'");
+        $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(id, 6) AS UNSIGNED)) AS max_num FROM `users` WHERE `id` REGEXP '^CUST-[0-9]{1,6}$'");
         $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
         if ($maxNum <= 0) {
-            $cStmt = $pdo->query("SELECT COUNT(*) FROM \`users\` WHERE \`role\` != 'Super Admin' AND \`id\` != 'ADMIN-ROOT'");
+            $cStmt = $pdo->query("SELECT COUNT(*) FROM `users` WHERE `role` != 'Super Admin' AND `id` != 'ADMIN-ROOT'");
             $maxNum = $cStmt ? (int)$cStmt->fetchColumn() : 0;
         }
         $nextNum = max(1, $maxNum + 1);
-        return 'CUST-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
+        $candidate = 'CUST-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
+        
+        // Double check candidate uniqueness
+        $chkStmt = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
+        $chkStmt->execute([$candidate]);
+        if ((int)$chkStmt->fetchColumn() > 0) {
+            $candidate = 'CUST-' . str_pad((string)($nextNum + rand(1, 50)), 3, '0', STR_PAD_LEFT);
+        }
+        return $candidate;
     } catch (Exception $e) {
-        return 'CUST-001';
+        return 'CUST-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
 }
 
 function generateNextOrderNumber($pdo) {
     if (!$pdo) {
-        return 'JAP-001';
+        return 'JAP-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
     try {
         $stmt = $pdo->query("SELECT MAX(num) AS max_num FROM (
-            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM \`orders\` WHERE \`number\` REGEXP '^(JAP|ORD)-[0-9]{1,4}$'
+            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^(JAP|ORD)-[0-9]{1,6}$'
             UNION
-            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM \`orders\` WHERE \`id\` REGEXP '^(JAP|ORD)-[0-9]{1,4}$'
+            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^(JAP|ORD)-[0-9]{1,6}$'
         ) AS t");
         $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
         $nextNum = max(1, $maxNum + 1);
         return 'JAP-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
     } catch (Exception $e) {
-        return 'JAP-001';
+        return 'JAP-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
 }
 
@@ -1420,6 +1428,30 @@ function ensureJananiCatalogSynced($pdo) {
         try {
             $pdo->exec("UPDATE `users` SET `phone` = '' WHERE `phone` = '+91 98480 22338' AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
             $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
+        } catch (Exception $e) {}
+
+        // Auto-repair: Guarantee ramaofficial.d@gmail.com is correctly set for Sai Rama and clean legacy dummy dr.ananya
+        try {
+            $rHash = password_hash('Rama@123', PASSWORD_DEFAULT);
+            $pdo->prepare("UPDATE `users` SET 
+                `email` = 'ramaofficial.d@gmail.com', 
+                `name` = 'Sai Rama', 
+                `password` = 'Rama@123', 
+                `password_hash` = ?, 
+                `status` = 'Active' 
+                WHERE `email` = 'dr.ananya@heritagehealth.org' OR `name` = 'Sai Rama'")->execute([$rHash]);
+
+            $checkRama = (int)$pdo->query("SELECT COUNT(*) FROM `users` WHERE `email` = 'ramaofficial.d@gmail.com'")->fetchColumn();
+            if ($checkRama === 0) {
+                $nextId = generateNextCustomerId($pdo);
+                $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `is_verified`, `referral_code`) 
+                VALUES (?, 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999', 'Rama@123', ?, 'Customer', 0.00, 850, 'Silver', 'Active', 1, 'JANANI7788')")->execute([$nextId, $rHash]);
+            } else {
+                $pdo->prepare("UPDATE `users` SET `password` = 'Rama@123', `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash]);
+            }
+
+            $pdo->exec("DELETE FROM `users` WHERE `email` = 'dr.ananya@heritagehealth.org' AND `email` != 'ramaofficial.d@gmail.com'");
+            $pdo->exec("UPDATE `orders` SET `customer_email` = 'ramaofficial.d@gmail.com', `customer_name` = 'Sai Rama' WHERE `customer_email` = 'dr.ananya@heritagehealth.org'");
         } catch (Exception $e) {}
     } catch (Exception $e) {}
 }
@@ -1707,6 +1739,11 @@ try {
                 }
 
                 $userId = generateNextCustomerId($pdo);
+                $chkId = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
+                $chkId->execute([$userId]);
+                if ((int)$chkId->fetchColumn() > 0) {
+                    $userId = 'CUST-' . str_pad((string)rand(100, 9999), 3, '0', STR_PAD_LEFT);
+                }
 
                 $user = [
                     'id' => $userId,
@@ -1722,13 +1759,17 @@ try {
                 ];
 
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
-                        VALUES (?, ?, ?, ?, ?, 'Customer', ?, 'Silver', 'Active', 1, ?) 
+                    $hash = $password ? password_hash($password, PASSWORD_DEFAULT) : null;
+                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
+                        VALUES (?, ?, ?, ?, ?, ?, 'Customer', ?, 'Silver', 'Active', 1, ?) 
                         ON DUPLICATE KEY UPDATE 
                             `name` = VALUES(`name`), 
+                            `email` = VALUES(`email`),
                             `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
+                            `password` = IF(VALUES(`password`) != '', VALUES(`password`), `password`),
+                            `password_hash` = IF(VALUES(`password_hash`) != '', VALUES(`password_hash`), `password_hash`),
                             `status` = 'Active'");
-                    $stmt->execute([$userId, $name, $email, $phone, $password, $user['walletBalance'], $user['referralCode']]);
+                    $stmt->execute([$userId, $name, $email, $phone, $password, $hash, $user['walletBalance'], $user['referralCode']]);
                 } catch (Exception $e) {}
 
                 echo json_encode([
@@ -2068,6 +2109,7 @@ try {
                     $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', 1, ?) 
                         ON DUPLICATE KEY UPDATE 
+                            `email` = VALUES(`email`),
                             `role` = VALUES(`role`), 
                             `status` = 'Active', 
                             `tier` = VALUES(`tier`),
@@ -3930,11 +3972,10 @@ try {
                 
                 // Auto-normalize legacy orders to sequential JAP-001 format
                 try {
-                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-001', \`id\` = 'JAP-001' WHERE (\`number\` LIKE '%356429%' OR \`id\` LIKE '%356429%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-001') AS _tmp)");
-                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-002', \`id\` = 'JAP-002' WHERE (\`number\` LIKE '%709853%' OR \`id\` LIKE '%709853%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-002') AS _tmp)");
-                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-003', \`id\` = 'JAP-003' WHERE (\`number\` LIKE '%845461%' OR \`id\` LIKE '%845461%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-003') AS _tmp)");
-                    $pdo->exec("UPDATE \`orders\` SET \`number\` = 'JAP-004', \`id\` = 'JAP-004' WHERE (\`number\` LIKE '%849201%' OR \`id\` LIKE '%849201%') AND NOT EXISTS (SELECT 1 FROM (SELECT \`id\` FROM \`orders\` WHERE \`number\` = 'JAP-004') AS _tmp)");
-                    $pdo->exec("UPDATE \`users\` SET \`id\` = 'CUST-001' WHERE \`email\` = 'kameswarip98@gmail.com' AND \`id\` != 'CUST-001'");
+                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-001', `id` = 'JAP-001' WHERE (`number` LIKE '%356429%' OR `id` LIKE '%356429%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-001') AS _tmp)");
+                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-002', `id` = 'JAP-002' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-002') AS _tmp)");
+                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-003', `id` = 'JAP-003' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-003') AS _tmp)");
+                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-004', `id` = 'JAP-004' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-004') AS _tmp)");
                 } catch (Exception $ex) {}
 
                 // Auto-repair any legacy mock rows with empty/generic names
