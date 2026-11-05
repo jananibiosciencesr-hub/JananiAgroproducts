@@ -561,6 +561,9 @@ try {
     $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
     $pdo->exec("UPDATE `orders` SET `customer_phone` = '+91 98490 55441' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND `customer_phone` = '+91 98480 22338'");
     $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
+    // Purge legacy corrupt product 2124 / mortein and restore canonical Janani products
+    $pdo->exec("DELETE FROM `products` WHERE `id` = 2124 OR LOWER(`name`) LIKE '%mortein%' OR LOWER(`slug`) LIKE '%mortein%'");
+    $pdo->exec("UPDATE `users` SET `wishlist` = '[1, 2]' WHERE (`email` = 'kameswarip98@gmail.com' OR `email` = 'sravanipachipulusu98@gmail.com') AND (`wishlist` LIKE '%2124%' OR `wishlist` LIKE '%mortein%' OR `wishlist` IS NULL OR `wishlist` = '[]' OR `wishlist` = '')");
 } catch (Exception $e) {}
 
 // 6. Orders

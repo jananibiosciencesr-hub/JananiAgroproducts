@@ -35,7 +35,7 @@ import { AccountDeleteModal } from "@/components/profile/account-delete-modal";
 type TabType = "orders" | "profile" | "addresses" | "wishlist";
 
 export const Route = createFileRoute("/dashboard")({
-  validateSearch: (search: Record<string, unknown>): { tab?: string } => {
+  validateSearch: (search: Record<string, unknown>): { tab?: string | undefined } => {
     return {
       tab: typeof search["tab"] === "string" ? search["tab"] : undefined,
     };
@@ -224,7 +224,7 @@ function DashboardPage() {
     setActiveTab(tab);
     navigate({
       to: "/dashboard",
-      search: { tab: tab === "orders" ? undefined : tab },
+      search: tab === "orders" ? {} : { tab },
       replace: true,
     });
   };

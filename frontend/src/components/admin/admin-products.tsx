@@ -320,18 +320,17 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
   // Synchronize category & product updates dynamically
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const handleUpdate = () => {
       loadProducts();
       loadCategories();
     };
-    if (typeof window !== "undefined") {
-      window.addEventListener("janani-products-updated", handleUpdate);
-      window.addEventListener("janani-categories-updated", handleUpdate);
-      return () => {
-        window.removeEventListener("janani-products-updated", handleUpdate);
-        window.removeEventListener("janani-categories-updated", handleUpdate);
-      };
-    }
+    window.addEventListener("janani-products-updated", handleUpdate);
+    window.addEventListener("janani-categories-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("janani-products-updated", handleUpdate);
+      window.removeEventListener("janani-categories-updated", handleUpdate);
+    };
   }, []);
 
   // Dynamic categories strictly reflecting the Categories management list + any categories in products (guaranteeing 'Other')

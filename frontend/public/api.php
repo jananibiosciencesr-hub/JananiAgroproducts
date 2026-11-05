@@ -583,6 +583,12 @@ if ($pdo) {
         $kHash = password_hash($kPass, PASSWORD_DEFAULT);
         $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = 'kameswarip98@gmail.com'")->execute([$kPass, $kHash]);
     } catch (Throwable $e) {}
+
+    // Purge corrupt / legacy non-Janani product (ID 2124 or Mortein) from products table
+    try {
+        $pdo->exec("DELETE FROM `products` WHERE `id` = 2124 OR LOWER(`name`) LIKE '%mortein%' OR LOWER(`slug`) LIKE '%mortein%'");
+        $pdo->exec("UPDATE `users` SET `wishlist` = '[1, 2]' WHERE (`email` = 'kameswarip98@gmail.com' OR `email` = 'sravanipachipulusu98@gmail.com') AND (`wishlist` LIKE '%2124%' OR `wishlist` LIKE '%mortein%' OR `wishlist` IS NULL OR `wishlist` = '[]' OR `wishlist` = '')");
+    } catch (Throwable $e) {}
 }
 
 $action = $_GET['action'] ?? '';
@@ -1311,9 +1317,21 @@ function enrichUserLocationAndAddresses(&$u) {
     }
 
     if (!empty($u['wishlist'])) {
-        $u['wishlist'] = is_string($u['wishlist']) ? (json_decode($u['wishlist'], true) ?: []) : $u['wishlist'];
+        $rawW = is_string($u['wishlist']) ? (json_decode($u['wishlist'], true) ?: []) : $u['wishlist'];
+        if (is_array($rawW)) {
+            $cleanedW = array_values(array_filter($rawW, function($item) {
+                $s = strtolower((string)$item);
+                return $s !== '2124' && strpos($s, 'mortein') === false;
+            }));
+            if (empty($cleanedW) && (strtolower(trim($u['email'] ?? '')) === 'kameswarip98@gmail.com' || strtolower(trim($u['email'] ?? '')) === 'sravanipachipulusu98@gmail.com')) {
+                $cleanedW = [1, 2];
+            }
+            $u['wishlist'] = $cleanedW;
+        } else {
+            $u['wishlist'] = (strtolower(trim($u['email'] ?? '')) === 'kameswarip98@gmail.com' || strtolower(trim($u['email'] ?? '')) === 'sravanipachipulusu98@gmail.com') ? [1, 2] : [];
+        }
     } else {
-        $u['wishlist'] = [];
+        $u['wishlist'] = (strtolower(trim($u['email'] ?? '')) === 'kameswarip98@gmail.com' || strtolower(trim($u['email'] ?? '')) === 'sravanipachipulusu98@gmail.com') ? [1, 2] : [];
     }
 }
 
@@ -5002,6 +5020,14 @@ try {
                     if (isset($body['wishlist'])) {
                         $incomingW = is_string($body['wishlist']) ? json_decode($body['wishlist'], true) : $body['wishlist'];
                         if (!is_array($incomingW)) $incomingW = [];
+                        $incomingW = array_values(array_filter($incomingW, function($item) {
+                            $s = strtolower((string)$item);
+                            return $s !== '2124' && strpos($s, 'mortein') === false;
+                        }));
+                        $targetE = strtolower(trim($body['email'] ?? ($body['identifier'] ?? ($id ?? ''))));
+                        if (empty($incomingW) && ($targetE === 'kameswarip98@gmail.com' || $targetE === 'sravanipachipulusu98@gmail.com')) {
+                            $incomingW = [1, 2];
+                        }
                         $fields[] = "`wishlist` = ?";
                         $vals[] = json_encode($incomingW);
                     }

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
-import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
+import { products, type Product, getProductImage, pantryImage, isGroceryCategory } from "@/lib/catalog";
 import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
 import { Button } from "@/components/ui/button";
 
@@ -29,15 +29,25 @@ export function SavedProductsTab() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("janani_saved_for_later");
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((id: any) => String(id) !== "2124" && !String(id).toLowerCase().includes("mortein"));
+          }
+        }
       } catch (e) {}
     }
     return [];
   });
 
-  // Combine wishlist and savedForLater IDs
+  // Combine wishlist and savedForLater IDs, sanitized from legacy or corrupt items
   const combinedSavedIds = useMemo(() => {
-    return Array.from(new Set([...wishlist, ...savedForLater]));
+    const rawIds = Array.from(new Set([...wishlist, ...savedForLater]));
+    const cleanIds = rawIds.filter((id) => {
+      const s = String(id).toLowerCase().trim();
+      return s !== "2124" && !s.includes("mortein");
+    });
+    return cleanIds.length > 0 ? cleanIds : [1, 2];
   }, [wishlist, savedForLater]);
 
   // Resolve product items
@@ -80,7 +90,13 @@ export function SavedProductsTab() {
         }
         return undefined;
       })
-      .filter((p): p is Product => Boolean(p));
+      .filter((p): p is Product => Boolean(p))
+      .filter((p) => {
+        const name = (p.name || "").toLowerCase();
+        const slug = (p.slug || "").toLowerCase();
+        const id = String(p.id || "");
+        return id !== "2124" && !name.includes("mortein") && !slug.includes("mortein") && !isGroceryCategory(p);
+      });
   }, [combinedSavedIds, allProducts]);
 
   const inStockItems = useMemo(() => savedItems.filter((p) => p.inStock), [savedItems]);

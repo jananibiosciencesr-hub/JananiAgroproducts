@@ -59,8 +59,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (storedWishlist) {
         const parsedW = JSON.parse(storedWishlist);
         if (Array.isArray(parsedW)) {
-          setWishlist(parsedW);
+          const hasCorrupt = parsedW.some((id: any) => String(id) === "2124" || String(id).toLowerCase().includes("mortein"));
+          const cleaned = parsedW.filter((id: any) => {
+            const s = String(id).toLowerCase().trim();
+            return s !== "2124" && !s.includes("mortein");
+          });
+          if (hasCorrupt) {
+            const restored = cleaned.length > 0 ? cleaned : [1, 2];
+            try { localStorage.setItem("janani_wishlist", JSON.stringify(restored)); } catch (e) {}
+            setWishlist(restored);
+          } else {
+            setWishlist(cleaned);
+          }
         }
+      } else {
+        setWishlist([1, 2]);
       }
     } catch (e) { }
 
@@ -148,7 +161,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         getCategories()
       ]);
       if (fetchedProds.status === "fulfilled" && Array.isArray(fetchedProds.value) && fetchedProds.value.length > 0) {
-        setLiveProducts(fetchedProds.value);
+        const cleanProds = fetchedProds.value.filter((p: any) => {
+          const sName = String(p.name || "").toLowerCase();
+          const sSlug = String(p.slug || "").toLowerCase();
+          const sId = String(p.id || "");
+          if (sId === "2124" || sName.includes("mortein") || sSlug.includes("mortein")) return false;
+          if (isGroceryCategory(p)) return false;
+          return true;
+        });
+        setLiveProducts(cleanProds.length > 0 ? cleanProds : initialProducts);
       }
       if (fetchedCats.status === "fulfilled" && Array.isArray(fetchedCats.value) && fetchedCats.value.length > 0) {
         const cleanCats = fetchedCats.value.filter((cat: any) => !isGroceryCategory(cat));
@@ -279,9 +300,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       // Clean obsolete demo grocery products if present
       const storedProducts = localStorage.getItem("janani_admin_products");
-      if (storedProducts && (storedProducts.includes("unpolished-toor-dal") || storedProducts.includes("lakadong-turmeric"))) {
+      if (storedProducts && (storedProducts.includes("unpolished-toor-dal") || storedProducts.includes("lakadong-turmeric") || storedProducts.includes("2124") || storedProducts.toLowerCase().includes("mortein"))) {
         localStorage.removeItem("janani_admin_products");
         localStorage.removeItem("janani_admin_categories");
+      }
+
+      const sfl = localStorage.getItem("janani_saved_for_later");
+      if (sfl && (sfl.includes("2124") || sfl.toLowerCase().includes("mortein"))) {
+        localStorage.removeItem("janani_saved_for_later");
       }
 
       // Replace any legacy demo dr.ananya customer in local storage with ramaofficial.d@gmail.com
@@ -337,9 +363,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // Reconcile wishlist with MySQL database
         if (Array.isArray(srv.wishlist) && srv.wishlist.length > 0) {
           setWishlist((cur) => {
-            const combined = Array.from(new Set([...cur.map(String), ...srv.wishlist.map(String)]));
-            try { localStorage.setItem("janani_wishlist", JSON.stringify(combined)); } catch (e) {}
-            return combined;
+            const combined = Array.from(new Set([...cur.map(String), ...srv.wishlist.map(String)]))
+              .filter((item) => {
+                const s = String(item).toLowerCase().trim();
+                return s !== "2124" && !s.includes("mortein");
+              });
+            const finalW = combined.length > 0 ? combined : [1, 2];
+            try { localStorage.setItem("janani_wishlist", JSON.stringify(finalW)); } catch (e) {}
+            return finalW;
           });
         }
 

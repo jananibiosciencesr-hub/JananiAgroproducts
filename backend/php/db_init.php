@@ -105,6 +105,14 @@ $schema = [
             'email' => 'VARCHAR(255) UNIQUE NOT NULL',
             'phone' => 'VARCHAR(50) DEFAULT NULL',
             'password' => 'VARCHAR(255) DEFAULT NULL',
+            'password_hash' => 'VARCHAR(255) DEFAULT NULL',
+            'address' => 'TEXT DEFAULT NULL',
+            'city' => 'VARCHAR(100) DEFAULT NULL',
+            'state' => 'VARCHAR(100) DEFAULT NULL',
+            'pincode' => 'VARCHAR(20) DEFAULT NULL',
+            'landmark' => 'VARCHAR(255) DEFAULT NULL',
+            'saved_addresses' => 'LONGTEXT DEFAULT NULL',
+            'wishlist' => 'LONGTEXT DEFAULT NULL',
             'role' => "VARCHAR(50) DEFAULT 'Customer'",
             'wallet_balance' => 'DECIMAL(10,2) DEFAULT 0.00',
             'loyalty_points' => 'INT DEFAULT 0',
@@ -163,7 +171,6 @@ $schema = [
             'reviews_count' => 'INT DEFAULT 0',
             'badge' => 'VARCHAR(100) DEFAULT NULL',
             'image' => 'VARCHAR(500) DEFAULT NULL',
-            'video_url' => 'MEDIUMTEXT DEFAULT NULL',
             'gallery' => 'JSON DEFAULT NULL',
             'description' => 'TEXT DEFAULT NULL',
             'features' => 'JSON DEFAULT NULL',
@@ -425,18 +432,17 @@ $categories = [
 $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric') OR `active` = 0 OR `deleted_at` IS NOT NULL");
 $pdo->exec("UPDATE `products` SET `category_name` = 'Agri Inputs' WHERE `category_name` = 'Others' OR `category_id` = 'cat-others'");
 
-$stmtCat = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE 
-    `name` = VALUES(`name`), 
-    `image` = VALUES(`image`), 
-    `active` = 1, 
-    `description` = VALUES(`description`)");
+// 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
+$catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
+if ($catCount === 0) {
+    $stmtCat = $pdo->prepare("INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `level`, `parent_id`, `parent_name`, `image`, `product_count`, `active`, `featured`, `trending`, `display_order`, `description`) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-foreach ($categories as $cat) {
-    try { $stmtCat->execute($cat); } catch (Exception $e) {}
+    foreach ($categories as $cat) {
+        try { $stmtCat->execute($cat); } catch (Exception $e) {}
+    }
+    $response['seeds_inserted'][] = 'categories (10)';
 }
-$response['seeds_inserted'][] = 'categories (10)';
 
 // 2. Products - All 18 Janani Agro Flagship Formulations (including ROOT PLUS)
 $products = [
@@ -539,7 +545,7 @@ $userCount = $pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
 if ($userCount <= 1) {
     $users = [
         ['STAFF-001', 'Rajesh Varma', 'admin@jananiagro.com', '+91 98490 55441', 'Super Admin', 250.00, 500, 'Platinum', 'Active', 'JANANI8492'],
-        ['CUST-001', 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999', 'Customer', 0.00, 850, 'Silver', 'Active', 'JANANI3821'],
+        ['CUST-001', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223', 'Customer', 0.00, 850, 'Gold', 'Active', 'JANANI3821'],
         ['CUST-002', 'Vikramaditya Rao', 'vikram.rao@technocorp.in', '+91 99800 44556', 'Customer', 0.00, 320, 'Silver', 'Active', 'JANANI9104']
     ];
     $stmt = $pdo->prepare("INSERT IGNORE INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `referral_code`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -555,6 +561,9 @@ try {
     $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
     $pdo->exec("UPDATE `orders` SET `customer_phone` = '+91 98490 55441' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND `customer_phone` = '+91 98480 22338'");
     $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
+    // Purge legacy corrupt product 2124 / mortein and restore canonical Janani products
+    $pdo->exec("DELETE FROM `products` WHERE `id` = 2124 OR LOWER(`name`) LIKE '%mortein%' OR LOWER(`slug`) LIKE '%mortein%'");
+    $pdo->exec("UPDATE `users` SET `wishlist` = '[1, 2]' WHERE (`email` = 'kameswarip98@gmail.com' OR `email` = 'sravanipachipulusu98@gmail.com') AND (`wishlist` LIKE '%2124%' OR `wishlist` LIKE '%mortein%' OR `wishlist` IS NULL OR `wishlist` = '[]' OR `wishlist` = '')");
 } catch (Exception $e) {}
 
 // 6. Orders
@@ -568,7 +577,7 @@ if ($orderCount == 0) {
             2450.00, 245.00, 0.00, 2205.00, 'UPI Instant', 'Paid', 'Delivered', 'Delhivery Air Express', 'DEL-8492048194', 'DEL-8492048194'
         ],
         [
-            'JAP-849202', 'JAP-849202', '10 Sep 2026, 18:45', 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999',
+            'JAP-849202', 'JAP-849202', '10 Sep 2026, 18:45', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223',
             json_encode(['name' => 'Dr. Ananya Iyer', 'street' => 'Villa 14, Palm Meadows, Whitefield', 'city' => 'Bengaluru', 'state' => 'Karnataka', 'pincode' => '560066']),
             json_encode([['productId' => 2, 'title' => 'Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner', 'price' => 380, 'quantity' => 2, 'subtotal' => 760]]),
             3890.00, 583.00, 0.00, 3307.00, 'Razorpay (Credit Card)', 'Paid', 'In Transit', 'Delhivery Air Express', 'DEL-8492048195', 'DEL-8492048195'
