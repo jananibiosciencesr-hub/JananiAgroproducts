@@ -224,6 +224,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
           id: "cat-other",
           name: "Other",
           slug: "other",
+          parentId: null,
           level: "root",
           description: "General and uncategorized sustainable farm inputs.",
           icon: "🌾",
@@ -233,7 +234,16 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
           trending: false,
           active: true,
           orderIndex: 999,
-          productsCount: 0
+          productsCount: 0,
+          deletedAt: null,
+          seo: {
+            metaTitle: "Other Agro Products",
+            metaDescription: "General sustainable farm inputs",
+            metaKeywords: "other, agri",
+            canonicalUrl: "",
+            ogImage: ""
+          },
+          createdAt: new Date().toISOString()
         });
       }
       return remaining;
@@ -301,6 +311,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
           id: "cat-other",
           name: "Other",
           slug: "other",
+          parentId: null,
           level: "root",
           description: "General and uncategorized sustainable farm inputs.",
           icon: "🌾",
@@ -310,7 +321,16 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
           trending: false,
           active: true,
           orderIndex: 999,
-          productsCount: 0
+          productsCount: 0,
+          deletedAt: null,
+          seo: {
+            metaTitle: "Other Agro Products",
+            metaDescription: "General sustainable farm inputs",
+            metaKeywords: "other, agri",
+            canonicalUrl: "",
+            ogImage: ""
+          },
+          createdAt: new Date().toISOString()
         });
       }
       return remaining;

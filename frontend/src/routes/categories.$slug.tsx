@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import React, { useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -36,6 +36,33 @@ export const Route = createFileRoute("/categories/$slug")({
     };
   },
   component: CategoryDetailPage,
+  errorComponent: () => {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-center">
+        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200">
+          <span className="text-3xl">🌾</span>
+        </div>
+        <h2 className="text-xl font-bold text-foreground">Category Formulations</h2>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+          We encountered an issue displaying this category formulation. Please explore our full catalog.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link
+            to="/categories"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition-all"
+          >
+            Browse All Categories
+          </Link>
+          <Link
+            to="/products"
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-all"
+          >
+            View All Products
+          </Link>
+        </div>
+      </div>
+    );
+  },
 });
 
 function CategoryDetailPage() {
@@ -111,9 +138,9 @@ function CategoryDetailPage() {
       const q = query.toLowerCase().trim();
       items = items.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.slug.toLowerCase().includes(q)
+          String(p.name || "").toLowerCase().includes(q) ||
+          String(p.description || "").toLowerCase().includes(q) ||
+          String(p.slug || "").toLowerCase().includes(q)
       );
     }
 
@@ -124,11 +151,11 @@ function CategoryDetailPage() {
 
     // Sorting
     return [...items].sort((a, b) => {
-      if (sort === "low") return a.price - b.price;
-      if (sort === "high") return b.price - a.price;
-      if (sort === "rating") return b.rating - a.rating;
-      if (sort === "discount") return b.discount - a.discount;
-      return String(a.id).localeCompare(String(b.id));
+      if (sort === "low") return (a.price ?? 0) - (b.price ?? 0);
+      if (sort === "high") return (b.price ?? 0) - (a.price ?? 0);
+      if (sort === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
+      if (sort === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
+      return String(a.id || "").localeCompare(String(b.id || ""));
     });
   }, [category, query, sort, inStockOnly, allProds]);
 
