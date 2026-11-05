@@ -754,17 +754,19 @@ export function AuthenticationPage() {
         {/* Main Dual-Pane Auth Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/70 bg-card/60 backdrop-blur-2xl shadow-xl transition-all w-full">
           
-          {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 4 cols) */}
-          <div className="relative hidden lg:flex lg:col-span-4 xl:col-span-4 overflow-hidden bg-[#102318] items-center justify-center">
+          {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 5 cols on lg, 4 cols on xl) */}
+          <div className="relative hidden lg:flex lg:col-span-5 xl:col-span-4 overflow-hidden bg-gradient-to-b from-[#075B32] via-[#064A29] to-[#042A17] items-center justify-center p-3.5 sm:p-5">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(79,174,42,0.18),transparent_70%)] pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 size-40 rounded-full bg-[#D99A12]/10 blur-2xl pointer-events-none" />
             <img
-              src="/images/auth-banner.jpg"
+              src="/images/auth-banner.png"
               alt="Janani Agro Products - Pure Soil to Soul"
-              className="size-full object-cover object-center scale-105"
+              className="relative z-10 w-full h-full max-h-[500px] object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)] transition-all duration-300 hover:scale-[1.02]"
             />
           </div>
 
-          {/* RIGHT PANE: Interactive Glassmorphism Form (8 cols) */}
-          <div className="lg:col-span-8 xl:col-span-8 px-4 sm:px-6 py-2.5 sm:py-3.5 flex flex-col justify-center bg-card/70 backdrop-blur-xl">
+          {/* RIGHT PANE: Interactive Glassmorphism Form (7 cols on lg, 8 cols on xl) */}
+          <div className="lg:col-span-7 xl:col-span-8 px-4 sm:px-6 py-2.5 sm:py-3.5 flex flex-col justify-center bg-card/70 backdrop-blur-xl">
             
             {/* Top Navigation Mode Pill */}
             <div>
