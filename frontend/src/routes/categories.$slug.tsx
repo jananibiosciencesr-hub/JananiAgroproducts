@@ -14,8 +14,9 @@ import {
   Package,
   ArrowRight
 } from "lucide-react";
-import { categories, products, getCategoryImage, isProductInCategory, type Product } from "@/lib/catalog";
+import { categories, products, getCategoryImage, isProductInCategory, isGroceryCategory, type Product } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
+import { getCategories } from "@/lib/api";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { ProductQuickViewModal } from "@/components/shop/product-quick-view-modal";
@@ -42,24 +43,46 @@ function CategoryDetailPage() {
   const { categories: storeCats, products: storeProds } = useStore();
   const rawCats = storeCats && storeCats.length > 0 ? storeCats : categories;
   const allCats = useMemo(() => {
-    return rawCats.filter((cat: any) => {
-      const n = (cat.name || "").toLowerCase();
-      const s = (cat.slug || "").toLowerCase();
-      if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
-      return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((term) => n.includes(term) || s.includes(term));
-    });
+    return rawCats.filter((cat: any) => !isGroceryCategory(cat));
   }, [rawCats]);
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
+  const [directCat, setDirectCat] = useState<any>(null);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    setNotFound(false);
+    const timer = setTimeout(() => {
+      setNotFound(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
+      (async () => {
+        try {
+          const fetched = await getCategories();
+          const match = fetched.find((c: any) =>
+            (c.slug || "").toLowerCase().trim() === slug.toLowerCase().trim() ||
+            (c.slug || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slug.toLowerCase().replace(/[^a-z0-9]/g, "") ||
+            (c.name || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slug.toLowerCase().replace(/[^a-z0-9]/g, "")
+          );
+          if (match) {
+            setDirectCat(match);
+          }
+        } catch (e) {}
+      })();
+    }
+  }, [slug]);
+
   const category = useMemo(() => {
     const slugLower = (slug || "").toLowerCase().trim();
     const slugNorm = slugLower.replace(/[^a-z0-9]/g, "");
-    return (
-      allCats.find((c: any) => (c.slug || "").toLowerCase().trim() === slugLower) ||
+    const found = allCats.find((c: any) => (c.slug || "").toLowerCase().trim() === slugLower) ||
       allCats.find((c: any) => (c.slug || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slugNorm) ||
-      allCats.find((c: any) => (c.name || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slugNorm) ||
-      allCats[0]
-    );
-  }, [allCats, slug]);
+      allCats.find((c: any) => (c.name || "").toLowerCase().replace(/[^a-z0-9]/g, "") === slugNorm);
+    return found || directCat || null;
+  }, [allCats, slug, directCat]);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
   const [list, setList] = useState(false);
@@ -110,10 +133,31 @@ function CategoryDetailPage() {
   }, [category, query, sort, inStockOnly, allProds]);
 
   if (!category) {
+    if (notFound) {
+      return (
+        <div className="mx-auto max-w-7xl px-4 py-24 text-center">
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200">
+            <span className="text-3xl">🌾</span>
+          </div>
+          <h2 className="text-xl font-bold text-foreground">Category Not Found</h2>
+          <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+            The category you are looking for does not exist or may have been updated.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Link
+              to="/categories"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition-all"
+            >
+              Browse All Categories
+            </Link>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="mx-auto max-w-7xl px-4 py-28 text-center">
         <div className="inline-block size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        <p className="mt-4 text-sm font-semibold text-muted-foreground">Loading category harvests...</p>
+        <p className="mt-4 text-sm font-semibold text-muted-foreground">Loading category formulations...</p>
       </div>
     );
   }
@@ -264,9 +308,13 @@ function CategoryDetailPage() {
           </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center space-y-3">
-            <p className="text-lg font-bold text-foreground">No products found matching "{query}"</p>
+            <p className="text-lg font-bold text-foreground">
+              {query ? `No products found matching "${query}"` : `No products currently available in ${category.name}`}
+            </p>
             <p className="text-xs text-muted-foreground">
-              Try modifying your search keywords or explore other bio-input categories.
+              {query
+                ? "Try modifying your search keywords or explore other bio-input categories."
+                : "New formulations and farm inputs will be listed here soon."}
             </p>
             <Button onClick={() => setQuery("")} className="mt-2 rounded-full" variant="outline">
               Clear Search

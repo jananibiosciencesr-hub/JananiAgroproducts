@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { getStorefrontReviews } from "@/lib/api";
-import { products, categories, getCategoryImage, slugs, isProductInCategory, type Product } from "@/lib/catalog";
+import { products, categories, getCategoryImage, slugs, isProductInCategory, isGroceryCategory, type Product } from "@/lib/catalog";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { HeroBannerCarousel } from "@/components/home/hero-banner-carousel";
@@ -142,12 +142,7 @@ export function HomePage() {
 
   // Dynamic Agri Products Categories (only Trending if set, or all valid)
   const categoryCards = useMemo(() => {
-    const validCats = allCategories.filter((cat: any) => {
-      const n = (cat.name || cat.title || "").toLowerCase();
-      const s = (cat.slug || "").toLowerCase();
-      if (n.includes("neem") || s.includes("neem") || n.includes("botanical") || s.includes("botanical")) return true;
-      return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((term) => n.includes(term) || s.includes(term));
-    });
+    const validCats = allCategories.filter((cat: any) => !isGroceryCategory(cat));
 
     const trendingOnly = validCats.filter((cat: any) =>
       Boolean(cat.trending === true || cat.trending === 1 || cat.trending === "1" || cat.trending === "true")

@@ -76,6 +76,53 @@ export function getProductImage(nameOrCategory: string = "", customImage?: strin
  * Accurately determines if a product belongs to a given category without cross-category substring leakage.
  * Avoids incorrectly matching "Fungicides" into "Bio Fungicides", or "Pesticides" into "Bio Pesticides".
  */
+
+export const FORBIDDEN_GROCERY_TERMS = [
+  "rice", "grain", "grains", "pulse", "pulses", "dal", "dals", "spice", "spices",
+  "ghee", "mustard oil", "cold pressed", "basmati", "wheat", "millet", "millets",
+  "flour", "atta", "sugar", "honey", "pantry", "grocery", "edible"
+];
+
+/**
+ * Checks whether an item/category is an edible grocery item (e.g. rice, dal, spices, edible oil).
+ * Strictly whitelists all agricultural input terms such as soil, protection, neem, bio, nutrient, etc.
+ * Uses whole-word boundary for 'oil' to never accidentally match 'soil', 'spoil', or 'boil'.
+ */
+export function isGroceryCategory(cat: any): boolean {
+  if (!cat) return false;
+  const name = String(cat.name || cat.title || "").toLowerCase().trim();
+  const slug = String(cat.slug || "").toLowerCase().trim();
+  const id = String(cat.id || "").toLowerCase().trim();
+
+  // Explicit agri whitelists - NEVER filter out legitimate agri categories!
+  if (
+    name.includes("soil") || slug.includes("soil") ||
+    name.includes("protection") || slug.includes("protection") ||
+    name.includes("neem") || slug.includes("neem") ||
+    name.includes("botanical") || slug.includes("botanical") ||
+    name.includes("bio") || slug.includes("bio") ||
+    name.includes("nutrient") || slug.includes("nutrient") ||
+    name.includes("fung") || slug.includes("fung") ||
+    name.includes("pest") || slug.includes("pest") ||
+    name.includes("crop") || slug.includes("crop") ||
+    name.includes("fertiliz") || slug.includes("fertiliz") ||
+    name.includes("stimulant") || slug.includes("stimulant") ||
+    name.includes("agri") || slug.includes("agri") ||
+    name.includes("input") || slug.includes("input") ||
+    name.includes("other") || slug.includes("other")
+  ) {
+    return false;
+  }
+
+  // Check whole-word oil (so 'oil' matches 'cooking oil', but NOT 'soil'!)
+  const hasIsolatedOil = /\boil\b/i.test(name) || /\boil\b/i.test(slug);
+  if (hasIsolatedOil && !name.includes("neem") && !slug.includes("neem")) {
+    return true;
+  }
+
+  return FORBIDDEN_GROCERY_TERMS.some((term) => name.includes(term) || slug.includes(term) || id.includes(term));
+}
+
 export function isProductInCategory(product: any, category: any): boolean {
   if (!product || !category) return false;
 
@@ -590,7 +637,8 @@ export const categories: { id: number; name: string; slug: string; count: number
   { id: 12, name: "Water Solubles", slug: "water-solubles", count: 1, image: "/images/categories/water-solubles.jpg", description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
   { id: 13, name: "Agri Inputs", slug: "agri-inputs", count: 2, image: "/images/categories/agri-inputs.jpg", description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
   { id: 14, name: "fungicides", slug: "fungs", count: 3, image: "/images/categories/fungicides.jpg", description: "Curative and protective agricultural fungicides for sustainable disease management." },
-  { id: 15, name: "pestocides", slug: "pestocides", count: 0, image: "/images/categories/bio-pesticides.jpg", description: "Formulations for organic pest control and preventive crop health." }
+  { id: 15, name: "pestocides", slug: "pestocides", count: 0, image: "/images/categories/bio-pesticides.jpg", description: "Formulations for organic pest control and preventive crop health." },
+  { id: 16, name: "Other", slug: "other", count: 0, image: "/images/categories/others.jpg", description: "General and diverse sustainable agricultural formulations and inputs." }
 ];
 
 export const products: Product[] = [

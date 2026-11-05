@@ -69,21 +69,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (storedCats) {
         const parsed = JSON.parse(storedCats);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleanCats = parsed.filter((cat: any) => {
-            const n = (cat.name || "").toLowerCase();
-            const s = (cat.slug || "").toLowerCase();
-            if (
-              n.includes("neem") || s.includes("neem") ||
-              n.includes("botanical") || s.includes("botanical") ||
-              n.includes("bio") || s.includes("bio") ||
-              n.includes("nutrient") || s.includes("nutrient") ||
-              n.includes("fung") || s.includes("fung") ||
-              n.includes("pest") || s.includes("pest") ||
-              n.includes("crop") || s.includes("crop") ||
-              n.includes("soil") || s.includes("soil")
-            ) return true;
-            return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((t) => n.includes(t) || s.includes(t));
-          });
+          const cleanCats = parsed.filter((cat: any) => !isGroceryCategory(cat));
           if (cleanCats.length > 0) {
             setLiveCategories(cleanCats);
           }
@@ -147,21 +133,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setLiveProducts(fetchedProds.value);
       }
       if (fetchedCats.status === "fulfilled" && Array.isArray(fetchedCats.value) && fetchedCats.value.length > 0) {
-        const cleanCats = fetchedCats.value.filter((cat: any) => {
-          const n = (cat.name || "").toLowerCase();
-          const s = (cat.slug || "").toLowerCase();
-          if (
-            n.includes("neem") || s.includes("neem") ||
-            n.includes("botanical") || s.includes("botanical") ||
-            n.includes("bio") || s.includes("bio") ||
-            n.includes("nutrient") || s.includes("nutrient") ||
-            n.includes("fung") || s.includes("fung") ||
-            n.includes("pest") || s.includes("pest") ||
-            n.includes("crop") || s.includes("crop") ||
-            n.includes("soil") || s.includes("soil")
-          ) return true;
-          return !["rice", "grain", "pulse", "dal", "spice", "ghee", "basmati", "mustard oil", "cold pressed", "oil", "wheat", "millet"].some((t) => n.includes(t) || s.includes(t));
-        });
+        const cleanCats = fetchedCats.value.filter((cat: any) => !isGroceryCategory(cat));
         setLiveCategories(cleanCats.length > 0 ? cleanCats : initialCategories);
       }
     } catch (e) {}

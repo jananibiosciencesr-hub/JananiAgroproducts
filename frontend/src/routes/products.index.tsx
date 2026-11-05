@@ -31,7 +31,7 @@ import {
   Plus,
   Minus
 } from "lucide-react";
-import { products, categories, type Product, formatProductName, isProductInCategory } from "@/lib/catalog";
+import { products, categories, type Product, formatProductName, isProductInCategory, isGroceryCategory } from "@/lib/catalog";
 import { matchesProductSearch, calculateProductRelevance } from "@/lib/search-helper";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";

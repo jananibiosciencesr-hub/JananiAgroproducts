@@ -13,7 +13,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { categories, products, getCategoryImage, isProductInCategory } from "@/lib/catalog";
+import { categories, products, getCategoryImage, isProductInCategory, isGroceryCategory } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 
 export const Route = createFileRoute("/categories/")({
@@ -52,13 +52,7 @@ function CategoriesIndexPage() {
 
       if (forbiddenKeys.some((b) => s === b || id === b || n === b)) return false;
 
-      if (
-        [
-          "rice", "grain", "pulse", "dal", "spice", "ghee", "basmati",
-          "mustard oil", "cold pressed", "oil", "wheat", "millet",
-          "grocery", "pantry", "flour", "atta", "sugar"
-        ].some((term) => (n.includes(term) || s.includes(term)) && !n.includes("neem") && !s.includes("neem") && !n.includes("bio") && !s.includes("bio") && !n.includes("nutrient") && !s.includes("nutrient") && !n.includes("fung") && !s.includes("fung") && !n.includes("pest") && !s.includes("pest") && !n.includes("crop") && !s.includes("crop") && !n.includes("soil") && !s.includes("soil"))
-      ) {
+      if (isGroceryCategory(cat)) {
         return false;
       }
 

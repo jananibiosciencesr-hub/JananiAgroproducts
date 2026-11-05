@@ -192,9 +192,57 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
   // Delete & Restore Handlers
   const handleDelete = async (id: string) => {
+    const deletedCat = categories.find((c) => c.id === id);
     await permanentDeleteAdminCategory(id);
-    setCategories((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Category permanently deleted from database");
+    
+    // Reassign products locally in localStorage if any exist
+    if (deletedCat && typeof window !== "undefined") {
+      try {
+        const storedProds = JSON.parse(localStorage.getItem("jap_admin_products") || "[]");
+        let changed = false;
+        const updatedProds = storedProds.map((p: any) => {
+          const pCat = (p.category || p.category_name || "").toLowerCase().trim();
+          const dName = (deletedCat.name || "").toLowerCase().trim();
+          const dSlug = (deletedCat.slug || "").toLowerCase().trim();
+          if (pCat === dName || pCat === dSlug || String(p.category_id) === String(id)) {
+            changed = true;
+            return { ...p, category: "Other", category_name: "Other", category_id: "cat-other", category_slug: "other" };
+          }
+          return p;
+        });
+        if (changed) {
+          localStorage.setItem("jap_admin_products", JSON.stringify(updatedProds));
+        }
+      } catch (e) {}
+    }
+
+    setCategories((prev) => {
+      const remaining = prev.filter((c) => c.id !== id);
+      const hasOther = remaining.some((c) => c.slug === "other" || c.name === "Other");
+      if (!hasOther) {
+        remaining.push({
+          id: "cat-other",
+          name: "Other",
+          slug: "other",
+          level: "root",
+          description: "General and uncategorized sustainable farm inputs.",
+          icon: "🌾",
+          image: "/images/categories/others.jpg",
+          bannerImage: "/images/categories/others.jpg",
+          featured: false,
+          trending: false,
+          active: true,
+          orderIndex: 999,
+          productsCount: 0
+        });
+      }
+      return remaining;
+    });
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+    }
+    toast.success("Category deleted. Associated products moved to 'Other'.");
   };
 
   const handleRestore = async (id: string) => {
@@ -216,12 +264,63 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
+    const deletedCats = categories.filter((c) => selectedIds.includes(c.id));
     for (const id of selectedIds) {
       await permanentDeleteAdminCategory(id);
     }
-    setCategories((prev) => prev.filter((c) => !selectedIds.includes(c.id)));
+
+    // Reassign products locally in localStorage if any exist
+    if (deletedCats.length > 0 && typeof window !== "undefined") {
+      try {
+        const storedProds = JSON.parse(localStorage.getItem("jap_admin_products") || "[]");
+        let changed = false;
+        const updatedProds = storedProds.map((p: any) => {
+          const pCat = (p.category || p.category_name || "").toLowerCase().trim();
+          const matches = deletedCats.some((dc) => {
+            const dName = (dc.name || "").toLowerCase().trim();
+            const dSlug = (dc.slug || "").toLowerCase().trim();
+            return pCat === dName || pCat === dSlug || String(p.category_id) === String(dc.id);
+          });
+          if (matches) {
+            changed = true;
+            return { ...p, category: "Other", category_name: "Other", category_id: "cat-other", category_slug: "other" };
+          }
+          return p;
+        });
+        if (changed) {
+          localStorage.setItem("jap_admin_products", JSON.stringify(updatedProds));
+        }
+      } catch (e) {}
+    }
+
+    setCategories((prev) => {
+      const remaining = prev.filter((c) => !selectedIds.includes(c.id));
+      const hasOther = remaining.some((c) => c.slug === "other" || c.name === "Other");
+      if (!hasOther) {
+        remaining.push({
+          id: "cat-other",
+          name: "Other",
+          slug: "other",
+          level: "root",
+          description: "General and uncategorized sustainable farm inputs.",
+          icon: "🌾",
+          image: "/images/categories/others.jpg",
+          bannerImage: "/images/categories/others.jpg",
+          featured: false,
+          trending: false,
+          active: true,
+          orderIndex: 999,
+          productsCount: 0
+        });
+      }
+      return remaining;
+    });
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
+    }
     setSelectedIds([]);
-    toast.success(`Deleted ${selectedIds.length} categories from database`);
+    toast.success(`Deleted ${selectedIds.length} categories. Associated products moved to 'Other'.`);
   };
 
   // Reordering (Sequence)

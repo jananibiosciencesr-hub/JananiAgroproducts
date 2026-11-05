@@ -3467,9 +3467,73 @@ try {
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
                 if ($id) {
+                    // 1. Locate category to delete
+                    $findStmt = $pdo->prepare("SELECT * FROM `categories` WHERE `id` = ? OR `slug` = ? LIMIT 1");
+                    $findStmt->execute([$id, $id]);
+                    $catToDelete = $findStmt->fetch();
+
+                    $delName = $catToDelete ? $catToDelete['name'] : $id;
+                    $delSlug = $catToDelete ? $catToDelete['slug'] : $id;
+                    $delId = $catToDelete ? $catToDelete['id'] : $id;
+
+                    // 2. Ensure "Other" category exists in MySQL database
+                    $otherStmt = $pdo->query("SELECT `id`, `name`, `slug` FROM `categories` WHERE `slug` = 'other' OR `slug` = 'others' OR `name` = 'Other' OR `name` = 'Others' LIMIT 1");
+                    $otherCat = $otherStmt->fetch();
+
+                    if (!$otherCat) {
+                        $otherId = 'cat-other';
+                        $otherName = 'Other';
+                        $otherSlug = 'other';
+                        try {
+                            $insOther = $pdo->prepare("INSERT INTO `categories` (`id`, `name`, `slug`, `level`, `image`, `banner_image`, `icon`, `active`, `featured`, `trending`, `display_order`, `description`) VALUES (?, ?, ?, 1, '/images/categories/others.jpg', '/images/categories/others.jpg', '🌾', 1, 0, 0, 999, 'General and uncategorized sustainable farm inputs.')");
+                            $insOther->execute([$otherId, $otherName, $otherSlug]);
+                        } catch (Exception $e) {}
+                    } else {
+                        $otherId = $otherCat['id'];
+                        $otherName = $otherCat['name'];
+                        $otherSlug = $otherCat['slug'];
+                    }
+
+                    // 3. Move all products from deleted category to 'Other' in products table
+                    $reassignedCount = 0;
+                    try {
+                        $pReassign = $pdo->prepare("UPDATE `products` SET `category_name` = ?, `category_id` = ? WHERE `category_name` = ? OR `category_id` = ? OR `category_slug` = ? OR `category_name` = ?");
+                        $pReassign->execute([$otherName, $otherId, $delName, $delId, $delSlug, $delSlug]);
+                        $reassignedCount = $pReassign->rowCount();
+                    } catch (Exception $e) {}
+
+                    // 4. Reassign subcategories if parent was deleted
+                    try {
+                        $cReassign = $pdo->prepare("UPDATE `categories` SET `parent_id` = ?, `parent_name` = ? WHERE `parent_id` = ? OR `parent_name` = ?");
+                        $cReassign->execute([$otherId, $otherName, $delId, $delName]);
+                    } catch (Exception $e) {}
+
+                    // 5. Delete category from categories table
                     $stmt = $pdo->prepare("DELETE FROM `categories` WHERE `id` = ? OR `slug` = ?");
                     $stmt->execute([$id, $id]);
-                    echo json_encode(['success' => true, 'message' => 'Category permanently deleted from MySQL database']);
+
+                    // 6. Recalculate live product counts in categories table
+                    try {
+                        $pCounts = $pdo->query("SELECT `category_name`, COUNT(*) as cnt FROM `products` WHERE (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL) GROUP BY `category_name`")->fetchAll();
+                        $catMap = [];
+                        foreach ($pCounts as $pc) {
+                            $catMap[strtolower($pc['category_name'])] = (int)$pc['cnt'];
+                        }
+                        $allCats = $pdo->query("SELECT `id`, `name` FROM `categories`")->fetchAll();
+                        $upCountStmt = $pdo->prepare("UPDATE `categories` SET `product_count` = ? WHERE `id` = ?");
+                        foreach ($allCats as $ac) {
+                            $cnt = $catMap[strtolower($ac['name'])] ?? 0;
+                            $upCountStmt->execute([$cnt, $ac['id']]);
+                        }
+                    } catch (Exception $e) {}
+
+                    echo json_encode([
+                        'success' => true,
+                        'message' => "Category '{$delName}' deleted from MySQL database. Associated products moved to '{$otherName}'.",
+                        'reassigned_count' => $reassignedCount,
+                        'reassigned_to' => $otherName,
+                        'deleted_id' => $id
+                    ]);
                     exit;
                 }
                 echo json_encode(['success' => false, 'message' => 'Category ID required for deletion']);
