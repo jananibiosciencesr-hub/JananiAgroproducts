@@ -1245,13 +1245,76 @@ function ensureUsersTableSchema($pdo) {
             }
         } catch (Exception $e) {}
 
-        if (!isset($existingCols['password'])) {
-            try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `password` VARCHAR(255) DEFAULT NULL"); } catch (Exception $e) {}
-        }
-        if (!isset($existingCols['password_hash'])) {
-            try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `password_hash` VARCHAR(255) DEFAULT NULL"); } catch (Exception $e) {}
+        $userColsNeeded = [
+            'password' => 'VARCHAR(255) DEFAULT NULL',
+            'password_hash' => 'VARCHAR(255) DEFAULT NULL',
+            'address' => 'TEXT DEFAULT NULL',
+            'city' => 'VARCHAR(100) DEFAULT NULL',
+            'state' => 'VARCHAR(100) DEFAULT NULL',
+            'pincode' => 'VARCHAR(20) DEFAULT NULL',
+            'landmark' => 'VARCHAR(255) DEFAULT NULL',
+            'saved_addresses' => 'LONGTEXT DEFAULT NULL',
+            'wishlist' => 'LONGTEXT DEFAULT NULL'
+        ];
+        foreach ($userColsNeeded as $colName => $colDef) {
+            if (!isset($existingCols[strtolower($colName)])) {
+                try { $pdo->exec("ALTER TABLE `users` ADD COLUMN `{$colName}` {$colDef}"); } catch (Exception $e) {}
+            }
         }
     } catch (Exception $e) {}
+}
+
+function enrichUserLocationAndAddresses(&$u) {
+    if (!$u) return;
+    $addressesList = [];
+    if (!empty($u['saved_addresses'])) {
+        $parsed = is_string($u['saved_addresses']) ? json_decode($u['saved_addresses'], true) : $u['saved_addresses'];
+        if (is_array($parsed) && count($parsed) > 0) $addressesList = $parsed;
+    }
+    if (empty($addressesList) && !empty($u['preferences'])) {
+        $prefs = is_string($u['preferences']) ? json_decode($u['preferences'], true) : $u['preferences'];
+        if (!empty($prefs['addresses']) && is_array($prefs['addresses'])) {
+            $addressesList = $prefs['addresses'];
+        }
+    }
+    if (empty($addressesList) && (!empty($u['address']) || !empty($u['city']))) {
+        $addressesList = [[
+            'id' => 'addr-' . ($u['id'] ?? 'default'),
+            'name' => $u['name'] ?: 'Delivery Address',
+            'phone' => $u['phone'] ?: '',
+            'street' => $u['address'] ?: '',
+            'city' => $u['city'] ?: '',
+            'state' => $u['state'] ?: '',
+            'pincode' => $u['pincode'] ?: '',
+            'landmark' => $u['landmark'] ?: '',
+            'isDefault' => true,
+            'type' => 'home'
+        ]];
+    }
+
+    $u['addresses'] = $addressesList;
+    $u['savedAddresses'] = $addressesList;
+
+    $defAddr = null;
+    foreach ($addressesList as $ad) {
+        if (!empty($ad['isDefault'])) { $defAddr = $ad; break; }
+    }
+    if (!$defAddr && !empty($addressesList[0])) $defAddr = $addressesList[0];
+
+    if ($defAddr) {
+        if (empty($u['city']) && !empty($defAddr['city'])) $u['city'] = $defAddr['city'];
+        if (empty($u['state']) && !empty($defAddr['state'])) $u['state'] = $defAddr['state'];
+        if (empty($u['address']) && !empty($defAddr['street'])) $u['address'] = $defAddr['street'];
+        if (empty($u['pincode']) && !empty($defAddr['pincode'])) $u['pincode'] = $defAddr['pincode'];
+        if (empty($u['landmark']) && !empty($defAddr['landmark'])) $u['landmark'] = $defAddr['landmark'];
+        if (empty($u['phone']) && !empty($defAddr['phone'])) $u['phone'] = $defAddr['phone'];
+    }
+
+    if (!empty($u['wishlist'])) {
+        $u['wishlist'] = is_string($u['wishlist']) ? (json_decode($u['wishlist'], true) ?: []) : $u['wishlist'];
+    } else {
+        $u['wishlist'] = [];
+    }
 }
 
 function ensureOrdersTableSchema($pdo) {
@@ -1699,16 +1762,26 @@ try {
                     } catch (Exception $e) {}
                 }
 
+                enrichUserLocationAndAddresses($foundUser);
+
                 $user = [
                     'id' => $foundUser['id'],
                     'name' => $foundUser['name'] ?: explode('@', $email)[0],
                     'email' => $foundUser['email'],
-                    'phone' => $custPhone,
+                    'phone' => $custPhone ?: ($foundUser['phone'] ?? ''),
                     'role' => $foundUser['role'] ?: 'Customer',
                     'walletBalance' => (float)($foundUser['wallet_balance'] ?? 0),
                     'referralCode' => $foundUser['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
                     'isVerified' => true,
-                    'tier' => $foundUser['tier'] ?: 'Silver'
+                    'tier' => $foundUser['tier'] ?: 'Silver',
+                    'city' => $foundUser['city'] ?? '',
+                    'state' => $foundUser['state'] ?? '',
+                    'address' => $foundUser['address'] ?? '',
+                    'pincode' => $foundUser['pincode'] ?? '',
+                    'landmark' => $foundUser['landmark'] ?? '',
+                    'addresses' => $foundUser['addresses'] ?? [],
+                    'savedAddresses' => $foundUser['savedAddresses'] ?? [],
+                    'wishlist' => $foundUser['wishlist'] ?? []
                 ];
 
                 echo json_encode([
@@ -2152,16 +2225,28 @@ try {
                 $tier = $existingUser && !empty($existingUser['tier']) ? $existingUser['tier'] : ($isAdmin ? 'Platinum Root Access' : 'Silver');
                 $referralCode = $existingUser && !empty($existingUser['referral_code']) ? $existingUser['referral_code'] : ($isAdmin ? 'JANANIROOT' : 'JANANI' . rand(1000, 9999));
 
+                if ($existingUser) {
+                    enrichUserLocationAndAddresses($existingUser);
+                }
+
                 $user = [
                     'id' => $userId,
                     'name' => $userName,
                     'email' => $userEmail,
-                    'phone' => $userPhone,
+                    'phone' => $userPhone ?: ($existingUser['phone'] ?? ''),
                     'role' => $userRole,
                     'walletBalance' => $walletBalance,
                     'referralCode' => $referralCode,
                     'isVerified' => true,
-                    'tier' => $tier
+                    'tier' => $tier,
+                    'city' => $existingUser['city'] ?? '',
+                    'state' => $existingUser['state'] ?? '',
+                    'address' => $existingUser['address'] ?? '',
+                    'pincode' => $existingUser['pincode'] ?? '',
+                    'landmark' => $existingUser['landmark'] ?? '',
+                    'addresses' => $existingUser['addresses'] ?? [],
+                    'savedAddresses' => $existingUser['savedAddresses'] ?? [],
+                    'wishlist' => $existingUser['wishlist'] ?? []
                 ];
 
                 // Synchronize user to MySQL users table
@@ -4443,6 +4528,53 @@ try {
                         @sendOrderConfirmationInvoiceEmail($created ?: $body, $smtp_user, $smtp_pass, $admin_email);
                     } catch (Exception $emailEx) {}
 
+                    // Auto-sync customer address in users table from order shipping address
+                    if (!empty($custEmail) && $custEmail !== 'patron@jananiagro.com') {
+                        try {
+                            $sAddr = is_array($sAddrObj) ? $sAddrObj : (json_decode($shippingAddr, true) ?: []);
+                            if (!empty($sAddr) && is_array($sAddr)) {
+                                $ordCity = trim($sAddr['city'] ?? '');
+                                $ordState = trim($sAddr['state'] ?? '');
+                                $ordStreet = trim($sAddr['street'] ?? ($sAddr['address'] ?? ''));
+                                $ordPincode = trim($sAddr['pincode'] ?? '');
+                                $ordLandmark = trim($sAddr['landmark'] ?? '');
+                                $ordPhone = trim($sAddr['phone'] ?? $custPhone);
+
+                                $uGet = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
+                                $uGet->execute([$custEmail]);
+                                $uRow = $uGet->fetch();
+                                if ($uRow) {
+                                    $uSaved = !empty($uRow['saved_addresses']) ? json_decode($uRow['saved_addresses'], true) : [];
+                                    if (!is_array($uSaved)) $uSaved = [];
+                                    if (empty($uSaved) && (!empty($ordStreet) || !empty($ordCity))) {
+                                        $uSaved[] = [
+                                            'id' => 'addr-' . time(),
+                                            'name' => $custName,
+                                            'phone' => $ordPhone,
+                                            'street' => $ordStreet,
+                                            'landmark' => $ordLandmark,
+                                            'city' => $ordCity,
+                                            'state' => $ordState,
+                                            'pincode' => $ordPincode,
+                                            'isDefault' => true,
+                                            'type' => 'home'
+                                        ];
+                                    }
+                                    $upSql = "UPDATE `users` SET 
+                                        `city` = IF(`city` IS NULL OR `city` = '', ?, `city`),
+                                        `state` = IF(`state` IS NULL OR `state` = '', ?, `state`),
+                                        `address` = IF(`address` IS NULL OR `address` = '', ?, `address`),
+                                        `pincode` = IF(`pincode` IS NULL OR `pincode` = '', ?, `pincode`),
+                                        `landmark` = IF(`landmark` IS NULL OR `landmark` = '', ?, `landmark`),
+                                        `phone` = IF(`phone` IS NULL OR `phone` = '', ?, `phone`),
+                                        `saved_addresses` = IF(`saved_addresses` IS NULL OR `saved_addresses` = '' OR `saved_addresses` = '[]', ?, `saved_addresses`)
+                                        WHERE `email` = ?";
+                                    $pdo->prepare($upSql)->execute([$ordCity, $ordState, $ordStreet, $ordPincode, $ordLandmark, $ordPhone, json_encode($uSaved), $custEmail]);
+                                }
+                            }
+                        } catch (Exception $uEx) {}
+                    }
+
                     echo json_encode(['success' => true, 'message' => "Order {$orderNum} recorded in MySQL with full realtime breakdown", 'data' => $created, 'order' => $created, 'orderId' => $orderNum]);
                     exit;
                 } else {
@@ -4550,6 +4682,7 @@ try {
                     $user = $stmt->fetch();
                     if ($user) {
                         $user['preferences'] = is_string($user['preferences']) ? json_decode($user['preferences'], true) : $user['preferences'];
+                        enrichUserLocationAndAddresses($user);
                         
                         // Check preferences addresses first for phone and real name
                         if (empty($user['phone']) && !empty($user['preferences']['addresses']) && is_array($user['preferences']['addresses'])) {
@@ -4647,6 +4780,7 @@ try {
                     $u['loyaltyPoints'] = (int)($u['loyalty_points'] ?? 0);
                     $u['isVerified'] = (bool)($u['is_verified'] ?? 1);
                     $u['preferences'] = is_string($u['preferences']) ? json_decode($u['preferences'], true) : $u['preferences'];
+                    enrichUserLocationAndAddresses($u);
 
                     // Auto-backfill phone and name if empty from preferences addresses or orders
                     $needsUpdate = false;
@@ -4835,6 +4969,43 @@ try {
                     if (isset($body['walletBalance']) || isset($body['wallet_balance'])) { $fields[] = "`wallet_balance` = ?"; $vals[] = (float)($body['walletBalance'] ?? $body['wallet_balance']); }
                     if (isset($body['loyaltyPoints']) || isset($body['loyalty_points'])) { $fields[] = "`loyalty_points` = ?"; $vals[] = (int)($body['loyaltyPoints'] ?? $body['loyalty_points']); }
 
+                    // Saved Addresses & Delivery locations persistence
+                    $incomingAddresses = $body['saved_addresses'] ?? ($body['addresses'] ?? ($body['savedAddresses'] ?? null));
+                    if ($incomingAddresses !== null) {
+                        $parsedAddr = is_string($incomingAddresses) ? json_decode($incomingAddresses, true) : $incomingAddresses;
+                        if (!is_array($parsedAddr)) $parsedAddr = [];
+                        $fields[] = "`saved_addresses` = ?";
+                        $vals[] = json_encode($parsedAddr);
+
+                        $defA = null;
+                        foreach ($parsedAddr as $pa) {
+                            if (!empty($pa['isDefault'])) { $defA = $pa; break; }
+                        }
+                        if (!$defA && !empty($parsedAddr[0])) $defA = $parsedAddr[0];
+
+                        if ($defA) {
+                            if (!isset($body['city']) && !empty($defA['city'])) { $fields[] = "`city` = ?"; $vals[] = trim($defA['city']); }
+                            if (!isset($body['state']) && !empty($defA['state'])) { $fields[] = "`state` = ?"; $vals[] = trim($defA['state']); }
+                            if (!isset($body['address']) && !empty($defA['street'])) { $fields[] = "`address` = ?"; $vals[] = trim($defA['street']); }
+                            if (!isset($body['pincode']) && !empty($defA['pincode'])) { $fields[] = "`pincode` = ?"; $vals[] = trim($defA['pincode']); }
+                            if (!isset($body['landmark']) && !empty($defA['landmark'])) { $fields[] = "`landmark` = ?"; $vals[] = trim($defA['landmark']); }
+                        }
+                    }
+
+                    if (isset($body['city']) && $body['city'] !== '') { $fields[] = "`city` = ?"; $vals[] = trim($body['city']); }
+                    if (isset($body['state']) && $body['state'] !== '') { $fields[] = "`state` = ?"; $vals[] = trim($body['state']); }
+                    if (isset($body['address']) && $body['address'] !== '') { $fields[] = "`address` = ?"; $vals[] = trim($body['address']); }
+                    if (isset($body['pincode']) && $body['pincode'] !== '') { $fields[] = "`pincode` = ?"; $vals[] = trim($body['pincode']); }
+                    if (isset($body['landmark']) && $body['landmark'] !== '') { $fields[] = "`landmark` = ?"; $vals[] = trim($body['landmark']); }
+
+                    // Wishlist persistence in MySQL users table
+                    if (isset($body['wishlist'])) {
+                        $incomingW = is_string($body['wishlist']) ? json_decode($body['wishlist'], true) : $body['wishlist'];
+                        if (!is_array($incomingW)) $incomingW = [];
+                        $fields[] = "`wishlist` = ?";
+                        $vals[] = json_encode($incomingW);
+                    }
+
                     // Fetch existing user preferences if available to merge
                     $searchId = $id ?: ($body['id'] ?? '');
                     $searchEmail = strtolower(trim($body['email'] ?? ($body['identifier'] ?? $id)));
@@ -4916,6 +5087,7 @@ try {
                             $updated['loyaltyPoints'] = (int)($updated['loyalty_points'] ?? 0);
                             $updated['isVerified'] = (bool)($updated['is_verified'] ?? 1);
                             $updated['preferences'] = is_string($updated['preferences']) ? json_decode($updated['preferences'], true) : $updated['preferences'];
+                            enrichUserLocationAndAddresses($updated);
                         }
                         echo json_encode(['success' => true, 'message' => 'Customer profile updated in MySQL successfully', 'data' => $updated, 'customer' => $updated, 'user' => $updated]);
                         exit;

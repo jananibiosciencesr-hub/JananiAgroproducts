@@ -8278,6 +8278,18 @@ export function loadUserSavedAddresses(userEmailOrId?: string | null): any[] {
         (u.id && u.id.toLowerCase() === userEmailOrId.toLowerCase())
       );
       if (isMatch) {
+        if (Array.isArray(u.saved_addresses) && u.saved_addresses.length > 0) {
+          localStorage.setItem(key, JSON.stringify(u.saved_addresses));
+          return u.saved_addresses;
+        }
+        if (Array.isArray(u.savedAddresses) && u.savedAddresses.length > 0) {
+          localStorage.setItem(key, JSON.stringify(u.savedAddresses));
+          return u.savedAddresses;
+        }
+        if (Array.isArray(u.addresses) && u.addresses.length > 0) {
+          localStorage.setItem(key, JSON.stringify(u.addresses));
+          return u.addresses;
+        }
         if (Array.isArray(u.preferences?.addresses) && u.preferences.addresses.length > 0) {
           localStorage.setItem(key, JSON.stringify(u.preferences.addresses));
           return u.preferences.addresses;
@@ -8322,6 +8334,8 @@ export function saveUserSavedAddresses(userEmailOrId: string | null | undefined,
     if (userEmailOrId && userEmailOrId !== "guest") {
       const defaultAddr = cleanList.find((a: any) => a.isDefault) || cleanList[0];
       const extraProfile: any = {
+        saved_addresses: cleanList,
+        addresses: cleanList,
         preferences: { addresses: cleanList }
       };
       if (defaultAddr?.phone) {
@@ -8330,6 +8344,11 @@ export function saveUserSavedAddresses(userEmailOrId: string | null | undefined,
       if (defaultAddr?.fullName || defaultAddr?.name) {
         extraProfile.name = defaultAddr.fullName || defaultAddr.name;
       }
+      if (defaultAddr?.city) extraProfile.city = defaultAddr.city;
+      if (defaultAddr?.state) extraProfile.state = defaultAddr.state;
+      if (defaultAddr?.street || defaultAddr?.address) extraProfile.address = defaultAddr.street || defaultAddr.address;
+      if (defaultAddr?.pincode) extraProfile.pincode = defaultAddr.pincode;
+      if (defaultAddr?.landmark) extraProfile.landmark = defaultAddr.landmark;
 
       updateUserProfileApi(userEmailOrId, extraProfile).then((res) => {
         if (res?.success && (res.customer || res.user || res.data)) {
@@ -8342,6 +8361,11 @@ export function saveUserSavedAddresses(userEmailOrId: string | null | undefined,
               if (srv.phone && !u.phone) { u.phone = srv.phone; changed = true; }
               if (srv.name && (!u.name || u.name.includes("@"))) { u.name = srv.name; changed = true; }
               if (srv.id && u.id !== srv.id) { u.id = srv.id; changed = true; }
+              if (srv.city && !u.city) { u.city = srv.city; changed = true; }
+              if (srv.state && !u.state) { u.state = srv.state; changed = true; }
+              if (srv.address && !u.address) { u.address = srv.address; changed = true; }
+              if (srv.pincode && !u.pincode) { u.pincode = srv.pincode; changed = true; }
+              if (srv.landmark && !u.landmark) { u.landmark = srv.landmark; changed = true; }
               if (changed) {
                 localStorage.setItem("janani_user", JSON.stringify(u));
                 localStorage.setItem("janani_auth_user", JSON.stringify(u));

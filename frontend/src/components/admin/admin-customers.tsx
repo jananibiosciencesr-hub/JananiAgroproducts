@@ -43,6 +43,7 @@ import {
   type CustomerQueryParams
 } from "@/lib/api";
 import { validatePhone, validateEmail } from "@/lib/validation";
+import { products } from "@/lib/catalog";
 
 export interface CustomersManagementProps {
   searchQuery?: string;
@@ -417,13 +418,21 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
 
                       {/* Location */}
                       <td className="px-3 py-4 text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="size-3.5 text-emerald-600 shrink-0" />
-                          <div>
-                            <p className="font-semibold text-foreground text-xs">{c.city || "India"}</p>
-                            <p className="text-[10px] text-muted-foreground">{c.state || "Karnataka"}</p>
-                          </div>
-                        </div>
+                        {(() => {
+                          const cCity = c.city || c.addresses?.[0]?.city || c.savedAddresses?.[0]?.city || "";
+                          const cState = c.state || c.addresses?.[0]?.state || c.savedAddresses?.[0]?.state || "";
+                          const topLoc = cCity || (cState ? cState : "India");
+                          const botLoc = cState ? cState : (cCity ? "Andhra Pradesh" : "India");
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="size-3.5 text-emerald-600 shrink-0" />
+                              <div>
+                                <p className="font-semibold text-foreground text-xs">{topLoc}</p>
+                                <p className="text-[10px] text-muted-foreground">{botLoc}</p>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Tier & Loyalty */}
@@ -741,7 +750,15 @@ function CustomerProfileDrawer({
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><Mail className="size-3.5 text-muted-foreground/80" /> {customer.email}</span>
                 <span className="flex items-center gap-1"><Phone className="size-3.5 text-muted-foreground/80" /> {customer.phone}</span>
-                <span className="flex items-center gap-1"><MapPin className="size-3.5 text-emerald-600" /> {customer.city}, {customer.state}</span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="size-3.5 text-emerald-600" />
+                  {(() => {
+                    const dCity = customer.city || customer.addresses?.[0]?.city || customer.savedAddresses?.[0]?.city || "";
+                    const dState = customer.state || customer.addresses?.[0]?.state || customer.savedAddresses?.[0]?.state || "";
+                    if (dCity && dState) return `${dCity}, ${dState}`;
+                    return dCity || dState || "India";
+                  })()}
+                </span>
               </div>
 
               <div className="mt-2.5 flex items-center gap-2 flex-wrap">
@@ -778,9 +795,9 @@ function CustomerProfileDrawer({
           {[
             { id: "overview", label: "Overview", icon: TrendingUp },
             { id: "orders", label: `Orders (${customer.orderHistory?.length || 0})`, icon: ShoppingBag },
-            { id: "wishlist", label: `Wishlist (${customer.wishlist?.length || 0})`, icon: Heart },
+            { id: "wishlist", label: `Wishlist (${(customer.wishlist || []).length})`, icon: Heart },
             { id: "cart", label: `Cart (${customer.cart?.length || 0})`, icon: ShoppingCart },
-            { id: "addresses", label: `Addresses (${customer.addresses?.length || 0})`, icon: MapPin },
+            { id: "addresses", label: `Addresses (${(customer.addresses || customer.savedAddresses || customer.preferences?.addresses || (customer.address ? [1] : [])).length})`, icon: MapPin },
             { id: "wallet", label: "Wallet & Ledger", icon: Wallet },
             { id: "referrals", label: "Referrals & Coupons", icon: Gift }
           ].map((tab) => {
@@ -951,41 +968,58 @@ function CustomerProfileDrawer({
           )}
 
           {/* TAB 3: WISHLIST */}
-          {activeTab === "wishlist" && (
-            <div className="space-y-3 animate-in fade-in">
-              {(!customer.wishlist || customer.wishlist.length === 0) ? (
-                <div className="py-12 text-center text-muted-foreground text-xs">
-                  <Heart className="size-8 mx-auto text-muted-foreground/60 mb-2" />
-                  <p>Customer has not saved any products to wishlist.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {customer.wishlist.map((item: any) => (
-                    <div key={item.id} className="rounded-2xl border border-border bg-card p-3.5 flex items-center gap-3 shadow-xs">
-                      <img
-                        src={item.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80"}
-                        alt={item.name}
-                        className="size-14 rounded-xl object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-foreground text-xs truncate">{item.name}</h4>
-                        <p className="text-[10px] text-muted-foreground">{item.unit || "1 unit"}</p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="font-extrabold text-foreground text-xs">₹{item.price}</span>
-                          {item.originalPrice && (
-                            <span className="text-[10px] text-muted-foreground line-through">₹{item.originalPrice}</span>
-                          )}
-                          <span className="rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[9px] px-1.5 font-bold">
-                            In Stock
-                          </span>
+          {activeTab === "wishlist" && (() => {
+            const rawWishlist = Array.isArray(customer.wishlist) ? customer.wishlist : [];
+            const resolvedWishlist = rawWishlist.map((item: any, idx: number) => {
+              if (item && typeof item === "object" && item.name) return item;
+              const idStr = String(item);
+              const found = products.find((p: any) => String(p.id) === idStr || p.slug === idStr);
+              if (found) return found;
+              return {
+                id: idStr || `w-${idx}`,
+                name: `Saved Bio Input (${idStr})`,
+                price: 499,
+                image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80",
+                unit: "1 Unit"
+              };
+            });
+
+            return (
+              <div className="space-y-3 animate-in fade-in">
+                {resolvedWishlist.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground text-xs">
+                    <Heart className="size-8 mx-auto text-muted-foreground/60 mb-2" />
+                    <p>Customer has not saved any products to wishlist.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {resolvedWishlist.map((item: any) => (
+                      <div key={item.id} className="rounded-2xl border border-border bg-card p-3.5 flex items-center gap-3 shadow-xs">
+                        <img
+                          src={item.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80"}
+                          alt={item.name}
+                          className="size-14 rounded-xl object-cover"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-foreground text-xs truncate">{item.name}</h4>
+                          <p className="text-[10px] text-muted-foreground">{item.unit || item.variants?.[0]?.title || "1 unit"}</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="font-extrabold text-foreground text-xs">₹{item.price || item.variants?.[0]?.price || 499}</span>
+                            {item.originalPrice && (
+                              <span className="text-[10px] text-muted-foreground line-through">₹{item.originalPrice}</span>
+                            )}
+                            <span className="rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[9px] px-1.5 font-bold">
+                              In Stock
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* TAB 4: ACTIVE CART */}
           {activeTab === "cart" && (
@@ -1027,34 +1061,64 @@ function CustomerProfileDrawer({
           )}
 
           {/* TAB 5: ADDRESS BOOK */}
-          {activeTab === "addresses" && (
-            <div className="space-y-3 animate-in fade-in">
-              {(!customer.addresses || customer.addresses.length === 0) ? (
-                <div className="py-12 text-center text-muted-foreground text-xs">
-                  <MapPin className="size-8 mx-auto text-muted-foreground/60 mb-2" />
-                  <p>No saved addresses.</p>
-                </div>
-              ) : (
-                customer.addresses.map((addr: any) => (
-                  <div key={addr.id} className="rounded-2xl border border-border bg-card p-4 space-y-1.5 shadow-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-foreground text-xs">{addr.label || "Delivery Address"}</span>
-                      {addr.isDefault && (
-                        <span className="rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[9px] px-2 py-0.5 font-bold">
-                          Default Shipping
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-foreground font-medium">{addr.street}</p>
-                    <p className="text-xs text-muted-foreground">{addr.city}, {addr.state} — {addr.pincode}</p>
-                    <p className="text-[11px] text-muted-foreground pt-1 flex items-center gap-1">
-                      <Phone className="size-3 text-muted-foreground/80" /> {addr.phone || customer.phone}
-                    </p>
+          {activeTab === "addresses" && (() => {
+            const rawAddrs = (customer.addresses && customer.addresses.length > 0)
+              ? customer.addresses
+              : (customer.savedAddresses && customer.savedAddresses.length > 0)
+                ? customer.savedAddresses
+                : (customer.preferences?.addresses && customer.preferences.addresses.length > 0)
+                  ? customer.preferences.addresses
+                  : [];
+
+            const addrList = rawAddrs.length > 0 ? rawAddrs : ((customer.address || customer.city) ? [{
+              id: 'addr-primary',
+              label: 'Default Delivery',
+              street: customer.address || '',
+              landmark: customer.landmark || '',
+              city: customer.city || '',
+              state: customer.state || '',
+              pincode: customer.pincode || '',
+              phone: customer.phone || '',
+              isDefault: true,
+              type: 'home'
+            }] : []);
+
+            return (
+              <div className="space-y-3 animate-in fade-in">
+                {addrList.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground text-xs">
+                    <MapPin className="size-8 mx-auto text-muted-foreground/60 mb-2" />
+                    <p>No saved addresses.</p>
                   </div>
-                ))
-              )}
-            </div>
-          )}
+                ) : (
+                  addrList.map((addr: any, idx: number) => (
+                    <div key={addr.id || idx} className="rounded-2xl border border-border bg-card p-4 space-y-1.5 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-foreground text-xs uppercase tracking-wide">
+                          {addr.type ? `${addr.type} • ` : ''}{addr.label || addr.name || "Delivery Address"}
+                        </span>
+                        {addr.isDefault && (
+                          <span className="rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[9px] px-2 py-0.5 font-bold">
+                            Default Shipping
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-foreground font-medium">{addr.street || addr.address}</p>
+                      {addr.landmark && (
+                        <p className="text-[11px] text-muted-foreground">Landmark: {addr.landmark}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground font-semibold">
+                        {[addr.city, addr.state].filter(Boolean).join(", ")}{addr.pincode ? ` — ${addr.pincode}` : ''}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground pt-1 flex items-center gap-1">
+                        <Phone className="size-3 text-muted-foreground/80" /> {addr.phone || customer.phone || "Not provided"}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            );
+          })()}
 
           {/* TAB 6: WALLET & LEDGER */}
           {activeTab === "wallet" && (

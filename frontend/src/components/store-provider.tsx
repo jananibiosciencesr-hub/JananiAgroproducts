@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import { products, products as initialProducts, categories as initialCategories, isGroceryCategory, type Product, parseCartItems } from "@/lib/catalog";
-import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories, updateUserProfileApi } from "@/lib/api";
+import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories, updateUserProfileApi, getUserAddressKey } from "@/lib/api";
 
 type StoreContextValue = {
   products: Product[];
@@ -316,13 +316,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("janani_auth_token");
         localStorage.removeItem("janani_user_auth_time");
         localStorage.removeItem("janani_auth_time");
-        localStorage.removeItem("janani_wishlist");
-        setWishlist([]);
       }
     }
   }, [user]);
 
-  // Authoritative server reconciliation: sync real customer ID, name, phone, and wallet from MySQL
+  // Authoritative server reconciliation: sync real customer ID, name, phone, wallet, addresses, and wishlist from MySQL
   useEffect(() => {
     if (!user?.email || typeof window === "undefined") return;
     const targetEmail = user.email.toLowerCase().trim();
@@ -336,6 +334,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const srv = data.customer || data.data || data.user;
         if (!srv) return;
 
+        // Reconcile wishlist with MySQL database
+        if (Array.isArray(srv.wishlist) && srv.wishlist.length > 0) {
+          setWishlist((cur) => {
+            const combined = Array.from(new Set([...cur.map(String), ...srv.wishlist.map(String)]));
+            try { localStorage.setItem("janani_wishlist", JSON.stringify(combined)); } catch (e) {}
+            return combined;
+          });
+        }
+
+        // Cache customer addresses from MySQL database
+        const srvAddrs = srv.addresses || srv.savedAddresses;
+        if (Array.isArray(srvAddrs) && srvAddrs.length > 0) {
+          try {
+            const aKey = getUserAddressKey(srv.email || targetEmail);
+            localStorage.setItem(aKey, JSON.stringify(srvAddrs));
+          } catch (e) {}
+        }
+
         setUser((prev) => {
           if (!prev) return null;
           if (typeof window !== "undefined") {
@@ -347,6 +363,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             id: srv.id || prev.id,
             name: (srv.name && !srv.name.includes("@") && srv.name !== "Valued Patron" && srv.name !== "Customer") ? srv.name : (prev.name || srv.name),
             phone: srv.phone || prev.phone,
+            city: srv.city || prev.city,
+            state: srv.state || prev.state,
+            address: srv.address || prev.address,
+            pincode: srv.pincode || prev.pincode,
             walletBalance: srv.walletBalance !== undefined ? Number(srv.walletBalance) : (srv.wallet_balance !== undefined ? Number(srv.wallet_balance) : Number(prev.walletBalance ?? 0)),
             loyaltyPoints: srv.loyaltyPoints !== undefined ? Number(srv.loyaltyPoints) : (srv.loyalty_points !== undefined ? Number(srv.loyalty_points) : Number(prev.loyaltyPoints ?? 0)),
           };
@@ -762,21 +782,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const itemBase = (itemStr.includes("__") ? itemStr.split("__")[0] : itemStr) || itemStr;
             return possibleKeys.has(itemStr) || possibleKeys.has(itemBase);
           });
+          let nextList: (string | number)[];
           if (isPresent) {
             toast.info("Removed from your saved wishlist");
-            return current.filter((item) => {
+            nextList = current.filter((item) => {
               const itemStr = String(item).toLowerCase().trim();
               const itemBase = (itemStr.includes("__") ? itemStr.split("__")[0] : itemStr) || itemStr;
               return !possibleKeys.has(itemStr) && !possibleKeys.has(itemBase);
             });
           } else {
             toast.success("Saved to your wishlist!");
-            return [...current, matched ? matched.id : id];
+            nextList = [...current, matched ? matched.id : id];
           }
+          try {
+            localStorage.setItem("janani_wishlist", JSON.stringify(nextList));
+          } catch (e) {}
+          if (user?.email && user.email !== "guest") {
+            updateUserProfileApi(user.email, { wishlist: nextList }).catch(() => {});
+          }
+          return nextList;
         });
       },
       clearWishlist: () => {
         setWishlist([]);
+        try {
+          localStorage.setItem("janani_wishlist", JSON.stringify([]));
+        } catch (e) {}
+        if (user?.email && user.email !== "guest") {
+          updateUserProfileApi(user.email, { wishlist: [] }).catch(() => {});
+        }
         toast.info("Wishlist cleared");
       },
       moveToCart: (id: number | string, quantity = 1, variantId = "1l") => {
