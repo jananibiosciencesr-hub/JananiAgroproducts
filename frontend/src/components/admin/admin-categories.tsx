@@ -198,20 +198,22 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
     // Reassign products locally in localStorage if any exist
     if (deletedCat && typeof window !== "undefined") {
       try {
-        const storedProds = JSON.parse(localStorage.getItem("jap_admin_products") || "[]");
-        let changed = false;
-        const updatedProds = storedProds.map((p: any) => {
-          const pCat = (p.category || p.category_name || "").toLowerCase().trim();
-          const dName = (deletedCat.name || "").toLowerCase().trim();
-          const dSlug = (deletedCat.slug || "").toLowerCase().trim();
-          if (pCat === dName || pCat === dSlug || String(p.category_id) === String(id)) {
-            changed = true;
-            return { ...p, category: "Other", category_name: "Other", category_id: "cat-other", category_slug: "other" };
+        for (const storageKey of ["janani_admin_products", "jap_admin_products"]) {
+          const storedProds = JSON.parse(localStorage.getItem(storageKey) || "[]");
+          let changed = false;
+          const updatedProds = storedProds.map((p: any) => {
+            const pCat = (p.category || p.category_name || "").toLowerCase().trim();
+            const dName = (deletedCat.name || "").toLowerCase().trim();
+            const dSlug = (deletedCat.slug || "").toLowerCase().trim();
+            if (pCat === dName || pCat === dSlug || String(p.category_id) === String(id)) {
+              changed = true;
+              return { ...p, category: "Other", category_name: "Other", category_id: "cat-other", category_slug: "other" };
+            }
+            return p;
+          });
+          if (changed) {
+            localStorage.setItem(storageKey, JSON.stringify(updatedProds));
           }
-          return p;
-        });
-        if (changed) {
-          localStorage.setItem("jap_admin_products", JSON.stringify(updatedProds));
         }
       } catch (e) {}
     }
@@ -282,23 +284,25 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
     // Reassign products locally in localStorage if any exist
     if (deletedCats.length > 0 && typeof window !== "undefined") {
       try {
-        const storedProds = JSON.parse(localStorage.getItem("jap_admin_products") || "[]");
-        let changed = false;
-        const updatedProds = storedProds.map((p: any) => {
-          const pCat = (p.category || p.category_name || "").toLowerCase().trim();
-          const matches = deletedCats.some((dc) => {
-            const dName = (dc.name || "").toLowerCase().trim();
-            const dSlug = (dc.slug || "").toLowerCase().trim();
-            return pCat === dName || pCat === dSlug || String(p.category_id) === String(dc.id);
+        for (const storageKey of ["janani_admin_products", "jap_admin_products"]) {
+          const storedProds = JSON.parse(localStorage.getItem(storageKey) || "[]");
+          let changed = false;
+          const updatedProds = storedProds.map((p: any) => {
+            const pCat = (p.category || p.category_name || "").toLowerCase().trim();
+            const matches = deletedCats.some((dc) => {
+              const dName = (dc.name || "").toLowerCase().trim();
+              const dSlug = (dc.slug || "").toLowerCase().trim();
+              return pCat === dName || pCat === dSlug || String(p.category_id) === String(dc.id);
+            });
+            if (matches) {
+              changed = true;
+              return { ...p, category: "Other", category_name: "Other", category_id: "cat-other", category_slug: "other" };
+            }
+            return p;
           });
-          if (matches) {
-            changed = true;
-            return { ...p, category: "Other", category_name: "Other", category_id: "cat-other", category_slug: "other" };
+          if (changed) {
+            localStorage.setItem(storageKey, JSON.stringify(updatedProds));
           }
-          return p;
-        });
-        if (changed) {
-          localStorage.setItem("jap_admin_products", JSON.stringify(updatedProds));
         }
       } catch (e) {}
     }

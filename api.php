@@ -699,11 +699,17 @@ if (!$pdo) {
             'success' => true,
             'db_fallback' => true,
             'categories' => [
-                ['id' => 'cat-bio-fertilizers', 'name' => 'Bio Fertilizers', 'slug' => 'bio-fertilizers', 'product_count' => 2, 'image' => '/products/dharani.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-bio-pesticides', 'name' => 'Bio Pesticides', 'slug' => 'bio-pesticides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🛡️', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-bio-fungicides', 'name' => 'Bio Fungicides', 'slug' => 'bio-fungicides', 'product_count' => 2, 'image' => '/products/harit.jpg', 'icon' => '🍄', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-bio-stimulants', 'name' => 'Bio Stimulants', 'slug' => 'bio-stimulants', 'product_count' => 4, 'image' => '/products/pushkal.jpg', 'icon' => '⚡', 'active' => 1, 'featured' => 1],
-                ['id' => 'cat-micro-nutrients', 'name' => 'Micro Nutrients', 'slug' => 'micro-nutrients', 'product_count' => 2, 'image' => '/products/annada.jpg', 'icon' => '🌱', 'active' => 1, 'featured' => 1]
+                ['id' => 'cat-bio-fertilizers', 'name' => 'Bio Fertilizers', 'slug' => 'bio-fertilizers', 'product_count' => 2, 'image' => '/products/dharani.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-bio-pesticides', 'name' => 'Bio Pesticides', 'slug' => 'bio-pesticides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🛡️', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-bio-fungicides', 'name' => 'Bio Fungicides', 'slug' => 'bio-fungicides', 'product_count' => 2, 'image' => '/products/harit.jpg', 'icon' => '🍄', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-bio-stimulants', 'name' => 'Bio Stimulants', 'slug' => 'bio-stimulants', 'product_count' => 6, 'image' => '/products/pushkal.jpg', 'icon' => '⚡', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-micro-nutrients', 'name' => 'Micro Nutrients', 'slug' => 'micro-nutrients', 'product_count' => 3, 'image' => '/products/annada.jpg', 'icon' => '🌱', 'active' => 1, 'featured' => 1, 'trending' => 1],
+                ['id' => 'cat-insecticides', 'name' => 'Insecticides', 'slug' => 'insecticides', 'product_count' => 1, 'image' => '/products/balavan.jpg', 'icon' => '🦗', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-fungicides', 'name' => 'Fungicides', 'slug' => 'fungicides', 'product_count' => 1, 'image' => '/products/suraksha.jpg', 'icon' => '🍃', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-botanical-extracts', 'name' => 'Botanical Extracts', 'slug' => 'botanical-extracts', 'product_count' => 1, 'image' => '/products/neem-oil.jpg', 'icon' => '🌿', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-water-solubles', 'name' => 'Water Solubles', 'slug' => 'water-solubles', 'product_count' => 1, 'image' => '/products/dhanya.jpg', 'icon' => '💧', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-agri-inputs', 'name' => 'Agri Inputs', 'slug' => 'agri-inputs', 'product_count' => 2, 'image' => '/products/bhumi-shakti.jpg', 'icon' => '🚜', 'active' => 1, 'featured' => 0, 'trending' => 0],
+                ['id' => 'cat-soil-protection', 'name' => 'Soil Protection', 'slug' => 'soil-protection', 'product_count' => 0, 'image' => '/images/categories/others.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 0, 'trending' => 0]
             ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;

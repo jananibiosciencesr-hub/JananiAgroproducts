@@ -329,42 +329,53 @@ export async function getProducts(params?: { category?: string; search?: string;
     } catch (e) { }
   }
 
-  // Unified Merge Map: Static 18 products -> Local Admin Products -> Live MySQL Products
+  // Unified Map: Live MySQL Products is the single source of truth.
+  // Static catalog and local storage are strictly fallback when backend is unreachable.
   const mergedMap = new Map<string, Product>();
 
-  // 1. Static Catalog (Base 18 genuine products including ROOT PLUS)
-  products.forEach((p) => {
-    const norm = normalizeProduct(p);
-    mergedMap.set(norm.slug || String(norm.id), norm);
-  });
+  if (fetchedList.length > 0) {
+    // 1. MySQL Live fetched products (highest and exclusive authority)
+    fetchedList.forEach((p) => {
+      if (
+        (p as any).status !== "Trash" &&
+        (p as any).active !== 0 &&
+        (p as any).active !== false &&
+        !p.name?.includes("(Copy)") &&
+        !p.slug?.includes("-copy-") &&
+        !(p as any).sku?.includes("-CPY")
+      ) {
+        mergedMap.set(p.slug || String(p.id), p);
+      }
+    });
 
-  // 2. Local admin products (Filter out any test copies or trash items)
-  localProducts.forEach((p) => {
-    if (
-      (p as any).status !== "Trash" &&
-      (p as any).active !== 0 &&
-      (p as any).active !== false &&
-      !(p as any).name?.includes("(Copy)") &&
-      !(p as any).slug?.includes("-copy-") &&
-      !(p as any).sku?.includes("-CPY")
-    ) {
-      mergedMap.set(p.slug || String(p.id), p);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("janani_admin_products", JSON.stringify(Array.from(mergedMap.values())));
+      } catch (e) { }
     }
-  });
+  } else {
+    // 2. Offline fallback ONLY when MySQL is completely unreachable:
+    localProducts.forEach((p) => {
+      if (
+        (p as any).status !== "Trash" &&
+        (p as any).active !== 0 &&
+        (p as any).active !== false &&
+        !(p as any).name?.includes("(Copy)") &&
+        !(p as any).slug?.includes("-copy-") &&
+        !(p as any).sku?.includes("-CPY")
+      ) {
+        mergedMap.set(p.slug || String(p.id), p);
+      }
+    });
 
-  // 3. MySQL Live fetched products (highest authority, filter out copies/trash)
-  fetchedList.forEach((p) => {
-    if (
-      (p as any).status !== "Trash" &&
-      (p as any).active !== 0 &&
-      (p as any).active !== false &&
-      !p.name?.includes("(Copy)") &&
-      !p.slug?.includes("-copy-") &&
-      !(p as any).sku?.includes("-CPY")
-    ) {
-      mergedMap.set(p.slug || String(p.id), p);
+    // If local storage is also empty, use static catalog fallback
+    if (mergedMap.size === 0) {
+      products.forEach((p) => {
+        const norm = normalizeProduct(p);
+        mergedMap.set(norm.slug || String(norm.id), norm);
+      });
     }
-  });
+  }
 
   const allProducts = Array.from(mergedMap.values());
 
@@ -1755,36 +1766,38 @@ export async function getAdminProducts(params?: {
     } catch (e) { }
   }
 
-  // Merge map: DEFAULT_PRODUCTS (all 18 flagship items) -> Local Storage items -> Remote MySQL items
+  // Unified Map: Remote MySQL items is the single source of truth for Admin products.
+  // DEFAULT_PRODUCTS and local storage are strictly fallback when backend is unreachable.
   const productMap = new Map<string, any>();
 
-  // 1. Defaults (ensure ROOT PLUS and all 18 items exist)
-  DEFAULT_PRODUCTS.forEach((dp) => {
-    const norm = normalizeAdminProduct(dp);
-    productMap.set(norm.slug || String(norm.id), norm);
-  });
+  if (dbList.length > 0) {
+    // 1. MySQL Live database is the exclusive authority
+    dbList.forEach((dbP) => {
+      if (dbP.status !== "Trash") {
+        productMap.set(dbP.slug || String(dbP.id), dbP);
+      }
+    });
+  } else {
+    // 2. Offline fallback ONLY when backend is unreachable
+    localProducts.forEach((lp) => {
+      if (!lp.name?.includes("(Copy)") && !lp.slug?.includes("-copy-") && !lp.sku?.includes("-CPY") && lp.status !== "Trash") {
+        productMap.set(lp.slug || String(lp.id), lp);
+      }
+    });
 
-  // 2. Local storage (purging any legacy copies)
-  localProducts.forEach((lp) => {
-    if (!lp.name?.includes("(Copy)") && !lp.slug?.includes("-copy-") && !lp.sku?.includes("-CPY") && lp.status !== "Trash") {
-      productMap.set(lp.slug || String(lp.id), lp);
+    if (productMap.size === 0) {
+      DEFAULT_PRODUCTS.forEach((dp) => {
+        const norm = normalizeAdminProduct(dp);
+        productMap.set(norm.slug || String(norm.id), norm);
+      });
     }
-  });
-
-  // 3. MySQL (highest authority)
-  dbList.forEach((dbP) => {
-    if (dbP.status !== "Trash") {
-      productMap.set(dbP.slug || String(dbP.id), dbP);
-    } else {
-      productMap.delete(dbP.slug || String(dbP.id));
-    }
-  });
+  }
 
   // Purge any copies that are not explicitly present in active dbList
   const activeDbSlugs = new Set(dbList.map((p) => p.slug || String(p.id)));
   for (const [key, prod] of productMap.entries()) {
     if (prod.name?.includes("(Copy)") || prod.slug?.includes("-copy-") || prod.sku?.includes("-CPY") || prod.status === "Trash") {
-      if (!activeDbSlugs.has(key)) {
+      if (dbList.length > 0 && !activeDbSlugs.has(key)) {
         productMap.delete(key);
       }
     }
@@ -1792,8 +1805,8 @@ export async function getAdminProducts(params?: {
 
   let list = Array.from(productMap.values());
 
-  // Keep localStorage up to date with merged list (excluding any copies or trash)
-  if (typeof window !== "undefined") {
+  // Keep localStorage up to date with clean list (excluding any copies or trash)
+  if (typeof window !== "undefined" && dbList.length > 0) {
     try {
       const cleanList = list.filter((p) => !p.name?.includes("(Copy)") && !p.slug?.includes("-copy-") && !p.sku?.includes("-CPY") && p.status !== "Trash");
       localStorage.setItem("janani_admin_products", JSON.stringify(cleanList));
@@ -3000,25 +3013,20 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
     }
   }
 
-  // Fallback to localStorage and 15 core catalog categories synchronized with MySQL database
+  // Fallback ONLY when MySQL is completely unreachable: canonical 11 categories matching database schema
   if (list.length === 0) {
-    const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
     const catalogSeed = [
       { id: "cat-bio-fertilizers", name: "Bio Fertilizers", slug: "bio-fertilizers", image: "/images/categories/bio-fertilizers.jpg", bannerImage: "/images/categories/bio-fertilizers.jpg", icon: "🌾", count: 2, description: "Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour." },
-      { id: "cat-crop-protection", name: "Biological Crop Protection", slug: "biological-crop-protection", image: "/images/categories/bio-pesticides.jpg", bannerImage: "/images/categories/bio-pesticides.jpg", icon: "🛡️", count: 2, description: "Targeted biological protection defending crops against fungal and bacterial pressures." },
       { id: "cat-bio-pesticides", name: "Bio Pesticides", slug: "bio-pesticides", image: "/images/categories/bio-pesticides.jpg", bannerImage: "/images/categories/bio-pesticides.jpg", icon: "🛡️", count: 1, description: "Targeted biological and microbial pest management formulations for organic insect and borer control." },
-      { id: "cat-plant-nutrients", name: "Organic Plant Nutrients", slug: "organic-plant-nutrients", image: "/images/categories/micro-nutrients.jpg", bannerImage: "/images/categories/micro-nutrients.jpg", icon: "🌱", count: 2, description: "Essential organic plant nutrients, chelated zinc, ferrous, and foliar sprays." },
       { id: "cat-bio-fungicides", name: "Bio Fungicides", slug: "bio-fungicides", image: "/images/categories/fungicides.jpg", bannerImage: "/images/categories/fungicides.jpg", icon: "🍄", count: 2, description: "Protective biofungal formulations defending foliage and roots against wilt and root rot." },
-      { id: "cat-soil-conditioners", name: "Soil Conditioners & Biostimulants", slug: "soil-conditioners-biostimulants", image: "/images/categories/bio-stimulants.jpg", bannerImage: "/images/categories/bio-stimulants.jpg", icon: "⚡", count: 4, description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts for living soil." },
-      { id: "cat-bio-stimulants", name: "Bio Stimulants", slug: "bio-stimulants", image: "/images/categories/bio-stimulants.jpg", bannerImage: "/images/categories/bio-stimulants.jpg", icon: "⚡", count: 4, description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
-      { id: "cat-micro-nutrients", name: "Micro Nutrients", slug: "micro-nutrients", image: "/images/categories/micro-nutrients.jpg", bannerImage: "/images/categories/micro-nutrients.jpg", icon: "🌱", count: 2, description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
+      { id: "cat-bio-stimulants", name: "Bio Stimulants", slug: "bio-stimulants", image: "/images/categories/bio-stimulants.jpg", bannerImage: "/images/categories/bio-stimulants.jpg", icon: "⚡", count: 6, description: "Humic-fulvic biostimulants, amino peptides and seaweed extracts that maximize flowering, fruit set and yield." },
+      { id: "cat-micro-nutrients", name: "Micro Nutrients", slug: "micro-nutrients", image: "/images/categories/micro-nutrients.jpg", bannerImage: "/images/categories/micro-nutrients.jpg", icon: "🌱", count: 3, description: "Chelated essential micronutrients and fish amino acids for correcting chlorosis and supporting balanced crop health." },
       { id: "cat-insecticides", name: "Insecticides", slug: "insecticides", image: "/images/categories/insecticides.jpg", bannerImage: "/images/categories/insecticides.jpg", icon: "🦗", count: 1, description: "Broad-spectrum eco-safe solutions for comprehensive management of sucking pests, mites, caterpillars and borers." },
       { id: "cat-fungicides", name: "Fungicides", slug: "fungicides", image: "/images/categories/fungicides.jpg", bannerImage: "/images/categories/fungicides.jpg", icon: "🍃", count: 1, description: "Protective and curative agricultural fungicides defending foliage and roots against mildew, blights and leaf spots." },
       { id: "cat-botanical-extracts", name: "Botanical Extracts", slug: "botanical-extracts", image: "/images/categories/botanical-extracts.jpg", bannerImage: "/images/categories/botanical-extracts.jpg", icon: "🌿", count: 1, description: "Cold-pressed herbal derivatives and Azadirachtin neem formulations for zero-residue IPM protection." },
       { id: "cat-water-solubles", name: "Water Solubles", slug: "water-solubles", image: "/images/categories/water-solubles.jpg", bannerImage: "/images/categories/water-solubles.jpg", icon: "💧", count: 1, description: "100% water soluble foliar and drip fertigation formulations for immediate plant absorption and rapid vegetative recovery." },
       { id: "cat-agri-inputs", name: "Agri Inputs", slug: "agri-inputs", image: "/images/categories/agri-inputs.jpg", bannerImage: "/images/categories/agri-inputs.jpg", icon: "🚜", count: 2, description: "Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions." },
-      { id: "cat-fungs", name: "fungicides", slug: "fungs", image: "/images/categories/fungicides.jpg", bannerImage: "/images/categories/fungicides.jpg", icon: "🍃", count: 3, description: "Curative and protective agricultural fungicides for sustainable disease management." },
-      { id: "cat-pestocides", name: "pestocides", slug: "pestocides", image: "/images/categories/bio-pesticides.jpg", bannerImage: "/images/categories/bio-pesticides.jpg", icon: "🛡️", count: 0, description: "Formulations for organic pest control and preventive crop health." }
+      { id: "cat-soil-protection", name: "Soil Protection", slug: "soil-protection", image: "/images/categories/others.jpg", bannerImage: "/images/categories/others.jpg", icon: "🌾", count: 0, description: "To protect the soils from the small ants, animals." }
     ].map((c, idx) => ({
       id: c.id,
       name: c.name,
@@ -3038,6 +3046,7 @@ export async function getAdminFullCategories(params?: { status?: string; level?:
       createdAt: "2025-01-01"
     }));
 
+    const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
     if (stored && stored.length > 0) {
       list = stored.map(normalizeAdminCategory).filter(Boolean);
     } else {

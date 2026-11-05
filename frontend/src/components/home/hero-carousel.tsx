@@ -90,7 +90,7 @@ const DEFAULT_SLIDES: HeroSlideData[] = [
     subheadline: "Bio-fertilizers, humic fulvic soil rejuvenators, and concentrated fish amino acids for balanced vegetative and reproductive growth.",
     tags: ["Bhumi Shakti Humic & Fulvic", "Dharani KMB Mobilizer", "Pushkal Fruit Set", "Harit Trichoderma"],
     ctaPrimaryText: "EXPLORE PRODUCTS",
-    ctaPrimaryLink: "/categories/organic-plant-nutrients",
+    ctaPrimaryLink: "/categories/bio-stimulants",
     ctaPrimaryVariant: "emerald",
     ctaSecondaryText: "ENQUIRE NOW",
     ctaSecondaryLink: "/contact",
