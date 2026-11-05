@@ -537,7 +537,7 @@ $userCount = $pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
 if ($userCount <= 1) {
     $users = [
         ['STAFF-001', 'Rajesh Varma', 'admin@jananiagro.com', '+91 98490 55441', 'Super Admin', 250.00, 500, 'Platinum', 'Active', 'JANANI8492'],
-        ['CUST-001', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223', 'Customer', 0.00, 850, 'Gold', 'Active', 'JANANI3821'],
+        ['CUST-001', 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999', 'Customer', 0.00, 850, 'Silver', 'Active', 'JANANI3821'],
         ['CUST-002', 'Vikramaditya Rao', 'vikram.rao@technocorp.in', '+91 99800 44556', 'Customer', 0.00, 320, 'Silver', 'Active', 'JANANI9104']
     ];
     $stmt = $pdo->prepare("INSERT IGNORE INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `referral_code`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -566,7 +566,7 @@ if ($orderCount == 0) {
             2450.00, 245.00, 0.00, 2205.00, 'UPI Instant', 'Paid', 'Delivered', 'Delhivery Air Express', 'DEL-8492048194', 'DEL-8492048194'
         ],
         [
-            'JAP-849202', 'JAP-849202', '10 Sep 2026, 18:45', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223',
+            'JAP-849202', 'JAP-849202', '10 Sep 2026, 18:45', 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999',
             json_encode(['name' => 'Dr. Ananya Iyer', 'street' => 'Villa 14, Palm Meadows, Whitefield', 'city' => 'Bengaluru', 'state' => 'Karnataka', 'pincode' => '560066']),
             json_encode([['productId' => 2, 'title' => 'Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner', 'price' => 380, 'quantity' => 2, 'subtotal' => 760]]),
             3890.00, 583.00, 0.00, 3307.00, 'Razorpay (Credit Card)', 'Paid', 'In Transit', 'Delhivery Air Express', 'DEL-8492048195', 'DEL-8492048195'
