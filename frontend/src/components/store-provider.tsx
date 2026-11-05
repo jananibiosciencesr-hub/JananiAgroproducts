@@ -52,7 +52,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setCart(parsed);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const storedWishlist = localStorage.getItem("janani_wishlist");
@@ -62,7 +62,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setWishlist(parsedW);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const storedCats = localStorage.getItem("janani_admin_categories") || localStorage.getItem("janani_admin_categories_v3");
@@ -93,7 +93,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     // Allow state hydration to commit before enabling localStorage persistence to prevent overwriting with {}
     setTimeout(() => {
@@ -120,7 +120,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             try {
               localStorage.setItem("janani_user", JSON.stringify(parsed));
               localStorage.setItem("janani_auth_user", JSON.stringify(parsed));
-            } catch (e) {}
+            } catch (e) { }
           }
           setUser(parsed);
         } else if (
@@ -136,7 +136,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem("janani_auth_time");
         }
       }
-    } catch (e) {} finally {
+    } catch (e) { } finally {
       isUserHydratedRef.current = true;
     }
   }, []);
@@ -154,7 +154,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const cleanCats = fetchedCats.value.filter((cat: any) => !isGroceryCategory(cat));
         setLiveCategories(cleanCats.length > 0 ? cleanCats : initialCategories);
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const refreshUserProfile = async (currentUser?: AuthUser | null) => {
@@ -173,7 +173,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       try {
         const stored = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
         if (stored) target = JSON.parse(stored);
-      } catch (e) {}
+      } catch (e) { }
     }
     const identifier = target?.email || target?.id;
     if (!identifier) return;
@@ -283,7 +283,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("janani_admin_products");
         localStorage.removeItem("janani_admin_categories");
       }
-    } catch (e) {}
+    } catch (e) { }
 
     return () => {
       window.removeEventListener("janani-products-updated", handleSync);
@@ -346,7 +346,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return merged;
         });
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       isMounted = false;
@@ -375,7 +375,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             window.dispatchEvent(new Event("janani-admin-session-expired"));
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     };
 
     // Run immediately on mount
@@ -416,7 +416,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const initDb = async () => {
       try {
         if (sessionStorage.getItem("janani_db_synced")) return;
-        
+
         // Trigger Hostinger PHP migration engine
         const res = await fetch("/db_init.php");
         if (res.ok) {
@@ -424,10 +424,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           console.log(" Janani Agro Database & Columns automatically verified/created.");
         } else {
           // Fallback to Express endpoint
-          await fetch("/api/db/init").catch(() => {});
+          await fetch("/api/db/init").catch(() => { });
         }
       } catch (e) {
-        fetch("/api/db/init").catch(() => {});
+        fetch("/api/db/init").catch(() => { });
       }
     };
 
@@ -506,7 +506,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
         }
         keysToRemove.forEach((k) => localStorage.removeItem(k));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 2. Clear state synchronously
@@ -518,7 +518,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       try {
         window.dispatchEvent(new Event("janani-customer-logged-out"));
-      } catch (e) {}
+      } catch (e) { }
     }
     toast.info("You have been signed out.");
   };
@@ -795,18 +795,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       clearCart: () => {
         setCart({});
       },
-    deductWalletBalance: (amount: number) => {
-      setUser((prev) => prev ? { ...prev, walletBalance: Math.max(0, (prev.walletBalance || 0) - amount) } : null);
-    },
-    addWalletBalance: (amount: number) => {
-      setUser((prev) => prev ? { ...prev, walletBalance: (prev.walletBalance || 0) + amount } : null);
-    },
-    loginUser,
-    logoutUser,
-    updateUserProfile,
-    updatePreferences
-  };
-}, [cart, wishlist, user, liveProducts, liveCategories]);
+      deductWalletBalance: (amount: number) => {
+        setUser((prev) => prev ? { ...prev, walletBalance: Math.max(0, (prev.walletBalance || 0) - amount) } : null);
+      },
+      addWalletBalance: (amount: number) => {
+        setUser((prev) => prev ? { ...prev, walletBalance: (prev.walletBalance || 0) + amount } : null);
+      },
+      loginUser,
+      logoutUser,
+      updateUserProfile,
+      updatePreferences
+    };
+  }, [cart, wishlist, user, liveProducts, liveCategories]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
