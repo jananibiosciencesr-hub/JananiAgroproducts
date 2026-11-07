@@ -508,7 +508,19 @@ input:-webkit-autofill:active {
 }
 
 @utility object-hero-center {
-  object-position: center 54%;
+  object-position: center 51%;
+}
+
+@utility object-hero-healthier {
+  object-position: center 52%;
+}
+
+@utility object-hero-biocare {
+  object-position: center 50%;
+}
+
+@utility object-hero-soilcare {
+  object-position: center 50%;
 }
 
 /* ========================================================= */
