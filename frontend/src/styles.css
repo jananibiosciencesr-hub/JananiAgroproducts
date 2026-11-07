@@ -620,5 +620,111 @@ form {
   min-width: 0;
 }
 
+/* ========================================================= */
+/* OFFICIAL TAX INVOICE SINGLE-PAGE PRINT RULES               */
+/* ========================================================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm;
+  }
+
+  /* When the invoice modal is active during print */
+  body.print-invoice-active {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide background website elements and overlays */
+  body.print-invoice-active header,
+  body.print-invoice-active footer,
+  body.print-invoice-active nav,
+  body.print-invoice-active aside,
+  body.print-invoice-active .toaster,
+  body.print-invoice-active .whatsapp-float,
+  body.print-invoice-active .order-invoice-modal-topbar,
+  body.print-invoice-active button {
+    display: none !important;
+  }
+
+  body.print-invoice-active .order-invoice-modal-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    z-index: 999999 !important;
+    display: block !important;
+  }
+
+  body.print-invoice-active .order-invoice-modal-card {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body.print-invoice-active #tax-invoice-content {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 10px 14px !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    font-size: 9.5px !important;
+    line-height: 1.3 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  body.print-invoice-active #tax-invoice-content .space-y-6 > * + * {
+    margin-top: 8px !important;
+  }
+
+  body.print-invoice-active #tax-invoice-content .pb-6 {
+    padding-bottom: 6px !important;
+  }
+
+  body.print-invoice-active #tax-invoice-content .pt-6 {
+    padding-top: 6px !important;
+  }
+
+  body.print-invoice-active #tax-invoice-content table {
+    font-size: 9px !important;
+  }
+
+  body.print-invoice-active #tax-invoice-content table th,
+  body.print-invoice-active #tax-invoice-content table td {
+    padding: 4px 6px !important;
+  }
+}
+
+
 
 

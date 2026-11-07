@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Printer, Download, CheckCircle2, ShieldCheck, FileText, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -68,6 +68,18 @@ export function OrderInvoiceModal({
   order,
 }: OrderInvoiceModalProps) {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (isOpen) {
+      document.body.classList.add("print-invoice-active");
+    } else {
+      document.body.classList.remove("print-invoice-active");
+    }
+    return () => {
+      document.body.classList.remove("print-invoice-active");
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -157,10 +169,10 @@ export function OrderInvoiceModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl rounded-3xl bg-white text-slate-900 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto flex flex-col">
+    <div className="order-invoice-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200 print:fixed print:inset-0 print:bg-white print:p-0 print:m-0 print:border-none print:shadow-none print:overflow-hidden print:z-[999999]">
+      <div className="order-invoice-modal-card relative w-full max-w-3xl rounded-3xl bg-white text-slate-900 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto flex flex-col print:w-full print:max-w-none print:max-h-none print:rounded-none print:shadow-none print:border-none print:overflow-visible print:p-0 print:m-0">
         {/* Modal Top Bar */}
-        <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 p-4 px-6 flex items-center justify-between">
+        <div className="order-invoice-modal-topbar sticky top-0 z-10 bg-slate-50 border-b border-slate-200 p-4 px-6 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-2">
             <FileText className="size-4 text-emerald-600" />
             <span className="font-bold text-xs text-slate-700">Official GST Tax Invoice Preview</span>
@@ -198,7 +210,7 @@ export function OrderInvoiceModal({
         </div>
 
         {/* Printable Invoice Document Body */}
-        <div className="p-6 sm:p-10 space-y-6 text-xs leading-relaxed" id="tax-invoice-content">
+        <div className="p-6 sm:p-10 space-y-6 text-xs leading-relaxed print:p-0 print:space-y-2.5 print:border print:border-slate-300 print:rounded-lg print:p-4 print:text-[9.5px] print:leading-snug print:break-inside-avoid print:page-break-inside-avoid" id="tax-invoice-content">
           {/* Company Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b border-slate-200">
             <div>
