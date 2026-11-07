@@ -4,7 +4,6 @@ import {
   ArrowRight,
   ChevronRight,
   Package,
-  Sparkles,
   Search,
   X,
   Sprout,
@@ -307,7 +306,7 @@ function CategoriesIndexPage() {
                         className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#075B32] hover:text-[#4FAE2A] transition-colors"
                       >
                         <span>Explore Category</span>
-                        <ChevronRight className="size-3.5 group- transition-transform" />
+                        <ChevronRight className="size-3.5" />
                       </Link>
                       <Link
                         to="/products"
@@ -322,28 +321,6 @@ function CategoriesIndexPage() {
             })}
           </div>
         )}
-
-        {/* Bottom Callout Banner */}
-        <div className="mt-16 rounded-[2.5rem] bg-gradient-to-br from-[#075B32]/10 via-[#075B32]/5 to-transparent p-8 sm:p-12 text-center border border-[#075B32]/20 shadow-xs">
-          <Sparkles className="mx-auto size-8 text-[#E7A91A]" />
-          <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-[#075B32]">
-            Looking for Bulk Agricultural or Dealer Supply?
-          </h2>
-          <p className="mx-auto mt-2 max-w-xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
-            We provide direct manufacturer supplies of certified bio-inputs, liquid formulations, and microbial cultures across India with GST invoicing.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button asChild className="bg-[#075B32] hover:bg-[#064A29] text-white rounded-full font-bold px-6">
-              <Link to="/products">Shop All Products</Link>
-            </Button>
-            <Button asChild variant="outline" className="rounded-full border-[#075B32]/30 text-[#075B32] font-semibold px-6">
-              <Link to="/contact">
-                <span>Contact Agronomist</span>
-                <ArrowRight className="size-4 ml-1.5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
       </div>
     </>
   );
