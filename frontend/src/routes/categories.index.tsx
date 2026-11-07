@@ -92,52 +92,18 @@ function CategoriesIndexPage() {
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string>("all");
-
-  const filterTags = [
-    { id: "all", label: "All Categories" },
-    { id: "bio", label: "Biologicals & Organic" },
-    { id: "protection", label: "Crop Protection" },
-    { id: "nutrition", label: "Nutrition & Solubles" },
-  ];
 
   const filteredCategories = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return allCats;
     return allCats.filter((cat) => {
-      const q = searchQuery.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
+      return (
         cat.name.toLowerCase().includes(q) ||
         (cat.description && cat.description.toLowerCase().includes(q)) ||
-        cat.slug.toLowerCase().includes(q);
-
-      if (!matchesSearch) return false;
-
-      if (selectedTag === "bio") {
-        return (
-          cat.slug.includes("bio") ||
-          cat.slug.includes("botanical") ||
-          cat.slug.includes("organic")
-        );
-      }
-      if (selectedTag === "protection") {
-        return (
-          cat.slug.includes("pesticide") ||
-          cat.slug.includes("fungicide") ||
-          cat.slug.includes("insecticide")
-        );
-      }
-      if (selectedTag === "nutrition") {
-        return (
-          cat.slug.includes("fertilizer") ||
-          cat.slug.includes("nutrient") ||
-          cat.slug.includes("stimulant") ||
-          cat.slug.includes("soluble")
-        );
-      }
-
-      return true;
+        cat.slug.toLowerCase().includes(q)
+      );
     });
-  }, [allCats, searchQuery, selectedTag]);
+  }, [allCats, searchQuery]);
 
   return (
     <>
@@ -205,22 +171,6 @@ function CategoriesIndexPage() {
               </button>
             )}
           </div>
-
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-            {filterTags.map((tag) => (
-              <button
-                key={tag.id}
-                onClick={() => setSelectedTag(tag.id)}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${selectedTag === tag.id
-                  ? "bg-[#075B32] text-white shadow-xs"
-                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-              >
-                {tag.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -236,13 +186,12 @@ function CategoriesIndexPage() {
             <Button
               onClick={() => {
                 setSearchQuery("");
-                setSelectedTag("all");
               }}
               variant="outline"
               size="sm"
               className="mt-4 rounded-xl text-xs font-bold"
             >
-              Reset Filters
+              Clear Search
             </Button>
           </div>
         ) : (
