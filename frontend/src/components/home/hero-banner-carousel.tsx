@@ -40,34 +40,64 @@ export interface BannerSlide {
 export const HERO_SLIDES: BannerSlide[] = [
   {
     id: "healthier-tomorrow",
-    title: "Natural Solutions For A Healthier Tomorrow",
-    link: "/products",
-    desktopImage: "/banners/hero_healthier_tomorrow_desktop.jpg",
-    mobileImage: "/banners/hero_healthier_tomorrow_mobile.jpg",
-    alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
+    badgeText: "100% Certified Organic & Bio-Inputs",
+    eyebrow: "Natural Solutions For A",
+    title: "Healthier Tomorrow",
+    subtitle:
+      "High quality agro inputs for sustainable farming. Healthy soil, stronger plants, and better yields with natural care.",
+    features: [
+      { icon: "Sprout", label: "Improves Soil Health" },
+      { icon: "TrendingUp", label: "Boosts Plant Growth" },
+      { icon: "ShieldCheck", label: "Natural & Safe Formulation" },
+      { icon: "Sparkles", label: "Better Crop Yield" },
+    ],
     ctaText: "Explore Our Products",
+    link: "/products",
+    desktopImage: "/banners/hero_healthier_clean.jpg",
+    mobileImage: "/banners/hero_healthier_mobile_clean.jpg",
+    alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
   {
     id: "organic-biocare",
-    title: "100% Organic Bio-Defense",
-    link: "/categories/bio-fungicides",
-    desktopImage: "/banners/hero_biocare_desktop.jpg",
-    mobileImage: "/banners/hero_biocare_mobile.jpg",
-    alt: "Janani Agro Products - Shield Your Crops Naturally",
+    badgeText: "Bio-Fungicides & Crop Defense",
+    eyebrow: "100% Organic Protection",
+    title: "Bio-Defense",
+    subtitle:
+      "Shield Your Crops Naturally with biological disease defense and eco-friendly botanical shields.",
+    features: [
+      { icon: "Sprout", label: "Soil Health" },
+      { icon: "ShieldCheck", label: "Disease Defense" },
+      { icon: "Droplets", label: "Safe Formulation" },
+      { icon: "TrendingUp", label: "High Yield" },
+    ],
     ctaText: "Explore Bio-Care",
+    link: "/categories/bio-fungicides",
+    desktopImage: "/banners/hero_biocare_clean.jpg",
+    mobileImage: "/banners/hero_biocare_mobile_clean.jpg",
+    alt: "Janani Agro Products - Shield Your Crops Naturally",
     desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
   {
     id: "organic-soilcare",
+    badgeText: "Organic Plant Nutrition",
+    eyebrow: "Root To Harvest Care",
     title: "Organic Soil Nutrition",
-    link: "/categories/bio-fertilizers",
-    desktopImage: "/banners/hero_soilcare_desktop.jpg",
-    mobileImage: "/banners/hero_soilcare_mobile.jpg",
-    alt: "Janani Agro Products - Nourish From Root To Harvest",
+    subtitle:
+      "Nourish From Root To Harvest with enriched organic bio-nutrients for bumper yields.",
+    features: [
+      { icon: "Sprout", label: "Soil Vitality" },
+      { icon: "GitBranch", label: "Root Growth" },
+      { icon: "Leaf", label: "Eco-Formulation" },
+      { icon: "TrendingUp", label: "Bumper Yield" },
+    ],
     ctaText: "Explore Soil-Care",
+    link: "/categories/bio-fertilizers",
+    desktopImage: "/banners/hero_soilcare_clean.jpg",
+    mobileImage: "/banners/hero_soilcare_mobile_clean.jpg",
+    alt: "Janani Agro Products - Nourish From Root To Harvest",
     desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
@@ -99,35 +129,86 @@ export function HeroBannerCarousel() {
         );
         if (active.length > 0) {
           const mapped: BannerSlide[] = active.map((b: any) => {
-            let desktop = b.desktopImageUrl || b.desktopImage || b.image || "/banners/hero_healthier_tomorrow_desktop.jpg";
+            let desktop = b.desktopImageUrl || b.desktopImage || b.image || "/banners/hero_healthier_clean.jpg";
             let mobile = b.mobileImageUrl || b.mobileImage || desktop;
 
-            const isBuiltinDefault =
-              b.id === "healthier-tomorrow" ||
-              b.id === "organic-biocare" ||
-              b.id === "organic-soilcare" ||
-              desktop.includes("/banners/hero_");
+            const isHealthier = b.id === "healthier-tomorrow" || desktop.includes("healthier");
+            const isBiocare = b.id === "organic-biocare" || desktop.includes("biocare");
+            const isSoilcare = b.id === "organic-soilcare" || desktop.includes("soilcare");
 
-            if (b.id === "healthier-tomorrow" || desktop.includes("healthier")) {
-              desktop = "/banners/hero_healthier_tomorrow_desktop.jpg";
-              mobile = "/banners/hero_healthier_tomorrow_mobile.jpg";
-            } else if (b.id === "organic-biocare" || desktop.includes("biocare")) {
-              desktop = "/banners/hero_biocare_desktop.jpg";
-              mobile = "/banners/hero_biocare_mobile.jpg";
-            } else if (b.id === "organic-soilcare" || desktop.includes("soilcare")) {
-              desktop = "/banners/hero_soilcare_desktop.jpg";
-              mobile = "/banners/hero_soilcare_mobile.jpg";
+            if (isHealthier) {
+              desktop = "/banners/hero_healthier_clean.jpg";
+              mobile = "/banners/hero_healthier_mobile_clean.jpg";
+            } else if (isBiocare) {
+              desktop = "/banners/hero_biocare_clean.jpg";
+              mobile = "/banners/hero_biocare_mobile_clean.jpg";
+            } else if (isSoilcare) {
+              desktop = "/banners/hero_soilcare_clean.jpg";
+              mobile = "/banners/hero_soilcare_mobile_clean.jpg";
             }
+
+            const defaultFeatures = isHealthier
+              ? [
+                  { icon: "Sprout", label: "Improves Soil Health" },
+                  { icon: "TrendingUp", label: "Boosts Plant Growth" },
+                  { icon: "ShieldCheck", label: "Natural & Safe Formulation" },
+                  { icon: "Sparkles", label: "Better Crop Yield" },
+                ]
+              : isBiocare
+              ? [
+                  { icon: "Sprout", label: "Soil Health" },
+                  { icon: "ShieldCheck", label: "Disease Defense" },
+                  { icon: "Droplets", label: "Safe Formulation" },
+                  { icon: "TrendingUp", label: "High Yield" },
+                ]
+              : isSoilcare
+              ? [
+                  { icon: "Sprout", label: "Soil Vitality" },
+                  { icon: "GitBranch", label: "Root Growth" },
+                  { icon: "Leaf", label: "Eco-Formulation" },
+                  { icon: "TrendingUp", label: "Bumper Yield" },
+                ]
+              : b.features;
+
+            const defaultBadge = isHealthier
+              ? "100% Certified Organic & Bio-Inputs"
+              : isBiocare
+              ? "Bio-Fungicides & Crop Defense"
+              : isSoilcare
+              ? "Organic Plant Nutrition"
+              : b.badgeText;
+
+            const defaultEyebrow = isHealthier
+              ? "Natural Solutions For A"
+              : isBiocare
+              ? "100% Organic Protection"
+              : isSoilcare
+              ? "Root To Harvest Care"
+              : b.eyebrow;
+
+            const defaultTitle = isHealthier
+              ? "Healthier Tomorrow"
+              : isBiocare
+              ? "Bio-Defense"
+              : isSoilcare
+              ? "Organic Soil Nutrition"
+              : b.title || "Janani Agro Products";
+
+            const defaultSubtitle = isHealthier
+              ? "High quality agro inputs for sustainable farming. Healthy soil, stronger plants, and better yields with natural care."
+              : isBiocare
+              ? "Shield Your Crops Naturally with biological disease defense and eco-friendly botanical shields."
+              : isSoilcare
+              ? "Nourish From Root To Harvest with enriched organic bio-nutrients for bumper yields."
+              : b.subtitle;
 
             let desktopPos = b.desktopPosition;
             if (
               !desktopPos ||
-              (isBuiltinDefault &&
-                (desktopPos === "md:object-top" ||
-                  desktopPos === "object-top" ||
-                  desktopPos === "md:object-center" ||
-                  desktopPos === "md:object-hero-center" ||
-                  desktopPos.includes("object-hero")))
+              desktopPos === "md:object-top" ||
+              desktopPos === "object-top" ||
+              desktopPos === "md:object-center" ||
+              desktopPos.includes("object-hero")
             ) {
               desktopPos = "md:object-center";
             } else if (!desktopPos.startsWith("md:")) {
@@ -136,18 +217,18 @@ export function HeroBannerCarousel() {
 
             return {
               id: b.id,
-              title: b.title || "Natural Solutions For A Healthier Tomorrow",
+              title: defaultTitle,
               link: b.primaryCtaUrl || b.link || "/products",
               desktopImage: desktop,
               mobileImage: mobile,
-              alt: b.title || "Janani Agro Products - Grow Healthy Crops With Natural Care",
-              ctaText: b.primaryCtaLabel || b.ctaText || "Explore Products",
-              eyebrow: b.eyebrow,
-              badgeText: b.badgeText,
-              subtitle: b.subtitle,
-              features: b.features,
-              secondaryCtaLabel: isBuiltinDefault ? undefined : b.secondaryCtaLabel,
-              secondaryCtaUrl: isBuiltinDefault ? undefined : b.secondaryCtaUrl,
+              alt: defaultTitle,
+              ctaText: b.primaryCtaLabel || b.ctaText || (isBiocare ? "Explore Bio-Care" : isSoilcare ? "Explore Soil-Care" : "Explore Our Products"),
+              eyebrow: defaultEyebrow,
+              badgeText: defaultBadge,
+              subtitle: defaultSubtitle,
+              features: defaultFeatures,
+              secondaryCtaLabel: isHealthier || isBiocare || isSoilcare ? undefined : b.secondaryCtaLabel,
+              secondaryCtaUrl: isHealthier || isBiocare || isSoilcare ? undefined : b.secondaryCtaUrl,
               desktopPosition: desktopPos,
               mobilePosition: b.mobilePosition || "object-top",
             };
@@ -254,8 +335,8 @@ export function HeroBannerCarousel() {
       onTouchEnd={handleTouchEnd}
       aria-label="Janani Agro Featured Campaigns"
     >
-      {/* Slides Container - Dedicated aspect ratios matching native banner assets for edge-to-edge full screen width with zero crop */}
-      <div className="relative w-full aspect-[9/16] sm:aspect-[1376/768] overflow-hidden">
+      {/* Slides Container - Sleek, comfortable height so products and categories below are immediately visible */}
+      <div className="relative w-full h-[360px] sm:h-[400px] md:h-[440px] lg:h-[470px] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -263,7 +344,6 @@ export function HeroBannerCarousel() {
           {slides.map((slide, idx) => {
             const isCurrent = current === idx;
             const isGraphicBanner =
-              slide.desktopImage.includes("/banners/hero_") ||
               slide.desktopImage.includes("/banners/banner_") ||
               slide.title === "." ||
               slide.title === "-" ||
@@ -303,8 +383,8 @@ export function HeroBannerCarousel() {
                     }`}
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
-                      if (!target.src.includes("hero_healthier_tomorrow_desktop")) {
-                        target.src = "/banners/hero_healthier_tomorrow_desktop.jpg";
+                      if (!target.src.includes("hero_healthier_clean")) {
+                        target.src = "/banners/hero_healthier_clean.jpg";
                       }
                     }}
                   />
