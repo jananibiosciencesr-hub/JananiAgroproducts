@@ -108,9 +108,9 @@ function CategoriesIndexPage() {
   return (
     <>
       {/* Compact Categories Header */}
-      <div className="border-b border-border/70 bg-gradient-to-b from-[#075B32]/10 via-background to-background pt-3 pb-3 sm:pt-6 sm:pb-6 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+      <div className="border-b border-border/70 bg-gradient-to-b from-[#075B32]/10 via-background to-background pt-3 pb-3 sm:pt-6 sm:pb-5 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
         <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
             <div>
               <nav
                 className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-1.5"
@@ -122,20 +122,44 @@ function CategoriesIndexPage() {
                 <ChevronRight className="size-3 text-muted-foreground/60" />
                 <span className="text-[#075B32] font-bold">Categories</span>
               </nav>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex flex-wrap items-center gap-2.5">
                 <span>Agri Products Categories</span>
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#075B32]/10 text-[#075B32] font-bold font-mono">
                   {allCats.length} Collections
                 </span>
               </h1>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-none text-left lg:whitespace-nowrap hyphens-none">
+                Discover biological crop protection, soil biostimulants, and organic plant nutrients.
+              </p>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 mt-2 md:mt-0">
+              {/* Quick Search moved beside heading & actions */}
+              <div className="relative w-full sm:w-64 md:w-72">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search categories..."
+                  className="h-9 w-full rounded-xl border border-input bg-white pl-9 pr-8 text-xs outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32] transition shadow-xs"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
               <Button
                 asChild
                 size="sm"
                 variant="outline"
-                className="h-9 text-xs font-bold rounded-xl border-[#075B32]/30 text-[#075B32] hover:bg-[#075B32]/5 shadow-xs"
+                className="h-9 text-xs font-bold rounded-xl border-[#075B32]/30 text-[#075B32] hover:bg-[#075B32]/5 shadow-xs shrink-0"
               >
                 <Link to="/products">
                   <span>View All Products</span>
@@ -143,33 +167,6 @@ function CategoriesIndexPage() {
                 </Link>
               </Button>
             </div>
-          </div>
-
-          <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-none text-left lg:whitespace-nowrap hyphens-none">
-            Discover biological crop protection, soil biostimulants, and organic plant nutrients.
-          </p>
-        </div>
-
-        {/* Search & Filter Pill Bar */}
-        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mt-5 pt-4 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Quick Search */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search categories..."
-              className="h-9 w-full rounded-xl border border-input bg-white pl-9 pr-8 text-xs outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32] transition"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
           </div>
         </div>
       </div>
