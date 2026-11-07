@@ -228,10 +228,21 @@ export function HeroBannerCarousel() {
             return (
               <div
                 key={slide.id || idx}
-                className="w-full h-full shrink-0 relative overflow-hidden"
+                className="w-full h-full shrink-0 relative overflow-hidden bg-[#021f10]"
               >
-                {/* Responsive Picture: Portrait for mobile screens, Landscape for desktop */}
-                <picture className="w-full h-full block">
+                {/* On Desktop: Ambient blurred background to fill full-bleed screen width seamlessly */}
+                <div className="hidden sm:block absolute inset-0 overflow-hidden pointer-events-none">
+                  <img
+                    src={slide.desktopImage}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-full h-full object-cover blur-2xl scale-110 opacity-45 brightness-90 contrast-110"
+                  />
+                  <div className="absolute inset-0 bg-black/20" />
+                </div>
+
+                {/* Responsive Picture: Portrait cover on mobile (<640px), crisp contained presentation on desktop (>=640px) */}
+                <picture className="w-full h-full block relative z-10">
                   {mobileSrc && (
                     <source
                       media="(max-width: 640px)"
@@ -242,11 +253,7 @@ export function HeroBannerCarousel() {
                     src={slide.desktopImage}
                     alt={slide.alt || slide.title}
                     loading={idx === 0 ? "eager" : "lazy"}
-                    className={`w-full h-full object-cover block transition-transform duration-700 ${
-                      slide.mobilePosition ? (slide.mobilePosition.includes("object-") ? slide.mobilePosition : `object-${slide.mobilePosition}`) : "object-top"
-                    } ${
-                      slide.desktopPosition ? (slide.desktopPosition.includes("object-") ? (slide.desktopPosition.startsWith("md:") ? slide.desktopPosition : `md:${slide.desktopPosition}`) : `md:object-${slide.desktopPosition}`) : "md:object-hero-center"
-                    }`}
+                    className="w-full h-full object-cover sm:object-contain object-center block mx-auto transition-transform duration-700 drop-shadow-lg"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
                       if (!target.src.includes("hero_healthier_tomorrow")) {
@@ -269,34 +276,34 @@ export function HeroBannerCarousel() {
                         </div>
                       )}
                       {slide.eyebrow && (
-                        <p className="text-[11px] sm:text-xs md:text-sm font-extrabold uppercase tracking-wider text-amber-400 drop-shadow mb-1 font-sans">
+                        <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-amber-400 drop-shadow mb-0.5 font-sans">
                           {slide.eyebrow}
                         </p>
                       )}
                       {slide.title && (
-                        <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight drop-shadow-md">
+                        <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black text-white leading-tight drop-shadow-md">
                           {slide.title}
                         </h2>
                       )}
                       {slide.subtitle && (
-                        <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm md:text-base text-slate-100/90 leading-relaxed max-w-lg drop-shadow line-clamp-2 sm:line-clamp-3">
+                        <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs md:text-sm text-slate-100/90 leading-relaxed max-w-lg drop-shadow line-clamp-2">
                           {slide.subtitle}
                         </p>
                       )}
-                      <div className="mt-3 sm:mt-5 flex flex-wrap items-center gap-3">
+                      <div className="mt-2.5 sm:mt-3.5 flex flex-wrap items-center gap-2.5">
                         <Link
                           to={slide.link || "/products"}
                           tabIndex={isCurrent ? 0 : -1}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-black/20 hover:shadow-xl transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-950 shadow-md shadow-black/20 hover:shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                         >
                           <span>{slide.ctaText || "Explore Products"}</span>
-                          <ArrowRight className="size-3.5 sm:size-4" />
+                          <ArrowRight className="size-3 sm:size-3.5" />
                         </Link>
                         {slide.secondaryCtaLabel && (
                           <Link
                             to={slide.secondaryCtaUrl || "/contact"}
                             tabIndex={isCurrent ? 0 : -1}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-950/40 hover:bg-white hover:text-slate-950 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-lg transition-all hover:scale-105 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-950/40 hover:bg-white hover:text-slate-950 px-3.5 sm:px-4.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-md transition-all hover:scale-105 cursor-pointer"
                           >
                             <span>{slide.secondaryCtaLabel}</span>
                           </Link>
@@ -349,7 +356,7 @@ export function HeroBannerCarousel() {
 
         {/* Sleek Floating Pagination Indicators inside banner (Zero space gap) */}
         {total > 1 && (
-          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/25 backdrop-blur-xs px-3 py-1.5 rounded-full">
+          <div className="absolute bottom-2 sm:bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/35 backdrop-blur-xs px-2.5 sm:px-3 py-1 rounded-full border border-white/10 shadow-sm pointer-events-auto">
             {slides.map((slide, idx) => (
               <button
                 key={slide.id || idx}
@@ -357,8 +364,8 @@ export function HeroBannerCarousel() {
                 onClick={() => setCurrent(idx)}
                 aria-label={`Jump to slide ${idx + 1}`}
                 className={`transition-all duration-300 rounded-full cursor-pointer ${current === idx
-                    ? "w-7 sm:w-8 h-2 bg-[#E7A91A] shadow-xs"
-                    : "w-2 h-2 bg-white/70 hover:bg-white"
+                    ? "w-6 sm:w-7 h-1.5 bg-[#E7A91A] shadow-xs"
+                    : "w-1.5 h-1.5 bg-white/70 hover:bg-white"
                   }`}
               />
             ))}
