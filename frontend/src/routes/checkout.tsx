@@ -60,6 +60,29 @@ export function CheckoutPage() {
     }
   }, [user, navigate]);
 
+  // Sync authentic customer phone strictly from MySQL matching user's email
+  useEffect(() => {
+    if (!user?.email || user.email === "patron@jananiagro.com") return;
+    fetch(`/api.php?action=get-user-phone&email=${encodeURIComponent(user.email)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.phone !== undefined && data?.phone !== null) {
+          const p = String(data.phone).trim();
+          if (p && !p.includes("8522901998")) {
+            try {
+              sessionStorage.setItem(`janani_sql_phone_${user.email}`, p);
+              const u = JSON.parse(localStorage.getItem("janani_user") || "{}");
+              if (u && u.phone !== p) {
+                u.phone = p;
+                localStorage.setItem("janani_user", JSON.stringify(u));
+              }
+            } catch (e) {}
+          }
+        }
+      })
+      .catch(() => {});
+  }, [user?.email]);
+
   const [step, setStep] = useState<"checkout" | "success">("checkout");
   const [orderId, setOrderId] = useState("");
   const [placedOrderSummary, setPlacedOrderSummary] = useState<any>(null);
@@ -221,11 +244,20 @@ export function CheckoutPage() {
       return;
     }
 
+    const cachedSqlPhone = (typeof window !== "undefined" && user?.email)
+      ? sessionStorage.getItem(`janani_sql_phone_${user.email}`) || ""
+      : "";
+    const effectiveCustomerPhone = (cachedSqlPhone && !cachedSqlPhone.includes("8522901998"))
+      ? cachedSqlPhone
+      : ((user?.phone && !user.phone.includes("8522901998") && !user.phone.includes("9848022338"))
+          ? user.phone
+          : (selectedAddress.phone && !selectedAddress.phone.includes("8522901998") ? selectedAddress.phone : ""));
+
     const pendingCheckout = {
       orderNumber: generateNextOrderNumber(),
       customerName: selectedAddress.fullName || user?.name || "Valued Patron",
       customerEmail: user?.email || "patron@jananiagro.com",
-      customerPhone: selectedAddress.phone || user?.phone || "",
+      customerPhone: effectiveCustomerPhone,
       address: selectedAddress,
       deliverySlot: "Standard Delivery (2-3 Business Days)",
       slot: {

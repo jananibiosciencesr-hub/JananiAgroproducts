@@ -115,6 +115,66 @@ export function PaymentPage() {
     }
     return customerEmail || "patron@jananiagro.com";
   }, [user, checkoutData, customerEmail]);
+
+  // Query SQL directly for the user's phone associated with this specific email
+  const [sqlPhone, setSqlPhone] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(`janani_sql_phone_${resolvedCustomerEmail}`);
+        if (cached && !cached.includes("8522901998") && !cached.includes("9848022338")) {
+          return cached;
+        }
+      } catch (e) {}
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    const targetEmail = resolvedCustomerEmail || user?.email;
+    if (!targetEmail || targetEmail === "patron@jananiagro.com") return;
+
+    fetch(`/api.php?action=get-user-phone&email=${encodeURIComponent(targetEmail)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.phone !== undefined && data?.phone !== null) {
+          const p = String(data.phone).trim();
+          setSqlPhone(p);
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem(`janani_sql_phone_${targetEmail}`, p);
+              const u = JSON.parse(localStorage.getItem("janani_user") || "{}");
+              if (u) {
+                u.phone = p;
+                localStorage.setItem("janani_user", JSON.stringify(u));
+              }
+              const au = JSON.parse(localStorage.getItem("janani_auth_user") || "{}");
+              if (au) {
+                au.phone = p;
+                localStorage.setItem("janani_auth_user", JSON.stringify(au));
+              }
+            } catch (e) {}
+          }
+        }
+      })
+      .catch(() => {});
+  }, [resolvedCustomerEmail, user?.email]);
+
+  const resolvedCustomerPhone = useMemo(() => {
+    // 1. Strictly prioritize phone directly associated with this email in SQL
+    if (sqlPhone && sqlPhone.trim()) return sqlPhone.trim();
+    if (user?.phone && user.phone.trim() && !user.phone.includes("8522901998") && !user.phone.includes("9848022338")) {
+      return user.phone.trim();
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const u = JSON.parse(localStorage.getItem("janani_user") || "{}");
+        if (u?.phone && !u.phone.includes("8522901998") && !u.phone.includes("9848022338")) {
+          return u.phone;
+        }
+      } catch (e) {}
+    }
+    return "";
+  }, [sqlPhone, user?.phone]);
   const deliveryDate = checkoutData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
   const city = checkoutData?.address?.city || "Ahmedabad";
 
@@ -184,7 +244,7 @@ export function PaymentPage() {
       amount: effectiveAmount,
       deliveryDate,
       customerName,
-      customerPhone,
+      customerPhone: resolvedCustomerPhone,
       customerEmail: resolvedCustomerEmail,
       customerAddress: checkoutData?.address
         ? `${streetAddr}, ${checkoutData.address.city}, ${checkoutData.address.state} - ${checkoutData.address.pincode}`
@@ -210,7 +270,7 @@ export function PaymentPage() {
       deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
       address: checkoutData?.address || {
         fullName: customerName,
-        phone: customerPhone,
+        phone: resolvedCustomerPhone,
         streetAddress: streetAddr,
         city,
         state: "Gujarat",
@@ -225,7 +285,7 @@ export function PaymentPage() {
       number: effectiveOrderNumber,
       orderNumber: effectiveOrderNumber,
       customerEmail: resolvedCustomerEmail,
-      customerPhone: user?.phone || customerPhone || "",
+      customerPhone: resolvedCustomerPhone,
       date: nowFormatted,
       isoDate: new Date().toISOString().split("T")[0]!,
       status: "Processing" as const,
@@ -247,7 +307,7 @@ export function PaymentPage() {
       ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
       address: {
         fullName: customerName,
-        phone: customerPhone,
+        phone: resolvedCustomerPhone,
         streetAddress: streetAddr,
         city: checkoutData?.address?.city || city,
         state: checkoutData?.address?.state || "Gujarat",
@@ -306,10 +366,10 @@ export function PaymentPage() {
       localStorage.setItem("janani_latest_order", JSON.stringify({
         ...confirmedOrder,
         customerEmail: resolvedCustomerEmail,
-        customerPhone: user?.phone || customerPhone || "",
+        customerPhone: resolvedCustomerPhone,
       }));
 
-      const userIdentifier = resolvedCustomerEmail || user?.email || user?.phone;
+      const userIdentifier = resolvedCustomerEmail || user?.email || resolvedCustomerPhone;
       const existingUserOrders = loadCustomerOrders(userIdentifier);
       const updatedOrders = [newCustomerOrder, ...existingUserOrders.filter((o: any) => o.number !== effectiveOrderNumber && o.id !== newCustomerOrder.id)];
       saveCustomerOrders(updatedOrders, userIdentifier);
@@ -337,7 +397,7 @@ export function PaymentPage() {
           name: customerName,
           firstName: customerName.split(" ")[0] || "Valued",
           lastName: customerName.split(" ").slice(1).join(" ") || "Patron",
-          phone: user?.phone || customerPhone,
+          phone: resolvedCustomerPhone,
           email: resolvedCustomerEmail,
           address: streetAddr,
           streetAddress: streetAddr,
@@ -382,8 +442,8 @@ export function PaymentPage() {
           customerName: customerName,
           customer_email: resolvedCustomerEmail,
           customerEmail: resolvedCustomerEmail,
-          customer_phone: user?.phone || customerPhone,
-          customerPhone: user?.phone || customerPhone,
+          customer_phone: resolvedCustomerPhone,
+          customerPhone: resolvedCustomerPhone,
           shipping_address: {
             streetAddress: streetAddr,
             city: checkoutData?.address?.city || city,
@@ -446,12 +506,35 @@ export function PaymentPage() {
     }
 
     setIsProcessing(true);
+
+    let activePhone = sqlPhone;
+    const targetEmail = resolvedCustomerEmail || user?.email;
+    if (targetEmail && targetEmail !== "patron@jananiagro.com") {
+      try {
+        const res = await fetch(`/api.php?action=get-user-phone&email=${encodeURIComponent(targetEmail)}`);
+        if (res.ok) {
+          const d = await res.json();
+          if (d?.phone !== undefined && d?.phone !== null) {
+            const fresh = String(d.phone).trim();
+            if (fresh) {
+              activePhone = fresh;
+              setSqlPhone(fresh);
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!activePhone && resolvedCustomerPhone) {
+      activePhone = resolvedCustomerPhone;
+    }
+
     const opened = await openRazorpayCheckout({
       amount: effectiveAmount,
       orderNumber: effectiveOrderNumber,
       customerName,
-      customerEmail,
-      customerPhone,
+      customerEmail: resolvedCustomerEmail,
+      customerPhone: activePhone,
       onSuccess: (res) => {
         setIsProcessing(false);
         handlePaymentSuccess({
@@ -578,7 +661,7 @@ export function PaymentPage() {
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
                 <span className="shrink-0 font-medium">Paying Customer:</span>
                 <strong className="text-foreground font-semibold break-words sm:text-right">
-                  {customerName} {customerPhone ? `(${customerPhone})` : ""}
+                  {customerName} {resolvedCustomerPhone ? `(${resolvedCustomerPhone})` : ""}
                 </strong>
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
@@ -590,7 +673,7 @@ export function PaymentPage() {
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
                 <span className="shrink-0 font-medium">Receipt Email:</span>
                 <span className="text-foreground font-mono break-all sm:text-right">
-                  {customerEmail}
+                  {resolvedCustomerEmail}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
@@ -769,7 +852,7 @@ export function PaymentPage() {
         amount={effectiveAmount}
         orderNumber={effectiveOrderNumber}
         customerName={customerName}
-        customerPhone={customerPhone}
+        customerPhone={resolvedCustomerPhone}
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentFailure={handlePaymentFailure}
         simulateFailure={simulateFailure}

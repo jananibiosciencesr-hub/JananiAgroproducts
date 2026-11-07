@@ -156,8 +156,8 @@ export async function openRazorpayCheckout(options: RazorpayCheckoutOptions) {
     },
     prefill: {
       name: options.customerName || "Valued Patron",
-      email: options.customerEmail || "patron@jananiagro.com",
-      contact: (options.customerPhone || "9848022338").replace(/\D/g, "").slice(-10)
+      email: options.customerEmail || "",
+      contact: options.customerPhone ? options.customerPhone.replace(/\D/g, "").slice(-10) : ""
     },
     notes: {
       order_number: options.orderNumber,

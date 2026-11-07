@@ -2044,6 +2044,26 @@ try {
                 ]);
                 exit;
             }
+        case 'get-user-phone':
+        case 'get-contact':
+            $target = strtolower(trim($_GET['email'] ?? $_POST['email'] ?? $_GET['id'] ?? $_POST['id'] ?? ''));
+            $userRow = null;
+            if ($target && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("SELECT `phone`, `name`, `email` FROM `users` WHERE LOWER(TRIM(`email`)) = ? OR `id` = ? LIMIT 1");
+                    $stmt->execute([$target, $target]);
+                    $userRow = $stmt->fetch();
+                } catch (Exception $e) {}
+            }
+            $cleanPhone = $userRow ? trim((string)($userRow['phone'] ?? '')) : '';
+            echo json_encode([
+                'success' => true,
+                'email' => $target,
+                'phone' => $cleanPhone,
+                'name' => $userRow ? trim((string)($userRow['name'] ?? '')) : ''
+            ]);
+            exit;
+
         case 'send-order-email':
             if ($method === 'POST' || $method === 'GET') {
                 $body = getJsonBody();
@@ -4827,37 +4847,17 @@ try {
                 $id = $_GET['id'] ?? ($_GET['userId'] ?? ($_GET['email'] ?? null));
                 if ($id) {
                     $cleanId = trim($id);
-                    $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? OR `phone` = ? LIMIT 1");
-                    $stmt->execute([$cleanId, $cleanId, $cleanId]);
+                    if (strpos($cleanId, '@') !== false) {
+                        $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
+                        $stmt->execute([strtolower($cleanId)]);
+                    } else {
+                        $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? OR `phone` = ? LIMIT 1");
+                        $stmt->execute([$cleanId, $cleanId, $cleanId]);
+                    }
                     $user = $stmt->fetch();
                     if ($user) {
                         $user['preferences'] = is_string($user['preferences']) ? json_decode($user['preferences'], true) : $user['preferences'];
                         enrichUserLocationAndAddresses($user);
-                        
-                        // Check preferences addresses first for phone and real name
-                        if (empty($user['phone']) && !empty($user['preferences']['addresses']) && is_array($user['preferences']['addresses'])) {
-                            foreach ($user['preferences']['addresses'] as $addr) {
-                                if (!empty($addr['phone'])) {
-                                    $c10 = preg_replace('/\D/', '', $addr['phone']);
-                                    $user['phone'] = strlen($c10) === 10 ? ('+91 ' . substr($c10, 0, 5) . ' ' . substr($c10, 5)) : trim($addr['phone']);
-                                    try { $pdo->prepare("UPDATE `users` SET `phone` = ? WHERE `id` = ? OR `email` = ?")->execute([$user['phone'], $user['id'], $user['email']]); } catch (Exception $e) {}
-                                    break;
-                                }
-                            }
-                        }
-
-                        // Check orders table to backfill phone and name
-                        if (empty($user['phone']) && !empty($user['email'])) {
-                            try {
-                                $oStmt = $pdo->prepare("SELECT `customer_name`, `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
-                                $oStmt->execute([$user['email'], '%' . explode('@', $user['email'])[0] . '%']);
-                                $ord = $oStmt->fetch();
-                                if ($ord && !empty($ord['customer_phone'])) {
-                                    $user['phone'] = $ord['customer_phone'];
-                                    $pdo->prepare("UPDATE `users` SET `phone` = ? WHERE `id` = ? OR `email` = ?")->execute([$ord['customer_phone'], $user['id'], $user['email']]);
-                                }
-                            } catch (Exception $e) {}
-                        }
 
                         // Attach order history and order stats
                         try {
