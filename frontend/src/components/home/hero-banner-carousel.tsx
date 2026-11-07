@@ -1,7 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  Sprout,
+  ShieldCheck,
+  TrendingUp,
+  Sparkles,
+  Droplets,
+  GitBranch,
+  Leaf,
+} from "lucide-react";
 import { getHeroBanners, type HeroBanner } from "@/lib/api";
+
+export interface BannerFeature {
+  icon: string;
+  label: string;
+}
 
 export interface BannerSlide {
   id: string;
@@ -14,6 +30,7 @@ export interface BannerSlide {
   eyebrow?: string | undefined;
   badgeText?: string | undefined;
   subtitle?: string | undefined;
+  features?: BannerFeature[] | undefined;
   secondaryCtaLabel?: string | undefined;
   secondaryCtaUrl?: string | undefined;
   desktopPosition?: string | undefined;
@@ -23,34 +40,64 @@ export interface BannerSlide {
 export const HERO_SLIDES: BannerSlide[] = [
   {
     id: "healthier-tomorrow",
-    title: "Natural Solutions For A Healthier Tomorrow",
-    link: "/products",
-    desktopImage: "/banners/hero_healthier_tomorrow_desktop.jpg",
-    mobileImage: "/banners/hero_healthier_tomorrow_mobile.jpg",
-    alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
+    badgeText: "100% Certified Organic & Bio-Inputs",
+    eyebrow: "Natural Solutions For A",
+    title: "Healthier Tomorrow",
+    subtitle:
+      "High quality agro inputs for sustainable farming. Healthy soil, stronger plants, and better yields with natural care.",
+    features: [
+      { icon: "Sprout", label: "Improves Soil Health" },
+      { icon: "TrendingUp", label: "Boosts Plant Growth" },
+      { icon: "ShieldCheck", label: "Natural & Safe Formulation" },
+      { icon: "Sparkles", label: "Better Crop Yield" },
+    ],
     ctaText: "Explore Our Products",
+    link: "/products",
+    desktopImage: "/banners/hero_healthier_clean.jpg",
+    mobileImage: "/banners/hero_healthier_mobile_clean.jpg",
+    alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
   {
     id: "organic-biocare",
-    title: "100% Organic Bio-Defense",
-    link: "/categories/bio-fungicides",
-    desktopImage: "/banners/hero_biocare_desktop.jpg",
-    mobileImage: "/banners/hero_biocare_mobile.jpg",
-    alt: "Janani Agro Products - Shield Your Crops Naturally",
+    badgeText: "Bio-Fungicides & Crop Defense",
+    eyebrow: "100% Organic Protection",
+    title: "Bio-Defense",
+    subtitle:
+      "Shield Your Crops Naturally with biological disease defense and eco-friendly botanical shields.",
+    features: [
+      { icon: "Sprout", label: "Soil Health" },
+      { icon: "ShieldCheck", label: "Disease Defense" },
+      { icon: "Droplets", label: "Safe Formulation" },
+      { icon: "TrendingUp", label: "High Yield" },
+    ],
     ctaText: "Explore Bio-Care",
+    link: "/categories/bio-fungicides",
+    desktopImage: "/banners/hero_biocare_clean.jpg",
+    mobileImage: "/banners/hero_biocare_mobile_clean.jpg",
+    alt: "Janani Agro Products - Shield Your Crops Naturally",
     desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
   {
     id: "organic-soilcare",
+    badgeText: "Organic Plant Nutrition",
+    eyebrow: "Root To Harvest Care",
     title: "Organic Soil Nutrition",
-    link: "/categories/bio-fertilizers",
-    desktopImage: "/banners/hero_soilcare_desktop.jpg",
-    mobileImage: "/banners/hero_soilcare_mobile.jpg",
-    alt: "Janani Agro Products - Nourish From Root To Harvest",
+    subtitle:
+      "Nourish From Root To Harvest with enriched organic bio-nutrients for bumper yields.",
+    features: [
+      { icon: "Sprout", label: "Soil Vitality" },
+      { icon: "GitBranch", label: "Root Growth" },
+      { icon: "Leaf", label: "Eco-Formulation" },
+      { icon: "TrendingUp", label: "Bumper Yield" },
+    ],
     ctaText: "Explore Soil-Care",
+    link: "/categories/bio-fertilizers",
+    desktopImage: "/banners/hero_soilcare_clean.jpg",
+    mobileImage: "/banners/hero_soilcare_mobile_clean.jpg",
+    alt: "Janani Agro Products - Nourish From Root To Harvest",
     desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
@@ -70,21 +117,99 @@ export function HeroBannerCarousel() {
         // Filter out any stale product bottle cutouts if previously cached
         const validCmsBanners = cmsBanners.filter((b: HeroBanner) => {
           const img = b.desktopImageUrl || (b as any).desktopImage || "";
-          return !img.includes("/products/harit") && !img.includes("/products/suraksha") && !img.includes("/products/bhumi") && !img.includes("neem-oil");
+          return (
+            !img.includes("/products/harit") &&
+            !img.includes("/products/suraksha") &&
+            !img.includes("/products/bhumi") &&
+            !img.includes("neem-oil")
+          );
         });
-        const active = (validCmsBanners.length > 0 ? validCmsBanners : HERO_SLIDES).filter((b: any) => b.active !== false);
+        const active = (validCmsBanners.length > 0 ? validCmsBanners : HERO_SLIDES).filter(
+          (b: any) => b.active !== false
+        );
         if (active.length > 0) {
           const mapped: BannerSlide[] = active.map((b: any) => {
-            const desktop = b.desktopImageUrl || b.desktopImage || b.image || "/banners/hero_healthier_tomorrow_desktop.jpg";
-            const mobile = b.mobileImageUrl || b.mobileImage || desktop;
-            const isBuiltinDefault =
-              b.id === "healthier-tomorrow" ||
-              b.id === "organic-biocare" ||
-              b.id === "organic-soilcare" ||
-              desktop.includes("/banners/hero_");
+            let desktop = b.desktopImageUrl || b.desktopImage || b.image || "/banners/hero_healthier_clean.jpg";
+            let mobile = b.mobileImageUrl || b.mobileImage || desktop;
+
+            const isHealthier = b.id === "healthier-tomorrow" || desktop.includes("healthier");
+            const isBiocare = b.id === "organic-biocare" || desktop.includes("biocare");
+            const isSoilcare = b.id === "organic-soilcare" || desktop.includes("soilcare");
+
+            if (isHealthier) {
+              desktop = "/banners/hero_healthier_clean.jpg";
+              mobile = "/banners/hero_healthier_mobile_clean.jpg";
+            } else if (isBiocare) {
+              desktop = "/banners/hero_biocare_clean.jpg";
+              mobile = "/banners/hero_biocare_mobile_clean.jpg";
+            } else if (isSoilcare) {
+              desktop = "/banners/hero_soilcare_clean.jpg";
+              mobile = "/banners/hero_soilcare_mobile_clean.jpg";
+            }
+
+            const defaultFeatures = isHealthier
+              ? [
+                  { icon: "Sprout", label: "Improves Soil Health" },
+                  { icon: "TrendingUp", label: "Boosts Plant Growth" },
+                  { icon: "ShieldCheck", label: "Natural & Safe Formulation" },
+                  { icon: "Sparkles", label: "Better Crop Yield" },
+                ]
+              : isBiocare
+              ? [
+                  { icon: "Sprout", label: "Soil Health" },
+                  { icon: "ShieldCheck", label: "Disease Defense" },
+                  { icon: "Droplets", label: "Safe Formulation" },
+                  { icon: "TrendingUp", label: "High Yield" },
+                ]
+              : isSoilcare
+              ? [
+                  { icon: "Sprout", label: "Soil Vitality" },
+                  { icon: "GitBranch", label: "Root Growth" },
+                  { icon: "Leaf", label: "Eco-Formulation" },
+                  { icon: "TrendingUp", label: "Bumper Yield" },
+                ]
+              : b.features;
+
+            const defaultBadge = isHealthier
+              ? "100% Certified Organic & Bio-Inputs"
+              : isBiocare
+              ? "Bio-Fungicides & Crop Defense"
+              : isSoilcare
+              ? "Organic Plant Nutrition"
+              : b.badgeText;
+
+            const defaultEyebrow = isHealthier
+              ? "Natural Solutions For A"
+              : isBiocare
+              ? "100% Organic Protection"
+              : isSoilcare
+              ? "Root To Harvest Care"
+              : b.eyebrow;
+
+            const defaultTitle = isHealthier
+              ? "Healthier Tomorrow"
+              : isBiocare
+              ? "Bio-Defense"
+              : isSoilcare
+              ? "Organic Soil Nutrition"
+              : b.title || "Janani Agro Products";
+
+            const defaultSubtitle = isHealthier
+              ? "High quality agro inputs for sustainable farming. Healthy soil, stronger plants, and better yields with natural care."
+              : isBiocare
+              ? "Shield Your Crops Naturally with biological disease defense and eco-friendly botanical shields."
+              : isSoilcare
+              ? "Nourish From Root To Harvest with enriched organic bio-nutrients for bumper yields."
+              : b.subtitle;
 
             let desktopPos = b.desktopPosition;
-            if (!desktopPos || (isBuiltinDefault && (desktopPos === "md:object-top" || desktopPos === "object-top" || desktopPos === "md:object-center" || desktopPos === "md:object-hero-center" || desktopPos.includes("object-hero")))) {
+            if (
+              !desktopPos ||
+              desktopPos === "md:object-top" ||
+              desktopPos === "object-top" ||
+              desktopPos === "md:object-center" ||
+              desktopPos.includes("object-hero")
+            ) {
               desktopPos = "md:object-center";
             } else if (!desktopPos.startsWith("md:")) {
               desktopPos = `md:${desktopPos}`;
@@ -92,17 +217,18 @@ export function HeroBannerCarousel() {
 
             return {
               id: b.id,
-              title: b.title || "Natural Solutions For A Healthier Tomorrow",
+              title: defaultTitle,
               link: b.primaryCtaUrl || b.link || "/products",
               desktopImage: desktop,
               mobileImage: mobile,
-              alt: b.title || "Janani Agro Products - Grow Healthy Crops With Natural Care",
-              ctaText: b.primaryCtaLabel || b.ctaText || "Explore Products",
-              eyebrow: b.eyebrow,
-              badgeText: b.badgeText,
-              subtitle: b.subtitle,
-              secondaryCtaLabel: isBuiltinDefault ? undefined : b.secondaryCtaLabel,
-              secondaryCtaUrl: isBuiltinDefault ? undefined : b.secondaryCtaUrl,
+              alt: defaultTitle,
+              ctaText: b.primaryCtaLabel || b.ctaText || (isBiocare ? "Explore Bio-Care" : isSoilcare ? "Explore Soil-Care" : "Explore Our Products"),
+              eyebrow: defaultEyebrow,
+              badgeText: defaultBadge,
+              subtitle: defaultSubtitle,
+              features: defaultFeatures,
+              secondaryCtaLabel: isHealthier || isBiocare || isSoilcare ? undefined : b.secondaryCtaLabel,
+              secondaryCtaUrl: isHealthier || isBiocare || isSoilcare ? undefined : b.secondaryCtaUrl,
               desktopPosition: desktopPos,
               mobilePosition: b.mobilePosition || "object-top",
             };
@@ -177,6 +303,27 @@ export function HeroBannerCarousel() {
     touchEndX.current = null;
   };
 
+  const renderFeatureIcon = (iconName: string) => {
+    switch (iconName) {
+      case "Sprout":
+        return <Sprout className="size-3 sm:size-3.5 text-[#075B32] shrink-0" />;
+      case "TrendingUp":
+        return <TrendingUp className="size-3 sm:size-3.5 text-[#075B32] shrink-0" />;
+      case "ShieldCheck":
+        return <ShieldCheck className="size-3 sm:size-3.5 text-[#075B32] shrink-0" />;
+      case "Sparkles":
+        return <Sparkles className="size-3 sm:size-3.5 text-[#075B32] shrink-0" />;
+      case "Droplets":
+        return <Droplets className="size-3 sm:size-3.5 text-[#075B32] shrink-0" />;
+      case "GitBranch":
+        return <GitBranch className="size-3 sm:size-3.5 text-[#075B32] shrink-0" />;
+      case "Leaf":
+        return <Leaf className="size-3 sm:size-3.5 text-[#075B32] shrink-0" />;
+      default:
+        return <Sprout className="size-3 sm:size-3.5 text-[#075B32] shrink-0" />;
+    }
+  };
+
   return (
     <section
       data-no-scroll-reveal="true"
@@ -197,12 +344,7 @@ export function HeroBannerCarousel() {
           {slides.map((slide, idx) => {
             const isCurrent = current === idx;
             const isGraphicBanner =
-              slide.desktopImage.includes("/banners/hero_") ||
               slide.desktopImage.includes("/banners/banner_") ||
-              slide.desktopImage.startsWith("data:image/") ||
-              slide.id === "healthier-tomorrow" ||
-              slide.id === "organic-biocare" ||
-              slide.id === "organic-soilcare" ||
               slide.title === "." ||
               slide.title === "-" ||
               !slide.title.trim();
@@ -211,9 +353,9 @@ export function HeroBannerCarousel() {
               !isGraphicBanner &&
               Boolean(
                 (slide.eyebrow && slide.eyebrow.trim()) ||
-                (slide.subtitle && slide.subtitle.trim()) ||
-                (slide.badgeText && slide.badgeText.trim()) ||
-                (slide.title && slide.title.trim())
+                  (slide.subtitle && slide.subtitle.trim()) ||
+                  (slide.badgeText && slide.badgeText.trim()) ||
+                  (slide.title && slide.title.trim())
               );
             const mobileSrc = slide.mobileImage && slide.mobileImage.trim() ? slide.mobileImage : slide.desktopImage;
 
@@ -241,54 +383,78 @@ export function HeroBannerCarousel() {
                     }`}
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
-                      if (!target.src.includes("hero_healthier_tomorrow")) {
-                        target.src = "/banners/hero_healthier_tomorrow_desktop.jpg";
+                      if (!target.src.includes("hero_healthier_clean")) {
+                        target.src = "/banners/hero_healthier_clean.jpg";
                       }
                     }}
                   />
                 </picture>
 
-                {/* If slide has custom text content (like newly added admin slides with uploaded or URL image) */}
+                {/* Option 2: Dynamic HTML/CSS Text Overlay with refined, proportionate typography */}
                 {hasTextContent ? (
-                  <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/45 to-transparent flex items-center z-10 pointer-events-none">
-                    <div className="max-w-xl sm:max-w-2xl px-5 sm:px-12 md:px-16 py-4 pointer-events-auto">
+                  <div className="absolute inset-0 z-10 flex items-start sm:items-center pointer-events-none">
+                    <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl px-4 sm:px-8 md:px-12 lg:px-16 pt-3.5 sm:pt-4 pb-3 pointer-events-auto">
+                      {/* Badge Tag */}
                       {slide.badgeText && (
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/50 bg-slate-950/70 px-3 py-1 backdrop-blur-md mb-2 shadow-xs">
-                          <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-300">
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white/90 backdrop-blur-xs px-2.5 sm:px-3 py-0.5 sm:py-1 mb-1 sm:mb-2 shadow-xs">
+                          <span className="size-1.5 rounded-full bg-[#0B6B35] animate-pulse" />
+                          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#075B32]">
                             {slide.badgeText}
                           </span>
                         </div>
                       )}
+
+                      {/* Eyebrow */}
                       {slide.eyebrow && (
-                        <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-amber-400 drop-shadow mb-0.5 font-sans">
+                        <p className="text-[10px] sm:text-xs md:text-xs lg:text-sm font-extrabold uppercase tracking-wider text-[#0B6B35] mb-0.5 font-sans">
                           {slide.eyebrow}
                         </p>
                       )}
+
+                      {/* Title - slightly smaller, refined typography */}
                       {slide.title && (
-                        <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black text-white leading-tight drop-shadow-md">
+                        <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-3.5xl xl:text-4xl font-black text-[#075B32] tracking-tight leading-[1.15] drop-shadow-xs">
                           {slide.title}
                         </h2>
                       )}
+
+                      {/* Subtitle */}
                       {slide.subtitle && (
-                        <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs md:text-sm text-slate-100/90 leading-relaxed max-w-lg drop-shadow line-clamp-2">
+                        <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs md:text-sm text-stone-700 font-medium leading-relaxed max-w-xs sm:max-w-md drop-shadow-xs line-clamp-2">
                           {slide.subtitle}
                         </p>
                       )}
-                      <div className="mt-2.5 sm:mt-3.5 flex flex-wrap items-center gap-2.5">
+
+                      {/* 4 Feature Badges (if present) */}
+                      {slide.features && slide.features.length > 0 && (
+                        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 my-2 sm:my-3 max-w-xs sm:max-w-md">
+                          {slide.features.map((feat, fIdx) => (
+                            <div
+                              key={fIdx}
+                              className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-white/90 backdrop-blur-xs border border-emerald-800/10 shadow-xs text-[9px] sm:text-xs font-bold text-[#075B32]"
+                            >
+                              {renderFeatureIcon(feat.icon)}
+                              <span className="truncate">{feat.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* CTA Buttons */}
+                      <div className="mt-2 sm:mt-3 flex flex-wrap items-center gap-2 sm:gap-2.5">
                         <Link
                           to={slide.link || "/products"}
                           tabIndex={isCurrent ? 0 : -1}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-950 shadow-md shadow-black/20 hover:shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                          className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[#075B32] hover:bg-[#064e2b] text-white px-3.5 sm:px-5.5 py-1.5 sm:py-2 text-[11px] sm:text-sm font-bold shadow-md shadow-[#075B32]/25 hover:shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                         >
                           <span>{slide.ctaText || "Explore Products"}</span>
-                          <ArrowRight className="size-3 sm:size-3.5" />
+                          <ArrowRight className="size-3 sm:size-4" />
                         </Link>
                         {slide.secondaryCtaLabel && (
                           <Link
                             to={slide.secondaryCtaUrl || "/contact"}
                             tabIndex={isCurrent ? 0 : -1}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-950/40 hover:bg-white hover:text-slate-950 px-3.5 sm:px-4.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-md transition-all hover:scale-105 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#075B32]/40 bg-white/90 hover:bg-[#075B32] hover:text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#075B32] backdrop-blur-xs shadow-xs transition-all hover:scale-105 cursor-pointer"
                           >
                             <span>{slide.secondaryCtaLabel}</span>
                           </Link>
@@ -348,10 +514,11 @@ export function HeroBannerCarousel() {
                 type="button"
                 onClick={() => setCurrent(idx)}
                 aria-label={`Jump to slide ${idx + 1}`}
-                className={`transition-all duration-300 rounded-full cursor-pointer ${current === idx
+                className={`transition-all duration-300 rounded-full cursor-pointer ${
+                  current === idx
                     ? "w-6 sm:w-7 h-1.5 bg-[#E7A91A] shadow-xs"
                     : "w-1.5 h-1.5 bg-white/70 hover:bg-white"
-                  }`}
+                }`}
               />
             ))}
           </div>
