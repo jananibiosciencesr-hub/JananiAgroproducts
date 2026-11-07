@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Bookmark,
   Trash2,
-  Home
+  Home,
+  Wallet
 } from "lucide-react";
 import { useStore } from "@/components/store-provider";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,11 @@ import { EditProfileTab } from "@/components/profile/edit-profile-tab";
 import { AddressManagerTab } from "@/components/profile/address-manager-tab";
 import { SavedProductsTab } from "@/components/profile/saved-products-tab";
 import { AccountDeleteModal } from "@/components/profile/account-delete-modal";
+import { WalletBalanceCard } from "@/components/wallet/wallet-balance-card";
+import { WalletTransactionsLedger } from "@/components/wallet/wallet-transactions-ledger";
+import { WalletTransaction } from "@/components/wallet/types";
 
-type TabType = "orders" | "profile" | "addresses" | "wishlist";
+type TabType = "orders" | "profile" | "addresses" | "wishlist" | "wallet";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (search: Record<string, unknown>): { tab?: string | undefined } => {
@@ -80,7 +84,7 @@ function DashboardPage() {
   const { wishlist, addToCart, user, logoutUser } = useStore();
   const [isMounted, setIsMounted] = useState(false);
 
-  const initialTab: TabType = (search.tab === "profile" || search.tab === "addresses" || search.tab === "wishlist" || search.tab === "saved")
+  const initialTab: TabType = (search.tab === "profile" || search.tab === "addresses" || search.tab === "wishlist" || search.tab === "saved" || search.tab === "wallet")
     ? (search.tab === "saved" ? "wishlist" : (search.tab as TabType))
     : "orders";
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
@@ -90,11 +94,29 @@ function DashboardPage() {
   useEffect(() => {
     if (search.tab) {
       const resolved = search.tab === "saved" ? "wishlist" : (search.tab as TabType);
-      if (resolved === "orders" || resolved === "profile" || resolved === "addresses" || resolved === "wishlist") {
+      if (resolved === "orders" || resolved === "wallet" || resolved === "profile" || resolved === "addresses" || resolved === "wishlist") {
         setActiveTab(resolved);
       }
     }
   }, [search.tab]);
+
+  // Wallet transaction history state
+  const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([
+    {
+      id: "tx-welcome",
+      date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+      title: "Welcome Patron Reward",
+      description: "Organic farming bonus credited to Janani Wallet",
+      amount: user?.walletBalance ?? 250,
+      type: "credit",
+      status: "completed",
+      category: "cashback"
+    }
+  ]);
+
+  const handleAddWalletTransaction = (tx: WalletTransaction) => {
+    setWalletTransactions((prev) => [tx, ...prev]);
+  };
 
   // Real-time dynamic customer orders list strictly scoped to current user
   const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
@@ -401,11 +423,23 @@ function DashboardPage() {
             </button>
           );
         })}
-        <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-bold gap-1 shrink-0 h-8 px-3">
-          <Link to="/orders">
-            <Truck className="size-3 text-brand-leaf" /> Orders Hub
-          </Link>
-        </Button>
+        <button
+          type="button"
+          onClick={() => handleTabChange("wallet")}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shrink-0 cursor-pointer ${
+            activeTab === "wallet"
+              ? "bg-[#075B32] text-white shadow-sm ring-1 ring-[#075B32]"
+              : "bg-secondary text-foreground hover:bg-secondary/80"
+          }`}
+        >
+          <Wallet className={`size-3.5 ${activeTab === "wallet" ? "text-white" : "text-brand-leaf"}`} />
+          <span>Wallet</span>
+          <span className={`rounded-full px-1.5 py-0.2 text-[9.5px] font-mono ${
+            activeTab === "wallet" ? "bg-white/25 text-white" : "bg-emerald-500/15 text-emerald-700"
+          }`}>
+            ₹{(user?.walletBalance ?? 0).toLocaleString("en-IN")}
+          </span>
+        </button>
       </div>
 
       {/* Main Content Layout: Sidebar + Active Tab Panel */}
@@ -449,15 +483,34 @@ function DashboardPage() {
           })}
 
           <div className="border-t border-border pt-3 mt-3 space-y-1">
-            <Link
-              to="/orders"
-              className="flex w-full items-center justify-between rounded-2xl p-3 text-xs font-semibold text-foreground hover:bg-secondary transition"
+            <button
+              type="button"
+              onClick={() => handleTabChange("wallet")}
+              className={`flex w-full items-center justify-between rounded-2xl p-3 text-xs font-semibold transition cursor-pointer ${
+                activeTab === "wallet"
+                  ? "bg-brand-leaf text-white shadow-sm"
+                  : "text-foreground hover:bg-secondary"
+              }`}
             >
               <span className="flex items-center gap-2.5">
-                <Truck className="size-4 text-brand-gold" /> My Orders Hub & Tracking
+                <Wallet className={`size-4.5 ${activeTab === "wallet" ? "text-white" : "text-brand-gold"}`} />
+                <span className="text-left">
+                  <span className="block font-bold">Janani Wallet</span>
+                  <span className={`text-[10px] block ${activeTab === "wallet" ? "text-white/80" : "text-muted-foreground"}`}>
+                    Add funds & balance
+                  </span>
+                </span>
               </span>
-              <ChevronRight className="size-3.5 text-muted-foreground" />
-            </Link>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono shrink-0 ${
+                  activeTab === "wallet"
+                    ? "bg-white text-brand-leaf"
+                    : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                }`}
+              >
+                ₹{(user?.walletBalance ?? 0).toLocaleString("en-IN")}
+              </span>
+            </button>
           </div>
 
           {/* Account Deletion Trigger */}
@@ -493,7 +546,7 @@ function DashboardPage() {
                 {customerOrders.length > 0 && (
                   <Button asChild variant="gold" size="sm" className="rounded-full text-xs font-bold gap-1.5 shadow-sm self-start sm:self-auto shrink-0">
                     <Link to="/orders">
-                      <Truck className="size-3.5" /> Full Orders Hub & Tracking
+                      <ShoppingBag className="size-3.5" /> View All Orders
                     </Link>
                   </Button>
                 )}
@@ -650,6 +703,29 @@ function DashboardPage() {
           {activeTab === "wishlist" && (
             <div className="space-y-4">
               <SavedProductsTab />
+            </div>
+          )}
+
+          {/* 5. Janani Wallet Tab */}
+          {activeTab === "wallet" && (
+            <div className="space-y-6">
+              <div className="border-b border-border pb-3 sm:pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-semibold text-foreground flex items-center gap-2">
+                    <Wallet className="size-5 text-brand-leaf shrink-0" />
+                    <span>Janani Farm Wallet & Credits</span>
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    1-Tap instant checkout, instant recharge bonuses, and automated refunds.
+                  </p>
+                </div>
+              </div>
+
+              {/* Wallet Balance Card with Add Money trigger */}
+              <WalletBalanceCard onTransactionAdded={handleAddWalletTransaction} />
+
+              {/* Transactions Ledger */}
+              <WalletTransactionsLedger transactions={walletTransactions} />
             </div>
           )}
         </div>
