@@ -179,36 +179,28 @@ function ContactPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-80px)] py-4 sm:py-10 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 flex items-start sm:items-center justify-center overflow-y-auto">
-      {/* Agricultural Background Image: High-resolution sunrise over terraced fields */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/banners/bg_sunrise_fields_hd.jpg')" }}
-      />
-      {/* Ambient Gradient Overlay: Semi-dark emerald gradient so lush fields & sunrise remain visible while text & form pop with clarity */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-emerald-950/50 to-black/70 backdrop-blur-[0.5px]" />
-
+    <div className="relative min-h-[calc(100vh-80px)] py-6 sm:py-12 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 flex items-start sm:items-center justify-center bg-slate-50/70 dark:bg-slate-950">
       <div className="relative z-10 mx-auto w-full max-w-6xl 2xl:max-w-7xl 3xl:max-w-[1536px]">
-        <div className="grid gap-5 lg:grid-cols-12 items-start">
+        <div className="grid gap-6 lg:grid-cols-12 items-start">
           
           {/* Left Column: Direct Coordinates (5 Cols) */}
-          <div className="lg:col-span-5 space-y-3">
+          <div className="lg:col-span-5 space-y-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-black/40 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 shadow-sm">
-                <Sparkles className="size-3 text-amber-300 animate-pulse" />
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-600/20 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 shadow-2xs dark:bg-emerald-950/50 dark:border-emerald-500/30 dark:text-emerald-300">
+                <Sparkles className="size-3 text-emerald-600 dark:text-emerald-400" />
                 Direct Coordinates
               </div>
-              <h1 className="mt-1.5 font-display text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-md">
+              <h1 className="mt-2 font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 Reach Us Directly
               </h1>
-              <p className="mt-1 text-xs text-emerald-100/90 leading-relaxed drop-shadow-xs">
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                 Our customer service desk and commercial sales offices are active seven days a week.
               </p>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {/* Address */}
-              <div className="flex items-start gap-3 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur-md transition hover:border-emerald-500/50 hover:bg-white">
+              <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-xs transition hover:border-emerald-500/40 hover:shadow-sm">
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary mt-0.5">
                   <MapPin className="size-4.5" />
                 </span>
@@ -222,8 +214,8 @@ function ContactPage() {
               </div>
 
               {/* Phone & WhatsApp */}
-              <div className="flex items-start gap-3 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur-md transition hover:border-emerald-500/50 hover:bg-white">
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 mt-0.5">
+              <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-xs transition hover:border-emerald-500/40 hover:shadow-sm">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 mt-0.5">
                   <Phone className="size-4.5" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -242,8 +234,8 @@ function ContactPage() {
               </div>
 
               {/* Email & Hours */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="rounded-2xl border border-white/60 bg-white/95 p-3 shadow-lg backdrop-blur-md">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-border/60 bg-card p-3.5 shadow-xs">
                   <div className="flex items-center gap-1.5 text-primary">
                     <Mail className="size-3.5" />
                     <h4 className="font-bold text-[11px] text-foreground">Official Email</h4>
@@ -253,7 +245,7 @@ function ContactPage() {
                   </a>
                 </div>
 
-                <div className="rounded-2xl border border-white/60 bg-white/95 p-3 shadow-lg backdrop-blur-md">
+                <div className="rounded-2xl border border-border/60 bg-card p-3.5 shadow-xs">
                   <div className="flex items-center gap-1.5 text-primary">
                     <Clock className="size-3.5" />
                     <h4 className="font-bold text-[11px] text-foreground">Working Hours</h4>
@@ -267,7 +259,7 @@ function ContactPage() {
           </div>
 
           {/* Right Column: Contact Form (7 Cols) */}
-          <div className="lg:col-span-7 rounded-3xl border border-white/60 bg-white/95 p-5 sm:p-6 shadow-2xl backdrop-blur-md">
+          <div className="lg:col-span-7 rounded-3xl border border-border/60 bg-card p-5 sm:p-7 shadow-lg shadow-black/3">
             <div>
               <h3 className="text-xl sm:text-2xl font-bold text-foreground">Send a Direct Message</h3>
               <p className="mt-1 text-xs text-muted-foreground">
