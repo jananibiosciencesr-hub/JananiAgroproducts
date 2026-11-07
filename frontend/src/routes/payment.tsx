@@ -533,9 +533,11 @@ export function PaymentPage() {
                     <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">
                       {isCod ? "Cash on Delivery (COD)" : "Razorpay Checkout Gateway"}
                     </h2>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 shrink-0">
-                      {isCod ? "Pay at Doorstep" : "Official Partner"}
-                    </span>
+                    {isCod && (
+                      <span className="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 shrink-0">
+                        Pay at Doorstep
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {isCod

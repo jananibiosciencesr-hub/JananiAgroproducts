@@ -1,0 +1,1 @@
+import{Jt as e}from"./index-CoBEsR4v.js";import{t}from"./jsx-runtime-LKYXHABd.js";var n=t(),r=()=>(0,n.jsx)(e,{});export{r as component};
