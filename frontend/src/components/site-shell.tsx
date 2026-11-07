@@ -188,11 +188,10 @@ function Shell({ children }: { children: React.ReactNode }) {
 
       {/* Sticky Main Header - Ultra-Luxe Elevated Frosted Design */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          isScrolled
+        className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
             ? "border-b border-[#075B32]/15 bg-white/98 shadow-[0_12px_36px_-6px_rgba(7,91,50,0.12)] backdrop-blur-2xl py-1 sm:py-2"
             : "border-b border-[#075B32]/10 bg-white/95 shadow-[0_4px_25px_-5px_rgba(7,91,50,0.06)] backdrop-blur-xl py-1.5 sm:py-2.5"
-        }`}
+          }`}
         style={{ top: 0 }}
       >
         <div className="mx-auto flex max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] items-center justify-between gap-1.5 sm:gap-3 lg:gap-2 xl:gap-4 px-3 sm:px-6 lg:px-4 xl:px-10 2xl:px-16 min-w-0">
@@ -225,11 +224,10 @@ function Shell({ children }: { children: React.ReactNode }) {
                   <Link
                     to={to}
                     onClick={() => setIsMegaMenuOpen(false)}
-                    className={`group relative flex items-center gap-1 px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full text-[12.5px] xl:text-[13.5px] tracking-tight transition-all duration-200 cursor-pointer whitespace-nowrap ${
-                      isActive
+                    className={`group relative flex items-center gap-1 px-2.5 py-1.5 xl:px-3.5 xl:py-2 rounded-full text-[12.5px] xl:text-[13.5px] tracking-tight transition-all duration-200 cursor-pointer whitespace-nowrap ${isActive
                         ? "text-[#075B32] font-black bg-[#F0F7ED] shadow-[inset_0_0_0_1px_rgba(7,91,50,0.14)]"
                         : "text-slate-700 font-bold hover:text-[#075B32] hover:bg-[#F4F8F1]"
-                    }`}
+                      }`}
                   >
                     {isActive && (
                       <span className="size-1.5 rounded-full bg-[#075B32] animate-pulse" />
@@ -237,9 +235,8 @@ function Shell({ children }: { children: React.ReactNode }) {
                     <span>{label}</span>
                     {hasDropdown && (
                       <ChevronDown
-                        className={`size-3.5 transition-transform duration-200 group-hover:rotate-180 ${
-                          isActive ? "text-[#075B32] stroke-[2.5]" : "text-slate-400 group-hover:text-[#075B32]"
-                        }`}
+                        className={`size-3.5 transition-transform duration-200 group-hover:rotate-180 ${isActive ? "text-[#075B32] stroke-[2.5]" : "text-slate-400 group-hover:text-[#075B32]"
+                          }`}
                       />
                     )}
                   </Link>
@@ -283,7 +280,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             >
               <Search className="size-4" />
             </Button>
-            
+
             {/* Wishlist Button */}
             <Link
               to="/wishlist"
@@ -435,18 +432,16 @@ function Shell({ children }: { children: React.ReactNode }) {
                         key={label}
                         to={to}
                         onClick={() => setMenu(false)}
-                        className={`rounded-xl px-2 py-1.5 text-xs font-semibold transition-all flex items-center justify-between group ${
-                          isActive
+                        className={`rounded-xl px-2 py-1.5 text-xs font-semibold transition-all flex items-center justify-between group ${isActive
                             ? "bg-[#075B32] text-white font-bold shadow-xs"
                             : "text-slate-700 hover:bg-slate-100/90 hover:text-emerald-800"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={`size-6.5 rounded-lg transition-colors flex items-center justify-center shrink-0 ${
-                            isActive
+                          <span className={`size-6.5 rounded-lg transition-colors flex items-center justify-center shrink-0 ${isActive
                               ? "bg-white/20 text-white"
                               : "bg-slate-100 text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-700"
-                          }`}>
+                            }`}>
                             <Icon className="size-3" />
                           </span>
                           <span className="truncate">{label}</span>
@@ -479,18 +474,16 @@ function Shell({ children }: { children: React.ReactNode }) {
                         key={label}
                         to={to}
                         onClick={() => setMenu(false)}
-                        className={`rounded-xl px-2 py-1.5 text-xs font-semibold transition-all flex items-center justify-between group ${
-                          isActive
+                        className={`rounded-xl px-2 py-1.5 text-xs font-semibold transition-all flex items-center justify-between group ${isActive
                             ? "bg-[#075B32] text-white font-bold shadow-xs"
                             : "text-slate-700 hover:bg-slate-100/90 hover:text-emerald-800"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={`size-6.5 rounded-lg transition-colors flex items-center justify-center shrink-0 ${
-                            isActive
+                          <span className={`size-6.5 rounded-lg transition-colors flex items-center justify-center shrink-0 ${isActive
                               ? "bg-white/20 text-white"
                               : "bg-slate-100 text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-700"
-                          }`}>
+                            }`}>
                             <Icon className="size-3" />
                           </span>
                           <span className="truncate">{label}</span>
@@ -548,7 +541,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       )}
 
       <main className={!isCheckoutFlow && pathname !== "/login" ? "site-main-with-bottom-bar" : ""}>{children}</main>
-      
+
       {!isCheckoutFlow && pathname !== "/order-success" && pathname !== "/login" && <Footer />}
 
       {!isCheckoutFlow && pathname !== "/order-success" && (
@@ -575,11 +568,10 @@ function Shell({ children }: { children: React.ReactNode }) {
               <Link
                 key={to}
                 to={to}
-                className={`flex flex-col items-center gap-1 text-[10px] transition-all relative py-0.5 ${
-                  isActive
+                className={`flex flex-col items-center gap-1 text-[10px] transition-all relative py-0.5 ${isActive
                     ? "text-[#075B32] font-black"
                     : "text-muted-foreground hover:text-foreground font-semibold"
-                }`}
+                  }`}
               >
                 {isActive && (
                   <span className="absolute -top-2 w-8 h-1 bg-[#075B32] rounded-full shadow-xs" />
