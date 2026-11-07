@@ -29,7 +29,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_healthier_tomorrow_mobile.jpg",
     alt: "Janani Agro Products - Grow Healthy Crops With Natural Care",
     ctaText: "Explore Our Products",
-    desktopPosition: "md:object-hero-healthier",
+    desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
   {
@@ -40,7 +40,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_biocare_mobile.jpg",
     alt: "Janani Agro Products - Shield Your Crops Naturally",
     ctaText: "Explore Bio-Care",
-    desktopPosition: "md:object-hero-biocare",
+    desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
   {
@@ -51,7 +51,7 @@ export const HERO_SLIDES: BannerSlide[] = [
     mobileImage: "/banners/hero_soilcare_mobile.jpg",
     alt: "Janani Agro Products - Nourish From Root To Harvest",
     ctaText: "Explore Soil-Care",
-    desktopPosition: "md:object-hero-soilcare",
+    desktopPosition: "md:object-center",
     mobilePosition: "object-top",
   },
 ];
@@ -84,16 +84,8 @@ export function HeroBannerCarousel() {
               desktop.includes("/banners/hero_");
 
             let desktopPos = b.desktopPosition;
-            if (!desktopPos || (isBuiltinDefault && (desktopPos === "md:object-top" || desktopPos === "object-top" || desktopPos === "md:object-center" || desktopPos === "md:object-hero-center"))) {
-              if (b.id === "organic-biocare" || desktop.includes("biocare")) {
-                desktopPos = "md:object-hero-biocare";
-              } else if (b.id === "organic-soilcare" || desktop.includes("soilcare")) {
-                desktopPos = "md:object-hero-soilcare";
-              } else if (b.id === "healthier-tomorrow" || desktop.includes("healthier")) {
-                desktopPos = "md:object-hero-healthier";
-              } else {
-                desktopPos = isBuiltinDefault ? "md:object-hero-center" : "md:object-top";
-              }
+            if (!desktopPos || (isBuiltinDefault && (desktopPos === "md:object-top" || desktopPos === "object-top" || desktopPos === "md:object-center" || desktopPos === "md:object-hero-center" || desktopPos.includes("object-hero")))) {
+              desktopPos = "md:object-center";
             } else if (!desktopPos.startsWith("md:")) {
               desktopPos = `md:${desktopPos}`;
             }
@@ -196,8 +188,8 @@ export function HeroBannerCarousel() {
       onTouchEnd={handleTouchEnd}
       aria-label="Janani Agro Featured Campaigns"
     >
-      {/* Slides Container - Compact, proportionate hero banner with complete top/bottom text safety margins */}
-      <div className="relative w-full aspect-[4/5] sm:aspect-[16/9] md:aspect-[16/8.2] lg:aspect-[16/8] xl:aspect-[16/7.8] 2xl:aspect-[16/7.6] max-h-[360px] sm:max-h-[380px] md:max-h-[430px] lg:max-h-[460px] xl:max-h-[480px] 2xl:max-h-[500px] overflow-hidden">
+      {/* Slides Container - Dedicated aspect ratios matching native banner assets for edge-to-edge full screen width with zero crop */}
+      <div className="relative w-full aspect-[9/16] sm:aspect-[1376/768] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -230,19 +222,8 @@ export function HeroBannerCarousel() {
                 key={slide.id || idx}
                 className="w-full h-full shrink-0 relative overflow-hidden bg-[#021f10]"
               >
-                {/* On Desktop: Ambient blurred background to fill full-bleed screen width seamlessly */}
-                <div className="hidden sm:block absolute inset-0 overflow-hidden pointer-events-none">
-                  <img
-                    src={slide.desktopImage}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-full h-full object-cover blur-2xl scale-110 opacity-45 brightness-90 contrast-110"
-                  />
-                  <div className="absolute inset-0 bg-black/20" />
-                </div>
-
-                {/* Responsive Picture: Portrait cover on mobile (<640px), crisp contained presentation on desktop (>=640px) */}
-                <picture className="w-full h-full block relative z-10">
+                {/* Responsive Picture: Edge-to-edge full screen width on all screens with zero side margins */}
+                <picture className="w-full h-full block">
                   {mobileSrc && (
                     <source
                       media="(max-width: 640px)"
@@ -253,7 +234,11 @@ export function HeroBannerCarousel() {
                     src={slide.desktopImage}
                     alt={slide.alt || slide.title}
                     loading={idx === 0 ? "eager" : "lazy"}
-                    className="w-full h-full object-cover sm:object-contain object-center block mx-auto transition-transform duration-700 drop-shadow-lg"
+                    className={`w-full h-full object-cover block transition-transform duration-700 ${
+                      slide.mobilePosition ? (slide.mobilePosition.includes("object-") ? slide.mobilePosition : `object-${slide.mobilePosition}`) : "object-top"
+                    } ${
+                      slide.desktopPosition ? (slide.desktopPosition.includes("object-") ? (slide.desktopPosition.startsWith("md:") ? slide.desktopPosition : `md:${slide.desktopPosition}`) : `md:object-${slide.desktopPosition}`) : "md:object-center"
+                    }`}
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
                       if (!target.src.includes("hero_healthier_tomorrow")) {
