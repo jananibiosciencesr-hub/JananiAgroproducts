@@ -589,6 +589,11 @@ if ($pdo) {
         $pdo->exec("DELETE FROM `products` WHERE `id` = 2124 OR LOWER(`name`) LIKE '%mortein%' OR LOWER(`slug`) LIKE '%mortein%'");
         $pdo->exec("UPDATE `users` SET `wishlist` = '[1, 2]' WHERE (`email` = 'kameswarip98@gmail.com' OR `email` = 'sravanipachipulusu98@gmail.com') AND (`wishlist` LIKE '%2124%' OR `wishlist` LIKE '%mortein%' OR `wishlist` IS NULL OR `wishlist` = '[]' OR `wishlist` = '')");
     } catch (Throwable $e) {}
+
+    // Clean up volume suffixes like (5L), (1L), (5 L), (1 L) from product names in MySQL
+    try {
+        $pdo->exec("UPDATE `products` SET `name` = TRIM(REPLACE(REPLACE(REPLACE(REPLACE(`name`, ' (5L)', ''), ' (1L)', ''), ' (5 L)', ''), ' (1 L)', '')) WHERE `name` LIKE '%(5L)%' OR `name` LIKE '%(1L)%' OR `name` LIKE '%(5 L)%' OR `name` LIKE '%(1 L)%'");
+    } catch (Throwable $e) {}
 }
 
 $action = $_GET['action'] ?? '';

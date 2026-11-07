@@ -4,6 +4,7 @@ import { Heart, ShoppingBag, Check, ShieldCheck, Sparkles, Minus, Plus } from "l
 import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import { toast } from "sonner";
 import { type CropProtectionProduct } from "@/lib/crop-protection-data";
+import { formatProductName } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 
 interface PesticideCardProps {
@@ -118,8 +119,8 @@ export function PesticideCard({ product }: PesticideCardProps) {
         </p>
 
         {/* Product Title */}
-        <h3 className="mt-1 text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-2 transition-colors group-hover:text-emerald-700">
-          {product.title}
+        <h3 className="mt-1 text-xs sm:text-[13px] font-bold text-slate-900 leading-snug line-clamp-2 transition-colors group-hover:text-emerald-700">
+          {formatProductName(product.title)}
         </h3>
 
         {/* Technical Name Chip */}

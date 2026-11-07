@@ -168,7 +168,14 @@ export function isProductInCategory(product: any, category: any): boolean {
 
 export function formatProductName(name: string = ""): string {
   if (!name || typeof name !== "string") return "";
-  const trimmed = name.trim();
+  let trimmed = name.trim();
+
+  // Strip pack size in parentheses or hyphens, e.g. (5L), (1L), (5 L), (1 L), (500ml), (10L), etc.
+  trimmed = trimmed
+    .replace(/\s*\(\s*\d+(?:\.\d+)?\s*(?:L|l|ml|ML|kg|KG|gm|GM|g|G|ltr|LTR|Litre|litre|Litres|litres)\s*\)/gi, "")
+    .replace(/\s*-\s*\d+(?:\.\d+)?\s*(?:L|l|ml|ML|kg|KG|gm|GM|g|G|ltr|LTR|Litre|litre|Litres|litres)\s*$/gi, "")
+    .trim();
+
   const lettersOnly = trimmed.replace(/[^A-Za-z]/g, "");
   if (lettersOnly.length > 0 && lettersOnly === lettersOnly.toUpperCase()) {
     return trimmed

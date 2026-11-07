@@ -295,11 +295,11 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
             )}
           </div>
 
-          {/* Product Name in Dark Green */}
+          {/* Product Name in Dark Green - Refined font size */}
           <Link
             to="/products/$slug"
             params={{ slug: product.slug }}
-            className="mt-1 font-bold text-xs sm:text-sm md:text-base text-[#075B32] hover:text-[#064A29] line-clamp-1 block transition leading-snug"
+            className="mt-1 font-bold text-[11.5px] sm:text-xs md:text-[13px] text-[#075B32] hover:text-[#064A29] line-clamp-2 block transition leading-snug"
           >
             {formatProductName(product.name)}
           </Link>
