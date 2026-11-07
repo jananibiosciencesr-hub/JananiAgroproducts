@@ -12,7 +12,12 @@ import {
   ShieldCheck,
   Leaf,
   Package,
-  ArrowRight
+  PackageX,
+  ArrowRight,
+  Filter,
+  X,
+  Check,
+  RotateCcw
 } from "lucide-react";
 import { categories, products, getCategoryImage, isProductInCategory, isGroceryCategory, type Product } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
@@ -20,6 +25,95 @@ import { getCategories } from "@/lib/api";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { ProductQuickViewModal } from "@/components/shop/product-quick-view-modal";
+
+const ALL_CROPS = [
+  "Fruits",
+  "Vegetables",
+  "Cereals",
+  "Pulses",
+  "Oilseeds",
+  "Cotton",
+  "Sugarcane",
+  "All Crops",
+];
+
+const CROP_SYNONYMS: Record<string, string[]> = {
+  vegetables: [
+    "vegetable", "vegetables", "tomato", "chilli", "chili", "brinjal",
+    "potato", "onion", "ginger", "turmeric", "garlic", "okra", "bhindi",
+    "cabbage", "cauliflower", "horticulture", "horticultural"
+  ],
+  fruits: [
+    "fruit", "fruits", "fruit crops", "orchard", "orchards", "mango",
+    "banana", "pomegranate", "grapes", "grape", "citrus", "papaya",
+    "apple", "guava", "horticulture", "horticultural", "plantation"
+  ],
+  cereals: [
+    "cereal", "cereals", "paddy", "rice", "wheat", "maize", "corn",
+    "millet", "millets", "grain", "grains", "sorghum", "barley"
+  ],
+  pulses: [
+    "pulse", "pulses", "gram", "chickpea", "pigeonpea", "lentil",
+    "lentils", "dal", "beans", "blackgram", "greengram"
+  ],
+  oilseeds: [
+    "oilseed", "oilseeds", "groundnut", "peanut", "soyabean", "soybean",
+    "mustard", "sunflower", "sesame"
+  ],
+  cotton: ["cotton", "kapas"],
+  sugarcane: ["sugarcane", "cane"]
+};
+
+function isProductSuitableForCrop(p: any, cropFilter: string): boolean {
+  if (!p || !cropFilter) return false;
+  const cleanFilter = cropFilter.trim();
+  if (cleanFilter === "All Crops") return true;
+
+  const cropsList: string[] = Array.isArray(p.crops)
+    ? p.crops
+    : typeof p.crops === "string"
+    ? (p.crops.startsWith("[")
+        ? (() => {
+            try {
+              const parsed = JSON.parse(p.crops);
+              return Array.isArray(parsed) ? parsed : p.crops.split(",");
+            } catch {
+              return p.crops.split(",");
+            }
+          })()
+        : p.crops.split(","))
+    : [];
+
+  const cleanCropsList = cropsList.map((c: any) => String(c).trim()).filter(Boolean);
+  const recCrops = String(p.recommendedCrops || p.recommended_crops || "").toLowerCase();
+  const desc = String(p.description || "").toLowerCase();
+
+  const isForAll =
+    cleanCropsList.some((c) => c.toLowerCase().includes("all crop")) ||
+    recCrops.includes("all crop") ||
+    recCrops.includes("all agricultural crop") ||
+    desc.includes("all crop") ||
+    desc.includes("all agricultural crop");
+
+  if (isForAll) return true;
+
+  const filterKey = cleanFilter.toLowerCase();
+  const directMatch = cleanCropsList.some((c) => {
+    const cLower = c.toLowerCase();
+    if (cLower === filterKey) return true;
+    if (cLower.replace(/s$/, "") === filterKey.replace(/s$/, "")) return true;
+    return false;
+  });
+  if (directMatch) return true;
+
+  const keywords = CROP_SYNONYMS[filterKey] || [filterKey];
+  const combinedText = `${cleanCropsList.join(" ")} ${recCrops} ${desc}`.toLowerCase();
+
+  return keywords.some((kw) => {
+    const regex = new RegExp(`\\b${kw}\\b`, "i");
+    return regex.test(combinedText);
+  });
+}
 
 export const Route = createFileRoute("/categories/$slug")({
   head: ({ params }) => {
@@ -134,6 +228,10 @@ function CategoryDetailPage() {
   const [sort, setSort] = useState("featured");
   const [list, setList] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [sliderPrice, setSliderPrice] = useState<number>(6000);
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState<number>(6000);
+  const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const otherCategoriesScrollRef = useRef<HTMLDivElement>(null);
 
@@ -143,6 +241,36 @@ function CategoryDetailPage() {
       otherCategoriesScrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
+
+  const toggleCrop = (crop: string) => {
+    setSelectedCrops((prev) => {
+      if (crop === "All Crops") {
+        return prev.includes("All Crops") ? [] : ["All Crops"];
+      }
+      const withoutAll = prev.filter((c) => c !== "All Crops");
+      if (withoutAll.includes(crop)) {
+        return withoutAll.filter((c) => c !== crop);
+      } else {
+        return [...withoutAll, crop];
+      }
+    });
+  };
+
+  const handleClearFilters = () => {
+    setQuery("");
+    setInStockOnly(false);
+    setSliderPrice(6000);
+    setAppliedMaxPrice(6000);
+    setSelectedCrops([]);
+    setSort("featured");
+  };
+
+  const hasActiveFilters = Boolean(
+    query.trim() ||
+    inStockOnly ||
+    appliedMaxPrice < 6000 ||
+    selectedCrops.length > 0
+  );
 
   // Products matching this category
   const categoryProducts = useMemo(() => {
@@ -169,6 +297,16 @@ function CategoryDetailPage() {
       items = items.filter((p) => p.inStock);
     }
 
+    // Price Range Filter
+    if (appliedMaxPrice < 6000) {
+      items = items.filter((p) => (p.price ?? 0) <= appliedMaxPrice);
+    }
+
+    // Crops Filter
+    if (selectedCrops.length > 0) {
+      items = items.filter((p) => selectedCrops.some((c) => isProductSuitableForCrop(p, c)));
+    }
+
     // Sorting
     return [...items].sort((a, b) => {
       if (sort === "low") return (a.price ?? 0) - (b.price ?? 0);
@@ -177,7 +315,7 @@ function CategoryDetailPage() {
       if (sort === "discount") return (b.discount ?? 0) - (a.discount ?? 0);
       return String(a.id || "").localeCompare(String(b.id || ""));
     });
-  }, [category, query, sort, inStockOnly, allProds]);
+  }, [category, query, sort, inStockOnly, appliedMaxPrice, selectedCrops, allProds]);
 
   if (!category) {
     if (notFound) {
@@ -209,11 +347,205 @@ function CategoryDetailPage() {
     );
   }
 
+  // Reusable Filter Sidebar Card Content
+  const filterSidebarCard = (
+    <div className="space-y-5">
+      {/* Filter Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="size-4 text-[#075B32]" />
+          <h3 className="text-sm font-bold text-gray-900 tracking-tight">Category Filters</h3>
+        </div>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="text-[11px] font-semibold text-[#075B32] hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <RotateCcw className="size-3" />
+            Reset All
+          </button>
+        )}
+      </div>
+
+      {/* 1. Search Within Category */}
+      <div className="space-y-2">
+        <label className="block text-xs font-bold text-gray-800">
+          Search in {category.name}
+        </label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search products..."
+            className="w-full h-8.5 rounded-xl border border-input bg-white pl-8 pr-7 text-xs outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32] transition"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label="Clear search"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      {/* 2. Categories Switcher (Active category highlighted, other categories clickable) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-bold text-gray-800">
+            Categories ({allCats.length})
+          </label>
+          <Link
+            to="/categories"
+            className="text-[11px] font-medium text-[#075B32] hover:underline"
+          >
+            All
+          </Link>
+        </div>
+        <div className="space-y-1 max-h-48 overflow-y-auto pr-1 no-scrollbar text-xs">
+          {allCats.map((cat: any) => {
+            const isSelected = (cat.slug || "").toLowerCase().trim() === (category.slug || "").toLowerCase().trim();
+            const count = allProds.filter((p: any) => isProductInCategory(p, cat)).length;
+            return isSelected ? (
+              <div
+                key={cat.slug || cat.id}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-[#075B32] text-white font-bold shadow-2xs"
+              >
+                <div className="flex items-center gap-1.5 truncate min-w-0">
+                  <Check className="size-3.5 shrink-0 text-[#F5B726]" />
+                  <span className="truncate">{cat.name}</span>
+                </div>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-white/20 text-white shrink-0 ml-1">
+                  {count}
+                </span>
+              </div>
+            ) : (
+              <Link
+                key={cat.slug || cat.id}
+                to="/categories/$slug"
+                params={{ slug: cat.slug }}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-gray-700 hover:bg-emerald-50/70 hover:text-[#075B32] transition font-medium"
+              >
+                <span className="truncate">{cat.name}</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 shrink-0 ml-1">
+                  {count}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      {/* 3. Price Range Slider */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-bold text-gray-800">
+            Price Range
+          </label>
+          {appliedMaxPrice < 6000 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSliderPrice(6000);
+                setAppliedMaxPrice(6000);
+              }}
+              className="text-[11px] font-semibold text-[#075B32] hover:underline"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={6000}
+          step={100}
+          value={sliderPrice}
+          onChange={(e) => {
+            const val = Number(e.target.value);
+            setSliderPrice(val);
+            setAppliedMaxPrice(val);
+          }}
+          className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#075B32]"
+        />
+        <div className="flex items-center justify-between text-[11px] text-gray-600 font-medium">
+          <span>₹ 0</span>
+          <span className="font-bold text-[#075B32]">₹ {sliderPrice}</span>
+          <span>₹ 6000</span>
+        </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      {/* 4. Crops Suitable */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-bold text-gray-800">
+            Suitable Crops
+          </label>
+          {selectedCrops.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedCrops([])}
+              className="text-[11px] font-semibold text-[#075B32] hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
+          {ALL_CROPS.map((crop) => {
+            const isChecked = selectedCrops.includes(crop);
+            return (
+              <label
+                key={crop}
+                className="flex items-center gap-2 text-gray-700 cursor-pointer select-none hover:text-[#075B32]"
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleCrop(crop)}
+                  className="rounded border-gray-300 text-[#075B32] focus:ring-[#075B32] size-3.5 accent-[#075B32]"
+                />
+                <span>{crop}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      {/* 5. In Stock Toggle */}
+      <div>
+        <label className="flex items-center justify-between text-xs font-bold text-gray-800 cursor-pointer select-none">
+          <span>In Stock Only</span>
+          <input
+            type="checkbox"
+            checked={inStockOnly}
+            onChange={() => setInStockOnly(!inStockOnly)}
+            className="rounded border-gray-300 text-[#075B32] focus:ring-[#075B32] size-4 accent-[#075B32]"
+          />
+        </label>
+      </div>
+    </div>
+  );
+
   return (
     <>
       {/* COMPACT CATEGORY HEADER & DIRECT PRODUCT DISPLAY */}
       <div className="border-b border-border/70 bg-gradient-to-b from-emerald-950/10 via-background to-background pt-4 pb-3 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mb-2.5" aria-label="Breadcrumb">
             <Link to="/" className="hover:text-foreground transition-colors">
@@ -260,114 +592,175 @@ function CategoryDetailPage() {
         </div>
       </div>
 
-      {/* MAIN PRODUCTS SECTION — DIRECTLY DISPLAYED */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
-        {/* Controls Toolbar */}
-        <div className="mb-6 rounded-2xl border border-border/80 bg-card p-3 sm:p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-muted-foreground">
-              Showing <strong className="text-foreground">{categoryProducts.length}</strong> available products
-            </span>
-          </div>
+      {/* MAIN PRODUCTS SECTION WITH LEFT STICKY FILTER CARD */}
+      <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 sm:py-8">
+        {/* Main 2-Column Layout */}
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 xl:gap-10 items-start">
+          {/* Left Sticky Filter Card (Desktop) */}
+          <aside className="hidden lg:block w-64 xl:w-72 2xl:w-80 shrink-0 lg:sticky lg:top-24 self-start z-10">
+            <div className="bg-white p-5 rounded-2xl border border-gray-200/90 shadow-xs max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-none">
+              {filterSidebarCard}
+            </div>
+          </aside>
 
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-            {/* Search Inside Category */}
-            <div className="relative flex-1 sm:flex-initial sm:w-56">
-              <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={`Search in ${category.name}...`}
-                className="w-full h-9 rounded-xl border border-input bg-background pl-9 pr-4 text-xs outline-none focus:border-primary"
-              />
+          {/* Right Main Content Area */}
+          <div className="flex-1 w-full min-w-0">
+            {/* Top Controls Toolbar */}
+            <div className="mb-4 rounded-2xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                {/* Mobile Filter Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(true)}
+                  className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-white text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition cursor-pointer shadow-2xs"
+                >
+                  <Filter className="size-3.5 text-[#075B32]" />
+                  Filters
+                  {hasActiveFilters && (
+                    <span className="size-2 rounded-full bg-[#075B32]" />
+                  )}
+                </button>
+
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Showing <strong className="text-foreground">{categoryProducts.length}</strong> available products
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
+                {/* Sort Select */}
+                <div className="relative flex items-center">
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    className="h-8.5 rounded-xl border border-input bg-background px-3 pr-8 text-xs font-semibold outline-none focus:border-primary appearance-none cursor-pointer"
+                  >
+                    <option value="featured">Featured</option>
+                    <option value="low">Price: Low to High</option>
+                    <option value="high">Price: High to Low</option>
+                    <option value="rating">Highest Rated</option>
+                    <option value="discount">Biggest Discount</option>
+                  </select>
+                  <ArrowUpDown className="absolute right-2.5 size-3 text-muted-foreground pointer-events-none" />
+                </div>
+
+                {/* View Switcher */}
+                <div className="flex items-center rounded-xl border border-input bg-background p-0.5">
+                  <button
+                    onClick={() => setList(false)}
+                    className={`size-7.5 rounded-lg flex items-center justify-center transition cursor-pointer ${
+                      !list ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Grid View"
+                  >
+                    <Grid2X2 className="size-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setList(true)}
+                    className={`size-7.5 rounded-lg flex items-center justify-center transition cursor-pointer ${
+                      list ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="List View"
+                  >
+                    <List className="size-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* In Stock Toggle */}
-            <button
-              onClick={() => setInStockOnly(!inStockOnly)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold border transition ${
-                inStockOnly
-                  ? "bg-emerald-500/10 border-emerald-500 text-emerald-700"
-                  : "bg-background border-border text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              In Stock Only
-            </button>
+            {/* Active Filters Pills */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  Active Filters:
+                </span>
+                {query.trim() && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
+                    "{query}"
+                    <button onClick={() => setQuery("")} className="hover:text-red-600 cursor-pointer">
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                )}
+                {appliedMaxPrice < 6000 && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
+                    Under ₹{appliedMaxPrice}
+                    <button
+                      onClick={() => {
+                        setSliderPrice(6000);
+                        setAppliedMaxPrice(6000);
+                      }}
+                      className="hover:text-red-600 cursor-pointer"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                )}
+                {selectedCrops.map((c) => (
+                  <span key={c} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
+                    {c}
+                    <button onClick={() => toggleCrop(c)} className="hover:text-red-600 cursor-pointer">
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                ))}
+                {inStockOnly && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#075B32]/10 text-[#075B32]">
+                    In Stock Only
+                    <button onClick={() => setInStockOnly(false)} className="hover:text-red-600 cursor-pointer">
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="text-xs font-semibold text-red-600 hover:underline ml-1 cursor-pointer"
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
 
-            {/* Sort Select */}
-            <div className="relative flex items-center">
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="h-9 rounded-xl border border-input bg-background px-3 pr-8 text-xs font-semibold outline-none focus:border-primary appearance-none cursor-pointer"
-              >
-                <option value="featured">Featured</option>
-                <option value="low">Price: Low to High</option>
-                <option value="high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-                <option value="discount">Biggest Discount</option>
-              </select>
-              <ArrowUpDown className="absolute right-2.5 size-3.5 text-muted-foreground pointer-events-none" />
-            </div>
-
-            {/* View Switcher */}
-            <div className="flex items-center rounded-xl border border-input bg-background p-0.5">
-              <button
-                onClick={() => setList(false)}
-                className={`size-8 rounded-lg flex items-center justify-center transition ${
-                  !list ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            {/* Product Grid — DIRECTLY RENDERED */}
+            {categoryProducts.length > 0 ? (
+              <div
+                className={`grid ${
+                  list
+                    ? "grid-cols-1 gap-4"
+                    : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5"
                 }`}
-                title="Grid View"
               >
-                <Grid2X2 className="size-4" />
-              </button>
-              <button
-                onClick={() => setList(true)}
-                className={`size-8 rounded-lg flex items-center justify-center transition ${
-                  list ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="List View"
-              >
-                <List className="size-4" />
-              </button>
-            </div>
+                {categoryProducts.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    list={list}
+                    onQuickView={(prod) => setQuickViewProduct(prod)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center space-y-3">
+                <PackageX className="size-10 text-gray-400 mx-auto" />
+                <p className="text-lg font-bold text-foreground">
+                  {hasActiveFilters
+                    ? "No formulations match your filter criteria"
+                    : `No products currently available in ${category.name}`}
+                </p>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  {hasActiveFilters
+                    ? "Try adjusting your price range, selected crops, or search query."
+                    : "New formulations and farm inputs will be listed here soon."}
+                </p>
+                {hasActiveFilters && (
+                  <Button onClick={handleClearFilters} className="mt-2 rounded-full" variant="outline">
+                    Reset All Filters
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Product Grid — DIRECTLY RENDERED */}
-        {categoryProducts.length > 0 ? (
-          <div
-            className={`grid ${
-              list
-                ? "grid-cols-1 gap-4"
-                : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-6"
-            }`}
-          >
-            {categoryProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                list={list}
-                onQuickView={(prod) => setQuickViewProduct(prod)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center space-y-3">
-            <p className="text-lg font-bold text-foreground">
-              {query ? `No products found matching "${query}"` : `No products currently available in ${category.name}`}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {query
-                ? "Try modifying your search keywords or explore other bio-input categories."
-                : "New formulations and farm inputs will be listed here soon."}
-            </p>
-            <Button onClick={() => setQuery("")} className="mt-2 rounded-full" variant="outline">
-              Clear Search
-            </Button>
-          </div>
-        )}
 
         {/* Quality Guarantees Strip (Positioned Below Products) */}
         <div className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-2xl border border-emerald-100/80 bg-emerald-50/40 dark:bg-emerald-950/20 p-5">
@@ -484,6 +877,61 @@ function CategoryDetailPage() {
           </div>
         </section>
       </div>
+
+      {/* Mobile Filters Slide-Out Drawer */}
+      {isMobileFilterOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileFilterOpen(false)}
+          />
+
+          {/* Drawer Panel */}
+          <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-2xl flex flex-col z-50">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="size-4 text-[#075B32]" />
+                <h3 className="text-base font-bold text-gray-900">Category Filters</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
+                aria-label="Close filters"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Filters */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {filterSidebarCard}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100 flex items-center gap-3 bg-gray-50/50">
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                >
+                  Reset
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[#075B32] text-white text-xs font-bold shadow-xs hover:bg-[#064A29] transition cursor-pointer"
+              >
+                View {categoryProducts.length} Formulations
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick View Modal */}
       <ProductQuickViewModal
