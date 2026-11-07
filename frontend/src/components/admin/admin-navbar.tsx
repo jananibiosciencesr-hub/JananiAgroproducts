@@ -345,22 +345,22 @@ export function AdminNavbar({
   ];
 
   return (
-    <header className={`sticky top-0 z-40 flex h-14 sm:h-20 w-full max-w-full items-center justify-between border-b backdrop-blur-xl transition-all duration-200 px-2.5 sm:px-4 lg:px-8 ${isScrolled ? "bg-card/95 border-border shadow-sm" : "bg-card/85 border-border/70"
+    <header className={`sticky top-0 z-40 flex h-16 sm:h-18 w-full max-w-full items-center justify-between border-b backdrop-blur-xl transition-all duration-200 px-3 sm:px-6 lg:px-8 ${isScrolled ? "bg-card/95 border-border shadow-xs" : "bg-card/85 border-border/80"
       }`}>
       {/* Left Area: Mobile Menu, Dynamic Search & Contextual Add */}
       <div className="flex items-center gap-1.5 sm:gap-3 flex-1 max-w-2xl min-w-0 mr-1.5 sm:mr-2">
         <button
           onClick={onOpenMobileSidebar}
-          className="lg:hidden flex size-8 sm:size-10 items-center justify-center rounded-lg sm:rounded-2xl border border-border bg-background text-foreground hover:bg-accent shrink-0 cursor-pointer"
+          className="lg:hidden flex size-9 items-center justify-center rounded-xl border border-border bg-background text-foreground hover:bg-accent shrink-0 cursor-pointer"
           aria-label="Open Sidebar Menu"
         >
-          <Menu className="size-4 sm:size-5" />
+          <Menu className="size-4.5" />
         </button>
 
         {/* Dynamic Contextual Search Bar */}
         <div ref={searchContainerRef} className="relative flex-1 max-w-md min-w-0">
-          <div className="relative flex items-center w-full rounded-xl sm:rounded-2xl border border-border/80 bg-background/80 shadow-sm transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-background hover:border-emerald-500/40">
-            <Search className="absolute left-2.5 sm:left-3.5 size-3.5 sm:size-4 text-muted-foreground pointer-events-none shrink-0" />
+          <div className="relative flex items-center w-full rounded-xl border border-slate-200/90 dark:border-slate-800 bg-background/90 shadow-2xs transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-background hover:border-emerald-500/40">
+            <Search className="absolute left-3 size-3.5 sm:size-4 text-muted-foreground pointer-events-none shrink-0" />
             <input
               type="text"
               value={searchTerm}
@@ -375,7 +375,7 @@ export function AdminNavbar({
                 }
               }}
               placeholder={getSearchPlaceholder(activeTab)}
-              className="w-full bg-transparent py-1.5 sm:py-2.5 pl-8 sm:pl-10 pr-6 sm:pr-20 text-[11px] sm:text-xs text-foreground placeholder:text-muted-foreground outline-none font-medium truncate"
+              className="w-full bg-transparent py-2 pl-9 pr-20 text-xs text-foreground placeholder:text-muted-foreground outline-none font-medium truncate"
             />
             <div className="absolute right-2 flex items-center gap-1">
               {searchTerm ? (
@@ -598,10 +598,10 @@ export function AdminNavbar({
         {/* Dark/Light Toggle */}
         <button
           onClick={toggleTheme}
-          className="flex size-8 sm:size-10 items-center justify-center rounded-lg sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer shrink-0"
+          className="flex size-9 sm:size-10 items-center justify-center rounded-xl border border-slate-200/90 dark:border-slate-800 bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-2xs cursor-pointer shrink-0"
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
         >
-          {theme === "light" ? <Moon className="size-3.5 sm:size-4 text-amber-600" /> : <Sun className="size-3.5 sm:size-4 text-amber-400" />}
+          {theme === "light" ? <Moon className="size-4 text-amber-600" /> : <Sun className="size-4 text-amber-400" />}
         </button>
 
         {/* Messages Dropdown */}
@@ -612,12 +612,12 @@ export function AdminNavbar({
               setNotificationsOpen(false);
               setProfileOpen(false);
             }}
-            className="relative flex size-8 sm:size-10 items-center justify-center rounded-lg sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer shrink-0"
+            className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl border border-slate-200/90 dark:border-slate-800 bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-2xs hover:border-emerald-500/30 cursor-pointer shrink-0"
             title="Customer Inquiries & Messages"
           >
-            <MessageSquare className="size-3.5 sm:size-4.5" />
+            <MessageSquare className="size-4" />
             {unreadMessagesCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex size-3.5 sm:size-4 items-center justify-center rounded-full bg-blue-600 text-[9px] sm:text-[10px] font-bold text-white shadow">
+              <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-2xs ring-2 ring-background">
                 {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
               </span>
             )}
@@ -702,11 +702,11 @@ export function AdminNavbar({
               setMessagesOpen(false);
               setProfileOpen(false);
             }}
-            className="relative flex size-8 sm:size-10 items-center justify-center rounded-lg sm:rounded-2xl border border-border/80 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-sm cursor-pointer shrink-0"
+            className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl border border-slate-200/90 dark:border-slate-800 bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-2xs hover:border-emerald-500/30 cursor-pointer shrink-0"
             title="Notifications"
           >
-            <Bell className="size-3.5 sm:size-4.5" />
-            <span className="absolute -top-1 -right-1 flex size-3.5 sm:size-4 items-center justify-center rounded-full bg-rose-500 text-[9px] sm:text-[10px] font-bold text-white shadow">
+            <Bell className="size-4" />
+            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-2xs ring-2 ring-background">
               {dynamicNotifications.length}
             </span>
           </button>
@@ -764,13 +764,13 @@ export function AdminNavbar({
               setNotificationsOpen(false);
               setMessagesOpen(false);
             }}
-            className="flex items-center gap-1.5 sm:gap-2.5 rounded-xl sm:rounded-2xl border border-border/80 bg-background/80 p-1 sm:p-1.5 sm:pr-3 hover:bg-accent transition-all shadow-sm cursor-pointer"
+            className="flex items-center gap-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-background/90 p-1 sm:p-1.5 sm:pr-3 hover:bg-accent/80 transition-all shadow-2xs hover:border-emerald-500/30 cursor-pointer"
           >
-            <div className="size-7 sm:size-8 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white font-bold text-xs flex items-center justify-center shadow">
+            <div className="size-7 sm:size-8 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-900 text-white font-bold text-xs flex items-center justify-center shadow-xs">
               {(currentAdmin.name || "Admin").substring(0, 2).toUpperCase()}
             </div>
             <div className="hidden md:flex flex-col text-left">
-              <span className="text-xs font-bold text-foreground leading-tight">{currentAdmin.name || "Janani Admin"}</span>
+              <span className="text-xs font-bold text-foreground leading-tight truncate max-w-[130px]">{currentAdmin.name || "Janani Admin"}</span>
               <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">{currentAdmin.role || "Super Admin"}</span>
             </div>
           </button>
