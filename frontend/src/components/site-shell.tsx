@@ -57,10 +57,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <ScrollRevealManager />
       <Shell>{children}</Shell>
       <Toaster
-        position="bottom-right"
-        duration={2400}
-        offset={{ bottom: 84, right: 24 }}
-        mobileOffset={{ bottom: "80px", left: "16px", right: "16px" }}
+        position="top-center"
+        duration={2600}
+        offset={{ top: 20 }}
+        mobileOffset={{ top: "16px", left: "16px", right: "16px" }}
       />
     </StoreProvider>
   );
