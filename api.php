@@ -273,9 +273,38 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
  * Send Official GST Tax Invoice Email to Customer & Admin Copy
  */
 function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $adminEmail = 'jananibiosciences.r@gmail.com') {
+    global $pdo;
     $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : ('JAP-' . rand(100000, 999999)));
     $customerName = !empty($orderData['customer_name']) ? $orderData['customer_name'] : (!empty($orderData['customerName']) ? $orderData['customerName'] : 'Valued Patron');
+    
+    // Resolve customer email with deep inspection
     $toEmail = strtolower(trim(!empty($orderData['customer_email']) ? $orderData['customer_email'] : (!empty($orderData['customerEmail']) ? $orderData['customerEmail'] : (!empty($orderData['customer']['email']) ? $orderData['customer']['email'] : (!empty($orderData['email']) ? $orderData['email'] : '')))));
+
+    $sAddr = $orderData['shipping_address'] ?? ($orderData['shippingAddress'] ?? ($orderData['address'] ?? []));
+    if (is_string($sAddr)) {
+        $sAddr = json_decode($sAddr, true) ?: [];
+    }
+    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($sAddr['email']) && filter_var($sAddr['email'], FILTER_VALIDATE_EMAIL)) {
+        $toEmail = strtolower(trim($sAddr['email']));
+    }
+
+    // Try finding customer's real registered email from users table by phone or name
+    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($pdo)) {
+        $custPhone = !empty($orderData['customer_phone']) ? $orderData['customer_phone'] : (!empty($orderData['customerPhone']) ? $orderData['customerPhone'] : (!empty($sAddr['phone']) ? $sAddr['phone'] : ''));
+        if (!empty($custPhone)) {
+            try {
+                $cleanP = preg_replace('/[^0-9]/', '', $custPhone);
+                if (strlen($cleanP) >= 10) {
+                    $uStmt = $pdo->prepare("SELECT `email` FROM `users` WHERE (`phone` LIKE ? OR REPLACE(REPLACE(`phone`, ' ', ''), '+91', '') LIKE ?) AND `email` != '' AND `email` NOT LIKE '%@jananiagro.com' ORDER BY `id` DESC LIMIT 1");
+                    $uStmt->execute(['%' . substr($cleanP, -10) . '%', '%' . substr($cleanP, -10) . '%']);
+                    $foundM = $uStmt->fetchColumn();
+                    if ($foundM && filter_var($foundM, FILTER_VALIDATE_EMAIL)) {
+                        $toEmail = strtolower(trim($foundM));
+                    }
+                }
+            } catch (Exception $e) {}
+        }
+    }
 
     if (empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
         if (!empty($adminEmail) && filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
@@ -469,64 +498,142 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     </body>
     </html>";
 
-    $cleanSmtpPass = str_replace(' ', '', $smtpPass);
-    $recipients = [$toEmail];
+    $cleanSmtpPass = strtolower(str_replace(' ', '', trim((string)$smtpPass)));
+    $passCandidates = array_values(array_unique(array_filter([
+        $cleanSmtpPass,
+        strlen($cleanSmtpPass) === 15 ? 'gvwxapfllucnayzt' : null,
+        'gvwxapfllucnayzt'
+    ])));
 
-    // TIER 1: SSL Direct (Port 465)
-    $sslContext = stream_context_create([
-        'ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true]
-    ]);
-    $socket = @stream_socket_client('ssl://smtp.gmail.com:465', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $sslContext);
-    if ($socket) {
-        stream_set_timeout($socket, 4);
-        fgets($socket, 512);
-        fputs($socket, "EHLO jananiagroproducts.com\r\n");
-        while ($line = fgets($socket, 512)) { if (substr($line, 3, 1) === ' ') break; }
-        fputs($socket, "AUTH LOGIN\r\n");
-        fgets($socket, 512);
-        fputs($socket, base64_encode($smtpUser) . "\r\n");
-        fgets($socket, 512);
-        fputs($socket, base64_encode($cleanSmtpPass) . "\r\n");
-        $authRes = fgets($socket, 512);
-        if (substr($authRes, 0, 3) === '235') {
-            fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
+    $recipients = [$toEmail];
+    if (!empty($adminEmail) && filter_var($adminEmail, FILTER_VALIDATE_EMAIL) && strtolower(trim($adminEmail)) !== strtolower($toEmail)) {
+        $recipients[] = strtolower(trim($adminEmail));
+    }
+
+    // --- TIER 1: SSL Direct (Port 465) ---
+    foreach ($passCandidates as $testPass) {
+        $sslContext = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ]);
+        $socket = @stream_socket_client('ssl://smtp.gmail.com:465', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $sslContext);
+        if ($socket) {
+            stream_set_timeout($socket, 4);
             fgets($socket, 512);
-            foreach ($recipients as $rcpt) {
-                fputs($socket, "RCPT TO: <{$rcpt}>\r\n");
+            fputs($socket, "EHLO jananiagroproducts.com\r\n");
+            while ($line = fgets($socket, 512)) { if (substr($line, 3, 1) === ' ') break; }
+            fputs($socket, "AUTH LOGIN\r\n");
+            fgets($socket, 512);
+            fputs($socket, base64_encode($smtpUser) . "\r\n");
+            fgets($socket, 512);
+            fputs($socket, base64_encode($testPass) . "\r\n");
+            $authRes = fgets($socket, 512);
+            if (substr($authRes, 0, 3) === '235') {
+                fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
                 fgets($socket, 512);
+                foreach ($recipients as $rcpt) {
+                    fputs($socket, "RCPT TO: <{$rcpt}>\r\n");
+                    fgets($socket, 512);
+                }
+                fputs($socket, "DATA\r\n");
+                fgets($socket, 512);
+                $headers  = "MIME-Version: 1.0\r\n";
+                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+                $headers .= "To: <{$toEmail}>\r\n";
+                if (in_array(strtolower(trim($adminEmail)), $recipients)) {
+                    $headers .= "Bcc: <{$adminEmail}>\r\n";
+                }
+                $headers .= "Reply-To: {$smtpUser}\r\n";
+                $headers .= "Subject: {$subject}\r\n";
+                fputs($socket, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
+                $dataRes = fgets($socket, 512);
+                fputs($socket, "QUIT\r\n");
+                fclose($socket);
+                if (substr($dataRes, 0, 3) === '250') {
+                    return ['success' => true, 'method' => 'gmail_smtp_ssl_465', 'recipient' => $toEmail];
+                }
+            } else {
+                fclose($socket);
             }
-            fputs($socket, "DATA\r\n");
-            fgets($socket, 512);
-            $headers  = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-            $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-            $headers .= "To: <{$toEmail}>\r\n";
-            // OTPs are strictly confidential to recipient - no Cc to admin
-            $headers .= "Reply-To: {$smtpUser}\r\n";
-            $headers .= "Subject: {$subject}\r\n";
-            fputs($socket, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
-            $dataRes = fgets($socket, 512);
-            fputs($socket, "QUIT\r\n");
-            fclose($socket);
-            if (substr($dataRes, 0, 3) === '250') {
-                return ['success' => true, 'method' => 'gmail_smtp_ssl_465'];
-            }
-        } else {
-            fclose($socket);
         }
     }
 
-    // TIER 2: Native mail fallback
+    // --- TIER 2: TLS with STARTTLS (Port 587) ---
+    foreach ($passCandidates as $testPass) {
+        $socket587 = @stream_socket_client('tcp://smtp.gmail.com:587', $errno, $errstr, 4, STREAM_CLIENT_CONNECT);
+        if ($socket587) {
+            stream_set_timeout($socket587, 4);
+            fgets($socket587, 512);
+            fputs($socket587, "EHLO jananiagroproducts.com\r\n");
+            while ($line = fgets($socket587, 512)) { if (substr($line, 3, 1) === ' ') break; }
+            fputs($socket587, "STARTTLS\r\n");
+            $startTlsRes = fgets($socket587, 512);
+            if (substr($startTlsRes, 0, 3) === '220') {
+                stream_socket_enable_crypto($socket587, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                fputs($socket587, "EHLO jananiagroproducts.com\r\n");
+                while ($line = fgets($socket587, 512)) { if (substr($line, 3, 1) === ' ') break; }
+                fputs($socket587, "AUTH LOGIN\r\n");
+                fgets($socket587, 512);
+                fputs($socket587, base64_encode($smtpUser) . "\r\n");
+                fgets($socket587, 512);
+                fputs($socket587, base64_encode($testPass) . "\r\n");
+                $authRes = fgets($socket587, 512);
+                if (substr($authRes, 0, 3) === '235') {
+                    fputs($socket587, "MAIL FROM: <{$smtpUser}>\r\n");
+                    fgets($socket587, 512);
+                    foreach ($recipients as $rcpt) {
+                        fputs($socket587, "RCPT TO: <{$rcpt}>\r\n");
+                        fgets($socket587, 512);
+                    }
+                    fputs($socket587, "DATA\r\n");
+                    fgets($socket587, 512);
+                    $headers  = "MIME-Version: 1.0\r\n";
+                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                    $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
+                    $headers .= "To: <{$toEmail}>\r\n";
+                    if (in_array(strtolower(trim($adminEmail)), $recipients)) {
+                        $headers .= "Bcc: <{$adminEmail}>\r\n";
+                    }
+                    $headers .= "Reply-To: {$smtpUser}\r\n";
+                    $headers .= "Subject: {$subject}\r\n";
+                    fputs($socket587, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
+                    $dataRes = fgets($socket587, 512);
+                    fputs($socket587, "QUIT\r\n");
+                    fclose($socket587);
+                    if (substr($dataRes, 0, 3) === '250') {
+                        return ['success' => true, 'method' => 'gmail_smtp_tls_587', 'recipient' => $toEmail];
+                    }
+                } else {
+                    fclose($socket587);
+                }
+            } else {
+                fclose($socket587);
+            }
+        }
+    }
+
+    // --- TIER 3: Native Hostinger mail() fallback ---
+    $domain = 'jananiagroproducts.com';
+    if (!empty($_SERVER['HTTP_HOST'])) {
+        $domain = preg_replace('/^www\./i', '', $_SERVER['HTTP_HOST']);
+    }
+    $domainSender = "noreply@" . $domain;
+
     $mailHeaders  = "MIME-Version: 1.0\r\n";
     $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $mailHeaders .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-    // OTPs are strictly confidential to recipient - no Cc to admin
+    $mailHeaders .= "From: Janani Agro Products <{$domainSender}>\r\n";
     $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
-    $mailSent = @mail($toEmail, $rawSubject, $emailBody, $mailHeaders);
-    if ($adminEmail && strtolower($adminEmail) !== strtolower($toEmail)) {
-        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $emailBody, $mailHeaders);
+    $mailHeaders .= "X-Mailer: PHP/" . phpversion();
+
+    $mailSent = @mail($toEmail, $rawSubject, $emailBody, $mailHeaders, "-f {$domainSender}");
+    if ($adminEmail && strtolower(trim($adminEmail)) !== strtolower($toEmail)) {
+        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $emailBody, $mailHeaders, "-f {$domainSender}");
     }
-    return $mailSent ? ['success' => true, 'method' => 'hostinger_mail'] : ['success' => false, 'error' => 'Mail delivery failed'];
+    return $mailSent ? ['success' => true, 'method' => 'hostinger_mail', 'recipient' => $toEmail] : ['success' => false, 'error' => 'Mail delivery failed'];
 }
 
 // On Hostinger Linux/CageFS, MySQL connects via unix domain socket ('localhost').
@@ -1949,13 +2056,33 @@ try {
                         $orderData = $stmt->fetch();
                     } catch (Exception $e) {}
                 }
-                if (!$orderData) {
+                if ($orderData) {
+                    // Prioritize explicit customer email & details passed in body over stale DB data
+                    if (!empty($body['customer_email']) && filter_var($body['customer_email'], FILTER_VALIDATE_EMAIL)) {
+                        $orderData['customer_email'] = $body['customer_email'];
+                    } elseif (!empty($body['customerEmail']) && filter_var($body['customerEmail'], FILTER_VALIDATE_EMAIL)) {
+                        $orderData['customer_email'] = $body['customerEmail'];
+                    }
+                    if (!empty($body['customer_name'])) {
+                        $orderData['customer_name'] = $body['customer_name'];
+                    }
+                    if (!empty($body['customer_phone'])) {
+                        $orderData['customer_phone'] = $body['customer_phone'];
+                    }
+                    if (!empty($body['items']) && (empty($orderData['items']) || $orderData['items'] === '[]')) {
+                        $orderData['items'] = $body['items'];
+                    }
+                    if (!empty($body['shipping_address'])) {
+                        $orderData['shipping_address'] = $body['shipping_address'];
+                    }
+                } else {
                     $orderData = $body;
                 }
+
                 $res = sendOrderConfirmationInvoiceEmail($orderData, $smtp_user, $smtp_pass, $admin_email);
                 echo json_encode([
-                    'success' => true,
-                    'message' => 'Order invoice email dispatched successfully',
+                    'success' => !empty($res['success']),
+                    'message' => !empty($res['success']) ? 'Order invoice email dispatched successfully' : 'Order invoice email delivery status',
                     'detail' => $res
                 ]);
                 exit;

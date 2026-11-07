@@ -132,6 +132,7 @@ export function OrderInvoiceModal({
       const res = await fetch("/api.php?action=send-order-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({
           number: resolvedOrderNumber,
           orderNumber: resolvedOrderNumber,

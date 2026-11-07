@@ -385,9 +385,29 @@ export function CheckoutPage() {
           ],
         };
 
+        const resolvedEmail =
+          user?.email ||
+          pendingCheckout.customerEmail ||
+          selectedAddress.email ||
+          (() => {
+            if (typeof window !== "undefined") {
+              try {
+                const u = JSON.parse(localStorage.getItem("janani_user") || "{}");
+                if (u?.email) return u.email;
+                const au = JSON.parse(localStorage.getItem("janani_auth_user") || "{}");
+                if (au?.email) return au.email;
+              } catch (e) {}
+            }
+            return "";
+          })() ||
+          "patron@jananiagro.com";
+
         if (typeof window !== "undefined") {
-          localStorage.setItem("janani_latest_order", JSON.stringify(confirmedOrder));
-          const userIdentifier = user?.email || pendingCheckout.customerEmail || user?.phone;
+          localStorage.setItem("janani_latest_order", JSON.stringify({
+            ...confirmedOrder,
+            customerEmail: resolvedEmail,
+          }));
+          const userIdentifier = resolvedEmail || user?.email || user?.phone;
           const existingUserOrders = loadCustomerOrders(userIdentifier);
           const updatedOrders = [newCustomerOrder, ...existingUserOrders.filter((o: any) => o.number !== orderNumber && o.id !== newCustomerOrder.id)];
           saveCustomerOrders(updatedOrders, userIdentifier);
@@ -411,7 +431,7 @@ export function CheckoutPage() {
               firstName: pendingCheckout.customerName.split(" ")[0] || "Valued",
               lastName: pendingCheckout.customerName.split(" ").slice(1).join(" ") || "Patron",
               phone: user?.phone || pendingCheckout.customerPhone,
-              email: user?.email || pendingCheckout.customerEmail,
+              email: resolvedEmail,
               address: streetAddr,
               streetAddress: streetAddr,
               city: selectedAddress.city,
@@ -445,12 +465,16 @@ export function CheckoutPage() {
           fetch("/api.php?action=send-order-email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            keepalive: true,
             body: JSON.stringify({
               number: orderNumber,
               orderNumber,
               customer_name: pendingCheckout.customerName,
-              customer_email: user?.email || pendingCheckout.customerEmail,
+              customerName: pendingCheckout.customerName,
+              customer_email: resolvedEmail,
+              customerEmail: resolvedEmail,
               customer_phone: user?.phone || pendingCheckout.customerPhone,
+              customerPhone: user?.phone || pendingCheckout.customerPhone,
               shipping_address: {
                 streetAddress: streetAddr,
                 city: selectedAddress.city,
@@ -471,6 +495,7 @@ export function CheckoutPage() {
               payment_method: "Cash on Delivery",
             }),
           }).catch(() => {});
+          sessionStorage.setItem(`janani_invoice_dispatched_${orderNumber}`, "true");
         } catch (e) {}
 
         clearCart();

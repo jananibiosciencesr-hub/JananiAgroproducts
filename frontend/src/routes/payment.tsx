@@ -100,6 +100,21 @@ export function PaymentPage() {
   const customerName = user?.name || checkoutData?.customerName || checkoutData?.address?.fullName || "Valued Patron";
   const customerPhone = user?.phone || checkoutData?.customerPhone || checkoutData?.address?.phone || "";
   const customerEmail = user?.email || checkoutData?.customerEmail || "patron@jananiagro.com";
+  
+  const resolvedCustomerEmail = useMemo(() => {
+    if (user?.email && user.email.includes("@")) return user.email;
+    if (checkoutData?.customerEmail && checkoutData.customerEmail.includes("@")) return checkoutData.customerEmail;
+    if (checkoutData?.address?.email && checkoutData.address.email.includes("@")) return checkoutData.address.email;
+    if (typeof window !== "undefined") {
+      try {
+        const u = JSON.parse(localStorage.getItem("janani_user") || "{}");
+        if (u?.email && u.email.includes("@")) return u.email;
+        const au = JSON.parse(localStorage.getItem("janani_auth_user") || "{}");
+        if (au?.email && au.email.includes("@")) return au.email;
+      } catch (e) {}
+    }
+    return customerEmail || "patron@jananiagro.com";
+  }, [user, checkoutData, customerEmail]);
   const deliveryDate = checkoutData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
   const city = checkoutData?.address?.city || "Ahmedabad";
 
@@ -170,7 +185,7 @@ export function PaymentPage() {
       deliveryDate,
       customerName,
       customerPhone,
-      customerEmail,
+      customerEmail: resolvedCustomerEmail,
       customerAddress: checkoutData?.address
         ? `${streetAddr}, ${checkoutData.address.city}, ${checkoutData.address.state} - ${checkoutData.address.pincode}`
         : "Registered Delivery Address, Ahmedabad, Gujarat - 380054",
@@ -209,7 +224,7 @@ export function PaymentPage() {
       id: `ord-${Date.now()}`,
       number: effectiveOrderNumber,
       orderNumber: effectiveOrderNumber,
-      customerEmail: user?.email || customerEmail || "",
+      customerEmail: resolvedCustomerEmail,
       customerPhone: user?.phone || customerPhone || "",
       date: nowFormatted,
       isoDate: new Date().toISOString().split("T")[0]!,
@@ -290,11 +305,11 @@ export function PaymentPage() {
     try {
       localStorage.setItem("janani_latest_order", JSON.stringify({
         ...confirmedOrder,
-        customerEmail: user?.email || customerEmail || "",
+        customerEmail: resolvedCustomerEmail,
         customerPhone: user?.phone || customerPhone || "",
       }));
 
-      const userIdentifier = user?.email || customerEmail || user?.phone;
+      const userIdentifier = resolvedCustomerEmail || user?.email || user?.phone;
       const existingUserOrders = loadCustomerOrders(userIdentifier);
       const updatedOrders = [newCustomerOrder, ...existingUserOrders.filter((o: any) => o.number !== effectiveOrderNumber && o.id !== newCustomerOrder.id)];
       saveCustomerOrders(updatedOrders, userIdentifier);
@@ -323,7 +338,7 @@ export function PaymentPage() {
           firstName: customerName.split(" ")[0] || "Valued",
           lastName: customerName.split(" ").slice(1).join(" ") || "Patron",
           phone: user?.phone || customerPhone,
-          email: user?.email || customerEmail,
+          email: resolvedCustomerEmail,
           address: streetAddr,
           streetAddress: streetAddr,
           city: checkoutData?.address?.city || city,
@@ -359,12 +374,16 @@ export function PaymentPage() {
       fetch("/api.php?action=send-order-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({
           number: effectiveOrderNumber,
           orderNumber: effectiveOrderNumber,
           customer_name: customerName,
-          customer_email: user?.email || customerEmail,
+          customerName: customerName,
+          customer_email: resolvedCustomerEmail,
+          customerEmail: resolvedCustomerEmail,
           customer_phone: user?.phone || customerPhone,
+          customerPhone: user?.phone || customerPhone,
           shipping_address: {
             streetAddress: streetAddr,
             city: checkoutData?.address?.city || city,
@@ -385,6 +404,7 @@ export function PaymentPage() {
           payment_method: details.method || "Razorpay",
         }),
       }).catch(() => {});
+      sessionStorage.setItem(`janani_invoice_dispatched_${effectiveOrderNumber}`, "true");
     } catch (e) {}
 
     clearCart();
