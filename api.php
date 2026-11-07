@@ -349,21 +349,28 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
         if (stripos($name, 'neem') !== false || stripos($name, 'harit') !== false || stripos($name, 'pesticide') !== false || stripos($name, 'fungicide') !== false) $hsn = '3808';
         elseif (stripos($name, 'seed') !== false) $hsn = '1209';
 
-        $cgst = round($lineTotal * 0.025);
-        $sgst = round($lineTotal * 0.025);
+        $cgst = round($lineTotal * 0.025, 2);
+        $sgst = round($lineTotal * 0.025, 2);
         $itemTotal = $lineTotal + $cgst + $sgst;
 
         $itemsRowsHtml .= "
-        <tr style='border-bottom: 1px solid #e2e8f0; font-size: 13px;'>
-            <td style='padding: 10px 8px; text-align: center; color: #64748b;'>{$idx}</td>
-            <td style='padding: 10px 8px; font-weight: 600; color: #1e293b;'>{$name}</td>
-            <td style='padding: 10px 8px; text-align: center; color: #64748b; font-family: monospace;'>{$hsn}</td>
-            <td style='padding: 10px 8px; text-align: center; font-weight: 600;'>{$qty}</td>
-            <td style='padding: 10px 8px; text-align: right; font-family: monospace;'>₹" . number_format($price, 2) . "</td>
-            <td style='padding: 10px 8px; text-align: right; font-family: monospace; font-weight: 600;'>₹" . number_format($lineTotal, 2) . "</td>
-            <td style='padding: 10px 8px; text-align: right; font-family: monospace; color: #059669;'>₹" . number_format($cgst, 2) . "</td>
-            <td style='padding: 10px 8px; text-align: right; font-family: monospace; color: #059669;'>₹" . number_format($sgst, 2) . "</td>
-            <td style='padding: 10px 8px; text-align: right; font-family: monospace; font-weight: 700; color: #0f172a;'>₹" . number_format($itemTotal, 2) . "</td>
+        <tr style='border-bottom: 1px solid #e2e8f0;'>
+            <td style='padding: 12px 10px; vertical-align: top;'>
+                <div style='font-size: 13px; font-weight: 700; color: #1e293b; line-height: 1.35;'>
+                    <span style='color: #075B32;'>#{$idx}.</span> {$name}
+                </div>
+                <div style='margin-top: 4px; font-size: 11px; color: #64748b; line-height: 1.4;'>
+                    <span style='display: inline-block; background: #e2e8f0; color: #334155; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 10px; font-weight: 700;'>HSN {$hsn}</span>
+                    &nbsp;&bull;&nbsp; Qty: <strong style='color: #1e293b;'>{$qty}</strong> &times; ₹" . number_format($price, 2) . "
+                </div>
+                <div style='margin-top: 3px; font-size: 10.5px; color: #059669; font-weight: 500; line-height: 1.3;'>
+                    Taxable: ₹" . number_format($lineTotal, 2) . " &bull; CGST (2.5%): ₹" . number_format($cgst, 2) . " &bull; SGST (2.5%): ₹" . number_format($sgst, 2) . "
+                </div>
+            </td>
+            <td style='padding: 12px 10px; text-align: right; vertical-align: top; width: 105px; min-width: 90px; white-space: nowrap;'>
+                <div style='font-size: 14px; font-weight: 800; color: #075B32; font-family: monospace;'>₹" . number_format($itemTotal, 2) . "</div>
+                <div style='font-size: 9.5px; color: #64748b; margin-top: 2px;'>Incl. 5% GST</div>
+            </td>
         </tr>";
         $idx++;
     }
@@ -372,8 +379,8 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
         $itemsSubtotal = (float)($orderData['subtotal'] ?? 0);
     }
 
-    $totalGst = isset($orderData['gstAmount']) ? (float)$orderData['gstAmount'] : round($itemsSubtotal * 0.05);
-    $cgstTotal = isset($orderData['cgst']) ? (float)$orderData['cgst'] : round($totalGst / 2);
+    $totalGst = isset($orderData['gstAmount']) ? (float)$orderData['gstAmount'] : round($itemsSubtotal * 0.05, 2);
+    $cgstTotal = isset($orderData['cgst']) ? (float)$orderData['cgst'] : round($totalGst / 2, 2);
     $sgstTotal = isset($orderData['sgst']) ? (float)$orderData['sgst'] : ($totalGst - $cgstTotal);
     $deliveryFee = isset($orderData['delivery_fee']) ? (float)$orderData['delivery_fee'] : (isset($orderData['shippingFee']) ? (float)$orderData['shippingFee'] : ($itemsSubtotal >= 799 ? 0 : 60));
     $discount = (float)($orderData['discount'] ?? ($orderData['coupon_discount'] ?? 0));
@@ -385,116 +392,163 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
 
     $emailBody = "
     <!DOCTYPE html>
-    <html>
-    <head><meta charset='utf-8'></head>
-    <body style='font-family: Arial, sans-serif; background-color: #f4f7f4; padding: 20px; margin: 0;'>
-      <div style='max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e2ece2;'>
-        <div style='background: linear-gradient(135deg, #075B32 0%, #04341B 100%); padding: 25px; color: white;'>
-          <table style='width: 100%; border-collapse: collapse;'>
-            <tr>
-              <td>
-                <h1 style='margin: 0; font-size: 20px; letter-spacing: 0.5px;'>JANANI AGRO PRODUCTS PVT. LTD.</h1>
-                <p style='margin: 4px 0 0 0; font-size: 11px; color: #a7f3d0;'>Nurturing Soil Health & Empowering Farmers</p>
-                <p style='margin: 3px 0 0 0; font-size: 10px; color: #e2e8f0;'>GSTIN: 24AAACJ1029K1Z4 &bull; FSSAI Lic. No: 10721026000412</p>
-              </td>
-              <td style='text-align: right; vertical-align: middle;'>
-                <span style='background: #D99A12; color: #04341B; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;'>
-                  TAX INVOICE
-                </span>
-              </td>
-            </tr>
-          </table>
-        </div>
-        <div style='padding: 24px;'>
-          <p style='font-size: 15px; color: #1e293b; margin: 0 0 12px 0;'>Dear <strong>{$customerName}</strong>,</p>
-          <p style='font-size: 13px; color: #475569; line-height: 1.5; margin: 0 0 16px 0;'>
-            Thank you for placing your order with Janani Agro Products! Your order has been placed and confirmed. Below is your official computer-generated GST tax invoice (Rule 46):
-          </p>
-          <table style='width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; font-size: 12px; margin-bottom: 20px;'>
-            <tr>
-              <td style='padding: 4px 8px; color: #64748b;'>Order Reference:</td>
-              <td style='padding: 4px 8px; font-weight: bold; color: #075B32; font-family: monospace;'>{$orderNumber}</td>
-              <td style='padding: 4px 8px; color: #64748b;'>Invoice Number:</td>
-              <td style='padding: 4px 8px; font-weight: bold; color: #1e293b; font-family: monospace;'>{$invoiceNumber}</td>
-            </tr>
-            <tr>
-              <td style='padding: 4px 8px; color: #64748b;'>Order Date:</td>
-              <td style='padding: 4px 8px; font-weight: 600; color: #1e293b;'>{$orderDate}</td>
-              <td style='padding: 4px 8px; color: #64748b;'>Payment Method:</td>
-              <td style='padding: 4px 8px; font-weight: 600; color: #1e293b;'>{$paymentMethod}</td>
-            </tr>
-            <tr>
-              <td style='padding: 4px 8px; color: #64748b;'>Delivery Address:</td>
-              <td colspan='3' style='padding: 4px 8px; font-weight: 600; color: #1e293b;'>{$fullAddress}</td>
-            </tr>
-          </table>
+    <html lang='en'>
+    <head>
+      <meta charset='utf-8'>
+      <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
+      <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+      <meta name='x-apple-disable-message-reformatting'>
+      <meta name='format-detection' content='telephone=no, date=no, address=no, email=no'>
+      <title>Order Confirmation & GST Tax Invoice #{$orderNumber}</title>
+      <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { margin: 0 !important; padding: 0 !important; width: 100% !important; min-width: 100% !important; background-color: #f1f5f1; }
+        @media only screen and (max-width: 600px) {
+          .email-card { width: 100% !important; max-width: 100% !important; border-radius: 10px !important; }
+          .header-pad { padding: 16px 12px !important; }
+          .body-pad { padding: 14px 12px !important; }
+        }
+      </style>
+    </head>
+    <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f1; margin: 0; padding: 10px 4px;'>
+      <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='width: 100%; border-collapse: collapse; margin: 0; padding: 0;'>
+        <tr>
+          <td align='center' style='padding: 0;'>
+            <table role='presentation' width='100%' cellpadding='0' cellspacing='0' class='email-card' style='width: 100%; max-width: 620px; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,0.06); border: 1px solid #e2ece2;'>
+              <!-- Header Banner -->
+              <tr>
+                <td style='background: linear-gradient(135deg, #075B32 0%, #04341B 100%); padding: 18px 16px; color: #ffffff;' class='header-pad'>
+                  <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='width: 100%; border-collapse: collapse;'>
+                    <tr>
+                      <td valign='top' style='vertical-align: top;'>
+                        <div style='font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: 0.4px; line-height: 1.25;'>JANANI AGRO PRODUCTS PVT. LTD.</div>
+                        <div style='font-size: 11px; color: #a7f3d0; margin-top: 3px; font-weight: 500;'>Nurturing Soil Health & Empowering Farmers</div>
+                        <div style='font-size: 9.5px; color: #e2e8f0; margin-top: 3px; line-height: 1.3;'>GSTIN: 24AAACJ1029K1Z4 &bull; FSSAI: 10721026000412</div>
+                      </td>
+                      <td align='right' valign='top' style='text-align: right; vertical-align: top; padding-left: 8px; white-space: nowrap;'>
+                        <span style='background: #D99A12; color: #04341B; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;'>
+                          TAX INVOICE
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
 
-          <div style='overflow-x: auto; margin-bottom: 20px;'>
-            <table style='width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px;'>
-              <thead>
-                <tr style='background: #f1f5f9; color: #334155; font-size: 11px; text-transform: uppercase; font-weight: 700;'>
-                  <th style='padding: 10px 8px; text-align: center; border-bottom: 1px solid #cbd5e1;'>#</th>
-                  <th style='padding: 10px 8px; text-align: left; border-bottom: 1px solid #cbd5e1;'>Product</th>
-                  <th style='padding: 10px 8px; text-align: center; border-bottom: 1px solid #cbd5e1;'>HSN</th>
-                  <th style='padding: 10px 8px; text-align: center; border-bottom: 1px solid #cbd5e1;'>Qty</th>
-                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>Rate</th>
-                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>Taxable</th>
-                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>CGST (2.5%)</th>
-                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>SGST (2.5%)</th>
-                  <th style='padding: 10px 8px; text-align: right; border-bottom: 1px solid #cbd5e1;'>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {$itemsRowsHtml}
-              </tbody>
+              <!-- Main Content Area -->
+              <tr>
+                <td style='padding: 18px 16px;' class='body-pad'>
+                  <p style='font-size: 15px; color: #1e293b; margin: 0 0 10px 0; font-weight: 600;'>Dear {$customerName},</p>
+                  <p style='font-size: 12.5px; color: #475569; line-height: 1.5; margin: 0 0 16px 0;'>
+                    Thank you for placing your order with <strong>Janani Agro Products</strong>! Your order has been placed and confirmed. Below is your official computer-generated GST tax invoice (Rule 46):
+                  </p>
+
+                  <!-- Order Metadata Grid -->
+                  <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='width: 100%; border-collapse: collapse; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 16px;'>
+                    <tr>
+                      <td style='padding: 12px 14px;'>
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='width: 100%; border-collapse: collapse;'>
+                          <tr>
+                            <td valign='top' style='width: 50%; padding: 4px 6px 6px 0; vertical-align: top;'>
+                              <div style='font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 700;'>Order Reference</div>
+                              <div style='font-size: 13px; font-weight: 800; color: #075B32; font-family: monospace; margin-top: 2px;'>{$orderNumber}</div>
+                            </td>
+                            <td valign='top' style='width: 50%; padding: 4px 0 6px 6px; vertical-align: top;'>
+                              <div style='font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 700;'>Invoice Number</div>
+                              <div style='font-size: 13px; font-weight: 800; color: #1e293b; font-family: monospace; margin-top: 2px;'>{$invoiceNumber}</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td valign='top' style='width: 50%; padding: 6px 6px 6px 0; vertical-align: top; border-top: 1px dashed #e2e8f0;'>
+                              <div style='font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 700;'>Order Date</div>
+                              <div style='font-size: 12px; font-weight: 600; color: #1e293b; margin-top: 2px;'>{$orderDate}</div>
+                            </td>
+                            <td valign='top' style='width: 50%; padding: 6px 0 6px 6px; vertical-align: top; border-top: 1px dashed #e2e8f0;'>
+                              <div style='font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 700;'>Payment Method</div>
+                              <div style='font-size: 12px; font-weight: 600; color: #1e293b; margin-top: 2px;'>{$paymentMethod}</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td colspan='2' valign='top' style='padding: 6px 0 2px 0; vertical-align: top; border-top: 1px dashed #e2e8f0;'>
+                              <div style='font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 700;'>Delivery Address</div>
+                              <div style='font-size: 12px; font-weight: 600; color: #1e293b; margin-top: 2px; line-height: 1.4;'>{$fullAddress}</div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Products Table (Rule 46 Fluid Responsive) -->
+                  <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 16px;'>
+                    <thead>
+                      <tr style='background: #f1f5f9; color: #334155; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.3px;'>
+                        <th style='padding: 10px 12px; text-align: left; border-bottom: 1px solid #cbd5e1;'>Product &amp; GST Details</th>
+                        <th style='padding: 10px 12px; text-align: right; border-bottom: 1px solid #cbd5e1; width: 105px; white-space: nowrap;'>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {$itemsRowsHtml}
+                    </tbody>
+                  </table>
+
+                  <!-- Financial Summary Card -->
+                  <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='width: 100%; border-collapse: collapse; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px;'>
+                    <tr>
+                      <td style='padding: 14px 16px;'>
+                        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='width: 100%; border-collapse: collapse; font-size: 13px;'>
+                          <tr>
+                            <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Taxable Subtotal:</td>
+                            <td style='padding: 4px 0; text-align: right; font-family: monospace; font-weight: 600; color: #1e293b;'>₹" . number_format($itemsSubtotal, 2) . "</td>
+                          </tr>
+                          <tr>
+                            <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Total CGST (2.5%):</td>
+                            <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>+₹" . number_format($cgstTotal, 2) . "</td>
+                          </tr>
+                          <tr>
+                            <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Total SGST (2.5%):</td>
+                            <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>+₹" . number_format($sgstTotal, 2) . "</td>
+                          </tr>
+                          " . ($discount > 0 ? "
+                          <tr>
+                            <td style='padding: 4px 0; color: #059669; font-weight: 600;'>Coupon Discount:</td>
+                            <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>-₹" . number_format($discount, 2) . "</td>
+                          </tr>" : "") . "
+                          <tr>
+                            <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Shipping / Delivery:</td>
+                            <td style='padding: 4px 0; text-align: right; font-family: monospace; font-weight: 600; color: " . ($deliveryFee === 0 ? "#059669" : "#1e293b") . ";'>" . ($deliveryFee === 0 ? "FREE" : "₹" . number_format($deliveryFee, 2)) . "</td>
+                          </tr>
+                          <tr style='border-top: 2px solid #075B32;'>
+                            <td style='padding: 10px 0 0 0; font-weight: 800; font-size: 15px; color: #0f172a;'>Total Paid:</td>
+                            <td style='padding: 10px 0 0 0; text-align: right; font-family: monospace; font-weight: 800; font-size: 17px; color: #075B32;'>₹" . number_format($finalTotal, 2) . "</td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Trust Badge Card -->
+                  <div style='background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 11px 14px; font-size: 11px; color: #166534; line-height: 1.45;'>
+                    <strong style='color: #075B32;'>✓ 100% Quality &amp; Potency Guaranteed:</strong><br>
+                    Inspected for batch potency and packed in secure agricultural transit packaging.
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style='background: #f8fafc; padding: 14px 16px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; line-height: 1.5;'>
+                  Need assistance with your order? Call <a href='tel:+919311416225' style='color: #075B32; font-weight: 600; text-decoration: none;'>+91 93114 16225</a> or WhatsApp us.<br>
+                  &copy; " . date('Y') . " Janani Agro Products Pvt. Ltd. &bull; Lodhika GIDC, Gujarat.
+                </td>
+              </tr>
             </table>
-          </div>
-
-          <table style='width: 100%; border-collapse: collapse;'>
-            <tr>
-              <td style='width: 50%; vertical-align: top; padding-right: 15px;'>
-                <div style='background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; font-size: 11px; color: #166534;'>
-                  <strong>100% Quality & Potency Guaranteed:</strong><br>
-                  Inspected for batch potency and packed in secure agricultural transit packaging.
-                </div>
-              </td>
-              <td style='width: 50%; vertical-align: top;'>
-                <table style='width: 100%; font-size: 13px;'>
-                  <tr>
-                    <td style='padding: 4px 0; color: #64748b;'>Taxable Subtotal:</td>
-                    <td style='padding: 4px 0; text-align: right; font-family: monospace; font-weight: 600;'>₹" . number_format($itemsSubtotal, 2) . "</td>
-                  </tr>
-                  <tr>
-                    <td style='padding: 4px 0; color: #64748b;'>Total CGST (2.5%):</td>
-                    <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669;'>+₹" . number_format($cgstTotal, 2) . "</td>
-                  </tr>
-                  <tr>
-                    <td style='padding: 4px 0; color: #64748b;'>Total SGST (2.5%):</td>
-                    <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669;'>+₹" . number_format($sgstTotal, 2) . "</td>
-                  </tr>
-                  " . ($discount > 0 ? "
-                  <tr>
-                    <td style='padding: 4px 0; color: #059669; font-weight: 600;'>Discount Applied:</td>
-                    <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669;'>-₹" . number_format($discount, 2) . "</td>
-                  </tr>" : "") . "
-                  <tr>
-                    <td style='padding: 4px 0; color: #64748b;'>Shipping Charges:</td>
-                    <td style='padding: 4px 0; text-align: right; font-family: monospace; font-weight: 600; color: " . ($deliveryFee === 0 ? "#059669" : "#1e293b") . ";'>" . ($deliveryFee === 0 ? "FREE" : "₹" . number_format($deliveryFee, 2)) . "</td>
-                  </tr>
-                  <tr style='border-top: 2px solid #075B32;'>
-                    <td style='padding: 8px 0 0 0; font-weight: bold; font-size: 15px; color: #0f172a;'>Total Paid:</td>
-                    <td style='padding: 8px 0 0 0; text-align: right; font-family: monospace; font-weight: bold; font-size: 16px; color: #075B32;'>₹" . number_format($finalTotal, 2) . "</td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </div>
-        <div style='background: #f8fafc; padding: 15px 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;'>
-          Need assistance with this order? Call +91 93114 16225 or WhatsApp us.<br>
-          &copy; " . date('Y') . " Janani Agro Products Pvt. Ltd. &bull; Lodhika GIDC, Gujarat.
-        </div>
-      </div>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>";
 
