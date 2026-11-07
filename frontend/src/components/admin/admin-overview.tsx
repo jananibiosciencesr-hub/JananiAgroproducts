@@ -293,14 +293,14 @@ export function AdminOverview({
 
   const matchingKpiCards = cleanSearch
     ? kpiCards.filter(card =>
-        card.title.toLowerCase().includes(cleanSearch) ||
-        card.trend.toLowerCase().includes(cleanSearch) ||
-        card.tab.toLowerCase().includes(cleanSearch) ||
-        (card.id === "inquiries" && "customer inquiries".includes(cleanSearch)) ||
-        (card.id === "lowstock" && "low stock products".includes(cleanSearch)) ||
-        (card.id === "coupons" && "coupons used today".includes(cleanSearch)) ||
-        (card.id === "referrals" && "referral earnings".includes(cleanSearch))
-      )
+      card.title.toLowerCase().includes(cleanSearch) ||
+      card.trend.toLowerCase().includes(cleanSearch) ||
+      card.tab.toLowerCase().includes(cleanSearch) ||
+      (card.id === "inquiries" && "customer inquiries".includes(cleanSearch)) ||
+      (card.id === "lowstock" && "low stock products".includes(cleanSearch)) ||
+      (card.id === "coupons" && "coupons used today".includes(cleanSearch)) ||
+      (card.id === "referrals" && "referral earnings".includes(cleanSearch))
+    )
     : kpiCards;
 
   const displayedKpiCards = cleanSearch && matchingKpiCards.length > 0 ? matchingKpiCards : kpiCards;
@@ -309,11 +309,11 @@ export function AdminOverview({
   const defaultSalesOverview = charts?.salesOverview || (
     liveOrders.length > 0
       ? liveOrders.slice(0, 7).map((o, i) => ({
-          date: o.date ? String(o.date).split(" ")[0] || `Day ${i + 1}` : `Day ${i + 1}`,
-          sales: Number(o.total) || 0,
-          orders: 1,
-          visitors: 3
-        }))
+        date: o.date ? String(o.date).split(" ")[0] || `Day ${i + 1}` : `Day ${i + 1}`,
+        sales: Number(o.total) || 0,
+        orders: 1,
+        visitors: 3
+      }))
       : [{ date: "Today", sales: totalSales, orders: totalOrdersCount, visitors: activePatronsCount * 3 }]
   );
 
@@ -403,15 +403,14 @@ export function AdminOverview({
                 </div>
 
                 <div className="mt-2 sm:mt-3 pt-2 border-t border-border/40 flex items-center justify-between gap-1 text-[10px] sm:text-[11px]">
-                  <span className={`inline-flex items-center gap-1 font-semibold truncate ${
-                    card.trendType === "live"
+                  <span className={`inline-flex items-center gap-1 font-semibold truncate ${card.trendType === "live"
                       ? "text-emerald-700 dark:text-emerald-400"
                       : card.trendType === "warning"
-                      ? "text-amber-700 dark:text-amber-400"
-                      : card.trendType === "negative"
-                      ? "text-rose-700 dark:text-rose-400"
-                      : "text-muted-foreground"
-                  }`}>
+                        ? "text-amber-700 dark:text-amber-400"
+                        : card.trendType === "negative"
+                          ? "text-rose-700 dark:text-rose-400"
+                          : "text-muted-foreground"
+                    }`}>
                     {card.trendType === "live" && (
                       <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                     )}
@@ -603,9 +602,8 @@ export function AdminOverview({
                   <button
                     key={status}
                     onClick={() => setTableFilter(status)}
-                    className={`rounded-lg px-2 sm:px-3 py-1 capitalize transition-colors text-[10px] sm:text-[11px] shrink-0 cursor-pointer ${
-                      tableFilter === status ? "bg-card text-foreground shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`rounded-lg px-2 sm:px-3 py-1 capitalize transition-colors text-[10px] sm:text-[11px] shrink-0 cursor-pointer ${tableFilter === status ? "bg-card text-foreground shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
+                      }`}
                   >
                     {status}
                   </button>
@@ -666,17 +664,16 @@ export function AdminOverview({
                     </td>
                     <td className="px-4 sm:px-6 py-3 sm:py-3.5">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold border ${
-                          (o.orderStatus || o.status) === "Delivered"
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold border ${(o.orderStatus || o.status) === "Delivered"
                             ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
                             : (o.orderStatus || o.status) === "Shipped"
-                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
-                            : (o.orderStatus || o.status) === "Processing"
-                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                            : (o.orderStatus || o.status) === "Cancelled"
-                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-                            : "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20"
-                        }`}
+                              ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+                              : (o.orderStatus || o.status) === "Processing"
+                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                                : (o.orderStatus || o.status) === "Cancelled"
+                                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                                  : "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20"
+                          }`}
                       >
                         {o.orderStatus || o.status || "Processing"}
                       </span>
@@ -768,24 +765,24 @@ export function AdminOverview({
             <div className="space-y-2 sm:space-y-2.5 min-w-0">
               {(cleanSearch
                 ? (liveCustomers.length > 0
-                    ? liveCustomers.filter(c => {
-                        const q = cleanSearch;
-                        return String(c.name || "").toLowerCase().includes(q) || String(c.email || "").toLowerCase().includes(q) || String(c.phone || "").toLowerCase().includes(q);
-                      })
-                    : liveOrders.filter(o => {
-                        const cust = getOrderCustomer(o);
-                        const q = cleanSearch;
-                        return String(cust.name || "").toLowerCase().includes(q) || String(cust.email || "").toLowerCase().includes(q) || String(cust.phone || "").toLowerCase().includes(q);
-                      }).map(o => {
-                        const cust = getOrderCustomer(o);
-                        return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: (cust as any)?.tier || "Active Patron", walletBalance: 0 };
-                      }))
+                  ? liveCustomers.filter(c => {
+                    const q = cleanSearch;
+                    return String(c.name || "").toLowerCase().includes(q) || String(c.email || "").toLowerCase().includes(q) || String(c.phone || "").toLowerCase().includes(q);
+                  })
+                  : liveOrders.filter(o => {
+                    const cust = getOrderCustomer(o);
+                    const q = cleanSearch;
+                    return String(cust.name || "").toLowerCase().includes(q) || String(cust.email || "").toLowerCase().includes(q) || String(cust.phone || "").toLowerCase().includes(q);
+                  }).map(o => {
+                    const cust = getOrderCustomer(o);
+                    return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: (cust as any)?.tier || "Active Patron", walletBalance: 0 };
+                  }))
                 : (liveCustomers.length > 0
-                    ? liveCustomers
-                    : liveOrders.map(o => {
-                        const cust = getOrderCustomer(o);
-                        return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: (cust as any)?.tier || "Active Patron", walletBalance: 0 };
-                      }))
+                  ? liveCustomers
+                  : liveOrders.map(o => {
+                    const cust = getOrderCustomer(o);
+                    return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: (cust as any)?.tier || "Active Patron", walletBalance: 0 };
+                  }))
               ).slice(0, 4).map((c, idx) => (
                 <div key={idx} className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-muted/30 border border-border/50 text-xs min-w-0 gap-2 hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
@@ -826,11 +823,11 @@ export function AdminOverview({
             {(liveReviews.length > 0
               ? liveReviews.slice(0, 4)
               : [
-                  { productName: "Harit (1 L) — Trichoderma Viride", author: "Ramesh Patel", rating: 5, comment: "Controlled root rot completely in our groundnut fields. High spore count." },
-                  { productName: "Bhumi Shakti (1 L) — Soil Conditioner", author: "Suresh Reddy", rating: 5, comment: "Excellent humus and root aeration. Chilli foliage is vigorous and deep green." },
-                  { productName: "Neem Oil 1000 PPM (1 L) — Pest Shield", author: "Balram Choudhary", rating: 5, comment: "High azadirachtin potency. Repelled whiteflies and thrips effectively." },
-                  { productName: "Dharani (1 L) — Root Growth Promoter", author: "Venkatesh Rao", rating: 5, comment: "Dense feeder root development in paddy nursery within 7 days." }
-                ]
+                { productName: "Harit (1 L) — Trichoderma Viride", author: "Ramesh Patel", rating: 5, comment: "Controlled root rot completely in our groundnut fields. High spore count." },
+                { productName: "Bhumi Shakti (1 L) — Soil Conditioner", author: "Suresh Reddy", rating: 5, comment: "Excellent humus and root aeration. Chilli foliage is vigorous and deep green." },
+                { productName: "Neem Oil 1000 PPM (1 L) — Pest Shield", author: "Balram Choudhary", rating: 5, comment: "High azadirachtin potency. Repelled whiteflies and thrips effectively." },
+                { productName: "Dharani (1 L) — Root Growth Promoter", author: "Venkatesh Rao", rating: 5, comment: "Dense feeder root development in paddy nursery within 7 days." }
+              ]
             ).map((r: any, idx: number) => (
               <div key={idx} className="p-3 sm:p-4 rounded-xl bg-muted/30 border border-border/50 flex flex-col justify-between min-w-0 max-w-full overflow-hidden hover:border-emerald-500/30 transition-colors">
                 <div className="min-w-0">
