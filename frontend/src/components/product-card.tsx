@@ -221,7 +221,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
             }}
             width={700}
             height={700}
-            className="max-h-full max-w-full object-contain transition duration-500 group-hover:scale-105"
+            className="max-h-full max-w-full object-contain transition duration-500 group-"
           />
         </Link>
 
@@ -238,7 +238,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
             type="button"
             onClick={handleWishlist}
             aria-label={`Save ${product.name}`}
-            className="size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer"
+            className="size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
           >
             <Heart
               className={`size-4 sm:size-4.5 transition-colors ${

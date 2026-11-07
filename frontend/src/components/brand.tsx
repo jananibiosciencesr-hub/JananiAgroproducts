@@ -23,7 +23,7 @@ export function Brand({
         <img
           src={jananiEmblem}
           alt="JANANI AGRO PRODUCTS"
-          className="relative size-8.5 sm:size-11 md:size-13 object-contain shrink-0 drop-shadow-[0_2px_8px_rgba(7,91,50,0.18)] transition-all duration-300 group-hover:scale-105"
+          className="relative size-8.5 sm:size-11 md:size-13 object-contain shrink-0 drop-shadow-[0_2px_8px_rgba(7,91,50,0.18)] transition-all duration-300 group-"
         />
       </div>
 

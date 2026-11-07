@@ -110,13 +110,13 @@ function BlogIndexPage() {
           {filteredPosts.slice(1).map((post) => (
             <article
               key={post.slug}
-              className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition hover:-translate-y-1 hover:shadow-luxe"
+              className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition hover:shadow-luxe"
             >
               <div className="relative aspect-[16/10] overflow-hidden bg-muted">
                 <img
                   src={post.image}
                   alt={post.title}
-                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  className="h-full w-full object-cover transition duration-700 group-"
                 />
               </div>
 

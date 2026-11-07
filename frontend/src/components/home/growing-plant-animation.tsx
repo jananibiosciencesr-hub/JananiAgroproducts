@@ -100,7 +100,7 @@ export function GrowingPlantAnimation() {
                   alt={stg.name}
                   loading="eager"
                   className={`w-full h-full object-cover transition-transform duration-700 ${
-                    stg.id === 3 ? "hover:scale-105" : ""
+                    stg.id === 3 ? "" : ""
                   }`}
                 />
               </div>

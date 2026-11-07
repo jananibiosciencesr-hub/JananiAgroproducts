@@ -337,7 +337,7 @@ export function PdpReviewsSection({ product }: PdpReviewsSectionProps) {
                       key={star}
                       type="button"
                       onClick={() => setNewRating(star)}
-                      className="p-1 hover:scale-110 transition"
+                      className="p-1 transition"
                     >
                       <Star
                         className={`size-6 ${

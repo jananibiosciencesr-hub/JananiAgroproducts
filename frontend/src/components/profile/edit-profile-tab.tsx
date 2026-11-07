@@ -244,7 +244,7 @@ export function EditProfileTab() {
             variant="gold"
             size="default"
             onClick={() => setIsEditing(true)}
-            className="rounded-full text-xs font-bold px-5 gap-2 shadow-sm shrink-0 self-start sm:self-auto hover:scale-[1.02] transition"
+            className="rounded-full text-xs font-bold px-5 gap-2 shadow-sm shrink-0 self-start sm:self-auto transition"
           >
             <Pencil className="size-3.5" /> Edit Profile Details
           </Button>

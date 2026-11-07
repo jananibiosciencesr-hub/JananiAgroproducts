@@ -242,7 +242,7 @@ export function ReferralProgramSection() {
             <button
               type="button"
               onClick={handleShareWhatsApp}
-              className="p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#128C7E] dark:text-[#25D366] flex flex-col items-center justify-center gap-1.5 transition hover:scale-105 active:scale-95"
+              className="p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#128C7E] dark:text-[#25D366] flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
             >
               <WhatsAppIcon className="size-5" />
               <span className="text-xs font-bold">WhatsApp</span>
@@ -252,7 +252,7 @@ export function ReferralProgramSection() {
             <button
               type="button"
               onClick={handleShareTelegram}
-              className="p-3 rounded-2xl bg-[#229ED9]/10 hover:bg-[#229ED9]/20 border border-[#229ED9]/30 text-[#229ED9] flex flex-col items-center justify-center gap-1.5 transition hover:scale-105 active:scale-95"
+              className="p-3 rounded-2xl bg-[#229ED9]/10 hover:bg-[#229ED9]/20 border border-[#229ED9]/30 text-[#229ED9] flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
             >
               <TelegramIcon className="size-5" />
               <span className="text-xs font-bold">Telegram</span>
@@ -262,7 +262,7 @@ export function ReferralProgramSection() {
             <button
               type="button"
               onClick={handleShareEmail}
-              className="p-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex flex-col items-center justify-center gap-1.5 transition hover:scale-105 active:scale-95"
+              className="p-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
             >
               <Mail className="size-5" />
               <span className="text-xs font-bold">Email</span>
@@ -272,7 +272,7 @@ export function ReferralProgramSection() {
             <button
               type="button"
               onClick={handleNativeShare}
-              className="p-3 rounded-2xl bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary flex flex-col items-center justify-center gap-1.5 transition hover:scale-105 active:scale-95"
+              className="p-3 rounded-2xl bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
             >
               <Share2 className="size-5" />
               <span className="text-xs font-bold">More</span>

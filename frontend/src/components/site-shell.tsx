@@ -307,7 +307,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               title="Shopping Cart"
               className="relative flex size-8.5 sm:size-9 lg:size-9.5 items-center justify-center rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] transition-all cursor-pointer group shrink-0"
             >
-              <ShoppingBag className="size-4 sm:size-4.5 group-hover:scale-105 transition-transform" />
+              <ShoppingBag className="size-4 sm:size-4.5 group- transition-transform" />
               {cartCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 sm:h-4.5 sm:min-w-4.5 items-center justify-center rounded-full bg-gradient-to-r from-[#D99A12] to-[#E7A91A] px-1 text-[8.5px] sm:text-[9px] font-black text-white shadow-xs ring-2 ring-white">
                   {cartCount}
@@ -337,7 +337,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             ) : (
               <Button
                 asChild
-                className="ml-1 hidden lg:inline-flex rounded-full font-black text-xs h-8.5 lg:h-9 px-3.5 xl:px-5 shadow-[0_4px_14px_rgba(217,154,18,0.35)] hover:shadow-[0_6px_20px_rgba(217,154,18,0.45)] hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-r from-[#D99A12] via-[#E7A91A] to-[#D99A12] hover:from-[#c98e10] hover:to-[#D99A12] text-[#1E3A1E] border border-[#FDE68A]/60 transition-all duration-200 shrink-0"
+                className="ml-1 hidden lg:inline-flex rounded-full font-black text-xs h-8.5 lg:h-9 px-3.5 xl:px-5 shadow-[0_4px_14px_rgba(217,154,18,0.35)] hover:shadow-[0_6px_20px_rgba(217,154,18,0.45)] active:translate-y-0 bg-gradient-to-r from-[#D99A12] via-[#E7A91A] to-[#D99A12] hover:from-[#c98e10] hover:to-[#D99A12] text-[#1E3A1E] border border-[#FDE68A]/60 transition-all duration-200 shrink-0"
               >
                 <Link to="/login" search={{ redirect: undefined }} className="flex items-center gap-1.5 whitespace-nowrap">
                   <User className="size-3.5 stroke-[2.5]" />
@@ -454,7 +454,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                         {isActive ? (
                           <span className="size-1.5 rounded-full bg-[#E7A91A] shrink-0" />
                         ) : (
-                          <ChevronRight className="size-3 text-slate-300 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5 shrink-0" />
+                          <ChevronRight className="size-3 text-slate-300 group-hover:text-emerald-600 transition-transform group- shrink-0" />
                         )}
                       </Link>
                     );
@@ -498,7 +498,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                         {isActive ? (
                           <span className="size-1.5 rounded-full bg-[#E7A91A] shrink-0" />
                         ) : (
-                          <ChevronRight className="size-3 text-slate-300 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5 shrink-0" />
+                          <ChevronRight className="size-3 text-slate-300 group-hover:text-emerald-600 transition-transform group- shrink-0" />
                         )}
                       </Link>
                     );
@@ -555,7 +555,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <a
           href="https://wa.me/919311416225"
           aria-label="Chat on WhatsApp"
-          className="fixed bottom-20 right-3 sm:right-6 z-30 grid size-12 place-items-center rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xl transition-all hover:scale-110 active:scale-95 md:bottom-6"
+          className="fixed bottom-20 right-3 sm:right-6 z-30 grid size-12 place-items-center rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xl transition-all active:scale-95 md:bottom-6"
         >
           <WhatsAppIcon className="size-6" />
         </a>
@@ -632,25 +632,25 @@ function Footer() {
       name: "Facebook",
       href: "https://facebook.com",
       Icon: FacebookIcon,
-      bgClass: "bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-md hover:scale-110",
+      bgClass: "bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-md ",
     },
     {
       name: "Instagram",
       href: "https://instagram.com",
       Icon: InstagramIcon,
-      bgClass: "bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white shadow-md hover:scale-110",
+      bgClass: "bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white shadow-md ",
     },
     {
       name: "YouTube",
       href: "https://youtube.com",
       Icon: YouTubeIcon,
-      bgClass: "bg-[#FF0000] text-white hover:bg-[#e60000] shadow-md hover:scale-110",
+      bgClass: "bg-[#FF0000] text-white hover:bg-[#e60000] shadow-md ",
     },
     {
       name: "WhatsApp",
       href: "https://wa.me/919311416225",
       Icon: WhatsAppIcon,
-      bgClass: "bg-[#25D366] text-white hover:bg-[#20bd5a] shadow-md hover:scale-110",
+      bgClass: "bg-[#25D366] text-white hover:bg-[#20bd5a] shadow-md ",
     }
   ];
 
@@ -686,7 +686,7 @@ function Footer() {
               <img
                 src={jananiEmblem}
                 alt="JANANI AGRO PRODUCTS"
-                className="size-12 sm:size-14 object-contain shrink-0 transition-transform duration-300 group-hover:scale-110"
+                className="size-12 sm:size-14 object-contain shrink-0 transition-transform duration-300 group-"
               />
               <div className="flex flex-col text-left">
                 <span className="font-display text-sm sm:text-base font-black tracking-tight text-[#075B32] leading-tight">

@@ -457,7 +457,7 @@ function CategoryDetailPage() {
                       key={c.slug}
                       to="/categories/$slug"
                       params={{ slug: c.slug }}
-                      className="group flex-none shrink-0 w-[225px] sm:w-[245px] snap-start flex items-center gap-3 p-3 sm:p-3.5 rounded-3xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                      className="group flex-none shrink-0 w-[225px] sm:w-[245px] snap-start flex items-center gap-3 p-3 sm:p-3.5 rounded-3xl border border-border/80 bg-white hover:border-[#075B32]/40 shadow-xs hover:shadow-md transition-all duration-200"
                     >
                       <div className="size-14 sm:size-16 rounded-full overflow-hidden shrink-0 border border-slate-100 bg-slate-50">
                         <img
@@ -466,7 +466,7 @@ function CategoryDetailPage() {
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
                           }}
-                          className="size-full object-cover group-hover:scale-105 transition duration-300"
+                          className="size-full object-cover group- transition duration-300"
                         />
                       </div>
                       <div className="min-w-0 flex-1">

@@ -100,7 +100,7 @@ export function ProfileHeader() {
             <button
               type="button"
               onClick={() => setShowPresets(!showPresets)}
-              className="absolute -bottom-1 -right-1 size-5 rounded-full bg-brand-gold text-forest flex items-center justify-center shadow hover:scale-110 transition cursor-pointer"
+              className="absolute -bottom-1 -right-1 size-5 rounded-full bg-brand-gold text-forest flex items-center justify-center shadow transition cursor-pointer"
               title="Change Profile Photo"
             >
               <Camera className="size-2.5" />

@@ -76,7 +76,7 @@ export function PdpGallery({ product }: PdpGalleryProps) {
           {/* Video Preview Button */}
           <button
             onClick={() => setIsVideoModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-full bg-brand-gold text-forest px-3.5 py-1.5 text-xs font-bold shadow-md hover:bg-amber-400 transition transform hover:scale-105"
+            className="flex items-center gap-1.5 rounded-full bg-brand-gold text-forest px-3.5 py-1.5 text-xs font-bold shadow-md hover:bg-amber-400 transition transform"
           >
             <Play className="size-3.5 fill-current" />
             Watch Farm Video
@@ -150,7 +150,7 @@ export function PdpGallery({ product }: PdpGalleryProps) {
           onClick={() => setIsVideoModalOpen(true)}
           className="relative aspect-square overflow-hidden rounded-2xl border-2 border-brand-gold/60 bg-forest flex flex-col items-center justify-center text-center p-2 text-white group hover:border-brand-gold transition shadow-sm"
         >
-          <div className="size-7 rounded-full bg-brand-gold text-forest flex items-center justify-center mb-1 group-hover:scale-110 transition">
+          <div className="size-7 rounded-full bg-brand-gold text-forest flex items-center justify-center mb-1 group- transition">
             <Play className="size-3.5 fill-current ml-0.5" />
           </div>
           <span className="text-[10px] font-bold text-brand-gold leading-tight">

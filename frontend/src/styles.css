@@ -548,16 +548,40 @@ html.scroll-animate-ready .scroll-reveal-top {
 }
 
 /* In-View revealed state when scrolling UP and DOWN */
-html.scroll-animate-ready .scroll-reveal-left.is-revealed:not(:hover),
-html.scroll-animate-ready .scroll-reveal-top.is-revealed:not(:hover) {
+html.scroll-animate-ready .scroll-reveal-left.is-revealed,
+html.scroll-animate-ready .scroll-reveal-top.is-revealed {
   opacity: 1 !important;
-  transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0) !important;
 }
 
-/* Retain full opacity while letting card hover transforms (e.g. hover:-translate-y-1) work cleanly */
-html.scroll-animate-ready .scroll-reveal-left.is-revealed:hover,
-html.scroll-animate-ready .scroll-reveal-top.is-revealed:hover {
-  opacity: 1 !important;
+/* ========================================================= */
+/* UNIVERSAL REMOVAL OF HOVER ANIMATIONS (ENTIRE WEBSITE)    */
+/* ========================================================= */
+
+/* Prevent any jumping, scaling, translating, bouncing on hover across all cards, buttons, images, links */
+[class*="hover:scale"]:hover,
+[class*="hover:scale"]:hover img,
+.group:hover [class*="group-hover:scale"],
+.group:hover [class*="group-hover:scale"] img,
+[class*="hover:-translate"]:hover,
+[class*="hover:translate"]:hover,
+.group:hover [class*="group-hover:-translate"],
+.group:hover [class*="group-hover:translate"],
+[data-card]:hover,
+[data-card]:hover *,
+article[data-card="product"]:hover,
+article[data-card="product"]:hover * {
+  transform: none !important;
+}
+
+/* Ensure transitions don't animate transform on hover (keep colors, borders, opacity smooth) */
+[data-card],
+[data-card] *,
+article,
+button,
+a,
+img {
+  transition-property: color, background-color, border-color, opacity, box-shadow !important;
 }
 
 /* User accessibility preference for reduced motion */

@@ -190,7 +190,7 @@ export function AdminSidebar({
                 } ${collapsed ? "justify-center px-0" : ""}`}
                 title={collapsed ? item.label : undefined}
               >
-                <Icon className={`size-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? "text-amber-300" : "text-muted-foreground group-hover:text-foreground"}`} />
+                <Icon className={`size-5 shrink-0 transition-transform group- ${isActive ? "text-amber-300" : "text-muted-foreground group-hover:text-foreground"}`} />
 
                 {!collapsed && (
                   <span className="truncate flex-1 text-left">{item.label}</span>

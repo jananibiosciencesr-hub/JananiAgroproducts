@@ -160,7 +160,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                           </div>
                         </div>
                       </div>
-                      <ArrowRight className="size-4 text-slate-300 group-hover:text-[#075B32] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                      <ArrowRight className="size-4 text-slate-300 group-hover:text-[#075B32] group- transition-all shrink-0 ml-2" />
                     </Link>
                   ))}
 

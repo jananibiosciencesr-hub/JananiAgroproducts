@@ -732,7 +732,7 @@ function ProductDetailPage() {
                 <img
                   src={galleryImages[activeImageIndex]?.src || product.image}
                   alt={product.name}
-                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-contain transition-transform duration-500 group-"
                 />
               )}
 
@@ -1339,7 +1339,7 @@ function ProductDetailPage() {
                               key={star}
                               type="button"
                               onClick={() => setReviewRating(star)}
-                              className="p-1 cursor-pointer transition hover:scale-110"
+                              className="p-1 cursor-pointer transition"
                             >
                               <Star
                                 className={`size-6 ${

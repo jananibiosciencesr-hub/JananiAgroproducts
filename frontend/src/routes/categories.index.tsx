@@ -258,7 +258,7 @@ function CategoriesIndexPage() {
                 <div
                   key={cat.slug}
                   data-card="category"
-                  className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/80 bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[#075B32]/30"
+                  className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/80 bg-white shadow-soft transition-all duration-300 hover:shadow-xl hover:border-[#075B32]/30"
                 >
                   {/* Clickable Image Header */}
                   <Link
@@ -272,7 +272,7 @@ function CategoriesIndexPage() {
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
                       }}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      className="h-full w-full object-cover transition duration-700 group-"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
@@ -307,7 +307,7 @@ function CategoriesIndexPage() {
                         className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#075B32] hover:text-[#4FAE2A] transition-colors"
                       >
                         <span>Explore Category</span>
-                        <ChevronRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        <ChevronRight className="size-3.5 group- transition-transform" />
                       </Link>
                       <Link
                         to="/products"

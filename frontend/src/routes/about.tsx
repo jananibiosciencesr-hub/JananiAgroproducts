@@ -111,7 +111,7 @@ function AboutPage() {
                 desc: "Water-soluble Zinc, Boron, Ferrous, and multi-micronutrient foliar blends that rapidly eliminate crop deficiencies.",
               },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-3xl border border-border bg-card p-6 shadow-soft hover:-translate-y-1 transition duration-200">
+              <div key={title} className="rounded-3xl border border-border bg-card p-6 shadow-soft transition duration-200">
                 <span className="grid size-12 place-items-center rounded-2xl bg-brand-leaf/10 text-brand-leaf mb-4">
                   <Icon className="size-6" />
                 </span>
@@ -165,7 +165,7 @@ function AboutPage() {
                 desc: "Dedicated agricultural advisory, dealer network enablement, and swift delivery support throughout the country.",
               },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-3xl border border-border bg-card p-8 shadow-soft transition hover:-translate-y-1">
+              <div key={title} className="rounded-3xl border border-border bg-card p-8 shadow-soft transition">
                 <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
                   <Icon className="size-6" />
                 </span>

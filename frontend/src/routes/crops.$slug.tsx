@@ -202,7 +202,7 @@ function CropDetailPage() {
                   className="size-6 rounded-full object-contain"
                 />
                 <span>{other.name}</span>
-                <ChevronRight className="size-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="size-3 text-slate-400 group- transition-transform" />
               </Link>
             ))}
           </div>
@@ -215,7 +215,7 @@ function CropDetailPage() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
-        className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl hover:scale-110 active:scale-95 transition-transform drop-shadow-md"
+        className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl active:scale-95 transition-transform drop-shadow-md"
       >
         <WhatsAppIcon className="size-7" />
       </a>

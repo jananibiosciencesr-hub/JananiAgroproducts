@@ -445,7 +445,7 @@ export function HeroBannerCarousel() {
                         <Link
                           to={slide.link || "/products"}
                           tabIndex={isCurrent ? 0 : -1}
-                          className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[#075B32] hover:bg-[#064e2b] text-white px-3.5 sm:px-5.5 py-1.5 sm:py-2 text-[11px] sm:text-sm font-bold shadow-md shadow-[#075B32]/25 hover:shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                          className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[#075B32] hover:bg-[#064e2b] text-white px-3.5 sm:px-5.5 py-1.5 sm:py-2 text-[11px] sm:text-sm font-bold shadow-md shadow-[#075B32]/25 hover:shadow-lg transition-transform active:scale-95 cursor-pointer"
                         >
                           <span>{slide.ctaText || "Explore Products"}</span>
                           <ArrowRight className="size-3 sm:size-4" />
@@ -454,7 +454,7 @@ export function HeroBannerCarousel() {
                           <Link
                             to={slide.secondaryCtaUrl || "/contact"}
                             tabIndex={isCurrent ? 0 : -1}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-[#075B32]/40 bg-white/90 hover:bg-[#075B32] hover:text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#075B32] backdrop-blur-xs shadow-xs transition-all hover:scale-105 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#075B32]/40 bg-white/90 hover:bg-[#075B32] hover:text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#075B32] backdrop-blur-xs shadow-xs transition-all cursor-pointer"
                           >
                             <span>{slide.secondaryCtaLabel}</span>
                           </Link>
@@ -486,7 +486,7 @@ export function HeroBannerCarousel() {
                 prevSlide();
               }}
               aria-label="Previous Slide"
-              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-12 rounded-full bg-white/90 hover:bg-white text-[#075B32] hover:text-[#4FAE2A] shadow-lg border border-[#D99A12]/40 backdrop-blur-md flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-12 rounded-full bg-white/90 hover:bg-white text-[#075B32] hover:text-[#4FAE2A] shadow-lg border border-[#D99A12]/40 backdrop-blur-md flex items-center justify-center transition-all active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="size-5 sm:size-6" />
             </button>
@@ -498,7 +498,7 @@ export function HeroBannerCarousel() {
                 nextSlide();
               }}
               aria-label="Next Slide"
-              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-12 rounded-full bg-white/90 hover:bg-white text-[#075B32] hover:text-[#4FAE2A] shadow-lg border border-[#D99A12]/40 backdrop-blur-md flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-12 rounded-full bg-white/90 hover:bg-white text-[#075B32] hover:text-[#4FAE2A] shadow-lg border border-[#D99A12]/40 backdrop-blur-md flex items-center justify-center transition-all active:scale-95 cursor-pointer"
             >
               <ChevronRight className="size-5 sm:size-6" />
             </button>

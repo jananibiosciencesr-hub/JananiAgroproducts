@@ -117,7 +117,7 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = product.image || "/products/harit.jpg";
                 }}
-                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                className="h-full w-full object-cover transition-transform duration-700"
               />
               {discountPercent > 0 && (
                 <span className="absolute top-4 left-4 rounded-full bg-destructive text-destructive-foreground px-2.5 py-1 text-xs font-bold shadow-md">

@@ -187,7 +187,7 @@ export function SavedProductsTab() {
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = prod.image || "/products/harit.jpg";
                       }}
-                      className="max-h-full max-w-full object-contain transition duration-500 group-hover:scale-105"
+                      className="max-h-full max-w-full object-contain transition duration-500 group-"
                     />
 
                     {/* Stock status badge */}

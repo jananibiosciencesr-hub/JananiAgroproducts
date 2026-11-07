@@ -510,7 +510,7 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
                             onClick={() => setLightboxImage({ image: img, review })}
                             className="group relative size-18 cursor-pointer overflow-hidden rounded-lg border border-border shadow-xs hover:border-brand-leaf"
                           >
-                            <img src={img.url} alt={img.caption || "Review UGC photo"} className="size-full object-cover transition-transform group-hover:scale-110" />
+                            <img src={img.url} alt={img.caption || "Review UGC photo"} className="size-full object-cover transition-transform group-" />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                               <Maximize2 className="size-4 text-white" />
                             </div>
@@ -691,13 +691,13 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
                 <div
                   key={image.id}
                   onClick={() => setLightboxImage({ image, review })}
-                  className="group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+                  className="group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md"
                 >
                   <div className="aspect-square overflow-hidden bg-muted">
                     <img
                       src={image.url}
                       alt={image.caption || review.productName}
-                      className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="size-full object-cover transition-transform duration-300 group-"
                     />
                   </div>
                   <div className="p-3">

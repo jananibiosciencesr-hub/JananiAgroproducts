@@ -257,7 +257,7 @@ function BecomeDistributorPage() {
             ].map(({ icon: Icon, title, desc }) => (
               <div
                 key={title}
-                className="rounded-3xl border border-border bg-card p-8 shadow-soft transition hover:-translate-y-1 hover:shadow-luxe"
+                className="rounded-3xl border border-border bg-card p-8 shadow-soft transition hover:shadow-luxe"
               >
                 <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
                   <Icon className="size-6" />

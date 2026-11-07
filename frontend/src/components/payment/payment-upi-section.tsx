@@ -371,7 +371,7 @@ export function PaymentUpiSection({
                     <span className="text-[10px] text-muted-foreground">Instant App Redirect</span>
                   </div>
                 </div>
-                <ArrowRight className="size-4 text-muted-foreground group-hover:text-brand-leaf group-hover:translate-x-0.5 transition" />
+                <ArrowRight className="size-4 text-muted-foreground group-hover:text-brand-leaf group- transition" />
               </button>
             ))}
           </div>

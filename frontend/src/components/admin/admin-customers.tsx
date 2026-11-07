@@ -393,7 +393,7 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
                           <img
                             src={c.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(c.name)}`}
                             alt={c.name}
-                            className="size-11 rounded-2xl object-cover ring-2 ring-border/80 shadow-xs group-hover:scale-105 transition-transform"
+                            className="size-11 rounded-2xl object-cover ring-2 ring-border/80 shadow-xs group- transition-transform"
                           />
                           <div>
                             <div className="flex items-center gap-2">

@@ -788,7 +788,7 @@ function ProductsPage() {
                     className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/70 border border-transparent hover:border-emerald-200/60 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 cursor-pointer select-none active:scale-95"
                     aria-label="Previous Page"
                   >
-                    <ChevronLeft className="size-4 shrink-0 transition-transform group-hover:-translate-x-0.5 text-gray-500 group-hover:text-[#075B32]" />
+                    <ChevronLeft className="size-4 shrink-0 transition-transform group- text-gray-500 group-hover:text-[#075B32]" />
                     <span className="hidden sm:inline font-semibold">Previous</span>
                   </button>
 
@@ -825,7 +825,7 @@ function ProductsPage() {
                     aria-label="Next Page"
                   >
                     <span className="hidden sm:inline font-semibold">Next</span>
-                    <ChevronRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 text-gray-500 group-hover:text-[#075B32]" />
+                    <ChevronRight className="size-4 shrink-0 transition-transform group- text-gray-500 group-hover:text-[#075B32]" />
                   </button>
                 </nav>
               </div>

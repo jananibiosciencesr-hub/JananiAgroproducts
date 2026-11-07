@@ -81,7 +81,7 @@ export function ShopByDisease() {
                 type="button"
                 onClick={() => scroll("left")}
                 aria-label="Scroll left"
-                className="size-8 rounded-full bg-slate-100 text-[#075B32] flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] hover:scale-105 active:scale-95"
+                className="size-8 rounded-full bg-slate-100 text-[#075B32] flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] active:scale-95"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -89,7 +89,7 @@ export function ShopByDisease() {
                 type="button"
                 onClick={() => scroll("right")}
                 aria-label="Scroll right"
-                className="size-8 rounded-full bg-slate-100 text-[#075B32] flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] hover:scale-105 active:scale-95"
+                className="size-8 rounded-full bg-slate-100 text-[#075B32] flex items-center justify-center transition hover:bg-[#F8FAEE] hover:text-[#4FAE2A] active:scale-95"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -100,7 +100,7 @@ export function ShopByDisease() {
               className="text-[#075B32] hover:text-[#4FAE2A] font-bold text-sm sm:text-base flex items-center gap-1 transition-colors group"
             >
               <span>View All</span>
-              <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+              <ArrowRight className="size-4 transition-transform duration-200 group-" />
             </Link>
           </div>
         </div>
@@ -120,13 +120,13 @@ export function ShopByDisease() {
             >
               {/* Circular Avatar / Card */}
               <div
-                className="size-24 sm:size-28 md:size-32 rounded-full bg-[#f4f7f2] flex items-center justify-center p-1.5 sm:p-2 transition-all duration-300 group-hover:scale-105 group-hover:bg-[#ebf3e7] relative overflow-hidden"
+                className="size-24 sm:size-28 md:size-32 rounded-full bg-[#f4f7f2] flex items-center justify-center p-1.5 sm:p-2 transition-all duration-300 group- group-hover:bg-[#ebf3e7] relative overflow-hidden"
               >
                 <img
                   src={disease.image}
                   alt={disease.name}
                   loading="lazy"
-                  className="h-full w-full object-contain rounded-full transition-transform duration-500 group-hover:scale-110 drop-shadow-xs"
+                  className="h-full w-full object-contain rounded-full transition-transform duration-500 group- drop-shadow-xs"
                 />
               </div>
 

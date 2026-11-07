@@ -70,7 +70,7 @@ export function PesticideCard({ product }: PesticideCardProps) {
   };
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-2xl border-0 bg-white p-3.5 sm:p-4 shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+    <div className="group relative flex flex-col justify-between rounded-2xl border-0 bg-white p-3.5 sm:p-4 shadow-none transition-all duration-300 hover:shadow-md">
       <Link
         to="/products/$slug"
         params={{ slug: product.slug }}
@@ -92,7 +92,7 @@ export function PesticideCard({ product }: PesticideCardProps) {
             type="button"
             onClick={handleToggleWishlist}
             aria-label="Wishlist"
-            className="flex size-8 items-center justify-center bg-transparent transition-transform hover:scale-110 active:scale-95"
+            className="flex size-8 items-center justify-center bg-transparent transition-transform active:scale-95"
           >
             <Heart
               className={`size-4 transition-colors ${
@@ -108,7 +108,7 @@ export function PesticideCard({ product }: PesticideCardProps) {
             src={product.image}
             alt={product.title}
             loading="lazy"
-            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-contain transition-transform duration-500 group-"
           />
         </div>
 

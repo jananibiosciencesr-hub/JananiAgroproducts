@@ -244,11 +244,11 @@ export function AdminOverview({
               <div
                 key={idx}
                 onClick={() => onNavigateTab(card.tab)}
-                className="group relative cursor-pointer overflow-hidden rounded-xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-card p-2.5 sm:p-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-luxe min-w-0 shadow-2xs"
+                className="group relative cursor-pointer overflow-hidden rounded-xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-card p-2.5 sm:p-4 transition-all duration-300 hover:border-emerald-500/50 hover:shadow-luxe min-w-0 shadow-2xs"
               >
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground truncate">{card.title}</span>
-                  <div className={`grid size-6 sm:size-8 place-items-center rounded-lg sm:rounded-xl bg-gradient-to-br ${card.color} text-white shadow-sm shrink-0 transition-transform group-hover:scale-110`}>
+                  <div className={`grid size-6 sm:size-8 place-items-center rounded-lg sm:rounded-xl bg-gradient-to-br ${card.color} text-white shadow-sm shrink-0 transition-transform group-`}>
                     <Icon className="size-3 sm:size-4" />
                   </div>
                 </div>

@@ -173,7 +173,7 @@ export function HomeFlashSale({
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = "/assets/janani-pantry.jpg";
                       }}
-                      className="max-h-full max-w-full object-contain transition duration-500 group-hover:scale-105"
+                      className="max-h-full max-w-full object-contain transition duration-500 group-"
                     />
                   </Link>
                   
@@ -187,7 +187,7 @@ export function HomeFlashSale({
                     type="button"
                     onClick={() => toggleWishlist(item.id)}
                     aria-label="Wishlist"
-                    className="absolute right-2 top-2 z-10 size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+                    className="absolute right-2 top-2 z-10 size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform active:scale-95"
                   >
                     <Heart
                       className={`size-4 sm:size-4.5 transition-colors ${

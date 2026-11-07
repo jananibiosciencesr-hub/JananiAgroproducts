@@ -654,7 +654,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                                 <button
                                   title="Issue Full / Partial Refund"
                                   onClick={() => handleOpenRefund(txn)}
-                                  className="px-2.5 py-1 rounded-lg bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 border border-purple-800/40 text-xs font-semibold transition-all hover:scale-105 cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 border border-purple-800/40 text-xs font-semibold transition-all cursor-pointer"
                                 >
                                   Refund
                                 </button>
@@ -1298,7 +1298,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                         setRecoveryModalOpen(true);
                       }}
                       disabled={isRecovered}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-900/30 disabled:opacity-40 transition-all hover:scale-105 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-900/30 disabled:opacity-40 transition-all cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                       Send Recovery Link
@@ -1736,7 +1736,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                   <MessageSquare className="w-4 h-4 text-emerald-400" />
                   <span>Send via WhatsApp ({selectedRecovery.customerPhone})</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-emerald-400 group- transition-transform" />
               </button>
 
               <button
@@ -1747,7 +1747,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                   <Smartphone className="w-4 h-4 text-blue-400" />
                   <span>Send via High-Priority SMS</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-blue-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-blue-400 group- transition-transform" />
               </button>
 
               <button
@@ -1758,7 +1758,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                   <Mail className="w-4 h-4 text-slate-400" />
                   <span>Send via Email ({selectedRecovery.customerEmail})</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group- transition-transform" />
               </button>
             </div>
           </div>

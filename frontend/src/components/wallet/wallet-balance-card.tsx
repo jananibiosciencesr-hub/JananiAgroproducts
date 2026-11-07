@@ -84,7 +84,7 @@ export function WalletBalanceCard({ onTransactionAdded }: WalletBalanceCardProps
             <Button
               type="button"
               onClick={() => setIsAddMoneyOpen(true)}
-              className="h-12 px-6 rounded-2xl bg-brand-gold hover:bg-amber-400 text-forest font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="h-12 px-6 rounded-2xl bg-brand-gold hover:bg-amber-400 text-forest font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-900/30 active:scale-[0.98] transition-all"
             >
               <Plus className="size-4 stroke-[3]" />
               <span>Add Money to Wallet</span>

@@ -615,7 +615,7 @@ export function CmsManagement() {
                     <img
                       src={banner.desktopImageUrl}
                       alt={banner.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group- transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
                       {banner.badgeText && (
@@ -855,7 +855,7 @@ export function CmsManagement() {
                     <img
                       src={cat.desktopImageUrl}
                       alt={cat.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group- transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
                       {cat.badge && (
@@ -2399,7 +2399,7 @@ function LiveDevicePreviewModal({
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {categoryBanners.filter(c => c.active).map(cat => (
                           <div key={cat.id} className="relative aspect-[4/3] rounded-xl overflow-hidden group shadow-sm bg-zinc-900">
-                            <img src={cat.desktopImageUrl} alt={cat.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                            <img src={cat.desktopImageUrl} alt={cat.title} className="w-full h-full object-cover group- transition-transform" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-2.5 text-white">
                               <p className="text-xs font-bold leading-tight">{cat.title}</p>
                             </div>

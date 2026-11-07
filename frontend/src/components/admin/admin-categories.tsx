@@ -1103,7 +1103,7 @@ function CategoryFormModal({
                       📁 Option 1: Upload from Device
                     </span>
                     <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-border hover:border-emerald-500 bg-muted/20 hover:bg-emerald-500/5 cursor-pointer transition-colors p-2 text-center group">
-                      <Upload className="size-5 text-muted-foreground group-hover:text-emerald-600 mb-1 transition-transform group-hover:-translate-y-0.5" />
+                      <Upload className="size-5 text-muted-foreground group-hover:text-emerald-600 mb-1 transition-transform group-" />
                       <span className="text-xs font-bold text-foreground">Click to Browse Thumbnail</span>
                       <span className="text-[10px] text-muted-foreground">PNG, JPG, WEBP, SVG</span>
                       <input

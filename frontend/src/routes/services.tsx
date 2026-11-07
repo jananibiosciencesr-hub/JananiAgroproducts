@@ -211,7 +211,7 @@ function ServicesPage() {
               return (
                 <div
                   key={srv.id}
-                  className="flex flex-col justify-between rounded-3xl border border-border bg-card p-8 shadow-soft transition hover:-translate-y-1 hover:shadow-luxe"
+                  className="flex flex-col justify-between rounded-3xl border border-border bg-card p-8 shadow-soft transition hover:shadow-luxe"
                 >
                   <div>
                     <div className="flex items-center justify-between">

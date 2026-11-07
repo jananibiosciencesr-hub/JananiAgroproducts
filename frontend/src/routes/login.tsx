@@ -761,7 +761,7 @@ export function AuthenticationPage() {
             <img
               src="/images/auth-banner.png"
               alt="Janani Agro Products - Pure Soil to Soul"
-              className="relative z-10 w-full h-full max-h-[500px] object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)] transition-all duration-300 hover:scale-[1.02]"
+              className="relative z-10 w-full h-full max-h-[500px] object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)] transition-all duration-300"
             />
           </div>
 

@@ -339,7 +339,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollCategories("left")}
               aria-label="Previous Categories"
-              className="hidden lg:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-emerald-100"
+              className="hidden lg:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -349,7 +349,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollCategories("right")}
               aria-label="Next Categories"
-              className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-emerald-100"
+              className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -363,7 +363,7 @@ export function HomePage() {
                 <Link
                   key={cat.id}
                   to={cat.link}
-                  className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1.5 group"
+                  className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 group"
                 >
                   <div className="size-20 sm:size-24 rounded-full overflow-hidden mb-3.5 shadow-sm border border-emerald-100/80 bg-white group-hover:border-[#4FAE2A]/50 group-hover:shadow-md transition-all duration-300 relative">
                     <img
@@ -372,7 +372,7 @@ export function HomePage() {
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
                       }}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-500 group-"
                       loading="lazy"
                     />
                   </div>
@@ -447,7 +447,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollProducts("left")}
               aria-label="Previous Products"
-              className="hidden sm:flex absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+              className="hidden sm:flex absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-sm"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -457,7 +457,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollProducts("right")}
               aria-label="Next Products"
-              className="hidden sm:flex absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
+              className="hidden sm:flex absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-slate-100 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-sm"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -495,7 +495,7 @@ export function HomePage() {
                           src={prod.image}
                           alt={prod.name}
                           loading="lazy"
-                          className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                          className="max-h-full max-w-full object-contain transition-transform duration-500 group-"
                         />
                       </Link>
 
@@ -515,7 +515,7 @@ export function HomePage() {
                           toggleWishlist(prod.numId);
                         }}
                         aria-label={`Save ${prod.name}`}
-                        className="absolute top-2 right-2 z-10 size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+                        className="absolute top-2 right-2 z-10 size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform active:scale-95"
                       >
                         <Heart
                           className={`size-4 sm:size-4.5 transition-colors ${
@@ -722,7 +722,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollTestimonials("left")}
               aria-label="Previous Testimonials"
-              className="hidden sm:flex absolute -left-4 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-white text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-slate-200"
+              className="hidden sm:flex absolute -left-4 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-white text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-slate-200"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -732,7 +732,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollTestimonials("right")}
               aria-label="Next Testimonials"
-              className="hidden sm:flex absolute -right-4 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-white text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-slate-200"
+              className="hidden sm:flex absolute -right-4 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-white text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-slate-200"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -746,7 +746,7 @@ export function HomePage() {
               {testimonials.map((t) => (
                 <div
                   key={t.id}
-                  className="snap-center sm:snap-start flex-none w-[calc(100vw-56px)] max-w-[340px] sm:w-[350px] md:w-[380px] flex flex-col justify-between p-5 sm:p-6 rounded-3xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 hover:-translate-y-1 border border-emerald-950/5"
+                  className="snap-center sm:snap-start flex-none w-[calc(100vw-56px)] max-w-[340px] sm:w-[350px] md:w-[380px] flex flex-col justify-between p-5 sm:p-6 rounded-3xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 border border-emerald-950/5"
                 >
                   <div>
                     {/* Farmer Headshot + Rating Stars */}
@@ -855,10 +855,10 @@ export function HomePage() {
               <div className="pt-2">
                 <Link
                   to="/products"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-xs sm:text-sm px-8 py-3.5 shadow-md transition-all hover:scale-105 active:scale-95 group"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#075B32] hover:bg-[#064A29] text-white font-bold text-xs sm:text-sm px-8 py-3.5 shadow-md transition-all active:scale-95 group"
                 >
                   <span>Explore Now</span>
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="size-4 transition-transform group-" />
                 </Link>
               </div>
             </div>
@@ -871,7 +871,7 @@ export function HomePage() {
                   alt="Healthy Harvest Bounty (Tomatoes, Mangoes, Cotton)"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-auto object-cover rounded-3xl shadow-lg transition-transform duration-700 hover:scale-105"
+                  className="w-full h-auto object-cover rounded-3xl shadow-lg transition-transform duration-700"
                 />
               </div>
             </div>
