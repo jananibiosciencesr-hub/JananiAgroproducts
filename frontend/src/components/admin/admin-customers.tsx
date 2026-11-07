@@ -279,8 +279,8 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
               key={t.id}
               onClick={() => setStatusFilter(t.id)}
               className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${statusFilter === t.id
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
             >
               <span>{t.label}</span>
@@ -440,12 +440,12 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
                         <div className="space-y-1">
                           <span
                             className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold shadow-xs ${isVip
-                                ? "bg-gradient-to-r from-purple-900 to-indigo-900 text-purple-200 border border-purple-500/30"
-                                : isPlatinum
-                                  ? "bg-gradient-to-r from-amber-600 to-yellow-600 text-white"
-                                  : isGold
-                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
-                                    : "bg-muted text-muted-foreground"
+                              ? "bg-gradient-to-r from-purple-900 to-indigo-900 text-purple-200 border border-purple-500/30"
+                              : isPlatinum
+                                ? "bg-gradient-to-r from-amber-600 to-yellow-600 text-white"
+                                : isGold
+                                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                                  : "bg-muted text-muted-foreground"
                               }`}
                           >
                             {isVip && "👑"} {isPlatinum && "⭐"} {isGold && "🥇"} {c.tier || "Silver"}
@@ -487,10 +487,10 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
                       <td className="px-3 py-4">
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${c.status === "Active"
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
-                              : c.status === "Suspended"
-                                ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20"
-                                : "bg-muted text-muted-foreground"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                            : c.status === "Suspended"
+                              ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20"
+                              : "bg-muted text-muted-foreground"
                             }`}
                         >
                           <span
@@ -528,8 +528,8 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
                             onClick={() => handleToggleStatus(c)}
                             title={c.status === "Active" ? "Suspend user" : "Activate user"}
                             className={`size-8 rounded-xl border border-border bg-card flex items-center justify-center transition-colors shadow-2xs ${c.status === "Active"
-                                ? "text-muted-foreground hover:text-rose-600 hover:border-rose-500"
-                                : "text-emerald-600 border-emerald-500/40 hover:bg-emerald-50"
+                              ? "text-muted-foreground hover:text-rose-600 hover:border-rose-500"
+                              : "text-emerald-600 border-emerald-500/40 hover:bg-emerald-50"
                               }`}
                           >
                             {c.status === "Active" ? <Ban className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}
@@ -738,8 +738,8 @@ function CustomerProfileDrawer({
                 </span>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${customer.status === "Active"
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
-                      : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                    : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20"
                     }`}
                 >
                   <span className={`size-1.5 rounded-full ${customer.status === "Active" ? "bg-emerald-500" : "bg-rose-500"}`} />
@@ -763,10 +763,10 @@ function CustomerProfileDrawer({
 
               <div className="mt-2.5 flex items-center gap-2 flex-wrap">
                 <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[11px] font-bold ${isVip
-                    ? "bg-purple-900 text-purple-200 border border-purple-500/30"
-                    : isPlatinum
-                      ? "bg-amber-600 text-white"
-                      : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                  ? "bg-purple-900 text-purple-200 border border-purple-500/30"
+                  : isPlatinum
+                    ? "bg-amber-600 text-white"
+                    : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
                   }`}>
                   {isVip ? "👑 VIP Patron" : isPlatinum ? "⭐ Platinum Gold" : "🥇 Gold Member"}
                 </span>
@@ -819,8 +819,8 @@ function CustomerProfileDrawer({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 whitespace-nowrap transition-all ${isActive
-                    ? "border-emerald-600 text-emerald-600"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "border-emerald-600 text-emerald-600"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
               >
                 <Icon className="size-3.5" />
@@ -913,8 +913,8 @@ function CustomerProfileDrawer({
                   <button
                     onClick={onToggleStatus}
                     className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold ${customer.status === "Active"
-                        ? "border-rose-500/40 text-rose-600 hover:bg-rose-50"
-                        : "border-emerald-500/40 text-emerald-600 hover:bg-emerald-50"
+                      ? "border-rose-500/40 text-rose-600 hover:bg-rose-50"
+                      : "border-emerald-500/40 text-emerald-600 hover:bg-emerald-50"
                       }`}
                   >
                     {customer.status === "Active" ? <Ban className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}
@@ -950,12 +950,12 @@ function CustomerProfileDrawer({
                         <span className="text-[10px] text-muted-foreground">• {ord.date}</span>
                       </div>
                       <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${ord.orderStatus === "Delivered"
-                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : ord.orderStatus === "Shipped"
-                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
-                            : ord.orderStatus === "Cancelled"
-                              ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        : ord.orderStatus === "Shipped"
+                          ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                          : ord.orderStatus === "Cancelled"
+                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                            : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
                         }`}>
                         {ord.orderStatus}
                       </span>
@@ -1465,8 +1465,8 @@ function AddCustomerModal({
                 onChange={(e) => handleEmailChange(e.target.value)}
                 placeholder="sravani@gmail.com"
                 className={`h-9 w-full rounded-xl border bg-background px-3 outline-none ${duplicateEmailCustomer || errors.email
-                    ? "border-rose-500 focus:border-rose-600 bg-rose-50/20"
-                    : "border-border focus:border-emerald-600"
+                  ? "border-rose-500 focus:border-rose-600 bg-rose-50/20"
+                  : "border-border focus:border-emerald-600"
                   }`}
               />
               {duplicateEmailCustomer && (
@@ -1489,8 +1489,8 @@ function AddCustomerModal({
                 placeholder="9845112345"
                 maxLength={10}
                 className={`h-9 w-full rounded-xl border bg-background px-3 outline-none ${duplicatePhoneCustomer || errors.phone
-                    ? "border-rose-500 focus:border-rose-600 bg-rose-50/20"
-                    : "border-border focus:border-emerald-600"
+                  ? "border-rose-500 focus:border-rose-600 bg-rose-50/20"
+                  : "border-border focus:border-emerald-600"
                   }`}
               />
               {duplicatePhoneCustomer && (
@@ -1671,8 +1671,8 @@ function WalletAdjustmentModal({
               type="button"
               onClick={() => setType("credit")}
               className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${type === "credit"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               <ArrowDownLeft className="size-3.5" />
@@ -1682,8 +1682,8 @@ function WalletAdjustmentModal({
               type="button"
               onClick={() => setType("debit")}
               className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${type === "debit"
-                  ? "bg-rose-600 text-white shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-rose-600 text-white shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               <ArrowUpRight className="size-3.5" />

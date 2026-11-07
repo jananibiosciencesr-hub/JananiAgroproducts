@@ -188,8 +188,8 @@ export function HeroBannerCarousel() {
       onTouchEnd={handleTouchEnd}
       aria-label="Janani Agro Featured Campaigns"
     >
-      {/* Slides Container - Dedicated 9:16 portrait on mobile and balanced 16:8 on desktop to eliminate top gap and frame content cleanly */}
-      <div className="relative w-full aspect-[9/16] sm:aspect-[16/10] md:aspect-[16/8.2] lg:aspect-[16/8] xl:aspect-[16/8] md:min-h-[400px] md:max-h-[500px] lg:max-h-[540px] xl:max-h-[580px] overflow-hidden">
+      {/* Slides Container - Compact, proportionate hero banner on all devices */}
+      <div className="relative w-full aspect-[4/5] sm:aspect-[16/9] md:aspect-[16/7.5] lg:aspect-[16/7] xl:aspect-[16/6.8] 2xl:aspect-[16/6.5] max-h-[360px] sm:max-h-[350px] md:max-h-[380px] lg:max-h-[420px] xl:max-h-[440px] 2xl:max-h-[460px] overflow-hidden">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -266,7 +266,7 @@ export function HeroBannerCarousel() {
                         </p>
                       )}
                       {slide.title && (
-                        <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-md">
+                        <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight drop-shadow-md">
                           {slide.title}
                         </h2>
                       )}
