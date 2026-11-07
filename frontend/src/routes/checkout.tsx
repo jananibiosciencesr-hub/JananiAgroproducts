@@ -5,12 +5,9 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   ArrowRight,
   CheckCircle2,
-  CreditCard,
   Lock,
   Package,
-  QrCode,
   ShieldCheck,
-  Wallet,
   Sparkles,
   UserCheck,
   LogOut
@@ -730,79 +727,6 @@ export function CheckoutPage() {
               orderNotes={orderNotes}
               onChangeNotes={(notes) => setOrderNotes(notes)}
             />
-          </section>
-
-          {/* STEP 3: Payment Option Selection */}
-          <section className="rounded-2xl sm:rounded-3xl border border-border bg-card p-3.5 sm:p-6 shadow-soft space-y-3.5">
-            <div className="flex items-center gap-2 border-b border-border pb-2.5">
-              <span className="grid size-6 sm:size-7 place-items-center rounded-full bg-brand-leaf text-white text-xs font-bold shadow-xs">
-                3
-              </span>
-              <h2 className="font-display text-base sm:text-lg font-bold text-foreground">
-                Payment Option
-              </h2>
-            </div>
-
-            <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-3">
-              {[
-                {
-                  id: "upi",
-                  label: "Instant UPI / QR",
-                  icon: QrCode,
-                  sub: "Google Pay, PhonePe, Paytm, BHIM",
-                  badge: "FASTEST",
-                },
-                {
-                  id: "card",
-                  label: "Cards & Banking",
-                  icon: CreditCard,
-                  sub: "Visa, Mastercard, RuPay, NetBanking",
-                },
-                {
-                  id: "cod",
-                  label: "Cash on Delivery",
-                  icon: Wallet,
-                  sub: "Pay upon harvest doorstep arrival",
-                },
-              ].map((m) => {
-                const Icon = m.icon;
-                const isSelected = paymentMethod === m.id;
-                return (
-                  <button
-                    type="button"
-                    key={m.id}
-                    onClick={() => setPaymentMethod(m.id as any)}
-                    className={`flex sm:flex-col items-center gap-3 sm:gap-2 p-3 sm:p-4 rounded-xl sm:rounded-2xl border text-left sm:text-center transition-all duration-200 relative cursor-pointer ${
-                      isSelected
-                        ? "border-brand-leaf bg-brand-leaf/10 text-brand-leaf shadow-sm ring-1 ring-brand-leaf/30"
-                        : "border-border bg-background text-foreground hover:bg-secondary"
-                    }`}
-                  >
-                    {m.badge && (
-                      <span className="absolute top-2 right-2 text-[9px] font-extrabold uppercase bg-brand-gold/15 text-brand-gold px-1.5 py-0.5 rounded">
-                        {m.badge}
-                      </span>
-                    )}
-                    <Icon className="size-5 sm:size-6 shrink-0 text-brand-leaf sm:mb-1" />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-bold block">{m.label}</span>
-                      <span className="text-[10px] text-muted-foreground block truncate">{m.sub}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {paymentMethod === "upi" && (
-              <div className="rounded-2xl bg-secondary/80 p-3.5 text-center border border-border text-xs text-muted-foreground">
-                💡 Instant QR Code will generate immediately after you click <strong>Place Order</strong>.
-              </div>
-            )}
-            {paymentMethod === "cod" && (
-              <div className="rounded-2xl bg-emerald-500/10 p-3.5 text-center border border-emerald-500/30 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
-                💵 <strong>Cash on Delivery selected:</strong> Pay ₹{finalTotal} with cash or UPI upon harvest arrival at your doorstep. No online payment needed now.
-              </div>
-            )}
           </section>
         </div>
 
