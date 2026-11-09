@@ -582,7 +582,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Pricing</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Featured</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Trending</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4 text-center">Status</th>
+                
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -683,19 +683,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                         </button>
                       </td>
 
-                      {/* Active Status */}
-                      <td className="px-4 py-4 text-center">
-                        <button
-                          onClick={() => handleToggleField(p.id, "active")}
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold transition-colors ${p.active
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                            : "bg-muted text-muted-foreground"
-                            }`}
-                        >
-                          <span className={`size-1.5 rounded-full ${p.active ? "bg-emerald-500" : "bg-muted-foreground"}`}></span>
-                          {p.active ? "Active" : "Draft"}
-                        </button>
-                      </td>
+
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
@@ -752,7 +740,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
                     <Package className="size-10 mx-auto opacity-30 mb-2" />
                     <p className="text-sm font-bold text-foreground">No products match your filters</p>
                     <p className="text-xs text-muted-foreground mt-1">Reset your filters or add a new organic product</p>
