@@ -1284,7 +1284,7 @@ function ProductFormModal({
   const activeCategories = (categories && categories.length > 0) ? categories : [];
   const defaultCategory = activeCategories[0] || initialData?.category || "";
 
-  const [activeTab, setActiveTab] = useState<"general" | "pricing" | "variants" | "gallery" | "specs" | "seo" | "toggles">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "variants" | "gallery" | "specs" | "seo" | "toggles">("general");
   const [specsSubTab, setSpecsSubTab] = useState<"desc" | "benefits" | "usage" | "crops" | "specs" | "reviews" | "faqs">("desc");
 
   const COMMON_CROPS = [
@@ -1832,12 +1832,11 @@ function ProductFormModal({
         <div className="flex items-center gap-1.5 rounded-2xl border border-border bg-muted/40 p-1.5 mt-4 shrink-0 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "general", label: "1. Info" },
-            { id: "pricing", label: "2. Pricing & Stock" },
-            { id: "variants", label: "3. Variants" },
-            { id: "gallery", label: "4. Gallery & Video" },
-            { id: "specs", label: "5. Agro Specs & Tabs" },
-            { id: "seo", label: "6. SEO" },
-            { id: "toggles", label: "7. Toggles" }
+            { id: "variants", label: "2. Variants" },
+            { id: "gallery", label: "3. Gallery & Video" },
+            { id: "specs", label: "4. Agro Specs & Tabs" },
+            { id: "seo", label: "5. SEO" },
+            { id: "toggles", label: "6. Toggles" }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1935,80 +1934,7 @@ function ProductFormModal({
             </div>
           )}
 
-          {/* TAB 2: Pricing & Inventory */}
-          {activeTab === "pricing" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Selling Price (₹) *</label>
-                  <input
-                    required
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold text-emerald-600 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">MRP Price (₹)</label>
-                  <input
-                    type="number"
-                    value={formData.originalPrice}
-                    onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Pack Size / Unit</label>
-                  <input
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    placeholder="1 kg"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Warehouse Stock *</label>
-                  <input
-                    type="number"
-                    value={formData.warehouseStock}
-                    onChange={(e) => setFormData({ ...formData, warehouseStock: e.target.value })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Reserved in Orders</label>
-                  <input
-                    type="number"
-                    value={formData.reservedStock}
-                    onChange={(e) => setFormData({ ...formData, reservedStock: e.target.value })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none text-muted-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Low Stock Alert (≤)</label>
-                  <input
-                    type="number"
-                    value={formData.lowStockThreshold}
-                    onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none text-amber-600"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border bg-muted/40 p-4">
-                <span className="text-[10px] font-bold uppercase text-muted-foreground block">Calculated Available Stock:</span>
-                <p className="text-xl font-extrabold text-emerald-700 dark:text-emerald-400 mt-0.5">
-                  {Math.max(0, Number(formData.warehouseStock) - Number(formData.reservedStock))} units ready for sale
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: Product Variants */}
+          {/* TAB 2: Product Variants */}
           {activeTab === "variants" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -3036,7 +2962,7 @@ function ProductFormModal({
               });
 
               const cleanVariants = (Array.isArray(formData.variants) ? formData.variants : []).map((v: any, idx: number) => {
-                const p = Number(v.price) || Number(formData.price) || 0;
+                const p = Number(v.price) || Number(formData.price) || (initialData?.price ? Number(initialData.price) : 450);
                 const op = Number(v.originalPrice ?? v.oldPrice) || Math.round(p * 1.2);
                 const st = v.stock !== undefined ? Number(v.stock) : (Number(formData.warehouseStock) || 50);
                 const n = v.name || v.label || v.unit || `Variant ${idx + 1}`;
@@ -3057,8 +2983,22 @@ function ProductFormModal({
                 };
               });
 
+              const primaryPrice = cleanVariants[0]?.price || Number(formData.price) || (initialData?.price ? Number(initialData.price) : 450);
+              const primaryOriginalPrice = cleanVariants[0]?.originalPrice || cleanVariants[0]?.oldPrice || Number(formData.originalPrice) || Math.round(primaryPrice * 1.2);
+              const primaryUnit = cleanVariants[0]?.unit || formData.unit || (initialData?.unit || "1 L");
+              const primaryStock = cleanVariants.length > 0
+                ? cleanVariants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+                : (Number(formData.warehouseStock) || (initialData?.stock ? Number(initialData.stock) : 100));
+
               const payload = {
                 ...formData,
+                price: primaryPrice,
+                originalPrice: primaryOriginalPrice,
+                oldPrice: primaryOriginalPrice,
+                old_price: primaryOriginalPrice,
+                unit: primaryUnit,
+                stock: primaryStock,
+                warehouseStock: primaryStock,
                 videoUrl: formData.videoUrl || "",
                 video_url: formData.videoUrl || "",
                 variants: cleanVariants,

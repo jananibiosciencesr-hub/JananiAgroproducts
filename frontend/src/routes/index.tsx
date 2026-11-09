@@ -187,7 +187,7 @@ export function HomePage() {
     });
   }, [allCategories, allProducts]);
 
-    // Dynamic Featured / Trending Products
+  // Dynamic Featured / Trending Products
   const featuredProductsList = useMemo(() => {
     const activeProds = allProducts.filter((p: any) => p.active !== false && p.status !== "Trash");
     const trendingProds = activeProds.filter((p: any) =>
@@ -525,11 +525,10 @@ export function HomePage() {
                         className="absolute top-2 right-2 z-10 size-7 sm:size-8 bg-transparent shadow-none flex items-center justify-center transition-transform active:scale-95"
                       >
                         <Heart
-                          className={`size-4 sm:size-4.5 transition-colors ${
-                            isWishlisted
+                          className={`size-4 sm:size-4.5 transition-colors ${isWishlisted
                               ? "fill-red-500 text-red-500"
                               : "text-slate-600 hover:text-red-500"
-                          }`}
+                            }`}
                         />
                       </button>
 
@@ -812,11 +811,10 @@ export function HomePage() {
                   type="button"
                   onClick={() => scrollToTestimonialIndex(idx)}
                   aria-label={`Go to testimonial ${idx + 1}`}
-                  className={`transition-all duration-300 rounded-full h-2 cursor-pointer ${
-                    activeTestimonial === idx
+                  className={`transition-all duration-300 rounded-full h-2 cursor-pointer ${activeTestimonial === idx
                       ? "w-6 bg-[#075B32]"
                       : "w-2 bg-slate-300 hover:bg-slate-400"
-                  }`}
+                    }`}
                 />
               ))}
             </div>
