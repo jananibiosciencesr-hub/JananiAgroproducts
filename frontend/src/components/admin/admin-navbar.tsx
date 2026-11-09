@@ -359,8 +359,8 @@ export function AdminNavbar({
 
         {/* Dynamic Contextual Search Bar */}
         <div ref={searchContainerRef} className="relative flex-1 max-w-md min-w-0">
-          <div className="relative flex items-center w-full rounded-xl border border-slate-200/90 dark:border-slate-800 bg-background/90 shadow-2xs transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-background hover:border-emerald-500/40">
-            <Search className="absolute left-3 size-3.5 sm:size-4 text-muted-foreground pointer-events-none shrink-0" />
+          <div className="relative flex items-center w-full rounded-full border border-slate-200/90 dark:border-slate-800 bg-background/90 shadow-2xs transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:bg-background hover:border-emerald-500/40">
+            <Search className="absolute left-3.5 size-3.5 sm:size-4 text-muted-foreground pointer-events-none shrink-0" />
             <input
               type="text"
               value={searchTerm}
@@ -375,9 +375,9 @@ export function AdminNavbar({
                 }
               }}
               placeholder={getSearchPlaceholder(activeTab)}
-              className="w-full bg-transparent py-2 pl-9 pr-20 text-xs text-foreground placeholder:text-muted-foreground outline-none font-medium truncate"
+              className="w-full bg-transparent py-2 pl-9 sm:pl-10 pr-9 text-xs text-foreground placeholder:text-muted-foreground border-none outline-none focus:outline-none focus:ring-0 font-medium truncate"
             />
-            <div className="absolute right-2 flex items-center gap-1">
+            <div className="absolute right-2.5 flex items-center gap-1">
               {searchTerm ? (
                 <button
                   type="button"
@@ -391,14 +391,6 @@ export function AdminNavbar({
                   <X className="size-3.5" />
                 </button>
               ) : null}
-              <button
-                type="button"
-                onClick={onOpenSearchModal}
-                className="hidden md:flex items-center gap-1 rounded-lg border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                title="Global Command Palette (⌘K)"
-              >
-                <Command className="size-2.5" /> K
-              </button>
             </div>
           </div>
 
@@ -593,7 +585,7 @@ export function AdminNavbar({
       </div>
 
       {/* Right Controls Area */}
-      <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
 
         {/* Dark/Light Toggle */}
         <button
@@ -603,158 +595,6 @@ export function AdminNavbar({
         >
           {theme === "light" ? <Moon className="size-4 text-amber-600" /> : <Sun className="size-4 text-amber-400" />}
         </button>
-
-        {/* Messages Dropdown */}
-        <div className="relative shrink-0">
-          <button
-            onClick={() => {
-              setMessagesOpen(!messagesOpen);
-              setNotificationsOpen(false);
-              setProfileOpen(false);
-            }}
-            className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl border border-slate-200/90 dark:border-slate-800 bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-2xs hover:border-emerald-500/30 cursor-pointer shrink-0"
-            title="Customer Inquiries & Messages"
-          >
-            <MessageSquare className="size-4" />
-            {unreadMessagesCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-2xs ring-2 ring-background">
-                {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
-              </span>
-            )}
-          </button>
-
-          {messagesOpen && (
-            <div className="absolute right-0 mt-2 sm:mt-3 w-[calc(100vw-1.5rem)] sm:w-96 max-w-[360px] rounded-2xl sm:rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">Customer Inquiries</h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    {unreadMessagesCount > 0
-                      ? `${unreadMessagesCount} unread customer inquiry${unreadMessagesCount === 1 ? "" : "s"}`
-                      : "All customer inquiries up to date"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setMessagesOpen(false);
-                    onNavigateTab("inquiries");
-                  }}
-                  className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                >
-                  View All
-                </button>
-              </div>
-
-              <div className="mt-3 space-y-2 max-h-72 overflow-y-auto no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                {liveInquiries.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-muted-foreground">
-                    No inquiries received yet.
-                  </div>
-                ) : (
-                  liveInquiries.slice(0, 8).map((m) => (
-                    <div
-                      key={m.id}
-                      onClick={() => {
-                        setMessagesOpen(false);
-                        onNavigateTab("inquiries");
-                      }}
-                      className="flex flex-col p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-muted/40 hover:bg-emerald-500/10 cursor-pointer transition-colors border border-border/40"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-xs font-bold text-foreground truncate">{m.name}</span>
-                          {m.status === "New" && (
-                            <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                              NEW
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground shrink-0 ml-1">
-                          {formatRelativeTime(m.createdAt || m.created_at)}
-                        </span>
-                      </div>
-                      <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mt-0.5 line-clamp-1">
-                        {m.service || m.subject || "General Inquiry"}
-                        {m.businessName || m.business_name ? ` · ${m.businessName || m.business_name}` : ""}
-                      </p>
-                      {m.message && (
-                        <p className="text-[11px] text-foreground/80 mt-0.5 line-clamp-1 italic">
-                          "{m.message}"
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">
-                        <span className="truncate max-w-[140px] sm:max-w-[170px]">{m.email}</span>
-                        {m.phone && <span className="font-mono">{m.phone}</span>}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Notifications Dropdown */}
-        <div className="relative shrink-0">
-          <button
-            onClick={() => {
-              setNotificationsOpen(!notificationsOpen);
-              setMessagesOpen(false);
-              setProfileOpen(false);
-            }}
-            className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl border border-slate-200/90 dark:border-slate-800 bg-background/90 text-muted-foreground hover:bg-accent hover:text-foreground transition-all shadow-2xs hover:border-emerald-500/30 cursor-pointer shrink-0"
-            title="Notifications"
-          >
-            <Bell className="size-4" />
-            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-2xs ring-2 ring-background">
-              {dynamicNotifications.length}
-            </span>
-          </button>
-
-          {notificationsOpen && (
-            <div className="absolute right-0 mt-2 sm:mt-3 w-[calc(100vw-1.5rem)] sm:w-96 max-w-[360px] rounded-2xl sm:rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">Notifications</h3>
-                  <p className="text-[11px] text-muted-foreground">{dynamicNotifications.length} live store updates</p>
-                </div>
-                <button
-                  onClick={() => setNotificationsOpen(false)}
-                  className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                >
-                  Close
-                </button>
-              </div>
-
-              <div className="mt-3 space-y-2 max-h-80 overflow-y-auto no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                {dynamicNotifications.map((n) => {
-                  const Icon = n.icon;
-                  return (
-                    <div
-                      key={n.id}
-                      onClick={() => {
-                        setNotificationsOpen(false);
-                        onNavigateTab(n.tab);
-                      }}
-                      className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-muted/40 hover:bg-accent cursor-pointer transition-colors border border-border/40"
-                    >
-                      <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl shrink-0 ${n.color}`}>
-                        <Icon className="size-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-bold text-foreground truncate">{n.title}</p>
-                          <span className="text-[10px] text-muted-foreground shrink-0">{n.time}</span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{n.desc}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Admin Profile Dropdown */}
         <div className="relative">
