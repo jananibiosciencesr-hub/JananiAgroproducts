@@ -327,7 +327,7 @@ export function HeroBannerCarousel() {
   return (
     <section
       data-no-scroll-reveal="true"
-      className="relative overflow-hidden bg-white select-none hero-carousel-container px-3 sm:px-0 pt-2 sm:pt-0 pb-1 sm:pb-0"
+      className="relative overflow-hidden bg-white select-none hero-carousel-container"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
@@ -335,8 +335,8 @@ export function HeroBannerCarousel() {
       onTouchEnd={handleTouchEnd}
       aria-label="Janani Agro Featured Campaigns"
     >
-      {/* Slides Container - Sleek, comfortable height so products and categories below are immediately visible */}
-      <div className="relative w-full h-[175px] xs:h-[195px] sm:h-[400px] md:h-[440px] lg:h-[470px] overflow-hidden rounded-2xl sm:rounded-none shadow-xs sm:shadow-none">
+      {/* Slides Container - Square edge-to-edge compact banner on mobile, sleek and unobstructed */}
+      <div className="relative w-full h-[175px] xs:h-[195px] sm:h-[400px] md:h-[440px] lg:h-[470px] overflow-hidden rounded-none">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
