@@ -8,7 +8,6 @@ import {
   RotateCcw,
   CheckCircle2,
   XCircle,
-  Calendar,
   Sparkles,
   ShoppingBag,
   ArrowRight,
@@ -46,7 +45,6 @@ export const Route = createFileRoute("/orders")({
 });
 
 type FilterStatus = "all" | "active" | "delivered" | "cancelled" | "returns";
-type DateFilter = "all" | "30days" | "6months" | "2026";
 
 export function MyOrdersPage() {
   const navigate = useNavigate();
@@ -59,7 +57,6 @@ export function MyOrdersPage() {
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
 
   // Active Modals state
   const [selectedTimelineOrder, setSelectedTimelineOrder] = useState<CustomerOrder | null>(null);
@@ -224,21 +221,8 @@ export function MyOrdersPage() {
       result = result.filter((o) => ["Return Requested", "Exchanged"].includes(o.status));
     }
 
-    // 3. Date Filter
-    if (dateFilter !== "all") {
-      const now = new Date("2026-09-12T21:00:00Z").getTime();
-      result = result.filter((o) => {
-        const orderTime = new Date(o.isoDate).getTime();
-        const diffDays = (now - orderTime) / (1000 * 60 * 60 * 24);
-        if (dateFilter === "30days") return diffDays <= 30;
-        if (dateFilter === "6months") return diffDays <= 180;
-        if (dateFilter === "2026") return o.isoDate.startsWith("2026");
-        return true;
-      });
-    }
-
     return result;
-  }, [ordersList, searchQuery, statusFilter, dateFilter]);
+  }, [ordersList, searchQuery, statusFilter]);
 
   // Handler: Confirm Cancellation
   const handleConfirmCancel = (orderId: string, reason: string, refundMethod: string) => {
@@ -415,21 +399,6 @@ export function MyOrdersPage() {
               </button>
             )}
           </div>
-
-          {/* Date Range Dropdown */}
-          <div className="flex items-center gap-2">
-            <Calendar className="size-4 text-muted-foreground hidden sm:block shrink-0" />
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-              className="h-11 rounded-2xl border border-input bg-card px-3.5 text-xs font-semibold text-foreground outline-none focus:border-brand-leaf shadow-xs"
-            >
-              <option value="all">All Time History</option>
-              <option value="30days">Last 30 Days</option>
-              <option value="6months">Past 6 Months</option>
-              <option value="2026">Year 2026</option>
-            </select>
-          </div>
         </div>
 
         {/* Status Filter Pills */}
@@ -474,13 +443,12 @@ export function MyOrdersPage() {
             <span>
               Showing <strong>{filteredOrders.length}</strong> of {ordersList.length} orders
             </span>
-            {(searchQuery || statusFilter !== "all" || dateFilter !== "all") && (
+            {(searchQuery || statusFilter !== "all") && (
               <button
                 type="button"
                 onClick={() => {
                   setSearchQuery("");
                   setStatusFilter("all");
-                  setDateFilter("all");
                 }}
                 className="text-brand-leaf font-bold hover:underline"
               >
@@ -526,7 +494,6 @@ export function MyOrdersPage() {
               onClick={() => {
                 setSearchQuery("");
                 setStatusFilter("all");
-                setDateFilter("all");
               }}
               className="rounded-full text-xs"
             >
