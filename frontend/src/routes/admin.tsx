@@ -961,10 +961,12 @@ function AdminDashboardPage() {
           {activeTab === "payments" && <PaymentsManagement searchQuery={adminSearch} />}
 
           {activeTab === "coupons" && (
-            <CouponsManagement
-              searchQuery={adminSearch}
-              addTrigger={addTriggerTab?.tab === "coupons" ? addTriggerTab.timestamp : 0}
-            />
+            <AdminTabErrorBoundary tabName="Coupons">
+              <CouponsManagement
+                searchQuery={adminSearch}
+                addTrigger={addTriggerTab?.tab === "coupons" ? addTriggerTab.timestamp : 0}
+              />
+            </AdminTabErrorBoundary>
           )}
 
           {activeTab === "referrals" && <ReferralsManagement searchQuery={adminSearch} />}

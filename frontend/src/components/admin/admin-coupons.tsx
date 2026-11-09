@@ -443,6 +443,7 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
     document.body.removeChild(link);
     showNotification("success", "Coupons catalog exported to CSV");
   };
+  const handleExportCSV = exportCouponsCsv;
 
   const exportUsageLedgerCsv = () => {
     if (usageHistory.length === 0) return;
