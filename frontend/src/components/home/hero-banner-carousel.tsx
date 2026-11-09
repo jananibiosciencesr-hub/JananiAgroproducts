@@ -390,6 +390,14 @@ export function HeroBannerCarousel() {
                   />
                 </picture>
 
+                {/* Light Fade in background for hero images with light opacity */}
+                {hasTextContent && (
+                  <div
+                    className="absolute inset-y-0 left-0 w-full sm:w-[72%] lg:w-[60%] z-[5] pointer-events-none bg-gradient-to-b from-white/80 via-white/40 to-transparent sm:bg-gradient-to-r sm:from-white/80 sm:via-white/35 sm:to-transparent"
+                    aria-hidden="true"
+                  />
+                )}
+
                 {/* Option 2: Dynamic HTML/CSS Text Overlay with refined, proportionate typography */}
                 {hasTextContent ? (
                   <div className="absolute inset-0 z-10 flex items-start sm:items-center pointer-events-none">
