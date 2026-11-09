@@ -197,12 +197,19 @@ export function HomePage() {
         (p.badge && (p.badge.toLowerCase().includes("popular") || p.badge.toLowerCase().includes("best") || p.badge.toLowerCase().includes("trending")))
       )
     );
-    const pool = trendingProds.length > 0 ? trendingProds : activeProds;
-    return pool.slice(0, 10).map((p: any) => ({
+    // Prioritize trending/featured products first, then append other active products so the showcase is fully populated with zero blank gaps
+    const pool: any[] = [...trendingProds];
+    for (const p of activeProds) {
+      if (!pool.some((item: any) => String(item.id) === String(p.id) || (p.slug && item.slug === p.slug))) {
+        pool.push(p);
+      }
+    }
+    const finalPool = pool.length > 0 ? pool : activeProds;
+    return finalPool.slice(0, 16).map((p: any) => ({
       id: p.slug || String(p.id),
       numId: Number(p.id) || 1,
       name: p.name,
-      spec: p.subtitle || p.category || "Organic Formulation",
+      spec: p.subtitle || p.category || (p as any).category_name || "Organic Formulation",
       image: p.image || "/products/harit.jpg",
       link: `/products/${p.slug}`,
       price: Number(p.price) || 450,
