@@ -441,10 +441,10 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
   };
 
   return (
-    <div className="space-y-6 h-fit">
+    <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card">
       {/* Bulk Action Bar (When 1+ rows selected) */}
       {selectedIds.length > 0 && (
-        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 sm:p-4 shadow-soft flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
+        <div className="w-full border-b border-emerald-500/30 bg-emerald-500/10 p-3.5 sm:p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3 animate-in fade-in rounded-none">
           <div className="flex items-center gap-2">
             <span className="rounded-xl bg-emerald-600 px-2.5 py-0.5 text-xs font-extrabold text-white">
               {selectedIds.length} Selected
@@ -489,8 +489,8 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
       )}
 
       {/* Main Categories Table */}
-      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden h-fit">
-        <div className="overflow-x-auto max-h-[calc(100vh-190px)] relative h-fit">
+      <div className="w-full border-b border-border bg-card shadow-none overflow-hidden rounded-none flex-1 flex flex-col">
+        <div className="overflow-x-auto flex-1 w-full relative min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)]">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>

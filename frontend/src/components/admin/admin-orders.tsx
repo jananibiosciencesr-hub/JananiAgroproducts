@@ -457,9 +457,9 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+    <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card overflow-x-hidden">
       {/* Filter Navigation Tabs & Toolbar */}
-      <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm space-y-3 sm:space-y-4 max-w-full overflow-hidden">
+      <div className="bg-card border-b border-border p-3 sm:p-4 shadow-2xs space-y-3 sm:space-y-4 w-full rounded-none">
         {/* Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap min-w-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
@@ -689,8 +689,8 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
       </div>
 
       {/* 5. Orders Desktop Table (Visible on screens >= 1024px) */}
-      <div className="hidden lg:block bg-card border border-border rounded-2xl shadow-sm overflow-hidden max-w-full h-fit">
-        <div className="overflow-x-auto max-h-[calc(100vh-190px)] min-w-0 w-full relative h-fit">
+      <div className="hidden lg:flex flex-col flex-1 bg-card border-b border-border shadow-none overflow-hidden w-full rounded-none">
+        <div className="overflow-x-auto flex-1 min-w-0 w-full relative min-h-[calc(100vh-140px)]">
           <table className="w-full text-left text-sm border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md shadow-xs">
               <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
