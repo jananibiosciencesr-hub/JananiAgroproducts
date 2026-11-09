@@ -1833,7 +1833,7 @@ function ProductFormModal({
           {[
             { id: "general", label: "1. Info" },
             { id: "variants", label: "2. Variants" },
-            { id: "gallery", label: "3. Gallery & Video" },
+            { id: "gallery", label: "3. Product Video" },
             { id: "specs", label: "4. Agro Specs & Tabs" },
             { id: "seo", label: "5. SEO" },
             { id: "toggles", label: "6. Toggles" }
@@ -2111,181 +2111,41 @@ function ProductFormModal({
             </div>
           )}
 
-          {/* TAB 4: Gallery Manager */}
+          {/* TAB 3: Product Video Showcase */}
           {activeTab === "gallery" && (
             <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Primary Thumbnail Image URL</label>
-                <div className="flex gap-2">
-                  <input
-                    value={formData.image}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        image: val,
-                        gallery: val && !prev.gallery.includes(val) ? [val, ...prev.gallery] : prev.gallery
-                      }));
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                    <Video className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      Product Video Showcase
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">
+                        Storefront Position #3
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      Displays in 3rd thumbnail position with a Play badge. Supports YouTube, Vimeo &amp; direct MP4/WebM uploads.
+                    </p>
+                  </div>
+                </div>
+                {formData.videoUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, videoUrl: "" }));
+                      toast.info("Product video removed");
                     }}
-                    placeholder="Enter image URL or upload below (e.g. /products/dharani.jpg)"
-                    className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono"
-                  />
-                  {formData.image ? (
-                    <div className="size-10 rounded-xl border border-border bg-muted overflow-hidden shrink-0">
-                      <img
-                        src={formData.image}
-                        alt="Primary thumbnail"
-                        className="size-full object-cover"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              {/* Quick Preset Images */}
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                  Quick Catalog Presets (Click to add):
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: "Bio-Fertilizers", url: "/products/dharani.jpg" },
-                    { label: "Bio-Pesticides", url: "/products/suraksha.jpg" },
-                    { label: "Bio-Fungicides", url: "/products/harit.jpg" },
-                    { label: "Bio-Stimulants", url: "/products/pushkal.jpg" },
-                    { label: "Micro Nutrients", url: "/products/annada.jpg" },
-                    { label: "Insecticides", url: "/products/balavan.jpg" },
-                    { label: "Botanical Neem", url: "/products/neem-oil.jpg" },
-                    { label: "Water Solubles", url: "/products/dhanya.jpg" },
-                    { label: "Agri Inputs", url: "/products/bhumi-shakti.jpg" },
-                    { label: "Growth Activator", url: "/products/balavan-bottle.jpg" }
-                  ].map((preset) => (
-                    <button
-                      key={preset.url}
-                      type="button"
-                      onClick={() => handleAddGalleryImage(preset.url)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/50 hover:bg-emerald-500/10 hover:border-emerald-500/50 text-[11px] font-medium text-foreground transition-all"
-                    >
-                      <span className="text-emerald-600 font-bold">+</span> {preset.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Gallery Grid */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-foreground">
-                    Product Gallery ({formData.gallery.length} Images)
-                  </span>
-                  {formData.gallery.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, gallery: [], image: "" })}
-                      className="text-[11px] text-rose-500 hover:underline font-medium"
-                    >
-                      Clear All
-                    </button>
-                  )}
-                </div>
-
-                {formData.gallery.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
-                    <ImageIcon className="size-8 mx-auto text-muted-foreground/50 mb-2" />
-                    <p className="text-xs font-bold text-foreground">No gallery images added yet</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Click "Upload File" above, paste an image link, or pick from presets.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                    {formData.gallery.map((img, i) => {
-                      const isPrimary = formData.image === img;
-                      return (
-                        <div
-                          key={i}
-                          className={`relative group rounded-2xl border bg-muted h-28 overflow-hidden shadow-sm transition-all ${isPrimary ? "ring-2 ring-emerald-600 border-emerald-600" : "border-border hover:border-foreground/40"
-                            }`}
-                        >
-                          <img
-                            src={img}
-                            alt={`Gallery ${i + 1}`}
-                            className="size-full object-cover"
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/products/dharani.jpg"; }}
-                          />
-                          {isPrimary && (
-                            <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow">
-                              Primary
-                            </span>
-                          )}
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
-                            <div className="flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = formData.gallery.filter((_, idx) => idx !== i);
-                                  const nextPrimary = isPrimary ? (updated[0] || "") : formData.image;
-                                  setFormData({ ...formData, gallery: updated, image: nextPrimary });
-                                }}
-                                className="size-6 rounded-full bg-rose-600 text-white flex items-center justify-center hover:bg-rose-700 transition"
-                                title="Remove image"
-                              >
-                                <X className="size-3.5" />
-                              </button>
-                            </div>
-                            {!isPrimary && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFormData({ ...formData, image: img });
-                                  toast.success("Set as primary thumbnail!");
-                                }}
-                                className="w-full py-1 rounded-lg bg-white/90 text-foreground text-[10px] font-bold hover:bg-white transition"
-                              >
-                                Set as Primary
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                    className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] h-7 px-2.5 rounded-xl cursor-pointer"
+                  >
+                    <X className="size-3 mr-1" /> Remove Video
+                  </Button>
                 )}
               </div>
-
-              {/* Product Showcase Video Section (User Storefront Position 3) */}
-              <div className="pt-4 border-t border-border/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                      <Video className="size-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                        Product Video Showcase
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">
-                          Storefront Gallery #3
-                        </span>
-                      </h4>
-                      <p className="text-[11px] text-muted-foreground">
-                        Displays in 3rd thumbnail position with a Play badge. Supports YouTube, Vimeo &amp; direct MP4/WebM uploads.
-                      </p>
-                    </div>
-                  </div>
-                  {formData.videoUrl && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setFormData((prev) => ({ ...prev, videoUrl: "" }));
-                        toast.info("Product video removed");
-                      }}
-                      className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] h-7 px-2.5 rounded-xl cursor-pointer"
-                    >
-                      <X className="size-3 mr-1" /> Remove Video
-                    </Button>
-                  )}
-                </div>
 
                 {/* Video Inputs: Upload & URL */}
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
@@ -2389,7 +2249,6 @@ function ProductFormModal({
                   )}
                 </div>
               </div>
-            </div>
           )}
 
           {/* TAB 5: Agro Specifications & Storefront Tabs (All 7 Tabs) */}
@@ -2990,8 +2849,14 @@ function ProductFormModal({
                 ? cleanVariants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
                 : (Number(formData.warehouseStock) || (initialData?.stock ? Number(initialData.stock) : 100));
 
+              const variantImages = cleanVariants.map((v: any) => v.image).filter(Boolean);
+              const primaryImage = cleanVariants[0]?.image || formData.image || (initialData?.image ? String(initialData.image).trim() : "/products/harit.jpg");
+              const galleryImages = variantImages.length > 0 ? variantImages : (Array.isArray(formData.gallery) && formData.gallery.length > 0 ? formData.gallery : [primaryImage]);
+
               const payload = {
                 ...formData,
+                image: primaryImage,
+                gallery: galleryImages,
                 price: primaryPrice,
                 originalPrice: primaryOriginalPrice,
                 oldPrice: primaryOriginalPrice,
