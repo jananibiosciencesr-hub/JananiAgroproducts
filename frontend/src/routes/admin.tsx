@@ -168,7 +168,7 @@ class AdminTabErrorBoundary extends React.Component<
             <AlertCircle className="size-8" />
           </div>
           <h2 className="text-lg font-bold text-foreground">
-            ${this.props.tabName || "View"} Display Notice
+            {this.props.tabName || "View"} Display Notice
           </h2>
           <p className="text-xs text-muted-foreground max-w-md mt-1 mb-5">
             A temporary display error occurred while rendering this tab. You can reload this view without losing your active session.
@@ -177,7 +177,7 @@ class AdminTabErrorBoundary extends React.Component<
             onClick={() => this.setState({ hasError: false, error: null })}
             className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 h-9"
           >
-            Reload ${this.props.tabName || "View"}
+            Reload {this.props.tabName || "View"}
           </Button>
         </div>
       );
