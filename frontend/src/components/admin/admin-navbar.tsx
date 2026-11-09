@@ -567,20 +567,6 @@ export function AdminNavbar({
             </div>
           )}
         </div>
-
-        {/* Dynamic Contextual Add Action Button */}
-        {addConfig && onAddAction && (
-          <button
-            type="button"
-            onClick={onAddAction}
-            className="flex items-center gap-1.5 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3 sm:px-4 py-2 sm:py-2.5 shadow-md shadow-emerald-700/20 transition-all shrink-0 cursor-pointer"
-            title={addConfig.label}
-          >
-            <Plus className="size-3.5 sm:size-4 stroke-[2.5]" />
-            <span className="hidden sm:inline">{addConfig.label}</span>
-            <span className="sm:hidden">{addConfig.shortLabel}</span>
-          </button>
-        )}
       </div>
 
       {/* Right Controls Area */}

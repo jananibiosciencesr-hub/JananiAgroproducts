@@ -489,6 +489,31 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
   return (
     <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card">
 
+      {/* Page Title & Action Subheader */}
+      <div className="w-full bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
+            Products
+          </h1>
+          {filteredProducts.length > 0 && (
+            <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
+              {filteredProducts.length} items
+            </span>
+          )}
+        </div>
+        <Button
+          onClick={() => {
+            setEditingProduct(null);
+            setIsFormModalOpen(true);
+          }}
+          size="sm"
+          className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer px-3.5 sm:px-4 shrink-0"
+        >
+          <Plus className="size-4 stroke-[2.5]" />
+          <span>Add Product</span>
+        </Button>
+      </div>
+
       {/* Bulk Action Toolbar */}
       {selectedIds.length > 0 && (
         <div className="w-full border-b border-border bg-card p-3 sm:p-4 shadow-2xs">
