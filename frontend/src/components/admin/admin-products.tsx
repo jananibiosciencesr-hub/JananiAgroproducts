@@ -364,12 +364,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
     });
   }, [products, search, minPrice, maxPrice, categoryFilter]);
 
-  // Pagination Slicing
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
-  const paginatedProducts = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredProducts.slice(start, start + itemsPerPage);
-  }, [filteredProducts, currentPage, itemsPerPage]);
+  // Display all products directly without pagination slicing
+  const paginatedProducts = filteredProducts;
 
   // Bulk Selection Handlers
   const handleSelectAll = () => {
@@ -492,101 +488,18 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
   return (
     <div className="space-y-6">
-      {/* Top Filter and Actions Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border bg-card p-4 shadow-soft">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Status Tabs: Active / Trash */}
-          <div className="flex items-center rounded-2xl border border-border bg-muted/40 p-1">
-            <button
-              onClick={() => {
-                setStatusFilter("active");
-                setCurrentPage(1);
-              }}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                statusFilter === "active"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => {
-                setStatusFilter("trash");
-                setCurrentPage(1);
-              }}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                statusFilter === "trash"
-                  ? "bg-rose-500/10 text-rose-600 font-extrabold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Trash
-            </button>
-          </div>
-
-          {/* Category Filter Dropdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-muted-foreground hidden sm:flex items-center gap-1">
-              <Filter className="size-3.5 text-emerald-600" /> Category:
-            </span>
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-9 rounded-2xl border border-border bg-card px-3 text-xs font-bold text-foreground outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer shadow-xs"
-            >
-              <option value="all">All Categories ({products.length})</option>
-              {availableCategories.map((c) => {
-                const count = products.filter(
-                  (p) =>
-                    (p.category && p.category.toLowerCase() === c.toLowerCase()) ||
-                    ((p as any).category_name && (p as any).category_name.toLowerCase() === c.toLowerCase())
-                ).length;
-                return (
-                  <option key={c} value={c}>
-                    {c} {count > 0 ? `(${count})` : ""}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-
-          {categoryFilter !== "all" && (
-            <button
-              onClick={() => {
-                setCategoryFilter("all");
-                setCurrentPage(1);
-              }}
-              className="rounded-xl bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
-              Clear Filter ✕
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={exportCSV}
-            variant="outline"
-            size="sm"
-            className="h-9 rounded-2xl text-xs font-bold gap-1.5 cursor-pointer"
-          >
-            <Download className="size-3.5" /> Export CSV
-          </Button>
-          <Button
-            onClick={() => {
-              setEditingProduct(null);
-              setIsFormModalOpen(true);
-            }}
-            size="sm"
-            className="h-9 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold gap-1.5 shadow-soft cursor-pointer"
-          >
-            <Plus className="size-4" /> Add Product
-          </Button>
-        </div>
+      {/* Top Action Bar */}
+      <div className="flex items-center justify-end">
+        <Button
+          onClick={() => {
+            setEditingProduct(null);
+            setIsFormModalOpen(true);
+          }}
+          size="sm"
+          className="h-9 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold gap-1.5 shadow-soft cursor-pointer"
+        >
+          <Plus className="size-4" /> Add Product
+        </Button>
       </div>
 
       {/* Bulk Action Toolbar */}
@@ -664,19 +577,9 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4 text-center w-10">
-                  <button onClick={handleSelectAll} className="text-muted-foreground hover:text-foreground">
-                    {selectedIds.length > 0 && selectedIds.length === paginatedProducts.length ? (
-                      <CheckSquare className="size-4 text-emerald-600" />
-                    ) : (
-                      <Square className="size-4" />
-                    )}
-                  </button>
-                </th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Product Details</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Category & Brand</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Pricing</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Warehouse & Available</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Featured</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Trending</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4 text-center">Status</th>
@@ -696,16 +599,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                       className={`hover:bg-accent/40 transition-colors ${selectedIds.includes(p.id) ? "bg-emerald-500/5" : ""
                         }`}
                     >
-                      {/* Select Checkbox */}
-                      <td className="px-4 py-4 text-center">
-                        <button onClick={() => handleToggleSelect(p.id)}>
-                          {selectedIds.includes(p.id) ? (
-                            <CheckSquare className="size-4 text-emerald-600" />
-                          ) : (
-                            <Square className="size-4 text-muted-foreground" />
-                          )}
-                        </button>
-                      </td>
+
 
                       {/* Title, Thumbnail, SKU */}
                       <td className="px-6 py-4">
@@ -763,25 +657,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                         </span>
                       </td>
 
-                      {/* Warehouse vs Reserved vs Available Stock */}
-                      <td className="px-4 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${isOut ? "bg-rose-500/15 text-rose-600 border border-rose-500/30" : isLow ? "bg-amber-500/15 text-amber-600 border border-amber-500/30" : "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
-                              }`}>
-                              {available} Avail
-                            </span>
-                            {p.reservedStock ? (
-                              <span className="text-[9px] text-muted-foreground font-mono">
-                                ({p.reservedStock} res)
-                              </span>
-                            ) : null}
-                          </div>
-                          <span className="text-[9px] text-muted-foreground block">
-                            Warehouse: {p.warehouseStock || p.stock} units
-                          </span>
-                        </div>
-                      </td>
+
 
                       {/* Featured (Star) */}
                       <td className="px-3 py-4 text-center">
@@ -876,7 +752,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 })
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="py-12 text-center text-muted-foreground">
                     <Package className="size-10 mx-auto opacity-30 mb-2" />
                     <p className="text-sm font-bold text-foreground">No products match your filters</p>
                     <p className="text-xs text-muted-foreground mt-1">Reset your filters or add a new organic product</p>
@@ -887,48 +763,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border bg-muted/20 text-xs">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <span>Showing {paginatedProducts.length} of {filteredProducts.length} products</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="h-8 rounded-xl border border-border bg-card px-2 text-xs font-semibold outline-none"
-            >
-              <option value={10}>10 per page</option>
-              <option value={20}>20 per page</option>
-              <option value={50}>50 per page</option>
-            </select>
-          </div>
 
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="rounded-xl text-xs font-semibold h-8"
-            >
-              Previous
-            </Button>
-            <span className="px-3 text-xs font-bold text-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="rounded-xl text-xs font-semibold h-8"
-            >
-              Next
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* Product Preview Slide-out Drawer */}
