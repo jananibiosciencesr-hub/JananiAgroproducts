@@ -813,7 +813,7 @@ function AdminDashboardPage() {
       />
 
       {/* Main Content Area */}
-      <div className={`flex flex-1 flex-col min-w-0 w-full max-w-full overflow-x-hidden transition-all duration-300 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
+      <div className={`flex flex-1 flex-col min-w-0 w-full max-w-full overflow-x-hidden transition-all duration-300 ${collapsed ? "lg:pl-16" : "lg:pl-60"}`}>
         {/* Top Navbar */}
         <AdminNavbar
           onOpenMobileSidebar={() => setMobileOpen(true)}

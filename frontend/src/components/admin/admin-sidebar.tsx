@@ -118,18 +118,18 @@ export function AdminSidebar({
       {/* Sidebar Container */}
       <aside
         className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col border-r border-border bg-card/95 backdrop-blur-xl transition-all duration-300 shadow-2xl lg:shadow-none ${
-          collapsed ? "w-20" : "w-72"
+          collapsed ? "w-16" : "w-60"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         {/* Brand Header */}
-        <div className="flex h-20 items-center justify-between px-4 border-b border-border/80">
+        <div className="flex h-16 sm:h-18 items-center justify-between px-3 border-b border-border/80">
           <Link to="/" className="flex items-center gap-3 overflow-hidden">
-            <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/20">
-              <Leaf className="size-6 text-amber-300" />
+            <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/20">
+              <Leaf className="size-5 text-amber-300" />
             </div>
             {!collapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="font-display text-base font-bold tracking-tight text-foreground flex items-center gap-1.5">
+                <span className="font-display text-sm font-bold tracking-tight text-foreground flex items-center gap-1">
                   JANANI AGRO <Sparkles className="size-3.5 text-amber-500 fill-amber-500" />
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
@@ -142,7 +142,7 @@ export function AdminSidebar({
           {/* Desktop Collapse Toggle */}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:flex size-8 items-center justify-center rounded-xl border border-border/70 bg-background/80 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shadow-sm"
+            className="hidden lg:flex size-7 items-center justify-center rounded-lg border border-border/70 bg-background/80 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shadow-xs shrink-0"
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
@@ -151,7 +151,7 @@ export function AdminSidebar({
 
         {/* Store Live Pill */}
         {!collapsed && (
-          <div className="mx-4 mt-4 p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-600/5 to-transparent border border-emerald-500/20 flex items-center justify-between">
+          <div className="mx-2.5 mt-2.5 p-2 rounded-xl bg-gradient-to-r from-emerald-500/10 via-emerald-600/5 to-transparent border border-emerald-500/20 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -170,7 +170,7 @@ export function AdminSidebar({
         )}
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="flex-1 overflow-y-auto px-2 py-2.5 space-y-1 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -183,14 +183,14 @@ export function AdminSidebar({
                   setActiveTab(item.id);
                   setMobileOpen(false);
                 }}
-                className={`group relative flex w-full items-center gap-3.5 rounded-2xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 ${
+                className={`group relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-semibold transition-all duration-200 ${
                   isActive
                     ? "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-700/25 font-bold"
                     : "text-muted-foreground hover:bg-accent/80 hover:text-foreground"
                 } ${collapsed ? "justify-center px-0" : ""}`}
                 title={collapsed ? item.label : undefined}
               >
-                <Icon className={`size-5 shrink-0 transition-transform group- ${isActive ? "text-amber-300" : "text-muted-foreground group-hover:text-foreground"}`} />
+                <Icon className={`size-4.5 shrink-0 transition-transform group- ${isActive ? "text-amber-300" : "text-muted-foreground group-hover:text-foreground"}`} />
 
                 {!collapsed && (
                   <span className="truncate flex-1 text-left">{item.label}</span>
@@ -218,9 +218,9 @@ export function AdminSidebar({
         </nav>
 
         {/* User Card & Logout */}
-        <div className="p-3 border-t border-border/80 bg-background/50">
-          <div className={`flex items-center gap-3 rounded-2xl p-2 bg-card border border-border/60 ${collapsed ? "justify-center" : ""}`}>
-            <div className="relative size-10 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shadow-md shrink-0">
+        <div className="p-2 border-t border-border/80 bg-background/50">
+          <div className={`flex items-center gap-2 rounded-xl p-1.5 bg-card border border-border/60 ${collapsed ? "justify-center" : ""}`}>
+            <div className="relative size-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shadow-md shrink-0">
               {(currentAdmin.name || "Admin").substring(0, 2).toUpperCase()}
               <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-emerald-400 ring-2 ring-card" />
             </div>
@@ -246,7 +246,7 @@ export function AdminSidebar({
                     window.location.reload();
                   }
                 }}
-                className="size-8 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
+                className="size-7 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
                 title="Logout Admin Session"
               >
                 <LogOut className="size-4" />
