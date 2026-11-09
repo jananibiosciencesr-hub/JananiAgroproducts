@@ -689,8 +689,8 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
       </div>
 
       {/* 5. Orders Desktop Table (Visible on screens >= 1024px) */}
-      <div className="hidden lg:block bg-card border border-border rounded-2xl shadow-sm overflow-hidden max-w-full">
-        <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] min-w-0 w-full relative">
+      <div className="hidden lg:block bg-card border border-border rounded-2xl shadow-sm overflow-hidden max-w-full h-fit">
+        <div className="overflow-x-auto max-h-[calc(100vh-190px)] min-w-0 w-full relative h-fit">
           <table className="w-full text-left text-sm border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md shadow-xs">
               <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
