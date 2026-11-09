@@ -264,78 +264,22 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
   };
 
   return (
-    <div className="space-y-6">
-      {/* 3. Filter Bar & Search */}
-      <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4 shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar max-w-full pb-0.5">
-          {/* Status Tabs */}
-          {[
-            { id: "all", label: "All Patrons", count: stats.total },
-            { id: "Active", label: "Active", count: stats.activeCount },
-            { id: "Suspended", label: "Suspended", count: stats.suspendedCount },
-            { id: "Inactive", label: "Inactive", count: stats.inactiveCount }
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setStatusFilter(t.id)}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${statusFilter === t.id
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-            >
-              <span>{t.label}</span>
-              <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${statusFilter === t.id ? "bg-white/20 text-white" : "bg-border text-muted-foreground"
-                }`}>
-                {t.count}
-              </span>
-            </button>
-          ))}
+    <div className="space-y-4">
+      {/* Customers Header */}
+      <div className="flex items-center justify-between pb-1">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Customer Directory</h2>
+          <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
+            {stats.total || customers.length} Patrons
+          </span>
         </div>
-
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 min-w-0">
-          {/* Search Box */}
-          <div className="relative flex-1 min-w-0 w-full sm:min-w-[180px]">
-            <Search className="absolute left-3 top-2.5 size-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, phone, email, city..."
-              className="h-9 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-xs outline-none focus:border-emerald-600 transition-all"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Tier Filter */}
-          <select
-            value={tierFilter}
-            onChange={(e) => setTierFilter(e.target.value)}
-            className="h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-emerald-600 shrink-0"
-          >
-            <option value="all">All Tiers</option>
-            <option value="VIP Patron">👑 VIP Patron</option>
-            <option value="Platinum Gold">⭐ Platinum Gold</option>
-            <option value="Gold Member">🥇 Gold Member</option>
-            <option value="Silver">🥈 Silver</option>
-            <option value="Bronze">🥉 Bronze</option>
-          </select>
-
-          {/* Sort By */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-emerald-600"
-          >
-            <option value="spent_desc">Sort: Highest LTV (Spent)</option>
-            <option value="orders_desc">Sort: Most Orders</option>
-            <option value="wallet_desc">Sort: Highest Wallet</option>
-            <option value="newest">Sort: Newest Joined</option>
-          </select>
-        </div>
+        <button
+          onClick={handleExportCSV}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
+        >
+          <Download className="w-3.5 h-3.5 text-muted-foreground" />
+          Export CSV
+        </button>
       </div>
 
       {/* 4. Customers Table */}
