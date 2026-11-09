@@ -327,7 +327,7 @@ export function HeroBannerCarousel() {
   return (
     <section
       data-no-scroll-reveal="true"
-      className="relative overflow-hidden bg-white select-none hero-carousel-container"
+      className="relative overflow-hidden bg-white select-none hero-carousel-container px-3 sm:px-0 pt-2 sm:pt-0 pb-1 sm:pb-0"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
@@ -336,7 +336,7 @@ export function HeroBannerCarousel() {
       aria-label="Janani Agro Featured Campaigns"
     >
       {/* Slides Container - Sleek, comfortable height so products and categories below are immediately visible */}
-      <div className="relative w-full h-[360px] sm:h-[400px] md:h-[440px] lg:h-[470px] overflow-hidden">
+      <div className="relative w-full h-[175px] xs:h-[195px] sm:h-[400px] md:h-[440px] lg:h-[470px] overflow-hidden rounded-2xl sm:rounded-none shadow-xs sm:shadow-none">
         <div
           className="flex w-full h-full transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
@@ -357,7 +357,7 @@ export function HeroBannerCarousel() {
                   (slide.badgeText && slide.badgeText.trim()) ||
                   (slide.title && slide.title.trim())
               );
-            const mobileSrc = slide.mobileImage && slide.mobileImage.trim() ? slide.mobileImage : slide.desktopImage;
+            const mobileSrc = slide.mobileImage && slide.mobileImage.trim() && !slide.mobileImage.includes("_mobile_clean") ? slide.mobileImage : slide.desktopImage;
 
             return (
               <div
@@ -377,7 +377,7 @@ export function HeroBannerCarousel() {
                     alt={slide.alt || slide.title}
                     loading={idx === 0 ? "eager" : "lazy"}
                     className={`w-full h-full object-cover block transition-transform duration-700 ${
-                      slide.mobilePosition ? (slide.mobilePosition.includes("object-") ? slide.mobilePosition : `object-${slide.mobilePosition}`) : "object-top"
+                      slide.mobilePosition ? (slide.mobilePosition.includes("object-") ? slide.mobilePosition : `object-${slide.mobilePosition}`) : "object-center"
                     } ${
                       slide.desktopPosition ? (slide.desktopPosition.includes("object-") ? (slide.desktopPosition.startsWith("md:") ? slide.desktopPosition : `md:${slide.desktopPosition}`) : `md:object-${slide.desktopPosition}`) : "md:object-center"
                     }`}
@@ -393,20 +393,20 @@ export function HeroBannerCarousel() {
                 {/* Light Fade in background for hero images with light opacity */}
                 {hasTextContent && (
                   <div
-                    className="absolute inset-y-0 left-0 w-full sm:w-[72%] lg:w-[60%] z-[5] pointer-events-none bg-gradient-to-b from-white/80 via-white/40 to-transparent sm:bg-gradient-to-r sm:from-white/80 sm:via-white/35 sm:to-transparent"
+                    className="absolute inset-y-0 left-0 w-[72%] sm:w-[72%] lg:w-[60%] z-[5] pointer-events-none bg-gradient-to-r from-white/90 via-white/50 to-transparent"
                     aria-hidden="true"
                   />
                 )}
 
                 {/* Option 2: Dynamic HTML/CSS Text Overlay with refined, proportionate typography */}
                 {hasTextContent ? (
-                  <div className="absolute inset-0 z-10 flex items-start sm:items-center pointer-events-none">
-                    <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl px-4 sm:px-8 md:px-12 lg:px-16 pt-3.5 sm:pt-4 pb-3 pointer-events-auto">
+                  <div className="absolute inset-0 z-10 flex items-center pointer-events-none">
+                    <div className="w-full max-w-[70%] sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl px-3.5 sm:px-8 md:px-12 lg:px-16 py-1.5 sm:py-4 pointer-events-auto">
                       {/* Badge Tag */}
                       {slide.badgeText && (
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white/90 backdrop-blur-xs px-2.5 sm:px-3 py-0.5 sm:py-1 mb-1 sm:mb-2 shadow-xs">
-                          <span className="size-1.5 rounded-full bg-[#0B6B35] animate-pulse" />
-                          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#075B32]">
+                        <div className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-emerald-600/30 bg-white/95 backdrop-blur-xs px-2 sm:px-3 py-0.5 sm:py-1 mb-0.5 sm:mb-2 shadow-xs">
+                          <span className="size-1 sm:size-1.5 rounded-full bg-[#0B6B35] animate-pulse" />
+                          <span className="text-[8.5px] sm:text-xs font-bold uppercase tracking-wider text-[#075B32] truncate">
                             {slide.badgeText}
                           </span>
                         </div>
@@ -414,28 +414,28 @@ export function HeroBannerCarousel() {
 
                       {/* Eyebrow */}
                       {slide.eyebrow && (
-                        <p className="text-[10px] sm:text-xs md:text-xs lg:text-sm font-extrabold uppercase tracking-wider text-[#0B6B35] mb-0.5 font-sans">
+                        <p className="text-[8.5px] sm:text-xs md:text-xs lg:text-sm font-extrabold uppercase tracking-wider text-[#0B6B35] mb-0.5 font-sans leading-tight">
                           {slide.eyebrow}
                         </p>
                       )}
 
                       {/* Title - slightly smaller, refined typography */}
                       {slide.title && (
-                        <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-3.5xl xl:text-4xl font-black text-[#075B32] tracking-tight leading-[1.15] drop-shadow-xs">
+                        <h2 className="text-sm xs:text-base sm:text-2xl md:text-3xl lg:text-3.5xl xl:text-4xl font-black text-[#075B32] tracking-tight leading-tight drop-shadow-xs">
                           {slide.title}
                         </h2>
                       )}
 
-                      {/* Subtitle */}
+                      {/* Subtitle - hidden on mobile to maintain compact, clean banner */}
                       {slide.subtitle && (
-                        <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs md:text-sm text-stone-700 font-medium leading-relaxed max-w-xs sm:max-w-md drop-shadow-xs line-clamp-2">
+                        <p className="hidden sm:block mt-1 sm:mt-1.5 text-[11px] sm:text-xs md:text-sm text-stone-700 font-medium leading-relaxed max-w-xs sm:max-w-md drop-shadow-xs line-clamp-2">
                           {slide.subtitle}
                         </p>
                       )}
 
-                      {/* 4 Feature Badges (if present) */}
+                      {/* 4 Feature Badges (hidden on mobile to prevent clutter) */}
                       {slide.features && slide.features.length > 0 && (
-                        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 my-2 sm:my-3 max-w-xs sm:max-w-md">
+                        <div className="hidden sm:grid grid-cols-2 gap-1.5 sm:gap-2 my-2 sm:my-3 max-w-xs sm:max-w-md">
                           {slide.features.map((feat, fIdx) => (
                             <div
                               key={fIdx}
@@ -448,8 +448,8 @@ export function HeroBannerCarousel() {
                         </div>
                       )}
 
-                      {/* CTA Buttons */}
-                      <div className="mt-2 sm:mt-3 flex flex-wrap items-center gap-2 sm:gap-2.5">
+                      {/* CTA Buttons (hidden on mobile; entire mobile card is clickable) */}
+                      <div className="hidden sm:flex mt-2 sm:mt-3 flex-wrap items-center gap-2 sm:gap-2.5">
                         <Link
                           to={slide.link || "/products"}
                           tabIndex={isCurrent ? 0 : -1}
@@ -479,12 +479,20 @@ export function HeroBannerCarousel() {
                     aria-label={slide.title || "Janani Agro Banner"}
                   />
                 )}
+
+                {/* Mobile tap-friendly full-banner link */}
+                <Link
+                  to={slide.link || "/products"}
+                  className="sm:hidden absolute inset-0 z-10 cursor-pointer"
+                  tabIndex={isCurrent ? 0 : -1}
+                  aria-label={slide.title || "Janani Agro Banner"}
+                />
               </div>
             );
           })}
         </div>
 
-        {/* Sleek Floating Navigation Buttons (< and >) */}
+        {/* Sleek Floating Navigation Buttons (< and >) - Visible on tablet/desktop, hidden on mobile */}
         {total > 1 && (
           <>
             <button
@@ -494,7 +502,7 @@ export function HeroBannerCarousel() {
                 prevSlide();
               }}
               aria-label="Previous Slide"
-              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-12 rounded-full bg-white/90 hover:bg-white text-[#075B32] hover:text-[#4FAE2A] shadow-lg border border-[#D99A12]/40 backdrop-blur-md flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              className="hidden sm:flex absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-12 rounded-full bg-white/90 hover:bg-white text-[#075B32] hover:text-[#4FAE2A] shadow-lg border border-[#D99A12]/40 backdrop-blur-md items-center justify-center transition-all active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="size-5 sm:size-6" />
             </button>
@@ -506,16 +514,16 @@ export function HeroBannerCarousel() {
                 nextSlide();
               }}
               aria-label="Next Slide"
-              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-12 rounded-full bg-white/90 hover:bg-white text-[#075B32] hover:text-[#4FAE2A] shadow-lg border border-[#D99A12]/40 backdrop-blur-md flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              className="hidden sm:flex absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-12 rounded-full bg-white/90 hover:bg-white text-[#075B32] hover:text-[#4FAE2A] shadow-lg border border-[#D99A12]/40 backdrop-blur-md items-center justify-center transition-all active:scale-95 cursor-pointer"
             >
               <ChevronRight className="size-5 sm:size-6" />
             </button>
           </>
         )}
 
-        {/* Sleek Floating Pagination Indicators inside banner (Zero space gap) */}
+        {/* Sleek Floating Pagination Indicators inside banner (Clean pills matching reference) */}
         {total > 1 && (
-          <div className="absolute bottom-2 sm:bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/35 backdrop-blur-xs px-2.5 sm:px-3 py-1 rounded-full border border-white/10 shadow-sm pointer-events-auto">
+          <div className="absolute bottom-2 sm:bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-2 py-0.5 pointer-events-auto">
             {slides.map((slide, idx) => (
               <button
                 key={slide.id || idx}
@@ -524,8 +532,8 @@ export function HeroBannerCarousel() {
                 aria-label={`Jump to slide ${idx + 1}`}
                 className={`transition-all duration-300 rounded-full cursor-pointer ${
                   current === idx
-                    ? "w-6 sm:w-7 h-1.5 bg-[#E7A91A] shadow-xs"
-                    : "w-1.5 h-1.5 bg-white/70 hover:bg-white"
+                    ? "w-7 sm:w-7 h-1.5 bg-white sm:bg-[#E7A91A] shadow-md ring-1 ring-black/10"
+                    : "w-2 sm:w-1.5 h-1.5 bg-white/70 hover:bg-white drop-shadow-xs"
                 }`}
               />
             ))}

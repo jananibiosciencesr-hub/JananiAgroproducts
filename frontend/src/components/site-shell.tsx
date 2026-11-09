@@ -269,14 +269,14 @@ function Shell({ children }: { children: React.ReactNode }) {
               </span>
             </button>
 
-            {/* Compact Search Icon Button (visible on mobile, tablet, and 1024px-1279px screens) */}
+            {/* Compact Search Icon Button (visible only on tablet sm to xl screens) */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsGlobalSearchOpen(true)}
               aria-label="Quick Search"
               title="Search Products"
-              className="xl:hidden size-8.5 sm:size-9 lg:size-9 rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] shrink-0"
+              className="hidden sm:inline-flex xl:hidden size-8.5 sm:size-9 lg:size-9 rounded-full text-[#075B32] hover:text-[#054324] hover:bg-[#F0F7ED] shrink-0"
             >
               <Search className="size-4" />
             </Button>
@@ -355,6 +355,23 @@ function Shell({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </div>
+
+        {/* Mobile Dedicated Quick Search Bar (visible only on mobile < sm) */}
+        {!isCheckoutFlow && pathname !== "/login" && (
+          <div className="sm:hidden px-3 pt-1 pb-1.5 border-t border-slate-100/70">
+            <button
+              type="button"
+              onClick={() => setIsGlobalSearchOpen(true)}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-full border border-slate-200/90 bg-[#F8FAF4] hover:border-[#075B32]/40 text-left shadow-2xs transition active:scale-[0.99] cursor-pointer group"
+              aria-label="Search products"
+            >
+              <Search className="size-4 text-slate-400 group-hover:text-[#075B32] transition-colors shrink-0" />
+              <span className="text-[12.5px] font-medium text-slate-400 group-hover:text-slate-600 truncate">
+                Search products...
+              </span>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Mobile Drawer */}
