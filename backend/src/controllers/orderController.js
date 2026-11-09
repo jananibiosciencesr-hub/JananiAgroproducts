@@ -91,6 +91,17 @@ export const createOrder = (req, res) => {
       createdAt: now.toISOString(),
     };
 
+    // Deduct stock for ordered items from warehouse inventory
+    enrichedItems.forEach((it) => {
+      const p = products.find((prod) => prod.id === it.productId || prod.name === it.name || prod.slug === it.productId);
+      if (p) {
+        p.stock = Math.max(0, (p.stock ?? p.stockCount ?? 45) - it.quantity);
+        if (p.stockCount !== undefined) {
+          p.stockCount = p.stock;
+        }
+      }
+    });
+
     orders.unshift(newOrder);
 
     return res.status(201).json({

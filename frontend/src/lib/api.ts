@@ -883,6 +883,40 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     timeline
   };
 
+  // Helper to sync and deduct product stock from local cache
+  const deductLocalProductStock = () => {
+    try {
+      const currentProds = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
+      let updatedAny = false;
+      const updatedProds = currentProds.map((prod) => {
+        const orderedItem = orderPayload.items.find((it) => {
+          const itId = String(it.productId || it.id || "");
+          const prodId = String(prod.id || "");
+          const prodSlug = String(prod.slug || "");
+          const itName = String(it.name || it.title || "").toLowerCase();
+          const prodName = String(prod.name || "").toLowerCase();
+          return (
+            itId === prodId ||
+            (prodSlug && itId === prodSlug) ||
+            (itName && prodName && (itName.includes(prodName) || prodName.includes(itName)))
+          );
+        });
+        if (orderedItem) {
+          const qty = Number(orderedItem.quantity || orderedItem.qty || 1);
+          const newStock = Math.max(0, (prod.stock ?? 45) - qty);
+          updatedAny = true;
+          return { ...prod, stock: newStock, inStock: newStock > 0 };
+        }
+        return prod;
+      });
+      if (updatedAny) {
+        setStored(STORAGE_KEYS.PRODUCTS, updatedProds);
+      }
+    } catch (e) {
+      console.warn("Local inventory sync note:", e);
+    }
+  };
+
   // 1. Prioritize direct MySQL write via api.php
   try {
     const phpRes = await fetch("/api.php?action=orders", {
@@ -896,6 +930,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
         const createdOrder = phpData.order || phpData.data;
         const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
         setStored(STORAGE_KEYS.ORDERS, [createdOrder, ...adminOrders.filter((o: any) => o.id !== createdOrder.id && o.number !== createdOrder.number)]);
+        deductLocalProductStock();
         return createdOrder;
       }
     }
@@ -911,6 +946,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     });
 
     if (data?.success && data.order) {
+      deductLocalProductStock();
       return data.order;
     }
   } catch (e) { }
@@ -934,6 +970,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
 
   const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
   setStored(STORAGE_KEYS.ORDERS, [newOrder, ...adminOrders.filter((o: any) => o.id !== newOrder.id && o.number !== newOrder.number)]);
+  deductLocalProductStock();
 
   return newOrder;
 }

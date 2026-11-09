@@ -3402,6 +3402,7 @@ try {
                         'price' => (float)$p['price'],
                         'stock' => $stk,
                         'lowStockThreshold' => $threshold,
+                        'threshold' => $threshold,
                         'status' => ($stk <= 0) ? 'Out of Stock' : (($stk <= $threshold) ? 'Low Stock' : 'In Stock'),
                         'warehouse' => 'Lodhika GIDC Central Facility',
                         'incoming' => 50,
@@ -3412,6 +3413,7 @@ try {
                 echo json_encode([
                     'success' => true,
                     'data' => $inventory,
+                    'inventory' => $inventory,
                     'total' => count($inventory)
                 ]);
                 exit;
@@ -3425,8 +3427,8 @@ try {
                         $up = $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ?");
                         $up->execute([$qty, (int)$targetId]);
                     } else {
-                        $up = $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `slug` = ?");
-                        $up->execute([$qty, $targetId]);
+                        $up = $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `slug` = ? OR `sku` = ? OR `name` = ?");
+                        $up->execute([$qty, $targetId, $targetId, $targetId]);
                     }
                     echo json_encode(['success' => true, 'message' => "Successfully restocked {$qty} units in MySQL", 'data' => ['id' => $targetId, 'quantity' => $qty]]);
                     exit;
@@ -4830,6 +4832,16 @@ try {
                     ];
                     $timeline = isset($body['timeline']) ? json_encode($body['timeline']) : json_encode($defaultTimeline);
 
+                    // Check if this is a brand new order to prevent duplicate inventory stock deductions
+                    $isNewOrder = true;
+                    try {
+                        $chkStmt = $pdo->prepare("SELECT 1 FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
+                        $chkStmt->execute([$orderId, $orderNum]);
+                        if ($chkStmt->fetchColumn()) {
+                            $isNewOrder = false;
+                        }
+                    } catch (Exception $e) {}
+
                     $stmt = $pdo->prepare("INSERT INTO `orders` (
                         `id`, `number`, `order_date`, `customer_name`, `customer_email`, `customer_phone`,
                         `shipping_address`, `billing_address`, `items`, `subtotal`, `discount`, `coupon_code`,
@@ -4858,6 +4870,71 @@ try {
                         $payStatus, $txnId, $rzpOrderId, $ordStatus, $courier,
                         $trackingId, $awb, $warehouse, $slot, $expDelivery, $timeline
                     ]);
+
+                    // Real-time Inventory Stock Deduction for newly placed customer order
+                    if ($isNewOrder) {
+                        $rawItems = $body['items'] ?? [];
+                        if (is_string($rawItems)) {
+                            $rawItems = json_decode($rawItems, true) ?: [];
+                        }
+                        if (is_array($rawItems) && !empty($rawItems)) {
+                            foreach ($rawItems as $it) {
+                                $deductQty = (int)($it['quantity'] ?? ($it['qty'] ?? 1));
+                                if ($deductQty <= 0) $deductQty = 1;
+
+                                $pId = $it['productId'] ?? ($it['id'] ?? null);
+                                $pSku = trim($it['sku'] ?? '');
+                                $pSlug = trim($it['slug'] ?? '');
+                                $pName = trim($it['name'] ?? ($it['title'] ?? ''));
+
+                                $deducted = false;
+
+                                // Strategy 1: Match by numeric ID
+                                if (!empty($pId) && is_numeric($pId)) {
+                                    $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE `id` = ?");
+                                    $up->execute([$deductQty, (int)$pId]);
+                                    if ($up->rowCount() > 0) $deducted = true;
+                                }
+
+                                // Strategy 2: Match by SKU
+                                if (!$deducted && !empty($pSku)) {
+                                    $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE `sku` = ?");
+                                    $up->execute([$deductQty, $pSku]);
+                                    if ($up->rowCount() > 0) $deducted = true;
+                                }
+
+                                // Strategy 3: Match by Slug or string ID
+                                if (!$deducted) {
+                                    $targetSlug = !empty($pSlug) ? $pSlug : (!is_numeric($pId) ? (string)$pId : '');
+                                    if (!empty($targetSlug)) {
+                                        $cleanSlug = preg_replace('/^prd-/i', '', trim($targetSlug));
+                                        $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE `slug` = ? OR `slug` = ?");
+                                        $up->execute([$deductQty, $targetSlug, $cleanSlug]);
+                                        if ($up->rowCount() > 0) $deducted = true;
+                                    }
+                                }
+
+                                // Strategy 4: Match by exact Product Name
+                                if (!$deducted && !empty($pName)) {
+                                    $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE `name` = ?");
+                                    $up->execute([$deductQty, $pName]);
+                                    if ($up->rowCount() > 0) $deducted = true;
+                                }
+
+                                // Strategy 5: Match by first significant keyword of product name (e.g. 'BALAVAN', 'SURAKSHA', 'HARIT', 'NEEM', 'ANNADA', 'PUSHKAL')
+                                if (!$deducted && !empty($pName)) {
+                                    $cleanName = preg_replace('/[^\w\s]/', ' ', $pName);
+                                    $words = array_values(array_filter(explode(' ', trim($cleanName))));
+                                    $firstWord = $words[0] ?? '';
+                                    if (strlen($firstWord) >= 3) {
+                                        $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE (`name` LIKE ? OR `slug` LIKE ?) AND (`status` != 'Trash' OR `status` IS NULL) ORDER BY `id` ASC LIMIT 1");
+                                        $up->execute([$deductQty, "%{$firstWord}%", "%" . strtolower($firstWord) . "%"]);
+                                        if ($up->rowCount() > 0) $deducted = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     $fStmt = $pdo->prepare("SELECT * FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
                     $fStmt->execute([$orderId, $orderNum]);
@@ -4944,6 +5021,36 @@ try {
                         $targetOrdId = $sub === 'refund' ? $id : ($body['orderId'] ?? ($body['id'] ?? ''));
                         $refundAmount = (float)($body['amount'] ?? 0);
                         $reason = $body['reason'] ?? 'Customer Refund Request';
+
+                        // Restore warehouse inventory stock if previously active
+                        try {
+                            $stPrev = $pdo->prepare("SELECT `order_status`, `items` FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
+                            $stPrev->execute([$targetOrdId, $targetOrdId]);
+                            $ordRow = $stPrev->fetch();
+                            if ($ordRow && strcasecmp($ordRow['order_status'], 'Cancelled') !== 0) {
+                                $restoreItems = !empty($ordRow['items']) ? (is_string($ordRow['items']) ? json_decode($ordRow['items'], true) : $ordRow['items']) : [];
+                                if (is_array($restoreItems)) {
+                                    foreach ($restoreItems as $rit) {
+                                        $rQty = (int)($rit['quantity'] ?? ($rit['qty'] ?? 1));
+                                        if ($rQty <= 0) continue;
+                                        $rpId = $rit['productId'] ?? ($rit['id'] ?? null);
+                                        $rpSku = trim($rit['sku'] ?? '');
+                                        $rpSlug = trim($rit['slug'] ?? '');
+                                        $rpName = trim($rit['name'] ?? ($rit['title'] ?? ''));
+                                        if (!empty($rpId) && is_numeric($rpId)) {
+                                            $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ?")->execute([$rQty, (int)$rpId]);
+                                        } elseif (!empty($rpSku)) {
+                                            $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `sku` = ?")->execute([$rQty, $rpSku]);
+                                        } elseif (!empty($rpSlug)) {
+                                            $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `slug` = ?")->execute([$rQty, $rpSlug]);
+                                        } elseif (!empty($rpName)) {
+                                            $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `name` = ?")->execute([$rQty, $rpName]);
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (Exception $e) {}
+
                         $pdo->prepare("UPDATE `orders` SET `payment_status` = 'Refunded', `order_status` = 'Cancelled' WHERE `id` = ? OR `number` = ?")->execute([$targetOrdId, $targetOrdId]);
 
                         try {
@@ -4951,7 +5058,7 @@ try {
                             $pdo->prepare("INSERT INTO `payments` (`id`, `order_id`, `gross_amount`, `net_settled_amount`, `refunded_amount`, `status`) VALUES (?, ?, ?, ?, ?, 'Refunded')")->execute([$payId, $targetOrdId, $refundAmount, 0, $refundAmount]);
                         } catch (Exception $e) {}
 
-                        echo json_encode(['success' => true, 'message' => "Order refund of ₹{$refundAmount} processed in MySQL"]);
+                        echo json_encode(['success' => true, 'message' => "Order refund of ₹{$refundAmount} processed in MySQL and inventory restored"]);
                         exit;
                     }
 
@@ -4982,6 +5089,38 @@ try {
                     }
 
                     if (!empty($fields)) {
+                        // If order is transitioning to Cancelled, restore stock
+                        $newStatus = $map['order_status'] ?? null;
+                        if ($newStatus && strcasecmp($newStatus, 'Cancelled') === 0) {
+                            try {
+                                $stPrev = $pdo->prepare("SELECT `order_status`, `items` FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
+                                $stPrev->execute([$id, $id]);
+                                $ordRow = $stPrev->fetch();
+                                if ($ordRow && strcasecmp($ordRow['order_status'], 'Cancelled') !== 0) {
+                                    $restoreItems = !empty($ordRow['items']) ? (is_string($ordRow['items']) ? json_decode($ordRow['items'], true) : $ordRow['items']) : [];
+                                    if (is_array($restoreItems)) {
+                                        foreach ($restoreItems as $rit) {
+                                            $rQty = (int)($rit['quantity'] ?? ($rit['qty'] ?? 1));
+                                            if ($rQty <= 0) continue;
+                                            $rpId = $rit['productId'] ?? ($rit['id'] ?? null);
+                                            $rpSku = trim($rit['sku'] ?? '');
+                                            $rpSlug = trim($rit['slug'] ?? '');
+                                            $rpName = trim($rit['name'] ?? ($rit['title'] ?? ''));
+                                            if (!empty($rpId) && is_numeric($rpId)) {
+                                                $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ?")->execute([$rQty, (int)$rpId]);
+                                            } elseif (!empty($rpSku)) {
+                                                $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `sku` = ?")->execute([$rQty, $rpSku]);
+                                            } elseif (!empty($rpSlug)) {
+                                                $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `slug` = ?")->execute([$rQty, $rpSlug]);
+                                            } elseif (!empty($rpName)) {
+                                                $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `name` = ?")->execute([$rQty, $rpName]);
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (Exception $e) {}
+                        }
+
                         $vals[] = $id;
                         $vals[] = $id;
                         $stmt = $pdo->prepare("UPDATE `orders` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `number` = ?");
@@ -6743,42 +6882,6 @@ try {
             }
             break;
 
-        case 'inventory':
-            if ($method === 'GET') {
-                $stmt = $pdo->query("SELECT `id`, `sku`, `name`, `category_name`, `image`, `price`, `stock`, `status`, `active` FROM `products` WHERE (`active` = 1 OR `active` IS NULL) AND (`status` != 'Trash' OR `status` IS NULL) ORDER BY `stock` ASC");
-                $prods = $stmt->fetchAll();
-                $inventory = [];
-                foreach ($prods as $p) {
-                    $stk = (int)$p['stock'];
-                    $inventory[] = [
-                        'id' => $p['id'],
-                        'sku' => $p['sku'] ?: ('JAP-' . $p['id']),
-                        'name' => $p['name'],
-                        'category' => $p['category_name'],
-                        'image' => $p['image'],
-                        'price' => (float)$p['price'],
-                        'stock' => $stk,
-                        'lowStockThreshold' => 10,
-                        'status' => $stk <= 0 ? 'Out of Stock' : ($stk <= 10 ? 'Low Stock' : 'In Stock'),
-                        'warehouse' => 'Lodhika GIDC Central Facility',
-                        'lastRestocked' => date('d M Y')
-                    ];
-                }
-                echo json_encode(['success' => true, 'inventory' => $inventory, 'data' => $inventory]);
-                exit;
-            } elseif ($method === 'POST') {
-                $body = getJsonBody();
-                $id = $body['id'] ?? null;
-                $qty = (int)($body['quantity'] ?? 0);
-                if ($id && $qty > 0) {
-                    $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ? OR `slug` = ?")->execute([$qty, $id, $id]);
-                    echo json_encode(['success' => true, 'message' => "Restocked {$qty} units in MySQL"]);
-                    exit;
-                }
-                echo json_encode(['success' => false, 'message' => 'Product ID and quantity required']);
-                exit;
-            }
-            break;
 
         case 'stats':
         case 'admin-stats':

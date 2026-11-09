@@ -264,10 +264,31 @@ function AdminDashboardPage() {
   // Dynamic Tab Search & Contextual Add State
   const [adminSearch, setAdminSearch] = useState("");
   const [addTriggerTab, setAddTriggerTab] = useState<{ tab: AdminTab; timestamp: number } | null>(null);
+  const [isRefreshingInventory, setIsRefreshingInventory] = useState(false);
+
+  const handleRefreshInventory = async () => {
+    try {
+      setIsRefreshingInventory(true);
+      const freshInv = await getAdminInventory();
+      if (Array.isArray(freshInv) && freshInv.length > 0) {
+        setInventory(freshInv);
+        toast.success("Warehouse inventory stock refreshed from live database!");
+      }
+    } catch (e) {
+      toast.error("Failed to refresh inventory.");
+    } finally {
+      setIsRefreshingInventory(false);
+    }
+  };
 
   const handleNavigateTab = (tab: AdminTab) => {
     setActiveTab(tab);
     setAdminSearch("");
+    if (tab === "inventory" || tab === "products") {
+      getAdminInventory().then((freshInv) => {
+        if (Array.isArray(freshInv) && freshInv.length > 0) setInventory(freshInv);
+      }).catch(() => {});
+    }
   };
 
   const handleContextualAdd = () => {
@@ -932,6 +953,8 @@ function AdminDashboardPage() {
               inventory={safeInventory}
               searchQuery={adminSearch}
               onOpenRestockModal={setSelectedItemForRestock}
+              onRefresh={handleRefreshInventory}
+              isRefreshing={isRefreshingInventory}
             />
           )}
 

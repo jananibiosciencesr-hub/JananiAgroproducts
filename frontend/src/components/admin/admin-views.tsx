@@ -30,7 +30,8 @@ import {
   Send,
   Printer,
   Copy,
-  Check
+  Check,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -194,9 +195,8 @@ export function ProductsView({
                   <td className="px-6 py-4"><span className="rounded-lg bg-muted px-2 py-0.5 text-[11px] font-semibold">{p.category}</span></td>
                   <td className="px-6 py-4 font-bold text-foreground">₹{p.price} <span className="text-[10px] text-muted-foreground line-through font-normal">₹{p.oldPrice || p.originalPrice || Math.round(p.price * 1.2)}</span></td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      (p.stock ?? 45) === 0 ? "bg-rose-500/10 text-rose-600" : (p.stock ?? 45) < 20 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
-                    }`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${(p.stock ?? 45) === 0 ? "bg-rose-500/10 text-rose-600" : (p.stock ?? 45) < 20 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
+                      }`}>
                       {p.stock ?? 45} units
                     </span>
                   </td>
@@ -442,11 +442,15 @@ export function CustomersView({ customers }: { customers: any[] }) {
 export function InventoryView({
   inventory,
   searchQuery = "",
-  onOpenRestockModal
+  onOpenRestockModal,
+  onRefresh,
+  isRefreshing = false
 }: {
   inventory: any[];
   searchQuery?: string;
   onOpenRestockModal: (item: any) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }) {
   const cleanSearch = (searchQuery || "").trim().toLowerCase();
   const filteredInventory = inventory.filter((item) => {
@@ -463,6 +467,27 @@ export function InventoryView({
   const healthyStockCount = filteredInventory.filter((i) => (i?.stock ?? 45) >= 20).length;
   const lowStockCount = filteredInventory.filter((i) => (i?.stock ?? 45) > 0 && (i?.stock ?? 45) < 20).length;
   const outOfStockCount = filteredInventory.filter((i) => (i?.stock ?? 45) === 0).length;
+
+  const handleExportCSV = () => {
+    const headers = ["Product Name", "SKU", "Category", "Current Stock (Units)", "Min Threshold", "Status", "Warehouse"];
+    const rows = filteredInventory.map((i) => [
+      `"${(i.name || "").replace(/"/g, '""')}"`,
+      `"${i.sku || ""}"`,
+      `"${i.category || ""}"`,
+      i.stock ?? 0,
+      i.threshold || i.lowStockThreshold || 20,
+      `"${(i.stock === 0 ? "Out of Stock" : i.stock < 20 ? "Low Stock Alert" : "Healthy Stock")}"`,
+      `"${i.warehouse || "Lodhika GIDC Central Facility"}"`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `warehouse-inventory-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 space-y-4 min-w-0 max-w-full">
@@ -496,6 +521,29 @@ export function InventoryView({
               {outOfStockCount} Out of Stock
             </span>
           )}
+
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+              title="Refresh warehouse inventory live"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isRefreshing ? "animate-spin text-emerald-600" : ""}`} />
+              <span>Refresh</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
+            title="Download Inventory CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 
@@ -523,9 +571,8 @@ export function InventoryView({
                   <td className="px-6 py-4 font-extrabold text-foreground">{item.stock} units</td>
                   <td className="px-6 py-4 text-muted-foreground">{item.threshold || 20} units</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                      item.stock === 0 ? "bg-rose-500/10 text-rose-600" : item.stock < 20 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
-                    }`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${item.stock === 0 ? "bg-rose-500/10 text-rose-600" : item.stock < 20 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
+                      }`}>
                       {item.stock === 0 ? "Out of Stock" : item.stock < 20 ? "Low Stock Alert" : "Healthy Stock"}
                     </span>
                   </td>
@@ -575,9 +622,8 @@ export function CouponsView({ coupons, onOpenAddCouponModal, onToggleCoupon }: {
                 </span>
                 <button
                   onClick={() => onToggleCoupon(c.id)}
-                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold transition-colors ${
-                    c.active ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold transition-colors ${c.active ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   {c.active ? "Active" : "Paused"}
                 </button>
