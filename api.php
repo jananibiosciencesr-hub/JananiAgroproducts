@@ -825,6 +825,44 @@ function saveBase64ImageFile($dataUri, $folder = 'images/categories', $filePrefi
     return $dataUri;
 }
 
+function saveBase64VideoFile($dataUri, $folder = 'videos/products', $filePrefix = 'prod-video') {
+    if (!is_string($dataUri) || strpos($dataUri, 'data:video/') !== 0) {
+        return $dataUri;
+    }
+    try {
+        if (!preg_match('/^data:video\/([a-zA-Z0-9+.-]+);base64,(.+)$/', $dataUri, $matches)) {
+            return $dataUri;
+        }
+        $rawExt = strtolower($matches[1]);
+        $ext = 'mp4';
+        if ($rawExt === 'webm') $ext = 'webm';
+        elseif ($rawExt === 'ogg') $ext = 'ogg';
+        elseif ($rawExt === 'quicktime') $ext = 'mov';
+        
+        $base64Data = base64_decode($matches[2]);
+        if (!$base64Data) {
+            return $dataUri;
+        }
+        $targetDir = __DIR__ . '/' . trim($folder, '/');
+        if (!is_dir($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+        $cleanPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '', $filePrefix);
+        if (empty($cleanPrefix)) $cleanPrefix = 'prod-video';
+        $fileName = $cleanPrefix . '-' . time() . '-' . substr(md5(uniqid()), 0, 6) . '.' . $ext;
+        $filePath = $targetDir . '/' . $fileName;
+        if (@file_put_contents($filePath, $base64Data) !== false) {
+            $feDir = __DIR__ . '/frontend/public/' . trim($folder, '/');
+            if (is_dir(dirname($feDir))) {
+                @mkdir($feDir, 0755, true);
+                @copy($filePath, $feDir . '/' . $fileName);
+            }
+            return '/' . trim($folder, '/') . '/' . $fileName;
+        }
+    } catch (Exception $e) {}
+    return $dataUri;
+}
+
 // ---------------------------------------------------------
 // ZERO-500 RESILIENT FALLBACK HANDLER WHEN DATABASE IS OFFLINE
 // ---------------------------------------------------------
@@ -1325,6 +1363,7 @@ function ensureProductsTableSchema($pdo) {
             `active` TINYINT(1) DEFAULT 1,
             `status` VARCHAR(50) DEFAULT 'Active',
             `sku` VARCHAR(100) DEFAULT NULL,
+            `video_url` MEDIUMTEXT DEFAULT NULL,
             `low_stock_threshold` INT(11) DEFAULT 20,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -1373,7 +1412,9 @@ function ensureProductsTableSchema($pdo) {
             'methodOfApplication' => 'TEXT NULL',
             'compatibility' => 'TEXT NULL',
             'storageNotice' => 'TEXT NULL',
-            'faqs' => 'LONGTEXT NULL'
+            'faqs' => 'LONGTEXT NULL',
+            'video_url' => 'MEDIUMTEXT NULL',
+            'videoUrl' => 'MEDIUMTEXT NULL'
         ];
         foreach ($needed as $colName => $colDef) {
             if (!isset($existingCols[strtolower($colName)])) {
@@ -2735,6 +2776,47 @@ try {
             }
             break;
 
+        case 'upload-video':
+        case 'upload-media':
+            if ($method === 'POST') {
+                $uploadedFile = $_FILES['video'] ?? ($_FILES['file'] ?? null);
+                if ($uploadedFile && !empty($uploadedFile['tmp_name'])) {
+                    $origName = $uploadedFile['name'] ?? 'video.mp4';
+                    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                    if (!in_array($ext, ['mp4', 'webm', 'ogg', 'mov', 'm4v'])) {
+                        $ext = 'mp4';
+                    }
+                    $targetDir = __DIR__ . '/videos/products';
+                    if (!is_dir($targetDir)) {
+                        @mkdir($targetDir, 0755, true);
+                    }
+                    $fileName = 'prod-video-' . time() . '-' . substr(md5(uniqid()), 0, 6) . '.' . $ext;
+                    $targetPath = $targetDir . '/' . $fileName;
+                    if (@move_uploaded_file($uploadedFile['tmp_name'], $targetPath)) {
+                        $savedUrl = '/videos/products/' . $fileName;
+                        $feDir = __DIR__ . '/frontend/public/videos/products';
+                        if (is_dir(dirname(dirname($feDir)))) {
+                            @mkdir($feDir, 0755, true);
+                            @copy($targetPath, $feDir . '/' . $fileName);
+                        }
+                        echo json_encode(['success' => true, 'url' => $savedUrl, 'videoUrl' => $savedUrl, 'video_url' => $savedUrl, 'message' => 'Video uploaded successfully']);
+                        exit;
+                    }
+                }
+
+                $body = getJsonBody();
+                $b64 = $body['video'] ?? ($body['videoUrl'] ?? ($body['data'] ?? ''));
+                if (!empty($b64) && strpos($b64, 'data:video/') === 0) {
+                    $savedUrl = saveBase64VideoFile($b64, 'videos/products', 'prod-video');
+                    echo json_encode(['success' => true, 'url' => $savedUrl, 'videoUrl' => $savedUrl, 'video_url' => $savedUrl, 'message' => 'Video saved successfully']);
+                    exit;
+                }
+
+                echo json_encode(['success' => false, 'message' => 'No video file received']);
+                exit;
+            }
+            break;
+
         case 'products':
             ensureJananiCatalogSynced($pdo);
             if ($method === 'GET') {
@@ -2853,8 +2935,12 @@ try {
                     $compat = $body['compatibility'] ?? null;
                     $storageNotice = $body['storageNotice'] ?? null;
                     $faqs = isset($body['faqs']) ? (is_array($body['faqs']) ? json_encode($body['faqs'], JSON_UNESCAPED_SLASHES) : $body['faqs']) : null;
+                    $videoUrl = $body['video_url'] ?? ($body['videoUrl'] ?? null);
+                    if (!empty($videoUrl) && strpos($videoUrl, 'data:video/') === 0) {
+                        $videoUrl = saveBase64VideoFile($videoUrl, 'videos/products', 'prod-video-' . $slug);
+                    }
 
-                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`, `gallery`, `variants`, `subtitle`, `benefits`, `specifications`, `crops`, `recommendedCrops`, `dosage`, `methodOfApplication`, `compatibility`, `storageNotice`, `faqs`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`, `gallery`, `variants`, `subtitle`, `benefits`, `specifications`, `crops`, `recommendedCrops`, `dosage`, `methodOfApplication`, `compatibility`, `storageNotice`, `faqs`, `video_url`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $slug,
                         $name,
@@ -2882,7 +2968,8 @@ try {
                         $methodApp,
                         $compat,
                         $storageNotice,
-                        $faqs
+                        $faqs,
+                        $videoUrl
                     ]);
                     $newId = $pdo->lastInsertId();
                     $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
@@ -3116,6 +3203,12 @@ try {
                     if (isset($body['old_price'])) {
                         $body['old_price'] = (float)$body['old_price'];
                     }
+                    if (isset($body['videoUrl']) && !isset($body['video_url'])) {
+                        $body['video_url'] = $body['videoUrl'];
+                    }
+                    if (!empty($body['video_url']) && strpos($body['video_url'], 'data:video/') === 0) {
+                        $body['video_url'] = saveBase64VideoFile($body['video_url'], 'videos/products', 'prod-video-' . ($body['slug'] ?? $id));
+                    }
 
                     $jsonFields = ['gallery', 'variants', 'benefits', 'specifications', 'crops', 'faqs'];
                     foreach ($jsonFields as $jf) {
@@ -3132,7 +3225,7 @@ try {
                         'description', 'origin', 'certification', 'active', 'status', 'sku',
                         'gallery', 'variants', 'subtitle', 'benefits', 'specifications',
                         'crops', 'recommendedCrops', 'dosage', 'methodOfApplication',
-                        'compatibility', 'storageNotice', 'faqs'
+                        'compatibility', 'storageNotice', 'faqs', 'video_url'
                     ];
 
                     ensureProductsTableSchema($pdo);
@@ -3148,6 +3241,13 @@ try {
                         try {
                             $pdo->exec("ALTER TABLE `products` ADD COLUMN `variants` LONGTEXT NULL");
                             $existingCols['variants'] = true;
+                        } catch (Exception $e) {}
+                    }
+
+                    if (!isset($existingCols['video_url'])) {
+                        try {
+                            $pdo->exec("ALTER TABLE `products` ADD COLUMN `video_url` MEDIUMTEXT NULL");
+                            $existingCols['video_url'] = true;
                         } catch (Exception $e) {}
                     }
 

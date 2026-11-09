@@ -758,6 +758,25 @@ function ProductDetailPage() {
                 </button>
               )}
 
+              {/* Quick Play Video Badge/Pill on Main Viewport */}
+              {Boolean((product as any).video_url || product.videoUrl) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const vidIdx = galleryImages.findIndex((g) => g.isVideo);
+                    if (vidIdx !== -1) {
+                      setActiveImageIndex(vidIdx);
+                    }
+                    setIsVideoModalOpen(true);
+                  }}
+                  title="Watch Official Product Video Demo"
+                  className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/80 hover:bg-black text-white text-xs font-semibold backdrop-blur-sm transition shadow-lg cursor-pointer z-10"
+                >
+                  <Play className="size-3.5 fill-white text-white" />
+                  <span>Product Video</span>
+                </button>
+              )}
+
               {/* Expand Lightbox / Video Modal Button (Bottom Right) */}
               <button
                 onClick={() => {
@@ -788,6 +807,22 @@ function ProductDetailPage() {
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 uppercase tracking-wider">
                     {product.category}
                   </span>
+                )}
+                {Boolean((product as any).video_url || product.videoUrl) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const vidIdx = galleryImages.findIndex((g) => g.isVideo);
+                      if (vidIdx !== -1) {
+                        setActiveImageIndex(vidIdx);
+                      }
+                      setIsVideoModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 transition cursor-pointer shadow-xs"
+                  >
+                    <Play className="size-3 text-amber-600 fill-amber-600" />
+                    <span>Watch Video Demo</span>
+                  </button>
                 )}
                 {product.brand && (
                   <span className="text-xs font-medium text-gray-500">
@@ -1087,6 +1122,57 @@ function ProductDetailPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Embedded Video Showcase in Description Tab */}
+                {Boolean((product as any).video_url || product.videoUrl) && (() => {
+                  const rawVid = (product as any).video_url || product.videoUrl;
+                  const vInfo = getVideoEmbedInfo(rawVid);
+                  return (
+                    <div className="mt-6 pt-5 border-t border-gray-200/80 space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="size-7 rounded-lg bg-[#EAF5E9] text-[#075B32] flex items-center justify-center">
+                            <Play className="size-3.5 fill-[#075B32] text-[#075B32]" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900">
+                              Official Product Demonstration &amp; Field Usage Video
+                            </h4>
+                            <p className="text-xs text-gray-500">
+                              Verified authentic field demonstration for {formatProductName(product.name)}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsVideoModalOpen(true)}
+                          className="text-xs font-semibold text-[#075B32] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Maximize2 className="size-3.5" /> Fullscreen View
+                        </button>
+                      </div>
+
+                      <div className="w-full aspect-video max-h-[380px] rounded-2xl overflow-hidden bg-black flex items-center justify-center shadow-lg border border-gray-200">
+                        {vInfo.isEmbeddable ? (
+                          <iframe
+                            src={vInfo.embedUrl}
+                            title={`${product.name} Video Demonstration`}
+                            className="w-full h-full border-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video
+                            src={vInfo.rawUrl}
+                            controls
+                            playsInline
+                            className="w-full h-full object-contain"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}

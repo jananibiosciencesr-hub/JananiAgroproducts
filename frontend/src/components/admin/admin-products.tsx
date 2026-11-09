@@ -1784,16 +1784,40 @@ function ProductFormModal({
   };
 
   // Upload product showcase video file
-  const handleUploadVideoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadVideoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      toast.warning("Video file exceeds 15 MB. For optimal storefront playback speed, we recommend pasting a YouTube link or using a video under 15 MB.");
+    if (file.size > 50 * 1024 * 1024) {
+      toast.warning("Video file exceeds 50 MB. For optimal playback, please use a video under 50 MB or paste a YouTube link.");
       return;
     }
 
     toast.info(`Uploading video "${file.name}"...`);
+    try {
+      const fd = new FormData();
+      fd.append("video", file);
+      const res = await fetch("/api.php?action=upload-video", {
+        method: "POST",
+        body: fd
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.success && (data?.url || data?.videoUrl)) {
+          const vUrl = data.url || data.videoUrl;
+          setFormData((prev) => ({
+            ...prev,
+            videoUrl: vUrl
+          }));
+          toast.success(`Video "${file.name}" uploaded to server successfully!`);
+          e.target.value = "";
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Direct upload to server failed, falling back to local file reading:", err);
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
