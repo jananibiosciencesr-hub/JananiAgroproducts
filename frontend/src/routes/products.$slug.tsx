@@ -95,7 +95,7 @@ function ProductDetailPage() {
       try {
         const parsed = JSON.parse((product as any).variants);
         if (Array.isArray(parsed)) rawList = parsed;
-      } catch {}
+      } catch { }
     }
 
     const vars: ProductVariant[] = rawList.map((v: any, idx: number) => ({
@@ -504,7 +504,7 @@ function ProductDetailPage() {
       try {
         const parsed = JSON.parse(product.benefits);
         if (Array.isArray(parsed)) list = parsed.map(String).filter(Boolean);
-      } catch {}
+      } catch { }
       if (list.length === 0) {
         list = product.benefits.includes("\n")
           ? product.benefits.split("\n").map((s) => s.trim()).filter(Boolean)
@@ -574,7 +574,7 @@ function ProductDetailPage() {
       try {
         const parsed = JSON.parse(product.crops);
         if (Array.isArray(parsed)) list = parsed.map(String).filter(Boolean);
-      } catch {}
+      } catch { }
       if (list.length === 0) {
         list = product.crops.split(",").map((c) => c.trim()).filter(Boolean);
       }
@@ -612,7 +612,7 @@ function ProductDetailPage() {
         if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
           rawSpecs = parsed;
         }
-      } catch {}
+      } catch { }
     }
 
     const base: Record<string, string> = {
@@ -649,7 +649,7 @@ function ProductDetailPage() {
       try {
         const parsed = JSON.parse(product.faqs);
         if (Array.isArray(parsed)) rawList = parsed;
-      } catch {}
+      } catch { }
     }
     if (rawList.length > 0) {
       const mapped = rawList.map((f: any) => ({
@@ -720,11 +720,10 @@ function ProductDetailPage() {
                       onClick={() => {
                         setActiveImageIndex(idx);
                       }}
-                      className={`relative size-14 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1.5 flex items-center justify-center cursor-pointer ${
-                        isActive
+                      className={`relative size-14 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1.5 flex items-center justify-center cursor-pointer ${isActive
                           ? "border-[#075B32] shadow-sm ring-2 ring-[#075B32]/30"
                           : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
-                      }`}
+                        }`}
                     >
                       <img
                         src={img.src}
@@ -953,11 +952,10 @@ function ProductDetailPage() {
                           setSelectedVariant(v);
                           setActiveImageIndex(0);
                         }}
-                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                          isSelected
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${isSelected
                             ? "border-2 border-[#075B32] bg-[#EAF5E9] shadow-xs"
                             : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className={`text-xs font-bold ${isSelected ? "text-[#075B32]" : "text-gray-900"}`}>
@@ -1091,11 +1089,10 @@ function ProductDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition border-b-2 -mb-px ${
-                    isActive
+                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition border-b-2 -mb-px ${isActive
                       ? "border-[#075B32] text-[#075B32]"
                       : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -1473,11 +1470,10 @@ function ProductDetailPage() {
                               className="p-1 cursor-pointer transition"
                             >
                               <Star
-                                className={`size-6 ${
-                                  star <= reviewRating
+                                className={`size-6 ${star <= reviewRating
                                     ? "text-[#E7A91A] fill-[#E7A91A]"
                                     : "text-gray-300"
-                                }`}
+                                  }`}
                               />
                             </button>
                           ))}
