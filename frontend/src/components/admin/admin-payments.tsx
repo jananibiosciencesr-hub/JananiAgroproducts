@@ -230,7 +230,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
 
   useEffect(() => {
     loadTransactions();
-  }, [statusFilter, gatewayFilter, sortBy]);
+  }, [searchQuery, statusFilter, gatewayFilter, sortBy]);
 
   useEffect(() => {
     loadGatewayConfigData();
@@ -398,83 +398,37 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
       {/* TAB 1: ALL TRANSACTIONS LEDGER */}
       {/* ========================================================================= */}
       {activeTab === "transactions" && (
-        <div className="space-y-6">
-          {/* Filter Bar */}
-          <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-            {/* Search Input */}
-            <form onSubmit={handleSearchSubmit} className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search Transaction ID, Order #, Customer Name, Email, or Bank UTR..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/40"
-              />
-            </form>
-
-            {/* Status Tabs */}
-            <div className="flex flex-wrap items-center gap-1.5 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {[
-                { id: "all", label: "All Status" },
-                { id: "captured", label: "Captured" },
-                { id: "pending", label: "Pending" },
-                { id: "refunded", label: "Refunded" },
-                { id: "partially refunded", label: "Partial Refund" },
-                { id: "failed", label: "Failed" }
-              ].map(st => (
-                <button
-                  key={st.id}
-                  onClick={() => setStatusFilter(st.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    statusFilter === st.id
-                      ? "bg-emerald-600 text-white font-semibold shadow-sm"
-                      : "bg-slate-800/80 text-slate-300 hover:bg-slate-700"
-                  }`}
-                >
-                  {st.label}
-                </button>
-              ))}
+        <div className="space-y-4">
+          {/* Header Title & Actions */}
+          <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-lg font-bold text-foreground tracking-tight">Payments & Transactions</h2>
+              <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
+                {transactions.length} Records
+              </span>
             </div>
-
-            {/* Gateway Filter Dropdown */}
-            <div className="flex items-center gap-2">
-              <select
-                value={gatewayFilter}
-                onChange={e => setGatewayFilter(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-medium text-slate-200 focus:outline-none focus:border-emerald-500/60"
-              >
-                <option value="all">All Payment Gateways</option>
-                <option value="razorpay">Razorpay (Cards/UPI)</option>
-                <option value="stripe">Stripe (USD/Intl)</option>
-                <option value="upi direct">UPI Direct (0% MDR)</option>
-                <option value="cod">Cash on Delivery (COD)</option>
-              </select>
-
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-medium text-slate-200 focus:outline-none focus:border-emerald-500/60"
-              >
-                <option value="newest">Latest First</option>
-                <option value="amount_desc">Highest Gross (₹)</option>
-              </select>
-            </div>
+            <button
+              onClick={handleExportCsv}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
+            >
+              <Receipt className="w-3.5 h-3.5 text-muted-foreground" />
+              Export CSV
+            </button>
           </div>
 
           {/* Transactions Table */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 overflow-hidden shadow-xl">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
             {loading ? (
               <div className="p-16 text-center">
-                <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-3" />
-                <p className="text-sm text-slate-400">Fetching encrypted payment transactions from gateway ledger...</p>
+                <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">Fetching encrypted payment transactions from gateway ledger...</p>
               </div>
             ) : transactions.length === 0 ? (
               <div className="p-16 text-center">
-                <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-white mb-1">No payment transactions found</h3>
-                <p className="text-sm text-slate-400 max-w-md mx-auto">
-                  Try clearing your search query or switching your status & gateway filter criteria.
+                <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-foreground mb-1">No payment transactions found</h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  No transaction records match the active search criteria.
                 </p>
                 <button
                   onClick={() => {
@@ -482,39 +436,34 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                     setStatusFilter("all");
                     setGatewayFilter("all");
                   }}
-                  className="mt-4 px-4 py-2 rounded-xl bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold hover:bg-emerald-600/30 cursor-pointer"
+                  className="mt-4 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold hover:bg-emerald-500/20 cursor-pointer"
                 >
-                  Reset All Filters
+                  Reset Search
                 </button>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-slate-300">
-                  <thead className="bg-slate-950/80 text-xs uppercase font-semibold text-slate-400 border-b border-slate-800 tracking-wider">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-muted/70 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border shadow-2xs">
                     <tr>
-                      <th className="px-5 py-4">Transaction ID & Date</th>
-                      <th className="px-5 py-4">Order & Customer</th>
-                      <th className="px-5 py-4">Gateway & Method</th>
-                      <th className="px-5 py-4 text-right">Gross Amount</th>
-                      <th className="px-5 py-4 text-right">Fee / MDR</th>
-                      <th className="px-5 py-4 text-right">Net Settled</th>
-                      <th className="px-5 py-4 text-center">Status</th>
-                      <th className="px-5 py-4">Bank Settlement / UTR</th>
-                      <th className="px-5 py-4 text-right">Actions</th>
+                      <th className="px-5 py-3.5">Transaction ID & Date</th>
+                      <th className="px-5 py-3.5">Order & Customer</th>
+                      <th className="px-5 py-3.5 text-right">Gross Amount</th>
+                      <th className="px-5 py-3.5 text-right">Fee / MDR</th>
+                      <th className="px-5 py-3.5 text-right">Net Settled</th>
+                      <th className="px-5 py-3.5">Bank Settlement / UTR</th>
+                      <th className="px-5 py-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 font-sans">
+                  <tbody className="divide-y divide-border font-sans">
                     {transactions.map(txn => {
                       const isCaptured = txn.status === "Captured";
-                      const isPending = txn.status === "Pending";
-                      const isFailed = txn.status === "Failed";
-                      const isRefunded = txn.status === "Refunded";
                       const isPartialRefund = txn.status === "Partially Refunded";
 
                       return (
                         <tr
                           key={txn.id}
-                          className="hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                          className="hover:bg-muted/40 transition-colors group cursor-pointer"
                           onClick={() => {
                             setSelectedTxn(txn);
                             setDrawerOpen(true);
@@ -522,10 +471,10 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                         >
                           {/* Transaction ID & Date */}
                           <td className="px-5 py-4 whitespace-nowrap">
-                            <div className="font-mono text-xs font-bold text-white flex items-center gap-1.5 group-hover:text-emerald-400 transition-colors">
+                            <div className="font-mono text-xs font-bold text-foreground flex items-center gap-1.5 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                               {txn.id}
                             </div>
-                            <div className="text-[11px] text-slate-500 mt-0.5">{txn.createdAt}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{txn.createdAt}</div>
                           </td>
 
                           {/* Order & Customer */}
@@ -534,35 +483,23 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                               <img
                                 src={txn.customer.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(txn.customer.name)}`}
                                 alt={txn.customer.name}
-                                className="w-8 h-8 rounded-full border border-slate-700 bg-slate-800"
+                                className="w-8 h-8 rounded-full border border-border bg-muted shrink-0"
                               />
                               <div>
-                                <div className="font-semibold text-white text-xs leading-none">{txn.customer.name}</div>
-                                <div className="text-[11px] text-emerald-400/90 font-mono mt-0.5">{txn.orderId}</div>
-                                <div className="text-[10px] text-slate-500">{txn.customer.phone}</div>
+                                <div className="font-semibold text-foreground text-xs leading-none">{txn.customer.name}</div>
+                                <div className="text-[11px] text-emerald-700 dark:text-emerald-400 font-mono font-bold mt-0.5">{txn.orderId}</div>
+                                <div className="text-[10px] text-muted-foreground">{txn.customer.phone}</div>
                               </div>
                             </div>
                           </td>
 
-                          {/* Gateway & Method */}
-                          <td className="px-5 py-4 whitespace-nowrap">
-                            <div className="text-xs font-medium text-slate-200 flex items-center gap-1.5">
-                              {txn.gateway.includes("Razorpay") && <span className="w-2 h-2 rounded-full bg-blue-400" />}
-                              {txn.gateway.includes("Stripe") && <span className="w-2 h-2 rounded-full bg-indigo-400" />}
-                              {txn.gateway.includes("UPI") && <span className="w-2 h-2 rounded-full bg-emerald-400" />}
-                              {txn.gateway.includes("COD") && <span className="w-2 h-2 rounded-full bg-amber-400" />}
-                              {txn.gateway}
-                            </div>
-                            <div className="text-[11px] text-slate-400 font-mono mt-0.5">{txn.method}</div>
-                          </td>
-
                           {/* Gross Amount */}
                           <td className="px-5 py-4 text-right whitespace-nowrap">
-                            <div className="font-bold text-white text-sm">
+                            <div className="font-bold text-foreground text-sm">
                               ₹{txn.grossAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                             </div>
                             {txn.refundedAmount > 0 && (
-                              <div className="text-[10px] text-rose-400 font-semibold mt-0.5">
+                              <div className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">
                                 -₹{txn.refundedAmount.toLocaleString("en-IN")} Refunded
                               </div>
                             )}
@@ -570,56 +507,32 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
 
                           {/* Fee / MDR */}
                           <td className="px-5 py-4 text-right whitespace-nowrap">
-                            <div className="text-xs font-mono text-slate-400">
+                            <div className="text-xs font-mono text-muted-foreground font-semibold">
                               ₹{txn.gatewayFee.toFixed(2)}
                             </div>
-                            <div className="text-[10px] text-slate-500">GST: ₹{txn.gstOnFee.toFixed(2)}</div>
+                            <div className="text-[10px] text-muted-foreground/80">GST: ₹{txn.gstOnFee.toFixed(2)}</div>
                           </td>
 
                           {/* Net Settled */}
                           <td className="px-5 py-4 text-right whitespace-nowrap">
-                            <div className="font-bold text-emerald-400 font-mono text-sm">
+                            <div className="font-bold text-emerald-700 dark:text-emerald-400 font-mono text-sm">
                               ₹{txn.netSettledAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                             </div>
-                          </td>
-
-                          {/* Status */}
-                          <td className="px-5 py-4 text-center whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                                isCaptured
-                                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                                  : isPending
-                                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                                  : isFailed
-                                  ? "bg-rose-500/15 text-rose-300 border border-rose-500/30"
-                                  : isRefunded
-                                  ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
-                                  : "bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
-                              }`}
-                            >
-                              {isCaptured && <CheckCircle2 className="w-3 h-3" />}
-                              {isPending && <Clock className="w-3 h-3" />}
-                              {isFailed && <XCircle className="w-3 h-3" />}
-                              {isRefunded && <ArrowDownLeft className="w-3 h-3" />}
-                              {isPartialRefund && <ArrowDownLeft className="w-3 h-3" />}
-                              {txn.status}
-                            </span>
                           </td>
 
                           {/* Bank Settlement / UTR */}
                           <td className="px-5 py-4 whitespace-nowrap">
                             {txn.bankUtr ? (
                               <div>
-                                <div className="font-mono text-[11px] font-semibold text-slate-300 flex items-center gap-1">
-                                  <Building2 className="w-3 h-3 text-teal-400" />
+                                <div className="font-mono text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                                  <Building2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
                                   {txn.bankUtr}
                                 </div>
-                                <div className="text-[10px] text-teal-400 font-medium">{txn.settlementStatus}</div>
+                                <div className="text-[10px] text-teal-700 dark:text-teal-400 font-medium">{txn.settlementStatus}</div>
                               </div>
                             ) : (
-                              <div className="text-xs text-slate-500 italic flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-slate-500" />
+                              <div className="text-xs text-muted-foreground italic flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                 {txn.settlementStatus}
                               </div>
                             )}
@@ -634,7 +547,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                                   setSelectedTxn(txn);
                                   setDrawerOpen(true);
                                 }}
-                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
@@ -645,7 +558,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                                   setSelectedTxn(txn);
                                   setReceiptModalOpen(true);
                                 }}
-                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                               >
                                 <Printer className="w-4 h-4" />
                               </button>
@@ -654,7 +567,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                                 <button
                                   title="Issue Full / Partial Refund"
                                   onClick={() => handleOpenRefund(txn)}
-                                  className="px-2.5 py-1 rounded-lg bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 border border-purple-800/40 text-xs font-semibold transition-all cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50 text-xs font-semibold transition-all cursor-pointer"
                                 >
                                   Refund
                                 </button>
@@ -1318,59 +1231,59 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
         <div className="fixed inset-0 z-50 flex justify-end">
           <div
             onClick={() => setDrawerOpen(false)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
           />
 
-          <div className="relative w-full max-w-xl bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto shadow-2xl space-y-6 z-10">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="relative w-full max-w-xl bg-card border-l border-border p-6 overflow-y-auto shadow-2xl space-y-6 z-10 text-foreground">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
               <div>
-                <div className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
+                <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider">
                   360° Transaction Inspector
                 </div>
-                <h2 className="text-xl font-black text-white mt-0.5">{selectedTxn.id}</h2>
+                <h2 className="text-xl font-black text-foreground mt-0.5">{selectedTxn.id}</h2>
               </div>
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer"
+                className="p-2 rounded-xl border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Status Header Card */}
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 space-y-4">
+            <div className="p-5 rounded-2xl bg-muted/30 border border-border space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Gross Amount</span>
+                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Gross Amount</span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
                     selectedTxn.status === "Captured"
-                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                      : "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50"
+                      : "bg-purple-100 text-purple-800 border border-purple-300 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50"
                   }`}
                 >
                   {selectedTxn.status}
                 </span>
               </div>
 
-              <div className="text-3xl font-black text-white">
+              <div className="text-3xl font-black text-foreground">
                 ₹{selectedTxn.grossAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
 
               {/* Mathematical MDR Breakdown */}
-              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800/80 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-slate-300">
+              <div className="p-3.5 rounded-xl bg-card border border-border space-y-2 text-xs">
+                <div className="flex items-center justify-between text-muted-foreground">
                   <span>Order Total:</span>
-                  <span className="font-mono font-semibold text-white">₹{selectedTxn.grossAmount.toFixed(2)}</span>
+                  <span className="font-mono font-semibold text-foreground">₹{selectedTxn.grossAmount.toFixed(2)}</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-400">
+                <div className="flex items-center justify-between text-muted-foreground">
                   <span>Gateway Fee (MDR):</span>
-                  <span className="font-mono text-rose-400">-₹{selectedTxn.gatewayFee.toFixed(2)}</span>
+                  <span className="font-mono text-rose-600 dark:text-rose-400">-₹{selectedTxn.gatewayFee.toFixed(2)}</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-400">
+                <div className="flex items-center justify-between text-muted-foreground">
                   <span>GST on MDR (18%):</span>
-                  <span className="font-mono text-rose-400">-₹{selectedTxn.gstOnFee.toFixed(2)}</span>
+                  <span className="font-mono text-rose-600 dark:text-rose-400">-₹{selectedTxn.gstOnFee.toFixed(2)}</span>
                 </div>
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-between font-bold text-emerald-400 text-sm">
+                <div className="pt-2 border-t border-border flex items-center justify-between font-bold text-emerald-700 dark:text-emerald-400 text-sm">
                   <span>Net Bank Deposit:</span>
                   <span className="font-mono">₹{selectedTxn.netSettledAmount.toFixed(2)}</span>
                 </div>
@@ -1378,60 +1291,60 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
             </div>
 
             {/* Customer & Order Details */}
-            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Customer & Order Link</h4>
+            <div className="p-4 rounded-2xl bg-muted/20 border border-border space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Customer & Order Link</h4>
               <div className="flex items-center gap-3">
                 <img
                   src={selectedTxn.customer.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(selectedTxn.customer.name)}`}
                   alt={selectedTxn.customer.name}
-                  className="w-10 h-10 rounded-full border border-slate-700"
+                  className="w-10 h-10 rounded-full border border-border bg-muted"
                 />
                 <div>
-                  <div className="font-bold text-white text-sm">{selectedTxn.customer.name}</div>
-                  <div className="text-xs text-slate-400">{selectedTxn.customer.email} • {selectedTxn.customer.phone}</div>
-                  <div className="text-xs font-mono text-emerald-400 font-semibold mt-0.5">Order ID: {selectedTxn.orderId}</div>
+                  <div className="font-bold text-foreground text-sm">{selectedTxn.customer.name}</div>
+                  <div className="text-xs text-muted-foreground">{selectedTxn.customer.email} • {selectedTxn.customer.phone}</div>
+                  <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5">Order ID: {selectedTxn.orderId}</div>
                 </div>
               </div>
             </div>
 
             {/* Gateway & Bank Details */}
-            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Gateway & Bank Rails</h4>
+            <div className="p-4 rounded-2xl bg-muted/20 border border-border space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gateway & Bank Rails</h4>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-slate-500">Acquiring Gateway:</span>
-                  <p className="font-semibold text-white">{selectedTxn.gateway}</p>
+                  <span className="text-muted-foreground">Acquiring Gateway:</span>
+                  <p className="font-semibold text-foreground">{selectedTxn.gateway}</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Payment Instrument:</span>
-                  <p className="font-semibold text-white">{selectedTxn.method}</p>
+                  <span className="text-muted-foreground">Payment Instrument:</span>
+                  <p className="font-semibold text-foreground">{selectedTxn.method}</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Bank Reference UTR:</span>
-                  <p className="font-mono font-bold text-teal-300">{selectedTxn.bankUtr || "Pending Settlement"}</p>
+                  <span className="text-muted-foreground">Bank Reference UTR:</span>
+                  <p className="font-mono font-bold text-teal-700 dark:text-teal-400">{selectedTxn.bankUtr || "Pending Settlement"}</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Settlement Status:</span>
-                  <p className="font-semibold text-emerald-400">{selectedTxn.settlementStatus}</p>
+                  <span className="text-muted-foreground">Settlement Status:</span>
+                  <p className="font-semibold text-emerald-700 dark:text-emerald-400">{selectedTxn.settlementStatus}</p>
                 </div>
               </div>
             </div>
 
             {/* JSON Metadata Payload */}
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Webhook Raw Metadata</h4>
-              <pre className="text-[11px] font-mono text-slate-300 p-3 rounded-xl bg-slate-900 overflow-x-auto">
+            <div className="p-4 rounded-2xl bg-muted/20 border border-border space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Webhook Raw Metadata</h4>
+              <pre className="text-[11px] font-mono text-muted-foreground p-3 rounded-xl bg-card border border-border overflow-x-auto">
                 {JSON.stringify(selectedTxn.paymentMetadata || {}, null, 2)}
               </pre>
             </div>
 
             {/* Actions Footer */}
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-800">
+            <div className="flex items-center gap-3 pt-4 border-t border-border">
               <button
                 onClick={() => {
                   setReceiptModalOpen(true);
                 }}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-bold transition-all cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 Print Receipt
@@ -1443,7 +1356,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                     setDrawerOpen(false);
                     handleOpenRefund(selectedTxn);
                   }}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
                 >
                   <ArrowDownLeft className="w-4 h-4" />
                   Issue Refund
@@ -1458,36 +1371,36 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
       {/* ISSUE FULL / PARTIAL REFUND MODAL */}
       {/* ========================================================================= */}
       {refundModalOpen && selectedTxn && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg rounded-3xl bg-card border border-border p-6 shadow-2xl space-y-5 text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-purple-600/10 text-purple-400 border border-purple-500/20">
+                <div className="p-2 rounded-xl bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/40">
                   <ArrowDownLeft className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Process Refund</h3>
-                  <p className="text-xs text-slate-400">Txn: {selectedTxn.id} • Order: {selectedTxn.orderId}</p>
+                  <h3 className="text-lg font-bold text-foreground">Process Refund</h3>
+                  <p className="text-xs text-muted-foreground">Txn: {selectedTxn.id} • Order: {selectedTxn.orderId}</p>
                 </div>
               </div>
 
               <button
                 onClick={() => setRefundModalOpen(false)}
-                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                className="p-1.5 rounded-lg border border-border bg-muted/40 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Eligible Balance Indicator */}
-            <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-between">
+            <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between">
               <div>
-                <div className="text-xs text-purple-300 font-medium">Eligible for Refund</div>
-                <div className="text-2xl font-black text-white mt-0.5">
+                <div className="text-xs text-purple-700 dark:text-purple-300 font-medium">Eligible for Refund</div>
+                <div className="text-2xl font-black text-foreground mt-0.5">
                   ₹{(selectedTxn.grossAmount - (selectedTxn.refundedAmount || 0)).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                 </div>
               </div>
-              <div className="text-right text-xs text-purple-300/80">
+              <div className="text-right text-xs text-muted-foreground">
                 <div>Gross: ₹{selectedTxn.grossAmount.toFixed(2)}</div>
                 {selectedTxn.refundedAmount > 0 && <div>Already Refunded: ₹{selectedTxn.refundedAmount.toFixed(2)}</div>}
               </div>
@@ -1503,8 +1416,8 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                 }}
                 className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   refundType === "full"
-                    ? "bg-purple-600/20 border-purple-500 text-purple-300 shadow-md"
-                    : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200"
+                    ? "bg-purple-600 text-white border-purple-600 shadow-md"
+                    : "bg-muted/30 border-border text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Full Refund (100%)
@@ -1515,8 +1428,8 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                 onClick={() => setRefundType("partial")}
                 className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   refundType === "partial"
-                    ? "bg-purple-600/20 border-purple-500 text-purple-300 shadow-md"
-                    : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200"
+                    ? "bg-purple-600 text-white border-purple-600 shadow-md"
+                    : "bg-muted/30 border-border text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Partial Custom Amount
@@ -1525,7 +1438,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
 
             {/* Amount Input */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-foreground mb-1">
                 Refund Amount (₹)
               </label>
               <input
@@ -1535,13 +1448,13 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                 max={selectedTxn.grossAmount - (selectedTxn.refundedAmount || 0)}
                 min={1}
                 onChange={e => setRefundAmount(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold font-mono text-white focus:outline-none focus:border-purple-500 disabled:opacity-75"
+                className="w-full px-4 py-2.5 rounded-xl bg-background border border-border text-sm font-bold font-mono text-foreground focus:outline-none focus:border-purple-500 disabled:opacity-75"
               />
             </div>
 
             {/* Destination Selector */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-foreground mb-1">
                 Refund Destination
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -1550,12 +1463,12 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                   onClick={() => setRefundDestination("gateway")}
                   className={`p-3 rounded-xl border text-left text-xs font-medium transition-all cursor-pointer ${
                     refundDestination === "gateway"
-                      ? "bg-purple-600/20 border-purple-500 text-purple-300"
-                      : "bg-slate-950/60 border-slate-800 text-slate-400"
+                      ? "bg-purple-50 border-purple-500 text-purple-900 dark:bg-purple-950/40 dark:text-purple-300"
+                      : "bg-muted/30 border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <div className="font-bold">Original Gateway</div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">{selectedTxn.gateway} (5-7 Days)</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{selectedTxn.gateway} (5-7 Days)</div>
                 </button>
 
                 <button
@@ -1563,23 +1476,23 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                   onClick={() => setRefundDestination("wallet")}
                   className={`p-3 rounded-xl border text-left text-xs font-medium transition-all cursor-pointer ${
                     refundDestination === "wallet"
-                      ? "bg-emerald-600/20 border-emerald-500 text-emerald-300"
-                      : "bg-slate-950/60 border-slate-800 text-slate-400"
+                      ? "bg-emerald-50 border-emerald-500 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "bg-muted/30 border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <div className="font-bold text-emerald-300">Janani Store Wallet</div>
-                  <div className="text-[10px] text-emerald-400/80 mt-0.5">Instant credit + 5% Bonus</div>
+                  <div className="font-bold text-emerald-700 dark:text-emerald-400">Janani Store Wallet</div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400/80 mt-0.5">Instant credit + 5% Bonus</div>
                 </button>
               </div>
             </div>
 
             {/* Reason */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Refund Reason</label>
+              <label className="block text-xs font-semibold text-foreground mb-1">Refund Reason</label>
               <select
                 value={refundReason}
                 onChange={e => setRefundReason(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-background border border-border text-xs text-foreground focus:outline-none focus:border-purple-500"
               >
                 <option value="Customer requested cancellation">Customer requested cancellation</option>
                 <option value="Item out of stock / Partial delivery">Item out of stock / Partial delivery</option>
@@ -1590,11 +1503,11 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
             </div>
 
             {/* Submit / Cancel */}
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-3">
+            <div className="pt-3 border-t border-border flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setRefundModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-border bg-muted/40 hover:bg-muted text-xs font-semibold text-foreground cursor-pointer transition-colors"
               >
                 Cancel
               </button>
@@ -1603,7 +1516,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                 type="button"
                 onClick={handleProcessRefund}
                 disabled={refundSubmitting || refundAmount <= 0}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-lg shadow-purple-900/40 disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {refundSubmitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ArrowDownLeft className="w-3.5 h-3.5" />}
                 Confirm & Execute Refund (₹{refundAmount.toFixed(2)})
