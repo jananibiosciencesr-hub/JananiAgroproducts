@@ -567,12 +567,6 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                 {/* Header Row: Checkbox, Order ID, Date, Status */}
                 <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-border/60">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleToggleSelectOrder(order.id)}
-                      className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer shrink-0"
-                    />
                     <div className="min-w-0">
                       <button
                         onClick={() => handleOpenDrawer(order)}
@@ -678,46 +672,15 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                 </div>
 
                 {/* Action Buttons Toolbar */}
-                <div className="grid grid-cols-4 gap-1.5 pt-1">
+                <div className="pt-1">
                   <button
                     onClick={() => handleOpenDrawer(order)}
-                    className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
                     title="View 360° Order Details"
                   >
                     <Eye className="size-3.5 text-primary" />
-                    <span className="text-[11px]">View</span>
+                    <span className="text-[11px]">View Order Details</span>
                   </button>
-
-                  <button
-                    onClick={() => setInvoiceOrder(order)}
-                    className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
-                    title="Print GST Tax Invoice"
-                  >
-                    <FileText className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-[11px]">Invoice</span>
-                  </button>
-
-                  <button
-                    onClick={() => setPackingSlipOrder(order)}
-                    className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border border-input bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
-                    title="Print Packing Slip"
-                  >
-                    <Package className="size-3.5 text-indigo-600 dark:text-indigo-400" />
-                    <span className="text-[11px]">Slip</span>
-                  </button>
-
-                  <div className="flex items-center justify-center">
-                    <OrderRowActionMenu
-                      order={order}
-                      onAssignWarehouse={() => setWarehouseModalOrder(order)}
-                      onAssignShiprocket={() => setShiprocketModalOrder(order)}
-                      onCancel={() => setCancelModalOrder(order)}
-                      onRefund={() => setRefundModalOrder(order)}
-                      onReturn={() => setReturnModalOrder(order)}
-                      onExchange={() => setExchangeModalOrder(order)}
-                      onAddNote={() => setNoteModalOrder(order)}
-                    />
-                  </div>
                 </div>
               </div>
             );
@@ -731,14 +694,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
           <table className="w-full text-left text-sm border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md shadow-xs">
               <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-10">
-                  <input
-                    type="checkbox"
-                    checked={orders.length > 0 && selectedOrderIds.length === orders.length}
-                    onChange={handleSelectAll}
-                    className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                  />
-                </th>
+
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Order Details</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Customer</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Items</th>
@@ -751,7 +707,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-16">
+                  <td colSpan={7} className="text-center py-16">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <RefreshCw className="h-8 w-8 animate-spin text-primary" />
                       <p className="text-sm font-medium text-muted-foreground">
@@ -762,7 +718,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-16">
+                  <td colSpan={7} className="text-center py-16">
                     <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
                       <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                         <ShoppingBag className="h-6 w-6" />
@@ -787,15 +743,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                         isSelected ? "bg-primary/5" : ""
                       }`}
                     >
-                      {/* Select Checkbox */}
-                      <td className="py-3.5 px-4">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggleSelectOrder(order.id)}
-                          className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                        />
-                      </td>
+
 
                       {/* Order Details */}
                       <td className="py-3.5 px-4">
@@ -955,41 +903,6 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                           >
                             <Eye className="h-4 w-4" />
                           </button>
-
-                          <button
-                            onClick={() => setInvoiceOrder(order)}
-                            className="p-1.5 rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
-                            title="Print GST Tax Invoice"
-                          >
-                            <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                          </button>
-
-                          <button
-                            onClick={() => setPackingSlipOrder(order)}
-                            className="p-1.5 rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
-                            title="Print Warehouse Packing Slip"
-                          >
-                            <Package className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                          </button>
-
-                          <button
-                            onClick={() => setShippingLabelOrder(order)}
-                            className="p-1.5 rounded-xl border border-input bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
-                            title="Print Shiprocket Shipping Label"
-                          >
-                            <Truck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </button>
-
-                          <OrderRowActionMenu
-                            order={order}
-                            onAssignWarehouse={() => setWarehouseModalOrder(order)}
-                            onAssignShiprocket={() => setShiprocketModalOrder(order)}
-                            onCancel={() => setCancelModalOrder(order)}
-                            onRefund={() => setRefundModalOrder(order)}
-                            onReturn={() => setReturnModalOrder(order)}
-                            onExchange={() => setExchangeModalOrder(order)}
-                            onAddNote={() => setNoteModalOrder(order)}
-                          />
                         </div>
                       </td>
                     </tr>
