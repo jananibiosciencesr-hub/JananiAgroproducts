@@ -292,58 +292,58 @@ export function InquiriesManagement({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 shadow-soft">
+      {/* Key Metrics Cards (Compact & Sleek) */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-3.5 shadow-2xs hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Total Inquiries</span>
-            <div className="grid size-8 place-items-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <MessageSquareText className="size-4" />
+            <span className="text-[11px] font-semibold text-muted-foreground">Total Inquiries</span>
+            <div className="grid size-7 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <MessageSquareText className="size-3.5" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <p className="mt-1.5 text-xl font-black tracking-tight text-foreground sm:text-2xl">
             {stats.total}
           </p>
-          <span className="mt-1 block text-[11px] text-muted-foreground">All time submissions</span>
+          <span className="mt-0.5 block text-[10px] text-muted-foreground">All time submissions</span>
         </div>
 
-        <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:p-5 shadow-soft">
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 sm:p-3.5 shadow-2xs hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">New Leads</span>
-            <div className="grid size-8 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
-              <Sparkles className="size-4" />
+            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">New Leads</span>
+            <div className="grid size-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600">
+              <Sparkles className="size-3.5" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-3xl">
+          <p className="mt-1.5 text-xl font-black tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-2xl">
             {stats.newCount}
           </p>
-          <span className="mt-1 block text-[11px] text-emerald-600/80">Action required</span>
+          <span className="mt-0.5 block text-[10px] text-emerald-600/80">Action required</span>
         </div>
 
-        <div className="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-4 sm:p-5 shadow-soft">
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 sm:p-3.5 shadow-2xs hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Dealerships</span>
-            <div className="grid size-8 place-items-center rounded-xl bg-amber-500/10 text-amber-600">
-              <Briefcase className="size-4" />
+            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">Dealerships</span>
+            <div className="grid size-7 place-items-center rounded-lg bg-amber-500/10 text-amber-600">
+              <Briefcase className="size-3.5" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 sm:text-3xl">
+          <p className="mt-1.5 text-xl font-black tracking-tight text-amber-600 dark:text-amber-400 sm:text-2xl">
             {stats.dealershipCount}
           </p>
-          <span className="mt-1 block text-[11px] text-amber-600/80">Retailers & distributors</span>
+          <span className="mt-0.5 block text-[10px] text-amber-600/80">Retailers & distributors</span>
         </div>
 
-        <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 shadow-soft">
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-3.5 shadow-2xs hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Resolution Rate</span>
-            <div className="grid size-8 place-items-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <CheckCircle2 className="size-4" />
+            <span className="text-[11px] font-semibold text-muted-foreground">Resolution Rate</span>
+            <div className="grid size-7 place-items-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
+              <CheckCircle2 className="size-3.5" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <p className="mt-1.5 text-xl font-black tracking-tight text-foreground sm:text-2xl">
             {stats.resolutionRate}%
           </p>
-          <span className="mt-1 block text-[11px] text-muted-foreground">{stats.resolvedCount} completed</span>
+          <span className="mt-0.5 block text-[10px] text-muted-foreground">{stats.resolvedCount} completed</span>
         </div>
       </div>
 
