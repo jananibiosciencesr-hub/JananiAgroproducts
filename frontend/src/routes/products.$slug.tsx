@@ -496,9 +496,23 @@ function ProductDetailPage() {
   }, [allProducts, product.id]);
 
   // Dynamic Benefits resolver
-  const dynamicBenefits = useMemo(() => {
-    if (product.benefits && product.benefits.length > 0) {
-      return product.benefits;
+  const dynamicBenefits: string[] = useMemo(() => {
+    let list: string[] = [];
+    if (Array.isArray(product.benefits) && product.benefits.length > 0) {
+      list = product.benefits.map(String).filter(Boolean);
+    } else if (typeof product.benefits === "string" && product.benefits.trim() !== "") {
+      try {
+        const parsed = JSON.parse(product.benefits);
+        if (Array.isArray(parsed)) list = parsed.map(String).filter(Boolean);
+      } catch {}
+      if (list.length === 0) {
+        list = product.benefits.includes("\n")
+          ? product.benefits.split("\n").map((s) => s.trim()).filter(Boolean)
+          : product.benefits.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    }
+    if (list.length > 0) {
+      return list;
     }
     const cat = (product.category || "").toLowerCase();
     if (cat.includes("fungicide")) {
@@ -552,10 +566,20 @@ function ProductDetailPage() {
   }, [product]);
 
   // Dynamic Crop List resolver
-  const cropList = useMemo(() => {
-    if (product.crops && product.crops.length > 0) {
-      return product.crops;
+  const cropList: string[] = useMemo(() => {
+    let list: string[] = [];
+    if (Array.isArray(product.crops) && product.crops.length > 0) {
+      list = product.crops.map(String).filter(Boolean);
+    } else if (typeof product.crops === "string" && product.crops.trim() !== "") {
+      try {
+        const parsed = JSON.parse(product.crops);
+        if (Array.isArray(parsed)) list = parsed.map(String).filter(Boolean);
+      } catch {}
+      if (list.length === 0) {
+        list = product.crops.split(",").map((c) => c.trim()).filter(Boolean);
+      }
     }
+    if (list.length > 0) return list;
     if (product.recommendedCrops) {
       return product.recommendedCrops.split(",").map((c) => c.trim()).filter(Boolean);
     }
@@ -579,6 +603,18 @@ function ProductDetailPage() {
 
   // Dynamic Specifications resolver
   const dynamicSpecifications = useMemo(() => {
+    let rawSpecs: Record<string, string> = {};
+    if (typeof product.specifications === "object" && product.specifications !== null && !Array.isArray(product.specifications)) {
+      rawSpecs = product.specifications;
+    } else if (typeof product.specifications === "string" && product.specifications.trim() !== "") {
+      try {
+        const parsed = JSON.parse(product.specifications);
+        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+          rawSpecs = parsed;
+        }
+      } catch {}
+    }
+
     const base: Record<string, string> = {
       "Product Name": product.name,
       "Category": product.category,
@@ -586,8 +622,8 @@ function ProductDetailPage() {
       "Formulation Type": product.unit?.toLowerCase().includes("l") || product.unit?.toLowerCase().includes("ml") ? "Liquid Biological Formulation" : "Water Soluble Inoculant / Granules",
       "Origin": product.origin || "Janani Bio Sciences, Gujarat",
       "Certifications": product.certifications?.join(", ") || "100% Certified Organic & NPOP Verified",
-      "Shelf Life": product.specifications?.["Shelf Life"] || "18–24 Months from manufacturing date",
-      ...(product.specifications || {})
+      "Shelf Life": rawSpecs["Shelf Life"] || "18–24 Months from manufacturing date",
+      ...rawSpecs
     };
     if (product.subtitle && !base["Technical Formulation"]) {
       base["Technical Formulation"] = product.subtitle;
@@ -606,8 +642,17 @@ function ProductDetailPage() {
 
   // Dynamic FAQs
   const productFaqs = useMemo(() => {
-    if (product.faqs && product.faqs.length > 0) {
-      const mapped = product.faqs.map((f: any) => ({
+    let rawList: any[] = [];
+    if (Array.isArray(product.faqs)) {
+      rawList = product.faqs;
+    } else if (typeof product.faqs === "string" && product.faqs.trim() !== "") {
+      try {
+        const parsed = JSON.parse(product.faqs);
+        if (Array.isArray(parsed)) rawList = parsed;
+      } catch {}
+    }
+    if (rawList.length > 0) {
+      const mapped = rawList.map((f: any) => ({
         q: f.q || f.question || "",
         a: f.a || f.answer || ""
       })).filter((f: any) => f.q && f.a);

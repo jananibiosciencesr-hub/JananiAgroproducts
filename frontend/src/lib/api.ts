@@ -256,8 +256,51 @@ export function normalizeProduct(raw: any): Product {
   }
 
   const recommendedCrops = raw.recommendedCrops || raw.recommended_crops || catalogProd?.recommendedCrops || "";
-  const benefits = raw.benefits || catalogProd?.benefits;
-  const specifications = raw.specifications || catalogProd?.specifications;
+
+  let parsedBenefits: string[] = [];
+  if (Array.isArray(raw.benefits)) {
+    parsedBenefits = raw.benefits.map(String).filter(Boolean);
+  } else if (typeof raw.benefits === "string" && raw.benefits.trim() !== "") {
+    try {
+      const parsed = JSON.parse(raw.benefits);
+      if (Array.isArray(parsed)) parsedBenefits = parsed.map(String).filter(Boolean);
+      else parsedBenefits = raw.benefits.includes("\n") ? raw.benefits.split("\n").map((s: string) => s.trim()).filter(Boolean) : raw.benefits.split(",").map((s: string) => s.trim()).filter(Boolean);
+    } catch {
+      parsedBenefits = raw.benefits.includes("\n") ? raw.benefits.split("\n").map((s: string) => s.trim()).filter(Boolean) : raw.benefits.split(",").map((s: string) => s.trim()).filter(Boolean);
+    }
+  }
+  if (parsedBenefits.length === 0 && catalogProd?.benefits) {
+    parsedBenefits = [...catalogProd.benefits];
+  }
+
+  let parsedSpecs: Record<string, string> = {};
+  if (typeof raw.specifications === "object" && raw.specifications !== null && !Array.isArray(raw.specifications)) {
+    parsedSpecs = raw.specifications;
+  } else if (typeof raw.specifications === "string" && raw.specifications.trim() !== "") {
+    try {
+      const parsed = JSON.parse(raw.specifications);
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        parsedSpecs = parsed;
+      }
+    } catch {}
+  }
+  if (Object.keys(parsedSpecs).length === 0 && catalogProd?.specifications) {
+    parsedSpecs = { ...catalogProd.specifications };
+  }
+
+  let parsedFaqs: { q: string; a: string; question?: string; answer?: string }[] = [];
+  if (Array.isArray(raw.faqs)) {
+    parsedFaqs = raw.faqs;
+  } else if (typeof raw.faqs === "string" && raw.faqs.trim() !== "") {
+    try {
+      const parsed = JSON.parse(raw.faqs);
+      if (Array.isArray(parsed)) parsedFaqs = parsed;
+    } catch {}
+  }
+  if (parsedFaqs.length === 0 && catalogProd?.faqs) {
+    parsedFaqs = [...catalogProd.faqs];
+  }
+
   const dosage = raw.dosage || catalogProd?.dosage;
   const methodOfApplication = raw.methodOfApplication || catalogProd?.methodOfApplication;
   const compatibility = raw.compatibility || catalogProd?.compatibility;
@@ -299,8 +342,9 @@ export function normalizeProduct(raw: any): Product {
     variants: parseProductVariants(raw.variants, price, unit, stock),
     subtitle: raw.subtitle || catalogProd?.subtitle,
     ...(parsedCrops.length > 0 ? { crops: parsedCrops } : {}),
-    benefits: benefits,
-    specifications: specifications,
+    benefits: parsedBenefits,
+    specifications: parsedSpecs,
+    faqs: parsedFaqs,
     recommendedCrops: recommendedCrops,
     dosage: dosage,
     methodOfApplication: methodOfApplication,
@@ -1742,8 +1786,18 @@ export function normalizeAdminProduct(raw: any) {
       : typeof raw.crops === "string"
         ? (raw.crops.startsWith("[") ? (() => { try { const p = JSON.parse(raw.crops); return Array.isArray(p) ? p : raw.crops.split(",").map((s: string) => s.trim()); } catch { return raw.crops.split(",").map((s: string) => s.trim()); } })() : raw.crops.split(",").map((s: string) => s.trim()))
         : (catalogProd?.crops || undefined),
-    benefits: Array.isArray(raw.benefits) ? raw.benefits : typeof raw.benefits === "string" ? raw.benefits.split("\n").map((s: string) => s.trim()).filter(Boolean) : (catalogProd?.benefits || undefined),
-    specifications: typeof raw.specifications === "object" ? raw.specifications : (catalogProd?.specifications || undefined),
+    benefits: Array.isArray(raw.benefits)
+      ? raw.benefits.map(String).filter(Boolean)
+      : typeof raw.benefits === "string"
+        ? (raw.benefits.startsWith("[")
+          ? (() => { try { const p = JSON.parse(raw.benefits); return Array.isArray(p) ? p.map(String).filter(Boolean) : [raw.benefits]; } catch { return raw.benefits.split("\n").map((s: string) => s.trim()).filter(Boolean); } })()
+          : (raw.benefits.includes("\n") ? raw.benefits.split("\n").map((s: string) => s.trim()).filter(Boolean) : raw.benefits.split(",").map((s: string) => s.trim()).filter(Boolean)))
+        : (catalogProd?.benefits || undefined),
+    specifications: typeof raw.specifications === "object" && raw.specifications !== null && !Array.isArray(raw.specifications)
+      ? raw.specifications
+      : typeof raw.specifications === "string" && raw.specifications.trim() !== ""
+        ? (() => { try { const p = JSON.parse(raw.specifications); return typeof p === "object" && p !== null && !Array.isArray(p) ? p : undefined; } catch { return undefined; } })()
+        : (catalogProd?.specifications || undefined),
     recommendedCrops: raw.recommendedCrops || catalogProd?.recommendedCrops || "",
     dosage: raw.dosage || catalogProd?.dosage || "",
     methodOfApplication: raw.methodOfApplication || catalogProd?.methodOfApplication || "",
@@ -1751,7 +1805,11 @@ export function normalizeAdminProduct(raw: any) {
     storageNotice: raw.storageNotice || catalogProd?.storageNotice || "",
     netContent: raw.netContent || "",
     targetDiseases: raw.targetDiseases || catalogProd?.targetDiseases || "",
-    faqs: Array.isArray(raw.faqs) ? raw.faqs : undefined,
+    faqs: Array.isArray(raw.faqs)
+      ? raw.faqs
+      : typeof raw.faqs === "string" && raw.faqs.trim() !== ""
+        ? (() => { try { const p = JSON.parse(raw.faqs); return Array.isArray(p) ? p : undefined; } catch { return undefined; } })()
+        : undefined,
     seo: raw.seo || {
       metaTitle: raw.name,
       metaDescription: raw.description,

@@ -863,6 +863,23 @@ function saveBase64VideoFile($dataUri, $folder = 'videos/products', $filePrefix 
     return $dataUri;
 }
 
+function formatProductRecordForOutput($prod) {
+    if (!$prod || !is_array($prod)) return $prod;
+    $jsonFields = ['gallery', 'variants', 'benefits', 'specifications', 'crops', 'faqs'];
+    foreach ($jsonFields as $jf) {
+        if (isset($prod[$jf]) && is_string($prod[$jf]) && trim($prod[$jf]) !== '') {
+            $trimmed = trim($prod[$jf]);
+            if (($trimmed[0] === '[' && substr($trimmed, -1) === ']') || ($trimmed[0] === '{' && substr($trimmed, -1) === '}')) {
+                $decoded = json_decode($trimmed, true);
+                if ($decoded !== null) {
+                    $prod[$jf] = $decoded;
+                }
+            }
+        }
+    }
+    return $prod;
+}
+
 // ---------------------------------------------------------
 // ZERO-500 RESILIENT FALLBACK HANDLER WHEN DATABASE IS OFFLINE
 // ---------------------------------------------------------
@@ -2837,6 +2854,7 @@ try {
                         $stmt->execute([$target]);
                     }
                     $prod = $stmt->fetch();
+                    $prod = formatProductRecordForOutput($prod);
                     echo json_encode(['success' => true, 'product' => $prod ?: null, 'data' => $prod ?: null]);
                     exit;
                 }
@@ -2880,6 +2898,9 @@ try {
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $products = $stmt->fetchAll();
+                if (is_array($products)) {
+                    $products = array_map('formatProductRecordForOutput', $products);
+                }
 
                 // Compute real counts from MySQL
                 $activeCount = 0;
