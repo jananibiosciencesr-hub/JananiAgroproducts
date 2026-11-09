@@ -32,7 +32,9 @@ import {
   FileSpreadsheet,
   Gift,
   HelpCircle,
-  DollarSign
+  DollarSign,
+  List,
+  LayoutGrid
 } from "lucide-react";
 import {
   getAdminCoupons,
@@ -81,7 +83,7 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   // Synchronize search query from Top Navbar
   useEffect(() => {
@@ -530,6 +532,62 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
       {/* ========================================================================= */}
       {activeTab === "all" && (
         <div className="space-y-4">
+          {/* Header Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-1">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-lg font-bold text-foreground tracking-tight">Coupons & Promo Codes</h2>
+              <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
+                {coupons.length} Vouchers
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    viewMode === "table" ? "bg-card text-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Line by Line (Table)"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>Line by Line</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    viewMode === "grid" ? "bg-card text-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Cards View"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Cards</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleExportCSV}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
+              >
+                <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                Export CSV
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenCreate}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Create Coupon</span>
+              </button>
+            </div>
+          </div>
+
           {/* Filtering Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 bg-card p-4 rounded-xl border border-border/70 shadow-sm">
             {/* Search Input */}
