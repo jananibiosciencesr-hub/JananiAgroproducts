@@ -180,6 +180,9 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
   // Multi-Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // Selected Variant for Table Row Pricing View
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -663,6 +666,30 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                   const isLow = available <= (p.lowStockThreshold || 20) && available > 0;
                   const isOut = available === 0;
 
+                  // Resolve active variant for this product row
+                  const pVariants = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : [];
+                  const selVarKey = selectedVariants[p.id] || selectedVariants[p.slug];
+                  const activeVariant = pVariants.find((v: any) => {
+                    if (selVarKey) {
+                      return (
+                        String(v.id) === selVarKey ||
+                        String(v.label) === selVarKey ||
+                        String(v.unit) === selVarKey ||
+                        String(v.name) === selVarKey
+                      );
+                    }
+                    const pUnitClean = String(p.unit || "").toLowerCase().replace(/\s+/g, "");
+                    const vUnitClean = String(v.unit || v.label || v.name || "").toLowerCase().replace(/\s+/g, "");
+                    return pUnitClean && (vUnitClean === pUnitClean || vUnitClean.includes(pUnitClean) || pUnitClean.includes(vUnitClean));
+                  }) || pVariants[0] || null;
+
+                  const curPrice = activeVariant ? Number(activeVariant.price) : (Number(p.price) || 0);
+                  const curOrigPrice = activeVariant
+                    ? (Number(activeVariant.originalPrice || activeVariant.oldPrice) || Math.round(curPrice * 1.2))
+                    : (Number(p.originalPrice) || Math.round((Number(p.price) || 0) * 1.2));
+                  const curUnit = activeVariant?.unit || activeVariant?.label || p.unit || "1 L";
+                  const margin = curOrigPrice > 0 ? Math.round(((curOrigPrice - curPrice) / curOrigPrice) * 100) : 0;
+
                   return (
                     <tr
                       key={p.id}
@@ -692,11 +719,11 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                               {formatProductName(p.name)}
                             </span>
                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                              <span className="font-mono text-emerald-600 font-bold">{p.sku}</span>
-                              <span>• {p.unit || "500g"}</span>
-                              {Array.isArray(p.variants) && p.variants.length > 1 && (
+                              <span className="font-mono text-emerald-600 font-bold">{activeVariant?.sku || p.sku}</span>
+                              <span>• {curUnit}</span>
+                              {pVariants.length > 1 && (
                                 <span className="rounded bg-emerald-500/10 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700">
-                                  {p.variants.length} Variants
+                                  {pVariants.length} Variants
                                 </span>
                               )}
                             </div>
@@ -714,24 +741,61 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                         </span>
                       </td>
 
-                      {/* Pricing */}
-                      <td className="px-4 py-4">
+                      {/* Pricing with Interactive Variant Chips */}
+                      <td className="px-4 py-4 min-w-[150px]">
                         <div className="flex items-baseline gap-1.5">
-                          <span className="font-extrabold text-foreground text-sm">₹{Number(p.price) || 0}</span>
+                          <span className="font-extrabold text-foreground text-sm">₹{curPrice}</span>
                           <span className="text-[10px] text-muted-foreground line-through">
-                            ₹{Number(p.originalPrice) || Math.round((Number(p.price) || 0) * 1.2)}
+                            ₹{curOrigPrice}
                           </span>
                         </div>
-                        {(() => {
-                          const orig = Number(p.originalPrice) || Math.round((Number(p.price) || 0) * 1.2);
-                          const cur = Number(p.price) || 0;
-                          const margin = orig > 0 ? Math.round(((orig - cur) / orig) * 100) : 0;
-                          return (
-                            <span className="text-[9px] font-bold text-emerald-600 block">
-                              {margin}% Margin
-                            </span>
-                          );
-                        })()}
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className={`text-[9px] font-bold ${margin >= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                            {margin}% Margin
+                          </span>
+                          <span className="text-[9px] text-muted-foreground font-semibold">
+                            ({curUnit})
+                          </span>
+                        </div>
+
+                        {/* Interactive Variant Selection Pills */}
+                        {pVariants.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1 mt-2">
+                            {pVariants.map((v: any, vIdx: number) => {
+                              const rawLbl = String(v.label || v.unit || v.name || `V${vIdx + 1}`).trim();
+                              const shortLbl = rawLbl
+                                .replace(/\bLitres?\b/gi, "L")
+                                .replace(/\bBottle\b/gi, "")
+                                .replace(/\s+/g, "")
+                                .trim();
+                              const isSelected = activeVariant
+                                ? (v.id === activeVariant.id || v.label === activeVariant.label || v.unit === activeVariant.unit)
+                                : vIdx === 0;
+
+                              return (
+                                <button
+                                  key={v.id || vIdx}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedVariants((prev) => ({
+                                      ...prev,
+                                      [p.id]: String(v.id || v.label || v.unit || vIdx)
+                                    }));
+                                  }}
+                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all cursor-pointer border ${
+                                    isSelected
+                                      ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs scale-105"
+                                      : "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70"
+                                  }`}
+                                  title={`${rawLbl}: ₹${v.price} (Original ₹${v.originalPrice || v.oldPrice || Math.round(v.price * 1.2)})`}
+                                >
+                                  {shortLbl}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </td>
 
 
