@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Package,
   ArrowLeft,
+  MapPin,
+  ExternalLink,
   Plus,
   Search,
   Filter,
@@ -806,7 +808,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
       {/* Product Preview Slide-out Drawer */}
       {previewProduct && (
-        <ProductPreviewDrawer
+        <ProductViewModal
           product={previewProduct}
           onClose={() => setPreviewProduct(null)}
           onEdit={() => {
@@ -995,144 +997,260 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 // -------------------------------------------------------------
 // Product Preview Slide-out Drawer
 // -------------------------------------------------------------
-function ProductPreviewDrawer({
+function ProductViewModal({
   product,
   onClose,
   onEdit
 }: {
-  product: AdminProductItem;
+  product: AdminProductItem | null;
   onClose: () => void;
   onEdit: () => void;
 }) {
+  if (!product) return null;
+
   const [selectedImage, setSelectedImage] = useState(product.image);
   const [selectedVariant, setSelectedVariant] = useState<any>(
     Array.isArray(product.variants) && product.variants.length > 0 ? product.variants[0] : null
   );
 
+  useEffect(() => {
+    setSelectedImage(product.image);
+    setSelectedVariant(Array.isArray(product.variants) && product.variants.length > 0 ? product.variants[0] : null);
+  }, [product]);
+
+  const price = selectedVariant?.price || product.price || 0;
+  const originalPrice = selectedVariant?.originalPrice || selectedVariant?.oldPrice || product.originalPrice || 0;
+  const availableStock = product.stock ?? ((product.warehouseStock || 50) - (product.reservedStock || 0));
+
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-md bg-card border-l border-border h-full p-6 shadow-2xl flex flex-col overflow-y-auto animate-in slide-in-from-right duration-300">
-        <div className="flex items-center justify-between pb-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <span className="rounded-lg bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-              Live Storefront Preview
-            </span>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-accent text-muted-foreground"><X className="size-4" /></button>
-        </div>
-
-        <div className="mt-4 space-y-4 flex-1">
-          {/* Main Gallery Image */}
-          <div className="h-64 w-full rounded-3xl bg-muted border border-border/80 overflow-hidden shadow-inner flex items-center justify-center">
-            {selectedImage ? (
-              <img src={selectedImage} alt={product.name} className="size-full object-cover" />
-            ) : (
-              "🌿"
-            )}
-          </div>
-
-          {/* Gallery Thumbnails */}
-          {product.gallery && product.gallery.length > 1 && (
-            <div className="flex flex-wrap items-center gap-2 pb-1 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {product.gallery.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(img)}
-                  className={`size-14 rounded-2xl border-2 overflow-hidden shrink-0 transition-all ${selectedImage === img ? "border-emerald-600 shadow-md" : "border-border/60 opacity-60 hover:opacity-100"
-                    }`}
-                >
-                  <img src={img} alt="thumb" className="size-full object-cover" />
-                </button>
-              ))}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl bg-card border border-border/80 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="relative p-5 sm:p-6 border-b border-border/70 bg-gradient-to-r from-emerald-500/10 via-emerald-600/5 to-transparent flex items-start justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="size-14 rounded-2xl bg-muted/90 border border-border/80 overflow-hidden flex items-center justify-center font-bold text-2xl shrink-0 shadow-sm">
+              {product.image ? (
+                <img src={product.image} alt={product.name} className="size-full object-cover" />
+              ) : (
+                "🌿"
+              )}
             </div>
-          )}
-
-          {/* Product Header */}
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
-              {product.category} • {product.brand || "Janani Gold Reserve"}
-            </span>
-            <h3 className="text-xl font-extrabold text-foreground mt-0.5">{product.name}</h3>
-            <p className="text-xs font-mono text-muted-foreground mt-0.5">SKU: {product.sku}</p>
-          </div>
-
-          {/* Pricing & Stock */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/40 border border-border/60">
-            <div>
-              <span className="text-[10px] font-bold text-muted-foreground uppercase">Price</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-extrabold text-foreground">
-                  ₹{selectedVariant?.price || product.price}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  {product.category || "Organic Crop Care"}
                 </span>
-                <span className="text-xs text-muted-foreground line-through">
-                  ₹{selectedVariant?.originalPrice || product.originalPrice}
+                <span className="text-[11px] font-semibold text-muted-foreground">
+                  • {product.brand || "Janani Agro Products"}
                 </span>
+                {product.featured && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/20">
+                    <Star className="size-3 fill-amber-500 text-amber-500" /> Featured
+                  </span>
+                )}
+                {product.trending && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-500/15 px-2 py-0.5 rounded-md border border-rose-500/20">
+                    <Flame className="size-3 fill-rose-500 text-rose-500" /> Trending
+                  </span>
+                )}
               </div>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase">Available Stock</span>
-              <p className="text-base font-extrabold text-emerald-600">
-                {product.stock} units
+              <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight truncate">
+                {product.name}
+              </h2>
+              <p className="text-xs font-mono text-muted-foreground mt-0.5">
+                SKU: <span className="text-foreground font-semibold">{product.sku}</span>
               </p>
             </div>
           </div>
 
-          {/* Inventory Breakdown */}
-          <div className="rounded-2xl border border-border bg-card p-3.5 space-y-2 text-xs">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Warehouse On-Hand:</span>
-              <strong className="text-foreground">{product.warehouseStock || product.stock} units</strong>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Reserved in Customer Orders:</span>
-              <strong className="text-foreground">{product.reservedStock || 0} units</strong>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Low Stock Alert Trigger:</span>
-              <strong className="text-amber-600">≤ {product.lowStockThreshold || 20} units</strong>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors shrink-0 cursor-pointer"
+            aria-label="Close"
+          >
+            <X className="size-4.5" />
+          </button>
+        </div>
 
-          {/* Variants Selector */}
-          {Array.isArray(product.variants) && product.variants.length > 0 && (
-            <div>
-              <span className="text-xs font-bold text-foreground block mb-1.5">Select Pack Variant:</span>
-              <div className="grid grid-cols-2 gap-2">
-                {product.variants.map((v: any) => (
-                  <button
-                    key={v.id}
-                    onClick={() => setSelectedVariant(v)}
-                    className={`p-2.5 rounded-2xl border text-left text-xs transition-all ${selectedVariant?.id === v.id
-                      ? "border-emerald-600 bg-emerald-500/10 font-bold"
-                      : "border-border bg-card hover:bg-muted/40"
+        {/* Modal Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            
+            {/* Left Column: Image & Gallery */}
+            <div className="md:col-span-5 space-y-4">
+              <div className="h-64 sm:h-72 w-full rounded-2xl bg-muted/60 border border-border/80 overflow-hidden shadow-inner flex items-center justify-center p-2">
+                {selectedImage ? (
+                  <img src={selectedImage} alt={product.name} className="size-full object-contain rounded-xl" />
+                ) : (
+                  <span className="text-5xl">🌿</span>
+                )}
+              </div>
+
+              {/* Gallery Thumbnails */}
+              {product.gallery && product.gallery.length > 1 && (
+                <div className="flex flex-wrap items-center gap-2 pb-1">
+                  {product.gallery.map((img, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSelectedImage(img)}
+                      className={`size-13 rounded-xl border-2 overflow-hidden shrink-0 transition-all cursor-pointer ${
+                        selectedImage === img ? "border-emerald-600 shadow-md scale-105" : "border-border/60 opacity-60 hover:opacity-100"
                       }`}
-                  >
-                    <span className="block font-bold">{v.name || v.label || v.unit}</span>
-                    <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">₹{v.price}</span>
-                  </button>
-                ))}
+                    >
+                      <img src={img} alt={`thumb-${i}`} className="size-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Quick Info Pills */}
+              <div className="p-3.5 rounded-2xl border border-border/80 bg-muted/30 space-y-2 text-xs">
+                {product.harvestOrigin && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="size-3.5 text-emerald-600 shrink-0" />
+                    <span className="truncate"><strong>Origin:</strong> {product.harvestOrigin}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <ShieldCheck className="size-3.5 text-emerald-600 shrink-0" />
+                  <span className="truncate"><strong>Quality:</strong> 100% Tested Agro Biologicals</span>
+                </div>
+                {product.rating && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Star className="size-3.5 fill-amber-500 text-amber-500 shrink-0" />
+                    <span><strong>Rating:</strong> {product.rating} / 5.0 ({product.reviewsCount || 0} reviews)</span>
+                  </div>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Description */}
-          <div>
-            <span className="text-xs font-bold text-foreground block mb-1">Description</span>
-            <p className="text-xs text-muted-foreground leading-relaxed">{product.description}</p>
-          </div>
+            {/* Right Column: Pricing, Inventory, Variants & Specs */}
+            <div className="md:col-span-7 space-y-4">
+              
+              {/* Pricing & Stock Card */}
+              <div className="p-4 rounded-2xl bg-muted/40 border border-border/70 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Price</span>
+                  <div className="flex items-baseline gap-2 mt-0.5">
+                    <span className="text-2xl font-black text-foreground">
+                      ₹{price}
+                    </span>
+                    {originalPrice > price && (
+                      <span className="text-xs text-muted-foreground line-through">
+                        ₹{originalPrice}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Available Stock</span>
+                  <p className="text-base font-extrabold text-emerald-600 mt-0.5">
+                    {availableStock} units in stock
+                  </p>
+                </div>
+              </div>
 
-          {/* Origin & Certifications */}
-          <div className="pt-2 border-t border-border space-y-1.5 text-xs text-muted-foreground">
-            <p>📍 <strong>Origin:</strong> {product.harvestOrigin || "Gujarat Farmer Cluster"}</p>
-            <p>🌱 <strong>Certifications:</strong> {(product.organicCertifications || ["NPOP Certified Organic"]).join(", ")}</p>
+              {/* Inventory Breakdown */}
+              <div className="rounded-2xl border border-border/80 bg-card p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Warehouse Total Units:</span>
+                  <strong className="text-foreground">{product.warehouseStock || product.stock || 0} units</strong>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Reserved in Orders:</span>
+                  <strong className="text-foreground">{product.reservedStock || 0} units</strong>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Low Stock Alert Trigger:</span>
+                  <strong className="text-amber-600">≤ {product.lowStockThreshold || 20} units</strong>
+                </div>
+              </div>
+
+              {/* Variants Selector */}
+              {Array.isArray(product.variants) && product.variants.length > 0 && (
+                <div>
+                  <span className="text-xs font-bold text-foreground block mb-2">Available Pack Variants:</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {product.variants.map((v: any) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedVariant(v)}
+                        className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                          selectedVariant?.id === v.id
+                            ? "border-emerald-600 bg-emerald-500/10 font-bold shadow-xs"
+                            : "border-border bg-card hover:bg-muted/50"
+                        }`}
+                      >
+                        <span className="block font-bold truncate">{v.name || v.label || v.unit}</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-extrabold block mt-0.5">₹{v.price}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {product.description && (
+                <div>
+                  <span className="text-xs font-bold text-foreground block mb-1">Description</span>
+                  <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line bg-muted/20 p-3 rounded-xl border border-border/60">
+                    {product.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Specifications snippet if present */}
+              {product.specifications && Object.keys(product.specifications).length > 0 && (
+                <div>
+                  <span className="text-xs font-bold text-foreground block mb-1.5">Agro Specifications:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {Object.entries(product.specifications).slice(0, 6).map(([k, v]) => (
+                      <div key={k} className="p-2 rounded-lg bg-muted/30 border border-border/60">
+                        <span className="text-[10px] text-muted-foreground block uppercase font-bold">{k}</span>
+                        <span className="font-semibold text-foreground truncate block">{String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
 
-        <div className="pt-4 border-t border-border flex gap-2">
-          <Button onClick={onEdit} className="w-full rounded-2xl bg-emerald-600 text-white font-bold text-xs gap-1.5 shadow">
-            <Edit className="size-3.5" /> Edit This Product
-          </Button>
+        {/* Footer */}
+        <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-3 shrink-0">
+          <a
+            href={`/products/${product.slug || product.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 hover:underline"
+          >
+            <ExternalLink className="size-3.5" />
+            <span>Open Public Storefront Page</span>
+          </a>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="rounded-xl text-xs font-semibold h-9 px-4 cursor-pointer"
+            >
+              Close
+            </Button>
+            <Button
+              onClick={onEdit}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow h-9 px-4 cursor-pointer"
+            >
+              <Edit className="size-3.5" /> Edit Product
+            </Button>
+          </div>
         </div>
+
       </div>
     </div>
   );
