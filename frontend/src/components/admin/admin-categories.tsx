@@ -13,8 +13,6 @@ import {
   Star,
   Flame,
   ArrowUpDown,
-  ChevronUp,
-  ChevronDown,
   ExternalLink,
   Save,
   X,
@@ -24,8 +22,6 @@ import {
   GripVertical,
   Globe,
   ImageIcon,
-  CheckSquare,
-  Square
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -160,11 +156,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
   }, [categories, search, visibilityFilter]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage) || 1;
-  const paginatedCategories = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredCategories.slice(start, start + itemsPerPage);
-  }, [filteredCategories, currentPage, itemsPerPage]);
+  const paginatedCategories = filteredCategories;
 
   // Bulk Selection Handlers
   const handleSelectAll = () => {
@@ -483,22 +475,10 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4 text-center w-10">
-                  <button onClick={handleSelectAll} className="text-muted-foreground hover:text-foreground">
-                    {selectedIds.length > 0 && selectedIds.length === paginatedCategories.length ? (
-                      <CheckSquare className="size-4 text-emerald-600" />
-                    ) : (
-                      <Square className="size-4" />
-                    )}
-                  </button>
-                </th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 w-12 text-center">Seq</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Category Name & Hierarchy</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Tier Level</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Products</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-center">Featured</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-center">Trending</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-center">Status</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -510,44 +490,8 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                   return (
                   <tr
                     key={cat.id}
-                    className={`hover:bg-accent/40 transition-colors ${
-                      selectedIds.includes(cat.id) ? "bg-emerald-500/5" : ""
-                    }`}
+                    className="hover:bg-accent/40 transition-colors"
                   >
-                    {/* Checkbox */}
-                    <td className="px-4 py-4 text-center">
-                      <button onClick={() => handleToggleSelect(cat.id)}>
-                        {selectedIds.includes(cat.id) ? (
-                          <CheckSquare className="size-4 text-emerald-600" />
-                        ) : (
-                          <Square className="size-4 text-muted-foreground" />
-                        )}
-                      </button>
-                    </td>
-
-                    {/* Order Sequence Up/Down */}
-                    <td className="px-3 py-4 text-center">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <button
-                          onClick={() => handleMove(effectiveIdx, "up")}
-                          disabled={effectiveIdx === 0}
-                          className="text-muted-foreground hover:text-foreground disabled:opacity-20"
-                          title="Move Up"
-                        >
-                          <ChevronUp className="size-3.5" />
-                        </button>
-                        <span className="text-[10px] font-bold text-muted-foreground">{cat.orderIndex || effectiveIdx + 1}</span>
-                        <button
-                          onClick={() => handleMove(effectiveIdx, "down")}
-                          disabled={effectiveIdx >= filteredCategories.length - 1}
-                          className="text-muted-foreground hover:text-foreground disabled:opacity-20"
-                          title="Move Down"
-                        >
-                          <ChevronDown className="size-3.5" />
-                        </button>
-                      </div>
-                    </td>
-
                     {/* Category Title & Icon & Parent Linkage */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -584,21 +528,6 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                       </div>
                     </td>
 
-                    {/* Tier Level Badge */}
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center rounded-xl px-2.5 py-1 text-[10px] font-extrabold capitalize ${
-                          cat.level === "root"
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
-                            : cat.level === "sub"
-                            ? "bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30"
-                            : "bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30"
-                        }`}
-                      >
-                        {cat.level === "root" ? "Root Tier 1" : cat.level === "sub" ? "Sub Tier 2" : "Child Tier 3"}
-                      </span>
-                    </td>
-
                     {/* Products Count */}
                     <td className="px-6 py-4">
                       <span className="font-bold text-foreground">{cat.productsCount || 0}</span>
@@ -628,21 +557,6 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                         title="Toggle Trending"
                       >
                         <Flame className={`size-4 ${cat.trending ? "fill-rose-500" : ""}`} />
-                      </button>
-                    </td>
-
-                    {/* Status Active Toggle Switch */}
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleToggleField(cat.id, "active")}
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold transition-colors ${
-                          cat.active
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        <span className={`size-1.5 rounded-full ${cat.active ? "bg-emerald-500" : "bg-muted-foreground"}`}></span>
-                        {cat.active ? "Active" : "Inactive"}
                       </button>
                     </td>
 
@@ -694,7 +608,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
               })
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={5} className="py-12 text-center text-muted-foreground">
                     <FolderTree className="size-10 mx-auto opacity-30 mb-2" />
                     <p className="text-sm font-bold text-foreground">No categories match your criteria</p>
                     <p className="text-xs text-muted-foreground mt-1">Try resetting filters or adding a new category</p>
@@ -705,48 +619,7 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
           </table>
         </div>
 
-        {/* Pagination Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border bg-muted/20 text-xs">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <span>Showing {paginatedCategories.length} of {filteredCategories.length} items</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="h-8 rounded-xl border border-border bg-card px-2 text-xs font-semibold outline-none"
-            >
-              <option value={10}>10 per page</option>
-              <option value={20}>20 per page</option>
-              <option value={50}>50 per page</option>
-            </select>
-          </div>
 
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="rounded-xl text-xs font-semibold h-8"
-            >
-              Previous
-            </Button>
-            <span className="px-3 text-xs font-bold text-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="rounded-xl text-xs font-semibold h-8"
-            >
-              Next
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* Add / Edit Category Modal */}
