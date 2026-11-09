@@ -1235,6 +1235,7 @@ function ProductFormModal({
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
   useEffect(() => {
+    if (isOpen) { setActiveTab("basic"); }
     if (initialData) {
       const rawData = initialData as any;
 
@@ -1376,41 +1377,34 @@ function ProductFormModal({
         sku: `JAP-${Math.floor(1000 + Math.random() * 9000)}`,
         category: defaultCategory,
         brand: "Janani Agro Products",
-        price: "450",
-        originalPrice: "520",
+        price: "",
+        originalPrice: "",
         unit: "1 L",
         warehouseStock: "50",
         reservedStock: "0",
         lowStockThreshold: "20",
-        badge: "100% Organic",
-        rating: "4.8",
-        reviewsCount: "53",
+        badge: "",
+        rating: "5.0",
+        reviewsCount: "0",
         description: "",
-        harvestOrigin: "Janani Bio Sciences Cluster, Gujarat",
+        harvestOrigin: "",
         image: "",
         videoUrl: "",
         gallery: [],
-        variants: [
-          { id: `VAR-1`, name: "500 ml Pack", label: "500 ml Pack", unit: "500 ml", sku: `JAP-500ML`, price: 250, originalPrice: 290, oldPrice: 290, stock: 25, inStock: true },
-          { id: `VAR-2`, name: "1 L Standard", label: "1 L Standard", unit: "1 L", sku: `JAP-1L`, price: 450, originalPrice: 520, oldPrice: 520, stock: 25, inStock: true }
-        ],
-        organicCertifications: ["NPOP Certified Organic", "Jaivik Bharat"],
+        variants: [],
+        organicCertifications: [],
         subtitle: "",
-        benefits: "Controls soil-borne fungal pathogens and root diseases\nImproves rhizosphere microbial biodiversity\nStimulates robust root system and feeder hair growth\nEnhances nutrient mobilization and moisture absorption",
-        dosage: "Foliar Spray: 2–3 ml/L | Drip Fertigation: 1 L/acre | Seed Treatment: 5–10 ml/kg",
-        methodOfApplication: "Soil Application, Drip Fertigation, Seed Treatment, and Foliar Spray",
-        recommendedCrops: "Paddy, Cotton, Chilli, Tomato, Brinjal, Sugarcane, Banana, Mango, Groundnut, Pulses, Wheat",
-        activeOrganism: "Trichoderma viride 1.5% W.P (2x10^6 CFU/ml)",
-        targetDiseases: "Wilt, Damping-off, Root rot, Collar rot, Leaf spots",
-        compatibility: "Compatible with biofertilizers, seaweed, and organic manures",
-        storageNotice: "Store in a cool, dry place away from direct sunlight",
-        shelfLife: "18–24 Months",
-        customSpecs: [
-          { key: "CFU Count", value: "2 x 10^8 CFU/ml minimum" },
-          { key: "pH Level", value: "6.5 – 7.5" },
-          { key: "Formulation Type", value: "Liquid Bio-Active Formulation" }
-        ],
-        faqs: FAQ_TEMPLATES,
+        benefits: "",
+        dosage: "",
+        methodOfApplication: "",
+        recommendedCrops: "",
+        activeOrganism: "",
+        targetDiseases: "",
+        compatibility: "",
+        storageNotice: "",
+        shelfLife: "",
+        customSpecs: [],
+        faqs: [],
         seo: {
           metaTitle: "",
           metaDescription: "",

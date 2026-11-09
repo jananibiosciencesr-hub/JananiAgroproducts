@@ -1082,9 +1082,9 @@ function CategoryFormModal({
     level: "root" as "root" | "sub" | "child",
     parentId: "" as string | null,
     description: "",
-    icon: "🌾",
-    image: "/images/cat-rice.jpg",
-    bannerImage: "/images/banner-rice.jpg",
+    icon: "",
+    image: "",
+    bannerImage: "",
     featured: false,
     trending: false,
     active: true,
@@ -1135,9 +1135,9 @@ function CategoryFormModal({
         level: initialData.level || "root",
         parentId: initialData.parentId || "",
         description: initialData.description || "",
-        icon: initialData.icon || "🌾",
-        image: initialData.image || "/images/categories/bio-fertilizers.jpg",
-        bannerImage: initialData.bannerImage || initialData.image || "/images/categories/bio-fertilizers.jpg",
+        icon: initialData.icon || "",
+        image: initialData.image || "",
+        bannerImage: initialData.bannerImage || initialData.image || "",
         featured: Boolean(initialData.featured),
         trending: Boolean(initialData.trending),
         active: initialData.active !== undefined ? Boolean(initialData.active) : true,
@@ -1157,9 +1157,9 @@ function CategoryFormModal({
         level: "root",
         parentId: "",
         description: "",
-        icon: "🌾",
-        image: "/images/categories/bio-fertilizers.jpg",
-        bannerImage: "/images/categories/bio-fertilizers.jpg",
+        icon: "",
+        image: "",
+        bannerImage: "",
         featured: false,
         trending: false,
         active: true,
@@ -1172,6 +1172,9 @@ function CategoryFormModal({
           ogImage: ""
         }
       });
+    }
+    if (isOpen) {
+      setActiveTab("general");
     }
   }, [initialData, isOpen]);
 
@@ -1346,7 +1349,7 @@ function CategoryFormModal({
                           const val = e.target.value;
                           setFormData((prev) => ({ ...prev, image: val, bannerImage: val }));
                         }}
-                        placeholder="/images/categories/bio-fertilizers.jpg or https://..."
+                        placeholder="e.g. https://... or upload from device"
                         className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
                       />
                       <p className="text-[10px] text-muted-foreground">
@@ -1365,7 +1368,7 @@ function CategoryFormModal({
                         alt="Thumbnail preview"
                         className="size-full object-cover"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
                         }}
                       />
                     </div>
