@@ -19,27 +19,8 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Star,
-  BarChart3,
-  MessageSquareText,
   Search
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend
-} from "recharts";
 import { Button } from "@/components/ui/button";
 import { type AdminTab } from "./admin-sidebar";
 import { getOrderCustomer } from "./admin-orders";
@@ -167,127 +148,7 @@ export function AdminOverview({
       color: "text-amber-600 dark:text-amber-400",
       bgColor: "bg-amber-500/10 border-amber-500/20",
       topGradient: "from-amber-500 to-orange-500",
-      tab: "reports" as AdminTab
-    },
-    {
-      id: "monthly-revenue",
-      title: "Monthly Revenue",
-      value: totalSales >= 100000 ? `₹${(totalSales / 100000).toFixed(2)}L` : `₹${totalSales.toLocaleString('en-IN')}`,
-      trend: "Gross Settled",
-      trendType: "neutral" as const,
-      icon: Calendar,
-      color: "text-blue-600 dark:text-blue-400",
-      bgColor: "bg-blue-500/10 border-blue-500/20",
-      topGradient: "from-blue-600 to-indigo-600",
-      tab: "reports" as AdminTab
-    },
-    {
-      id: "pending",
-      title: "Pending Orders",
-      value: `${pendingOrdersCount}`,
-      trend: pendingOrdersCount > 0 ? "Needs Dispatch" : "All Dispatched",
-      trendType: pendingOrdersCount > 0 ? "warning" as const : "positive" as const,
-      icon: Clock,
-      color: "text-orange-600 dark:text-orange-400",
-      bgColor: "bg-orange-500/10 border-orange-500/20",
-      topGradient: "from-orange-500 to-amber-500",
       tab: "orders" as AdminTab
-    },
-    {
-      id: "delivered",
-      title: "Delivered Orders",
-      value: `${deliveredOrdersCount}`,
-      trend: totalOrdersCount > 0 ? `${Math.round((deliveredOrdersCount / Math.max(1, totalOrdersCount)) * 100)}% Fulfilled` : "100% Fulfilled",
-      trendType: "positive" as const,
-      icon: CheckCircle2,
-      color: "text-teal-600 dark:text-teal-400",
-      bgColor: "bg-teal-500/10 border-teal-500/20",
-      topGradient: "from-teal-600 to-emerald-600",
-      tab: "orders" as AdminTab
-    },
-    {
-      id: "cancelled",
-      title: "Cancelled Orders",
-      value: `${cancelledOrdersCount}`,
-      trend: totalOrdersCount > 0 ? `${Math.round((cancelledOrdersCount / Math.max(1, totalOrdersCount)) * 100)}% Rate` : "0% Rate",
-      trendType: cancelledOrdersCount > 0 ? "negative" as const : "neutral" as const,
-      icon: XCircle,
-      color: "text-rose-600 dark:text-rose-400",
-      bgColor: "bg-rose-500/10 border-rose-500/20",
-      topGradient: "from-rose-500 to-red-600",
-      tab: "orders" as AdminTab
-    },
-    {
-      id: "patrons",
-      title: "Active Patrons",
-      value: `${activePatronsCount.toLocaleString('en-IN')}`,
-      trend: "Registered Users",
-      trendType: "positive" as const,
-      icon: Users,
-      color: "text-indigo-600 dark:text-indigo-400",
-      bgColor: "bg-indigo-500/10 border-indigo-500/20",
-      topGradient: "from-indigo-600 to-blue-600",
-      tab: "customers" as AdminTab
-    },
-    {
-      id: "inquiries",
-      title: "Inquiries",
-      value: "4 New",
-      trend: "B2B & Retail",
-      trendType: "live" as const,
-      icon: MessageSquareText,
-      color: "text-cyan-600 dark:text-cyan-400",
-      bgColor: "bg-cyan-500/10 border-cyan-500/20",
-      topGradient: "from-cyan-600 to-blue-500",
-      tab: "inquiries" as AdminTab
-    },
-    {
-      id: "outofstock",
-      title: "Out of Stock",
-      value: `${outOfStockCount}`,
-      trend: outOfStockCount > 0 ? "Immediate Restock" : "Full Stock",
-      trendType: outOfStockCount > 0 ? "negative" as const : "positive" as const,
-      icon: AlertOctagon,
-      color: "text-red-600 dark:text-red-400",
-      bgColor: "bg-red-500/10 border-red-500/20",
-      topGradient: "from-red-600 to-rose-600",
-      tab: "inventory" as AdminTab
-    },
-    {
-      id: "lowstock",
-      title: "Low Stock",
-      value: `${lowStockCount}`,
-      trend: lowStockCount > 0 ? "< 10 units left" : "Optimal Stock",
-      trendType: lowStockCount > 0 ? "warning" as const : "positive" as const,
-      icon: AlertTriangle,
-      color: "text-amber-600 dark:text-amber-400",
-      bgColor: "bg-amber-500/10 border-amber-500/20",
-      topGradient: "from-amber-500 to-yellow-500",
-      tab: "inventory" as AdminTab
-    },
-    {
-      id: "coupons",
-      title: "Active Coupons",
-      value: `${couponsUsedCount}`,
-      trend: couponsUsedCount > 0 ? "Active Codes" : "No Coupons",
-      trendType: "positive" as const,
-      icon: TicketPercent,
-      color: "text-purple-600 dark:text-purple-400",
-      bgColor: "bg-purple-500/10 border-purple-500/20",
-      topGradient: "from-purple-600 to-pink-600",
-      tab: "coupons" as AdminTab
-    },
-    {
-      id: "referrals",
-      title: "Referral Rewards",
-      value: `₹${referralEarningsTotal.toLocaleString('en-IN')}`,
-      trend: "Patron Rewards",
-      trendType: "positive" as const,
-      icon: Share2,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bgColor: "bg-emerald-500/10 border-emerald-500/20",
-      topGradient: "from-emerald-600 to-green-600",
-      tab: "referrals" as AdminTab
     },
   ];
 
@@ -295,54 +156,11 @@ export function AdminOverview({
     ? kpiCards.filter(card =>
       card.title.toLowerCase().includes(cleanSearch) ||
       card.trend.toLowerCase().includes(cleanSearch) ||
-      card.tab.toLowerCase().includes(cleanSearch) ||
-      (card.id === "inquiries" && "customer inquiries".includes(cleanSearch)) ||
-      (card.id === "lowstock" && "low stock products".includes(cleanSearch)) ||
-      (card.id === "coupons" && "coupons used today".includes(cleanSearch)) ||
-      (card.id === "referrals" && "referral earnings".includes(cleanSearch))
+      card.tab.toLowerCase().includes(cleanSearch)
     )
     : kpiCards;
 
   const displayedKpiCards = cleanSearch && matchingKpiCards.length > 0 ? matchingKpiCards : kpiCards;
-
-  // Dynamic Chart Fallbacks from Real Live Orders
-  const defaultSalesOverview = charts?.salesOverview || (
-    liveOrders.length > 0
-      ? liveOrders.slice(0, 7).map((o, i) => ({
-        date: o.date ? String(o.date).split(" ")[0] || `Day ${i + 1}` : `Day ${i + 1}`,
-        sales: Number(o.total) || 0,
-        orders: 1,
-        visitors: 3
-      }))
-      : [{ date: "Today", sales: totalSales, orders: totalOrdersCount, visitors: activePatronsCount * 3 }]
-  );
-
-  const defaultMonthlyRevenue = charts?.monthlyRevenue || [
-    { month: new Date().toLocaleDateString("en-IN", { month: "short" }), revenue: totalSales, target: Math.round(totalSales * 1.2) }
-  ];
-
-  const defaultOrderStatusPie = charts?.orderStatusPie || [
-    { name: "Delivered", value: Math.max(deliveredOrdersCount, 0), color: "#16a34a" },
-    { name: "Processing / Shipped", value: Math.max(pendingOrdersCount + liveOrders.filter(o => o.orderStatus === "Shipped").length, 0), color: "#2563eb" },
-    { name: "Pending Verification", value: Math.max(liveOrders.filter(o => o.orderStatus === "Pending").length, 0), color: "#d97706" },
-    { name: "Cancelled / Returned", value: Math.max(cancelledOrdersCount + refundRequestsCount, 0), color: "#dc2626" }
-  ].filter(p => p.value > 0 || liveOrders.length === 0);
-
-  const defaultTopCategories = charts?.topCategories || [
-    { category: "Bio-Fertilizers & Stimulants", revenue: Math.round(totalSales * 0.45), units: Math.max(1, totalOrdersCount) },
-    { category: "Bio-Pesticides & Fungicides", revenue: Math.round(totalSales * 0.35), units: Math.max(1, totalOrdersCount) },
-    { category: "Micro Nutrients & Sprays", revenue: Math.round(totalSales * 0.20), units: Math.max(1, totalOrdersCount) }
-  ];
-
-  const defaultWeeklySales = charts?.weeklySales || [
-    { day: "Mon", online: 0, cod: 0 },
-    { day: "Tue", online: 0, cod: 0 },
-    { day: "Wed", online: 0, cod: 0 },
-    { day: "Thu", online: 0, cod: 0 },
-    { day: "Fri", online: 0, cod: 0 },
-    { day: "Sat", online: 0, cod: 0 },
-    { day: "Sun", online: totalSales, cod: 0 }
-  ];
 
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8 pb-12 min-w-0 max-w-full overflow-x-hidden">
@@ -371,16 +189,16 @@ export function AdminOverview({
         </div>
       )}
 
-      {/* 12 Executive Luxury KPI Cards Grid */}
+      {/* Primary KPI Cards Grid */}
       <section className="min-w-0 max-w-full">
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4 xl:grid-cols-6 min-w-0 max-w-full">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 max-w-xl min-w-0">
           {displayedKpiCards.map((card, idx) => {
             const Icon = card.icon;
             return (
               <div
                 key={idx}
                 onClick={() => onNavigateTab(card.tab)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-3 sm:p-4 transition-all duration-200 hover:border-emerald-500/40 hover:shadow-md hover:-translate-y-0.5 min-w-0 shadow-xs flex flex-col justify-between"
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-3.5 sm:p-5 transition-all duration-200 hover:border-emerald-500/40 hover:shadow-md hover:-translate-y-0.5 min-w-0 shadow-xs flex flex-col justify-between"
               >
                 {/* Top Hover Accent Line */}
                 <div className={`absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r ${card.topGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
@@ -390,19 +208,19 @@ export function AdminOverview({
                     <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground/90 tracking-tight leading-tight whitespace-nowrap">
                       {card.title}
                     </span>
-                    <div className={`grid size-7 sm:size-8 place-items-center rounded-xl ${card.bgColor} ${card.color} shrink-0 transition-transform duration-300 group-hover:scale-105 border`}>
+                    <div className={`grid size-7.5 sm:size-8.5 place-items-center rounded-xl ${card.bgColor} ${card.color} shrink-0 transition-transform duration-300 group-hover:scale-105 border`}>
                       <Icon className="size-3.5 sm:size-4" />
                     </div>
                   </div>
 
-                  <div className="mt-2 sm:mt-2.5">
-                    <span className="text-base sm:text-lg lg:text-xl xl:text-2xl font-black text-foreground tracking-tight font-mono truncate block">
+                  <div className="mt-2.5 sm:mt-3">
+                    <span className="text-lg sm:text-xl lg:text-2xl font-black text-foreground tracking-tight font-mono truncate block">
                       {card.value}
                     </span>
                   </div>
                 </div>
 
-                <div className="mt-2 sm:mt-3 pt-2 border-t border-border/40 flex items-center justify-between gap-1 text-[10px] sm:text-[11px]">
+                <div className="mt-2.5 sm:mt-3 pt-2 border-t border-border/40 flex items-center justify-between gap-1 text-[10px] sm:text-[11px]">
                   <span className={`inline-flex items-center gap-1 font-semibold truncate ${card.trendType === "live"
                       ? "text-emerald-700 dark:text-emerald-400"
                       : card.trendType === "warning"
@@ -421,166 +239,6 @@ export function AdminOverview({
               </div>
             );
           })}
-        </div>
-      </section>
-
-
-
-      {/* Interactive Sales & Revenue Analytics */}
-      <section className="space-y-4 sm:space-y-6 min-w-0 max-w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/40 min-w-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-              <BarChart3 className="size-4 sm:size-4.5" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-bold text-foreground tracking-tight flex items-center gap-2 truncate">
-                Interactive Sales & Revenue Analytics
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 hidden md:inline-flex items-center gap-1">
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Telemetry
-                </span>
-              </h2>
-              <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Real-time revenue velocity, gross settlements, and fulfillment distribution</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[11px] font-semibold text-muted-foreground bg-muted/60 border border-border/60 px-2.5 py-1 rounded-xl">
-              Live Real-Time Feed
-            </span>
-          </div>
-        </div>
-
-        {/* Row 1: Sales Overview (Area) & Monthly Revenue (Bar) */}
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 min-w-0 max-w-full">
-          {/* Chart 1: Sales Overview */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-4 sm:p-6 shadow-xs hover:shadow-sm transition-all min-w-0 max-w-full overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-3 sm:mb-4 min-w-0">
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-foreground">Sales Trend & Order Velocity</h3>
-                <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Daily gross sales (₹) vs Store orders</p>
-              </div>
-              <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] sm:text-[11px] font-bold text-emerald-700 dark:text-emerald-400 shrink-0 self-start sm:self-auto flex items-center gap-1">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Feed
-              </span>
-            </div>
-
-            <div className="h-60 sm:h-72 w-full min-w-0 max-w-full overflow-hidden">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={defaultSalesOverview}>
-                  <defs>
-                    <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#059669" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#059669" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`} />
-                  <Tooltip
-                    formatter={(val: any) => [`₹${Number(val).toLocaleString('en-IN')}`, "Sales"]}
-                    contentStyle={{ borderRadius: "0.875rem", backgroundColor: "var(--card)", borderColor: "var(--border)", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}
-                  />
-                  <Area type="monotone" dataKey="sales" stroke="#059669" strokeWidth={2.5} fillOpacity={1} fill="url(#salesGradient)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Chart 2: Monthly Revenue vs Target */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-4 sm:p-6 shadow-xs hover:shadow-sm transition-all min-w-0 max-w-full overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-3 sm:mb-4 min-w-0">
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-foreground">Monthly Revenue vs Targets</h3>
-                <p className="text-[11px] sm:text-xs text-muted-foreground truncate">FY 2026 Monthly performance in ₹</p>
-              </div>
-              <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-400 shrink-0 self-start sm:self-auto">
-                Active Financials
-              </span>
-            </div>
-
-            <div className="h-60 sm:h-72 w-full min-w-0 max-w-full overflow-hidden">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={defaultMonthlyRevenue}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(val) => `₹${val >= 100000 ? `${(val / 100000).toFixed(1)}L` : val}`} />
-                  <Tooltip
-                    formatter={(val: any) => [`₹${Number(val).toLocaleString('en-IN')}`, ""]}
-                    contentStyle={{ borderRadius: "0.875rem", backgroundColor: "var(--card)", borderColor: "var(--border)", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "10px" }} />
-                  <Bar dataKey="revenue" name="Actual Revenue" fill="#10b981" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="target" name="Target Goal" fill="#94a3b8" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Order Status Donut, Top Categories, Top Products */}
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3 min-w-0 max-w-full">
-          {/* Chart 3: Order Status Donut */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-4 sm:p-6 shadow-xs hover:shadow-sm transition-all min-w-0 max-w-full overflow-hidden">
-            <h3 className="text-sm font-bold text-foreground mb-1">Order Status Fulfillment</h3>
-            <p className="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">Total {totalOrdersCount} active database orders</p>
-            <div className="h-56 sm:h-64 w-full min-w-0 max-w-full overflow-hidden">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={defaultOrderStatusPie}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {defaultOrderStatusPie.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.color || "#10b981"} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: "0.875rem", backgroundColor: "var(--card)", borderColor: "var(--border)" }} />
-                  <Legend wrapperStyle={{ fontSize: "10px" }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Chart 4: Top Selling Categories */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-4 sm:p-6 shadow-xs hover:shadow-sm transition-all min-w-0 max-w-full overflow-hidden">
-            <h3 className="text-sm font-bold text-foreground mb-1">Top Selling Categories</h3>
-            <p className="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">Revenue breakdown by product class</p>
-            <div className="h-56 sm:h-64 w-full min-w-0 max-w-full overflow-hidden">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={defaultTopCategories}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                  <XAxis type="number" tick={{ fontSize: 9 }} tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`} />
-                  <YAxis dataKey="category" type="category" width={95} tick={{ fontSize: 9 }} />
-                  <Tooltip formatter={(val: any) => [`₹${Number(val).toLocaleString('en-IN')}`, "Revenue"]} contentStyle={{ borderRadius: "0.875rem" }} />
-                  <Bar dataKey="revenue" fill="#047857" radius={[0, 6, 6, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Chart 5: Weekly Sales (Online vs COD) */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-4 sm:p-6 shadow-xs hover:shadow-sm transition-all min-w-0 max-w-full overflow-hidden">
-            <h3 className="text-sm font-bold text-foreground mb-1">Weekly Day-by-Day Trend</h3>
-            <p className="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">Online Prepaid vs Cash on Delivery</p>
-            <div className="h-56 sm:h-64 w-full min-w-0 max-w-full overflow-hidden">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={defaultWeeklySales}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                  <XAxis dataKey="day" tick={{ fontSize: 9 }} />
-                  <YAxis tick={{ fontSize: 9 }} tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`} />
-                  <Tooltip contentStyle={{ borderRadius: "0.875rem" }} />
-                  <Legend wrapperStyle={{ fontSize: "10px" }} />
-                  <Line type="monotone" dataKey="online" name="Prepaid Online" stroke="#059669" strokeWidth={2.5} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="cod" name="COD" stroke="#d97706" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
         </div>
       </section>
 
