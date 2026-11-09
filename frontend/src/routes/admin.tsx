@@ -840,6 +840,7 @@ function AdminDashboardPage() {
               widgets={widgets}
               orders={safeOrders}
               products={products}
+              categories={categories}
               customers={customers}
               reviews={safeReviews}
               searchQuery={adminSearch}
