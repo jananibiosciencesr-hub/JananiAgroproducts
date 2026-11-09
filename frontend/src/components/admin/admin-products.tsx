@@ -193,10 +193,14 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
             const delRaw = localStorage.getItem("janani_deleted_categories");
-            const delList: string[] = delRaw ? JSON.parse(delRaw) : [];
+            let delList: string[] = [];
+            try {
+              const dParsed = delRaw ? JSON.parse(delRaw) : [];
+              delList = Array.isArray(dParsed) ? dParsed.map((s) => String(s).toLowerCase().trim()) : [];
+            } catch {}
             return parsed
-              .filter((c: any) => c.active !== false && !c.deletedAt && !c.deleted_at && !delList.includes(String(c.name).toLowerCase()) && !delList.includes(String(c.id).toLowerCase()) && !delList.includes(String(c.slug).toLowerCase()))
-              .map((c: any) => (typeof c.name === "string" ? c.name.trim() : ""))
+              .filter((c: any) => c && c.active !== false && !c.deletedAt && !c.deleted_at && !delList.includes(String(c.name || "").toLowerCase().trim()) && !delList.includes(String(c.id || "").toLowerCase().trim()) && !delList.includes(String(c.slug || "").toLowerCase().trim()))
+              .map((c: any) => (typeof c.name === "string" ? c.name.trim() : (c.name ? String(c.name).trim() : "")))
               .filter(Boolean);
           }
         }
@@ -233,9 +237,10 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
         try {
           const delStored = localStorage.getItem("janani_deleted_categories");
           if (delStored) {
-            const delList: string[] = JSON.parse(delStored);
-            if (Array.isArray(delList) && delList.length > 0) {
-              names = names.filter((n) => !delList.includes(n.toLowerCase()));
+            const dParsed = JSON.parse(delStored);
+            const delList: string[] = Array.isArray(dParsed) ? dParsed.map((s) => String(s).toLowerCase().trim()) : [];
+            if (delList.length > 0) {
+              names = names.filter((n) => !delList.includes(String(n || "").toLowerCase().trim()));
             }
           }
         } catch { }
@@ -338,14 +343,18 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
   // Dynamic categories strictly reflecting the Categories management list + any categories in products (guaranteeing 'Other')
   const availableCategories = useMemo(() => {
-    const list = [...categoriesList];
-    products.forEach((p) => {
-      const cat = p.category || (p as any).category_name;
-      if (cat && !list.some((c) => c.toLowerCase() === cat.toLowerCase())) {
-        list.push(cat);
-      }
-    });
-    if (!list.some((c) => c.toLowerCase() === "other")) {
+    const list: string[] = Array.isArray(categoriesList) ? categoriesList.filter(Boolean).map(String) : [];
+    if (Array.isArray(products)) {
+      products.forEach((p) => {
+        if (!p) return;
+        const rawCat = p.category || (p as any).category_name;
+        const catStr = typeof rawCat === "object" && rawCat !== null ? String(rawCat.name || "") : String(rawCat || "");
+        if (catStr.trim() && !list.some((c) => String(c).toLowerCase().trim() === catStr.toLowerCase().trim())) {
+          list.push(catStr.trim());
+        }
+      });
+    }
+    if (!list.some((c) => String(c).toLowerCase().trim() === "other")) {
       list.push("Other");
     }
     return Array.from(new Set(list.filter(Boolean)));
@@ -353,15 +362,24 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
 
   // Client-side Filter
   const filteredProducts = useMemo(() => {
+    if (!Array.isArray(products)) return [];
     return products.filter((p) => {
+      if (!p) return false;
       const matchSearch = !search.trim() || matchesProductSearch(p, search);
-      const matchMin = !minPrice || p.price >= Number(minPrice);
-      const matchMax = !maxPrice || p.price <= Number(maxPrice);
+      const priceNum = Number(p.price) || 0;
+      const matchMin = !minPrice || priceNum >= Number(minPrice);
+      const matchMax = !maxPrice || priceNum <= Number(maxPrice);
+
+      const pCat = typeof p.category === "object" && p.category !== null ? String(p.category.name || "") : String(p.category || "");
+      const pCatName = typeof (p as any).category_name === "object" && (p as any).category_name !== null ? String((p as any).category_name.name || "") : String((p as any).category_name || "");
+      const pCatId = (p as any).category_id ? String((p as any).category_id) : "";
+      const filterLower = (categoryFilter || "all").toLowerCase().trim();
+
       const matchCategory =
-        categoryFilter === "all" ||
-        (p.category && p.category.toLowerCase() === categoryFilter.toLowerCase()) ||
-        ((p as any).category_name && (p as any).category_name.toLowerCase() === categoryFilter.toLowerCase()) ||
-        ((p as any).category_id && String((p as any).category_id).toLowerCase() === categoryFilter.toLowerCase());
+        filterLower === "all" ||
+        (pCat && pCat.toLowerCase().trim() === filterLower) ||
+        (pCatName && pCatName.toLowerCase().trim() === filterLower) ||
+        (pCatId && pCatId.toLowerCase().trim() === filterLower);
 
       return matchSearch && matchMin && matchMax && matchCategory;
     });
@@ -689,24 +707,31 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                       {/* Category & Brand */}
                       <td className="px-4 py-4">
                         <span className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-semibold block w-fit">
-                          {p.category}
+                          {typeof p.category === "object" && p.category !== null ? String((p.category as any).name || "General") : String(p.category || "General")}
                         </span>
                         <span className="text-[10px] text-muted-foreground mt-0.5 block truncate">
-                          {p.brand || "Janani Gold Reserve"}
+                          {typeof p.brand === "object" && p.brand !== null ? String((p.brand as any).name || "Janani Agro Products") : String(p.brand || "Janani Agro Products")}
                         </span>
                       </td>
 
                       {/* Pricing */}
                       <td className="px-4 py-4">
                         <div className="flex items-baseline gap-1.5">
-                          <span className="font-extrabold text-foreground text-sm">₹{p.price}</span>
+                          <span className="font-extrabold text-foreground text-sm">₹{Number(p.price) || 0}</span>
                           <span className="text-[10px] text-muted-foreground line-through">
-                            ₹{p.originalPrice || Math.round(p.price * 1.2)}
+                            ₹{Number(p.originalPrice) || Math.round((Number(p.price) || 0) * 1.2)}
                           </span>
                         </div>
-                        <span className="text-[9px] font-bold text-emerald-600 block">
-                          {Math.round((((p.originalPrice || Math.round(p.price * 1.2)) - p.price) / (p.originalPrice || Math.round(p.price * 1.2))) * 100)}% Margin
-                        </span>
+                        {(() => {
+                          const orig = Number(p.originalPrice) || Math.round((Number(p.price) || 0) * 1.2);
+                          const cur = Number(p.price) || 0;
+                          const margin = orig > 0 ? Math.round(((orig - cur) / orig) * 100) : 0;
+                          return (
+                            <span className="text-[9px] font-bold text-emerald-600 block">
+                              {margin}% Margin
+                            </span>
+                          );
+                        })()}
                       </td>
 
 
@@ -1008,19 +1033,49 @@ function ProductViewModal({
 }) {
   if (!product) return null;
 
-  const [selectedImage, setSelectedImage] = useState(product.image);
-  const [selectedVariant, setSelectedVariant] = useState<any>(
+  const [selectedImage, setSelectedImage] = useState<string>(() => product.image || "");
+  const [selectedVariant, setSelectedVariant] = useState<any>(() =>
     Array.isArray(product.variants) && product.variants.length > 0 ? product.variants[0] : null
   );
 
   useEffect(() => {
-    setSelectedImage(product.image);
+    setSelectedImage(product.image || "");
     setSelectedVariant(Array.isArray(product.variants) && product.variants.length > 0 ? product.variants[0] : null);
   }, [product]);
 
-  const price = selectedVariant?.price || product.price || 0;
-  const originalPrice = selectedVariant?.originalPrice || selectedVariant?.oldPrice || product.originalPrice || 0;
-  const availableStock = product.stock ?? ((product.warehouseStock || 50) - (product.reservedStock || 0));
+  const price = Number(selectedVariant?.price ?? product.price) || 0;
+  const originalPrice = Number(selectedVariant?.originalPrice ?? selectedVariant?.oldPrice ?? product.originalPrice) || Math.round(price * 1.2);
+  const warehouseUnits = Number(product.warehouseStock ?? product.stock) || 0;
+  const reservedUnits = Number(product.reservedStock) || 0;
+  const availableStock = product.stock !== undefined && typeof product.stock === "number" ? product.stock : (warehouseUnits - reservedUnits);
+
+  const categoryName = typeof product.category === "object" && product.category !== null 
+    ? String((product.category as any).name || "Organic Crop Care")
+    : String(product.category || "Organic Crop Care");
+
+  const brandName = typeof product.brand === "object" && product.brand !== null
+    ? String((product.brand as any).name || "Janani Agro Products")
+    : String(product.brand || "Janani Agro Products");
+
+  const galleryList: string[] = Array.isArray(product.gallery) 
+    ? product.gallery.filter((g) => typeof g === "string" && g.trim())
+    : (typeof product.gallery === "string" && (product.gallery as string).trim() ? [product.gallery] : []);
+
+  const specsEntries: [string, any][] = (() => {
+    if (!product.specifications) return [];
+    if (typeof product.specifications === "object" && !Array.isArray(product.specifications)) {
+      return Object.entries(product.specifications);
+    }
+    if (typeof product.specifications === "string") {
+      try {
+        const parsed = JSON.parse(product.specifications);
+        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+          return Object.entries(parsed);
+        }
+      } catch {}
+    }
+    return [];
+  })();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -1031,7 +1086,7 @@ function ProductViewModal({
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="size-14 rounded-2xl bg-muted/90 border border-border/80 overflow-hidden flex items-center justify-center font-bold text-2xl shrink-0 shadow-sm">
               {product.image ? (
-                <img src={product.image} alt={product.name} className="size-full object-cover" />
+                <img src={product.image} alt={String(product.name || "")} className="size-full object-cover" />
               ) : (
                 "🌿"
               )}
@@ -1039,27 +1094,27 @@ function ProductViewModal({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                  {product.category || "Organic Crop Care"}
+                  {categoryName}
                 </span>
                 <span className="text-[11px] font-semibold text-muted-foreground">
-                  • {product.brand || "Janani Agro Products"}
+                  • {brandName}
                 </span>
-                {product.featured && (
+                {Boolean(product.featured) && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/20">
                     <Star className="size-3 fill-amber-500 text-amber-500" /> Featured
                   </span>
                 )}
-                {product.trending && (
+                {Boolean(product.trending) && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-500/15 px-2 py-0.5 rounded-md border border-rose-500/20">
                     <Flame className="size-3 fill-rose-500 text-rose-500" /> Trending
                   </span>
                 )}
               </div>
               <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight truncate">
-                {product.name}
+                {String(product.name || "Product")}
               </h2>
               <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                SKU: <span className="text-foreground font-semibold">{product.sku}</span>
+                SKU: <span className="text-foreground font-semibold">{String(product.sku || "")}</span>
               </p>
             </div>
           </div>
@@ -1082,16 +1137,16 @@ function ProductViewModal({
             <div className="md:col-span-5 space-y-4">
               <div className="h-64 sm:h-72 w-full rounded-2xl bg-muted/60 border border-border/80 overflow-hidden shadow-inner flex items-center justify-center p-2">
                 {selectedImage ? (
-                  <img src={selectedImage} alt={product.name} className="size-full object-contain rounded-xl" />
+                  <img src={selectedImage} alt={String(product.name || "")} className="size-full object-contain rounded-xl" />
                 ) : (
                   <span className="text-5xl">🌿</span>
                 )}
               </div>
 
               {/* Gallery Thumbnails */}
-              {product.gallery && product.gallery.length > 1 && (
+              {galleryList.length > 1 && (
                 <div className="flex flex-wrap items-center gap-2 pb-1">
-                  {product.gallery.map((img, i) => (
+                  {galleryList.map((img, i) => (
                     <button
                       key={i}
                       type="button"
@@ -1111,7 +1166,7 @@ function ProductViewModal({
                 {product.harvestOrigin && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="size-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate"><strong>Origin:</strong> {product.harvestOrigin}</span>
+                    <span className="truncate"><strong>Origin:</strong> {String(product.harvestOrigin)}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -1157,11 +1212,11 @@ function ProductViewModal({
               <div className="rounded-2xl border border-border/80 bg-card p-3.5 space-y-2 text-xs">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Warehouse Total Units:</span>
-                  <strong className="text-foreground">{product.warehouseStock || product.stock || 0} units</strong>
+                  <strong className="text-foreground">{warehouseUnits} units</strong>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Reserved in Orders:</span>
-                  <strong className="text-foreground">{product.reservedStock || 0} units</strong>
+                  <strong className="text-foreground">{reservedUnits} units</strong>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Low Stock Alert Trigger:</span>
@@ -1174,21 +1229,25 @@ function ProductViewModal({
                 <div>
                   <span className="text-xs font-bold text-foreground block mb-2">Available Pack Variants:</span>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {product.variants.map((v: any) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setSelectedVariant(v)}
-                        className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
-                          selectedVariant?.id === v.id
-                            ? "border-emerald-600 bg-emerald-500/10 font-bold shadow-xs"
-                            : "border-border bg-card hover:bg-muted/50"
-                        }`}
-                      >
-                        <span className="block font-bold truncate">{v.name || v.label || v.unit}</span>
-                        <span className="text-emerald-700 dark:text-emerald-400 font-extrabold block mt-0.5">₹{v.price}</span>
-                      </button>
-                    ))}
+                    {product.variants.map((v: any, idx: number) => {
+                      if (!v) return null;
+                      const isSel = selectedVariant?.id ? selectedVariant.id === v.id : selectedVariant === v;
+                      return (
+                        <button
+                          key={v.id || idx}
+                          type="button"
+                          onClick={() => setSelectedVariant(v)}
+                          className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                            isSel
+                              ? "border-emerald-600 bg-emerald-500/10 font-bold shadow-xs"
+                              : "border-border bg-card hover:bg-muted/50"
+                          }`}
+                        >
+                          <span className="block font-bold truncate">{String(v.name || v.label || v.unit || `Variant ${idx + 1}`)}</span>
+                          <span className="text-emerald-700 dark:text-emerald-400 font-extrabold block mt-0.5">₹{Number(v.price) || 0}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1198,20 +1257,20 @@ function ProductViewModal({
                 <div>
                   <span className="text-xs font-bold text-foreground block mb-1">Description</span>
                   <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line bg-muted/20 p-3 rounded-xl border border-border/60">
-                    {product.description}
+                    {String(product.description)}
                   </p>
                 </div>
               )}
 
               {/* Specifications snippet if present */}
-              {product.specifications && Object.keys(product.specifications).length > 0 && (
+              {specsEntries.length > 0 && (
                 <div>
                   <span className="text-xs font-bold text-foreground block mb-1.5">Agro Specifications:</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {Object.entries(product.specifications).slice(0, 6).map(([k, v]) => (
+                    {specsEntries.slice(0, 6).map(([k, v]) => (
                       <div key={k} className="p-2 rounded-lg bg-muted/30 border border-border/60">
                         <span className="text-[10px] text-muted-foreground block uppercase font-bold">{k}</span>
-                        <span className="font-semibold text-foreground truncate block">{String(v)}</span>
+                        <span className="font-semibold text-foreground truncate block">{String(typeof v === "object" ? JSON.stringify(v) : v)}</span>
                       </div>
                     ))}
                   </div>

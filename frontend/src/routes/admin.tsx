@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
   Mail,
@@ -144,6 +144,46 @@ function AdminErrorFallback({ error, reset }: { error: any; reset: () => void })
       </div>
     </div>
   );
+}
+
+class AdminTabErrorBoundary extends React.Component<
+  { children: React.ReactNode; tabName?: string },
+  { hasError: boolean; error: any }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    console.error(`Admin tab [${this.props.tabName}] caught error:`, error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full flex-1 flex flex-col items-center justify-center p-8 bg-card text-center min-h-[400px]">
+          <div className="size-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-4">
+            <AlertCircle className="size-8" />
+          </div>
+          <h2 className="text-lg font-bold text-foreground">
+            ${this.props.tabName || "View"} Display Notice
+          </h2>
+          <p className="text-xs text-muted-foreground max-w-md mt-1 mb-5">
+            A temporary display error occurred while rendering this tab. You can reload this view without losing your active session.
+          </p>
+          <Button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 h-9"
+          >
+            Reload ${this.props.tabName || "View"}
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function AdminDashboardPage() {
@@ -853,18 +893,22 @@ function AdminDashboardPage() {
           )}
 
           {activeTab === "categories" && (
-            <CategoriesManagement
-              searchQuery={adminSearch}
-              addTrigger={addTriggerTab?.tab === "categories" ? addTriggerTab.timestamp : 0}
-              products={products}
-            />
+            <AdminTabErrorBoundary tabName="Categories">
+              <CategoriesManagement
+                searchQuery={adminSearch}
+                addTrigger={addTriggerTab?.tab === "categories" ? addTriggerTab.timestamp : 0}
+                products={products}
+              />
+            </AdminTabErrorBoundary>
           )}
 
           {activeTab === "products" && (
-            <ProductsManagement
-              searchQuery={adminSearch}
-              addTrigger={addTriggerTab?.tab === "products" ? addTriggerTab.timestamp : 0}
-            />
+            <AdminTabErrorBoundary tabName="Products">
+              <ProductsManagement
+                searchQuery={adminSearch}
+                addTrigger={addTriggerTab?.tab === "products" ? addTriggerTab.timestamp : 0}
+              />
+            </AdminTabErrorBoundary>
           )}
 
           {activeTab === "orders" && <OrdersManagement searchQuery={adminSearch} />}
