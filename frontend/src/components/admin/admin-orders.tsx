@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   ShoppingBag,
   Search,
@@ -246,6 +246,8 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
   const [warehouseFilter, setWarehouseFilter] = useState("all");
   const [courierFilter, setCourierFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date_desc");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   // Synchronize search query from Top Navbar
   useEffect(() => {
@@ -390,16 +392,39 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
     setSelectedOrderIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  };
+  };  // Client-side date and status filtering
+  const filteredOrders = useMemo(() => {
+    return orders.filter((o) => {
+      if (startDate || endDate) {
+        const rawDate = o.date || o.order_date || o.orderDate || o.created_at || o.createdAt;
+        if (rawDate) {
+          const match = String(rawDate).match(/(\d{4})-(\d{2})-(\d{2})/);
+          if (match) {
+            const orderDateStr = `${match[1]}-${match[2]}-${match[3]}`;
+            if (startDate && orderDateStr < startDate) return false;
+            if (endDate && orderDateStr > endDate) return false;
+          } else {
+            const d = new Date(rawDate);
+            if (!isNaN(d.getTime())) {
+              const orderDateStr = d.toISOString().slice(0, 10);
+              if (startDate && orderDateStr < startDate) return false;
+              if (endDate && orderDateStr > endDate) return false;
+            }
+          }
+        }
+      }
+      return true;
+    });
+  }, [orders, startDate, endDate]);
 
-  // Export CSV
+  // Export Excel CSV
   const handleExportCSV = () => {
-    const exportData = orders.filter((o) =>
+    const exportData = filteredOrders.filter((o) =>
       selectedOrderIds.length > 0 ? selectedOrderIds.includes(o.id) : true
     );
 
     if (exportData.length === 0) {
-      toast.error("No orders available to export");
+      toast.error("No orders available to export for selected dates / filters");
       return;
     }
 
@@ -425,8 +450,8 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
     const rows = exportData.map((o) => {
       const cust = getOrderCustomer(o);
       return [
-        `"${o.id}"`,
-        `"${o.date}"`,
+        `"${o.id || o.number}"`,
+        `"${o.date || o.order_date || o.created_at || ""}"`,
         `"${cust.name}"`,
         `"${cust.email}"`,
         `"${cust.phone}"`,
@@ -434,30 +459,60 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
         `"${cust.state}"`,
         `"${o.shippingAddress?.pincode || ""}"`,
         o.total || 0,
-        `"${o.paymentMethod || ""}"`,
-        `"${o.paymentStatus || ""}"`,
-        `"${o.orderStatus || ""}"`,
+        `"${o.paymentMethod || o.payment_method || ""}"`,
+        `"${o.paymentStatus || o.payment_status || ""}"`,
+        `"${o.orderStatus || o.status || ""}"`,
         `"${getWarehouseName(o.warehouse)}"`,
         `"${o.courier || ""}"`,
-        `"${o.trackingId || ""}"`,
+        `"${o.trackingId || o.awb || ""}"`,
         o.items?.length || 0
       ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    // Add UTF-8 BOM so Microsoft Excel opens it with proper character encoding
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Janani_Agro_Orders_Export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.href = url;
+    const dateTag = startDate && endDate ? `${startDate}_to_${endDate}` : (startDate ? `from_${startDate}` : (endDate ? `until_${endDate}` : new Date().toISOString().slice(0, 10)));
+    link.download = `Janani_Agro_Orders_${dateTag}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success(`Exported ${exportData.length} orders to CSV`);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${exportData.length} orders to Excel spreadsheet`);
   };
 
   return (
     <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card overflow-x-hidden">
+
+      {/* Page Title & Action Subheader */}
+      <div className="w-full bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
+            Orders
+          </h1>
+          <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
+            {filteredOrders.length} orders
+          </span>
+          {(startDate || endDate) && (
+            <span className="hidden sm:inline-flex text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+              Filtered: {startDate || "Start"} → {endDate || "Today"}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleExportCSV}
+          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+          title="Download filtered orders as Excel spreadsheet (.csv)"
+        >
+          <Download className="size-4 stroke-[2.5]" />
+          <span>Download Excel Sheet</span>
+        </button>
+      </div>
+
       {/* Filter Navigation Tabs & Toolbar */}
       <div className="bg-card border-b border-border p-3 sm:p-4 shadow-2xs space-y-3 sm:space-y-4 w-full rounded-none">
         {/* Status Tabs */}
@@ -497,6 +552,91 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
               </button>
             );
           })}
+        </div>
+
+        {/* Date to Date Range Filter Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/60">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-bold text-foreground flex items-center gap-1.5 shrink-0">
+              <Calendar className="size-3.5 text-emerald-600" /> Date Range:
+            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-8.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                title="Start Date (From)"
+              />
+              <span className="text-muted-foreground font-bold text-xs">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-8.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                title="End Date (To)"
+              />
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date().toISOString().slice(0, 10);
+                  setStartDate(today);
+                  setEndDate(today);
+                }}
+                className="px-2 py-1 rounded-md text-[11px] font-bold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted transition-colors cursor-pointer"
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const end = new Date();
+                  const start = new Date();
+                  start.setDate(end.getDate() - 7);
+                  setStartDate(start.toISOString().slice(0, 10));
+                  setEndDate(end.toISOString().slice(0, 10));
+                }}
+                className="px-2 py-1 rounded-md text-[11px] font-bold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted transition-colors cursor-pointer"
+              >
+                Last 7 Days
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const now = new Date();
+                  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                  setStartDate(firstDay.toISOString().slice(0, 10));
+                  setEndDate(now.toISOString().slice(0, 10));
+                }}
+                className="px-2 py-1 rounded-md text-[11px] font-bold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted transition-colors cursor-pointer"
+              >
+                This Month
+              </button>
+            </div>
+
+            {(startDate || endDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                }}
+                className="flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer ml-1"
+              >
+                <X className="size-3" /> Clear Dates
+              </button>
+            )}
+          </div>
+
+          {(startDate || endDate) && (
+            <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+              Showing {filteredOrders.length} of {orders.length} orders
+            </span>
+          )}
         </div>
 
         {/* Bulk Actions Floating Bar */}
@@ -540,7 +680,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
             <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
             <p className="text-sm font-medium text-muted-foreground">Loading Janani Agro orders...</p>
           </div>
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <div className="bg-card border border-border rounded-2xl p-12 text-center max-w-md mx-auto">
             <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground mx-auto mb-3">
               <ShoppingBag className="h-6 w-6" />
@@ -551,7 +691,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
             </p>
           </div>
         ) : (
-          orders.map((order) => {
+          filteredOrders.map((order) => {
             const isSelected = selectedOrderIds.includes(order.id);
             const itemCount = order.items?.length || 0;
             const warehouseDisplay = getWarehouseName(order.warehouse);
@@ -716,7 +856,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                     </div>
                   </td>
                 </tr>
-              ) : orders.length === 0 ? (
+              ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-16">
                     <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
@@ -731,7 +871,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => {
+                filteredOrders.map((order) => {
                   const isSelected = selectedOrderIds.includes(order.id);
                   const itemCount = order.items?.length || 0;
                   const warehouseDisplay = getWarehouseName(order.warehouse);
