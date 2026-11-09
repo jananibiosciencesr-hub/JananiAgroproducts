@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Package,
+  ArrowLeft,
   Plus,
   Search,
   Filter,
@@ -485,6 +486,43 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
     link.click();
     toast.success("Products catalog exported to CSV");
   };
+
+  if (isFormModalOpen) {
+    return (
+      <ProductFormView
+        categories={availableCategories}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setEditingProduct(null);
+        }}
+        initialData={editingProduct}
+        onSave={async (formData) => {
+          try {
+            if (editingProduct) {
+              const res = await updateAdminProduct(editingProduct.id, formData);
+              if (!res || res.success === false) {
+                toast.error(res?.message || "Failed to update product in database");
+                return;
+              }
+              toast.success(`Product "${formData.name}" updated successfully in database`);
+            } else {
+              const res = await createAdminProduct(formData);
+              if (!res || res.success === false) {
+                toast.error(res?.message || "Failed to create product in database");
+                return;
+              }
+              toast.success(`Product "${formData.name}" created successfully in database`);
+            }
+            await loadProducts();
+            setIsFormModalOpen(false);
+            setEditingProduct(null);
+          } catch (err: any) {
+            toast.error(err?.message || "An error occurred while saving product");
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card">
@@ -1103,7 +1141,7 @@ function ProductPreviewDrawer({
 // -------------------------------------------------------------
 // Add / Edit Product 6-Tab Modal
 // -------------------------------------------------------------
-function ProductFormModal({
+function ProductFormView({
   isOpen,
   onClose,
   initialData,
@@ -1665,48 +1703,151 @@ function ProductFormModal({
     e.target.value = "";
   };
 
-  if (!isOpen) return null;
+  const handleSaveSubmit = () => {
+    // Compile custom specifications dictionary
+    const compiledSpecs: Record<string, string> = {
+      "Active Organism": formData.activeOrganism || formData.name,
+      "Targeted Diseases / Pests": formData.targetDiseases || "Broad Spectrum Crop Protection",
+      "Compatibility": formData.compatibility || "Compatible with biofertilizers & organic manures",
+      "Shelf Life": formData.shelfLife || "18–24 Months",
+      "Dosage": formData.dosage || "2–3 ml / Litre",
+      "Formulation": formData.unit?.toLowerCase().includes("l") || formData.unit?.toLowerCase().includes("ml") ? "Liquid Biological Formulation" : "Granular / Water Soluble Inoculant"
+    };
+    formData.customSpecs.forEach((s) => {
+      if (s.key.trim() && s.value.trim()) {
+        compiledSpecs[s.key.trim()] = s.value.trim();
+      }
+    });
+
+    const cleanVariants = (Array.isArray(formData.variants) ? formData.variants : []).map((v: any, idx: number) => {
+      const p = Number(v.price) || Number(formData.price) || (initialData?.price ? Number(initialData.price) : 450);
+      const op = Number(v.originalPrice ?? v.oldPrice) || Math.round(p * 1.2);
+      const st = v.stock !== undefined ? Number(v.stock) : (Number(formData.warehouseStock) || 50);
+      const n = v.name || v.label || v.unit || `Variant ${idx + 1}`;
+      const u = v.unit || v.name || v.label || formData.unit || "1 L";
+      const img = v.image && typeof v.image === "string" && v.image.trim() ? v.image.trim() : "";
+      return {
+        id: String(v.id || `VAR-${Date.now()}-${idx + 1}`),
+        name: n,
+        label: n,
+        unit: u,
+        sku: v.sku || `${formData.sku || "JAP"}-${idx + 1}`,
+        price: p,
+        originalPrice: op,
+        oldPrice: op,
+        stock: st,
+        inStock: st > 0,
+        image: img
+      };
+    });
+
+    const primaryPrice = cleanVariants[0]?.price || Number(formData.price) || (initialData?.price ? Number(initialData.price) : 450);
+    const primaryOriginalPrice = cleanVariants[0]?.originalPrice || cleanVariants[0]?.oldPrice || Number(formData.originalPrice) || Math.round(primaryPrice * 1.2);
+    const primaryUnit = cleanVariants[0]?.unit || formData.unit || (initialData?.unit || "1 L");
+    const primaryStock = cleanVariants.length > 0
+      ? cleanVariants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+      : (Number(formData.warehouseStock) || (initialData?.stock ? Number(initialData.stock) : 100));
+
+    const variantImages = cleanVariants.map((v: any) => v.image).filter(Boolean);
+    const primaryImage = cleanVariants[0]?.image || formData.image || (initialData?.image ? String(initialData.image).trim() : "/products/harit.jpg");
+    const galleryImages = variantImages.length > 0 ? variantImages : (Array.isArray(formData.gallery) && formData.gallery.length > 0 ? formData.gallery : [primaryImage]);
+
+    const payload = {
+      ...formData,
+      image: primaryImage,
+      gallery: galleryImages,
+      price: primaryPrice,
+      originalPrice: primaryOriginalPrice,
+      oldPrice: primaryOriginalPrice,
+      old_price: primaryOriginalPrice,
+      unit: primaryUnit,
+      stock: primaryStock,
+      warehouseStock: primaryStock,
+      videoUrl: formData.videoUrl || "",
+      video_url: formData.videoUrl || "",
+      variants: cleanVariants,
+      rating: Number(formData.rating) || 4.8,
+      reviewsCount: Number(formData.reviewsCount) || 53,
+      reviews: Number(formData.reviewsCount) || 53,
+      subtitle: formData.subtitle,
+      benefits: formData.benefits ? formData.benefits.split("\n").map((b: string) => b.trim()).filter(Boolean) : undefined,
+      dosage: formData.dosage,
+      methodOfApplication: formData.methodOfApplication,
+      recommendedCrops: formData.recommendedCrops,
+      crops: formData.recommendedCrops ? formData.recommendedCrops.split(",").map((c: string) => c.trim()).filter(Boolean) : undefined,
+      targetDiseases: formData.targetDiseases,
+      compatibility: formData.compatibility,
+      storageNotice: formData.storageNotice,
+      specifications: compiledSpecs,
+      faqs: formData.faqs.filter((f) => f.q.trim() && f.a.trim())
+    };
+    onSave(payload);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-4xl rounded-3xl border border-border bg-card p-6 sm:p-7 shadow-2xl max-h-[92vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-border shrink-0">
+    <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card animate-in fade-in">
+      {/* Top Page Header Bar */}
+      <div className="w-full bg-card border-b border-border px-4 sm:px-6 py-3.5 sm:py-4 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-1.5 px-2.5 rounded-xl border border-border hover:bg-muted"
+          >
+            <ArrowLeft className="size-4" />
+            <span>Back to Products</span>
+          </button>
           <div>
-            <h3 className="text-lg font-bold text-foreground">
+            <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
               {initialData ? `Edit Product: ${initialData.name}` : "Create New Product Listing"}
-            </h3>
-            <p className="text-xs text-muted-foreground">Variants, agro specifications, tab descriptions & SEO suite</p>
+            </h1>
+            <p className="text-[11px] text-muted-foreground hidden sm:block">
+              Variants, agro specifications, tab descriptions & SEO suite
+            </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-accent text-muted-foreground"><X className="size-4" /></button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 rounded-2xl border border-border bg-muted/40 p-1.5 mt-4 shrink-0 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {[
-            { id: "general", label: "1. Info" },
-            { id: "variants", label: "2. Variants" },
-            { id: "gallery", label: "3. Product Video" },
-            { id: "specs", label: "4. Agro Specs & Tabs" },
-            { id: "seo", label: "5. SEO" },
-            { id: "toggles", label: "6. Toggles" }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 min-w-max px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all text-center whitespace-nowrap select-none ${activeTab === tab.id
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-semibold h-9 px-3.5 cursor-pointer">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveSubmit}
+            disabled={!formData.name || !formData.sku}
+            className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-sm h-9 px-4 cursor-pointer"
+          >
+            <Save className="size-4" /> Save Product Listing
+          </Button>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="w-full border-b border-border bg-muted/40 px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {[
+          { id: "general", label: "1. Info" },
+          { id: "variants", label: "2. Variants" },
+          { id: "gallery", label: "3. Product Video" },
+          { id: "specs", label: "4. Agro Specs & Tabs" },
+          { id: "seo", label: "5. SEO" },
+          { id: "toggles", label: "6. Toggles" }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap select-none ${
+              activeTab === tab.id
                 ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm border border-border/80 font-extrabold"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto py-5 space-y-4 pr-1 scrollbar-thin">
+      {/* Page Form Body */}
+      <div className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
           {/* TAB 1: General Info */}
           {activeTab === "general" && (
             <div className="space-y-4">
@@ -2648,101 +2789,20 @@ function ProductFormModal({
                 />
               </div>
             </div>
-          )}
-        </div>
+          )}      </div>
 
-        {/* Footer */}
-        <div className="pt-4 border-t border-border flex items-center justify-between shrink-0">
-          <Button variant="outline" onClick={onClose} className="rounded-2xl text-xs font-semibold">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              // Compile custom specifications dictionary
-              const compiledSpecs: Record<string, string> = {
-                "Active Organism": formData.activeOrganism || formData.name,
-                "Targeted Diseases / Pests": formData.targetDiseases || "Broad Spectrum Crop Protection",
-                "Compatibility": formData.compatibility || "Compatible with biofertilizers & organic manures",
-                "Shelf Life": formData.shelfLife || "18–24 Months",
-                "Dosage": formData.dosage || "2–3 ml / Litre",
-                "Formulation": formData.unit?.toLowerCase().includes("l") || formData.unit?.toLowerCase().includes("ml") ? "Liquid Biological Formulation" : "Granular / Water Soluble Inoculant"
-              };
-              formData.customSpecs.forEach((s) => {
-                if (s.key.trim() && s.value.trim()) {
-                  compiledSpecs[s.key.trim()] = s.value.trim();
-                }
-              });
-
-              const cleanVariants = (Array.isArray(formData.variants) ? formData.variants : []).map((v: any, idx: number) => {
-                const p = Number(v.price) || Number(formData.price) || (initialData?.price ? Number(initialData.price) : 450);
-                const op = Number(v.originalPrice ?? v.oldPrice) || Math.round(p * 1.2);
-                const st = v.stock !== undefined ? Number(v.stock) : (Number(formData.warehouseStock) || 50);
-                const n = v.name || v.label || v.unit || `Variant ${idx + 1}`;
-                const u = v.unit || v.name || v.label || formData.unit || "1 L";
-                const img = v.image && typeof v.image === "string" && v.image.trim() ? v.image.trim() : "";
-                return {
-                  id: String(v.id || `VAR-${Date.now()}-${idx + 1}`),
-                  name: n,
-                  label: n,
-                  unit: u,
-                  sku: v.sku || `${formData.sku || "JAP"}-${idx + 1}`,
-                  price: p,
-                  originalPrice: op,
-                  oldPrice: op,
-                  stock: st,
-                  inStock: st > 0,
-                  image: img
-                };
-              });
-
-              const primaryPrice = cleanVariants[0]?.price || Number(formData.price) || (initialData?.price ? Number(initialData.price) : 450);
-              const primaryOriginalPrice = cleanVariants[0]?.originalPrice || cleanVariants[0]?.oldPrice || Number(formData.originalPrice) || Math.round(primaryPrice * 1.2);
-              const primaryUnit = cleanVariants[0]?.unit || formData.unit || (initialData?.unit || "1 L");
-              const primaryStock = cleanVariants.length > 0
-                ? cleanVariants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
-                : (Number(formData.warehouseStock) || (initialData?.stock ? Number(initialData.stock) : 100));
-
-              const variantImages = cleanVariants.map((v: any) => v.image).filter(Boolean);
-              const primaryImage = cleanVariants[0]?.image || formData.image || (initialData?.image ? String(initialData.image).trim() : "/products/harit.jpg");
-              const galleryImages = variantImages.length > 0 ? variantImages : (Array.isArray(formData.gallery) && formData.gallery.length > 0 ? formData.gallery : [primaryImage]);
-
-              const payload = {
-                ...formData,
-                image: primaryImage,
-                gallery: galleryImages,
-                price: primaryPrice,
-                originalPrice: primaryOriginalPrice,
-                oldPrice: primaryOriginalPrice,
-                old_price: primaryOriginalPrice,
-                unit: primaryUnit,
-                stock: primaryStock,
-                warehouseStock: primaryStock,
-                videoUrl: formData.videoUrl || "",
-                video_url: formData.videoUrl || "",
-                variants: cleanVariants,
-                rating: Number(formData.rating) || 4.8,
-                reviewsCount: Number(formData.reviewsCount) || 53,
-                reviews: Number(formData.reviewsCount) || 53,
-                subtitle: formData.subtitle,
-                benefits: formData.benefits ? formData.benefits.split("\n").map((b: string) => b.trim()).filter(Boolean) : undefined,
-                dosage: formData.dosage,
-                methodOfApplication: formData.methodOfApplication,
-                recommendedCrops: formData.recommendedCrops,
-                crops: formData.recommendedCrops ? formData.recommendedCrops.split(",").map((c: string) => c.trim()).filter(Boolean) : undefined,
-                targetDiseases: formData.targetDiseases,
-                compatibility: formData.compatibility,
-                storageNotice: formData.storageNotice,
-                specifications: compiledSpecs,
-                faqs: formData.faqs.filter((f) => f.q.trim() && f.a.trim())
-              };
-              onSave(payload);
-            }}
-            disabled={!formData.name || !formData.sku}
-            className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow"
-          >
-            <Save className="size-4" /> Save Product Listing
-          </Button>
-        </div>
+      {/* Bottom Sticky Action Footer */}
+      <div className="w-full border-t border-border bg-card px-4 sm:px-6 py-3.5 flex items-center justify-between mt-auto">
+        <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-semibold h-9 px-4 cursor-pointer">
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSaveSubmit}
+          disabled={!formData.name || !formData.sku}
+          className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-sm h-9 px-4 cursor-pointer"
+        >
+          <Save className="size-4" /> Save Product Listing
+        </Button>
       </div>
     </div>
   );

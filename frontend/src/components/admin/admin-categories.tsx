@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   FolderTree,
+  ArrowLeft,
   Plus,
   Search,
   Filter,
@@ -440,6 +441,48 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
     return p ? p.name : parentId;
   };
 
+  if (isFormModalOpen) {
+    return (
+      <CategoryFormView
+        initialData={editingCategory}
+        allCategories={categories}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setEditingCategory(null);
+        }}
+        onSave={async (formData) => {
+          try {
+            if (editingCategory) {
+              const res = await updateAdminCategory(editingCategory.id, formData);
+              if (res?.success === false) {
+                toast.error(res?.message || `Failed to update category "${formData.name}"`);
+                return;
+              }
+              const updatedData = res?.data || { ...editingCategory, ...formData };
+              setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? updatedData : c)));
+              toast.success(res?.message || `Category "${formData.name}" updated successfully`);
+            } else {
+              const res = await createAdminCategory(formData);
+              if (res?.success === false) {
+                toast.error(res?.message || `Failed to create category "${formData.name}"`);
+                return;
+              }
+              const createdData = res?.data || formData;
+              setCategories((prev) => [createdData, ...prev.filter((c) => c.id !== createdData.id)]);
+              toast.success(res?.message || `Category "${formData.name}" created successfully`);
+            }
+            await loadCategories();
+            setIsFormModalOpen(false);
+            setEditingCategory(null);
+          } catch (err: any) {
+            console.error("Save category error:", err);
+            toast.error(err?.message || "Failed to save category to database");
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card">
 
@@ -687,45 +730,7 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
         />
       )}
 
-      {/* Add / Edit Category Modal */}
-      <CategoryFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => {
-          setIsFormModalOpen(false);
-          setEditingCategory(null);
-        }}
-        initialData={editingCategory}
-        allCategories={categories}
-        onSave={async (formData) => {
-          try {
-            if (editingCategory) {
-              const res = await updateAdminCategory(editingCategory.id, formData);
-              if (res?.success === false) {
-                toast.error(res?.message || `Failed to update category "${formData.name}"`);
-                return;
-              }
-              const updatedData = res?.data || { ...editingCategory, ...formData };
-              setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? updatedData : c)));
-              toast.success(res?.message || `Category "${formData.name}" updated successfully`);
-            } else {
-              const res = await createAdminCategory(formData);
-              if (res?.success === false) {
-                toast.error(res?.message || `Failed to create category "${formData.name}"`);
-                return;
-              }
-              const createdData = res?.data || formData;
-              setCategories((prev) => [createdData, ...prev.filter((c) => c.id !== createdData.id)]);
-              toast.success(res?.message || `Category "${formData.name}" created successfully`);
-            }
-            await loadCategories();
-            setIsFormModalOpen(false);
-            setEditingCategory(null);
-          } catch (err: any) {
-            console.error("Save category error:", err);
-            toast.error(err?.message || "Failed to save category to database");
-          }
-        }}
-      />
+
 
       {/* Import CSV Modal */}
       <CategoryImportModal
@@ -1061,7 +1066,7 @@ function CategoryViewModal({
   );
 }
 
-function CategoryFormModal({
+function CategoryFormView({
   isOpen,
   onClose,
   initialData,
@@ -1193,8 +1198,6 @@ function CategoryFormModal({
     }));
   };
 
-  if (!isOpen) return null;
-
   // Filter possible parents based on selected level
   const parentCandidates = allCategories.filter((c) => {
     if (formData.level === "sub") return c.level === "root";
@@ -1203,41 +1206,67 @@ function CategoryFormModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-2xl rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-2xl max-h-[92vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-border shrink-0">
+    <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card animate-in fade-in">
+      {/* Top Page Header Bar */}
+      <div className="w-full bg-card border-b border-border px-4 sm:px-6 py-3.5 sm:py-4 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-1.5 px-2.5 rounded-xl border border-border hover:bg-muted"
+          >
+            <ArrowLeft className="size-4" />
+            <span>Back to Categories</span>
+          </button>
           <div>
-            <h3 className="text-lg font-bold text-foreground">
+            <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
               {initialData ? `Edit Category: ${initialData.name}` : "Create New Category"}
-            </h3>
-            <p className="text-xs text-muted-foreground">3-Tier Hierarchy, SEO tags, and Category Image</p>
+            </h1>
+            <p className="text-[11px] text-muted-foreground hidden sm:block">
+              3-Tier Hierarchy, SEO tags, and Category Image
+            </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-accent text-muted-foreground"><X className="size-4" /></button>
         </div>
 
-        {/* Modal Tabs */}
-        <div className="flex rounded-2xl border border-border bg-muted/40 p-1 mt-4 text-xs font-bold shrink-0">
-          {[
-            { id: "general", label: "1. General & Hierarchy" },
-            { id: "media", label: "2. Category Image" },
-            { id: "seo", label: "3. SEO & Meta Tags" },
-            { id: "settings", label: "4. Storefront Toggles" }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 rounded-xl py-2 transition-colors text-center ${
-                activeTab === tab.id ? "bg-card text-foreground shadow-sm font-extrabold text-emerald-700 dark:text-emerald-400" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-semibold h-9 px-3.5 cursor-pointer">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => onSave(formData)}
+            disabled={!formData.name}
+            className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-sm h-9 px-4 cursor-pointer"
+          >
+            <Save className="size-4" /> Save Category
+          </Button>
         </div>
+      </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto py-5 space-y-4 pr-1 scrollbar-thin">
+      {/* Tab Navigation */}
+      <div className="w-full border-b border-border bg-muted/40 px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {[
+          { id: "general", label: "1. General & Hierarchy" },
+          { id: "media", label: "2. Category Image" },
+          { id: "seo", label: "3. SEO & Meta Tags" },
+          { id: "settings", label: "4. Storefront Toggles" }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap select-none ${
+              activeTab === tab.id
+                ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm border border-border/80 font-extrabold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Page Form Body */}
+      <div className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
           {/* TAB 1: General Info */}
           {activeTab === "general" && (
             <div className="space-y-4">
@@ -1508,22 +1537,20 @@ function CategoryFormModal({
               </div>
             </div>
           )}
-        </div>
+      </div>
 
-        {/* Modal Footer */}
-        <div className="pt-4 border-t border-border flex items-center justify-between shrink-0">
-          <Button variant="outline" onClick={onClose} className="rounded-2xl text-xs font-semibold">
-            Cancel
-          </Button>
-
-          <Button
-            onClick={() => onSave(formData)}
-            disabled={!formData.name}
-            className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-md"
-          >
-            <Save className="size-4" /> Save Category
-          </Button>
-        </div>
+      {/* Bottom Sticky Action Footer */}
+      <div className="w-full border-t border-border bg-card px-4 sm:px-6 py-3.5 flex items-center justify-between mt-auto">
+        <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-semibold h-9 px-4 cursor-pointer">
+          Cancel
+        </Button>
+        <Button
+          onClick={() => onSave(formData)}
+          disabled={!formData.name}
+          className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-sm h-9 px-4 cursor-pointer"
+        >
+          <Save className="size-4" /> Save Category
+        </Button>
       </div>
     </div>
   );
