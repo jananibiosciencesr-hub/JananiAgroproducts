@@ -43,7 +43,6 @@ export const SEARCHABLE_NAV_MODULES: Array<{
     { id: "inventory", title: "Inventory & Restock", desc: "Warehouse stock levels & alerts", keywords: ["inventory", "stock", "restock", "warehouse", "threshold", "units"], icon: AlertTriangle },
     { id: "payments", title: "Payments & Settlements", desc: "Razorpay, UPI & transaction records", keywords: ["payments", "transactions", "razorpay", "upi", "settlements", "gateway"], icon: CheckCircle2 },
     { id: "coupons", title: "Coupons & Discounts", desc: "Promo codes & cart percentage offers", keywords: ["coupons", "discounts", "offers", "promo", "voucher"], icon: Sparkles },
-    { id: "shipping", title: "Shipping & Logistics", desc: "Shiprocket AWBs & courier dispatches", keywords: ["shipping", "shiprocket", "courier", "awb", "bluedart", "delhivery"], icon: ExternalLink },
     { id: "reviews", title: "Customer Reviews", desc: "Testimonials & organic harvest ratings", keywords: ["reviews", "review", "ratings", "feedback", "testimonials", "stars"], icon: Sparkles },
     { id: "returns", title: "Returns & Refunds", desc: "Return requests, replacements & refunds", keywords: ["returns", "return", "refunds", "refund", "replacement"], icon: AlertTriangle },
     { id: "reports", title: "Reports & Financials", desc: "Sales trends, revenue velocity & GST", keywords: ["reports", "report", "revenue", "analytics", "gst", "financial", "velocity", "today revenue", "monthly revenue"], icon: TrendingUp },

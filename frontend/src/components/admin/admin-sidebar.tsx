@@ -76,7 +76,6 @@ const menuItems: Array<{
   { id: "inventory", label: "Inventory", icon: Warehouse, badgeKey: "inventory", badgeColor: "bg-amber-500", group: "Operations" },
   { id: "payments", label: "Payments", icon: CreditCard, group: "Operations" },
   { id: "coupons", label: "Coupons", icon: TicketPercent, group: "Marketing" },
-  { id: "shipping", label: "Shipping (Shiprocket)", icon: Truck, group: "Operations" },
   { id: "reviews", label: "Reviews", icon: Star, badgeKey: "reviews", badgeColor: "bg-blue-500", group: "Customer" },
   { id: "cms", label: "Banners & CMS", icon: ImageIcon, group: "Storefront" },
 ];
