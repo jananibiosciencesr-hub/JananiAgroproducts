@@ -913,23 +913,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
           </table>
         </div>
 
-        {/* Footer info */}
-        <div className="p-3.5 border-t border-border flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-2">
-          <span>
-            Showing <strong className="text-foreground">{orders.length}</strong> orders (Filtered from total {stats.total || orders.length})
-          </span>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500"></span> Delivered / Paid
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-blue-500"></span> In Transit
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-amber-500"></span> Pending Dispatch
-            </span>
-          </div>
-        </div>
+
       </div>
 
       {/* 5. 360° Order Detail Drawer */}
