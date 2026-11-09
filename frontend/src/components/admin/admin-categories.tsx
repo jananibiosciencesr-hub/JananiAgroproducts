@@ -22,10 +22,13 @@ import {
   GripVertical,
   Globe,
   ImageIcon,
+  Eye,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
+  getAdminProducts,
   getAdminFullCategories,
   createAdminCategory,
   updateAdminCategory,
@@ -68,11 +71,27 @@ export interface CategoryItem {
 export interface CategoriesManagementProps {
   searchQuery?: string;
   addTrigger?: number;
+  products?: any[];
 }
 
-export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesManagementProps = {}) {
+export function CategoriesManagement({ searchQuery, addTrigger, products: propProducts }: CategoriesManagementProps = {}) {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingCategory, setViewingCategory] = useState<CategoryItem | null>(null);
+  const [loadedProducts, setLoadedProducts] = useState<any[]>([]);
+  const liveProducts = (propProducts && propProducts.length > 0) ? propProducts : loadedProducts;
+
+  useEffect(() => {
+    if (!propProducts || propProducts.length === 0) {
+      getAdminProducts({ limit: 200 }).then((res: any) => {
+        if (res?.success && Array.isArray(res.data?.products)) {
+          setLoadedProducts(res.data.products);
+        } else if (Array.isArray(res?.data)) {
+          setLoadedProducts(res.data);
+        }
+      }).catch(() => {});
+    }
+  }, [propProducts]);
 
   // Filters & State
   const [search, setSearch] = useState("");
@@ -583,6 +602,13 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
                         ) : (
                           <>
                             <button
+                              onClick={() => setViewingCategory(cat)}
+                              className="p-1.5 rounded-xl hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-600 transition-colors"
+                              title="View Category Details & Products"
+                            >
+                              <Eye className="size-4" />
+                            </button>
+                            <button
                               onClick={() => {
                                 setEditingCategory(cat);
                                 setIsFormModalOpen(true);
@@ -621,6 +647,20 @@ export function CategoriesManagement({ searchQuery, addTrigger }: CategoriesMana
 
 
       </div>
+
+      {/* View Category Details & Products Modal */}
+      {viewingCategory && (
+        <CategoryViewModal
+          category={viewingCategory}
+          allCategories={categories}
+          allProducts={liveProducts}
+          onClose={() => setViewingCategory(null)}
+          onEdit={(cat) => {
+            setEditingCategory(cat);
+            setIsFormModalOpen(true);
+          }}
+        />
+      )}
 
       {/* Add / Edit Category Modal */}
       <CategoryFormModal
@@ -713,6 +753,287 @@ function processCategoryMediaFile(file: File, maxWidth = 1200, maxHeight = 800):
     reader.onerror = () => resolve("");
     reader.readAsDataURL(file);
   });
+}
+
+
+function CategoryViewModal({
+  category,
+  allCategories,
+  allProducts,
+  onClose,
+  onEdit,
+}: {
+  category: CategoryItem | null;
+  allCategories: CategoryItem[];
+  allProducts: any[];
+  onClose: () => void;
+  onEdit: (cat: CategoryItem) => void;
+}) {
+  if (!category) return null;
+
+  const cName = String(category.name || "").trim().toLowerCase();
+  const cSlug = String(category.slug || "").trim().toLowerCase();
+  const cId = String(category.id || "").trim().toLowerCase();
+
+  const matchingProducts = allProducts.filter((p) => {
+    if (!p) return false;
+    const pCatName = String(typeof p.category === "object" ? p.category?.name : (p.category || p.category_name || p.categoryName || "")).trim().toLowerCase();
+    const pCatSlug = String(typeof p.category === "object" ? p.category?.slug : (p.category_slug || p.categorySlug || "")).trim().toLowerCase();
+    const pCatId = String(typeof p.category === "object" ? p.category?.id : (p.category_id || p.categoryId || "")).trim().toLowerCase();
+
+    return (
+      (cId && pCatId === cId) ||
+      (cSlug && pCatSlug === cSlug) ||
+      (cName && pCatName === cName) ||
+      (cSlug && pCatName.replace(/[\s-_]+/g, "") === cSlug.replace(/[\s-_]+/g, "")) ||
+      (cName && pCatSlug.replace(/[\s-_]+/g, "") === cName.replace(/[\s-_]+/g, ""))
+    );
+  });
+
+  const parentName = category.parentId
+    ? allCategories.find((c) => c.id === category.parentId)?.name || "Root"
+    : "Root Tier 1";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-3xl bg-card border border-border/80 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+        {/* Header Banner & Title */}
+        <div className="relative p-5 sm:p-6 border-b border-border/70 bg-gradient-to-r from-emerald-500/10 via-emerald-600/5 to-transparent flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="size-14 rounded-2xl bg-muted/90 border border-border/80 overflow-hidden flex items-center justify-center font-bold text-2xl shrink-0 shadow-sm">
+              {category.image && (category.image.startsWith("http") || category.image.startsWith("data:") || category.image.startsWith("/")) ? (
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  className="size-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
+                  }}
+                />
+              ) : (
+                category.icon || "🌾"
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight truncate">
+                  {category.name}
+                </h2>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                    category.active
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <span className={`size-1.5 rounded-full ${category.active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                  {category.active ? "Active" : "Inactive"}
+                </span>
+                {category.featured && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] font-bold">
+                    <Star className="size-3 fill-amber-500" /> Featured
+                  </span>
+                )}
+                {category.trending && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-400 px-2 py-0.5 text-[10px] font-bold">
+                    <Flame className="size-3 fill-rose-500" /> Trending
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2.5 text-xs text-muted-foreground mt-1 flex-wrap">
+                <span className="font-mono text-emerald-600 font-semibold">/{category.slug}</span>
+                <span>•</span>
+                <span className="capitalize">{category.level === "root" ? "Root Tier 1" : category.level === "sub" ? "Sub Tier 2" : "Child Tier 3"}</span>
+                {category.parentId && <span>(Parent: {parentName})</span>}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="size-8 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center shrink-0 transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Modal Scroll Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+          {/* Category Overview Card */}
+          <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <FolderTree className="size-3.5 text-emerald-600" /> Category Overview
+            </h3>
+            <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
+              {category.description || "No description provided for this agricultural input category."}
+            </p>
+            <div className="flex items-center gap-4 pt-2 border-t border-border/60 text-xs text-muted-foreground flex-wrap">
+              <div>
+                <span className="text-[11px] block text-muted-foreground/80 font-medium">Associated Products</span>
+                <strong className="text-sm font-extrabold text-foreground">{matchingProducts.length} items</strong>
+              </div>
+              <div>
+                <span className="text-[11px] block text-muted-foreground/80 font-medium">Display Hierarchy</span>
+                <strong className="text-xs font-bold text-foreground capitalize">{category.level || "Root"}</strong>
+              </div>
+              <div>
+                <span className="text-[11px] block text-muted-foreground/80 font-medium">Storefront URL</span>
+                <a
+                  href={`/categories/${category.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                >
+                  View on Store <ExternalLink className="size-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Products in this category */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Package className="size-3.5 text-blue-600" /> Products in this Category ({matchingProducts.length})
+              </h3>
+              {matchingProducts.length > 0 && (
+                <span className="text-[11px] text-muted-foreground">Showing all {matchingProducts.length} items</span>
+              )}
+            </div>
+
+            {matchingProducts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+                {matchingProducts.map((prod: any, pIdx: number) => {
+                  const pImg = prod.thumbnail || prod.image || (Array.isArray(prod.images) ? prod.images[0] : null) || "/images/products/harit.jpg";
+                  const pPrice = Number(prod.price || prod.sellingPrice || prod.regularPrice || 0);
+                  const pOriginalPrice = Number(prod.originalPrice || prod.regularPrice || prod.mrp || 0);
+                  const pStock = Number(prod.stock ?? prod.warehouseStock ?? 50);
+
+                  return (
+                    <div
+                      key={prod.id || pIdx}
+                      className="flex items-center gap-3 p-3 rounded-2xl border border-border/80 bg-card hover:border-emerald-500/40 hover:shadow-sm transition-all"
+                    >
+                      <div className="size-13 rounded-xl bg-muted/60 border border-border/60 overflow-hidden flex items-center justify-center shrink-0">
+                        <img
+                          src={pImg}
+                          alt={prod.name || prod.title}
+                          className="size-full object-contain p-1"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "/images/products/harit.jpg";
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-foreground truncate" title={prod.name || prod.title}>
+                          {prod.name || prod.title}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">
+                            ₹{pPrice.toLocaleString("en-IN")}
+                          </span>
+                          {pOriginalPrice > pPrice && (
+                            <span className="text-[10px] text-muted-foreground line-through">
+                              ₹{pOriginalPrice.toLocaleString("en-IN")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 text-[10px]">
+                          <span
+                            className={`inline-flex items-center rounded-full px-1.5 py-0.2 font-bold ${
+                              pStock > 10
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                                : pStock > 0
+                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                : "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                            }`}
+                          >
+                            {pStock > 0 ? `${pStock} in stock` : "Out of stock"}
+                          </span>
+                          {prod.sku && (
+                            <span className="text-muted-foreground truncate font-mono">SKU: {prod.sku}</span>
+                          )}
+                        </div>
+                      </div>
+                      {prod.slug && (
+                        <a
+                          href={`/products/${prod.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 transition-colors shrink-0"
+                          title="View Product Page"
+                        >
+                          <ExternalLink className="size-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border/80 p-6 text-center bg-muted/10">
+                <Package className="size-8 text-muted-foreground/40 mx-auto mb-2" />
+                <p className="text-xs font-bold text-foreground">No Products in this Category</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Products assigned to '{category.name}' will automatically appear here.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* SEO & Meta Tags Card */}
+          <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-2.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Globe className="size-3.5 text-indigo-600" /> SEO & Search Engine Optimization
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">Meta Title</span>
+                <p className="font-semibold text-foreground truncate mt-0.5">
+                  {category.seo?.metaTitle || `${category.name} - Janani Agro Products`}
+                </p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">Canonical URL</span>
+                <p className="font-mono text-[11px] text-emerald-600 truncate mt-0.5">
+                  {category.seo?.canonicalUrl || `https://jananiagroproducts.com/categories/${category.slug}`}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">Meta Description</span>
+                <p className="text-xs text-foreground/80 mt-0.5 line-clamp-2">
+                  {category.seo?.metaDescription || category.description || "Discover high-yield biological agro inputs and organic solutions at Janani Agro."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="rounded-xl text-xs font-semibold h-9"
+          >
+            Close
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => {
+              onClose();
+              onEdit(category);
+            }}
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold h-9 gap-1.5 shadow-sm"
+          >
+            <Edit className="size-3.5" /> Edit Category & SEO
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function CategoryFormModal({

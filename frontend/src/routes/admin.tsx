@@ -856,6 +856,7 @@ function AdminDashboardPage() {
             <CategoriesManagement
               searchQuery={adminSearch}
               addTrigger={addTriggerTab?.tab === "categories" ? addTriggerTab.timestamp : 0}
+              products={products}
             />
           )}
 
