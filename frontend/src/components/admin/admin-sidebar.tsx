@@ -1,4 +1,5 @@
 import React from "react";
+import jananiEmblem from "@/assets/janani-emblem.png";
 import {
   LayoutDashboard,
   FolderTree,
@@ -14,7 +15,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Leaf,
   Sparkles,
   ExternalLink,
   MessageSquareText
@@ -124,8 +124,12 @@ export function AdminSidebar({
         {/* Brand Header */}
         <div className="flex h-16 sm:h-18 items-center justify-between px-3 border-b border-border/80">
           <Link to="/" className="flex items-center gap-3 overflow-hidden">
-            <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/20">
-              <Leaf className="size-5 text-amber-300" />
+            <div className="relative shrink-0 size-9 sm:size-10 flex items-center justify-center">
+              <img
+                src={jananiEmblem}
+                alt="Janani Agro"
+                className="size-full object-contain drop-shadow-[0_2px_8px_rgba(7,91,50,0.2)] transition-transform duration-300 group-hover:scale-105"
+              />
             </div>
             {!collapsed && (
               <div className="flex flex-col min-w-0">
