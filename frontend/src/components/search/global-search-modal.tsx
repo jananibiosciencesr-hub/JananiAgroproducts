@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, X, ArrowRight } from "lucide-react";
-import { products, type Product, getProductImage, pantryImage } from "@/lib/catalog";
+import { products, type Product, getProductImage } from "@/lib/catalog";
 import { matchesProductSearch, calculateProductRelevance } from "@/lib/search-helper";
 import { useStore } from "@/components/store-provider";
 
@@ -9,15 +9,6 @@ interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const popularSearches = [
-  "Bio Fertilizers",
-  "Bio Pesticides",
-  "Neem Oil",
-  "Bio Stimulants",
-  "Bhumi Shakti",
-  "Harit",
-];
 
 export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
   const navigate = useNavigate();
@@ -86,7 +77,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Simple Clean Search Input Bar */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 bg-white">
+        <div className={`flex items-center gap-3 px-4 py-3 bg-white ${query.trim() ? "border-b border-slate-100" : ""}`}>
           <Search className="size-5 text-[#075B32] shrink-0" />
           <input
             ref={inputRef}
@@ -122,9 +113,8 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
         </div>
 
         {/* Search Content */}
-        <div className="max-h-[380px] overflow-y-auto p-3 scrollbar-thin">
-          {/* 1. Results when typing */}
-          {query.trim() ? (
+        {query.trim() ? (
+          <div className="max-h-[380px] overflow-y-auto p-3 scrollbar-thin">
             <div>
               {matchingProducts.length > 0 ? (
                 <div className="space-y-1">
@@ -187,30 +177,8 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                 </div>
               )}
             </div>
-          ) : (
-            /* 2. Simple clean state when empty */
-            <div className="py-3 px-2 space-y-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block px-1">
-                Popular Searches
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {popularSearches.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => {
-                      setQuery(item);
-                      handleExecuteSearch(item);
-                    }}
-                    className="rounded-full bg-slate-100 hover:bg-[#F0F7ED] hover:text-[#075B32] text-slate-600 px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

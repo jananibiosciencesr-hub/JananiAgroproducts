@@ -7,7 +7,6 @@ import {
   List,
   Search as SearchIcon,
   X,
-  Mic,
   Clock,
 Sparkles,
   Boxes,
@@ -216,47 +215,8 @@ function SearchPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 sm:pb-16">
-      {/* Global Smart Search Bar */}
-      <div className="mx-auto max-w-3xl">
-        <div className="relative">
-          <SearchIcon className="absolute left-5 top-4 size-5 text-brand-leaf" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveQuery(query);
-            }}
-            placeholder="Search by crop disease, bio-fertilizer, pesticide, or active organism (e.g. Harit, Bhumi Shakti)..."
-            className="h-14 w-full rounded-full border-2 border-primary/30 bg-card pl-14 pr-24 text-sm sm:text-base outline-none transition focus:border-primary shadow-soft text-foreground placeholder:text-muted-foreground font-medium"
-            autoFocus
-          />
-
-          <div className="absolute right-3 top-2.5 flex items-center gap-1">
-            {query && (
-              <button
-                onClick={() => setQuery("")}
-                className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition cursor-pointer"
-                title="Clear input"
-              >
-                <X className="size-4" />
-              </button>
-            )}
-
-            {/* Voice Search Button */}
-            <button
-              onClick={() => setIsVoiceOpen(true)}
-              className="size-9 rounded-full bg-primary/10 text-brand-leaf hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition shadow-xs cursor-pointer"
-              title="Voice Search"
-            >
-              <Mic className="size-4.5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content Area: Sidebar Filters & Results */}
-      <div className="mt-6 sm:mt-8 grid gap-6 sm:gap-8 lg:grid-cols-[260px_1fr] items-start">
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-[260px_1fr] items-start">
         {/* Desktop Filter Sidebar */}
         <aside className="space-y-6 rounded-3xl border border-border bg-card p-6 shadow-soft h-fit sticky-sidebar lg:sticky lg:top-24 self-start z-10" style={{ position: "sticky", top: "5.5rem", alignSelf: "flex-start" }}>
           <div className="flex items-center justify-between border-b border-border pb-3">

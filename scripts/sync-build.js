@@ -172,7 +172,12 @@ async function syncBuild() {
         for (const route of routes) {
           try {
             const req = new Request(`http://localhost${route.path}`);
-            const res = await serverModule.default.fetch(req);
+            let res = await serverModule.default.fetch(req);
+            if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
+              const loc = res.headers.get('location');
+              const targetUrl = loc.startsWith('http') ? loc : `http://localhost${loc}`;
+              res = await serverModule.default.fetch(new Request(targetUrl));
+            }
             if (res.ok) {
               const html = await res.text();
               if (route.destDir === null) {
