@@ -42,6 +42,11 @@ Options -Indexes
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
+  # 4b. CSS Stylesheet Fallback: If an outdated or cached page requests an old /assets/styles-*.css that does not exist,
+  # automatically rewrite it to the active fallback /assets/styles.css to prevent any unstyled page rendering
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^assets/styles-[a-zA-Z0-9_-]+\.css$ /assets/styles.css [L]
+
   # 5. Fix for /products route: The physical folder /products contains only images,
   # so any non-file request to /products or /products/ MUST load the SPA index.html
   RewriteCond %{REQUEST_FILENAME} !-f
