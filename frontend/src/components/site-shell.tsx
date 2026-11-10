@@ -289,7 +289,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               title="Wishlist"
             >
               <Heart className="size-4 sm:size-4.5" />
-              {wishlist.length > 0 && (
+              {Boolean(user) && wishlist.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 sm:h-4.5 sm:min-w-4.5 items-center justify-center rounded-full bg-[#E7A91A] px-1 text-[8.5px] sm:text-[9px] font-black text-[#075B32] shadow-xs ring-2 ring-white">
                   {wishlist.length}
                 </span>

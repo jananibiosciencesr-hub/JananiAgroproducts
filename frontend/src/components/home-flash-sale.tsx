@@ -38,7 +38,7 @@ export function HomeFlashSale({
   bannerTitle = "Seasonal Bio-Agro Flash Deals",
   bannerSubtitle = "Certified bio-fertilizers, bio-fungicides & plant stimulants fresh from our Lodhika GIDC facility.",
 }: FlashSaleProps) {
-  const { addToCart, wishlist, toggleWishlist, products: storeProducts } = useStore();
+  const { addToCart, wishlist, toggleWishlist, products: storeProducts, user } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
   // 12-Hour Live Countdown Timer
@@ -150,7 +150,7 @@ export function HomeFlashSale({
         {/* Flash Deals 4-Card Grid: 2 columns on mobile, 4 columns on desktop */}
         <div className="mt-6 sm:mt-8 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
           {flashDeals.map((item) => {
-            const isWishlisted = wishlist.includes(item.id);
+            const isWishlisted = Boolean(user) && wishlist.includes(item.id);
             const remaining = Math.max(1, item.totalStock - item.claimed);
             const progressPercent = Math.min(95, Math.max(65, Math.round((item.claimed / item.totalStock) * 100)));
 

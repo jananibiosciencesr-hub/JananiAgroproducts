@@ -117,10 +117,7 @@ export function WishlistPage() {
     if (typeof window !== "undefined") setShareUrl(window.location.href);
   }, []);
   const [notifiedItems, setNotifiedItems] = useState<Record<string | number, boolean>>({});
-  const [priceAlertActive, setPriceAlertActive] = useState<Record<string | number, boolean>>({
-    1: true, // Harit price alert active by default
-    2: true, // Bhumi Shakti
-  });
+  const [priceAlertActive, setPriceAlertActive] = useState<Record<string | number, boolean>>({});
 
   // Fetch product objects corresponding to wishlist IDs
   const rawSavedProducts = useMemo(() => {

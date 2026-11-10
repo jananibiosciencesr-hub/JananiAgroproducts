@@ -47,7 +47,7 @@ export function SavedProductsTab() {
       const s = String(id).toLowerCase().trim();
       return s !== "2124" && !s.includes("mortein");
     });
-    return cleanIds.length > 0 ? cleanIds : [1, 2];
+    return cleanIds;
   }, [wishlist, savedForLater]);
 
   // Resolve product items

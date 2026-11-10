@@ -52,7 +52,7 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
   const [quantity, setQuantity] = useState(1);
   const [selectedTab, setSelectedTab] = useState<"overview" | "nutrition" | "origin">("overview");
 
-  const isWishlisted = wishlist.includes(product.id);
+  const isWishlisted = Boolean(user) && wishlist.includes(product.id);
   const discountPercent = Math.round(
     ((selectedVariant.oldPrice - selectedVariant.price) / selectedVariant.oldPrice) * 100
   );

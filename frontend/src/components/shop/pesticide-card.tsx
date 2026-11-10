@@ -12,9 +12,9 @@ interface PesticideCardProps {
 }
 
 export function PesticideCard({ product }: PesticideCardProps) {
-  const { cart, addToCart, updateQuantity, removeFromCart, wishlist, toggleWishlist } = useStore();
+  const { cart, addToCart, updateQuantity, removeFromCart, wishlist, toggleWishlist, user } = useStore();
   const quantity = cart[product.catalogId] || 0;
-  const isWishlisted = wishlist.includes(product.catalogId);
+  const isWishlisted = Boolean(user) && wishlist.includes(product.catalogId);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();

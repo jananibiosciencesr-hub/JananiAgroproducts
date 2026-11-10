@@ -54,28 +54,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) { }
 
-    try {
-      const storedWishlist = localStorage.getItem("janani_wishlist");
-      if (storedWishlist) {
-        const parsedW = JSON.parse(storedWishlist);
-        if (Array.isArray(parsedW)) {
-          const hasCorrupt = parsedW.some((id: any) => String(id) === "2124" || String(id).toLowerCase().includes("mortein"));
-          const cleaned = parsedW.filter((id: any) => {
-            const s = String(id).toLowerCase().trim();
-            return s !== "2124" && !s.includes("mortein");
-          });
-          if (hasCorrupt) {
-            const restored = cleaned.length > 0 ? cleaned : [1, 2];
-            try { localStorage.setItem("janani_wishlist", JSON.stringify(restored)); } catch (e) {}
-            setWishlist(restored);
-          } else {
-            setWishlist(cleaned);
-          }
-        }
-      } else {
-        setWishlist([1, 2]);
-      }
-    } catch (e) { }
+// Wishlist is loaded only after verifying authenticated user below
 
     try {
       const storedCats = localStorage.getItem("janani_admin_categories") || localStorage.getItem("janani_admin_categories_v3");
@@ -114,6 +93,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       isWishlistHydratedRef.current = true;
     }, 100);
 
+    let activeUser: AuthUser | null = null;
     try {
       const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
 
@@ -135,6 +115,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               localStorage.setItem("janani_auth_user", JSON.stringify(parsed));
             } catch (e) { }
           }
+          activeUser = parsed;
           setUser(parsed);
         } else if (
           parsed?.email?.toLowerCase().includes("neha.patel") ||
@@ -151,6 +132,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) { } finally {
       isUserHydratedRef.current = true;
+    }
+
+    // Wishlist Authentication Enforcement:
+    // Unregistered / non-signed-in patrons MUST NOT have any wishlist items
+    if (!activeUser) {
+      setWishlist([]);
+      try { localStorage.removeItem("janani_wishlist"); } catch (e) {}
+    } else {
+      try {
+        const storedWishlist = localStorage.getItem("janani_wishlist");
+        if (storedWishlist) {
+          const parsedW = JSON.parse(storedWishlist);
+          if (Array.isArray(parsedW)) {
+            const cleaned = parsedW.filter((id: any) => {
+              const s = String(id).toLowerCase().trim();
+              return s !== "2124" && !s.includes("mortein") && s !== "112" && s !== "root-plus";
+            });
+            setWishlist(cleaned);
+          } else {
+            setWishlist([]);
+          }
+        } else {
+          setWishlist([]);
+        }
+      } catch (e) {
+        setWishlist([]);
+      }
     }
   }, []);
 
@@ -369,7 +377,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 const s = String(item).toLowerCase().trim();
                 return s !== "2124" && !s.includes("mortein");
               });
-            const finalW = combined.length > 0 ? combined : [1, 2];
+            const finalW = combined;
             try { localStorage.setItem("janani_wishlist", JSON.stringify(finalW)); } catch (e) {}
             return finalW;
           });
@@ -462,13 +470,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [cart]);
 
-  // Sync wishlist to localStorage (never overwrite before hydration)
+  // Sync wishlist to localStorage (only for authenticated patrons; guest wishlist is purged)
   useEffect(() => {
     if (!isWishlistHydratedRef.current) return;
     if (typeof window !== "undefined") {
-      localStorage.setItem("janani_wishlist", JSON.stringify(wishlist));
+      if (user) {
+        localStorage.setItem("janani_wishlist", JSON.stringify(wishlist));
+      } else {
+        localStorage.removeItem("janani_wishlist");
+        if (wishlist.length > 0) {
+          setWishlist([]);
+        }
+      }
     }
-  }, [wishlist]);
+  }, [wishlist, user]);
 
   // Auto-sync & auto-create database tables/columns in the background
   useEffect(() => {

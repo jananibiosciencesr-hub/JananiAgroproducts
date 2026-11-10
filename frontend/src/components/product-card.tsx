@@ -13,7 +13,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, list = false, onQuickView }: ProductCardProps) {
-  const { cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, products: storeProducts } = useStore();
+  const { cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, products: storeProducts, user } = useStore();
 
   const variants = useMemo(() => resolveProductVariants(product), [product]);
 
@@ -93,7 +93,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
     return count;
   }, [cart, canonicalKey, product, variantNormId, storeProducts]);
 
-  const isWishlisted = wishlist.some((item) => String(item) === String(product.id) || Number(item) === Number(product.id));
+  const isWishlisted = Boolean(user) && wishlist.some((item) => String(item) === String(product.id) || Number(item) === Number(product.id));
 
   const currentPrice = Number(selectedVariant.price) || Number(product.price) || 0;
   const currentOldPrice =
