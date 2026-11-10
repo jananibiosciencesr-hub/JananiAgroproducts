@@ -83,7 +83,8 @@ export function HomePage() {
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
   const scrollCategories = (direction: "left" | "right") => {
     if (categoriesScrollRef.current) {
-      const offset = direction === "left" ? -300 : 300;
+      const scrollAmount = categoriesScrollRef.current.clientWidth || 320;
+      const offset = direction === "left" ? -scrollAmount : scrollAmount;
       categoriesScrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
     }
   };
@@ -342,8 +343,28 @@ export function HomePage() {
               </p>
             </div>
 
-            {/* Top-Right Controls: View All Categories Button */}
+            {/* Top-Right Controls: Mobile Arrows & View All Categories Button */}
             <div className="flex items-center gap-2 sm:gap-3 self-start sm:self-auto">
+              {/* Mobile Carousel Navigation Arrows */}
+              <div className="flex items-center gap-1.5 sm:hidden">
+                <button
+                  type="button"
+                  onClick={() => scrollCategories("left")}
+                  aria-label="Previous Categories"
+                  className="size-8 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollCategories("right")}
+                  aria-label="Next Categories"
+                  className="size-8 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+
               {/* View All Categories Link Button */}
               <Button
                 asChild
@@ -380,32 +401,32 @@ export function HomePage() {
               <ChevronRight className="size-5" />
             </button>
 
-            {/* Scrollable Container */}
+            {/* Scrollable Container: exactly 2 cards visible per row on mobile */}
             <div
               ref={categoriesScrollRef}
-              className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 px-2 scrollbar-none snap-x snap-mandatory"
+              className="flex items-stretch gap-2.5 sm:gap-6 overflow-x-auto pb-4 pt-2 px-1 sm:px-2 scrollbar-none snap-x snap-mandatory"
             >
               {categoryCards.map((cat) => (
                 <Link
                   key={cat.id}
                   to={cat.link}
-                  className="snap-start flex-none w-[170px] sm:w-[195px] flex flex-col items-center text-center p-4 sm:p-5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 group"
+                  className="snap-start flex-none w-[calc(50%-5px)] max-w-[calc(50%-5px)] sm:w-[195px] sm:max-w-none flex flex-col items-center text-center p-3 sm:p-5 rounded-2xl bg-[#f4f7f2] hover:bg-[#ebf3e7] transition-all duration-300 group"
                 >
-                  <div className="size-20 sm:size-24 rounded-full overflow-hidden mb-3.5 shadow-sm border border-emerald-100/80 bg-white group-hover:border-[#4FAE2A]/50 group-hover:shadow-md transition-all duration-300 relative">
+                  <div className="size-20 sm:size-24 rounded-full overflow-hidden mb-2.5 sm:mb-3.5 shadow-sm border border-emerald-100/80 bg-white group-hover:border-[#4FAE2A]/50 group-hover:shadow-md transition-all duration-300 relative">
                     <img
                       src={cat.image}
                       alt={cat.title}
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = "/images/categories/bio-fertilizers.jpg";
                       }}
-                      className="w-full h-full object-cover transition-transform duration-500 group-"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
                   </div>
                   <h3 className="text-xs sm:text-sm font-bold text-[#075B32] group-hover:text-[#4FAE2A] transition-colors line-clamp-1">
                     {cat.title}
                   </h3>
-                  <span className="text-[11px] font-semibold text-[#0B6B35] mt-1 block">
+                  <span className="text-[11px] font-semibold text-[#0B6B35] mt-0.5 sm:mt-1 block">
                     {cat.count} formulations
                   </span>
                 </Link>
