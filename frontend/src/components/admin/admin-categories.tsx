@@ -793,44 +793,31 @@ function CategoryViewModal({
   onClose,
   onEdit,
 }: {
-  category: CategoryItem | null;
-  allCategories: CategoryItem[];
+  category: Category;
+  allCategories: Category[];
   allProducts: any[];
   onClose: () => void;
-  onEdit: (cat: CategoryItem) => void;
+  onEdit: (cat: Category) => void;
 }) {
-  if (!category) return null;
-
-  const cName = String(category.name || "").trim().toLowerCase();
-  const cSlug = String(category.slug || "").trim().toLowerCase();
-  const cId = String(category.id || "").trim().toLowerCase();
-
+  // Find products belonging to this category
   const matchingProducts = allProducts.filter((p) => {
-    if (!p) return false;
-    const pCatName = String(typeof p.category === "object" ? p.category?.name : (p.category || p.category_name || p.categoryName || "")).trim().toLowerCase();
-    const pCatSlug = String(typeof p.category === "object" ? p.category?.slug : (p.category_slug || p.categorySlug || "")).trim().toLowerCase();
-    const pCatId = String(typeof p.category === "object" ? p.category?.id : (p.category_id || p.categoryId || "")).trim().toLowerCase();
-
+    const pCatId = typeof p.category === "object" ? p.category?.id : p.categoryId || p.category_id;
+    const pCatSlug = typeof p.category === "object" ? p.category?.slug : p.category;
+    const pCatName = typeof p.category === "object" ? p.category?.name : p.category;
     return (
-      (cId && pCatId === cId) ||
-      (cSlug && pCatSlug === cSlug) ||
-      (cName && pCatName === cName) ||
-      (cSlug && pCatName.replace(/[\s-_]+/g, "") === cSlug.replace(/[\s-_]+/g, "")) ||
-      (cName && pCatSlug.replace(/[\s-_]+/g, "") === cName.replace(/[\s-_]+/g, ""))
+      (pCatId && String(pCatId) === String(category.id)) ||
+      (pCatSlug && String(pCatSlug).toLowerCase() === String(category.slug).toLowerCase()) ||
+      (pCatName && String(pCatName).toLowerCase() === String(category.name).toLowerCase())
     );
   });
 
-  const parentName = category.parentId
-    ? allCategories.find((c) => c.id === category.parentId)?.name || "Root"
-    : "Root Tier 1";
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-3xl bg-card border border-border/80 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-card border border-border/80 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
         {/* Header Banner & Title */}
-        <div className="relative p-5 sm:p-6 border-b border-border/70 bg-gradient-to-r from-emerald-500/10 via-emerald-600/5 to-transparent flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="size-14 rounded-2xl bg-muted/90 border border-border/80 overflow-hidden flex items-center justify-center font-bold text-2xl shrink-0 shadow-sm">
+        <div className="relative px-5 py-3.5 border-b border-border/70 bg-gradient-to-r from-emerald-500/10 via-emerald-600/5 to-transparent flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-11 rounded-xl bg-muted/90 border border-border/80 overflow-hidden flex items-center justify-center font-bold text-xl shrink-0 shadow-sm">
               {category.image && (category.image.startsWith("http") || category.image.startsWith("data:") || category.image.startsWith("/")) ? (
                 <img
                   src={category.image}
@@ -846,11 +833,11 @@ function CategoryViewModal({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight truncate">
+                <h2 className="text-base sm:text-lg font-black text-foreground tracking-tight truncate">
                   {category.name}
                 </h2>
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
                     category.active
                       ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                       : "bg-muted text-muted-foreground"
@@ -870,8 +857,8 @@ function CategoryViewModal({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2.5 text-xs text-muted-foreground mt-1 flex-wrap">
-                <span className="font-mono text-emerald-600 font-semibold">/{category.slug}</span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                <span className="font-mono text-emerald-600 font-semibold text-[11px]">/{category.slug}</span>
               </div>
             </div>
           </div>
@@ -884,24 +871,15 @@ function CategoryViewModal({
           </button>
         </div>
 
-        {/* Modal Scroll Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+        {/* Modal Body - Sleek, Fits without scrollbar */}
+        <div className="p-4 sm:p-5 space-y-3 overflow-y-auto max-h-[84vh] scrollbar-none">
           {/* Category Overview Card */}
-          <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <FolderTree className="size-3.5 text-emerald-600" /> Category Overview
-            </h3>
-            <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
-              {category.description || "No description provided for this agricultural input category."}
-            </p>
-            <div className="flex items-center gap-4 pt-2 border-t border-border/60 text-xs text-muted-foreground flex-wrap">
+          <div className="rounded-2xl border border-border/80 bg-muted/20 p-3 sm:p-3.5 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <FolderTree className="size-3.5 text-emerald-600" /> Category Overview
+              </h3>
               <div>
-                <span className="text-[11px] block text-muted-foreground/80 font-medium">Associated Products</span>
-                <strong className="text-sm font-extrabold text-foreground">{matchingProducts.length} items</strong>
-              </div>
-              
-              <div>
-                <span className="text-[11px] block text-muted-foreground/80 font-medium">Storefront URL</span>
                 <a
                   href={`/categories/${category.slug}`}
                   target="_blank"
@@ -912,10 +890,18 @@ function CategoryViewModal({
                 </a>
               </div>
             </div>
+            <p className="text-xs text-foreground/90 leading-relaxed line-clamp-2">
+              {category.description || "No description provided for this agricultural input category."}
+            </p>
+            <div className="flex items-center gap-4 pt-1.5 border-t border-border/60 text-xs text-muted-foreground">
+              <span className="text-[11px] text-muted-foreground">
+                Associated Products: <strong className="font-extrabold text-foreground">{matchingProducts.length} items</strong>
+              </span>
+            </div>
           </div>
 
           {/* Products in this category */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Package className="size-3.5 text-blue-600" /> Products in this Category ({matchingProducts.length})
@@ -926,7 +912,7 @@ function CategoryViewModal({
             </div>
 
             {matchingProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-52 overflow-y-auto scrollbar-none pr-0.5">
                 {matchingProducts.map((prod: any, pIdx: number) => {
                   const pImg = prod.thumbnail || prod.image || (Array.isArray(prod.images) ? prod.images[0] : null) || "/images/products/harit.jpg";
                   const pPrice = Number(prod.price || prod.sellingPrice || prod.regularPrice || 0);
@@ -936,13 +922,13 @@ function CategoryViewModal({
                   return (
                     <div
                       key={prod.id || pIdx}
-                      className="flex items-center gap-3 p-3 rounded-2xl border border-border/80 bg-card hover:border-emerald-500/40 hover:shadow-sm transition-all"
+                      className="flex items-center gap-2.5 p-2.5 rounded-xl border border-border/80 bg-card hover:border-emerald-500/40 hover:shadow-xs transition-all"
                     >
-                      <div className="size-13 rounded-xl bg-muted/60 border border-border/60 overflow-hidden flex items-center justify-center shrink-0">
+                      <div className="size-10 rounded-lg bg-muted/60 border border-border/60 overflow-hidden flex items-center justify-center shrink-0">
                         <img
                           src={pImg}
                           alt={prod.name || prod.title}
-                          className="size-full object-contain p-1"
+                          className="size-full object-contain p-0.5"
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src = "/images/products/harit.jpg";
                           }}
@@ -952,7 +938,7 @@ function CategoryViewModal({
                         <h4 className="text-xs font-bold text-foreground truncate" title={prod.name || prod.title}>
                           {prod.name || prod.title}
                         </h4>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">
                             ₹{pPrice.toLocaleString("en-IN")}
                           </span>
@@ -961,10 +947,8 @@ function CategoryViewModal({
                               ₹{pOriginalPrice.toLocaleString("en-IN")}
                             </span>
                           )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-[10px]">
                           <span
-                            className={`inline-flex items-center rounded-full px-1.5 py-0.2 font-bold ${
+                            className={`inline-flex items-center rounded-full px-1.5 py-0.2 text-[9px] font-bold ml-auto ${
                               pStock > 10
                                 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                                 : pStock > 0
@@ -974,17 +958,17 @@ function CategoryViewModal({
                           >
                             {pStock > 0 ? `${pStock} in stock` : "Out of stock"}
                           </span>
-                          {prod.sku && (
-                            <span className="text-muted-foreground truncate font-mono">SKU: {prod.sku}</span>
-                          )}
                         </div>
+                        {prod.sku && (
+                          <span className="text-[10px] text-muted-foreground truncate font-mono block mt-0.5">SKU: {prod.sku}</span>
+                        )}
                       </div>
                       {prod.slug && (
                         <a
                           href={`/products/${prod.slug}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 transition-colors shrink-0"
+                          className="p-1 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 transition-colors shrink-0"
                           title="View Product Page"
                         >
                           <ExternalLink className="size-3.5" />
@@ -995,10 +979,10 @@ function CategoryViewModal({
                 })}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-border/80 p-6 text-center bg-muted/10">
-                <Package className="size-8 text-muted-foreground/40 mx-auto mb-2" />
+              <div className="rounded-xl border border-dashed border-border/80 p-4 text-center bg-muted/10">
+                <Package className="size-6 text-muted-foreground/40 mx-auto mb-1" />
                 <p className="text-xs font-bold text-foreground">No Products in this Category</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[11px] text-muted-foreground">
                   Products assigned to '{category.name}' will automatically appear here.
                 </p>
               </div>
@@ -1006,14 +990,14 @@ function CategoryViewModal({
           </div>
 
           {/* SEO & Meta Tags Card */}
-          <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-2.5">
+          <div className="rounded-2xl border border-border/80 bg-muted/20 p-3 sm:p-3.5 space-y-1.5">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Globe className="size-3.5 text-indigo-600" /> SEO & Search Engine Optimization
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Meta Title</span>
-                <p className="font-semibold text-foreground truncate mt-0.5">
+                <p className="font-semibold text-foreground truncate text-xs mt-0.5">
                   {category.seo?.metaTitle || `${category.name} - Janani Agro Products`}
                 </p>
               </div>
@@ -1025,7 +1009,7 @@ function CategoryViewModal({
               </div>
               <div className="sm:col-span-2">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Meta Description</span>
-                <p className="text-xs text-foreground/80 mt-0.5 line-clamp-2">
+                <p className="text-[11px] text-foreground/80 mt-0.5 line-clamp-1">
                   {category.seo?.metaDescription || category.description || "Discover high-yield biological agro inputs and organic solutions at Janani Agro."}
                 </p>
               </div>
@@ -1034,12 +1018,12 @@ function CategoryViewModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between">
+        <div className="px-5 py-3 border-t border-border/80 bg-muted/20 flex items-center justify-between">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl text-xs font-semibold h-9"
+            className="rounded-xl text-xs font-semibold h-8.5 px-3"
           >
             Close
           </Button>
@@ -1050,7 +1034,7 @@ function CategoryViewModal({
               onClose();
               onEdit(category);
             }}
-            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold h-9 gap-1.5 shadow-sm"
+            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold h-8.5 px-3.5 gap-1.5 shadow-sm"
           >
             <Edit className="size-3.5" /> Edit Category & SEO
           </Button>
