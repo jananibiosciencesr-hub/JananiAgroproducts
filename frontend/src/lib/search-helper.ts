@@ -1,4 +1,56 @@
-import type { Product } from "./catalog";
+import { isProductInCategory, type Product } from "./catalog";
+
+export const CATEGORY_SEARCH_INTENTS = [
+  {
+    category: "Bio Fertilizers",
+    keywords: ["bio fertilizer", "bio fertilizers", "biofertilizer", "biofertilizers", "fertilizer", "fertilizers", "kmb", "potassium mobilizer"],
+  },
+  {
+    category: "Bio Pesticides",
+    keywords: ["bio pesticide", "bio pesticides", "biopesticide", "biopesticides", "pesticide", "pesticides"],
+  },
+  {
+    category: "Bio Fungicides",
+    keywords: ["bio fungicide", "bio fungicides", "biofungicide", "biofungicides", "fungicide", "fungicides"],
+  },
+  {
+    category: "Bio Stimulants",
+    keywords: ["bio stimulant", "bio stimulants", "biostimulant", "biostimulants", "stimulant", "stimulants"],
+  },
+  {
+    category: "Botanical Extracts",
+    keywords: ["botanical extract", "botanical extracts", "botanical", "botanicals"],
+  },
+  {
+    category: "Micro Nutrients",
+    keywords: ["micro nutrient", "micro nutrients", "micronutrient", "micronutrients"],
+  },
+  {
+    category: "Insecticides",
+    keywords: ["insecticide", "insecticides"],
+  },
+  {
+    category: "Water Solubles",
+    keywords: ["water soluble", "water solubles"],
+  },
+  {
+    category: "Agri Inputs",
+    keywords: ["agri input", "agri inputs"],
+  },
+];
+
+export function detectCategoryIntent(query: string) {
+  const q = (query || "").toLowerCase().trim().replace(/[-_]/g, " ");
+  if (!q) return null;
+  for (const intent of CATEGORY_SEARCH_INTENTS) {
+    for (const kw of intent.keywords) {
+      if (q === kw || q === kw.replace(/\s+/g, "")) {
+        return intent;
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * Returns variants for a word token (singular, plural, stripped punctuation)
@@ -88,12 +140,27 @@ export function getProductSearchCorpus(p: Product | any): string {
 
 /**
  * Calculates search relevance score.
- * Returns 0 if the product does NOT match all query terms.
- * Returns > 0 if matching, with higher scores for matches in name, subtitle, aliases, etc.
+ * Returns 0 if the product does NOT match query terms or category constraints.
+ * Returns > 0 if matching, with higher scores for matches in name, subtitle, category, etc.
  */
 export function calculateProductRelevance(p: Product | any, query: string): number {
   const q = (query || "").trim().toLowerCase();
   if (!q) return 1;
+
+  // 1. Strict Category Intent Check:
+  // If query is specifically a category phrase (e.g. "bio fertilizers", "bio pesticides"),
+  // only products belonging to that category or bearing that category term in their title/subtitle are allowed.
+  const intent = detectCategoryIntent(q);
+  if (intent) {
+    const isCatMatch = isProductInCategory(p, intent.category);
+    const pName = (p.name || "").toLowerCase();
+    const pSub = (p.subtitle || "").toLowerCase();
+    const hasDirectTitle = intent.keywords.some((kw) => pName.includes(kw) || pSub.includes(kw));
+
+    if (!isCatMatch && !hasDirectTitle) {
+      return 0; // Exclude products from other categories
+    }
+  }
 
   const rawTokens = q.split(/\s+/).filter(Boolean);
   if (rawTokens.length === 0) return 1;
@@ -122,6 +189,11 @@ export function calculateProductRelevance(p: Product | any, query: string): numb
   // Base score for matching all tokens
   let score = 10;
 
+  // Strong bonus for direct category match
+  if (intent && isProductInCategory(p, intent.category)) {
+    score += 120;
+  }
+
   const nameLower = (p.name || "").toLowerCase();
   const subLower = (p.subtitle || "").toLowerCase();
   const catLower = (p.category || "").toLowerCase();
@@ -130,7 +202,7 @@ export function calculateProductRelevance(p: Product | any, query: string): numb
   const nameWords = nameLower.split(/[\s-]+/).filter(Boolean);
   const catWords = catLower.split(/[\s-]+/).filter(Boolean);
 
-  // Exact phrase and word-start bonuses (ranks prefix matches like 'N' -> 'Neem Oil' highest)
+  // Exact phrase and word-start bonuses
   if (nameLower === q) score += 150;
   else if (nameLower.startsWith(q)) score += 100;
   else if (nameWords.some((w: string) => w.startsWith(q))) score += 80;
