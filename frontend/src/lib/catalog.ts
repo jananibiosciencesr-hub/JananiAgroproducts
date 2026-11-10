@@ -126,6 +126,17 @@ export function isGroceryCategory(cat: any): boolean {
 export function isProductInCategory(product: any, category: any): boolean {
   if (!product || !category) return false;
 
+  // Filter out any legacy obsolete dummy products or deleted items
+  const sName = String(product.name || "").toLowerCase().trim();
+  const sSlug = String(product.slug || "").toLowerCase().trim();
+  const sId = String(product.id || "").trim();
+  if (sId === "112" || sSlug === "root-plus" || sName === "root plus" || sId === "2124" || sName.includes("mortein") || sSlug.includes("mortein")) {
+    return false;
+  }
+  if (product.active === 0 || product.active === false || product.active === "0" || product.status === "Trash") {
+    return false;
+  }
+
   const pCat = String(product.category || product.category_name || "").toLowerCase().trim();
   const pSlug = String(product.category_slug || product.categorySlug || "").toLowerCase().trim();
   const pCatId = product.category_id || product.categoryId ? String(product.category_id || product.categoryId).trim() : "";

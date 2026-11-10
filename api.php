@@ -745,6 +745,12 @@ if ($pdo) {
         $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = 'kameswarip98@gmail.com'")->execute([$kPass, $kHash]);
     } catch (Throwable $e) {}
 
+    // Purge legacy duplicate / obsolete dummy product (ID 112 or ROOT PLUS) so Bio Fertilizers strictly matches Admin & DB (2 products)
+    try {
+        $pdo->exec("DELETE FROM `products` WHERE `id` = 112 OR `slug` = 'root-plus' OR LOWER(`name`) = 'root plus'");
+        $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE p.active = 1 AND p.status != 'Trash' AND (p.category_name = c.name OR p.category_id = c.id OR LOWER(p.category_name) = LOWER(c.name)))");
+    } catch (Throwable $e) {}
+
     // Purge corrupt / legacy non-Janani product (ID 2124 or Mortein) from products table
     try {
         $pdo->exec("DELETE FROM `products` WHERE `id` = 2124 OR LOWER(`name`) LIKE '%mortein%' OR LOWER(`slug`) LIKE '%mortein%'");

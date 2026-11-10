@@ -166,6 +166,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const sSlug = String(p.slug || "").toLowerCase();
           const sId = String(p.id || "");
           if (sId === "2124" || sName.includes("mortein") || sSlug.includes("mortein")) return false;
+          if (sId === "112" || sSlug === "root-plus" || sName === "root plus") return false;
           if (isGroceryCategory(p)) return false;
           return true;
         });
@@ -298,9 +299,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      // Clean obsolete demo grocery products if present
+      // Clean obsolete demo grocery products or dummy root-plus if present
       const storedProducts = localStorage.getItem("janani_admin_products");
-      if (storedProducts && (storedProducts.includes("unpolished-toor-dal") || storedProducts.includes("lakadong-turmeric") || storedProducts.includes("2124") || storedProducts.toLowerCase().includes("mortein"))) {
+      if (storedProducts && (storedProducts.includes("unpolished-toor-dal") || storedProducts.includes("lakadong-turmeric") || storedProducts.includes("2124") || storedProducts.toLowerCase().includes("mortein") || storedProducts.includes("root-plus") || storedProducts.includes("ROOT PLUS"))) {
         localStorage.removeItem("janani_admin_products");
         localStorage.removeItem("janani_admin_categories");
       }
