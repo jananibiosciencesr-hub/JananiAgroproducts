@@ -221,9 +221,9 @@ export function AdminOverview({
         </div>
       )}
 
-      {/* Primary KPI Cards Grid */}
+      {/* Primary KPI Cards Grid in a Single Row */}
       <section className="min-w-0 max-w-full">
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 max-w-xl min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
           {displayedKpiCards.map((card, idx) => {
             const Icon = card.icon;
             return (
