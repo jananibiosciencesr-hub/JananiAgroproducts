@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=5" },
       { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
-      { name: "google-site-verification", content: "google4046b4028ce3a005" },
+      { name: "google-site-verification", content: "googlef54c20f96caff23a" },
       { name: "author", content: "JANANI AGRO PRODUCTS" },
       { name: "publisher", content: "JANANI AGRO PRODUCTS" },
       { name: "theme-color", content: "#15803d" },
@@ -178,7 +178,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {/* Google Analytics 4 (gtag.js) */}
         <script
           async
-          src="https://www.googletagmanager.com/gtag/js?id=G-2B5C9X3V2G"
+          src="https://www.googletagmanager.com/gtag/js?id=G-3PP2EML8T7"
         />
         <script
           dangerouslySetInnerHTML={{
@@ -186,7 +186,7 @@ function RootShell({ children }: { children: ReactNode }) {
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              var gaId = (typeof window !== 'undefined' && window.JANANI_CONFIG && window.JANANI_CONFIG.gaMeasurementId) || 'G-2B5C9X3V2G';
+              var gaId = (typeof window !== 'undefined' && window.JANANI_CONFIG && window.JANANI_CONFIG.gaMeasurementId) || 'G-3PP2EML8T7';
               gtag('config', gaId, {
                 send_page_view: true
               });
@@ -217,7 +217,7 @@ function RootComponent() {
     if (typeof window !== "undefined" && typeof (window as any).gtag === "function") {
       const search = location.searchStr ? `?${location.searchStr}` : "";
       const path = location.pathname + search;
-      const gaId = (window as any).JANANI_CONFIG?.gaMeasurementId || "G-2B5C9X3V2G";
+      const gaId = (window as any).JANANI_CONFIG?.gaMeasurementId || "G-3PP2EML8T7";
       (window as any).gtag("config", gaId, {
         page_path: path,
         page_title: document.title,
