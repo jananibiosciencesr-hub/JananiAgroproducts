@@ -68,3 +68,5 @@ To test and create the optimized frontend production bundle:
 ```bash
 npm run build
 ```
+
+Do not disturb other functionilites 
