@@ -651,7 +651,6 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Product Details</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Category & Brand</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Pricing</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Featured</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Trending</th>
@@ -689,6 +688,9 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                     : (Number(p.originalPrice) || Math.round((Number(p.price) || 0) * 1.2));
                   const curUnit = activeVariant?.unit || activeVariant?.label || p.unit || "1 L";
                   const margin = curOrigPrice > 0 ? Math.round(((curOrigPrice - curPrice) / curOrigPrice) * 100) : 0;
+                  const categoryName = typeof p.category === "object" && p.category !== null
+                    ? String((p.category as any).name || "")
+                    : String(p.category || "");
 
                   return (
                     <tr
@@ -698,7 +700,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                     >
 
 
-                      {/* Title, Thumbnail, SKU */}
+                      {/* Title, Thumbnail, SKU, Variants & Category */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div
@@ -718,7 +720,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                             >
                               {formatProductName(p.name)}
                             </span>
-                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                            <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                               <span className="font-mono text-emerald-600 font-bold">{activeVariant?.sku || p.sku}</span>
                               <span>• {curUnit}</span>
                               {pVariants.length > 1 && (
@@ -726,19 +728,14 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                                   {pVariants.length} Variants
                                 </span>
                               )}
+                              {categoryName && (
+                                <span className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground/80 border border-border/60 shrink-0">
+                                  {categoryName}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
-                      </td>
-
-                      {/* Category & Brand */}
-                      <td className="px-4 py-4">
-                        <span className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-semibold block w-fit">
-                          {typeof p.category === "object" && p.category !== null ? String((p.category as any).name || "General") : String(p.category || "General")}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground mt-0.5 block truncate">
-                          {typeof p.brand === "object" && p.brand !== null ? String((p.brand as any).name || "Janani Agro Products") : String(p.brand || "Janani Agro Products")}
-                        </span>
                       </td>
 
                       {/* Pricing with Interactive Variant Chips */}
@@ -881,7 +878,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={5} className="py-12 text-center text-muted-foreground">
                     <Package className="size-10 mx-auto opacity-30 mb-2" />
                     <p className="text-sm font-bold text-foreground">No products match your filters</p>
                     <p className="text-xs text-muted-foreground mt-1">Reset your filters or add a new organic product</p>
