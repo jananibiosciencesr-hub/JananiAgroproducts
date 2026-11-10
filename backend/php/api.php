@@ -6367,6 +6367,8 @@ try {
                 $statusFilter = strtolower(trim($_GET['status'] ?? 'all'));
                 $gatewayFilter = strtolower(trim($_GET['gateway'] ?? 'all'));
                 $search = strtolower(trim($_GET['search'] ?? ''));
+                $startDate = trim($_GET['startDate'] ?? ($_GET['dateFrom'] ?? ($_GET['start_date'] ?? '')));
+                $endDate = trim($_GET['endDate'] ?? ($_GET['dateTo'] ?? ($_GET['end_date'] ?? '')));
 
                 // Fetch orders to synthesize complete ledger
                 $ordersStmt = $pdo->query("SELECT * FROM `orders` ORDER BY `created_at` DESC LIMIT 200");
@@ -6450,6 +6452,14 @@ try {
                     }
                     if ($gatewayFilter !== 'all' && stripos($tx['gateway'], $gatewayFilter) === false) {
                         continue;
+                    }
+                    if ($startDate) {
+                        $ordDate = date('Y-m-d', strtotime($ord['created_at'] ?? 'now'));
+                        if ($ordDate < $startDate) continue;
+                    }
+                    if ($endDate) {
+                        $ordDate = date('Y-m-d', strtotime($ord['created_at'] ?? 'now'));
+                        if ($ordDate > $endDate) continue;
                     }
                     if ($search) {
                         $searchMatches = (

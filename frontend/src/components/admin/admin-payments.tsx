@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   CreditCard,
   DollarSign,
@@ -24,7 +24,8 @@ import {
   X,
   MessageSquare,
   Mail,
-  Info
+  Info,
+  Calendar
 } from "lucide-react";
 import {
   getPaymentTransactions,
@@ -140,6 +141,8 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
   const [statusFilter, setStatusFilter] = useState("all");
   const [gatewayFilter, setGatewayFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Synchronize searchQuery prop from top navbar
   useEffect(() => {
@@ -183,7 +186,9 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
         status: statusFilter,
         gateway: gatewayFilter,
         search: searchQuery || undefined,
-        sortBy
+        sortBy,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
       });
       if (res?.data) {
         setTransactions(res.data);
@@ -197,6 +202,29 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
       setLoading(false);
     }
   };
+
+  // Client-side date-filtered transactions ensuring instant and guaranteed range filtering
+  const filteredTransactions = useMemo(() => {
+    if (!startDate && !endDate) return transactions;
+    return transactions.filter((t) => {
+      const dateVal = t.createdAt;
+      if (!dateVal) return true;
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) {
+        const clean = String(dateVal).replace(/,/g, "");
+        const d2 = new Date(clean);
+        if (isNaN(d2.getTime())) return true;
+        const ymd = d2.toISOString().slice(0, 10);
+        if (startDate && ymd < startDate) return false;
+        if (endDate && ymd > endDate) return false;
+        return true;
+      }
+      const ymd = d.toISOString().slice(0, 10);
+      if (startDate && ymd < startDate) return false;
+      if (endDate && ymd > endDate) return false;
+      return true;
+    });
+  }, [transactions, startDate, endDate]);
 
   // Load Gateway Configs
   const loadGatewayConfigData = async () => {
@@ -230,7 +258,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
 
   useEffect(() => {
     loadTransactions();
-  }, [searchQuery, statusFilter, gatewayFilter, sortBy]);
+  }, [searchQuery, statusFilter, gatewayFilter, sortBy, startDate, endDate]);
 
   useEffect(() => {
     loadGatewayConfigData();
@@ -347,8 +375,9 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
 
   // Export CSV
   const handleExportCsv = () => {
+    const listToExport = filteredTransactions.length > 0 ? filteredTransactions : transactions;
     const headers = ["Transaction ID", "Order ID", "Customer", "Gateway", "Method", "Gross Amount", "Gateway Fee", "Net Settled", "Status", "Bank UTR", "Date"];
-    const rows = transactions.map(t => [
+    const rows = listToExport.map(t => [
       t.id,
       t.orderId,
       `"${t.customer.name}"`,
@@ -404,7 +433,8 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
             <div className="flex items-center gap-2.5">
               <h2 className="text-lg font-bold text-foreground tracking-tight">Payments & Transactions</h2>
               <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
-                {transactions.length} Records
+                {filteredTransactions.length} {filteredTransactions.length === 1 ? "Record" : "Records"}
+                {(startDate || endDate) && ` (Filtered from ${transactions.length})`}
               </span>
             </div>
             <button
@@ -416,6 +446,91 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
             </button>
           </div>
 
+          {/* Date to Date Range Filter Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl border border-border bg-card shadow-soft">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-bold text-foreground flex items-center gap-1.5 shrink-0">
+                <Calendar className="size-3.5 text-emerald-600" /> Date Range:
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-8.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                  title="Start Date (From)"
+                />
+                <span className="text-muted-foreground font-bold text-xs">to</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-8.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 cursor-pointer"
+                  title="End Date (To)"
+                />
+              </div>
+
+              {/* Quick Presets */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = new Date().toISOString().slice(0, 10);
+                    setStartDate(today);
+                    setEndDate(today);
+                  }}
+                  className="px-2.5 py-1 rounded-md text-[11px] font-bold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const end = new Date();
+                    const start = new Date();
+                    start.setDate(end.getDate() - 7);
+                    setStartDate(start.toISOString().slice(0, 10));
+                    setEndDate(end.toISOString().slice(0, 10));
+                  }}
+                  className="px-2.5 py-1 rounded-md text-[11px] font-bold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Last 7 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                    setStartDate(firstDay.toISOString().slice(0, 10));
+                    setEndDate(now.toISOString().slice(0, 10));
+                  }}
+                  className="px-2.5 py-1 rounded-md text-[11px] font-bold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  This Month
+                </button>
+              </div>
+
+              {(startDate || endDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  className="flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer ml-1"
+                >
+                  <X className="size-3" /> Clear Dates
+                </button>
+              )}
+            </div>
+
+            {(startDate || endDate) && (
+              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                Showing {filteredTransactions.length} of {transactions.length} records
+              </span>
+            )}
+          </div>
+
           {/* Transactions Table */}
           <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
             {loading ? (
@@ -423,22 +538,26 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                 <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">Fetching encrypted payment transactions from gateway ledger...</p>
               </div>
-            ) : transactions.length === 0 ? (
+            ) : filteredTransactions.length === 0 ? (
               <div className="p-16 text-center">
                 <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
                 <h3 className="text-lg font-bold text-foreground mb-1">No payment transactions found</h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  No transaction records match the active search criteria.
+                  {startDate || endDate
+                    ? `No payment transactions found between ${startDate || "start"} and ${endDate || "today"}.`
+                    : "No transaction records match the active search criteria."}
                 </p>
                 <button
                   onClick={() => {
                     setSearchQuery("");
                     setStatusFilter("all");
                     setGatewayFilter("all");
+                    setStartDate("");
+                    setEndDate("");
                   }}
                   className="mt-4 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold hover:bg-emerald-500/20 cursor-pointer"
                 >
-                  Reset Search
+                  Reset Filters & Dates
                 </button>
               </div>
             ) : (
@@ -456,7 +575,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border font-sans">
-                    {transactions.map(txn => {
+                    {filteredTransactions.map(txn => {
                       const isCaptured = txn.status === "Captured";
                       const isPartialRefund = txn.status === "Partially Refunded";
 

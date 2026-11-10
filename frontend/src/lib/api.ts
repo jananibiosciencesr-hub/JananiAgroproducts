@@ -4021,6 +4021,8 @@ export interface PaymentQueryParams {
   gateway?: string | undefined;
   search?: string | undefined;
   sortBy?: string | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
 }
 
 export async function getPaymentTransactions(params?: PaymentQueryParams) {
@@ -4029,6 +4031,8 @@ export async function getPaymentTransactions(params?: PaymentQueryParams) {
   if (params?.gateway && params.gateway !== "all") query.append("gateway", params.gateway);
   if (params?.search) query.append("search", params.search);
   if (params?.sortBy) query.append("sortBy", params.sortBy);
+  if (params?.startDate) query.append("startDate", params.startDate);
+  if (params?.endDate) query.append("endDate", params.endDate);
 
   let res = await fetchJson<{
     success: boolean;
@@ -4063,6 +4067,28 @@ export async function getPaymentTransactions(params?: PaymentQueryParams) {
   }
   if (params?.gateway && params.gateway !== "all") {
     list = list.filter((t) => t.gateway?.toLowerCase() === params.gateway?.toLowerCase());
+  }
+  if (params?.startDate) {
+    list = list.filter((t) => {
+      const d = new Date(t.createdAt);
+      if (isNaN(d.getTime())) {
+        const clean = String(t.createdAt || "").replace(/,/g, "");
+        const d2 = new Date(clean);
+        return isNaN(d2.getTime()) || d2.toISOString().slice(0, 10) >= params.startDate!;
+      }
+      return d.toISOString().slice(0, 10) >= params.startDate!;
+    });
+  }
+  if (params?.endDate) {
+    list = list.filter((t) => {
+      const d = new Date(t.createdAt);
+      if (isNaN(d.getTime())) {
+        const clean = String(t.createdAt || "").replace(/,/g, "");
+        const d2 = new Date(clean);
+        return isNaN(d2.getTime()) || d2.toISOString().slice(0, 10) <= params.endDate!;
+      }
+      return d.toISOString().slice(0, 10) <= params.endDate!;
+    });
   }
   if (params?.search) {
     const q = params.search.toLowerCase();
