@@ -7998,6 +7998,21 @@ export function getCurrentUser(): AuthUser | null {
     const userStr = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
     if (!userStr) return null;
 
+    // Strict 24-hour expiration check for customer
+    const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
+    const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+    if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+      localStorage.removeItem("janani_user");
+      localStorage.removeItem("janani_auth_user");
+      localStorage.removeItem("janani_token");
+      localStorage.removeItem("janani_auth_token");
+      localStorage.removeItem("janani_user_auth_time");
+      localStorage.removeItem("janani_auth_time");
+      return null;
+    }
+
     const parsed = JSON.parse(userStr);
     if (parsed?.role === "Super Admin" || parsed?.role === "Admin" || parsed?.email?.toLowerCase() === "jananibiosciences.r@gmail.com") {
       return null;
@@ -8525,9 +8540,7 @@ export async function signupCustomer(payload: {
       const data = await phpRes.json();
       if (data?.success && data.user) {
         if (typeof window !== "undefined") {
-          localStorage.setItem("janani_auth_token", data.token || "jap_jwt_" + Date.now());
-          localStorage.setItem("janani_auth_user", JSON.stringify(data.user));
-          localStorage.setItem("janani_user", JSON.stringify(data.user));
+          persistAuthSession(data.user, data.token || "jap_jwt_" + Date.now());
         }
         return data;
       }
@@ -8574,9 +8587,7 @@ export async function signupCustomer(payload: {
     user
   };
   if (typeof window !== "undefined") {
-    localStorage.setItem("janani_auth_token", authData.token);
-    localStorage.setItem("janani_auth_user", JSON.stringify(user));
-    localStorage.setItem("janani_user", JSON.stringify(user));
+    persistAuthSession(user, authData.token);
 
     // Save newly entered address to user's scoped saved addresses list
     if (payload.street || payload.houseFlat || payload.city || payload.pincode) {
@@ -8653,8 +8664,7 @@ export async function loginWithGoogle(payload?: {
     user
   };
   if (typeof window !== "undefined") {
-    localStorage.setItem("janani_auth_token", authData.token);
-    localStorage.setItem("janani_auth_user", JSON.stringify(user));
+    persistAuthSession(user, authData.token);
   }
   return authData;
 }
@@ -8725,7 +8735,21 @@ export async function getAuthProfile() {
   if (res?.success && res.user) return res;
 
   if (typeof window !== "undefined") {
-    const raw = localStorage.getItem("janani_auth_user");
+    // Check 24-hour expiration for customer
+    const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
+    const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+      localStorage.removeItem("janani_user");
+      localStorage.removeItem("janani_auth_user");
+      localStorage.removeItem("janani_token");
+      localStorage.removeItem("janani_auth_token");
+      localStorage.removeItem("janani_user_auth_time");
+      localStorage.removeItem("janani_auth_time");
+      return null;
+    }
+
+    const raw = localStorage.getItem("janani_auth_user") || localStorage.getItem("janani_user");
     if (raw) {
       try {
         return { success: true, user: JSON.parse(raw) as AuthUser };

@@ -96,38 +96,62 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let activeUser: AuthUser | null = null;
     try {
       const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+      const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
+      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const userTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+      const isUserExpired = !userTimestamp || isNaN(userTimestamp) || now - userTimestamp > TWENTY_FOUR_HOURS;
 
       if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        if (
-          parsed?.role !== "Super Admin" &&
-          parsed?.role !== "Admin" &&
-          parsed?.email?.toLowerCase() !== "jananibiosciences.r@gmail.com" &&
-          !parsed?.email?.toLowerCase().includes("neha.patel") &&
-          !parsed?.email?.toLowerCase().includes("example.com") &&
-          !parsed?.name?.toLowerCase().includes("neha patel") &&
-          parsed?.id !== "cust-101"
-        ) {
-          if (parsed?.email?.toLowerCase() === "kameswarip98@gmail.com" && parsed?.id !== "CUST-001") {
-            parsed.id = "CUST-001";
-            try {
-              localStorage.setItem("janani_user", JSON.stringify(parsed));
-              localStorage.setItem("janani_auth_user", JSON.stringify(parsed));
-            } catch (e) { }
-          }
-          activeUser = parsed;
-          setUser(parsed);
-        } else if (
-          parsed?.email?.toLowerCase().includes("neha.patel") ||
-          parsed?.email?.toLowerCase().includes("example.com") ||
-          parsed?.id === "cust-101"
-        ) {
+        if (isUserExpired) {
+          // Strictly enforce 24-hour expiration: wipe stale customer session
           localStorage.removeItem("janani_user");
           localStorage.removeItem("janani_auth_user");
           localStorage.removeItem("janani_token");
           localStorage.removeItem("janani_auth_token");
           localStorage.removeItem("janani_user_auth_time");
           localStorage.removeItem("janani_auth_time");
+          localStorage.removeItem("janani_wishlist");
+          try {
+            sessionStorage.removeItem("janani_user");
+            sessionStorage.removeItem("janani_auth_user");
+            sessionStorage.removeItem("janani_token");
+            sessionStorage.removeItem("janani_auth_token");
+          } catch (e) { }
+          activeUser = null;
+          setUser(null);
+        } else {
+          const parsed = JSON.parse(storedUser);
+          if (
+            parsed?.role !== "Super Admin" &&
+            parsed?.role !== "Admin" &&
+            parsed?.email?.toLowerCase() !== "jananibiosciences.r@gmail.com" &&
+            !parsed?.email?.toLowerCase().includes("neha.patel") &&
+            !parsed?.email?.toLowerCase().includes("example.com") &&
+            !parsed?.name?.toLowerCase().includes("neha patel") &&
+            parsed?.id !== "cust-101"
+          ) {
+            if (parsed?.email?.toLowerCase() === "kameswarip98@gmail.com" && parsed?.id !== "CUST-001") {
+              parsed.id = "CUST-001";
+              try {
+                localStorage.setItem("janani_user", JSON.stringify(parsed));
+                localStorage.setItem("janani_auth_user", JSON.stringify(parsed));
+              } catch (e) { }
+            }
+            activeUser = parsed;
+            setUser(parsed);
+          } else if (
+            parsed?.email?.toLowerCase().includes("neha.patel") ||
+            parsed?.email?.toLowerCase().includes("example.com") ||
+            parsed?.id === "cust-101"
+          ) {
+            localStorage.removeItem("janani_user");
+            localStorage.removeItem("janani_auth_user");
+            localStorage.removeItem("janani_token");
+            localStorage.removeItem("janani_auth_token");
+            localStorage.removeItem("janani_user_auth_time");
+            localStorage.removeItem("janani_auth_time");
+          }
         }
       }
     } catch (e) { } finally {
@@ -422,7 +446,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.email]);
 
-  // Active Heartbeat: 24-Hour Auto-Logout for Admin Session Only
+  // Active Heartbeat: 24-Hour Auto-Logout for Both Admin & Customer Sessions
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -431,7 +455,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const now = Date.now();
         const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-        // Admin 24-hour auto-logout check
+        // 1. Admin 24-hour auto-logout check
         const adminSession = localStorage.getItem("janani_admin_session");
         const adminAuthTime = localStorage.getItem("janani_admin_auth_time");
         if (adminSession === "true") {
@@ -442,6 +466,52 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem("janani_admin_token");
             localStorage.removeItem("janani_admin_auth_time");
             window.dispatchEvent(new Event("janani-admin-session-expired"));
+          }
+        }
+
+        // 2. Customer 24-hour auto-logout check
+        const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
+        const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
+        if (storedUser || user) {
+          const userTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+          if (!userTimestamp || isNaN(userTimestamp) || now - userTimestamp > TWENTY_FOUR_HOURS) {
+            // Clear customer storage keys
+            localStorage.removeItem("janani_token");
+            localStorage.removeItem("janani_auth_token");
+            localStorage.removeItem("janani_user");
+            localStorage.removeItem("janani_auth_user");
+            localStorage.removeItem("janani_user_auth_time");
+            localStorage.removeItem("janani_auth_time");
+            localStorage.removeItem("janani_wishlist");
+            try {
+              sessionStorage.removeItem("janani_user");
+              sessionStorage.removeItem("janani_auth_user");
+              sessionStorage.removeItem("janani_token");
+              sessionStorage.removeItem("janani_auth_token");
+
+              // Purge dynamic customer-scoped keys
+              const keysToRemove: string[] = [];
+              for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (
+                  k &&
+                  !k.startsWith("janani_admin_") &&
+                  (k.startsWith("janani_user") ||
+                    k.startsWith("janani_auth_") ||
+                    k.startsWith("janani_customer_orders") ||
+                    k.startsWith("janani_saved_addresses_"))
+                ) {
+                  keysToRemove.push(k);
+                }
+              }
+              keysToRemove.forEach((k) => localStorage.removeItem(k));
+            } catch (e) { }
+
+            setUser(null);
+            setWishlist([]);
+            window.dispatchEvent(new Event("janani-customer-logged-out"));
+            window.dispatchEvent(new Event("janani-user-session-expired"));
+            toast.info("Your session has expired (24h limit). Please sign in again.");
           }
         }
       } catch (e) { }
@@ -459,7 +529,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("focus", checkAutoLogout);
       document.removeEventListener("visibilitychange", checkAutoLogout);
     };
-  }, []);
+  }, [user]);
 
   // Sync cart to localStorage reliably (never overwrite with initial empty state before hydration)
   useEffect(() => {
