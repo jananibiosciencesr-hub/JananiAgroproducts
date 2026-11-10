@@ -2,8 +2,7 @@ import React from "react";
 import {
   X,
   RotateCcw,
-  Star,
-  Check,
+Check,
   Search,
   Filter,
   SlidersHorizontal,
@@ -87,8 +86,7 @@ export function ShopFilterSidebar({
     (filters.selectedCategories.length > 0 ? 1 : 0) +
     (filters.selectedBrands.length > 0 ? 1 : 0) +
     (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000 ? 1 : 0) +
-    (filters.minRating !== null ? 1 : 0) +
-    (filters.inStockOnly ? 1 : 0) +
+        (filters.inStockOnly ? 1 : 0) +
     (filters.minDiscount !== null ? 1 : 0) +
     (filters.selectedDietary.length > 0 ? 1 : 0) +
     (filters.selectedOrigins.length > 0 ? 1 : 0) +
@@ -311,35 +309,6 @@ export function ShopFilterSidebar({
             <span>₹500 (Standard)</span>
             <span>₹1,000+ (Bulk)</span>
           </div>
-        </div>
-      </div>
-
-      {/* 5. Rating Filter */}
-      <div className="space-y-2.5 pt-2 border-t border-border">
-        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Star className="size-3.5 text-amber-500 fill-amber-500" /> Customer Rating
-        </label>
-        <div className="grid grid-cols-3 gap-1.5">
-          {[
-            { label: "4.5★+", val: 4.5 },
-            { label: "4.0★+", val: 4.0 },
-            { label: "All", val: null },
-          ].map((r) => {
-            const isSelected = filters.minRating === r.val;
-            return (
-              <button
-                key={r.label}
-                onClick={() => setFilters((prev) => ({ ...prev, minRating: r.val }))}
-                className={`px-2 py-1.5 rounded-lg text-xs font-medium border text-center transition ${
-                  isSelected
-                    ? "bg-amber-500/15 border-amber-500 text-amber-600 font-bold"
-                    : "border-border bg-card hover:bg-muted text-muted-foreground"
-                }`}
-              >
-                {r.label}
-              </button>
-            );
-          })}
         </div>
       </div>
 

@@ -12,8 +12,7 @@ import {
 Sparkles,
   Boxes,
   Tag,
-  Star,
-  ShieldCheck,
+ShieldCheck,
   RotateCcw,
   SlidersHorizontal,
   ChevronDown,
@@ -76,7 +75,6 @@ function SearchPage() {
   const [selectedCat, setSelectedCat] = useState("All");
   const [selectedBrand, setSelectedBrand] = useState("All");
   const [maxPrice, setMaxPrice] = useState(1000);
-  const [minRating, setMinRating] = useState<number | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
   const [sort, setSort] = useState("featured");
@@ -141,7 +139,6 @@ function SearchPage() {
     setSelectedCat("All");
     setSelectedBrand("All");
     setMaxPrice(1000);
-    setMinRating(null);
     setInStockOnly(false);
     setSelectedDietary([]);
     setSort("featured");
@@ -168,11 +165,6 @@ function SearchPage() {
 
         // Price Filter
         if (p.price > maxPrice) {
-          return false;
-        }
-
-        // Rating Filter
-        if (minRating !== null && p.rating < minRating) {
           return false;
         }
 
@@ -209,7 +201,6 @@ function SearchPage() {
     selectedCat,
     selectedBrand,
     maxPrice,
-    minRating,
     inStockOnly,
     selectedDietary,
     sort,
@@ -219,7 +210,6 @@ function SearchPage() {
     (selectedCat !== "All" ? 1 : 0) +
     (selectedBrand !== "All" ? 1 : 0) +
     (maxPrice < 1000 ? 1 : 0) +
-    (minRating !== null ? 1 : 0) +
     (inStockOnly ? 1 : 0) +
     (selectedDietary.length > 0 ? 1 : 0) +
     (query ? 1 : 0);
@@ -353,32 +343,6 @@ function SearchPage() {
               <span>₹100</span>
               <span>₹500</span>
               <span>₹1,000+</span>
-            </div>
-          </div>
-
-          {/* 4. Rating Filter */}
-          <div className="border-t border-border pt-4 space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Star className="size-3.5 text-amber-500 fill-amber-500" /> Minimum Rating
-            </span>
-            <div className="grid grid-cols-3 gap-1">
-              {[
-                { label: "4.5★+", val: 4.5 },
-                { label: "4.0★+", val: 4.0 },
-                { label: "All", val: null },
-              ].map((r) => (
-                <button
-                  key={r.label}
-                  onClick={() => setMinRating(r.val)}
-                  className={`py-1 rounded-lg text-xs font-semibold border text-center transition ${
-                    minRating === r.val
-                      ? "bg-amber-500/15 border-amber-500 text-amber-700"
-                      : "border-border bg-card hover:bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
             </div>
           </div>
 
