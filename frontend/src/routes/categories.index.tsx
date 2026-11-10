@@ -18,13 +18,36 @@ import { useStore } from "@/components/store-provider";
 export const Route = createFileRoute("/categories/")({
   head: () => ({
     meta: [
-      { title: "Agri Products Categories — JANANI AGRO PRODUCTS" },
+      { title: "Agricultural Input Categories — Bio Fertilizers, Pesticides & Stimulants | JANANI AGRO" },
       {
         name: "description",
         content:
-          "Explore Janani Agri Products by category: Bio Fertilizers, Bio Pesticides, Bio Stimulants, Micro Nutrients, Insecticides, Fungicides, Botanical Extracts, Water Solubles and Agri Inputs.",
+          "Explore Janani Agri Products by category: Bio Fertilizers, Bio Pesticides, Bio Fungicides, Bio Stimulants, Micro Nutrients, Insecticides, Botanical Extracts, and Water Solubles. 100% genuine biological formulations for Indian agriculture.",
       },
-      { property: "og:title", content: "Agri Products Categories — JANANI AGRO PRODUCTS" },
+      {
+        name: "keywords",
+        content:
+          "agricultural input categories, bio fertilizers category, bio pesticides, bio fungicides, bio stimulants, micro nutrients, botanical extracts, neem oil, Janani Agro categories",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { property: "og:title", content: "Agricultural Input Categories — JANANI AGRO PRODUCTS" },
+      {
+        property: "og:description",
+        content: "Explore certified biological crop protection, organic plant nutrients, and soil conditioners for sustainable farming.",
+      },
+      { property: "og:url", content: "https://jananiagroproducts.com/categories" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://jananiagroproducts.com/images/categories/bio-fertilizers.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Agricultural Input Categories — JANANI AGRO PRODUCTS" },
+      {
+        name: "twitter:description",
+        content: "Certified biological crop protection and plant nutrition formulations.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/images/categories/bio-fertilizers.jpg" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/categories" },
     ],
   }),
   component: CategoriesIndexPage,

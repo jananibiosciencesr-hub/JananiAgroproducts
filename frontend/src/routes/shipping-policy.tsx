@@ -4,8 +4,15 @@ import { PolicyPage } from "@/components/page-kit";
 export const Route = createFileRoute("/shipping-policy")({
   head: () => ({
     meta: [
-      { title: "Shipping & Delivery Policy — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Learn about our nationwide shipping timelines, complimentary delivery above ₹799, and dispatch standards." },
+      { title: "Shipping & Delivery Policy for India Farms — JANANI AGRO" },
+      { name: "description", content: "Nationwide agricultural doorstep delivery timelines, free delivery above ₹799, safe leak-proof drum packing, and dispatch tracking standards." },
+      { name: "keywords", content: "shipping policy, farm delivery timeline, agricultural courier dispatch, Janani Agro delivery India, COD farm shipping" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Shipping & Delivery Policy — JANANI AGRO PRODUCTS" },
+      { property: "og:url", content: "https://jananiagroproducts.com/shipping-policy" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/shipping-policy" },
     ],
   }),
   component: ShippingPolicyPage,

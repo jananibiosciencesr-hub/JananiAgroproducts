@@ -38,17 +38,36 @@ import { GrowingPlantAnimation } from "@/components/home/growing-plant-animation
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Janani Agro Products — Grow Healthy Crops with Natural Care" },
+      { title: "Janani Agro Products — Certified Bio-Fertilizers, Bio-Pesticides & Crop Protection" },
       {
         name: "description",
         content:
-          "High quality agro inputs for sustainable farming. Certified biological crop protection, organic plant nutrients, and soil conditioners for bumper crop yields.",
+          "Janani Agro Products is India's leading manufacturer of certified agricultural bio-fertilizers, bio-pesticides, bio-fungicides, humic biostimulants & micronutrients. Doorstep delivery across India.",
       },
+      {
+        name: "keywords",
+        content:
+          "Janani Agro Products, bio fertilizers, bio pesticides, bio fungicides, crop protection, Trichoderma viride, humic acid 12%, neem oil 1000 ppm, organic farming Gujarat, Lodhika GIDC, agriculture inputs India, farm yield booster, sustainable agriculture",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
       { property: "og:title", content: "Janani Agro Products — Healthy Soil, Brighter Harvests" },
       {
         property: "og:description",
         content: "Natural and effective agro solutions for sustainable farming and peak crop productivity across India.",
       },
+      { property: "og:url", content: "https://jananiagroproducts.com/" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://jananiagroproducts.com/logo.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Janani Agro Products — Certified Bio-Fertilizers & Crop Protection" },
+      {
+        name: "twitter:description",
+        content: "Natural and effective agro solutions for sustainable farming and peak crop productivity across India.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/logo.png" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/" },
     ],
   }),
   component: HomePage,

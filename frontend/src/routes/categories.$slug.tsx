@@ -118,14 +118,33 @@ function isProductSuitableForCrop(p: any, cropFilter: string): boolean {
 export const Route = createFileRoute("/categories/$slug")({
   head: ({ params }) => {
     const cat = categories.find((c) => c.slug === params.slug);
-    const title = cat ? `${cat.name} — Pure Organic Harvest — JANANI` : "Category — JANANI";
+    const catName = cat ? cat.name : "Agricultural Inputs";
+    const title = `${catName} — Bio Inputs & Crop Protection | JANANI AGRO PRODUCTS`;
+    const description = cat?.description
+      ? `${cat.description} Buy authentic ${catName} formulations direct from Janani Agro Products with all-India doorstep delivery.`
+      : `Explore high-potency ${catName} bio-inputs, fertilizers, and crop protection formulations manufactured by Janani Agro Products. 100% genuine quality.`;
+    const canonicalUrl = `https://jananiagroproducts.com/categories/${params.slug}`;
+    const imageUrl = `https://jananiagroproducts.com${getCategoryImage(params.slug, cat?.image)}`;
+    const keywords = `${catName}, buy ${catName} online, ${catName} fertilizers, bio pesticides, bio fungicides, crop protection, Gujarat agro chemicals, Janani Agro Products, organic farming inputs India`;
+
     return {
       meta: [
         { title },
-        {
-          name: "description",
-          content: `Shop pure and single-origin ${cat?.name ?? "products"} from Janani Agro Products with certified organic quality.`,
-        },
+        { name: "description", content: description },
+        { name: "keywords", content: keywords },
+        { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: canonicalUrl },
+        { property: "og:type", content: "website" },
+        { property: "og:image", content: imageUrl },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: imageUrl },
+      ],
+      links: [
+        { rel: "canonical", href: canonicalUrl },
       ],
     };
   },
@@ -541,8 +560,44 @@ function CategoryDetailPage() {
     </div>
   );
 
+  const categoryJsonLd = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": `${category?.name || "Agricultural Formulations"} — Janani Agro Products`,
+    "description": category?.description || "Browse certified biological agri inputs and crop protection products.",
+    "url": `https://jananiagroproducts.com/categories/${slug}`,
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://jananiagroproducts.com"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Categories",
+          "item": "https://jananiagroproducts.com/categories"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": category?.name || "Category",
+          "item": `https://jananiagroproducts.com/categories/${slug}`
+        }
+      ]
+    }
+  }), [category, slug]);
+
   return (
     <>
+      {/* Category Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryJsonLd) }}
+      />
       {/* COMPACT CATEGORY HEADER & DIRECT PRODUCT DISPLAY */}
       <div className="border-b border-border/70 bg-gradient-to-b from-emerald-950/10 via-background to-background pt-4 pb-3 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">

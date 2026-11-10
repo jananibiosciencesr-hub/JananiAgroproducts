@@ -24,20 +24,36 @@ import { WhatsAppIcon } from "@/components/ui/brand-icons";
 export const Route = createFileRoute("/diseases/$slug")({
   head: ({ params }) => {
     const disease = getDiseaseById(params.slug);
+    const diseaseName = disease?.name || "Crop Disease & Pest Control";
     const title = disease
-      ? `${disease.name} Control & Recommended Pesticides — JANANI AGRO`
-      : "Disease & Pest Control — JANANI AGRO";
+      ? `${diseaseName} Treatment & Recommended Bio-Pesticides | JANANI AGRO`
+      : "Disease & Pest Control Solutions — JANANI AGRO PRODUCTS";
+    const description = disease?.tagline
+      ? `${disease.tagline} Proven bio-fungicides and biological formulations to eradicate ${diseaseName} naturally. Manufacturer recommendations by Janani Agro.`
+      : `Recommended biological pest and disease control formulations to treat ${diseaseName}. All-India doorstep delivery directly to farms.`;
+    const canonicalUrl = `https://jananiagroproducts.com/diseases/${params.slug}`;
+    const keywords = `${diseaseName} control, ${diseaseName} organic treatment, ${diseaseName} pesticide, bio fungicide for ${diseaseName}, crop disease treatment Janani Agro`;
+
     return {
       meta: [
         { title },
-        {
-          name: "description",
-          content: disease?.tagline || "Proven pesticides and biological formulations to eradicate crop diseases and pests."
-        }
-      ]
+        { name: "description", content: description },
+        { name: "keywords", content: keywords },
+        { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: canonicalUrl },
+        { property: "og:type", content: "article" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+      links: [
+        { rel: "canonical", href: canonicalUrl },
+      ],
     };
   },
-  component: DiseaseDetailPage
+  component: DiseaseDetailPage,
 });
 
 function DiseaseDetailPage() {

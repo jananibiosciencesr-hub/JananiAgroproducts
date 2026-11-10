@@ -41,18 +41,36 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/products/")({
   head: () => ({
     meta: [
-      { title: "Products — JANANI AGRO PRODUCTS" },
+      { title: "Agricultural Products & Bio Inputs Catalog — JANANI AGRO PRODUCTS" },
       {
         name: "description",
         content:
-          "Natural and effective agro solutions for healthier crops and higher yields. Bio fertilizers, bio pesticides, bio fungicides, bio stimulants, micro nutrients, insecticides, botanical extracts and water solubles.",
+          "Browse our complete catalog of certified agricultural inputs: Bio Fertilizers, Bio Pesticides, Bio Fungicides, Humic Biostimulants, Micronutrients, and Neem Oil. Direct manufacturer rates with doorstep farm delivery across India.",
       },
-      { property: "og:title", content: "Products — JANANI AGRO PRODUCTS" },
+      {
+        name: "keywords",
+        content:
+          "agricultural products catalog, buy bio fertilizers online, organic bio pesticides, Trichoderma Harit, Bhumi Shakti humic acid, Neem Oil 1000 ppm, Balavan, Suraksha, Pushkal, Janani Agro store, farmer inputs India",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { property: "og:title", content: "All Agricultural Inputs & Bio Formulations — JANANI AGRO PRODUCTS" },
       {
         property: "og:description",
-        content: "Natural and effective agro solutions for healthier crops and higher yields.",
+        content: "Natural and effective agro solutions for healthier crops, active root growth, pest control, and bumper crop yields.",
       },
+      { property: "og:url", content: "https://jananiagroproducts.com/products" },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://jananiagroproducts.com/products/harit.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Agricultural Products Catalog — JANANI AGRO PRODUCTS" },
+      {
+        name: "twitter:description",
+        content: "Direct manufacturer pricing on high-potency bio-fertilizers, fungicides, and crop stimulants.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/products/harit.jpg" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/products" },
     ],
   }),
   component: ProductsPage,

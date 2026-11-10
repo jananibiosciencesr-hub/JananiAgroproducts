@@ -25,20 +25,36 @@ import { WhatsAppIcon } from "@/components/ui/brand-icons";
 export const Route = createFileRoute("/crops/$slug")({
   head: ({ params }) => {
     const crop = getCropById(params.slug);
+    const cropName = crop?.name || "Crop Protection";
     const title = crop
-      ? `${crop.name} Pesticides & Crop Protection — JANANI AGRO`
-      : "Crop Protection — JANANI AGRO";
+      ? `${cropName} Pesticides, Bio-Fertilizers & Crop Protection Guide | JANANI AGRO`
+      : "Crop Protection Advisory & Inputs — JANANI AGRO PRODUCTS";
+    const description = crop?.tagline
+      ? `${crop.tagline} Discover certified bio-fungicides, pesticides, and biostimulants specifically formulated for ${cropName} by Janani Agro Products.`
+      : `Recommended pesticides, bio-fertilizers, and sustainable crop protection schedules for ${cropName}. Doorstep farm delivery across India.`;
+    const canonicalUrl = `https://jananiagroproducts.com/crops/${params.slug}`;
+    const keywords = `${cropName} crop protection, ${cropName} pesticides, ${cropName} diseases, ${cropName} biofertilizers, spray schedule for ${cropName}, Janani Agro ${cropName}`;
+
     return {
       meta: [
         { title },
-        {
-          name: "description",
-          content: crop?.tagline || "Discover effective pesticides and bio-inputs for crop protection."
-        }
-      ]
+        { name: "description", content: description },
+        { name: "keywords", content: keywords },
+        { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: canonicalUrl },
+        { property: "og:type", content: "article" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+      links: [
+        { rel: "canonical", href: canonicalUrl },
+      ],
     };
   },
-  component: CropDetailPage
+  component: CropDetailPage,
 });
 
 function CropDetailPage() {

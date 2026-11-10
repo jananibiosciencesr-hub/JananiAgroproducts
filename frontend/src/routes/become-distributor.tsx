@@ -24,9 +24,36 @@ import { validatePhone, validateEmail } from "@/lib/validation";
 export const Route = createFileRoute("/become-distributor")({
   head: () => ({
     meta: [
-      { title: "Become a Distributor & Dealer — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Apply for retail dealership or regional distributorship of pure organic Janani Agro products." },
-      { property: "og:title", content: "Become a Distributor — JANANI" },
+      { title: "Become an Authorized Agro Dealer or Distributor | JANANI AGRO" },
+      {
+        name: "description",
+        content:
+          "Partner with Janani Agro Products as an authorized agricultural dealer or regional distributor. High margins on certified bio-fertilizers, pesticides, and biostimulants with marketing support.",
+      },
+      {
+        name: "keywords",
+        content:
+          "apply for agro dealership, agriculture distributor franchise, Janani Agro dealership application, agro chemicals retail dealership, rural business opportunity India",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { property: "og:title", content: "Become an Authorized Agro Dealer — JANANI AGRO" },
+      {
+        property: "og:description",
+        content: "High margins, dedicated area exclusivity, and promotional support for agricultural input dealers.",
+      },
+      { property: "og:url", content: "https://jananiagroproducts.com/become-distributor" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://jananiagroproducts.com/logo.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Become an Authorized Agro Dealer | JANANI AGRO" },
+      {
+        name: "twitter:description",
+        content: "Join Janani Agro's rapidly expanding network of authorized agricultural distributors.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/logo.png" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/become-distributor" },
     ],
   }),
   component: BecomeDistributorPage,

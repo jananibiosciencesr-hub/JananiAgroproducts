@@ -8,9 +8,36 @@ import { posts, storyImage } from "@/lib/catalog";
 export const Route = createFileRoute("/blog/")({
   head: () => ({
     meta: [
-      { title: "Field Agronomy & Crop Protection Journal — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Field guides, crop protection advisories, and agronomy insights from Janani Agro Products." },
-      { property: "og:title", content: "Agronomy Journal — JANANI AGRO" },
+      { title: "Agronomy Journal & Crop Protection Field Guides — JANANI AGRO" },
+      {
+        name: "description",
+        content:
+          "Practical field knowledge, crop protection advisories, rhizosphere health, and biological agronomy insights from Janani Agro Products experts.",
+      },
+      {
+        name: "keywords",
+        content:
+          "agronomy journal, crop protection field guide, bio fertilizer usage, Trichoderma dosage guide, humic acid soil benefits, organic farming insights India",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { property: "og:title", content: "Agronomy Journal & Crop Protection Field Guides — JANANI AGRO" },
+      {
+        property: "og:description",
+        content: "Practical agronomy field guides on biological fertilizers, disease control, and soil rejuvenation.",
+      },
+      { property: "og:url", content: "https://jananiagroproducts.com/blog" },
+      { property: "og:type", content: "blog" },
+      { property: "og:image", content: "https://jananiagroproducts.com/logo.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Agronomy Journal — JANANI AGRO PRODUCTS" },
+      {
+        name: "twitter:description",
+        content: "Expert farming and crop protection field guides for Indian farmers.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/logo.png" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/blog" },
     ],
   }),
   component: BlogIndexPage,

@@ -1,14 +1,115 @@
+# ==============================================================================
+# JANANI AGRO PRODUCTS - Robots.txt
+# https://jananiagroproducts.com
+# ==============================================================================
+
 User-agent: Googlebot
 Allow: /
+Allow: /products
+Allow: /products/*
+Allow: /categories
+Allow: /categories/*
+Allow: /crops/*
+Allow: /diseases/*
+Allow: /blog
+Allow: /blog/*
+Allow: /about
+Allow: /contact
+Allow: /services
+Allow: /become-distributor
+Allow: /faq
+Allow: /assets/
+Allow: /images/
+Allow: /products/
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /cart
+Disallow: /checkout
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /wishlist
+Disallow: /orders
+Disallow: /orders/*
+Disallow: /payment
+Disallow: /profile
+Disallow: /wallet
+Disallow: /order-success
+Disallow: /api.php
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /cart
+Disallow: /checkout
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /wishlist
+Disallow: /orders
+Disallow: /orders/*
+Disallow: /payment
+Disallow: /profile
+Disallow: /wallet
+Disallow: /order-success
+Disallow: /api.php
 
-User-agent: Twitterbot
+User-agent: Slurp
 Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /cart
+Disallow: /checkout
+Disallow: /dashboard
 
-User-agent: facebookexternalhit
+User-agent: DuckDuckBot
 Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /cart
+Disallow: /checkout
+Disallow: /dashboard
+
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /cart
+Disallow: /checkout
+Disallow: /dashboard
+
+User-agent: YandexBot
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /cart
+Disallow: /checkout
+Disallow: /dashboard
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /cart
+Disallow: /checkout
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /wishlist
+Disallow: /orders
+Disallow: /orders/*
+Disallow: /payment
+Disallow: /profile
+Disallow: /wallet
+Disallow: /order-success
+Disallow: /api.php
+
+# Sitemap Declarations
+Sitemap: https://jananiagroproducts.com/sitemap.xml
+Sitemap: https://jananiagroproducts.com/sitemap-pages.xml
+Sitemap: https://jananiagroproducts.com/sitemap-products.xml
+Sitemap: https://jananiagroproducts.com/sitemap-categories.xml
+Sitemap: https://jananiagroproducts.com/sitemap-crops.xml
+Sitemap: https://jananiagroproducts.com/sitemap-diseases.xml
+Sitemap: https://jananiagroproducts.com/sitemap-blogs.xml

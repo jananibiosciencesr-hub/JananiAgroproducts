@@ -7,11 +7,30 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/blog/$slug")({
   head: ({ params }) => {
     const p = posts.find((x) => x.slug === params.slug);
-    const title = p ? `${p.title} — JANANI AGRO PRODUCTS` : "Journal — JANANI";
+    const postTitle = p ? p.title : "Agronomy Field Guide";
+    const title = `${postTitle} | JANANI AGRO PRODUCTS Journal`;
+    const description = p?.excerpt ?? "Journal story and practical agronomy insights from Janani Agro Products.";
+    const canonicalUrl = `https://jananiagroproducts.com/blog/${params.slug}`;
+    const keywords = `${postTitle}, agronomy field guide, bio fertilizer usage, crop protection advisory, Janani Agro blog`;
+
     return {
       meta: [
         { title },
-        { name: "description", content: p?.excerpt ?? "Journal story from Janani Agro Products." },
+        { name: "description", content: description },
+        { name: "keywords", content: keywords },
+        { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: canonicalUrl },
+        { property: "og:type", content: "article" },
+        { property: "og:image", content: "https://jananiagroproducts.com/logo.png" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: "https://jananiagroproducts.com/logo.png" },
+      ],
+      links: [
+        { rel: "canonical", href: canonicalUrl },
       ],
     };
   },
@@ -33,8 +52,33 @@ function BlogPostPage() {
     }
   };
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.title,
+    "description": post.excerpt,
+    "datePublished": "2026-08-15T00:00:00+05:30",
+    "author": {
+      "@type": "Organization",
+      "name": "JANANI AGRO PRODUCTS Agronomy Team"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "JANANI AGRO PRODUCTS",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://jananiagroproducts.com/logo.png"
+      }
+    },
+    "mainEntityOfPage": `https://jananiagroproducts.com/blog/${slug}`
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs text-muted-foreground">
         <Link to="/" className="hover:text-primary">Home</Link>

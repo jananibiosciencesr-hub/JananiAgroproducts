@@ -19,9 +19,36 @@ import { validatePhone, validateEmail } from "@/lib/validation";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact Us — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Get in touch with Janani Agro Products. Lodhika GIDC, Gujarat. Call +91 93114 16225 or WhatsApp us." },
+      { title: "Contact Us & Agronomy Support Desk — JANANI AGRO PRODUCTS" },
+      {
+        name: "description",
+        content:
+          "Connect with Janani Agro Products. Customer support, crop dosage guidance, wholesale inquiries, and distributor onboarding. Factory at Lodhika GIDC, Gujarat. Call +91 93114 16225.",
+      },
+      {
+        name: "keywords",
+        content:
+          "Janani Agro contact number, Lodhika GIDC Rajkot address, farmer helpline, WhatsApp crop inquiry, buy bio fertilizers contact, agronomy consultation",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
       { property: "og:title", content: "Contact Us — JANANI AGRO PRODUCTS" },
+      {
+        property: "og:description",
+        content: "Call +91 93114 16225 or message on WhatsApp for crop advice and dealer orders.",
+      },
+      { property: "og:url", content: "https://jananiagroproducts.com/contact" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://jananiagroproducts.com/logo.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Contact Janani Agro Products" },
+      {
+        name: "twitter:description",
+        content: "Factory direct sales and farmer agronomy support in Gujarat, India.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/logo.png" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/contact" },
     ],
   }),
   component: ContactPage,

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://jananiagroproducts.com/sitemap-pages.xml</loc>
+    <lastmod>2026-11-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://jananiagroproducts.com/sitemap-products.xml</loc>
+    <lastmod>2026-11-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://jananiagroproducts.com/sitemap-categories.xml</loc>
+    <lastmod>2026-11-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://jananiagroproducts.com/sitemap-crops.xml</loc>
+    <lastmod>2026-11-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://jananiagroproducts.com/sitemap-diseases.xml</loc>
+    <lastmod>2026-11-10</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://jananiagroproducts.com/sitemap-blogs.xml</loc>
+    <lastmod>2026-11-10</lastmod>
+  </sitemap>
+</sitemapindex>

@@ -21,14 +21,36 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About Us — JANANI AGRO PRODUCTS" },
+      { title: "About Us — Biological Agriculture & Crop Protection | JANANI AGRO" },
       {
         name: "description",
         content:
-          "Learn about Janani Agro Products, our commitment to biological crop protection, organic bio-fertilizers, and sustainable agronomy empowering 50,000+ Indian farmers.",
+          "Learn about Janani Agro Products: Gujarat-based manufacturer of biological crop protection, organic bio-fertilizers, and sustainable agronomy formulations empowering 50,000+ Indian farmers.",
       },
+      {
+        name: "keywords",
+        content:
+          "about Janani Agro Products, Lodhika GIDC manufacturer, organic bio fertilizers factory Gujarat, sustainable agronomy team, certified agri inputs India",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
       { property: "og:title", content: "About Us — JANANI AGRO PRODUCTS" },
-      { property: "og:description", content: "Pure Soil to Soul — Nurturing Soil Health, Empowering Farmers, Enriching Nature." },
+      {
+        property: "og:description",
+        content: "Pure Soil to Soul — Nurturing Soil Health, Empowering Farmers, Enriching Nature with certified biological agro inputs.",
+      },
+      { property: "og:url", content: "https://jananiagroproducts.com/about" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://jananiagroproducts.com/logo.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "About Janani Agro Products" },
+      {
+        name: "twitter:description",
+        content: "Biological agriculture and sustainable crop protection manufacturer in Gujarat.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/logo.png" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/about" },
     ],
   }),
   component: AboutPage,

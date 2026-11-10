@@ -5,8 +5,15 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Terms & Conditions — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Terms of service and legal agreement for JANANI AGRO PRODUCTS." },
+      { title: "Terms & Conditions of Service — JANANI AGRO PRODUCTS" },
+      { name: "description", content: "Terms and conditions, acceptable use, order terms, warranties, and legal policies for Janani Agro Products." },
+      { name: "keywords", content: "terms and conditions, customer terms, service terms, legal policy, Janani Agro Products" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Terms & Conditions — JANANI AGRO PRODUCTS" },
+      { property: "og:url", content: "https://jananiagroproducts.com/terms" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/terms" },
     ],
   }),
   component: TermsPage,

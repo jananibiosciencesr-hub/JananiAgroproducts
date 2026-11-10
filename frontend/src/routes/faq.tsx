@@ -9,8 +9,36 @@ import { faqs, storyImage } from "@/lib/catalog";
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
-      { title: "Frequently Asked Questions — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Answers about organic certification, purity testing, delivery, and wholesale orders." },
+      { title: "Frequently Asked Questions (FAQ) on Bio-Inputs & Usage | JANANI AGRO" },
+      {
+        name: "description",
+        content:
+          "Clear answers to farmer questions on Trichoderma application, Bhumi Shakti dosage, bio-fertilizer compatibility, shelf life, COD delivery, and dealership opportunities.",
+      },
+      {
+        name: "keywords",
+        content:
+          "Janani Agro FAQ, Trichoderma usage dosage, bio pesticide shelf life, Cash on Delivery farm products, organic certification question, bio fertilizer compatibility",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { property: "og:title", content: "Frequently Asked Questions — JANANI AGRO PRODUCTS" },
+      {
+        property: "og:description",
+        content: "Answers about bio-fertilizer dosage, crop protection application, organic certification, and farm delivery.",
+      },
+      { property: "og:url", content: "https://jananiagroproducts.com/faq" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://jananiagroproducts.com/logo.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Janani Agro Products - FAQ" },
+      {
+        name: "twitter:description",
+        content: "Frequently Asked Questions about agricultural bio inputs and crop protection.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/logo.png" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/faq" },
     ],
   }),
   component: FaqPage,
@@ -35,8 +63,25 @@ function FaqPage() {
     return question.toLowerCase().includes(search.toLowerCase()) || answer.toLowerCase().includes(search.toLowerCase());
   });
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": allFaqs.map(([question, answer]) => ({
+      "@type": "Question",
+      "name": question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": answer,
+      },
+    })),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <PageHero
         eyebrow="Help & Support"
         title="Frequently Asked Questions"

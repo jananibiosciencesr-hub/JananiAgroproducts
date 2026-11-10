@@ -46,19 +46,39 @@ import { ProductCard } from "@/components/product-card";
 export const Route = createFileRoute("/products/$slug")({
   head: ({ params }) => {
     const p = products.find((x) => x.slug === params.slug || x.aliases?.includes(params.slug) || String(x.id) === params.slug);
+    const prodName = p ? formatProductName(p.name) : "Agricultural Formulation";
     const title = p
-      ? `${formatProductName(p.name)} — ${p.subtitle || "Janani Agro Products"}`
+      ? `${prodName} (${p.unit || "1L / 5L"}) — ₹${p.price} | JANANI AGRO PRODUCTS`
       : "Product Detail — JANANI AGRO PRODUCTS";
-    const description =
-      p?.description ??
-      "Natural and effective agro solutions for healthier crops and higher yields.";
+    const description = p
+      ? `${prodName} by Janani Agro Products. ${p.subtitle ? `${p.subtitle}. ` : ""}${p.description.slice(0, 150)}... Buy authentic bio-inputs direct from manufacturer with fast all-India delivery.`
+      : "Natural and effective agro solutions for healthier crops, pest control and higher yields.";
+    const canonicalUrl = `https://jananiagroproducts.com/products/${p ? p.slug : params.slug}`;
+    const imageUrl = p ? `https://jananiagroproducts.com${p.image}` : "https://jananiagroproducts.com/logo.png";
+    const keywords = p
+      ? `${p.name}, ${prodName}, ${p.category}, buy ${p.name} online, ${p.subtitle || ""}, bio fertilizer, crop protection, Gujarat agro chemicals, Janani Agro, agricultural inputs, ${p.crops?.slice(0, 5).join(", ") || "all crops"}, ${p.targetDiseases || "disease prevention"}`
+      : "agricultural inputs, bio fertilizers, crop protection, Janani Agro Products";
+
     return {
       meta: [
         { title },
         { name: "description", content: description },
+        { name: "keywords", content: keywords },
+        { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
         { property: "og:title", content: title },
         { property: "og:description", content: description },
+        { property: "og:url", content: canonicalUrl },
         { property: "og:type", content: "product" },
+        { property: "og:image", content: imageUrl },
+        { property: "product:price:amount", content: String(p?.price || 450) },
+        { property: "product:price:currency", content: "INR" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: imageUrl },
+      ],
+      links: [
+        { rel: "canonical", href: canonicalUrl },
       ],
     };
   },
@@ -685,8 +705,76 @@ function ProductDetailPage() {
     ];
   }, [product]);
 
+  const productJsonLd = useMemo(() => ({
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": formatProductName(product.name),
+    "image": [`https://jananiagroproducts.com${product.image}`],
+    "description": product.description,
+    "sku": `JAP-SKU-${product.slug.toUpperCase()}`,
+    "mpn": `JAP-MPN-${product.id}`,
+    "brand": {
+      "@type": "Brand",
+      "name": "JANANI AGRO PRODUCTS"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `https://jananiagroproducts.com/products/${product.slug}`,
+      "priceCurrency": "INR",
+      "price": product.price,
+      "priceValidUntil": "2027-12-31",
+      "itemCondition": "https://schema.org/NewCondition",
+      "availability": product.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "JANANI AGRO PRODUCTS"
+      }
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": product.rating || 4.8,
+      "reviewCount": product.reviews || 45,
+      "bestRating": "5",
+      "worstRating": "1"
+    }
+  }), [product]);
+
+  const breadcrumbJsonLd = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://jananiagroproducts.com"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Products",
+        "item": "https://jananiagroproducts.com/products"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": formatProductName(product.name),
+        "item": `https://jananiagroproducts.com/products/${product.slug}`
+      }
+    ]
+  }), [product]);
+
   return (
     <div className="bg-white min-h-screen text-gray-900">
+      {/* Product & Breadcrumb JSON-LD Schemas for Search Engines */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-4 sm:py-8">
         {/* 1. Breadcrumbs Strip */}
         <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-4 sm:mb-6 font-medium flex-wrap">

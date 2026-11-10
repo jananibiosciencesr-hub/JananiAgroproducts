@@ -5,7 +5,14 @@ export const Route = createFileRoute("/return-policy")({
   head: () => ({
     meta: [
       { title: "Returns & Refund Policy — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Details on our 7-day replacement guarantee, return conditions, and refund process." },
+      { name: "description", content: "Details on our 7-day transit replacement guarantee, damaged bottle replacements, refund timelines, and hassle-free farmer service." },
+      { name: "keywords", content: "returns policy, refund policy, transit damage replacement, Janani Agro refund, agricultural input warranty" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Returns & Refund Policy — JANANI AGRO PRODUCTS" },
+      { property: "og:url", content: "https://jananiagroproducts.com/return-policy" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/return-policy" },
     ],
   }),
   component: ReturnPolicyPage,

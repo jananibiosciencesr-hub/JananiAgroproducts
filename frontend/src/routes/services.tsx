@@ -11,9 +11,36 @@ import { validatePhone, validateEmail } from "@/lib/validation";
 export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
-      { title: "Agricultural Services & Supply — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Wholesale supply, dealer networks, bulk grain sourcing, private labeling and organic farming consultation by Janani Agro Products." },
-      { property: "og:title", content: "Services & Wholesale — JANANI AGRO PRODUCTS" },
+      { title: "Agricultural Services, Dealership & Bulk Sourcing | JANANI AGRO" },
+      {
+        name: "description",
+        content:
+          "Agricultural services by Janani Agro Products: Wholesale farm supply, retail dealer network, FPO sourcing, custom contract bio-formulation, and professional agronomy field consultation.",
+      },
+      {
+        name: "keywords",
+        content:
+          "agricultural dealership, bio pesticide wholesale distributor, bulk bio fertilizer supply, FPO sourcing, private label agro chemicals, agronomy consultation India",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { property: "og:title", content: "Agricultural Services & Supply — JANANI AGRO PRODUCTS" },
+      {
+        property: "og:description",
+        content: "Wholesale farm supply, dealer network, and organic agronomy advisory by Janani Agro Products.",
+      },
+      { property: "og:url", content: "https://jananiagroproducts.com/services" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://jananiagroproducts.com/logo.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Agricultural Services — JANANI AGRO" },
+      {
+        name: "twitter:description",
+        content: "Wholesale agri supply, dealer network, and agronomy services in Gujarat, India.",
+      },
+      { name: "twitter:image", content: "https://jananiagroproducts.com/logo.png" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/services" },
     ],
   }),
   component: ServicesPage,
@@ -333,13 +360,12 @@ function ServicesPage() {
                   value={formData.phone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder="98765 43210"
-                  className={`h-12 w-full rounded-2xl border bg-background pl-16 pr-10 text-sm outline-none transition tracking-wide font-mono ${
-                    touched.phone && errors.phone
+                  className={`h-12 w-full rounded-2xl border bg-background pl-16 pr-10 text-sm outline-none transition tracking-wide font-mono ${touched.phone && errors.phone
                       ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 bg-destructive/5 text-destructive"
                       : isPhoneValid
-                      ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
-                      : "border-input focus:border-primary"
-                  }`}
+                        ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                        : "border-input focus:border-primary"
+                    }`}
                 />
                 {isPhoneValid && (
                   <CheckCircle2 className="absolute right-3.5 top-4 size-4 text-emerald-600 pointer-events-none" />
@@ -373,13 +399,12 @@ function ServicesPage() {
                   value={formData.email}
                   onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="contact@business.com"
-                  className={`h-12 w-full rounded-2xl border bg-background px-4 pr-10 text-sm outline-none transition ${
-                    touched.email && errors.email
+                  className={`h-12 w-full rounded-2xl border bg-background px-4 pr-10 text-sm outline-none transition ${touched.email && errors.email
                       ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 bg-destructive/5 text-destructive"
                       : isEmailValid
-                      ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
-                      : "border-input focus:border-primary"
-                  }`}
+                        ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                        : "border-input focus:border-primary"
+                    }`}
                 />
                 {isEmailValid && (
                   <CheckCircle2 className="absolute right-3.5 top-4 size-4 text-emerald-600 pointer-events-none" />

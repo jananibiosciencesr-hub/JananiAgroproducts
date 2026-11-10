@@ -4,8 +4,15 @@ import { PolicyPage } from "@/components/page-kit";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — JANANI AGRO PRODUCTS" },
-      { name: "description", content: "Privacy policy, data protection, and customer rights for Janani Agro Products." },
+      { title: "Privacy & Data Protection Policy — JANANI AGRO PRODUCTS" },
+      { name: "description", content: "Privacy policy, user data protection, payment safety, and security protocols for Janani Agro Products." },
+      { name: "keywords", content: "privacy policy, data protection, security, customer rights, Janani Agro Products" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Privacy Policy — JANANI AGRO PRODUCTS" },
+      { property: "og:url", content: "https://jananiagroproducts.com/privacy" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://jananiagroproducts.com/privacy" },
     ],
   }),
   component: PrivacyPage,
