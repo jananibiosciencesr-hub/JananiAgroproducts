@@ -872,9 +872,6 @@ function CategoryViewModal({
               </div>
               <div className="flex items-center gap-2.5 text-xs text-muted-foreground mt-1 flex-wrap">
                 <span className="font-mono text-emerald-600 font-semibold">/{category.slug}</span>
-                <span>•</span>
-                <span className="capitalize">{category.level === "root" ? "Root Tier 1" : category.level === "sub" ? "Sub Tier 2" : "Child Tier 3"}</span>
-                {category.parentId && <span>(Parent: {parentName})</span>}
               </div>
             </div>
           </div>
@@ -902,10 +899,7 @@ function CategoryViewModal({
                 <span className="text-[11px] block text-muted-foreground/80 font-medium">Associated Products</span>
                 <strong className="text-sm font-extrabold text-foreground">{matchingProducts.length} items</strong>
               </div>
-              <div>
-                <span className="text-[11px] block text-muted-foreground/80 font-medium">Display Hierarchy</span>
-                <strong className="text-xs font-bold text-foreground capitalize">{category.level || "Root"}</strong>
-              </div>
+              
               <div>
                 <span className="text-[11px] block text-muted-foreground/80 font-medium">Storefront URL</span>
                 <a
