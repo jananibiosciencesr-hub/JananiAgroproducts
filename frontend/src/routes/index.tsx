@@ -328,7 +328,7 @@ export function HomePage() {
       {/* 2. EXPLORE OUR PRODUCT CATEGORIES                                         */}
       {/* ========================================================================= */}
       <section className="py-4 sm:py-5 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 bg-white relative">
-        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
+        <div className="mx-auto max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
           {/* Section Header with Left Text & Right Controls */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-3 sm:mb-4 text-left">
             <div>
@@ -401,10 +401,11 @@ export function HomePage() {
               <ChevronRight className="size-5" />
             </button>
 
-            {/* Scrollable Container: exactly 2 cards visible per row on mobile */}
+            {/* Scrollable Container: exactly 2 cards visible per row on mobile, centered on larger screens */}
             <div
               ref={categoriesScrollRef}
-              className="flex items-stretch gap-2.5 sm:gap-6 overflow-x-auto pb-4 pt-2 px-1 sm:px-2 scrollbar-none snap-x snap-mandatory"
+              className="flex items-stretch gap-2.5 sm:gap-6 overflow-x-auto pb-4 pt-2 px-1 sm:px-2 scrollbar-none snap-x snap-mandatory justify-start xl:justify-center [justify-content:safe_center]"
+              style={{ justifyContent: "safe center" }}
             >
               {categoryCards.map((cat) => (
                 <Link
@@ -441,7 +442,7 @@ export function HomePage() {
       {/* 3. FEATURED PRODUCTS SECTION                                              */}
       {/* ========================================================================= */}
       <section className="py-4 sm:py-5 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 bg-white relative">
-        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
+        <div className="mx-auto max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
           {/* Header Row */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-3 sm:mb-4">
             <div>
@@ -677,7 +678,7 @@ export function HomePage() {
       {/* 4. WHY CHOOSE JANANI AGRO PRODUCTS?                                       */}
       {/* ========================================================================= */}
       <section className="py-4 sm:py-6 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 bg-white relative overflow-hidden">
-        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
+        <div className="mx-auto max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
             {/* Left Column: Dynamic Growing Plant Animation */}
             <div className="lg:col-span-5 flex justify-center">
@@ -747,7 +748,7 @@ export function HomePage() {
       {/* 5. WHAT OUR FARMERS SAY (TESTIMONIALS)                                    */}
       {/* ========================================================================= */}
       <section className="py-4 sm:py-6 px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 bg-white relative">
-        <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
+        <div className="mx-auto max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
           {/* Header */}
           <div className="mb-3 sm:mb-4 text-left">
             <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
