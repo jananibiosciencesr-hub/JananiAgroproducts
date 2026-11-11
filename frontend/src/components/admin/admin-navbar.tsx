@@ -344,7 +344,7 @@ export function AdminNavbar({
   ];
 
   return (
-    <header style={{ position: "sticky", top: 0, zIndex: 40 }} className={`sticky top-0 z-40 flex h-16 sm:h-18 w-full max-w-full items-center justify-between border-b bg-card border-border transition-all duration-200 px-3 sm:px-6 lg:px-8 ${isScrolled ? "shadow-md" : "shadow-xs"}`}>
+    <header style={{ position: "sticky", top: 0, zIndex: 40 }} className={`sticky top-0 z-40 flex h-16 sm:h-18 w-full max-w-full items-center justify-between border-b bg-card border-border transition-all duration-200 px-5 sm:px-8 lg:px-10 xl:px-12 ${isScrolled ? "shadow-md" : "shadow-xs"}`}>
       {/* Left Area: Mobile Menu, Dynamic Search & Contextual Add */}
       <div className="flex items-center gap-1.5 sm:gap-3 flex-1 max-w-2xl min-w-0 mr-1.5 sm:mr-2">
         <button
