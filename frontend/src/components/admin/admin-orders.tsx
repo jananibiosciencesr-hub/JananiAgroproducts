@@ -726,7 +726,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                 {/* Items & Financials Breakdown */}
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex -space-x-2 overflow-hidden shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {order.items?.slice(0, 3).map((item: any, idx: number) => (
                         <img
                           key={idx}
@@ -888,7 +888,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                       {/* Items */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">
-                          <div className="flex -space-x-2 overflow-hidden shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             {order.items?.slice(0, 3).map((item: any, idx: number) => (
                               <img
                                 key={idx}

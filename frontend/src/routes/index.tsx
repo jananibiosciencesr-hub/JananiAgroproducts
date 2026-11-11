@@ -567,8 +567,8 @@ export function HomePage() {
                       >
                         <Heart
                           className={`size-4 sm:size-4.5 transition-colors ${isWishlisted
-                              ? "fill-red-500 text-red-500"
-                              : "text-slate-600 hover:text-red-500"
+                            ? "fill-red-500 text-red-500"
+                            : "text-slate-600 hover:text-red-500"
                             }`}
                         />
                       </button>
@@ -853,8 +853,8 @@ export function HomePage() {
                   onClick={() => scrollToTestimonialIndex(idx)}
                   aria-label={`Go to testimonial ${idx + 1}`}
                   className={`transition-all duration-300 rounded-full h-2 cursor-pointer ${activeTestimonial === idx
-                      ? "w-6 bg-[#075B32]"
-                      : "w-2 bg-slate-300 hover:bg-slate-400"
+                    ? "w-6 bg-[#075B32]"
+                    : "w-2 bg-slate-300 hover:bg-slate-400"
                     }`}
                 />
               ))}

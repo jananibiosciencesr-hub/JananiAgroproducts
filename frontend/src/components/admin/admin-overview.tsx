@@ -243,17 +243,17 @@ export function AdminOverview({
               <div
                 key={idx}
                 onClick={() => onNavigateTab(card.tab)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-3.5 sm:p-5 transition-all duration-200 hover:border-emerald-500/40 hover:shadow-md hover:-translate-y-0.5 min-w-0 shadow-xs flex flex-col justify-between"
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-3.5 sm:p-5 transition-colors duration-200 hover:border-emerald-500/50 min-w-0 shadow-xs flex flex-col justify-between"
               >
-                {/* Top Hover Accent Line */}
-                <div className={`absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r ${card.topGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                {/* Top Accent Line */}
+                <div className={`absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r ${card.topGradient} opacity-70`} />
 
                 <div>
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground/90 tracking-tight leading-tight whitespace-nowrap">
                       {card.title}
                     </span>
-                    <div className={`grid size-7.5 sm:size-8.5 place-items-center rounded-xl ${card.bgColor} ${card.color} shrink-0 transition-transform duration-300 group-hover:scale-105 border`}>
+                    <div className={`grid size-7.5 sm:size-8.5 place-items-center rounded-xl ${card.bgColor} ${card.color} shrink-0 border`}>
                       <Icon className="size-3.5 sm:size-4" />
                     </div>
                   </div>
@@ -280,7 +280,7 @@ export function AdminOverview({
                     )}
                     <span className="truncate">{card.trend}</span>
                   </span>
-                  <ArrowUpRight className="size-3 text-muted-foreground/50 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
+                  <ArrowUpRight className="size-3 text-muted-foreground/50 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors shrink-0" />
                 </div>
               </div>
             );

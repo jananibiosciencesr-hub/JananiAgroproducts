@@ -290,7 +290,7 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
               {reviews.map(review => (
                 <div
                   key={review.id}
-                  className={`relative rounded-xl border bg-card p-5 shadow-sm transition-all hover:shadow-md ${
+                  className={`relative rounded-xl border bg-card p-5 shadow-sm transition-colors ${
                     review.status === "Pending"
                       ? "border-amber-500/40 bg-amber-500/[0.02]"
                       : review.status === "Rejected"
@@ -597,7 +597,7 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
                 <div
                   key={image.id}
                   onClick={() => setLightboxImage({ image, review })}
-                  className="group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md"
+                  className="group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-colors"
                 >
                   <div className="aspect-square overflow-hidden bg-muted">
                     <img

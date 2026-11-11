@@ -695,7 +695,7 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
                 return (
                   <div
                     key={coupon.id}
-                    className={`relative bg-card rounded-2xl border transition-all duration-200 hover:shadow-md overflow-hidden flex flex-col justify-between ${
+                    className={`relative bg-card rounded-2xl border transition-colors duration-200 overflow-hidden flex flex-col justify-between ${
                       !coupon.active
                         ? "border-dashed border-amber-300 dark:border-amber-800/60 opacity-80"
                         : isExpired

@@ -922,7 +922,7 @@ function CategoryViewModal({
                   return (
                     <div
                       key={prod.id || pIdx}
-                      className="flex items-center gap-2.5 p-2.5 rounded-xl border border-border/80 bg-card hover:border-emerald-500/40 hover:shadow-xs transition-all"
+                      className="flex items-center gap-2.5 p-2.5 rounded-xl border border-border/80 bg-card hover:border-emerald-500/40 transition-colors"
                     >
                       <div className="size-10 rounded-lg bg-muted/60 border border-border/60 overflow-hidden flex items-center justify-center shrink-0">
                         <img

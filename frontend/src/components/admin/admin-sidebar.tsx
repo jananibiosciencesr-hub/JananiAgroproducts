@@ -127,7 +127,7 @@ export function AdminSidebar({
               <img
                 src={jananiEmblem}
                 alt="Janani Agro"
-                className="size-full object-contain drop-shadow-[0_2px_8px_rgba(7,91,50,0.2)] transition-transform duration-300 group-hover:scale-105"
+                className="size-full object-contain drop-shadow-[0_2px_8px_rgba(7,91,50,0.2)]"
               />
             </div>
             {!collapsed && (

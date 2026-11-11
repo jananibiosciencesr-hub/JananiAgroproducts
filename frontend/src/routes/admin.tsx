@@ -853,7 +853,7 @@ function AdminDashboardPage() {
   const safeReviews = Array.isArray(reviews) ? reviews : [];
 
   return (
-    <div className="flex min-h-screen w-full max-w-full overflow-x-clip bg-slate-50/70 dark:bg-slate-950/80 text-foreground font-sans antialiased">
+    <div data-admin="true" className="admin-portal flex min-h-screen w-full max-w-full overflow-x-clip bg-slate-50/70 dark:bg-slate-950/80 text-foreground font-sans antialiased">
       {/* Collapsible Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
