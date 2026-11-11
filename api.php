@@ -4655,7 +4655,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY `created_at` DESC LIMIT 200";
+                $query .= " ORDER BY COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC, id DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $orders = $stmt->fetchAll();
@@ -5225,7 +5225,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY `created_at` DESC LIMIT 200";
+                $query .= " ORDER BY COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC, id DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $users = $stmt->fetchAll();

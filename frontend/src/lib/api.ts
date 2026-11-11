@@ -812,6 +812,9 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     id: generatedId,
     number: generatedId,
     orderNumber: generatedId,
+    created_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    timestamp: Date.now(),
     order_date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
     customer_name: custName,
     customer_email: custEmail,
@@ -956,6 +959,9 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     ...phpPayload,
     status: "Processing",
     date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+    created_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    timestamp: Date.now(),
     isoDate: new Date().toISOString().split("T")[0]!,
     customer: {
       id: (orderPayload.customer as any)?.id || generateNextCustomerId(),
@@ -1453,25 +1459,110 @@ export interface OrderQueryParams {
   sortBy?: string | undefined;
 }
 
+const ORDER_MONTH_MAP: Record<string, string> = {
+  jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+  jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
+  january: "01", february: "02", march: "03", april: "04", june: "06",
+  july: "07", august: "08", september: "09", october: "10", november: "11", december: "12"
+};
+
+export function parseOrderTimestamp(o: any): number {
+  if (!o) return 0;
+  if (typeof o.timestamp === "number" && !isNaN(o.timestamp)) return o.timestamp;
+  if (typeof o.createdAt === "number" && !isNaN(o.createdAt)) return o.createdAt;
+  if (typeof o.created_at === "number" && !isNaN(o.created_at)) return o.created_at;
+
+  const raw = o.created_at || o.createdAt || o.timestamp || o.date || o.order_date || o.orderDate;
+  if (!raw) return 0;
+
+  if (typeof raw === "string" && /^\d{10,13}$/.test(raw.trim())) {
+    const n = Number(raw.trim());
+    return n < 1e11 ? n * 1000 : n;
+  }
+  if (typeof raw === "number" && !isNaN(raw)) {
+    return raw < 1e11 ? raw * 1000 : raw;
+  }
+
+  const s = String(raw).trim();
+
+  // 1. ISO 8601 or standard SQL format: "YYYY-MM-DD" or "YYYY-MM-DD HH:mm:ss"
+  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if (isoMatch) {
+    const [, y, m, d, hh = "0", mm = "0", ss = "0"] = isoMatch;
+    const isoStr = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${hh.padStart(2, "0")}:${mm.padStart(2, "0")}:${ss.padStart(2, "0")}`;
+    const t = new Date(isoStr).getTime();
+    if (!isNaN(t)) return t;
+  }
+
+  // 2. Indian numeric date: "DD/MM/YYYY" or "DD-MM-YYYY" (with optional time)
+  const dmyMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[,\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)?)?/i);
+  if (dmyMatch) {
+    const [, d, m, y, rawH = "0", rawM = "0", rawS = "0", ampm] = dmyMatch;
+    let h = parseInt(rawH, 10);
+    const min = parseInt(rawM, 10);
+    const sec = parseInt(rawS, 10);
+    if (ampm) {
+      if (ampm.toLowerCase() === "pm" && h < 12) h += 12;
+      if (ampm.toLowerCase() === "am" && h === 12) h = 0;
+    }
+    const isoStr = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    const t = new Date(isoStr).getTime();
+    if (!isNaN(t)) return t;
+  }
+
+  // 3. Indian formatted date with Month name: "11 Nov 2026, 02:15 PM"
+  const dMonMatch = s.match(/^(\d{1,2})[\s\-]+([a-z]+)[\s\-]+(\d{4})(?:[,\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)?)?/i);
+  if (dMonMatch) {
+    const [, d, monStr, y, rawH = "0", rawM = "0", rawS = "0", ampm] = dMonMatch;
+    const m = ORDER_MONTH_MAP[monStr.toLowerCase().slice(0, 3)] || "01";
+    let h = parseInt(rawH, 10);
+    const min = parseInt(rawM, 10);
+    const sec = parseInt(rawS, 10);
+    if (ampm) {
+      if (ampm.toLowerCase() === "pm" && h < 12) h += 12;
+      if (ampm.toLowerCase() === "am" && h === 12) h = 0;
+    }
+    const isoStr = `${y}-${m}-${d.padStart(2, "0")}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    const t = new Date(isoStr).getTime();
+    if (!isNaN(t)) return t;
+  }
+
+  const parsed = Date.parse(s);
+  if (!isNaN(parsed)) return parsed;
+
+  const d = new Date(s);
+  const t = d.getTime();
+  return isNaN(t) ? 0 : t;
+}
+
 export function sortOrdersLIFO(list: any[]): any[] {
   if (!Array.isArray(list)) return [];
-  return [...list].sort((a, b) => {
-    const rawA = a.created_at || a.createdAt || a.date || a.order_date || a.orderDate;
-    const rawB = b.created_at || b.createdAt || b.date || b.order_date || b.orderDate;
-    const timeA = rawA ? new Date(rawA).getTime() : 0;
-    const timeB = rawB ? new Date(rawB).getTime() : 0;
-    if (timeA !== timeB && !isNaN(timeA) && !isNaN(timeB) && timeA > 0 && timeB > 0) {
-      return timeB - timeA;
-    }
-    const matchA = String(a.number || a.id || "").match(/\d+/);
-    const matchB = String(b.number || b.id || "").match(/\d+/);
-    const numA = matchA ? parseInt(matchA[0], 10) : 0;
-    const numB = matchB ? parseInt(matchB[0], 10) : 0;
-    if (numA !== numB) {
-      return numB - numA;
-    }
-    return String(b.id || b.number || "").localeCompare(String(a.id || a.number || ""));
-  });
+
+  const parseOrderNumber = (o: any): number => {
+    const str = String(o.number || o.id || "");
+    const match = str.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
+  };
+
+  return list
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const timeA = parseOrderTimestamp(a.item);
+      const timeB = parseOrderTimestamp(b.item);
+      if (timeA !== timeB && timeA > 0 && timeB > 0) {
+        return timeB - timeA;
+      }
+      if (timeA > 0 && timeB <= 0) return -1;
+      if (timeB > 0 && timeA <= 0) return 1;
+
+      const numA = parseOrderNumber(a.item);
+      const numB = parseOrderNumber(b.item);
+      if (numA !== numB && numA > 0 && numB > 0) {
+        return numB - numA;
+      }
+      return a.index - b.index;
+    })
+    .map((wrapper) => wrapper.item);
 }
 
 export async function getAdminOrders(params?: OrderQueryParams) {

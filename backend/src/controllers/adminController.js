@@ -1515,6 +1515,36 @@ export const getWidgetsData = (req, res) => {
 // 📦 JANANI AGRO ORDERS CONTROLLER
 // ==========================================
 
+const parseBackendOrderTime = (o) => {
+  if (!o) return 0;
+  if (typeof o.timestamp === "number" && !isNaN(o.timestamp)) return o.timestamp;
+  if (typeof o.createdAt === "number" && !isNaN(o.createdAt)) return o.createdAt;
+  if (typeof o.created_at === "number" && !isNaN(o.created_at)) return o.created_at;
+  const raw = o.created_at || o.createdAt || o.timestamp || o.date || o.order_date || o.orderDate;
+  if (!raw) return 0;
+  if (typeof raw === "number") return raw;
+  const s = String(raw).trim();
+  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if (isoMatch) {
+    const [, y, m, d, hh = "0", mm = "0", ss = "0"] = isoMatch;
+    const t = new Date(`${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${hh.padStart(2, "0")}:${mm.padStart(2, "0")}:${ss.padStart(2, "0")}`).getTime();
+    if (!isNaN(t)) return t;
+  }
+  const dmyMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[,\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)?)?/i);
+  if (dmyMatch) {
+    const [, d, m, y, rawH = "0", rawM = "0", rawS = "0", ampm] = dmyMatch;
+    let h = parseInt(rawH, 10);
+    const min = parseInt(rawM, 10);
+    const sec = parseInt(rawS, 10);
+    if (ampm && ampm.toLowerCase() === "pm" && h < 12) h += 12;
+    if (ampm && ampm.toLowerCase() === "am" && h === 12) h = 0;
+    const t = new Date(`${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`).getTime();
+    if (!isNaN(t)) return t;
+  }
+  const t = new Date(s).getTime();
+  return isNaN(t) ? 0 : t;
+};
+
 export const getAdminOrders = (req, res) => {
   const {
     status = "all",
@@ -1566,7 +1596,7 @@ export const getAdminOrders = (req, res) => {
 
   // Sorting
   if (sortBy === "newest") {
-    results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    results.sort((a, b) => parseBackendOrderTime(b) - parseBackendOrderTime(a));
   } else if (sortBy === "amount_desc") {
     results.sort((a, b) => b.total - a.total);
   } else if (sortBy === "amount_asc") {
