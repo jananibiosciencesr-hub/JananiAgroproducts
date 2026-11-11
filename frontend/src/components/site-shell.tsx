@@ -565,7 +565,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <a
           href="https://wa.me/919311416225"
           aria-label="Chat on WhatsApp"
-          className="fixed bottom-20 right-3 sm:right-6 z-30 grid size-12 place-items-center rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xl transition-all active:scale-95 md:bottom-6"
+          className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-3 sm:right-6 z-30 grid size-12 place-items-center rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xl transition-all active:scale-95 md:bottom-6"
         >
           <WhatsAppIcon className="size-6" />
         </a>
@@ -664,7 +664,7 @@ function Footer() {
   ];
 
   return (
-    <footer className="relative bg-[#064A29] text-white pt-10 sm:pt-12 pb-12 md:pb-6 overflow-hidden select-none">
+    <footer className="relative bg-[#064A29] text-white pt-10 sm:pt-12 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 overflow-hidden select-none">
       {/* Top Graceful Wavy Ribbon Curve */}
       <div className="absolute top-0 inset-x-0 overflow-hidden leading-none pointer-events-none -translate-y-[1px]">
         <svg
