@@ -719,10 +719,12 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                       >
                         {order.id}
                       </button>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Calendar className="h-3 w-3 shrink-0" />
-                        {order.date}
-                      </span>
+                      {Boolean(order.date || order.order_date || order.created_at) && (
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Calendar className="h-3 w-3 shrink-0" />
+                          {order.date || order.order_date || order.created_at}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -893,13 +895,6 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                           >
                             <span>{order.id}</span>
                           </button>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <Calendar className="h-3 w-3" />
-                            {order.date}
-                          </span>
-                          <span className="inline-block mt-1 text-[10px] font-semibold text-muted-foreground/80 bg-muted px-1.5 py-0.5 rounded w-fit">
-                            Direct Web
-                          </span>
                         </div>
                       </td>
 
