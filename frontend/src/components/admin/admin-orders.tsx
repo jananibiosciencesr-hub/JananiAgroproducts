@@ -135,6 +135,47 @@ function getWarehouseName(warehouse: any): string {
   return warehouse.name || warehouse.id || "Warehouse Hub";
 }
 
+export function getOrderFinancials(order: any) {
+  if (!order) {
+    return {
+      subtotal: 0,
+      cgst: 0,
+      sgst: 0,
+      gst: 0,
+      shippingFee: 0,
+      couponDiscount: 0,
+      total: 0,
+    };
+  }
+
+  const itemsSubtotal = Array.isArray(order.items) && order.items.length > 0
+    ? order.items.reduce((s: number, it: any) => s + (Number(it.price || it.unitPrice || 0) * Number(it.qty || 1)), 0)
+    : 0;
+
+  const total = Number(order.total || 0);
+  const couponDiscount = Number(order.couponDiscount ?? order.discount ?? 0);
+  const rawShipping = order.shippingFee ?? order.deliveryFee;
+  const shippingFee = rawShipping !== undefined ? Number(rawShipping) : (total > 0 && itemsSubtotal > 0 && total >= itemsSubtotal + 50 ? 60 : 0);
+
+  const subtotal = Number(
+    order.subtotal ?? (itemsSubtotal > 0 ? itemsSubtotal : Math.max(0, (total - shippingFee) / 1.05))
+  );
+
+  const cgst = Number(order.cgst ?? (order.taxAmount ? order.taxAmount / 2 : subtotal * 0.025));
+  const sgst = Number(order.sgst ?? (order.taxAmount ? order.taxAmount / 2 : subtotal * 0.025));
+  const gst = Number(order.taxAmount ?? (cgst + sgst));
+
+  return {
+    subtotal,
+    cgst,
+    sgst,
+    gst,
+    shippingFee,
+    couponDiscount,
+    total,
+  };
+}
+
 function getItemTitle(item: any): string {
   if (!item) return "Janani Agro Product";
   return item.name || item.title || "Item";
@@ -751,6 +792,14 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                     <span className="font-black text-sm text-foreground">
                       ₹{order.total?.toLocaleString("en-IN")}
                     </span>
+                    {(() => {
+                      const fin = getOrderFinancials(order);
+                      return (
+                        <p className="text-[10px] text-muted-foreground font-mono">
+                          ₹{fin.subtotal.toFixed(0)} + ₹{fin.gst.toFixed(1)} GST
+                        </p>
+                      );
+                    })()}
                     <div className="flex items-center justify-end gap-1 mt-0.5">
                       <PaymentBadge status={order.paymentStatus} />
                       <span className="text-[9px] text-muted-foreground uppercase font-bold">
@@ -912,34 +961,71 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
 
                       {/* Financials */}
                       <td className="py-3.5 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-foreground">
-                            ₹{order.total?.toLocaleString("en-IN")}
-                          </span>
-                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                            <PaymentBadge status={order.paymentStatus} />
-                            <span className="text-[10px] text-muted-foreground uppercase font-semibold">
-                              {order.paymentMethod}
-                            </span>
-                          </div>
-                          {(order.transactionId || order.transaction_id) && (
-                            <div className="flex items-center gap-1 mt-1 text-[10px] font-mono text-muted-foreground">
-                              <span className="truncate max-w-[110px] text-blue-600 dark:text-blue-400 font-semibold" title={order.transactionId || order.transaction_id}>
-                                {order.transactionId || order.transaction_id}
-                              </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyToClipboard(order.transactionId || order.transaction_id, "Razorpay Payment ID");
-                                }}
-                                className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
-                                title="Copy Razorpay Payment ID"
-                              >
-                                <Copy className="h-2.5 w-2.5" />
-                              </button>
+                        {(() => {
+                          const fin = getOrderFinancials(order);
+                          return (
+                            <div className="flex flex-col gap-1.5 min-w-[155px]">
+                              {/* Total Amount Paid */}
+                              <div className="flex items-baseline justify-between gap-1.5">
+                                <span className="font-black text-sm sm:text-base text-foreground font-mono">
+                                  ₹{fin.total?.toLocaleString("en-IN")}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total</span>
+                              </div>
+
+                              {/* Product Price + GST Breakdown Box */}
+                              <div className="rounded-lg bg-muted/40 p-1.5 text-[10px] space-y-0.5 border border-border/50 font-mono">
+                                <div className="flex justify-between items-center text-muted-foreground">
+                                  <span className="text-slate-600 dark:text-slate-400">Price:</span>
+                                  <span className="font-semibold text-foreground">₹{fin.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-muted-foreground">
+                                  <span className="text-slate-600 dark:text-slate-400">GST (5%):</span>
+                                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">+₹{fin.gst.toFixed(2)}</span>
+                                </div>
+                                {fin.shippingFee > 0 && (
+                                  <div className="flex justify-between items-center text-muted-foreground">
+                                    <span className="text-slate-600 dark:text-slate-400">Delivery:</span>
+                                    <span className="font-medium text-slate-700 dark:text-slate-300">+₹{fin.shippingFee.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {fin.couponDiscount > 0 && (
+                                  <div className="flex justify-between items-center text-emerald-600 font-semibold">
+                                    <span>Coupon:</span>
+                                    <span>-₹{fin.couponDiscount.toFixed(2)}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Payment Badge & Method */}
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <PaymentBadge status={order.paymentStatus} />
+                                <span className="text-[10px] text-muted-foreground uppercase font-semibold truncate max-w-[130px]" title={order.paymentMethod}>
+                                  {order.paymentMethod}
+                                </span>
+                              </div>
+
+                              {/* Transaction ID */}
+                              {(order.transactionId || order.transaction_id) && (
+                                <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+                                  <span className="truncate max-w-[110px] text-blue-600 dark:text-blue-400 font-semibold" title={order.transactionId || order.transaction_id}>
+                                    {order.transactionId || order.transaction_id}
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(order.transactionId || order.transaction_id, "Razorpay Payment ID");
+                                    }}
+                                    className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                                    title="Copy Razorpay Payment ID"
+                                  >
+                                    <Copy className="h-2.5 w-2.5" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Fulfillment Status Dropdown */}
@@ -1591,65 +1677,67 @@ function OrderDetailDrawer({
                 </div>
 
                 {/* Mathematical Calculation Summary */}
-                <div className="p-4 bg-muted/10 border-t border-border flex justify-end">
-                  <div className="w-full max-w-xs space-y-2 text-xs">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Items Subtotal</span>
-                      <span className="font-medium text-foreground">
-                        ₹{(order.subtotal || Math.max(0, (order.total - (order.shippingFee || 60)) / 1.05)).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>CGST (2.5%)</span>
-                      <span className="font-medium text-foreground">
-                        ₹{(order.cgst ?? (order.taxAmount ? order.taxAmount / 2 : (order.subtotal || Math.max(0, (order.total - (order.shippingFee || 60)) / 1.05)) * 0.025)).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>SGST (2.5%)</span>
-                      <span className="font-medium text-foreground">
-                        ₹{(order.sgst ?? (order.taxAmount ? order.taxAmount / 2 : (order.subtotal || Math.max(0, (order.total - (order.shippingFee || 60)) / 1.05)) * 0.025)).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Shipping & Handling</span>
-                      <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                        {((order.shippingFee ?? order.deliveryFee ?? 0) > 0) ? `₹${order.shippingFee || order.deliveryFee}` : "FREE"}
-                      </span>
-                    </div>
-                    {Boolean(
-                      Number(order.couponDiscount || order.discount || 0) > 0 &&
-                      Math.abs(((order.subtotal || 0) + (order.cgst ?? (order.subtotal || 0) * 0.025) + (order.sgst ?? (order.subtotal || 0) * 0.025) + (order.shippingFee ?? order.deliveryFee ?? 0) - (order.couponDiscount || order.discount || 0)) - (order.total || 0)) < 2
-                    ) && (
-                      <div className="flex justify-between text-emerald-600 font-medium">
-                        <span>🏷️ Coupon ({order.couponCode || "Applied"})</span>
-                        <span>-₹{(Number(order.couponDiscount || order.discount || 0)).toFixed(2)}</span>
+                {(() => {
+                  const fin = getOrderFinancials(order);
+                  return (
+                    <div className="p-4 bg-muted/10 border-t border-border flex justify-end">
+                      <div className="w-full max-w-xs space-y-2 text-xs">
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Items Subtotal</span>
+                          <span className="font-medium text-foreground">
+                            ₹{fin.subtotal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>CGST (2.5%)</span>
+                          <span className="font-medium text-foreground">
+                            ₹{fin.cgst.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>SGST (2.5%)</span>
+                          <span className="font-medium text-foreground">
+                            ₹{fin.sgst.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Shipping & Handling</span>
+                          <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                            {fin.shippingFee > 0 ? `₹${fin.shippingFee.toFixed(2)}` : "FREE"}
+                          </span>
+                        </div>
+                        {fin.couponDiscount > 0 && (
+                          <div className="flex justify-between text-emerald-600 font-medium">
+                            <span>🏷️ Coupon ({order.couponCode || "Applied"})</span>
+                            <span>-₹{fin.couponDiscount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {Boolean(order.walletDeduction && order.walletDeduction > 0) && (
+                          <div className="flex justify-between text-amber-600 font-medium">
+                            <span>🪙 Farm Wallet Deduction</span>
+                            <span>-₹{Number(order.walletDeduction).toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="border-t border-border pt-2 flex justify-between text-sm font-bold text-foreground">
+                          <span>Total Amount Paid</span>
+                          <span className="text-primary text-base">₹{fin.total.toFixed(2)}</span>
+                        </div>
+                        {order.transactionId && (
+                          <div className="flex justify-between text-[11px] text-muted-foreground pt-1">
+                            <span>Razorpay Txn ID:</span>
+                            <span className="font-mono text-foreground font-semibold">{order.transactionId}</span>
+                          </div>
+                        )}
+                        {order.deliverySlot && (
+                          <div className="flex justify-between text-[11px] text-muted-foreground">
+                            <span>Preferred Slot:</span>
+                            <span className="text-foreground font-medium">{order.deliverySlot}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {Boolean(order.walletDeduction && order.walletDeduction > 0) && (
-                      <div className="flex justify-between text-amber-600 font-medium">
-                        <span>🪙 Farm Wallet Deduction</span>
-                        <span>-₹{(order.walletDeduction).toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="border-t border-border pt-2 flex justify-between text-sm font-bold text-foreground">
-                      <span>Total Amount Paid</span>
-                      <span className="text-primary text-base">₹{Number(order.total || 0).toFixed(2)}</span>
                     </div>
-                    {order.transactionId && (
-                      <div className="flex justify-between text-[11px] text-muted-foreground pt-1">
-                        <span>Razorpay Txn ID:</span>
-                        <span className="font-mono text-foreground font-semibold">{order.transactionId}</span>
-                      </div>
-                    )}
-                    {order.deliverySlot && (
-                      <div className="flex justify-between text-[11px] text-muted-foreground">
-                        <span>Preferred Slot:</span>
-                        <span className="text-foreground font-medium">{order.deliverySlot}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
 
               {/* Internal Notes & Special Instructions */}
@@ -1981,10 +2069,10 @@ function PrintableTaxInvoiceModal({
     window.print();
   };
 
-  const subtotal = order.subtotal || order.total * 0.95;
-  const tax = order.taxAmount || order.total * 0.05;
-  const cgst = tax / 2;
-  const sgst = tax / 2;
+  const fin = getOrderFinancials(order);
+  const subtotal = fin.subtotal;
+  const cgst = fin.cgst;
+  const sgst = fin.sgst;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
@@ -2121,11 +2209,17 @@ function PrintableTaxInvoiceModal({
               </div>
               <div className="flex justify-between text-neutral-600">
                 <span>Shipping Fee:</span>
-                <span className="font-semibold text-emerald-700">₹0.00</span>
+                <span className="font-semibold text-emerald-700">{fin.shippingFee > 0 ? `₹${fin.shippingFee.toFixed(2)}` : "₹0.00"}</span>
               </div>
+              {fin.couponDiscount > 0 && (
+                <div className="flex justify-between text-neutral-600">
+                  <span>Coupon Discount:</span>
+                  <span className="font-semibold text-emerald-700">-₹{fin.couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="border-t-2 border-neutral-800 pt-1.5 flex justify-between font-black text-sm text-neutral-900">
                 <span>Total Amount (INR):</span>
-                <span className="text-emerald-900 text-base">₹{order.total?.toLocaleString("en-IN")}.00</span>
+                <span className="text-emerald-900 text-base">₹{fin.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
