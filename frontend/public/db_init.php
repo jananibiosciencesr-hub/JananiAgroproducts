@@ -565,6 +565,32 @@ try {
     $pdo->exec("UPDATE `users` SET `wishlist` = '[1, 2]' WHERE (`email` = 'kameswarip98@gmail.com' OR `email` = 'sravanipachipulusu98@gmail.com') AND (`wishlist` LIKE '%2124%' OR `wishlist` LIKE '%mortein%' OR `wishlist` IS NULL OR `wishlist` = '[]' OR `wishlist` = '')");
 } catch (Exception $e) {}
 
+// Auto-hash any unhashed passwords or missing password hashes in users table
+try {
+    $unhashedUsers = $pdo->query("SELECT \`id\`, \`password\` FROM \`users\` WHERE \`password\` IS NOT NULL AND \`password\` != '' AND (\`password_hash\` IS NULL OR \`password_hash\` = '')")->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($unhashedUsers)) {
+        $upHashStmt = $pdo->prepare("UPDATE \`users\` SET \`password_hash\` = ? WHERE \`id\` = ?");
+        foreach ($unhashedUsers as $uRow) {
+            $rawPass = trim($uRow['password']);
+            if ($rawPass !== '') {
+                $computedHash = preg_match('/^\\$2[ayb]\\$[0-9]{2}\\$/', $rawPass) ? $rawPass : password_hash($rawPass, PASSWORD_DEFAULT);
+                $upHashStmt->execute([$computedHash, $uRow['id']]);
+            }
+        }
+    }
+
+    $noPassUsers = $pdo->query("SELECT \`id\`, \`email\`, \`phone\` FROM \`users\` WHERE (\`password_hash\` IS NULL OR \`password_hash\` = '') AND (\`password\` IS NULL OR \`password\` = '')")->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($noPassUsers)) {
+        $genHashStmt = $pdo->prepare("UPDATE \`users\` SET \`password\` = ?, \`password_hash\` = ? WHERE \`id\` = ?");
+        foreach ($noPassUsers as $npUser) {
+            $cleanPhoneDigits = preg_replace('/\\D/', '', $npUser['phone'] ?? '');
+            $derivedPass = strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123';
+            $derivedHash = password_hash($derivedPass, PASSWORD_DEFAULT);
+            $genHashStmt->execute([$derivedPass, $derivedHash, $npUser['id']]);
+        }
+    }
+} catch (Exception $e) {}
+
 // 6. Purge dummy/mock orders
 try {
     $pdo->exec("DELETE FROM `orders` WHERE `number` LIKE 'JAP-849%' OR `id` LIKE 'JAP-849%' OR `number` LIKE '%8492%' OR `id` LIKE '%8492%' OR `number` LIKE '%356429%' OR `id` LIKE '%356429%' OR `id` LIKE 'ORD-%'");
