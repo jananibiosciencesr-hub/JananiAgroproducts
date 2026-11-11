@@ -529,13 +529,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
         {/* Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap min-w-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
-            { id: "all", label: "All Orders", count: stats.total },
-            { id: "Pending", label: "Pending", count: stats.pending, badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" },
-            { id: "Processing", label: "Processing", count: stats.processing, badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300" },
-            { id: "Shipped", label: "Shipped", count: stats.shipped, badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
-            { id: "Delivered", label: "Delivered", count: stats.delivered, badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" },
-            { id: "Cancelled", label: "Cancelled", count: stats.cancelled, badgeColor: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" },
-            { id: "Returned", label: "Returns", count: stats.returned, badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300" }
+            { id: "all", label: "All Orders", count: stats.total || orders.length }
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
