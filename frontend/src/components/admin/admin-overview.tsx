@@ -27,6 +27,8 @@ import { Button } from "@/components/ui/button";
 import { type AdminTab } from "./admin-sidebar";
 import { getOrderCustomer } from "./admin-orders";
 
+export type TrendType = "positive" | "negative" | "warning" | "neutral" | "live";
+
 interface AdminOverviewProps {
   stats?: any;
   charts?: any;
@@ -133,7 +135,18 @@ export function AdminOverview({
     );
   });
 
-  const kpiCards = [
+  const kpiCards: Array<{
+    id: string;
+    title: string;
+    value: string;
+    trend: string;
+    trendType: TrendType;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    bgColor: string;
+    topGradient: string;
+    tab: AdminTab;
+  }> = [
     {
       id: "orders",
       title: "Today's Orders",
@@ -253,14 +266,15 @@ export function AdminOverview({
                 </div>
 
                 <div className="mt-2.5 sm:mt-3 pt-2 border-t border-border/40 flex items-center justify-between gap-1 text-[10px] sm:text-[11px]">
-                  <span className={`inline-flex items-center gap-1 font-semibold truncate ${card.trendType === "live"
+                  <span className={`inline-flex items-center gap-1 font-semibold truncate ${
+                    card.trendType === "live" || card.trendType === "positive"
                       ? "text-emerald-700 dark:text-emerald-400"
                       : card.trendType === "warning"
                         ? "text-amber-700 dark:text-amber-400"
                         : card.trendType === "negative"
                           ? "text-rose-700 dark:text-rose-400"
                           : "text-muted-foreground"
-                    }`}>
+                  }`}>
                     {card.trendType === "live" && (
                       <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                     )}
