@@ -687,22 +687,70 @@ function ProductsPage() {
 
           {/* Right Main Content Area */}
           <div id="products-grid-top" className="flex-1 w-full min-w-0">
-            {/* Mobile Filters Trigger (Only on mobile/tablet where sidebar is hidden) */}
-            <div className="lg:hidden flex items-center justify-between mb-4">
-              <button
-                type="button"
-                onClick={() => setIsMobileFilterOpen(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition cursor-pointer bg-white shadow-2xs"
-              >
-                <Filter className="size-3.5 text-[#075B32]" />
-                Filters
-                {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000) && (
-                  <span className="size-2 rounded-full bg-[#075B32]" />
-                )}
-              </button>
-              <span className="text-xs text-gray-500 font-medium">
-                {sortedProducts.length} Products
-              </span>
+            {/* Mobile Filters Bar & Quick Category Chips */}
+            <div className="lg:hidden space-y-2.5 mb-4">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(true)}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition cursor-pointer bg-white shadow-2xs shrink-0"
+                >
+                  <Filter className="size-3.5 text-[#075B32]" />
+                  <span>Filters</span>
+                  {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000) && (
+                    <span className="size-2 rounded-full bg-[#075B32]" />
+                  )}
+                </button>
+
+                <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+                  <span className="font-semibold text-gray-700">{sortedProducts.length} Products</span>
+                  {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
+                    <button
+                      type="button"
+                      onClick={handleClearFilters}
+                      className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer ml-1"
+                    >
+                      Reset All
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Horizontal Scrollable Category Chips for Instant Real-Time Filtering */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none no-scrollbar -mx-1 px-1">
+                <button
+                  type="button"
+                  onClick={handleSelectAllCategories}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer shrink-0 ${
+                    selectedCategories.length === 0
+                      ? "bg-[#075B32] text-white shadow-xs font-bold"
+                      : "bg-white border border-gray-200 text-gray-700 hover:border-[#075B32]"
+                  }`}
+                >
+                  All ({activeProductList.length})
+                </button>
+                {activeCategories.map((cat: any) => {
+                  const isSelected = selectedCategories.some((sc) => isProductInCategory({ category: sc, category_name: sc, category_slug: sc }, cat));
+                  const count = activeProductList.filter((p) => isProductInCategory(p, cat)).length;
+                  return (
+                    <button
+                      key={cat.id || cat.slug}
+                      type="button"
+                      onClick={() => toggleCategory(cat.name)}
+                      className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                        isSelected
+                          ? "bg-[#075B32] text-white shadow-xs font-bold"
+                          : "bg-white border border-gray-200 text-gray-700 hover:border-[#075B32] font-medium"
+                      }`}
+                    >
+                      <span>{cat.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                        isSelected ? "bg-white/20 text-white font-bold" : "bg-gray-100 text-gray-500"
+                      }`}>{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Active Filters Pills */}
@@ -901,50 +949,68 @@ function ProductsPage() {
         </section>
       </div>
 
-      {/* Mobile Filters Slide-over Modal */}
+      {/* Mobile Filters Compact Bottom Sheet Modal */}
       {isMobileFilterOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end lg:hidden animate-in fade-in duration-200">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileFilterOpen(false)}
           />
-          {/* Drawer */}
-          <div className="relative ml-auto w-full max-w-xs bg-white h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-6">
-                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Filter className="size-4 text-[#075B32]" />
-                  Filters
-                </h2>
-                <div className="flex items-center gap-2">
-                  {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
-                    <button
-                      type="button"
-                      onClick={handleClearFilters}
-                      className="text-xs text-red-600 hover:text-red-700 font-semibold cursor-pointer"
-                    >
-                      Clear All
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setIsMobileFilterOpen(false)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 cursor-pointer"
-                  >
-                    <X className="size-5" />
-                  </button>
-                </div>
-              </div>
 
+          {/* Compact Bottom Sheet Container */}
+          <div className="relative z-10 w-full max-h-[82vh] bg-white rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
+            {/* Grab Handle */}
+            <div className="pt-3 pb-1 flex justify-center shrink-0">
+              <div className="w-10 h-1 bg-gray-300 rounded-full" />
+            </div>
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <Filter className="size-4 text-[#075B32]" />
+                <h2 className="text-sm font-bold text-gray-900 tracking-tight">Filters</h2>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#075B32]/10 text-[#075B32]">
+                  {sortedProducts.length} matching
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="text-xs text-red-600 hover:text-red-700 font-semibold cursor-pointer"
+                  >
+                    Reset All
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(false)}
+                  className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  aria-label="Close filters"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Filter Content with generous padding so nothing is cut off */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
               {filterSidebarContent}
             </div>
 
-            <div className="pt-4 border-t border-gray-100 mt-6 sticky bottom-0 bg-white">
+            {/* Solid Fixed Bottom Button Bar - Completely Separated from Scroll Body */}
+            <div className="p-4 border-t border-gray-100 bg-white shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-lg">
               <button
+                type="button"
                 onClick={() => setIsMobileFilterOpen(false)}
-                className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-xs font-bold py-3 rounded-xl shadow-xs transition cursor-pointer"
+                className="w-full bg-[#075B32] hover:bg-[#064A29] active:scale-[0.99] text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                Show Results ({sortedProducts.length})
+                <span>Show {sortedProducts.length} Results</span>
+                <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">
+                  {sortedProducts.length === 1 ? "1 item" : `${sortedProducts.length} items`}
+                </span>
               </button>
             </div>
           </div>
