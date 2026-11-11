@@ -148,7 +148,6 @@ export function AdminOverview({
     icon: React.ComponentType<{ className?: string }>;
     color: string;
     bgColor: string;
-    topGradient: string;
     tab: AdminTab;
   }> = [
     {
@@ -160,7 +159,6 @@ export function AdminOverview({
       icon: ShoppingBag,
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-500/10 border-emerald-500/20",
-      topGradient: "from-emerald-500 to-teal-500",
       tab: "orders" as AdminTab
     },
     {
@@ -172,7 +170,6 @@ export function AdminOverview({
       icon: DollarSign,
       color: "text-amber-600 dark:text-amber-400",
       bgColor: "bg-amber-500/10 border-amber-500/20",
-      topGradient: "from-amber-500 to-orange-500",
       tab: "orders" as AdminTab
     },
     {
@@ -184,7 +181,6 @@ export function AdminOverview({
       icon: Package,
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-500/10 border-blue-500/20",
-      topGradient: "from-blue-600 to-indigo-600",
       tab: "products" as AdminTab
     },
     {
@@ -196,7 +192,6 @@ export function AdminOverview({
       icon: FolderTree,
       color: "text-purple-600 dark:text-purple-400",
       bgColor: "bg-purple-500/10 border-purple-500/20",
-      topGradient: "from-purple-600 to-pink-600",
       tab: "categories" as AdminTab
     },
   ];
@@ -212,7 +207,7 @@ export function AdminOverview({
   const displayedKpiCards = cleanSearch && matchingKpiCards.length > 0 ? matchingKpiCards : kpiCards;
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 pb-12 min-w-0 max-w-full overflow-x-hidden">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 pt-2 sm:pt-4 pb-12 min-w-0 max-w-full overflow-x-hidden">
 
       {/* Search Filter Status Banner */}
       {cleanSearch && (
@@ -249,9 +244,6 @@ export function AdminOverview({
                 onClick={() => onNavigateTab(card.tab)}
                 className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-3.5 sm:p-5 transition-colors duration-200 hover:border-emerald-500/50 min-w-0 shadow-xs flex flex-col justify-between"
               >
-                {/* Top Accent Line */}
-                <div className={`absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r ${card.topGradient} opacity-70`} />
-
                 <div>
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground/90 tracking-tight leading-tight whitespace-nowrap">

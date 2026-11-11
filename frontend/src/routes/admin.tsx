@@ -894,7 +894,7 @@ function AdminDashboardPage() {
         />
 
         {/* Dynamic View Body */}
-        <main className={`flex-1 flex flex-col min-w-0 w-full overflow-x-clip ${["categories", "products", "orders", "customers"].includes(activeTab) ? "p-0 max-w-none" : "p-2.5 sm:p-5 lg:p-6 xl:p-8 max-w-[1600px] xl:max-w-[1800px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] mx-auto"}`}>
+        <main className={`flex-1 flex flex-col min-w-0 w-full overflow-x-clip ${["categories", "products", "orders", "customers"].includes(activeTab) ? "p-0 max-w-none" : "p-4 sm:p-5 lg:p-6 xl:p-8 max-w-[1600px] xl:max-w-[1800px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] mx-auto"}`}>
           {activeTab === "dashboard" && (
             <AdminOverview
               stats={stats}
