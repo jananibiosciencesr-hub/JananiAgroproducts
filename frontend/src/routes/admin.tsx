@@ -63,6 +63,7 @@ import {
   getAdminCharts,
   getAdminWidgets,
   getAdminOrders,
+  sortOrdersLIFO,
   updateAdminOrderStatus,
   generateShiprocketAwb,
   getAdminProducts,
@@ -544,7 +545,7 @@ function AdminDashboardPage() {
       setStats(statsData || null);
       setCharts(chartsData || null);
       setWidgets(widgetsData || null);
-      setOrders(ordersData?.data || (Array.isArray(ordersData) ? ordersData : []));
+      setOrders(sortOrdersLIFO(ordersData?.data || (Array.isArray(ordersData) ? ordersData : [])));
       setProducts(productsData?.data || (Array.isArray(productsData) ? productsData : []));
       setCategories(Array.isArray(rawCategories) ? rawCategories : (rawCategories?.data || []));
       setCustomers(customersData?.data || (Array.isArray(customersData) ? customersData : []));

@@ -1453,6 +1453,27 @@ export interface OrderQueryParams {
   sortBy?: string | undefined;
 }
 
+export function sortOrdersLIFO(list: any[]): any[] {
+  if (!Array.isArray(list)) return [];
+  return [...list].sort((a, b) => {
+    const rawA = a.created_at || a.createdAt || a.date || a.order_date || a.orderDate;
+    const rawB = b.created_at || b.createdAt || b.date || b.order_date || b.orderDate;
+    const timeA = rawA ? new Date(rawA).getTime() : 0;
+    const timeB = rawB ? new Date(rawB).getTime() : 0;
+    if (timeA !== timeB && !isNaN(timeA) && !isNaN(timeB) && timeA > 0 && timeB > 0) {
+      return timeB - timeA;
+    }
+    const matchA = String(a.number || a.id || "").match(/\d+/);
+    const matchB = String(b.number || b.id || "").match(/\d+/);
+    const numA = matchA ? parseInt(matchA[0], 10) : 0;
+    const numB = matchB ? parseInt(matchB[0], 10) : 0;
+    if (numA !== numB) {
+      return numB - numA;
+    }
+    return String(b.id || b.number || "").localeCompare(String(a.id || a.number || ""));
+  });
+}
+
 export async function getAdminOrders(params?: OrderQueryParams) {
   const query = new URLSearchParams();
   if (params?.status && params.status !== "all") query.append("status", params.status);
@@ -1508,6 +1529,9 @@ export async function getAdminOrders(params?: OrderQueryParams) {
         }
       }
     } catch (e) { }
+    if (Array.isArray(res.data)) {
+      res.data = sortOrdersLIFO(res.data);
+    }
     return res;
   }
 
@@ -1534,7 +1558,7 @@ export async function getAdminOrders(params?: OrderQueryParams) {
   const totalRev = stored.reduce((sum, o) => sum + (o.total || 0), 0);
   return {
     success: true,
-    data: list,
+    data: sortOrdersLIFO(list),
     total: list.length,
     pendingCount: stored.filter((o) => (o.orderStatus || o.status) === "Pending").length,
     processingCount: stored.filter((o) => (o.orderStatus || o.status) === "Processing").length,

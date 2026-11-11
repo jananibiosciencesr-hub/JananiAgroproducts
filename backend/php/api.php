@@ -4659,7 +4659,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY `created_at` DESC LIMIT 200";
+                $query .= " ORDER BY `created_at` DESC, `id` DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $orders = $stmt->fetchAll();
@@ -5214,7 +5214,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY `created_at` DESC LIMIT 200";
+                $query .= " ORDER BY `created_at` DESC, `id` DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $users = $stmt->fetchAll();

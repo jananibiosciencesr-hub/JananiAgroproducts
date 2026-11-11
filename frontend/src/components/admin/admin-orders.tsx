@@ -176,6 +176,40 @@ export function getOrderFinancials(order: any) {
   };
 }
 
+export function sortOrdersLIFO(list: any[]): any[] {
+  if (!Array.isArray(list)) return [];
+
+  const parseOrderTimestamp = (o: any): number => {
+    const raw = o.created_at || o.createdAt || o.date || o.order_date || o.orderDate;
+    if (!raw) return 0;
+    const d = new Date(raw);
+    const t = d.getTime();
+    if (!isNaN(t)) return t;
+    const parsed = Date.parse(raw);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const parseOrderNumber = (o: any): number => {
+    const str = String(o.number || o.id || "");
+    const match = str.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
+  };
+
+  return [...list].sort((a, b) => {
+    const timeA = parseOrderTimestamp(a);
+    const timeB = parseOrderTimestamp(b);
+    if (timeA !== timeB && timeA > 0 && timeB > 0) {
+      return timeB - timeA;
+    }
+    const numA = parseOrderNumber(a);
+    const numB = parseOrderNumber(b);
+    if (numA !== numB) {
+      return numB - numA;
+    }
+    return String(b.id || b.number || "").localeCompare(String(a.id || a.number || ""));
+  });
+}
+
 function getItemTitle(item: any): string {
   if (!item) return "Janani Agro Product";
   return item.name || item.title || "Item";
@@ -311,7 +345,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
       });
 
       if (res && res.data) {
-        setOrders(res.data);
+        setOrders(sortOrdersLIFO(res.data));
         if (res.stats) {
           setStats(res.stats);
         } else {
@@ -403,9 +437,9 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
     setSelectedOrderIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  };  // Client-side date and status filtering
+  };  // Client-side date and status filtering (strictly LIFO - newest orders on top)
   const filteredOrders = useMemo(() => {
-    return orders.filter((o) => {
+    const list = orders.filter((o) => {
       if (startDate || endDate) {
         const rawDate = o.date || o.order_date || o.orderDate || o.created_at || o.createdAt;
         if (rawDate) {
@@ -426,6 +460,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
       }
       return true;
     });
+    return sortOrdersLIFO(list);
   }, [orders, startDate, endDate]);
 
   // Export Excel CSV

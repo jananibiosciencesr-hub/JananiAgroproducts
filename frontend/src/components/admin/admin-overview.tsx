@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   ShoppingBag,
   Package,
@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type AdminTab } from "./admin-sidebar";
-import { getOrderCustomer } from "./admin-orders";
+import { getOrderCustomer, sortOrdersLIFO } from "./admin-orders";
 
 export type TrendType = "positive" | "negative" | "warning" | "neutral" | "live";
 
@@ -64,7 +64,7 @@ export function AdminOverview({
 }: AdminOverviewProps) {
   const [tableFilter, setTableFilter] = useState("all");
 
-  const liveOrders = Array.isArray(orders) ? orders : [];
+  const liveOrders = useMemo(() => sortOrdersLIFO(Array.isArray(orders) ? orders : []), [orders]);
   const liveProducts = Array.isArray(products) ? products : [];
   const liveCategories = Array.isArray(categories) ? categories : [];
   const liveCustomers = Array.isArray(customers) ? customers : [];
