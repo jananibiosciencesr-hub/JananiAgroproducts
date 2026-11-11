@@ -1057,28 +1057,6 @@ function CategoryFormView({
   allCategories: CategoryItem[];
   onSave: (data: any) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<string>("cat-section-general");
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ["cat-section-general", "cat-section-media", "cat-section-seo", "cat-section-settings"];
-      const scrollPos = window.scrollY + 200;
-      for (const id of sections) {
-        const el = document.getElementById(id);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPos >= top && scrollPos < top + height) {
-            setActiveTab(id);
-            break;
-          }
-        }
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -1176,9 +1154,6 @@ function CategoryFormView({
         }
       });
     }
-    if (isOpen) {
-      setActiveTab("cat-section-general");
-    }
   }, [initialData, isOpen]);
 
   // Auto-generate slug and meta title from name
@@ -1238,35 +1213,6 @@ function CategoryFormView({
             <Save className="size-4" /> Save Category
           </Button>
         </div>
-      </div>
-
-      {/* Sticky Quick-Scroll Navigation Bar */}
-      <div className="sticky top-[57px] sm:top-[65px] z-20 w-full border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shadow-2xs">
-        {[
-          { id: "cat-section-general", label: "1. General & Hierarchy" },
-          { id: "cat-section-media", label: "2. Category Image" },
-          { id: "cat-section-seo", label: "3. SEO & Meta Tags" },
-          { id: "cat-section-settings", label: "4. Storefront Toggles" }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => {
-              setActiveTab(tab.id);
-              const el = document.getElementById(tab.id);
-              if (el) {
-                el.scrollIntoView({ behavior: "smooth", block: "start" });
-              }
-            }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap select-none cursor-pointer ${
-              activeTab === tab.id
-                ? "bg-emerald-600 text-white shadow-sm font-extrabold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-muted/40 border border-border/60"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* Page Form Body - Unified Continuous Scrolling Container */}

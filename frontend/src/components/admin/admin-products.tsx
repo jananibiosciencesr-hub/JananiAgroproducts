@@ -1360,35 +1360,7 @@ function ProductFormView({
   const activeCategories = (categories && categories.length > 0) ? categories : [];
   const defaultCategory = activeCategories[0] || initialData?.category || "";
 
-  const [activeTab, setActiveTab] = useState<string>("prod-section-general");
   const [specsSubTab, setSpecsSubTab] = useState<"desc" | "benefits" | "usage" | "crops" | "specs" | "reviews" | "faqs">("desc");
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = [
-        "prod-section-general",
-        "prod-section-variants",
-        "prod-section-gallery",
-        "prod-section-specs",
-        "prod-section-seo",
-        "prod-section-toggles"
-      ];
-      const scrollPos = window.scrollY + 200;
-      for (const id of sections) {
-        const el = document.getElementById(id);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPos >= top && scrollPos < top + height) {
-            setActiveTab(id);
-            break;
-          }
-        }
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const COMMON_CROPS = [
     "Paddy / Rice",
@@ -1503,7 +1475,6 @@ function ProductFormView({
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
   useEffect(() => {
-    if (isOpen) { setActiveTab("prod-section-general"); }
     if (initialData) {
       const rawData = initialData as any;
 
@@ -2049,37 +2020,6 @@ function ProductFormView({
             <Save className="size-4" /> Save Product Listing
           </Button>
         </div>
-      </div>
-
-      {/* Quick-Scroll Sticky Navigation Bar */}
-      <div className="sticky top-[57px] sm:top-[65px] z-20 w-full border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shadow-2xs">
-        {[
-          { id: "prod-section-general", label: "1. Info" },
-          { id: "prod-section-variants", label: "2. Variants" },
-          { id: "prod-section-gallery", label: "3. Product Video" },
-          { id: "prod-section-specs", label: "4. Agro Specs & Tabs" },
-          { id: "prod-section-seo", label: "5. SEO" },
-          { id: "prod-section-toggles", label: "6. Toggles" }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => {
-              setActiveTab(tab.id);
-              const el = document.getElementById(tab.id);
-              if (el) {
-                el.scrollIntoView({ behavior: "smooth", block: "start" });
-              }
-            }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap select-none cursor-pointer ${
-              activeTab === tab.id
-                ? "bg-emerald-600 text-white shadow-sm font-extrabold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-muted/40 border border-border/60"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* Page Form Body - Unified Continuous Scrolling Container */}
