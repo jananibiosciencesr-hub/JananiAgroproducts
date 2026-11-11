@@ -1457,10 +1457,7 @@ function OrderDetailDrawer({
         {/* Tab Navigation */}
         <div className="flex flex-wrap items-center gap-2 px-6 pt-3 border-b border-border bg-card no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {[
-            { id: "overview", label: "Overview & Items", icon: ShoppingBag },
-            { id: "logistics", label: "Warehouse & Shiprocket", icon: Truck },
-            { id: "documents", label: "Print Documents", icon: FileText },
-            { id: "lifecycle", label: "Cancel / Refund / Return", icon: RotateCcw }
+            { id: "overview", label: "Overview & Items", icon: ShoppingBag }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1677,13 +1674,13 @@ function OrderDetailDrawer({
                     <div className="flex justify-between text-muted-foreground">
                       <span>CGST (2.5%)</span>
                       <span className="font-medium text-foreground">
-                        ₹{((order.taxAmount ? order.taxAmount / 2 : order.total * 0.025)).toFixed(2)}
+                        ₹{(order.cgst ?? (order.taxAmount ? order.taxAmount / 2 : (order.subtotal || order.total * 0.95) * 0.025)).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>SGST (2.5%)</span>
                       <span className="font-medium text-foreground">
-                        ₹{((order.taxAmount ? order.taxAmount / 2 : order.total * 0.025)).toFixed(2)}
+                        ₹{(order.sgst ?? (order.taxAmount ? order.taxAmount / 2 : (order.subtotal || order.total * 0.95) * 0.025)).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
@@ -1692,13 +1689,13 @@ function OrderDetailDrawer({
                         {((order.shippingFee ?? order.deliveryFee ?? 0) > 0) ? `₹${order.shippingFee || order.deliveryFee}` : "FREE"}
                       </span>
                     </div>
-                    {(order.couponCode || (order.couponDiscount && order.couponDiscount > 0) || (order.discount && order.discount > 0)) && (
+                    {Boolean(order.couponCode || (order.couponDiscount && order.couponDiscount > 0) || (order.discount && order.discount > 0)) && (
                       <div className="flex justify-between text-emerald-600 font-medium">
                         <span>🏷️ Coupon ({order.couponCode || "Applied"})</span>
                         <span>-₹{(order.couponDiscount || order.discount || 0).toFixed(2)}</span>
                       </div>
                     )}
-                    {(order.walletDeduction && order.walletDeduction > 0) && (
+                    {Boolean(order.walletDeduction && order.walletDeduction > 0) && (
                       <div className="flex justify-between text-amber-600 font-medium">
                         <span>🪙 Farm Wallet Deduction</span>
                         <span>-₹{(order.walletDeduction).toFixed(2)}</span>
