@@ -1360,8 +1360,35 @@ function ProductFormView({
   const activeCategories = (categories && categories.length > 0) ? categories : [];
   const defaultCategory = activeCategories[0] || initialData?.category || "";
 
-  const [activeTab, setActiveTab] = useState<"general" | "variants" | "gallery" | "specs" | "seo" | "toggles">("general");
+  const [activeTab, setActiveTab] = useState<string>("prod-section-general");
   const [specsSubTab, setSpecsSubTab] = useState<"desc" | "benefits" | "usage" | "crops" | "specs" | "reviews" | "faqs">("desc");
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = [
+        "prod-section-general",
+        "prod-section-variants",
+        "prod-section-gallery",
+        "prod-section-specs",
+        "prod-section-seo",
+        "prod-section-toggles"
+      ];
+      const scrollPos = window.scrollY + 200;
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            setActiveTab(id);
+            break;
+          }
+        }
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const COMMON_CROPS = [
     "Paddy / Rice",
@@ -1476,7 +1503,7 @@ function ProductFormView({
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
   useEffect(() => {
-    if (isOpen) { setActiveTab("basic"); }
+    if (isOpen) { setActiveTab("prod-section-general"); }
     if (initialData) {
       const rawData = initialData as any;
 
@@ -2024,24 +2051,30 @@ function ProductFormView({
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="w-full border-b border-border bg-muted/40 px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* Quick-Scroll Sticky Navigation Bar */}
+      <div className="sticky top-[57px] sm:top-[65px] z-20 w-full border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shadow-2xs">
         {[
-          { id: "general", label: "1. Info" },
-          { id: "variants", label: "2. Variants" },
-          { id: "gallery", label: "3. Product Video" },
-          { id: "specs", label: "4. Agro Specs & Tabs" },
-          { id: "seo", label: "5. SEO" },
-          { id: "toggles", label: "6. Toggles" }
+          { id: "prod-section-general", label: "1. Info" },
+          { id: "prod-section-variants", label: "2. Variants" },
+          { id: "prod-section-gallery", label: "3. Product Video" },
+          { id: "prod-section-specs", label: "4. Agro Specs & Tabs" },
+          { id: "prod-section-seo", label: "5. SEO" },
+          { id: "prod-section-toggles", label: "6. Toggles" }
         ].map((tab) => (
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap select-none ${
+            onClick={() => {
+              setActiveTab(tab.id);
+              const el = document.getElementById(tab.id);
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap select-none cursor-pointer ${
               activeTab === tab.id
-                ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm border border-border/80 font-extrabold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                ? "bg-emerald-600 text-white shadow-sm font-extrabold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-muted/40 border border-border/60"
             }`}
           >
             {tab.label}
@@ -2049,100 +2082,116 @@ function ProductFormView({
         ))}
       </div>
 
-      {/* Page Form Body */}
-      <div className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-          {/* TAB 1: General Info */}
-          {activeTab === "general" && (
-            <div className="space-y-4">
+      {/* Page Form Body - Unified Continuous Scrolling Container */}
+      <div className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        {/* SECTION 1: General Info */}
+        <div id="prod-section-general" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+            <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+              1
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Basic Information & Catalog Details</h3>
+              <p className="text-[11px] text-muted-foreground">Product title, SKU, URL slug, category, brand, and main harvest description</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Product Title *</label>
+              <input
+                required
+                value={formData.name}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="e.g. Harit Trichoderma Viride (1 L)"
+                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Product Title *</label>
+                <label className="text-xs font-bold text-foreground block mb-1">SKU Code *</label>
                 <input
                   required
-                  value={formData.name}
-                  onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder="e.g. Harit Trichoderma Viride (1 L)"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  placeholder="JAP-1001"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-bold text-emerald-600 outline-none"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">SKU Code *</label>
-                  <input
-                    required
-                    value={formData.sku}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    placeholder="JAP-1001"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-bold text-emerald-600 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">URL Slug *</label>
-                  <input
-                    required
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="harit-trichoderma-1l"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Category</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
-                  >
-                    {formData.category && !activeCategories.includes(formData.category) && (
-                      <option value={formData.category}>{formData.category} (Current)</option>
-                    )}
-                    {activeCategories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Brand Line</label>
-                  <select
-                    value={formData.brand}
-                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
-                  >
-                    {JANANI_DEFAULT_BRANDS.map((b) => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Pure organic harvest description..."
-                  className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none"
+                <label className="text-xs font-bold text-foreground block mb-1">URL Slug *</label>
+                <input
+                  required
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  placeholder="harit-trichoderma-1l"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono outline-none"
                 />
               </div>
             </div>
-          )}
 
-          {/* TAB 2: Product Variants */}
-          {activeTab === "variants" && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h4 className="text-xs font-bold text-foreground">Pack Size / Weight Variants</h4>
-                  <p className="text-[10px] text-muted-foreground">Each variant can have independent price and stock</p>
-                </div>
-                <Button type="button" onClick={handleAddVariant} size="sm" variant="outline" className="rounded-xl text-xs font-bold gap-1">
-                  <Plus className="size-3.5" /> Add Variant
-                </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">Category</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
+                >
+                  {formData.category && !activeCategories.includes(formData.category) && (
+                    <option value={formData.category}>{formData.category} (Current)</option>
+                  )}
+                  {activeCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">Brand Line</label>
+                <select
+                  value={formData.brand}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
+                >
+                  {JANANI_DEFAULT_BRANDS.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Description</label>
+              <textarea
+                rows={3}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Pure organic harvest description..."
+                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 2: Product Variants */}
+        <div id="prod-section-variants" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center justify-between pb-3 border-b border-border/70">
+            <div className="flex items-center gap-2.5">
+              <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+                2
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Pack Size & Weight Variants</h3>
+                <p className="text-[11px] text-muted-foreground">Each variant can have independent pricing, inventory stock, and custom size photo</p>
+              </div>
+            </div>
+            <Button type="button" onClick={handleAddVariant} size="sm" variant="outline" className="rounded-xl text-xs font-bold gap-1 cursor-pointer">
+              <Plus className="size-3.5" /> Add Variant
+            </Button>
+          </div>
+
+          <div className="space-y-4">
 
               <div className="space-y-3">
                 {(Array.isArray(formData.variants) ? formData.variants : []).map((v, i) => (
@@ -2306,151 +2355,161 @@ function ProductFormView({
                 ))}
               </div>
             </div>
-          )}
+        </div>
 
-          {/* TAB 3: Product Video Showcase */}
-          {activeTab === "gallery" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                    <Video className="size-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                      Product Video Showcase
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">
-                        Storefront Position #3
-                      </span>
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground">
-                      Displays in 3rd thumbnail position with a Play badge. Supports YouTube, Vimeo &amp; direct MP4/WebM uploads.
-                    </p>
-                  </div>
-                </div>
-                {formData.videoUrl && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setFormData((prev) => ({ ...prev, videoUrl: "" }));
-                      toast.info("Product video removed");
-                    }}
-                    className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] h-7 px-2.5 rounded-xl cursor-pointer"
-                  >
-                    <X className="size-3 mr-1" /> Remove Video
-                  </Button>
-                )}
+        {/* SECTION 3: Product Video Showcase */}
+        <div id="prod-section-gallery" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center justify-between pb-3 border-b border-border/70">
+            <div className="flex items-center gap-2.5">
+              <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+                3
               </div>
-
-                {/* Video Inputs: Upload & URL */}
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
-                  <div className="sm:col-span-8 flex gap-2">
-                    <input
-                      value={formData.videoUrl}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, videoUrl: e.target.value }))}
-                      placeholder="Paste YouTube watch/shorts URL, Vimeo, or MP4 link..."
-                      className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
-                    />
-                  </div>
-                  <div className="sm:col-span-4 flex items-center gap-1.5">
-                    <label className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-2xl border border-border bg-card hover:bg-accent text-foreground text-xs font-bold cursor-pointer transition-colors shadow-sm">
-                      <Upload className="size-3.5 text-brand-leaf" />
-                      <span>Upload Video</span>
-                      <input
-                        type="file"
-                        accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                        className="hidden"
-                        onChange={handleUploadVideoFile}
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                {/* Help tip for video format */}
-                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                  <Play className="size-3 text-emerald-600 fill-emerald-600 shrink-0" />
-                  <span>Supports public YouTube links (e.g. <code className="font-mono bg-muted px-1 rounded">https://www.youtube.com/watch?v=...</code> or <code className="font-mono bg-muted px-1 rounded">https://youtu.be/...</code>), Vimeo links, or uploaded MP4/WebM video files.</span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <Video className="size-4 text-emerald-600" />
+                  <span>Product Video Showcase</span>
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">
+                    Storefront Position #3
+                  </span>
+                </h3>
+                <p className="text-[11px] text-muted-foreground">
+                  Displays in 3rd thumbnail position with a Play badge. Supports YouTube, Vimeo &amp; direct MP4/WebM uploads.
                 </p>
-
-                {/* Quick Client Demo Preset Buttons */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Quick Sample Presets:
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoUrl: SAMPLE_PRODUCT_VIDEO
-                      }));
-                      toast.success("Loaded built-in Janani Agro sample video!");
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
-                  >
-                    <Play className="size-3 text-emerald-600 fill-emerald-600" />
-                    Janani Agro Sample Demo (Direct MP4)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoUrl: "https://www.youtube.com/watch?v=TihdID6918Q"
-                      }));
-                      toast.success("Loaded Organic Farming Trichoderma YouTube Demo!");
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
-                  >
-                    <Play className="size-3 text-emerald-600 fill-emerald-600" />
-                    Trichoderma Viride Organic Farming Demo (YouTube)
-                  </button>
-                </div>
-
-                {/* Live Video Preview Box */}
-                <div className="rounded-2xl border border-border bg-muted/30 p-3">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-2 flex items-center gap-1">
-                    <Eye className="size-3.5 text-emerald-600" /> Live Video Preview Player:
-                  </span>
-                  {formData.videoUrl ? (
-                    (() => {
-                      const vInfo = getVideoEmbedInfo(formData.videoUrl);
-                      return (
-                        <div className="w-full aspect-video max-h-56 rounded-xl border border-border overflow-hidden bg-black flex items-center justify-center shadow-inner relative">
-                          {vInfo.isEmbeddable ? (
-                            <iframe
-                              src={vInfo.embedUrl}
-                              title="Product Video Preview"
-                              className="size-full border-0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                            />
-                          ) : (
-                            <video
-                              src={vInfo.rawUrl}
-                              controls
-                              className="size-full object-contain"
-                            />
-                          )}
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="h-28 rounded-xl border border-dashed border-border/80 flex flex-col items-center justify-center text-center p-3 text-muted-foreground">
-                      <Video className="size-6 mb-1 text-muted-foreground/40" />
-                      <p className="text-xs font-semibold">No video attached to this product</p>
-                      <p className="text-[10px]">Add a YouTube / Vimeo URL or upload an MP4 video above to activate the video thumbnail on the storefront.</p>
-                    </div>
-                  )}
-                </div>
               </div>
-          )}
+            </div>
+            {formData.videoUrl && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFormData((prev) => ({ ...prev, videoUrl: "" }));
+                  toast.info("Product video removed");
+                }}
+                className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] h-7 px-2.5 rounded-xl cursor-pointer"
+              >
+                <X className="size-3 mr-1" /> Remove Video
+              </Button>
+            )}
+          </div>
 
-          {/* TAB 5: Agro Specifications & Storefront Tabs (All 7 Tabs) */}
-          {activeTab === "specs" && (
-            <div className="space-y-4">
+          {/* Video Inputs: Upload & URL */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+            <div className="sm:col-span-8 flex gap-2">
+              <input
+                value={formData.videoUrl}
+                onChange={(e) => setFormData((prev) => ({ ...prev, videoUrl: e.target.value }))}
+                placeholder="Paste YouTube watch/shorts URL, Vimeo, or MP4 link..."
+                className="h-10 flex-1 rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
+              />
+            </div>
+            <div className="sm:col-span-4 flex items-center gap-1.5">
+              <label className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-2xl border border-border bg-card hover:bg-accent text-foreground text-xs font-bold cursor-pointer transition-colors shadow-sm">
+                <Upload className="size-3.5 text-brand-leaf" />
+                <span>Upload Video</span>
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                  className="hidden"
+                  onChange={handleUploadVideoFile}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Help tip for video format */}
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <Play className="size-3 text-emerald-600 fill-emerald-600 shrink-0" />
+            <span>Supports public YouTube links (e.g. <code className="font-mono bg-muted px-1 rounded">https://www.youtube.com/watch?v=...</code> or <code className="font-mono bg-muted px-1 rounded">https://youtu.be/...</code>), Vimeo links, or uploaded MP4/WebM video files.</span>
+          </p>
+
+          {/* Quick Client Demo Preset Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              Quick Sample Presets:
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData((prev) => ({
+                  ...prev,
+                  videoUrl: SAMPLE_PRODUCT_VIDEO
+                }));
+                toast.success("Loaded built-in Janani Agro sample video!");
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
+            >
+              <Play className="size-3 text-emerald-600 fill-emerald-600" />
+              Janani Agro Sample Demo (Direct MP4)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData((prev) => ({
+                  ...prev,
+                  videoUrl: "https://www.youtube.com/watch?v=TihdID6918Q"
+                }));
+                toast.success("Loaded Organic Farming Trichoderma YouTube Demo!");
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium transition-all cursor-pointer"
+            >
+              <Play className="size-3 text-emerald-600 fill-emerald-600" />
+              Trichoderma Viride Organic Farming Demo (YouTube)
+            </button>
+          </div>
+
+          {/* Live Video Preview Box */}
+          <div className="rounded-2xl border border-border bg-muted/30 p-3">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-2 flex items-center gap-1">
+              <Eye className="size-3.5 text-emerald-600" /> Live Video Preview Player:
+            </span>
+            {formData.videoUrl ? (
+              (() => {
+                const vInfo = getVideoEmbedInfo(formData.videoUrl);
+                return (
+                  <div className="w-full aspect-video max-h-56 rounded-xl border border-border overflow-hidden bg-black flex items-center justify-center shadow-inner relative">
+                    {vInfo.isEmbeddable ? (
+                      <iframe
+                        src={vInfo.embedUrl}
+                        title="Product Video Preview"
+                        className="size-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video
+                        src={vInfo.rawUrl}
+                        controls
+                        className="size-full object-contain"
+                      />
+                    )}
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="h-28 rounded-xl border border-dashed border-border/80 flex flex-col items-center justify-center text-center p-3 text-muted-foreground">
+                <Video className="size-6 mb-1 text-muted-foreground/40" />
+                <p className="text-xs font-semibold">No video attached to this product</p>
+                <p className="text-[10px]">Add a YouTube / Vimeo URL or upload an MP4 video above to activate the video thumbnail on the storefront.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* SECTION 4: Agro Specifications & Storefront Tabs */}
+        <div id="prod-section-specs" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+            <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+              4
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <Layers className="size-4 text-emerald-600" />
+                <span>Agro Specifications & Storefront Tabs</span>
+              </h3>
+              <p className="text-[11px] text-muted-foreground">Formulation details, dosage, application steps, crops, technical specs, reviews, and FAQs</p>
+            </div>
+          </div>
               {/* 7-Subtab Header Navigation */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-border/80 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {[
@@ -2891,108 +2950,150 @@ function ProductFormView({
                   )}
                 </div>
               )}
+        </div>
+
+        {/* SECTION 5: SEO Meta Suite */}
+        <div id="prod-section-seo" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+            <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+              5
             </div>
-          )}
-
-          {/* TAB 6: SEO Meta Suite */}
-          {activeTab === "seo" && (
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Meta Title</label>
-                <input
-                  value={formData.seo.metaTitle}
-                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaTitle: e.target.value } })}
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Meta Description</label>
-                <textarea
-                  rows={2}
-                  value={formData.seo.metaDescription}
-                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaDescription: e.target.value } })}
-                  className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Canonical URL</label>
-                <input
-                  value={formData.seo.canonicalUrl}
-                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, canonicalUrl: e.target.value } })}
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono text-[11px] outline-none"
-                />
-              </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <Globe className="size-4 text-emerald-600" />
+                <span>Search Engine Optimization (SEO)</span>
+              </h3>
+              <p className="text-[11px] text-muted-foreground">Search engine tags, meta title, meta description, and canonical URL</p>
             </div>
-          )}
+          </div>
 
-          {/* TAB 7: Storefront Toggles */}
-          {activeTab === "toggles" && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-muted/40 p-4 space-y-4">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">Active Visibility</span>
-                    <span className="text-[11px] text-muted-foreground">Show product live on storefront for purchase</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.active}
-                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">Featured Product (⭐)</span>
-                    <span className="text-[11px] text-muted-foreground">Display in homepage featured collections</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.featured}
-                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                    className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">Trending Harvest (🔥)</span>
-                    <span className="text-[11px] text-muted-foreground">Highlight with trending flame badge</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.trending}
-                    onChange={(e) => setFormData({ ...formData, trending: e.target.checked })}
-                    className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">New Arrival (✨)</span>
-                    <span className="text-[11px] text-muted-foreground">Show new harvest crop badge</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.isNewArrival}
-                    onChange={(e) => setFormData({ ...formData, isNewArrival: e.target.checked })}
-                    className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Custom Promo Badge</label>
-                <input
-                  value={formData.badge}
-                  onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                  placeholder="e.g. 100% Certified Organic"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                />
-              </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Meta Title</label>
+              <input
+                value={formData.seo.metaTitle}
+                onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaTitle: e.target.value } })}
+                placeholder="Buy Harit Trichoderma Viride Online | Janani Agro"
+                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-semibold"
+              />
             </div>
-          )}      </div>
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Meta Description</label>
+              <textarea
+                rows={2}
+                value={formData.seo.metaDescription}
+                onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaDescription: e.target.value } })}
+                placeholder="High potency bio-fertilizer and fungicide for root rot protection..."
+                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Canonical URL</label>
+              <input
+                value={formData.seo.canonicalUrl}
+                onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, canonicalUrl: e.target.value } })}
+                placeholder="https://jananiagro.com/products/..."
+                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono text-[11px] outline-none focus:border-emerald-600"
+              />
+            </div>
+
+            {/* SERP Google Snippet Preview */}
+            <div className="rounded-2xl border border-border bg-muted/30 p-4 shadow-sm">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-1.5 flex items-center gap-1">
+                <Globe className="size-3 text-emerald-600" /> Google Search Result Preview:
+              </span>
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 truncate hover:underline cursor-pointer">
+                {formData.seo.metaTitle || `${formData.name || 'Product'} | JANANI AGRO`}
+              </p>
+              <p className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 truncate">
+                {formData.seo.canonicalUrl || `https://jananiagro.com/products/${formData.slug || 'slug'}`}
+              </p>
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                {formData.seo.metaDescription || formData.description || "Certified bio-organic inputs engineered for high soil fertility and disease defense."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 6: Storefront Visibility & Badges */}
+        <div id="prod-section-toggles" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+            <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+              6
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Storefront Visibility & Promo Badges</h3>
+              <p className="text-[11px] text-muted-foreground">Control live availability, featured carousels, trending flame tags, and promotion badges</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-border bg-muted/40 p-4 space-y-4">
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">Active Visibility</span>
+                  <span className="text-[11px] text-muted-foreground">Show product live on storefront for purchase</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.active}
+                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                  className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">Featured Product (⭐)</span>
+                  <span className="text-[11px] text-muted-foreground">Display in homepage featured collections</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.featured}
+                  onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                  className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">Trending Harvest (🔥)</span>
+                  <span className="text-[11px] text-muted-foreground">Highlight with trending flame badge</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.trending}
+                  onChange={(e) => setFormData({ ...formData, trending: e.target.checked })}
+                  className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">New Arrival (✨)</span>
+                  <span className="text-[11px] text-muted-foreground">Show new harvest crop badge</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.isNewArrival}
+                  onChange={(e) => setFormData({ ...formData, isNewArrival: e.target.checked })}
+                  className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+              </label>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Custom Promo Badge</label>
+              <input
+                value={formData.badge}
+                onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                placeholder="e.g. 100% Certified Organic"
+                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Bottom Sticky Action Footer */}
       <div className="w-full border-t border-border bg-card px-4 sm:px-6 py-3.5 flex items-center justify-between mt-auto">

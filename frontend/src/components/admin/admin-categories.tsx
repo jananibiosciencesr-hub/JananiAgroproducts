@@ -1057,7 +1057,27 @@ function CategoryFormView({
   allCategories: CategoryItem[];
   onSave: (data: any) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"general" | "media" | "seo" | "settings">("general");
+  const [activeTab, setActiveTab] = useState<string>("cat-section-general");
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ["cat-section-general", "cat-section-media", "cat-section-seo", "cat-section-settings"];
+      const scrollPos = window.scrollY + 200;
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            setActiveTab(id);
+            break;
+          }
+        }
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -1157,7 +1177,7 @@ function CategoryFormView({
       });
     }
     if (isOpen) {
-      setActiveTab("general");
+      setActiveTab("cat-section-general");
     }
   }, [initialData, isOpen]);
 
@@ -1220,22 +1240,28 @@ function CategoryFormView({
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="w-full border-b border-border bg-muted/40 px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* Sticky Quick-Scroll Navigation Bar */}
+      <div className="sticky top-[57px] sm:top-[65px] z-20 w-full border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shadow-2xs">
         {[
-          { id: "general", label: "1. General & Hierarchy" },
-          { id: "media", label: "2. Category Image" },
-          { id: "seo", label: "3. SEO & Meta Tags" },
-          { id: "settings", label: "4. Storefront Toggles" }
+          { id: "cat-section-general", label: "1. General & Hierarchy" },
+          { id: "cat-section-media", label: "2. Category Image" },
+          { id: "cat-section-seo", label: "3. SEO & Meta Tags" },
+          { id: "cat-section-settings", label: "4. Storefront Toggles" }
         ].map((tab) => (
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap select-none ${
+            onClick={() => {
+              setActiveTab(tab.id);
+              const el = document.getElementById(tab.id);
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap select-none cursor-pointer ${
               activeTab === tab.id
-                ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm border border-border/80 font-extrabold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                ? "bg-emerald-600 text-white shadow-sm font-extrabold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-muted/40 border border-border/60"
             }`}
           >
             {tab.label}
@@ -1243,278 +1269,313 @@ function CategoryFormView({
         ))}
       </div>
 
-      {/* Page Form Body */}
-      <div className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-          {/* TAB 1: General Info */}
-          {activeTab === "general" && (
-            <div className="space-y-4">
+      {/* Page Form Body - Unified Continuous Scrolling Container */}
+      <div className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        {/* SECTION 1: General Info & Hierarchy */}
+        <div id="cat-section-general" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+            <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+              1
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">General Information & Hierarchy</h3>
+              <p className="text-[11px] text-muted-foreground">Category name, URL slug, parent hierarchy, and description</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Category Name *</label>
+              <input
+                required
+                value={formData.name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="e.g. Bio-Fertilizers & Inoculants"
+                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">URL Slug *</label>
+              <input
+                required
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                placeholder="bio-fertilizers"
+                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-semibold text-emerald-600 outline-none"
+              />
+            </div>
+
+            {formData.level !== "root" && (
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Category Name *</label>
-                <input
-                  required
-                  value={formData.name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="e.g. Bio-Fertilizers & Inoculants"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
-                />
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Select Parent Category ({formData.level === "sub" ? "Select Root Parent" : "Select Sub Parent"}) *
+                </label>
+                <select
+                  value={formData.parentId || ""}
+                  onChange={(e) => setFormData({ ...formData, parentId: e.target.value || null })}
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
+                >
+                  <option value="">-- Choose Parent --</option>
+                  {parentCandidates.map((parent) => (
+                    <option key={parent.id} value={parent.id}>
+                      {parent.icon} {parent.name} ({parent.level} tier)
+                    </option>
+                  ))}
+                </select>
               </div>
+            )}
 
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">URL Slug *</label>
-                <input
-                  required
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="bio-fertilizers"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-semibold text-emerald-600 outline-none"
-                />
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Category Description</label>
+              <textarea
+                rows={3}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Describe harvest origins, purity certifications, and organic cultivation standards..."
+                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 2: Media & Images */}
+        <div id="cat-section-media" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center justify-between pb-3 border-b border-border/70">
+            <div className="flex items-center gap-2.5">
+              <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+                2
               </div>
-
-              {formData.level !== "root" && (
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">
-                    Select Parent Category ({formData.level === "sub" ? "Select Root Parent" : "Select Sub Parent"}) *
-                  </label>
-                  <select
-                    value={formData.parentId || ""}
-                    onChange={(e) => setFormData({ ...formData, parentId: e.target.value || null })}
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
-                  >
-                    <option value="">-- Choose Parent --</option>
-                    {parentCandidates.map((parent) => (
-                      <option key={parent.id} value={parent.id}>
-                        {parent.icon} {parent.name} ({parent.level} tier)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Category Description</label>
-                <textarea
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe harvest origins, purity certifications, and organic cultivation standards..."
-                  className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600"
-                />
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <ImageIcon className="size-4 text-emerald-600" />
+                  <span>Category Image & Thumbnail</span>
+                </h3>
+                <p className="text-[11px] text-muted-foreground">Used in storefront cards, grids, and navigation banners</p>
               </div>
             </div>
-          )}
+            {formData.image && (
+              <button
+                type="button"
+                onClick={() => setFormData((prev) => ({ ...prev, image: "", bannerImage: "" }))}
+                className="text-[11px] text-rose-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+              >
+                <Trash2 className="size-3" /> Clear Image
+              </button>
+            )}
+          </div>
 
-          {/* TAB 2: Media & Images (Upload from Device + Direct URL) */}
-          {activeTab === "media" && (
-            <div className="space-y-4">
-              {/* 1. Category Card Thumbnail */}
-              <div className="rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <ImageIcon className="size-4 text-emerald-600" />
-                    <span>Card Thumbnail</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">(Used in category cards & grids)</span>
-                  </label>
-                  {formData.image && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, image: "", bannerImage: "" }))}
-                      className="text-[11px] text-rose-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
-                    >
-                      <Trash2 className="size-3" /> Clear Image
-                    </button>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Upload from Computer / Device */}
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                📁 Option 1: Upload from Device
+              </span>
+              <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-border hover:border-emerald-500 bg-muted/20 hover:bg-emerald-500/5 cursor-pointer transition-colors p-2 text-center group">
+                <Upload className="size-5 text-muted-foreground group-hover:text-emerald-600 mb-1 transition-transform group-hover:scale-110" />
+                <span className="text-xs font-bold text-foreground">Click to Browse Thumbnail</span>
+                <span className="text-[10px] text-muted-foreground">PNG, JPG, WEBP, SVG</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleUploadMediaFile(e, "image")}
+                />
+              </label>
+            </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Upload from Computer / Device */}
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                      📁 Option 1: Upload from Device
-                    </span>
-                    <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-border hover:border-emerald-500 bg-muted/20 hover:bg-emerald-500/5 cursor-pointer transition-colors p-2 text-center group">
-                      <Upload className="size-5 text-muted-foreground group-hover:text-emerald-600 mb-1 transition-transform group-" />
-                      <span className="text-xs font-bold text-foreground">Click to Browse Thumbnail</span>
-                      <span className="text-[10px] text-muted-foreground">PNG, JPG, WEBP, SVG</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleUploadMediaFile(e, "image")}
-                      />
-                    </label>
-                  </div>
-
-                  {/* Direct URL input */}
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                      🔗 Option 2: Direct Image URL
-                    </span>
-                    <div className="flex flex-col justify-between h-24">
-                      <input
-                        value={formData.image}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setFormData((prev) => ({ ...prev, image: val, bannerImage: val }));
-                        }}
-                        placeholder="e.g. https://... or upload from device"
-                        className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
-                      />
-                      <p className="text-[10px] text-muted-foreground">
-                        Supports local paths, HTTPS links, or uploaded Base64 image data.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Thumbnail Preview Bar */}
-                {formData.image && (
-                  <div className="flex items-center gap-3 pt-2.5 border-t border-border/60">
-                    <div className="size-12 rounded-xl border border-border overflow-hidden bg-muted shrink-0 shadow-xs">
-                      <img
-                        src={formData.image}
-                        alt="Thumbnail preview"
-                        className="size-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs font-bold text-foreground block truncate">Active Card Thumbnail</span>
-                      <span className="text-[10px] font-mono text-muted-foreground truncate block">
-                        {formData.image.startsWith("data:") ? "Local Image File Selected (Ready to Save)" : formData.image}
-                      </span>
-                    </div>
-                  </div>
-                )}
+            {/* Direct URL input */}
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                🔗 Option 2: Direct Image URL
+              </span>
+              <div className="flex flex-col justify-between h-24">
+                <input
+                  value={formData.image}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData((prev) => ({ ...prev, image: val, bannerImage: val }));
+                  }}
+                  placeholder="e.g. https://... or upload from device"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Supports local paths, HTTPS links, or uploaded Base64 image data.
+                </p>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* TAB 3: SEO Suite */}
-          {activeTab === "seo" && (
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold text-foreground">SEO Meta Title</label>
-                  <span className="text-[10px] text-muted-foreground">{(formData.seo.metaTitle || '').length}/60 chars</span>
-                </div>
-                <input
-                  value={formData.seo.metaTitle}
-                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaTitle: e.target.value } })}
-                  placeholder="Buy Pure Organic Rice Online | Janani Agro"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
+          {/* Thumbnail Preview Bar */}
+          {formData.image && (
+            <div className="flex items-center gap-3 pt-2.5 border-t border-border/60">
+              <div className="size-12 rounded-xl border border-border overflow-hidden bg-muted shrink-0 shadow-xs">
+                <img
+                  src={formData.image}
+                  alt="Thumbnail preview"
+                  className="size-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
                 />
               </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold text-foreground">SEO Meta Description</label>
-                  <span className="text-[10px] text-muted-foreground">{(formData.seo.metaDescription || '').length}/160 chars</span>
-                </div>
-                <textarea
-                  rows={2}
-                  value={formData.seo.metaDescription}
-                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaDescription: e.target.value } })}
-                  placeholder="Certified organic grains grown without chemical pesticides..."
-                  className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Meta Keywords</label>
-                  <input
-                    value={formData.seo.metaKeywords}
-                    onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaKeywords: e.target.value } })}
-                    placeholder="bio-fertilizer, trichoderma, humic, soil health"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Canonical URL</label>
-                  <input
-                    value={formData.seo.canonicalUrl}
-                    onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, canonicalUrl: e.target.value } })}
-                    placeholder="https://jananiagro.com/categories/..."
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono text-[11px] outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* SERP Google Snippet Preview */}
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-1.5 flex items-center gap-1">
-                  <Globe className="size-3 text-emerald-600" /> Google Search Result Preview:
+              <div className="min-w-0 flex-1">
+                <span className="text-xs font-bold text-foreground block truncate">Active Card Thumbnail</span>
+                <span className="text-[10px] font-mono text-muted-foreground truncate block">
+                  {formData.image.startsWith("data:") ? "Local Image File Selected (Ready to Save)" : formData.image}
                 </span>
-                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 truncate hover:underline cursor-pointer">
-                  {formData.seo.metaTitle || `${formData.name || 'Category'} | JANANI AGRO`}
-                </p>
-                <p className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 truncate">
-                  {formData.seo.canonicalUrl || `https://jananiagro.com/categories/${formData.slug || 'slug'}`}
-                </p>
-                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                  {formData.seo.metaDescription || formData.description || "Discover farm-fresh organic harvest products directly tested for purity."}
-                </p>
               </div>
             </div>
           )}
+        </div>
 
-          {/* TAB 4: Storefront Toggles */}
-          {activeTab === "settings" && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-muted/40 p-4 space-y-4">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">Active Visibility</span>
-                    <span className="text-[11px] text-muted-foreground">Show category live on public navigation & filter menus</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.active}
-                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                </label>
+        {/* SECTION 3: SEO Suite */}
+        <div id="cat-section-seo" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+            <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+              3
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <Globe className="size-3.5 text-emerald-600" />
+                <span>SEO & Meta Tags Suite</span>
+              </h3>
+              <p className="text-[11px] text-muted-foreground">Custom meta titles, descriptions, keywords, and live Google SERP preview</p>
+            </div>
+          </div>
 
-                <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">Featured on Homepage</span>
-                    <span className="text-[11px] text-muted-foreground">Display prominently on the homepage category carousel</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.featured}
-                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                    className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">Trending Tag</span>
-                    <span className="text-[11px] text-muted-foreground">Show glowing 'Trending Harvest' badge</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formData.trending}
-                    onChange={(e) => setFormData({ ...formData, trending: e.target.checked })}
-                    className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                </label>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-foreground">SEO Meta Title</label>
+                <span className="text-[10px] text-muted-foreground">{(formData.seo.metaTitle || '').length}/60 chars</span>
               </div>
+              <input
+                value={formData.seo.metaTitle}
+                onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaTitle: e.target.value } })}
+                placeholder="Buy Pure Organic Rice Online | Janani Agro"
+                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+              />
+            </div>
 
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-foreground">SEO Meta Description</label>
+                <span className="text-[10px] text-muted-foreground">{(formData.seo.metaDescription || '').length}/160 chars</span>
+              </div>
+              <textarea
+                rows={2}
+                value={formData.seo.metaDescription}
+                onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaDescription: e.target.value } })}
+                placeholder="Certified organic grains grown without chemical pesticides..."
+                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Sort Order Sequence</label>
+                <label className="text-xs font-bold text-foreground block mb-1">Meta Keywords</label>
                 <input
-                  type="number"
-                  value={formData.orderIndex}
-                  onChange={(e) => setFormData({ ...formData, orderIndex: Number(e.target.value) })}
-                  className="h-10 w-32 rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none"
+                  value={formData.seo.metaKeywords}
+                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaKeywords: e.target.value } })}
+                  placeholder="bio-fertilizer, trichoderma, humic, soil health"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">Canonical URL</label>
+                <input
+                  value={formData.seo.canonicalUrl}
+                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, canonicalUrl: e.target.value } })}
+                  placeholder="https://jananiagro.com/categories/..."
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono text-[11px] outline-none focus:border-emerald-600"
                 />
               </div>
             </div>
-          )}
+
+            {/* SERP Google Snippet Preview */}
+            <div className="rounded-2xl border border-border bg-muted/30 p-4 shadow-sm">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-1.5 flex items-center gap-1">
+                <Globe className="size-3 text-emerald-600" /> Google Search Result Preview:
+              </span>
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 truncate hover:underline cursor-pointer">
+                {formData.seo.metaTitle || `${formData.name || 'Category'} | JANANI AGRO`}
+              </p>
+              <p className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 truncate">
+                {formData.seo.canonicalUrl || `https://jananiagro.com/categories/${formData.slug || 'slug'}`}
+              </p>
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                {formData.seo.metaDescription || formData.description || "Discover farm-fresh organic harvest products directly tested for purity."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 4: Storefront Toggles & Visibility */}
+        <div id="cat-section-settings" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+            <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
+              4
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Storefront Toggles & Visibility</h3>
+              <p className="text-[11px] text-muted-foreground">Active storefront status, homepage carousel display, trending badges, and sequence</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-border bg-muted/40 p-4 space-y-4">
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">Active Visibility</span>
+                  <span className="text-[11px] text-muted-foreground">Show category live on public navigation & filter menus</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.active}
+                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                  className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">Featured on Homepage</span>
+                  <span className="text-[11px] text-muted-foreground">Display prominently on the homepage category carousel</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.featured}
+                  onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                  className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">Trending Tag</span>
+                  <span className="text-[11px] text-muted-foreground">Show glowing 'Trending Harvest' badge</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.trending}
+                  onChange={(e) => setFormData({ ...formData, trending: e.target.checked })}
+                  className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+              </label>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Sort Order Sequence</label>
+              <input
+                type="number"
+                value={formData.orderIndex}
+                onChange={(e) => setFormData({ ...formData, orderIndex: Number(e.target.value) })}
+                className="h-10 w-32 rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Bottom Sticky Action Footer */}
