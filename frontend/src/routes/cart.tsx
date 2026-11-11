@@ -467,7 +467,7 @@ export function CartPage() {
           <span className="text-xs font-bold uppercase tracking-widest text-brand-leaf flex items-center gap-1.5">
             <ShoppingBag className="size-4 text-brand-leaf" /> Harvest Basket
           </span>
-          <h1 className="mt-1.5 font-display text-3xl sm:text-4xl font-bold text-foreground">
+          <h1 className="mt-1.5 font-display text-xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight whitespace-nowrap">
             Shopping Cart ({actualCartCount} {actualCartCount === 1 ? "item" : "items"})
           </h1>
         </div>
