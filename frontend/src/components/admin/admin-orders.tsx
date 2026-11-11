@@ -524,43 +524,10 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
         </button>
       </div>
 
-      {/* Filter Navigation Tabs & Toolbar */}
-      <div className="bg-card border-b border-border p-3 sm:p-4 shadow-2xs space-y-3 sm:space-y-4 w-full rounded-none">
-        {/* Status Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap min-w-0 no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {[
-            { id: "all", label: "All Orders", count: stats.total || orders.length }
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                }`}
-              >
-                <span>{tab.label}</span>
-                {tab.count !== undefined && (
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : tab.badgeColor || "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
+      {/* Filter Toolbar */}
+      <div className="bg-card border-b border-border p-3 sm:p-4 shadow-2xs w-full rounded-none">
         {/* Date to Date Range Filter Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/60">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="font-bold text-foreground flex items-center gap-1.5 shrink-0">
               <Calendar className="size-3.5 text-emerald-600" /> Date Range:
