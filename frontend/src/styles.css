@@ -657,9 +657,9 @@ form {
 
   /* When the invoice modal is active during print */
   body.print-invoice-active {
-    height: 100vh !important;
-    max-height: 100vh !important;
-    overflow: hidden !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
@@ -676,23 +676,30 @@ form {
   body.print-invoice-active .toaster,
   body.print-invoice-active .whatsapp-float,
   body.print-invoice-active .order-invoice-modal-topbar,
+  body.print-invoice-active .no-print,
   body.print-invoice-active button {
     display: none !important;
   }
 
-  body.print-invoice-active .order-invoice-modal-overlay {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
+  /* Hide background page elements when invoice is mounted */
+  body.print-invoice-active > div:not(.print-active-portal) {
+    display: none !important;
+  }
+
+  body.print-invoice-active .order-invoice-modal-overlay,
+  body.print-invoice-active .print-active-portal {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
     background: #ffffff !important;
     padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
-    overflow: hidden !important;
-    z-index: 999999 !important;
+    overflow: visible !important;
+    z-index: auto !important;
     display: block !important;
   }
 
@@ -710,43 +717,47 @@ form {
     overflow: visible !important;
   }
 
-  body.print-invoice-active #tax-invoice-content {
+  body.print-invoice-active #printable-tax-invoice,
+  body.print-invoice-active #tax-invoice-content,
+  body.print-invoice-active #printable-packing-slip,
+  body.print-invoice-active #printable-shipping-label {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 auto !important;
-    padding: 10px 14px !important;
+    padding: 6px 10px !important;
     box-sizing: border-box !important;
     background: #ffffff !important;
     color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 8px !important;
-    font-size: 9.5px !important;
-    line-height: 1.3 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     page-break-after: avoid !important;
     break-after: avoid !important;
+    overflow: visible !important;
   }
 
-  body.print-invoice-active #tax-invoice-content .space-y-6 > * + * {
+  body.print-invoice-active #printable-tax-invoice .space-y-6 > * + * {
     margin-top: 8px !important;
   }
 
-  body.print-invoice-active #tax-invoice-content .pb-6 {
+  body.print-invoice-active #printable-tax-invoice .pb-4 {
     padding-bottom: 6px !important;
   }
 
-  body.print-invoice-active #tax-invoice-content .pt-6 {
-    padding-top: 6px !important;
+  body.print-invoice-active #printable-tax-invoice .pt-6 {
+    padding-top: 8px !important;
   }
 
-  body.print-invoice-active #tax-invoice-content table {
-    font-size: 9px !important;
+  body.print-invoice-active #printable-tax-invoice table {
+    font-size: 9.5px !important;
   }
 
-  body.print-invoice-active #tax-invoice-content table th,
-  body.print-invoice-active #tax-invoice-content table td {
+  body.print-invoice-active #printable-tax-invoice table th,
+  body.print-invoice-active #printable-tax-invoice table td {
     padding: 4px 6px !important;
   }
 }

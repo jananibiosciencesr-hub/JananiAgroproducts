@@ -2118,6 +2118,195 @@ function OrderDetailDrawer({
 }
 
 // -------------------------------------------------------------
+// Isolated Single-Page Document Printing Utility
+// -------------------------------------------------------------
+
+function printSinglePageDocument(elementId: string, docTitle: string) {
+  if (typeof document === "undefined") return;
+  const element = document.getElementById(elementId);
+  if (!element) {
+    window.print();
+    return;
+  }
+
+  // Remove any stale print frames
+  const oldFrame = document.getElementById("single-page-print-frame");
+  if (oldFrame) {
+    try { oldFrame.remove(); } catch (_) {}
+  }
+
+  const iframe = document.createElement("iframe");
+  iframe.id = "single-page-print-frame";
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "none";
+  iframe.style.visibility = "hidden";
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) {
+    window.print();
+    return;
+  }
+
+  doc.open();
+  doc.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${docTitle}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 6mm 8mm;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.35;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      width: 100%;
+    }
+    .page-wrapper {
+      width: 100%;
+      max-width: 100%;
+      padding: 4px 6px;
+      margin: 0 auto;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 4px 6px;
+      font-size: 10px;
+    }
+    .border { border: 1px solid #cbd5e1; }
+    .border-b { border-bottom: 1px solid #e2e8f0; }
+    .border-b-2 { border-bottom: 2px solid #0f172a; }
+    .border-t { border-top: 1px solid #e2e8f0; }
+    .border-t-2 { border-top: 2px solid #0f172a; }
+    .border-neutral-200 { border-color: #e2e8f0; }
+    .border-neutral-300 { border-color: #cbd5e1; }
+    .border-neutral-400 { border-color: #94a3b8; }
+    .border-neutral-800 { border-color: #1e293b; }
+    .border-neutral-900 { border-color: #0f172a; }
+    .border-emerald-300 { border-color: #6ee7b7; }
+    .border-dashed { border-style: dashed; }
+    .border-4 { border-width: 4px; }
+    .bg-neutral-50 { background-color: #f8fafc; }
+    .bg-neutral-100 { background-color: #f1f5f9; }
+    .bg-neutral-200 { background-color: #e2e8f0; }
+    .bg-neutral-200\\/80 { background-color: #e2e8f0; }
+    .bg-neutral-900 { background-color: #0f172a; }
+    .bg-emerald-100 { background-color: #d1fae5; }
+    .text-white { color: #ffffff; }
+    .text-emerald-900 { color: #064e3b; }
+    .text-emerald-800 { color: #065f46; }
+    .text-emerald-700 { color: #047857; }
+    .text-emerald-600 { color: #059669; }
+    .text-blue-900 { color: #1e3a8a; }
+    .text-neutral-900 { color: #0f172a; }
+    .text-neutral-800 { color: #1e293b; }
+    .text-neutral-700 { color: #334155; }
+    .text-neutral-600 { color: #475569; }
+    .text-neutral-500 { color: #64748b; }
+    .font-bold { font-weight: 700; }
+    .font-black { font-weight: 900; }
+    .font-semibold { font-weight: 600; }
+    .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .text-\\[10px\\] { font-size: 10px; }
+    .text-\\[11px\\] { font-size: 11px; }
+    .text-xs { font-size: 11px; }
+    .text-sm { font-size: 12.5px; }
+    .text-base { font-size: 14px; }
+    .text-xl { font-size: 18px; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .flex { display: flex; }
+    .justify-between { justify-content: space-between; }
+    .items-start { align-items: flex-start; }
+    .items-end { align-items: flex-end; }
+    .items-center { align-items: center; }
+    .grid { display: grid; }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .gap-6 { gap: 14px; }
+    .gap-4 { gap: 10px; }
+    .gap-3 { gap: 8px; }
+    .p-8 { padding: 4px 6px; }
+    .p-6 { padding: 4px 6px; }
+    .p-4 { padding: 8px 10px; }
+    .p-3 { padding: 6px; }
+    .pt-2 { padding-top: 4px; }
+    .pb-4 { padding-bottom: 6px; }
+    .pb-3 { padding-bottom: 6px; }
+    .pb-2 { padding-bottom: 4px; }
+    .pt-6 { padding-top: 8px; }
+    .mt-0\\.5 { margin-top: 2px; }
+    .mt-1 { margin-top: 3px; }
+    .mt-2 { margin-top: 5px; }
+    .mb-1 { margin-bottom: 3px; }
+    .m-4 { margin: 8px; }
+    .space-y-6 > * + * { margin-top: 8px; }
+    .space-y-4 > * + * { margin-top: 6px; }
+    .space-y-3 > * + * { margin-top: 5px; }
+    .space-y-2 > * + * { margin-top: 4px; }
+    .space-y-1\\.5 > * + * { margin-top: 3px; }
+    .space-y-1 > * + * { margin-top: 2px; }
+    .rounded { border-radius: 4px; }
+    .rounded-lg { border-radius: 6px; }
+    .uppercase { text-transform: uppercase; }
+    .tracking-tight { letter-spacing: -0.025em; }
+    .tracking-wider { letter-spacing: 0.05em; }
+    .tracking-widest { letter-spacing: 0.1em; }
+    .w-64 { width: 220px; }
+    .max-w-xs { max-width: 260px; }
+    .divide-y > * + * { border-top: 1px solid #e2e8f0; }
+    .inline-block { display: inline-block; }
+    .italic { font-style: italic; }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    ${element.innerHTML}
+  </div>
+</body>
+</html>`);
+  doc.close();
+
+  setTimeout(() => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch (e) {
+      console.error("Print error:", e);
+    } finally {
+      setTimeout(() => {
+        try {
+          iframe.remove();
+        } catch (_) {}
+      }, 1500);
+    }
+  }, 350);
+}
+
+// -------------------------------------------------------------
 // Printable GST Tax Invoice Modal (Rule 46 Compliant)
 // -------------------------------------------------------------
 
@@ -2128,8 +2317,22 @@ function PrintableTaxInvoiceModal({
   order: any;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.body.classList.add("print-invoice-active");
+    }
+    return () => {
+      if (typeof document !== "undefined") {
+        document.body.classList.remove("print-invoice-active");
+      }
+    };
+  }, []);
+
   const handlePrint = () => {
-    window.print();
+    printSinglePageDocument(
+      "printable-tax-invoice",
+      `Tax-Invoice-${order.id || order.number || "Janani"}`
+    );
   };
 
   const fin = getOrderFinancials(order);
@@ -2138,10 +2341,10 @@ function PrintableTaxInvoiceModal({
   const sgst = fin.sgst;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-3xl bg-white text-neutral-900 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="print-active-portal order-invoice-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+      <div className="order-invoice-modal-card w-full max-w-3xl bg-white text-neutral-900 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Top Control Bar */}
-        <div className="px-6 py-3 bg-neutral-100 border-b border-neutral-300 flex items-center justify-between no-print">
+        <div className="px-6 py-3 bg-neutral-100 border-b border-neutral-300 flex items-center justify-between no-print order-invoice-modal-topbar">
           <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
             <FileText className="h-4 w-4 text-emerald-600" />
             Official GST Tax Invoice Preview
@@ -2149,14 +2352,14 @@ function PrintableTaxInvoiceModal({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white flex items-center gap-1.5 shadow-sm transition-colors"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5" />
-              <span>Print / Save PDF</span>
+              <span>Print / Save PDF (1 Page)</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1 rounded text-neutral-500 hover:text-neutral-900"
+              className="p-1 rounded text-neutral-500 hover:text-neutral-900 cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -2178,8 +2381,10 @@ function PrintableTaxInvoiceModal({
               <span className="px-3 py-1 bg-emerald-100 text-emerald-900 font-black text-xs uppercase tracking-widest rounded border border-emerald-300">
                 TAX INVOICE
               </span>
-              <p className="font-bold text-sm text-neutral-900 mt-2 font-mono">Invoice #{order.id.replace("ORD", "INV-2026")}</p>
-              <p className="text-neutral-600">Date: {order.date}</p>
+              <p className="font-bold text-sm text-neutral-900 mt-2 font-mono">
+                Invoice #{order.number || order.id || "JAP-001"}
+              </p>
+              <p className="text-neutral-600">Date: {order.date || order.order_date || order.created_at || "11-Nov-2026"}</p>
               <p className="text-neutral-600">Place of Supply: {order.shippingAddress?.state || "Karnataka"} (29)</p>
               <p className="text-neutral-600">Payment: <strong className="text-neutral-900">{order.paymentMethod || "Razorpay (Online)"}</strong> ({order.paymentStatus || "Paid"})</p>
               {(order.transactionId || order.transaction_id) && (
@@ -2316,16 +2521,27 @@ function PrintablePackingSlipModal({
   order: any;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.body.classList.add("print-invoice-active");
+    }
+    return () => {
+      if (typeof document !== "undefined") {
+        document.body.classList.remove("print-invoice-active");
+      }
+    };
+  }, []);
+
   const handlePrint = () => {
-    window.print();
+    printSinglePageDocument("printable-packing-slip", `Packing-Slip-${order.id || order.number || "Janani"}`);
   };
 
   const warehouseName = getWarehouseName(order.warehouse);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-2xl bg-white text-neutral-900 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="px-6 py-3 bg-neutral-100 border-b border-neutral-300 flex items-center justify-between no-print">
+    <div className="print-active-portal order-invoice-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+      <div className="order-invoice-modal-card w-full max-w-2xl bg-white text-neutral-900 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="px-6 py-3 bg-neutral-100 border-b border-neutral-300 flex items-center justify-between no-print order-invoice-modal-topbar">
           <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
             <Package className="h-4 w-4 text-indigo-600" />
             Warehouse Picking & Packing Slip
@@ -2333,18 +2549,18 @@ function PrintablePackingSlipModal({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white flex items-center gap-1.5 shadow-sm transition-colors"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5" />
-              <span>Print Packing Slip</span>
+              <span>Print Packing Slip (1 Page)</span>
             </button>
-            <button onClick={onClose} className="p-1 rounded text-neutral-500 hover:text-neutral-900">
+            <button onClick={onClose} className="p-1 rounded text-neutral-500 hover:text-neutral-900 cursor-pointer">
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-4 text-xs font-sans text-neutral-900">
+        <div className="p-6 overflow-y-auto space-y-4 text-xs font-sans text-neutral-900" id="printable-packing-slip">
           <div className="flex justify-between items-center border-b pb-3">
             <div>
               <h2 className="text-base font-black text-neutral-900">WAREHOUSE PICK LIST & PACKING SLIP</h2>
@@ -2439,14 +2655,25 @@ function PrintableShippingLabelModal({
   order: any;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.body.classList.add("print-invoice-active");
+    }
+    return () => {
+      if (typeof document !== "undefined") {
+        document.body.classList.remove("print-invoice-active");
+      }
+    };
+  }, []);
+
   const handlePrint = () => {
-    window.print();
+    printSinglePageDocument("printable-shipping-label", `Shipping-Label-${order.id || order.number || "Janani"}`);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-md bg-white text-neutral-900 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="px-6 py-3 bg-neutral-100 border-b border-neutral-300 flex items-center justify-between no-print">
+    <div className="print-active-portal order-invoice-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+      <div className="order-invoice-modal-card w-full max-w-md bg-white text-neutral-900 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="px-6 py-3 bg-neutral-100 border-b border-neutral-300 flex items-center justify-between no-print order-invoice-modal-topbar">
           <span className="text-sm font-bold text-neutral-800 flex items-center gap-2">
             <Truck className="h-4 w-4 text-blue-600" />
             Shiprocket 4x6 Courier Label
@@ -2454,19 +2681,19 @@ function PrintableShippingLabelModal({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-1.5 shadow-sm transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5" />
-              <span>Print Label</span>
+              <span>Print Label (1 Page)</span>
             </button>
-            <button onClick={onClose} className="p-1 rounded text-neutral-500 hover:text-neutral-900">
+            <button onClick={onClose} className="p-1 rounded text-neutral-500 hover:text-neutral-900 cursor-pointer">
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
         {/* 4x6 Shipping Label Content */}
-        <div className="p-6 overflow-y-auto space-y-3 text-xs font-sans text-neutral-900 border-4 border-dashed border-neutral-300 m-4 rounded">
+        <div className="p-6 overflow-y-auto space-y-3 text-xs font-sans text-neutral-900 border-4 border-dashed border-neutral-300 m-4 rounded" id="printable-shipping-label">
           {/* Top Carrier Bar */}
           <div className="flex justify-between items-center border-b-2 border-neutral-900 pb-2">
             <span className="font-black text-base tracking-tight text-blue-900">SHIPROCKET</span>
