@@ -373,7 +373,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
       const matchMin = !minPrice || priceNum >= Number(minPrice);
       const matchMax = !maxPrice || priceNum <= Number(maxPrice);
 
-      const pCat = typeof p.category === "object" && p.category !== null ? String(p.category.name || "") : String(p.category || "");
+      const pCat = typeof p.category === "object" && p.category !== null ? String((p.category as any)?.name || "") : String(p.category || "");
       const pCatName = typeof (p as any).category_name === "object" && (p as any).category_name !== null ? String((p as any).category_name.name || "") : String((p as any).category_name || "");
       const pCatId = (p as any).category_id ? String((p as any).category_id) : "";
       const filterLower = (categoryFilter || "all").toLowerCase().trim();
@@ -513,6 +513,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
   if (isFormModalOpen) {
     return (
       <ProductFormView
+        isOpen={isFormModalOpen}
         categories={availableCategories}
         onClose={() => {
           setIsFormModalOpen(false);

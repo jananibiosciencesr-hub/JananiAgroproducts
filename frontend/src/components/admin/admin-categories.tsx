@@ -84,7 +84,7 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
 
   useEffect(() => {
     if (!propProducts || propProducts.length === 0) {
-      getAdminProducts({ limit: 200 }).then((res: any) => {
+      getAdminProducts().then((res: any) => {
         if (res?.success && Array.isArray(res.data?.products)) {
           setLoadedProducts(res.data.products);
         } else if (Array.isArray(res?.data)) {
@@ -444,6 +444,7 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
   if (isFormModalOpen) {
     return (
       <CategoryFormView
+        isOpen={isFormModalOpen}
         initialData={editingCategory}
         allCategories={categories}
         onClose={() => {
@@ -793,11 +794,11 @@ function CategoryViewModal({
   onClose,
   onEdit,
 }: {
-  category: Category;
-  allCategories: Category[];
+  category: CategoryItem;
+  allCategories: CategoryItem[];
   allProducts: any[];
   onClose: () => void;
-  onEdit: (cat: Category) => void;
+  onEdit: (cat: CategoryItem) => void;
 }) {
   // Find products belonging to this category
   const matchingProducts = allProducts.filter((p) => {

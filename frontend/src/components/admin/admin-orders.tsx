@@ -204,42 +204,53 @@ export function parseOrderTimestamp(o: any): number {
 
   // 1. ISO 8601 or standard SQL format: "YYYY-MM-DD" or "YYYY-MM-DD HH:mm:ss"
   const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
-  if (isoMatch) {
-    const [, y, m, d, hh = "0", mm = "0", ss = "0"] = isoMatch;
-    const isoStr = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${hh.padStart(2, "0")}:${mm.padStart(2, "0")}:${ss.padStart(2, "0")}`;
+  if (isoMatch && isoMatch[1] && isoMatch[2] && isoMatch[3]) {
+    const y = isoMatch[1];
+    const m = isoMatch[2].padStart(2, "0");
+    const d = isoMatch[3].padStart(2, "0");
+    const hh = (isoMatch[4] || "0").padStart(2, "0");
+    const mm = (isoMatch[5] || "0").padStart(2, "0");
+    const ss = (isoMatch[6] || "0").padStart(2, "0");
+    const isoStr = `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
     const t = new Date(isoStr).getTime();
     if (!isNaN(t)) return t;
   }
 
   // 2. Indian numeric date: "DD/MM/YYYY" or "DD-MM-YYYY" (with optional time)
   const dmyMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[,\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)?)?/i);
-  if (dmyMatch) {
-    const [, d, m, y, rawH = "0", rawM = "0", rawS = "0", ampm] = dmyMatch;
-    let h = parseInt(rawH, 10);
-    const min = parseInt(rawM, 10);
-    const sec = parseInt(rawS, 10);
+  if (dmyMatch && dmyMatch[1] && dmyMatch[2] && dmyMatch[3]) {
+    const d = dmyMatch[1].padStart(2, "0");
+    const m = dmyMatch[2].padStart(2, "0");
+    const y = dmyMatch[3];
+    let h = parseInt(dmyMatch[4] || "0", 10);
+    const min = parseInt(dmyMatch[5] || "0", 10);
+    const sec = parseInt(dmyMatch[6] || "0", 10);
+    const ampm = dmyMatch[7];
     if (ampm) {
       if (ampm.toLowerCase() === "pm" && h < 12) h += 12;
       if (ampm.toLowerCase() === "am" && h === 12) h = 0;
     }
-    const isoStr = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    const isoStr = `${y}-${m}-${d}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
     const t = new Date(isoStr).getTime();
     if (!isNaN(t)) return t;
   }
 
   // 3. Indian formatted date with Month name: "11 Nov 2026, 02:15 PM"
   const dMonMatch = s.match(/^(\d{1,2})[\s\-]+([a-z]+)[\s\-]+(\d{4})(?:[,\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)?)?/i);
-  if (dMonMatch) {
-    const [, d, monStr, y, rawH = "0", rawM = "0", rawS = "0", ampm] = dMonMatch;
-    const m = MONTH_MAP[monStr.toLowerCase().slice(0, 3)] || "01";
-    let h = parseInt(rawH, 10);
-    const min = parseInt(rawM, 10);
-    const sec = parseInt(rawS, 10);
+  if (dMonMatch && dMonMatch[1] && dMonMatch[2] && dMonMatch[3]) {
+    const d = dMonMatch[1].padStart(2, "0");
+    const monStr = dMonMatch[2].toLowerCase().slice(0, 3);
+    const m = MONTH_MAP[monStr] || "01";
+    const y = dMonMatch[3];
+    let h = parseInt(dMonMatch[4] || "0", 10);
+    const min = parseInt(dMonMatch[5] || "0", 10);
+    const sec = parseInt(dMonMatch[6] || "0", 10);
+    const ampm = dMonMatch[7];
     if (ampm) {
       if (ampm.toLowerCase() === "pm" && h < 12) h += 12;
       if (ampm.toLowerCase() === "am" && h === 12) h = 0;
     }
-    const isoStr = `${y}-${m}-${d.padStart(2, "0")}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    const isoStr = `${y}-${m}-${d}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
     const t = new Date(isoStr).getTime();
     if (!isNaN(t)) return t;
   }
@@ -264,7 +275,7 @@ export function isDummyOrder(o: any): boolean {
 export function parseSequentialNum(o: any): number {
   const str = String(o?.number || o?.id || "").trim();
   const match = str.match(/JAP-(\d+)/i);
-  if (match) {
+  if (match && match[1]) {
     const n = parseInt(match[1], 10);
     if (!isNaN(n) && n > 0 && n < 10000) return n;
   }

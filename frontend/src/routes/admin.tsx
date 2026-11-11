@@ -158,10 +158,10 @@ class AdminTabErrorBoundary extends React.Component<
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
   }
-  componentDidCatch(error: any, info: any) {
+  override componentDidCatch(error: any, info: any) {
     console.error(`Admin tab [${this.props.tabName}] caught error:`, error, info);
   }
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="w-full flex-1 flex flex-col items-center justify-center p-8 bg-card text-center min-h-[400px]">

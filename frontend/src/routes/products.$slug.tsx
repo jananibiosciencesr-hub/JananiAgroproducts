@@ -518,17 +518,18 @@ function ProductDetailPage() {
   // Dynamic Benefits resolver
   const dynamicBenefits: string[] = useMemo(() => {
     let list: string[] = [];
-    if (Array.isArray(product.benefits) && product.benefits.length > 0) {
-      list = product.benefits.map(String).filter(Boolean);
-    } else if (typeof product.benefits === "string" && product.benefits.trim() !== "") {
+    const rawBenefits = (product as any).benefits;
+    if (Array.isArray(rawBenefits) && rawBenefits.length > 0) {
+      list = rawBenefits.map(String).filter(Boolean);
+    } else if (typeof rawBenefits === "string" && rawBenefits.trim() !== "") {
       try {
-        const parsed = JSON.parse(product.benefits);
+        const parsed = JSON.parse(rawBenefits);
         if (Array.isArray(parsed)) list = parsed.map(String).filter(Boolean);
       } catch { }
       if (list.length === 0) {
-        list = product.benefits.includes("\n")
-          ? product.benefits.split("\n").map((s) => s.trim()).filter(Boolean)
-          : product.benefits.split(",").map((s) => s.trim()).filter(Boolean);
+        list = rawBenefits.includes("\n")
+          ? rawBenefits.split("\n").map((s: string) => s.trim()).filter(Boolean)
+          : rawBenefits.split(",").map((s: string) => s.trim()).filter(Boolean);
       }
     }
     if (list.length > 0) {
@@ -588,15 +589,16 @@ function ProductDetailPage() {
   // Dynamic Crop List resolver
   const cropList: string[] = useMemo(() => {
     let list: string[] = [];
-    if (Array.isArray(product.crops) && product.crops.length > 0) {
-      list = product.crops.map(String).filter(Boolean);
-    } else if (typeof product.crops === "string" && product.crops.trim() !== "") {
+    const rawCrops = (product as any).crops;
+    if (Array.isArray(rawCrops) && rawCrops.length > 0) {
+      list = rawCrops.map(String).filter(Boolean);
+    } else if (typeof rawCrops === "string" && rawCrops.trim() !== "") {
       try {
-        const parsed = JSON.parse(product.crops);
+        const parsed = JSON.parse(rawCrops);
         if (Array.isArray(parsed)) list = parsed.map(String).filter(Boolean);
       } catch { }
       if (list.length === 0) {
-        list = product.crops.split(",").map((c) => c.trim()).filter(Boolean);
+        list = rawCrops.split(",").map((c: string) => c.trim()).filter(Boolean);
       }
     }
     if (list.length > 0) return list;
@@ -624,11 +626,12 @@ function ProductDetailPage() {
   // Dynamic Specifications resolver
   const dynamicSpecifications = useMemo(() => {
     let rawSpecs: Record<string, string> = {};
-    if (typeof product.specifications === "object" && product.specifications !== null && !Array.isArray(product.specifications)) {
-      rawSpecs = product.specifications;
-    } else if (typeof product.specifications === "string" && product.specifications.trim() !== "") {
+    const rawSpecsProp = (product as any).specifications;
+    if (typeof rawSpecsProp === "object" && rawSpecsProp !== null && !Array.isArray(rawSpecsProp)) {
+      rawSpecs = rawSpecsProp;
+    } else if (typeof rawSpecsProp === "string" && rawSpecsProp.trim() !== "") {
       try {
-        const parsed = JSON.parse(product.specifications);
+        const parsed = JSON.parse(rawSpecsProp);
         if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
           rawSpecs = parsed;
         }
@@ -663,11 +666,12 @@ function ProductDetailPage() {
   // Dynamic FAQs
   const productFaqs = useMemo(() => {
     let rawList: any[] = [];
-    if (Array.isArray(product.faqs)) {
-      rawList = product.faqs;
-    } else if (typeof product.faqs === "string" && product.faqs.trim() !== "") {
+    const rawFaqsProp = (product as any).faqs;
+    if (Array.isArray(rawFaqsProp)) {
+      rawList = rawFaqsProp;
+    } else if (typeof rawFaqsProp === "string" && rawFaqsProp.trim() !== "") {
       try {
-        const parsed = JSON.parse(product.faqs);
+        const parsed = JSON.parse(rawFaqsProp);
         if (Array.isArray(parsed)) rawList = parsed;
       } catch { }
     }
