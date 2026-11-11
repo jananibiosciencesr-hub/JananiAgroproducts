@@ -1300,6 +1300,8 @@ export async function getAdminStats() {
   const lowStockCnt = storedProds.filter((p) => (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= 10).length;
 
   return {
+    totalOrders: storedOrders.length,
+    totalOrdersTrend: `${storedOrders.length} Placed`,
     todayOrders: storedOrders.length,
     todayOrdersTrend: `${storedOrders.length} Placed`,
     todayRevenue: totalRev,

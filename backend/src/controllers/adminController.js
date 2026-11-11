@@ -1420,6 +1420,8 @@ let adminRoles = [
 
 export const getDashboardStats = (req, res) => {
   const stats = {
+    totalOrders: 38,
+    totalOrdersTrend: "+14.2%",
     todayOrders: 38,
     todayOrdersTrend: "+14.2%",
     todayRevenue: 84250,

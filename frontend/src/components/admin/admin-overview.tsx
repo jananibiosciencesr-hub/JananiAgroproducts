@@ -72,7 +72,11 @@ export function AdminOverview({
 
   // Real-time metrics calculations directly from live data
   const totalSales = stats?.todayRevenue ?? liveOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
-  const totalOrdersCount = stats?.todayOrders ?? liveOrders.length;
+  const totalOrdersCount = Math.max(
+    Number(stats?.totalOrders || 0),
+    liveOrders.length,
+    Number(stats?.todayOrders || 0)
+  );
   const totalProductsCount = stats?.totalProducts ?? (liveProducts.length > 0 ? liveProducts.length : 31);
   const uniqueProductCategories = new Set(liveProducts.map(p => (typeof p.category === "object" ? p.category?.name : p.category)).filter(Boolean)).size;
   const totalCategoriesCount = stats?.totalCategories ?? (liveCategories.length > 0 ? liveCategories.length : (uniqueProductCategories > 0 ? uniqueProductCategories : 11));
@@ -149,7 +153,7 @@ export function AdminOverview({
   }> = [
     {
       id: "orders",
-      title: "Today's Orders",
+      title: "Total Orders",
       value: `${totalOrdersCount}`,
       trend: `${totalOrdersCount} Placed`,
       trendType: "positive" as const,

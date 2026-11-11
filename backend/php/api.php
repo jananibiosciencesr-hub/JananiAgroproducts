@@ -6914,6 +6914,8 @@ try {
             $walletTotal = (float)$pdo->query("SELECT COALESCE(SUM(wallet_balance), 0) FROM `users` WHERE role = 'Customer'")->fetchColumn();
 
             $statsPayload = [
+                'totalOrders' => $orderCount,
+                'totalOrdersTrend' => "{$orderCount} Placed",
                 'todayOrders' => $todayOrders,
                 'todayOrdersTrend' => "{$todayOrders} Placed",
                 'todayRevenue' => $todaySales,
