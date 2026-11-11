@@ -41,7 +41,31 @@ export function getStored<T>(key: string, fallback: T): T {
       localStorage.setItem(key, JSON.stringify(fallback));
       return fallback;
     }
-    return JSON.parse(item) as T;
+    const parsed = JSON.parse(item) as T;
+
+    // Auto-clean any dummy mock customers from localStorage
+    if (key === STORAGE_KEYS.CUSTOMERS && Array.isArray(parsed)) {
+      const cleaned = parsed.filter((c: any) => {
+        const name = String(c?.name || "").toLowerCase();
+        const email = String(c?.email || "").toLowerCase();
+        return (
+          !name.includes("ananya") &&
+          !name.includes("patwardhan") &&
+          !name.includes("ranganathan") &&
+          !name.includes("rameshwar") &&
+          !email.includes("ananya") &&
+          !email.includes("patwardhan") &&
+          !email.includes("ranganathan") &&
+          !email.includes("ramesh.patel")
+        );
+      });
+      if (cleaned.length !== parsed.length) {
+        localStorage.setItem(key, JSON.stringify(cleaned));
+      }
+      return cleaned as unknown as T;
+    }
+
+    return parsed;
   } catch (e) {
     console.warn(`[mock-storage] Error reading ${key}, using fallback:`, e);
     return fallback;
@@ -115,77 +139,7 @@ export const DEFAULT_CATEGORIES = catalogCategories.map((c, idx) => ({
 
 export const DEFAULT_ORDERS: any[] = [];
 
-export const DEFAULT_CUSTOMERS = [
-  {
-    id: "CUST-001",
-    name: "Kameswari Pachipulusu",
-    email: "kameswarip98@gmail.com",
-    password: "Sravs@98",
-    passwordHash: "Sravs@98",
-    phone: "+91 98480 22338",
-    tier: "Silver Member",
-    status: "Active",
-    ordersCount: 1,
-    totalSpent: 930,
-    walletBalance: 250,
-    city: "Visakhapatnam",
-    state: "Andhra Pradesh",
-    joinedDate: "2026-10-13",
-    avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kameswari%20Pachipulusu"
-  },
-  { id: "CUST-002", name: "Ananya Sharma",
-    email: "ananya.s@gmail.com",
-    phone: "+91 98451 22345",
-    tier: "Platinum Gold",
-    status: "Active",
-    ordersCount: 14,
-    totalSpent: 28450,
-    walletBalance: 850,
-    city: "Bengaluru",
-    state: "Karnataka",
-    joinedDate: "2025-11-12",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80"
-  },
-  { id: "CUST-003", name: "Suresh Patwardhan",
-    email: "suresh.p@yahoo.co.in",
-    phone: "+91 94220 89123",
-    tier: "Silver Patron",
-    status: "Active",
-    ordersCount: 6,
-    totalSpent: 9800,
-    walletBalance: 150,
-    city: "Pune",
-    state: "Maharashtra",
-    joinedDate: "2026-01-20",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80"
-  },
-  { id: "CUST-004", name: "Kavitha Ranganathan",
-    email: "kavitha.r@outlook.com",
-    phone: "+91 98410 44231",
-    tier: "Gold Harvest Member",
-    status: "Active",
-    ordersCount: 9,
-    totalSpent: 16420,
-    walletBalance: 420,
-    city: "Chennai",
-    state: "Tamil Nadu",
-    joinedDate: "2025-12-04",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80"
-  },
-  { id: "CUST-005", name: "Rameshwar Patel",
-    email: "ramesh.patel@gmail.com",
-    phone: "+91 98251 10928",
-    tier: "New Harvest Patron",
-    status: "Active",
-    ordersCount: 2,
-    totalSpent: 1696,
-    walletBalance: 50,
-    city: "Rajkot",
-    state: "Gujarat",
-    joinedDate: "2026-09-01",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80"
-  }
-];
+export const DEFAULT_CUSTOMERS: any[] = [];
 
 export const DEFAULT_COUPONS = [
   {
@@ -715,83 +669,14 @@ export const DEFAULT_CMS = {
 };
 
 export const DEFAULT_PAYMENTS = {
-  transactions: [
-    {
-      id: "TXN-001",
-      orderId: "ORD-001",
-      customer: { name: "Ananya Sharma", email: "ananya.s@gmail.com", phone: "+91 98451 22345", avatar: "" },
-      amount: 3477,
-      currency: "INR",
-      paymentMethod: "UPI (PhonePe)",
-      gateway: "PhonePe PG",
-      gatewayTxnId: "T2609159981023",
-      bankUtr: "UTR609154910283",
-      status: "Captured" as const,
-      timestamp: "2026-09-15 10:45 AM",
-      settlementStatus: "Settled to HDFC",
-      fee: 0,
-      tax: 0,
-      net: 3477
-    },
-    {
-      id: "TXN-002",
-      orderId: "ORD-002",
-      customer: { name: "Suresh Patwardhan", email: "suresh.p@yahoo.co.in", phone: "+91 94220 89123", avatar: "" },
-      amount: 1305,
-      currency: "INR",
-      paymentMethod: "Credit Card (HDFC)",
-      gateway: "Razorpay",
-      gatewayTxnId: "pay_NL7739182301",
-      bankUtr: "UTR609168819203",
-      status: "Captured" as const,
-      timestamp: "2026-09-16 03:20 PM",
-      settlementStatus: "Settled to HDFC",
-      fee: 26.10,
-      tax: 4.70,
-      net: 1274.20
-    },
-    {
-      id: "TXN-003",
-      orderId: "ORD-003",
-      customer: { name: "Kavitha Ranganathan", email: "kavitha.r@outlook.com", phone: "+91 98410 44231", avatar: "" },
-      amount: 1044,
-      currency: "INR",
-      paymentMethod: "UPI (Google Pay)",
-      gateway: "Razorpay UPI Direct",
-      gatewayTxnId: "pay_NL6655221190",
-      bankUtr: "UTR609172291045",
-      status: "Captured" as const,
-      timestamp: "2026-09-17 11:10 AM",
-      settlementStatus: "Pending Payout (T+1)",
-      fee: 0,
-      tax: 0,
-      net: 1044
-    },
-    {
-      id: "TXN-004",
-      orderId: "ORD-004",
-      customer: { name: "Rameshwar Patel", email: "ramesh.patel@gmail.com", phone: "+91 98251 10928", avatar: "" },
-      amount: 848,
-      currency: "INR",
-      paymentMethod: "Cash on Delivery",
-      gateway: "COD Courier Escrow",
-      gatewayTxnId: "COD-DEL-99102",
-      bankUtr: "Pending Courier Remittance",
-      status: "Pending" as const,
-      timestamp: "2026-09-17 01:45 PM",
-      settlementStatus: "COD In Transit",
-      fee: 50,
-      tax: 0,
-      net: 798
-    }
-  ],
+  transactions: [] as any[],
   stats: {
-    grossInflow: 6674,
-    settledToBank: 4751.20,
-    pendingPayouts: 1044,
-    codInTransit: 848,
+    grossInflow: 0,
+    settledToBank: 0,
+    pendingPayouts: 0,
+    codInTransit: 0,
     totalRefunds: 0,
-    recoveryRate: "78.4%"
+    recoveryRate: "100%"
   }
 };
 
@@ -809,7 +694,7 @@ export const DEFAULT_AUDIT_LOGS = [
   {
     id: "LOG-102",
     timestamp: "2026-09-17 11:40 AM",
-    actor: { id: "STAFF-002", name: "Suresh Patwardhan", email: "operations@jananiagro.com", role: "Logistics Manager" },
+    actor: { id: "STAFF-002", name: "Janani Logistics", email: "operations@jananiagro.com", role: "Logistics Manager" },
     action: "Generated Shiprocket AWB for ORD-002",
     module: "Shipping & Orders",
     severity: "low" as const,

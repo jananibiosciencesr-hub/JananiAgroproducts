@@ -5134,6 +5134,33 @@ try {
                     exit;
                 }
 
+                // Purge any dummy mock customers from users permanently
+                try {
+                    $pdo->exec("DELETE FROM `users` WHERE `name` IN ('Ananya Sharma', 'Suresh Patwardhan', 'Kavitha Ranganathan', 'Rameshwar Patel', 'Dr. Ananya Iyer', 'Vikramaditya Rao') OR `email` IN ('ananya.s@gmail.com', 'suresh.p@yahoo.co.in', 'kavitha.r@outlook.com', 'ramesh.patel@gmail.com', 'dr.ananya@heritagehealth.org', 'vikram.rao@technocorp.in')");
+                } catch (Exception $e) {}
+
+                // Sync real customers from real orders into users table if not already present
+                try {
+                    $oCustStmt = $pdo->query("SELECT DISTINCT `customer_email`, `customer_name`, `customer_phone`, `shipping_address` FROM `orders` WHERE `customer_email` IS NOT NULL AND `customer_email` != '' AND `customer_email` NOT LIKE '%example.com' AND `customer_name` NOT IN ('Ananya Sharma', 'Suresh Patwardhan', 'Kavitha Ranganathan', 'Rameshwar Patel')");
+                    $oCusts = $oCustStmt ? $oCustStmt->fetchAll() : [];
+                    foreach ($oCusts as $oc) {
+                        $cEmail = strtolower(trim($oc['customer_email']));
+                        if (!$cEmail) continue;
+                        $checkU = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1");
+                        $checkU->execute([$cEmail]);
+                        if (!$checkU->fetch()) {
+                            $nextCId = generateNextCustomerId($pdo);
+                            $cName = trim($oc['customer_name'] ?? '');
+                            if (!$cName || $cName === 'Customer') $cName = 'Valued Patron';
+                            $cPhone = trim($oc['customer_phone'] ?? '');
+                            $sAddr = !empty($oc['shipping_address']) ? (is_string($oc['shipping_address']) ? json_decode($oc['shipping_address'], true) : $oc['shipping_address']) : [];
+                            $prefs = json_encode(['addresses' => !empty($sAddr) ? [$sAddr] : []]);
+                            $insU = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `tier`, `wallet_balance`, `loyalty_points`, `status`, `preferences`, `is_verified`) VALUES (?, ?, ?, ?, 'Customer', 'Active Patron', 0, 0, 'Active', ?, 1)");
+                            $insU->execute([$nextCId, $cName, $cEmail, $cPhone, $prefs]);
+                        }
+                    }
+                } catch (Exception $e) {}
+
                 $status = $_GET['status'] ?? null;
                 $tier = $_GET['tier'] ?? null;
                 $search = trim($_GET['search'] ?? '');
@@ -5156,7 +5183,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY CAST(SUBSTRING(COALESCE(number, id), 5) AS UNSIGNED) DESC, COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC LIMIT 200";
+                $query .= " ORDER BY COALESCE(`created_at`, `updated_at`) DESC, `id` DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $users = $stmt->fetchAll();

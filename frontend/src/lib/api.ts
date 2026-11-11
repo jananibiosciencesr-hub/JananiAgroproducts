@@ -2529,12 +2529,27 @@ export async function getAdminCustomers(params?: CustomerQueryParams) {
     }>(`/admin/customers?${query.toString()}`);
   }
 
-  if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+  if (res?.success && Array.isArray(res.data)) {
     return res;
   }
 
   const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
-  let list = [...stored];
+  let list = Array.isArray(stored)
+    ? stored.filter((c: any) => {
+        const name = String(c?.name || "").toLowerCase();
+        const email = String(c?.email || "").toLowerCase();
+        return (
+          !name.includes("ananya") &&
+          !name.includes("patwardhan") &&
+          !name.includes("ranganathan") &&
+          !name.includes("rameshwar") &&
+          !email.includes("ananya") &&
+          !email.includes("patwardhan") &&
+          !email.includes("ranganathan") &&
+          !email.includes("ramesh.patel")
+        );
+      })
+    : [];
 
   if (params?.status && params.status !== "all") {
     list = list.filter((c) => c.status?.toLowerCase() === params.status?.toLowerCase());
@@ -2557,12 +2572,12 @@ export async function getAdminCustomers(params?: CustomerQueryParams) {
     success: true,
     data: list,
     total: list.length,
-    activeCount: stored.filter((c) => c.status === "Active").length,
-    suspendedCount: stored.filter((c) => c.status === "Suspended").length,
-    inactiveCount: stored.filter((c) => c.status === "Inactive").length,
-    totalLtv: stored.reduce((sum, c) => sum + (c.ltv || 0), 0),
-    totalWallet: stored.reduce((sum, c) => sum + (c.walletBalance || 0), 0),
-    totalLoyalty: stored.reduce((sum, c) => sum + (c.loyaltyPoints || 0), 0)
+    activeCount: list.filter((c) => c.status === "Active").length,
+    suspendedCount: list.filter((c) => c.status === "Suspended").length,
+    inactiveCount: list.filter((c) => c.status === "Inactive").length,
+    totalLtv: list.reduce((sum, c) => sum + (c.totalSpent || c.ltv || 0), 0),
+    totalWallet: list.reduce((sum, c) => sum + (c.walletBalance || 0), 0),
+    totalLoyalty: list.reduce((sum, c) => sum + (c.loyaltyPoints || 0), 0)
   };
 }
 
