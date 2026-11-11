@@ -1643,12 +1643,12 @@ function generateNextOrderNumber($pdo) {
     }
     try {
         $stmt = $pdo->query("SELECT MAX(num) AS max_num FROM (
-            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^(JAP|ORD)-[0-9]{1,6}$'
+            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(number, 5) AS UNSIGNED) < 1000
             UNION
-            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^(JAP|ORD)-[0-9]{1,6}$'
+            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(id, 5) AS UNSIGNED) < 1000
         ) AS t");
         $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
-        $nextNum = max(1, $maxNum + 1);
+        $nextNum = max(13, $maxNum + 1);
         return 'JAP-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
     } catch (Exception $e) {
         return 'JAP-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
@@ -4488,48 +4488,9 @@ try {
                 $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `timeline` LONGTEXT DEFAULT NULL");
 
                 
-                // Auto-normalize legacy orders to sequential JAP-001 format
+                // Purge any dummy/mock orders permanently from database
                 try {
-                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-001', `id` = 'JAP-001' WHERE (`number` LIKE '%356429%' OR `id` LIKE '%356429%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-001') AS _tmp)");
-                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-002', `id` = 'JAP-002' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-002') AS _tmp)");
-                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-003', `id` = 'JAP-003' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-003') AS _tmp)");
-                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-004', `id` = 'JAP-004' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-004') AS _tmp)");
-                } catch (Exception $ex) {}
-
-                // Auto-repair any legacy mock rows with empty/generic names
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'K. Suresh Reddy', `customer_email` = 'suresh.reddy@gmail.com', `customer_phone` = '+91 98489 11223' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'Ananya Sharma', `customer_email` = 'ananya.s@gmail.com', `customer_phone` = '+91 99123 44556' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'Rajesh Varma', `customer_email` = 'rajesh.varma@gmail.com', `customer_phone` = '+91 98490 55441' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '' OR `customer_phone` = '+91 98480 22338')");
-                // Auto-seed JAP-356429 if not present
-                try {
-                    $checkJap = $pdo->prepare("SELECT id FROM `orders` WHERE `number` LIKE '%356429%' OR `id` LIKE '%356429%' LIMIT 1");
-                    $checkJap->execute();
-                    if (!$checkJap->fetch()) {
-                        $japItems = json_encode([
-                            ['id' => 'PRD-101', 'title' => 'BHUMI SHAKTI Bio Fertilizer 5KG', 'price' => 520, 'quantity' => 1],
-                            ['id' => 'PRD-105', 'title' => 'NEEM GUARD Botanical Extract 1L', 'price' => 410, 'quantity' => 1]
-                        ]);
-                        $japAddr = json_encode([
-                            'name' => 'Kameswarip98',
-                            'fullName' => 'Kameswarip98',
-                            'city' => 'Visakhapatnam',
-                            'state' => 'Andhra Pradesh',
-                            'street' => 'D.No 4-56, Main Road',
-                            'pincode' => '530001',
-                            'phone' => '+91 67890 00000'
-                        ]);
-                        $pdo->prepare("INSERT INTO `orders` (
-                            `id`, `number`, `order_date`, `customer_name`, `customer_email`, `customer_phone`,
-                            `shipping_address`, `billing_address`, `items`, `subtotal`, `delivery_fee`, `total`,
-                            `payment_method`, `payment_status`, `order_status`, `courier`, `tracking_id`, `awb`, `warehouse`,
-                            `transaction_id`
-                        ) VALUES (
-                            'JAP-356429', 'JAP-356429', '06 Oct 2026, 11:09 am', 'Kameswarip98', 'kameswarip98@gmail.com', '+91 67890 00000',
-                            ?, ?, ?, 930.00, 0.00, 930.00, 'Razorpay (Online)', 'Pending', 'Pending',
-                            'Delhivery Air Express & Janani Fleet', 'DEL-3928172635', 'DEL-3928172635', 'Lodhika GIDC Central Facility, Rajkot',
-                            'pay_TkVgHCVcXG2X4b'
-                        )")->execute([$japAddr, $japAddr, $japItems]);
-                    }
+                    $pdo->exec("DELETE FROM `orders` WHERE `number` LIKE 'JAP-849%' OR `id` LIKE 'JAP-849%' OR `number` LIKE '%8492%' OR `id` LIKE '%8492%' OR `number` LIKE '%356429%' OR `id` LIKE '%356429%' OR `id` LIKE 'ORD-%'");
                 } catch (Exception $ex) {}
             } catch (Exception $ex) {}
 
@@ -4554,29 +4515,14 @@ try {
                         } elseif (!empty($rawAddrName) && strcasecmp($rawAddrName, 'Customer') !== 0 && strcasecmp($rawAddrName, 'User') !== 0) {
                             $cName = $rawAddrName;
                         } else {
-                            if (strpos($order['number'], '709853') !== false || (isset($sAddr['city']) && stripos($sAddr['city'], 'Visakhapatnam') !== false)) {
-                                $cName = 'K. Suresh Reddy';
-                            } elseif (strpos($order['number'], '845461') !== false) {
-                                $cName = 'Ananya Sharma';
-                            } elseif (strpos($order['number'], '849201') !== false) {
-                                $cName = 'Rajesh Varma';
-                            } elseif (strpos($order['number'], '849202') !== false) {
-                                $cName = 'Priya Patel';
-                            } else {
-                                $cName = 'Chaitanya Kumar';
-                            }
+                            $cName = 'Valued Patron';
                         }
 
                         $rawEmail = !empty($order['customer_email']) ? trim($order['customer_email']) : (!empty($sAddr['email']) ? trim($sAddr['email']) : '');
-                        if (!empty($rawEmail) && !str_ends_with($rawEmail, '@jananiagro.com')) {
-                            $cEmail = $rawEmail;
-                        } else {
-                            $cleanSlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cName));
-                            $cEmail = ($cleanSlug ? $cleanSlug : 'patron') . '@gmail.com';
-                        }
+                        $cEmail = !empty($rawEmail) ? $rawEmail : 'patron@jananiagro.com';
 
                         $rawPhone = !empty($order['customer_phone']) ? trim($order['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
-                        $cPhone = !empty($rawPhone) ? $rawPhone : (strpos($order['number'], '709853') !== false ? '+91 98489 11223' : (strpos($order['number'], '845461') !== false ? '+91 99123 44556' : (strpos($order['number'], '849201') !== false ? '+91 98490 55441' : (strpos($order['number'], '849202') !== false ? '+91 98251 44321' : '+91 98480 99887'))));
+                        $cPhone = !empty($rawPhone) ? $rawPhone : '';
 
                         $order['customerName'] = $cName;
                         $order['customer_name'] = $cName;
@@ -4621,7 +4567,7 @@ try {
                 $customerEmail = $_GET['email'] ?? ($_GET['customer_email'] ?? null);
                 $customerPhone = $_GET['phone'] ?? ($_GET['customer_phone'] ?? null);
                 $search = trim($_GET['search'] ?? '');
-                $query = "SELECT * FROM `orders` WHERE 1=1";
+                $query = "SELECT * FROM `orders` WHERE `number` NOT LIKE '%8492%' AND `number` NOT LIKE '%356429%' AND `id` NOT LIKE '%8492%' AND `id` NOT LIKE '%356429%' AND `id` NOT LIKE 'ORD-%'";
                 $params = [];
 
                 if ($customerEmail && $customerPhone) {
@@ -4655,7 +4601,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC, id DESC LIMIT 200";
+                $query .= " ORDER BY CAST(SUBSTRING(COALESCE(number, id), 5) AS UNSIGNED) DESC, COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $orders = $stmt->fetchAll();
@@ -4675,29 +4621,14 @@ try {
                     } elseif (!empty($rawAddrName) && strcasecmp($rawAddrName, 'Customer') !== 0 && strcasecmp($rawAddrName, 'User') !== 0) {
                         $cName = $rawAddrName;
                     } else {
-                        if (strpos($ord['number'], '709853') !== false || (isset($sAddr['city']) && stripos($sAddr['city'], 'Visakhapatnam') !== false)) {
-                            $cName = 'K. Suresh Reddy';
-                        } elseif (strpos($ord['number'], '845461') !== false) {
-                            $cName = 'Ananya Sharma';
-                        } elseif (strpos($ord['number'], '849201') !== false) {
-                            $cName = 'Rajesh Varma';
-                        } elseif (strpos($ord['number'], '849202') !== false) {
-                            $cName = 'Priya Patel';
-                        } else {
-                            $cName = 'Chaitanya Kumar';
-                        }
+                        $cName = 'Valued Patron';
                     }
 
                     $rawEmail = !empty($ord['customer_email']) ? trim($ord['customer_email']) : (!empty($sAddr['email']) ? trim($sAddr['email']) : '');
-                    if (!empty($rawEmail) && !str_ends_with($rawEmail, '@jananiagro.com')) {
-                        $cEmail = $rawEmail;
-                    } else {
-                        $cleanSlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cName));
-                        $cEmail = ($cleanSlug ? $cleanSlug : 'patron') . '@gmail.com';
-                    }
+                    $cEmail = !empty($rawEmail) ? $rawEmail : 'patron@jananiagro.com';
 
                     $rawPhone = !empty($ord['customer_phone']) ? trim($ord['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
-                    $cPhone = !empty($rawPhone) ? $rawPhone : (strpos($ord['number'], '709853') !== false ? '+91 98489 11223' : (strpos($ord['number'], '845461') !== false ? '+91 99123 44556' : (strpos($ord['number'], '849201') !== false ? '+91 98490 55441' : (strpos($ord['number'], '849202') !== false ? '+91 98251 44321' : '+91 98480 99887'))));
+                    $cPhone = !empty($rawPhone) ? $rawPhone : '';
 
                     $ord['customerName'] = $cName;
                     $ord['customer_name'] = $cName;
@@ -5225,7 +5156,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC, id DESC LIMIT 200";
+                $query .= " ORDER BY CAST(SUBSTRING(COALESCE(number, id), 5) AS UNSIGNED) DESC, COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $users = $stmt->fetchAll();

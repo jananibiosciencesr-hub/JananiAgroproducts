@@ -726,17 +726,32 @@ export function generateNextCustomerId(): string {
   return `CUST-${String(nextNum).padStart(3, "0")}`;
 }
 
+export function isDummyOrder(o: any): boolean {
+  if (!o) return true;
+  const num = String(o?.number || o?.id || "").trim().toUpperCase();
+  if (/^JAP-(?:849\d+|356429)/i.test(num)) return true;
+  if (/^ORD-\d+/i.test(num)) return true;
+  if (num.startsWith("TEST-") || num.startsWith("MOCK-")) return true;
+  return false;
+}
+
+export function parseSequentialNum(o: any): number {
+  const str = String(o?.number || o?.id || "").trim();
+  const match = str.match(/JAP-(\d+)/i);
+  if (match) {
+    const n = parseInt(match[1], 10);
+    if (!isNaN(n) && n > 0 && n < 10000) return n;
+  }
+  return 0;
+}
+
 export function generateNextOrderNumber(): string {
-  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const storedOrders = (getStored<any[]>(STORAGE_KEYS.ORDERS, []) || []).filter((o) => !isDummyOrder(o));
   let nextOrderNum = 1;
   if (Array.isArray(storedOrders) && storedOrders.length > 0) {
     const nums = storedOrders
-      .map(o => {
-        const val = String(o.number || o.orderNumber || o.id || "");
-        const match = val.match(/(?:JAP|ORD)-(\d+)/i) || val.match(/^(\d+)$/);
-        return (match && match[1]) ? parseInt(match[1], 10) : 0;
-      })
-      .filter(n => !isNaN(n) && n > 0 && n < 10000);
+      .map(o => parseSequentialNum(o))
+      .filter(n => !isNaN(n) && n > 0 && n < 1000);
     if (nums.length > 0) {
       nextOrderNum = Math.max(...nums) + 1;
     } else {
@@ -931,7 +946,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
       const phpData = await phpRes.json();
       if (phpData?.success && (phpData.order || phpData.data)) {
         const createdOrder = phpData.order || phpData.data;
-        const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+        const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
         setStored(STORAGE_KEYS.ORDERS, [createdOrder, ...adminOrders.filter((o: any) => o.id !== createdOrder.id && o.number !== createdOrder.number)]);
         deductLocalProductStock();
         return createdOrder;
@@ -974,7 +989,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     address: phpPayload.shipping_address
   };
 
-  const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   setStored(STORAGE_KEYS.ORDERS, [newOrder, ...adminOrders.filter((o: any) => o.id !== newOrder.id && o.number !== newOrder.number)]);
   deductLocalProductStock();
 
@@ -1030,7 +1045,7 @@ export async function trackOrder(query: string) {
     } catch (e) { }
   }
 
-  const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const matched = adminOrders.find(
     (o) =>
       o.id?.toLowerCase() === query.toLowerCase() ||
@@ -1292,7 +1307,7 @@ export async function getAdminStats() {
   if (res?.success && res.data) return res.data;
 
   // Real-time calculation from active order store
-  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const storedUsers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
   const storedProds = getStored<any[]>(STORAGE_KEYS.PRODUCTS, []);
 
@@ -1346,7 +1361,7 @@ export async function getAdminCharts() {
   const res = await fetchJson<{ success: boolean; data: any }>(`/admin/charts`);
   if (res?.success && res.data) return res.data;
 
-  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const totalRev = storedOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
   const dateMap: Record<string, { sales: number; orders: number }> = {};
@@ -1419,7 +1434,7 @@ export async function getAdminWidgets() {
   const res = await fetchJson<{ success: boolean; data: any }>(`/admin/widgets`);
   if (res?.success && res.data) return res.data;
 
-  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const storedOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const storedUsers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
   const storedProds = getStored<any[]>(STORAGE_KEYS.PRODUCTS, []);
   const totalRev = storedOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
@@ -1537,16 +1552,22 @@ export function parseOrderTimestamp(o: any): number {
 
 export function sortOrdersLIFO(list: any[]): any[] {
   if (!Array.isArray(list)) return [];
+  // Strictly filter out any dummy or mock records
+  const cleaned = list.filter((o) => !isDummyOrder(o));
 
-  const parseOrderNumber = (o: any): number => {
-    const str = String(o.number || o.id || "");
-    const match = str.match(/\d+/);
-    return match ? parseInt(match[0], 10) : 0;
-  };
-
-  return list
+  return cleaned
     .map((item, index) => ({ item, index }))
     .sort((a, b) => {
+      // 1. Strictly prioritize sequential store order IDs (JAP-012 > JAP-011 > ... > JAP-001)
+      const seqA = parseSequentialNum(a.item);
+      const seqB = parseSequentialNum(b.item);
+      if (seqA > 0 && seqB > 0 && seqA !== seqB) {
+        return seqB - seqA;
+      }
+      if (seqA > 0 && seqB <= 0) return -1;
+      if (seqB > 0 && seqA <= 0) return 1;
+
+      // 2. Fallback to order timestamp
       const timeA = parseOrderTimestamp(a.item);
       const timeB = parseOrderTimestamp(b.item);
       if (timeA !== timeB && timeA > 0 && timeB > 0) {
@@ -1555,11 +1576,6 @@ export function sortOrdersLIFO(list: any[]): any[] {
       if (timeA > 0 && timeB <= 0) return -1;
       if (timeB > 0 && timeA <= 0) return 1;
 
-      const numA = parseOrderNumber(a.item);
-      const numB = parseOrderNumber(b.item);
-      if (numA !== numB && numA > 0 && numB > 0) {
-        return numB - numA;
-      }
       return a.index - b.index;
     })
     .map((wrapper) => wrapper.item);
@@ -1573,6 +1589,22 @@ export async function getAdminOrders(params?: OrderQueryParams) {
   if (params?.courier && params.courier !== "all") query.append("courier", params.courier);
   if (params?.search) query.append("search", params.search);
   if (params?.sortBy) query.append("sortBy", params.sortBy);
+
+  // Proactively cleanse any dummy orders stored in client localStorage
+  try {
+    if (typeof window !== "undefined") {
+      const rawLocal = localStorage.getItem(STORAGE_KEYS.ORDERS);
+      if (rawLocal) {
+        const parsed = JSON.parse(rawLocal);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter((o) => !isDummyOrder(o));
+          if (cleaned.length !== parsed.length) {
+            localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(cleaned));
+          }
+        }
+      }
+    }
+  } catch (e) { }
 
   let res = await fetchJson<{
     success: boolean;
@@ -1603,31 +1635,12 @@ export async function getAdminOrders(params?: OrderQueryParams) {
   }
 
   if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-    // Proactively backfill any local orders to MySQL if missing
-    try {
-      if (typeof window !== "undefined") {
-        const localOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-        const serverNumbers = new Set(res.data.map((o: any) => o.number || o.id));
-        for (const locOrd of localOrders) {
-          const num = locOrd?.number || locOrd?.id;
-          if (num && !serverNumbers.has(num)) {
-            fetch("/api.php?action=orders", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(locOrd)
-            }).catch(() => { });
-          }
-        }
-      }
-    } catch (e) { }
-    if (Array.isArray(res.data)) {
-      res.data = sortOrdersLIFO(res.data);
-    }
+    res.data = sortOrdersLIFO(res.data);
     return res;
   }
 
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
-  let list = [...stored];
+  const stored = (getStored<any[]>(STORAGE_KEYS.ORDERS, []) || []).filter((o) => !isDummyOrder(o));
+  let list = sortOrdersLIFO(stored);
 
   if (params?.status && params.status !== "all") {
     list = list.filter((o) => (o.orderStatus || o.status)?.toLowerCase() === params.status?.toLowerCase());
@@ -1677,7 +1690,7 @@ export async function getAdminOrderById(id: string) {
   }
   if (res?.success && res.data) return res.data;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   return stored.find((o) => o.id === id || o.number === id) || null;
 }
 
@@ -1694,7 +1707,7 @@ export async function updateAdminOrderStatus(id: string, payload: { orderStatus?
   }
   if (res?.success) return res;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const updated = stored.map((o) => {
     if (o.id === id || o.number === id) {
       return {
@@ -1725,7 +1738,7 @@ export async function assignOrderWarehouse(id: string, warehouse: string | { id:
   if (res?.success) return res;
 
   const wName = typeof warehouse === "string" ? warehouse : warehouse.name;
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, warehouse: wName } : o));
   setStored(STORAGE_KEYS.ORDERS, updated);
   return { success: true, message: "Warehouse assigned", data: { id, warehouse: wName } };
@@ -1745,7 +1758,7 @@ export async function generateShiprocketAwb(id: string, courierPartner: string =
   if (res?.success) return res;
 
   const awbCode = `SR-${courierPartner.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`;
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const updated = stored.map((o) => {
     if (o.id === id || o.number === id) {
       return {
@@ -1777,7 +1790,7 @@ export async function addOrderAdminNote(id: string, text: string, author: string
   if (res?.success) return res;
 
   const note = { id: `NOTE-${Date.now()}`, text, author, date: "Just now" };
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, adminNotes: [...(o.adminNotes || []), note] } : o));
   setStored(STORAGE_KEYS.ORDERS, updated);
   return { success: true, message: "Note added", data: [note] };
@@ -1797,7 +1810,7 @@ export async function cancelAdminOrder(id: string, reason?: string | { reason?: 
   }
   if (res?.success) return res;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, orderStatus: "Cancelled", status: "Cancelled" } : o));
   setStored(STORAGE_KEYS.ORDERS, updated);
   return { success: true, message: "Order cancelled successfully", data: { id, status: "Cancelled" } };
@@ -1817,7 +1830,7 @@ export async function refundAdminOrder(id: string, amount?: number | { amount?: 
   }
   if (res?.success) return res;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, paymentStatus: "Refunded" } : o));
   setStored(STORAGE_KEYS.ORDERS, updated);
   return { success: true, message: "Refund processed successfully", data: { id, status: "Refunded" } };
@@ -1837,7 +1850,7 @@ export async function returnAdminOrder(id: string, reason?: string | { reason?: 
   }
   if (res?.success) return res;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, orderStatus: "Returned", status: "Returned" } : o));
   setStored(STORAGE_KEYS.ORDERS, updated);
   return { success: true, message: "Return scheduled", data: { id, status: "Returned" } };
@@ -1873,7 +1886,7 @@ export async function bulkUpdateAdminOrderStatus(ids: string[], status: string) 
   }
   if (res?.success) return res;
 
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, DEFAULT_ORDERS);
+  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
   const updated = stored.map((o) => (ids.includes(o.id) || ids.includes(o.number) ? { ...o, orderStatus: status, status } : o));
   setStored(STORAGE_KEYS.ORDERS, updated);
   return { success: true, message: `Bulk updated ${ids.length} orders to ${status}` };

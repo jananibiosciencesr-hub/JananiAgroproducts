@@ -275,43 +275,34 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
 function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $adminEmail = 'jananibiosciences.r@gmail.com') {
     global $pdo;
     $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : ('JAP-' . rand(100000, 999999)));
+    $customerName = !empty($orderData['customer_name']) ? $orderData['customer_name'] : (!empty($orderData['customerName']) ? $orderData['customerName'] : 'Valued Patron');
+    
+    // Resolve customer email with deep inspection
+    $toEmail = strtolower(trim(!empty($orderData['customer_email']) ? $orderData['customer_email'] : (!empty($orderData['customerEmail']) ? $orderData['customerEmail'] : (!empty($orderData['customer']['email']) ? $orderData['customer']['email'] : (!empty($orderData['email']) ? $orderData['email'] : '')))));
+
     $sAddr = $orderData['shipping_address'] ?? ($orderData['shippingAddress'] ?? ($orderData['address'] ?? []));
     if (is_string($sAddr)) {
         $sAddr = json_decode($sAddr, true) ?: [];
     }
-
-    // Dynamic resolution of customer name
-    $customerName = '';
-    if (!empty($orderData['customer_name']) && $orderData['customer_name'] !== 'Customer' && $orderData['customer_name'] !== 'Valued Patron') {
-        $customerName = trim($orderData['customer_name']);
-    } elseif (!empty($orderData['customerName']) && $orderData['customerName'] !== 'Customer' && $orderData['customerName'] !== 'Valued Patron') {
-        $customerName = trim($orderData['customerName']);
-    } elseif (!empty($orderData['customer']['name']) && $orderData['customer']['name'] !== 'Customer') {
-        $customerName = trim($orderData['customer']['name']);
-    } elseif (!empty($orderData['customer']['fullName']) && $orderData['customer']['fullName'] !== 'Customer') {
-        $customerName = trim($orderData['customer']['fullName']);
-    } elseif (!empty($sAddr['fullName'])) {
-        $customerName = trim($sAddr['fullName']);
-    } elseif (!empty($sAddr['name'])) {
-        $customerName = trim($sAddr['name']);
-    } else {
-        $customerName = 'Valued Customer';
+    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($sAddr['email']) && filter_var($sAddr['email'], FILTER_VALIDATE_EMAIL)) {
+        $toEmail = strtolower(trim($sAddr['email']));
     }
 
-    // Strictly resolve customer email dynamically - no fake defaults or random lookups
-    $toEmail = '';
-    $candidateEmails = [
-        $orderData['customer_email'] ?? '',
-        $orderData['customerEmail'] ?? '',
-        $orderData['customer']['email'] ?? '',
-        $sAddr['email'] ?? '',
-        $orderData['email'] ?? ''
-    ];
-    foreach ($candidateEmails as $cand) {
-        $cand = strtolower(trim((string)$cand));
-        if (!empty($cand) && filter_var($cand, FILTER_VALIDATE_EMAIL) && !str_ends_with($cand, '@jananiagro.com') && !str_ends_with($cand, '@janani.customer')) {
-            $toEmail = $cand;
-            break;
+    // Try finding customer's real registered email from users table by phone or name
+    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($pdo)) {
+        $custPhone = !empty($orderData['customer_phone']) ? $orderData['customer_phone'] : (!empty($orderData['customerPhone']) ? $orderData['customerPhone'] : (!empty($sAddr['phone']) ? $sAddr['phone'] : ''));
+        if (!empty($custPhone)) {
+            try {
+                $cleanP = preg_replace('/[^0-9]/', '', $custPhone);
+                if (strlen($cleanP) >= 10) {
+                    $uStmt = $pdo->prepare("SELECT `email` FROM `users` WHERE (`phone` LIKE ? OR REPLACE(REPLACE(`phone`, ' ', ''), '+91', '') LIKE ?) AND `email` != '' AND `email` NOT LIKE '%@jananiagro.com' ORDER BY `id` DESC LIMIT 1");
+                    $uStmt->execute(['%' . substr($cleanP, -10) . '%', '%' . substr($cleanP, -10) . '%']);
+                    $foundM = $uStmt->fetchColumn();
+                    if ($foundM && filter_var($foundM, FILTER_VALIDATE_EMAIL)) {
+                        $toEmail = strtolower(trim($foundM));
+                    }
+                }
+            } catch (Exception $e) {}
         }
     }
 
@@ -388,22 +379,12 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
         $itemsSubtotal = (float)($orderData['subtotal'] ?? 0);
     }
 
-    $totalGst = isset($orderData['gstAmount']) ? (float)$orderData['gstAmount'] : (isset($orderData['gst_amount']) ? (float)$orderData['gst_amount'] : round($itemsSubtotal * 0.05, 2));
+    $totalGst = isset($orderData['gstAmount']) ? (float)$orderData['gstAmount'] : round($itemsSubtotal * 0.05, 2);
     $cgstTotal = isset($orderData['cgst']) ? (float)$orderData['cgst'] : round($totalGst / 2, 2);
-    $sgstTotal = isset($orderData['sgst']) ? (float)$orderData['sgst'] : round($totalGst - $cgstTotal, 2);
+    $sgstTotal = isset($orderData['sgst']) ? (float)$orderData['sgst'] : ($totalGst - $cgstTotal);
     $deliveryFee = isset($orderData['delivery_fee']) ? (float)$orderData['delivery_fee'] : (isset($orderData['shippingFee']) ? (float)$orderData['shippingFee'] : ($itemsSubtotal >= 799 ? 0 : 60));
-    $discount = (float)($orderData['discount'] ?? ($orderData['coupon_discount'] ?? ($orderData['couponDiscount'] ?? 0)));
-    
-    if (isset($orderData['total']) && (float)$orderData['total'] > 0) {
-        $finalTotal = (float)$orderData['total'];
-    } elseif (isset($orderData['finalTotal']) && (float)$orderData['finalTotal'] > 0) {
-        $finalTotal = (float)$orderData['finalTotal'];
-    } else {
-        $finalTotal = round($itemsSubtotal + $totalGst + $deliveryFee - $discount, 2);
-    }
-
-    // Only display coupon discount if it was actually deducted from the final total
-    $showDiscount = ($discount > 0 && abs(($itemsSubtotal + $totalGst + $deliveryFee - $discount) - $finalTotal) < 1.0);
+    $discount = (float)($orderData['discount'] ?? ($orderData['coupon_discount'] ?? 0));
+    $finalTotal = $itemsSubtotal + $totalGst + $deliveryFee - $discount;
 
     $invoiceNumber = "INV-" . str_replace("JAP-", "2026-", $orderNumber);
     $rawSubject = "🧾 Order Confirmation & GST Tax Invoice #{$orderNumber} - Janani Agro Products";
@@ -531,7 +512,7 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
                             <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Total SGST (2.5%):</td>
                             <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>+₹" . number_format($sgstTotal, 2) . "</td>
                           </tr>
-                          " . ($showDiscount ? "
+                          " . ($discount > 0 ? "
                           <tr>
                             <td style='padding: 4px 0; color: #059669; font-weight: 600;'>Coupon Discount:</td>
                             <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>-₹" . number_format($discount, 2) . "</td>
@@ -1662,12 +1643,12 @@ function generateNextOrderNumber($pdo) {
     }
     try {
         $stmt = $pdo->query("SELECT MAX(num) AS max_num FROM (
-            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^(JAP|ORD)-[0-9]{1,6}$'
+            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(number, 5) AS UNSIGNED) < 1000
             UNION
-            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^(JAP|ORD)-[0-9]{1,6}$'
+            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(id, 5) AS UNSIGNED) < 1000
         ) AS t");
         $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
-        $nextNum = max(1, $maxNum + 1);
+        $nextNum = max(13, $maxNum + 1);
         return 'JAP-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
     } catch (Exception $e) {
         return 'JAP-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
@@ -4507,48 +4488,9 @@ try {
                 $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `timeline` LONGTEXT DEFAULT NULL");
 
                 
-                // Auto-normalize legacy orders to sequential JAP-001 format
+                // Purge any dummy/mock orders permanently from database
                 try {
-                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-001', `id` = 'JAP-001' WHERE (`number` LIKE '%356429%' OR `id` LIKE '%356429%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-001') AS _tmp)");
-                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-002', `id` = 'JAP-002' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-002') AS _tmp)");
-                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-003', `id` = 'JAP-003' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-003') AS _tmp)");
-                    $pdo->exec("UPDATE `orders` SET `number` = 'JAP-004', `id` = 'JAP-004' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `orders` WHERE `number` = 'JAP-004') AS _tmp)");
-                } catch (Exception $ex) {}
-
-                // Auto-repair any legacy mock rows with empty/generic names
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'K. Suresh Reddy', `customer_email` = 'suresh.reddy@gmail.com', `customer_phone` = '+91 98489 11223' WHERE (`number` LIKE '%709853%' OR `id` LIKE '%709853%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'Ananya Sharma', `customer_email` = 'ananya.s@gmail.com', `customer_phone` = '+91 99123 44556' WHERE (`number` LIKE '%845461%' OR `id` LIKE '%845461%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '')");
-                $pdo->exec("UPDATE `orders` SET `customer_name` = 'Rajesh Varma', `customer_email` = 'rajesh.varma@gmail.com', `customer_phone` = '+91 98490 55441' WHERE (`number` LIKE '%849201%' OR `id` LIKE '%849201%') AND (`customer_name` IS NULL OR `customer_name` = 'Customer' OR `customer_name` = '' OR `customer_phone` = '+91 98480 22338')");
-                // Auto-seed JAP-356429 if not present
-                try {
-                    $checkJap = $pdo->prepare("SELECT id FROM `orders` WHERE `number` LIKE '%356429%' OR `id` LIKE '%356429%' LIMIT 1");
-                    $checkJap->execute();
-                    if (!$checkJap->fetch()) {
-                        $japItems = json_encode([
-                            ['id' => 'PRD-101', 'title' => 'BHUMI SHAKTI Bio Fertilizer 5KG', 'price' => 520, 'quantity' => 1],
-                            ['id' => 'PRD-105', 'title' => 'NEEM GUARD Botanical Extract 1L', 'price' => 410, 'quantity' => 1]
-                        ]);
-                        $japAddr = json_encode([
-                            'name' => 'Kameswarip98',
-                            'fullName' => 'Kameswarip98',
-                            'city' => 'Visakhapatnam',
-                            'state' => 'Andhra Pradesh',
-                            'street' => 'D.No 4-56, Main Road',
-                            'pincode' => '530001',
-                            'phone' => '+91 67890 00000'
-                        ]);
-                        $pdo->prepare("INSERT INTO `orders` (
-                            `id`, `number`, `order_date`, `customer_name`, `customer_email`, `customer_phone`,
-                            `shipping_address`, `billing_address`, `items`, `subtotal`, `delivery_fee`, `total`,
-                            `payment_method`, `payment_status`, `order_status`, `courier`, `tracking_id`, `awb`, `warehouse`,
-                            `transaction_id`
-                        ) VALUES (
-                            'JAP-356429', 'JAP-356429', '06 Oct 2026, 11:09 am', 'Kameswarip98', 'kameswarip98@gmail.com', '+91 67890 00000',
-                            ?, ?, ?, 930.00, 0.00, 930.00, 'Razorpay (Online)', 'Pending', 'Pending',
-                            'Delhivery Air Express & Janani Fleet', 'DEL-3928172635', 'DEL-3928172635', 'Lodhika GIDC Central Facility, Rajkot',
-                            'pay_TkVgHCVcXG2X4b'
-                        )")->execute([$japAddr, $japAddr, $japItems]);
-                    }
+                    $pdo->exec("DELETE FROM `orders` WHERE `number` LIKE 'JAP-849%' OR `id` LIKE 'JAP-849%' OR `number` LIKE '%8492%' OR `id` LIKE '%8492%' OR `number` LIKE '%356429%' OR `id` LIKE '%356429%' OR `id` LIKE 'ORD-%'");
                 } catch (Exception $ex) {}
             } catch (Exception $ex) {}
 
@@ -4568,16 +4510,16 @@ try {
                         $rawCName = !empty($order['customer_name']) ? trim($order['customer_name']) : '';
                         $rawAddrName = !empty($sAddr['fullName']) ? trim($sAddr['fullName']) : (!empty($sAddr['name']) ? trim($sAddr['name']) : '');
 
-                        if (!empty($rawCName) && strcasecmp($rawCName, 'Customer') !== 0 && strcasecmp($rawCName, 'User') !== 0 && strcasecmp($rawCName, 'Valued Patron') !== 0) {
+                        if (!empty($rawCName) && strcasecmp($rawCName, 'Customer') !== 0 && strcasecmp($rawCName, 'User') !== 0) {
                             $cName = $rawCName;
                         } elseif (!empty($rawAddrName) && strcasecmp($rawAddrName, 'Customer') !== 0 && strcasecmp($rawAddrName, 'User') !== 0) {
                             $cName = $rawAddrName;
                         } else {
-                            $cName = 'Customer';
+                            $cName = 'Valued Patron';
                         }
 
                         $rawEmail = !empty($order['customer_email']) ? trim($order['customer_email']) : (!empty($sAddr['email']) ? trim($sAddr['email']) : '');
-                        $cEmail = (!empty($rawEmail) && !str_ends_with($rawEmail, '@jananiagro.com') && !str_ends_with($rawEmail, '@janani.customer')) ? $rawEmail : '';
+                        $cEmail = !empty($rawEmail) ? $rawEmail : 'patron@jananiagro.com';
 
                         $rawPhone = !empty($order['customer_phone']) ? trim($order['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
                         $cPhone = !empty($rawPhone) ? $rawPhone : '';
@@ -4625,7 +4567,7 @@ try {
                 $customerEmail = $_GET['email'] ?? ($_GET['customer_email'] ?? null);
                 $customerPhone = $_GET['phone'] ?? ($_GET['customer_phone'] ?? null);
                 $search = trim($_GET['search'] ?? '');
-                $query = "SELECT * FROM `orders` WHERE 1=1";
+                $query = "SELECT * FROM `orders` WHERE `number` NOT LIKE '%8492%' AND `number` NOT LIKE '%356429%' AND `id` NOT LIKE '%8492%' AND `id` NOT LIKE '%356429%' AND `id` NOT LIKE 'ORD-%'";
                 $params = [];
 
                 if ($customerEmail && $customerPhone) {
@@ -4659,7 +4601,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC, id DESC LIMIT 200";
+                $query .= " ORDER BY CAST(SUBSTRING(COALESCE(number, id), 5) AS UNSIGNED) DESC, COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $orders = $stmt->fetchAll();
@@ -4674,16 +4616,16 @@ try {
                     $rawCName = !empty($ord['customer_name']) ? trim($ord['customer_name']) : '';
                     $rawAddrName = !empty($sAddr['fullName']) ? trim($sAddr['fullName']) : (!empty($sAddr['name']) ? trim($sAddr['name']) : '');
 
-                    if (!empty($rawCName) && strcasecmp($rawCName, 'Customer') !== 0 && strcasecmp($rawCName, 'User') !== 0 && strcasecmp($rawCName, 'Valued Patron') !== 0) {
+                    if (!empty($rawCName) && strcasecmp($rawCName, 'Customer') !== 0 && strcasecmp($rawCName, 'User') !== 0) {
                         $cName = $rawCName;
                     } elseif (!empty($rawAddrName) && strcasecmp($rawAddrName, 'Customer') !== 0 && strcasecmp($rawAddrName, 'User') !== 0) {
                         $cName = $rawAddrName;
                     } else {
-                        $cName = 'Customer';
+                        $cName = 'Valued Patron';
                     }
 
                     $rawEmail = !empty($ord['customer_email']) ? trim($ord['customer_email']) : (!empty($sAddr['email']) ? trim($sAddr['email']) : '');
-                    $cEmail = (!empty($rawEmail) && !str_ends_with($rawEmail, '@jananiagro.com') && !str_ends_with($rawEmail, '@janani.customer')) ? $rawEmail : '';
+                    $cEmail = !empty($rawEmail) ? $rawEmail : 'patron@jananiagro.com';
 
                     $rawPhone = !empty($ord['customer_phone']) ? trim($ord['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
                     $cPhone = !empty($rawPhone) ? $rawPhone : '';
@@ -5214,7 +5156,7 @@ try {
                     $params[] = "%{$search}%";
                 }
 
-                $query .= " ORDER BY COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC, id DESC LIMIT 200";
+                $query .= " ORDER BY CAST(SUBSTRING(COALESCE(number, id), 5) AS UNSIGNED) DESC, COALESCE(created_at, STR_TO_DATE(order_date, '%d %b %Y, %h:%i %p'), updated_at) DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $users = $stmt->fetchAll();
@@ -6914,8 +6856,6 @@ try {
             $walletTotal = (float)$pdo->query("SELECT COALESCE(SUM(wallet_balance), 0) FROM `users` WHERE role = 'Customer'")->fetchColumn();
 
             $statsPayload = [
-                'totalOrders' => $orderCount,
-                'totalOrdersTrend' => "{$orderCount} Placed",
                 'todayOrders' => $todayOrders,
                 'todayOrdersTrend' => "{$todayOrders} Placed",
                 'todayRevenue' => $todaySales,

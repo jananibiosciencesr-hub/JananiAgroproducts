@@ -338,10 +338,5 @@ INSERT IGNORE INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_bala
 ('CUST-001', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223', 'Customer', 0.00, 850, 'Gold', 'Active', 'JANANI3821'),
 ('CUST-002', 'Vikramaditya Rao', 'vikram.rao@technocorp.in', '+91 99800 44556', 'Customer', 0.00, 320, 'Silver', 'Active', 'JANANI9104');
 
--- Orders Seed
-INSERT IGNORE INTO `orders` (`id`, `number`, `order_date`, `customer_name`, `customer_email`, `customer_phone`, `shipping_address`, `items`, `subtotal`, `discount`, `delivery_fee`, `total`, `payment_method`, `payment_status`, `order_status`, `courier`, `tracking_id`, `awb`) VALUES
-('JAP-849201', 'JAP-849201', '11 Sep 2026, 14:20', 'Rajesh Varma', 'rajesh.varma@gmail.com', '+91 98490 55441', '{"city":"Bengaluru","name":"Rajesh Varma","state":"Karnataka","street":"Flat 402, Green Palms, Indiranagar","pincode":"560038"}', '[{"price":1850,"title":"Wood Pressed Groundnut Oil (5L)","subtotal":1850,"quantity":1,"productId":1}]', 2450.00, 245.00, 0.00, 2205.00, 'UPI Instant', 'Paid', 'Delivered', 'Delhivery Air Express', 'DEL-8492048194', 'DEL-8492048194'),
-('JAP-849202', 'JAP-849202', '10 Sep 2026, 18:45', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223', '{"city":"Bengaluru","name":"Dr. Ananya Iyer","state":"Karnataka","street":"Villa 14, Palm Meadows, Whitefield","pincode":"560066"}', '[{"price":1200,"title":"Royal Aged Basmati Rice (5kg)","subtotal":2400,"quantity":2,"productId":4}]', 3890.00, 583.00, 0.00, 3307.00, 'Razorpay (Credit Card)', 'Paid', 'In Transit', 'Delhivery Air Express', 'DEL-8492048195', 'DEL-8492048195');
-
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;

@@ -460,47 +460,10 @@ export async function initDatabase() {
       results.seedsInserted.push("users (3)");
     }
 
-    // Seed Orders if empty
-    const [orderRows] = await connection.query(`SELECT COUNT(*) as count FROM orders`);
-    if (orderRows[0].count === 0) {
-      console.log(`🌱 [MySQL Seed] Seeding initial orders...`);
-      const ordersSeed = [
-        [
-          "JAP-849201",
-          "JAP-849201",
-          "11 Sep 2026, 14:20",
-          "Rajesh Varma",
-          "rajesh.varma@gmail.com",
-          "+91 98480 22338",
-          JSON.stringify({ name: "Rajesh Varma", street: "Flat 402, Green Palms, Indiranagar", city: "Bengaluru", state: "Karnataka", pincode: "560038" }),
-          JSON.stringify([{ productId: 1, title: "Harit (5 L) — Trichoderma Viride", price: 1850, quantity: 1, subtotal: 1850 }]),
-          2450.0, 245.0, 0.0, 2205.0,
-          "UPI Instant", "Paid", "Delivered",
-          "Delhivery Air Express", "DEL-8492048194", "DEL-8492048194"
-        ],
-        [
-          "JAP-849202",
-          "JAP-849202",
-          "10 Sep 2026, 18:45",
-          "Sai Rama",
-          "ramaofficial.d@gmail.com",
-          "+91 99999 99999",
-          JSON.stringify({ name: "Dr. Ananya Iyer", street: "Villa 14, Palm Meadows, Whitefield", city: "Bengaluru", state: "Karnataka", pincode: "560066" }),
-          JSON.stringify([{ productId: 2, title: "Bhumi Shakti (1 L) — Humic & Fulvic Soil Conditioner", price: 380, quantity: 2, subtotal: 760 }]),
-          3890.0, 583.0, 0.0, 3307.0,
-          "Razorpay (Credit Card)", "Paid", "In Transit",
-          "Delhivery Air Express", "DEL-8492048195", "DEL-8492048195"
-        ]
-      ];
-
-      for (const [id, num, dt, name, email, phone, addr, items, sub, disc, ship, total, method, payStat, ordStat, courier, trk, awb] of ordersSeed) {
-        await connection.query(
-          `INSERT IGNORE INTO orders (id, number, order_date, customer_name, customer_email, customer_phone, shipping_address, items, subtotal, discount, delivery_fee, total, payment_method, payment_status, order_status, courier, tracking_id, awb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [id, num, dt, name, email, phone, addr, items, sub, disc, ship, total, method, payStat, ordStat, courier, trk, awb]
-        );
-      }
-      results.seedsInserted.push("orders (2)");
-    }
+    // Purge any dummy orders from orders table
+    try {
+      await connection.query(`DELETE FROM orders WHERE number LIKE 'JAP-849%' OR id LIKE 'JAP-849%' OR number LIKE '%8492%' OR id LIKE '%8492%' OR number LIKE '%356429%' OR id LIKE '%356429%' OR id LIKE 'ORD-%'`);
+    } catch (e) {}
 
     await connection.end();
     console.log(`🎉 [MySQL Init] Complete database setup finished successfully!`);

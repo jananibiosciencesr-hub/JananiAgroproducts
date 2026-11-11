@@ -1545,6 +1545,21 @@ const parseBackendOrderTime = (o) => {
   return isNaN(t) ? 0 : t;
 };
 
+const isDummyOrder = (o) => {
+  if (!o) return true;
+  const num = String(o.number || o.id || "").trim().toUpperCase();
+  if (/^JAP-(?:849\d+|356429)/i.test(num)) return true;
+  if (/^ORD-\d+/i.test(num)) return true;
+  if (num.startsWith("TEST-") || num.startsWith("MOCK-")) return true;
+  return false;
+};
+
+const parseSeq = (o) => {
+  const s = String(o?.number || o?.id || "").trim();
+  const m = s.match(/JAP-(\d+)/i);
+  return m ? parseInt(m[1], 10) : 0;
+};
+
 export const getAdminOrders = (req, res) => {
   const {
     status = "all",
@@ -1555,7 +1570,7 @@ export const getAdminOrders = (req, res) => {
     sortBy = "newest"
   } = req.query;
 
-  let results = [...adminOrders];
+  let results = adminOrders.filter(o => !isDummyOrder(o));
 
   // Status Filter
   if (status !== "all") {
@@ -1596,7 +1611,12 @@ export const getAdminOrders = (req, res) => {
 
   // Sorting
   if (sortBy === "newest") {
-    results.sort((a, b) => parseBackendOrderTime(b) - parseBackendOrderTime(a));
+    results.sort((a, b) => {
+      const seqA = parseSeq(a);
+      const seqB = parseSeq(b);
+      if (seqA > 0 && seqB > 0 && seqA !== seqB) return seqB - seqA;
+      return parseBackendOrderTime(b) - parseBackendOrderTime(a);
+    });
   } else if (sortBy === "amount_desc") {
     results.sort((a, b) => b.total - a.total);
   } else if (sortBy === "amount_asc") {

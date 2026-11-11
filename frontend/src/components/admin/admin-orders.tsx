@@ -252,18 +252,43 @@ export function parseOrderTimestamp(o: any): number {
   return isNaN(t) ? 0 : t;
 }
 
+export function isDummyOrder(o: any): boolean {
+  if (!o) return true;
+  const num = String(o?.number || o?.id || "").trim().toUpperCase();
+  if (/^JAP-(?:849\d+|356429)/i.test(num)) return true;
+  if (/^ORD-\d+/i.test(num)) return true;
+  if (num.startsWith("TEST-") || num.startsWith("MOCK-")) return true;
+  return false;
+}
+
+export function parseSequentialNum(o: any): number {
+  const str = String(o?.number || o?.id || "").trim();
+  const match = str.match(/JAP-(\d+)/i);
+  if (match) {
+    const n = parseInt(match[1], 10);
+    if (!isNaN(n) && n > 0 && n < 10000) return n;
+  }
+  return 0;
+}
+
 export function sortOrdersLIFO(list: any[]): any[] {
   if (!Array.isArray(list)) return [];
+  // Strictly filter out any dummy or mock records
+  const cleaned = list.filter((o) => !isDummyOrder(o));
 
-  const parseOrderNumber = (o: any): number => {
-    const str = String(o.number || o.id || "");
-    const match = str.match(/\d+/);
-    return match ? parseInt(match[0], 10) : 0;
-  };
-
-  return list
+  return cleaned
     .map((item, index) => ({ item, index }))
     .sort((a, b) => {
+      // 1. Strictly prioritize sequential store order IDs (JAP-012 > JAP-011 > ... > JAP-001)
+      const seqA = parseSequentialNum(a.item);
+      const seqB = parseSequentialNum(b.item);
+      if (seqA > 0 && seqB > 0 && seqA !== seqB) {
+        return seqB - seqA;
+      }
+      if (seqA > 0 && seqB <= 0) return -1;
+      if (seqB > 0 && seqA <= 0) return 1;
+
+      // 2. Fallback to order timestamp
       const timeA = parseOrderTimestamp(a.item);
       const timeB = parseOrderTimestamp(b.item);
       if (timeA !== timeB && timeA > 0 && timeB > 0) {
@@ -272,11 +297,6 @@ export function sortOrdersLIFO(list: any[]): any[] {
       if (timeA > 0 && timeB <= 0) return -1;
       if (timeB > 0 && timeA <= 0) return 1;
 
-      const numA = parseOrderNumber(a.item);
-      const numB = parseOrderNumber(b.item);
-      if (numA !== numB && numA > 0 && numB > 0) {
-        return numB - numA;
-      }
       return a.index - b.index;
     })
     .map((wrapper) => wrapper.item);
@@ -1645,15 +1665,17 @@ function OrderDetailDrawer({
                       <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Payment / Txn ID</span>
                       <div className="flex items-center justify-between font-mono font-bold text-foreground text-xs bg-muted/40 p-1.5 rounded border border-border mt-0.5">
                         <span className="truncate max-w-[150px] text-blue-600 dark:text-blue-400">
-                          {order.transactionId || order.transaction_id || `pay_rzp_${(order.id || "").slice(-8)}`}
+                          {order.transactionId || order.transaction_id || "N/A"}
                         </span>
-                        <button
-                          onClick={() => copyToClipboard(order.transactionId || order.transaction_id || `pay_rzp_${(order.id || "").slice(-8)}`, "Payment ID")}
-                          className="p-1 hover:text-primary transition cursor-pointer"
-                          title="Copy Payment ID"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </button>
+                        {(order.transactionId || order.transaction_id) && (
+                          <button
+                            onClick={() => copyToClipboard(order.transactionId || order.transaction_id, "Payment ID")}
+                            className="p-1 hover:text-primary transition cursor-pointer"
+                            title="Copy Payment ID"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -1811,7 +1833,7 @@ function OrderDetailDrawer({
                     Customer Delivery Instructions
                   </h4>
                   <p className="text-xs text-foreground bg-muted/30 p-3 rounded-lg border border-border italic">
-                    "{order.customerNote || order.notes || "Please handle with care. Fragile glass spice jars inside package."}"
+                    {order.customerNote || order.notes ? `"${order.customerNote || order.notes}"` : "No special instructions provided by customer."}
                   </p>
                 </div>
 
