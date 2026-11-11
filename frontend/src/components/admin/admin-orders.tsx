@@ -760,26 +760,13 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                   </div>
                 </div>
 
-                {/* Logistics Info Bar */}
-                <div className="flex items-center justify-between gap-2 text-xs bg-muted/40 p-2 rounded-xl border border-border/40">
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
-                    <Building2 className="size-3 shrink-0" />
-                    <span className="truncate">{warehouseDisplay}</span>
+                {/* Tracking Info Bar (if available) */}
+                {order.trackingId ? (
+                  <div className="flex items-center gap-1.5 text-xs bg-muted/40 p-2 rounded-xl border border-border/40">
+                    <Truck className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span className="font-mono text-[11px] text-foreground font-semibold truncate">{order.trackingId}</span>
                   </div>
-                  {order.trackingId ? (
-                    <div className="flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 font-mono shrink-0">
-                      <Truck className="size-3 shrink-0" />
-                      <span className="truncate max-w-[110px]">{order.trackingId}</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShiprocketModalOrder(order)}
-                      className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer shrink-0"
-                    >
-                      <Plus className="size-3" /> Assign AWB
-                    </button>
-                  )}
-                </div>
+                ) : null}
 
                 {/* Action Buttons Toolbar */}
                 <div className="pt-1">
@@ -809,7 +796,6 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Customer</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Items</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Financials</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Logistics & Hub</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-center">Fulfillment Status</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -817,7 +803,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-16">
+                  <td colSpan={6} className="text-center py-16">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <RefreshCw className="h-8 w-8 animate-spin text-primary" />
                       <p className="text-sm font-medium text-muted-foreground">
@@ -828,7 +814,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                 </tr>
               ) : filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-16">
+                  <td colSpan={6} className="text-center py-16">
                     <div className="flex flex-col items-center justify-center gap-3 max-w-md mx-auto">
                       <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                         <ShoppingBag className="h-6 w-6" />
@@ -952,34 +938,6 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                                 <Copy className="h-2.5 w-2.5" />
                               </button>
                             </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Logistics & Hub */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1 text-xs text-foreground font-medium">
-                            <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <span className="truncate max-w-[120px]" title={warehouseDisplay}>
-                              {warehouseDisplay}
-                            </span>
-                          </div>
-                          {order.trackingId ? (
-                            <div className="flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 font-mono">
-                              <Truck className="h-3 w-3 shrink-0" />
-                              <span className="truncate max-w-[110px]" title={order.trackingId}>
-                                {order.trackingId}
-                              </span>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setShiprocketModalOrder(order)}
-                              className="text-[11px] text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                            >
-                              <Plus className="h-2.5 w-2.5" />
-                              <span>Assign AWB</span>
-                            </button>
                           )}
                         </div>
                       </td>
