@@ -813,8 +813,8 @@ function ProductDetailPage() {
                         setActiveImageIndex(idx);
                       }}
                       className={`relative size-14 sm:size-18 rounded-xl overflow-hidden border-2 bg-white transition shrink-0 p-1.5 flex items-center justify-center cursor-pointer ${isActive
-                          ? "border-[#075B32] shadow-sm ring-2 ring-[#075B32]/30"
-                          : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
+                        ? "border-[#075B32] shadow-sm ring-2 ring-[#075B32]/30"
+                        : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
                         }`}
                     >
                       <img
@@ -1045,8 +1045,8 @@ function ProductDetailPage() {
                           setActiveImageIndex(0);
                         }}
                         className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${isSelected
-                            ? "border-2 border-[#075B32] bg-[#EAF5E9] shadow-xs"
-                            : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"
+                          ? "border-2 border-[#075B32] bg-[#EAF5E9] shadow-xs"
+                          : "border-gray-200 bg-white hover:border-gray-400 text-gray-700"
                           }`}
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -1182,8 +1182,8 @@ function ProductDetailPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
                   className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition border-b-2 -mb-px ${isActive
-                      ? "border-[#075B32] text-[#075B32]"
-                      : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                    ? "border-[#075B32] text-[#075B32]"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
                     }`}
                 >
                   {tab.label}
@@ -1563,8 +1563,8 @@ function ProductDetailPage() {
                             >
                               <Star
                                 className={`size-6 ${star <= reviewRating
-                                    ? "text-[#E7A91A] fill-[#E7A91A]"
-                                    : "text-gray-300"
+                                  ? "text-[#E7A91A] fill-[#E7A91A]"
+                                  : "text-gray-300"
                                   }`}
                               />
                             </button>
