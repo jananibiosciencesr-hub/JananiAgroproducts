@@ -1325,6 +1325,8 @@ export async function getAdminStats() {
     totalOrdersTrend: `${storedOrders.length} Placed`,
     todayOrders: storedOrders.length,
     todayOrdersTrend: `${storedOrders.length} Placed`,
+    totalRevenue: totalRev,
+    totalRevenueTrend: "Live Sales",
     todayRevenue: totalRev,
     todayRevenueTrend: "Live Sales",
     monthlyRevenue: totalRev,

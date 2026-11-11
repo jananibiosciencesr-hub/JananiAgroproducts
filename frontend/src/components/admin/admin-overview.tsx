@@ -71,7 +71,18 @@ export function AdminOverview({
   const liveReviews = Array.isArray(reviews) ? reviews : [];
 
   // Real-time metrics calculations directly from live data
-  const totalSales = stats?.todayRevenue ?? liveOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const calculatedTotalRevenue = liveOrders.reduce((sum, o) => {
+    const s = (o.orderStatus || o.status || "").toLowerCase();
+    if (s === "cancelled") return sum;
+    return sum + (Number(o.total) || 0);
+  }, 0);
+
+  const totalSales = Math.max(
+    Number(stats?.totalRevenue || 0),
+    Number(stats?.monthlyRevenue || 0),
+    Number(stats?.todayRevenue || 0),
+    calculatedTotalRevenue
+  );
   const totalOrdersCount = Math.max(
     Number(stats?.totalOrders || 0),
     liveOrders.length,
@@ -162,8 +173,8 @@ export function AdminOverview({
       tab: "orders" as AdminTab
     },
     {
-      id: "today-revenue",
-      title: "Today's Revenue",
+      id: "total-revenue",
+      title: "Total Revenue",
       value: `₹${totalSales.toLocaleString('en-IN')}`,
       trend: "Live Sales",
       trendType: "live" as const,
