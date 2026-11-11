@@ -218,7 +218,7 @@ export function AdminOverview({
   const displayedKpiCards = cleanSearch && matchingKpiCards.length > 0 ? matchingKpiCards : kpiCards;
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 pt-2 sm:pt-4 pb-12 min-w-0 max-w-full overflow-x-hidden">
+    <div className="flex flex-col gap-6 sm:gap-8 lg:gap-10 pb-16 min-w-0 max-w-full overflow-x-hidden">
 
       {/* Search Filter Status Banner */}
       {cleanSearch && (
@@ -246,33 +246,33 @@ export function AdminOverview({
 
       {/* Primary KPI Cards Grid in a Single Row */}
       <section className="min-w-0 max-w-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 w-full min-w-0">
           {displayedKpiCards.map((card, idx) => {
             const Icon = card.icon;
             return (
               <div
                 key={idx}
                 onClick={() => onNavigateTab(card.tab)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card p-3.5 sm:p-5 transition-colors duration-200 hover:border-emerald-500/50 min-w-0 shadow-xs flex flex-col justify-between"
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card p-4 sm:p-5 lg:p-6 transition-all duration-200 hover:border-emerald-500/50 hover:shadow-md min-w-0 shadow-xs flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground/90 tracking-tight leading-tight whitespace-nowrap">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs sm:text-sm font-semibold text-muted-foreground tracking-tight leading-tight whitespace-nowrap">
                       {card.title}
                     </span>
-                    <div className={`grid size-7.5 sm:size-8.5 place-items-center rounded-xl ${card.bgColor} ${card.color} shrink-0 border`}>
-                      <Icon className="size-3.5 sm:size-4" />
+                    <div className={`grid size-8 sm:size-9 lg:size-10 place-items-center rounded-xl ${card.bgColor} ${card.color} shrink-0 border`}>
+                      <Icon className="size-4 sm:size-4.5" />
                     </div>
                   </div>
 
-                  <div className="mt-2.5 sm:mt-3">
-                    <span className="text-lg sm:text-xl lg:text-2xl font-black text-foreground tracking-tight font-mono truncate block">
+                  <div className="mt-3 sm:mt-4">
+                    <span className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight font-mono truncate block">
                       {card.value}
                     </span>
                   </div>
                 </div>
 
-                <div className="mt-2.5 sm:mt-3 pt-2 border-t border-border/40 flex items-center justify-between gap-1 text-[10px] sm:text-[11px]">
+                <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-border/50 flex items-center justify-between gap-1 text-[11px] sm:text-xs">
                   <span className={`inline-flex items-center gap-1 font-semibold truncate ${
                     card.trendType === "live" || card.trendType === "positive"
                       ? "text-emerald-700 dark:text-emerald-400"
@@ -287,7 +287,7 @@ export function AdminOverview({
                     )}
                     <span className="truncate">{card.trend}</span>
                   </span>
-                  <ArrowUpRight className="size-3 text-muted-foreground/50 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors shrink-0" />
+                  <ArrowUpRight className="size-3.5 text-muted-foreground/50 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors shrink-0" />
                 </div>
               </div>
             );
@@ -296,15 +296,15 @@ export function AdminOverview({
       </section>
 
       {/* 4 Real-Time Tables Section */}
-      <section className="space-y-4 sm:space-y-6 min-w-0 max-w-full">
+      <section className="space-y-6 sm:space-y-8 lg:space-y-10 min-w-0 max-w-full">
         {/* Table 1: Latest Orders */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card shadow-xs overflow-hidden min-w-0 max-w-full">
-          <div className="flex flex-col gap-2.5 sm:gap-3 p-3.5 sm:p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 min-w-0">
+        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs overflow-hidden min-w-0 max-w-full">
+          <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-6 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 min-w-0">
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
                 <ShoppingBag className="size-4 sm:size-4.5 text-emerald-600 shrink-0" /> Latest Customer Orders
               </h3>
-              <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Real-time order feed with Shiprocket dispatch actions</p>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">Real-time order feed with Shiprocket dispatch actions</p>
             </div>
 
             <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 max-w-full">
@@ -335,23 +335,23 @@ export function AdminOverview({
             <table className="w-full min-w-[620px] text-left text-xs">
               <thead className="bg-muted/40 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/60">
                 <tr>
-                  <th className="px-4 sm:px-6 py-3 sm:py-3.5">Order ID</th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-3.5">Customer</th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-3.5">Items</th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-3.5">Total (₹)</th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-3.5">Payment</th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-3.5">Status</th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-3.5 text-right">Actions</th>
+                  <th className="px-5 sm:px-6 py-3.5 sm:py-4">Order ID</th>
+                  <th className="px-5 sm:px-6 py-3.5 sm:py-4">Customer</th>
+                  <th className="px-5 sm:px-6 py-3.5 sm:py-4">Items</th>
+                  <th className="px-5 sm:px-6 py-3.5 sm:py-4">Total (₹)</th>
+                  <th className="px-5 sm:px-6 py-3.5 sm:py-4">Payment</th>
+                  <th className="px-5 sm:px-6 py-3.5 sm:py-4">Status</th>
+                  <th className="px-5 sm:px-6 py-3.5 sm:py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {filteredOrders.slice(0, 8).map((o) => (
                   <tr key={o.id || o.number} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 sm:px-6 py-3 sm:py-3.5 font-extrabold text-foreground">
+                    <td className="px-5 sm:px-6 py-3.5 sm:py-4 font-extrabold text-foreground">
                       <span className="font-mono text-emerald-700 dark:text-emerald-400">{o.number || o.id}</span>
                       <p className="text-[10px] font-normal text-muted-foreground mt-0.5">{o.date || "Today"}</p>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-3.5">
+                    <td className="px-5 sm:px-6 py-3.5 sm:py-4">
                       {(() => {
                         const cust = getOrderCustomer(o);
                         return (
@@ -362,18 +362,18 @@ export function AdminOverview({
                         );
                       })()}
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-3.5">
+                    <td className="px-5 sm:px-6 py-3.5 sm:py-4">
                       <span className="text-muted-foreground">{o.items?.length || 1} organic item(s)</span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-3.5 font-bold font-mono text-foreground">
+                    <td className="px-5 sm:px-6 py-3.5 sm:py-4 font-bold font-mono text-foreground">
                       ₹{(Number(o.total) || 0).toLocaleString('en-IN')}
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-3.5">
+                    <td className="px-5 sm:px-6 py-3.5 sm:py-4">
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-foreground">
                         {o.paymentMethod || "Razorpay (Online)"}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-3.5">
+                    <td className="px-5 sm:px-6 py-3.5 sm:py-4">
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold border ${(o.orderStatus || o.status) === "Delivered"
                             ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
@@ -389,7 +389,7 @@ export function AdminOverview({
                         {o.orderStatus || o.status || "Processing"}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-3.5 text-right">
+                    <td className="px-5 sm:px-6 py-3.5 sm:py-4 text-right">
                       <div className="flex items-center justify-end gap-1.5 sm:gap-2">
                         {(o.orderStatus || o.status) !== "Shipped" && (o.orderStatus || o.status) !== "Delivered" && (
                           <Button
@@ -425,24 +425,24 @@ export function AdminOverview({
         </div>
 
         {/* Row with Recent Payments & New Customers */}
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 min-w-0 max-w-full">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-2 min-w-0 max-w-full">
           {/* Table 2: Recent Payments */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card shadow-xs p-4 sm:p-6 min-w-0 max-w-full overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-3 sm:mb-4 min-w-0">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs p-5 sm:p-6 min-w-0 max-w-full overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-5 min-w-0">
               <div className="min-w-0">
-                <h3 className="text-sm font-bold text-foreground">Recent Gateway Transactions</h3>
-                <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Live Razorpay & UPI settlements</p>
+                <h3 className="text-sm sm:text-base font-bold text-foreground">Recent Gateway Transactions</h3>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">Live Razorpay & UPI settlements</p>
               </div>
               <button onClick={() => onNavigateTab("payments")} className="text-xs font-bold text-emerald-600 hover:underline shrink-0 text-left sm:text-right cursor-pointer">
                 View All
               </button>
             </div>
-            <div className="space-y-2 sm:space-y-2.5 min-w-0">
+            <div className="space-y-3 min-w-0">
               {(cleanSearch ? filteredOrders : liveOrders).slice(0, 4).map((o, idx) => {
                 const cust = getOrderCustomer(o);
                 const txn = o.transactionId || o.paymentGatewayId || `TXN-${o.id || idx}`;
                 return (
-                  <div key={idx} className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-muted/30 border border-border/50 text-xs min-w-0 gap-2 hover:bg-muted/50 transition-colors">
+                  <div key={idx} className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-muted/30 border border-border/50 text-xs min-w-0 gap-2 hover:bg-muted/50 transition-colors">
                     <div className="min-w-0 flex-1">
                       <span className="font-bold text-foreground block truncate">{cust.name}</span>
                       <p className="text-[10px] text-muted-foreground font-mono truncate">{txn} • {o.paymentMethod || "Razorpay"}</p>
@@ -463,17 +463,17 @@ export function AdminOverview({
           </div>
 
           {/* Table 3: Highest Value Customers */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card shadow-xs p-4 sm:p-6 min-w-0 max-w-full overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-3 sm:mb-4 min-w-0">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs p-5 sm:p-6 min-w-0 max-w-full overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-5 min-w-0">
               <div className="min-w-0">
-                <h3 className="text-sm font-bold text-foreground">Highest Value Customers</h3>
-                <p className="text-[11px] sm:text-xs text-muted-foreground truncate">VIP Patrons & Registered Accounts</p>
+                <h3 className="text-sm sm:text-base font-bold text-foreground">Highest Value Customers</h3>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">VIP Patrons & Registered Accounts</p>
               </div>
               <button onClick={() => onNavigateTab("customers")} className="text-xs font-bold text-emerald-600 hover:underline shrink-0 text-left sm:text-right cursor-pointer">
                 View All
               </button>
             </div>
-            <div className="space-y-2 sm:space-y-2.5 min-w-0">
+            <div className="space-y-3 min-w-0">
               {(cleanSearch
                 ? (liveCustomers.length > 0
                   ? liveCustomers.filter(c => {
@@ -495,9 +495,9 @@ export function AdminOverview({
                     return { name: cust.name, email: cust.email || `${cust.phone}@janani.customer`, tier: (cust as any)?.tier || "Active Patron", walletBalance: 0 };
                   }))
               ).slice(0, 4).map((c, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-muted/30 border border-border/50 text-xs min-w-0 gap-2 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
-                    <div className="size-7 sm:size-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center text-[10px] shrink-0 shadow-2xs">
+                <div key={idx} className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-muted/30 border border-border/50 text-xs min-w-0 gap-2 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                    <div className="size-8 sm:size-9 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs">
                       {(c.name || "P").substring(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -519,18 +519,18 @@ export function AdminOverview({
         </div>
 
         {/* Table 4: Recent Product Reviews */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-card shadow-xs p-4 sm:p-6 min-w-0 max-w-full overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-3 sm:mb-4 min-w-0">
+        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs p-5 sm:p-6 min-w-0 max-w-full overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-5 min-w-0">
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-foreground">Latest Customer Reviews & Ratings</h3>
-              <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Authentic verified harvest feedback</p>
+              <h3 className="text-sm sm:text-base font-bold text-foreground">Latest Customer Reviews & Ratings</h3>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">Authentic verified harvest feedback</p>
             </div>
             <button onClick={() => onNavigateTab("reviews")} className="text-xs font-bold text-emerald-600 hover:underline shrink-0 text-left sm:text-right cursor-pointer">
               Moderate Reviews ({liveReviews.length})
             </button>
           </div>
 
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 min-w-0 max-w-full">
+          <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 min-w-0 max-w-full">
             {(liveReviews.length > 0
               ? liveReviews.slice(0, 4)
               : [
@@ -540,7 +540,7 @@ export function AdminOverview({
                 { productName: "Dharani (1 L) — Root Growth Promoter", author: "Venkatesh Rao", rating: 5, comment: "Dense feeder root development in paddy nursery within 7 days." }
               ]
             ).map((r: any, idx: number) => (
-              <div key={idx} className="p-3 sm:p-4 rounded-xl bg-muted/30 border border-border/50 flex flex-col justify-between min-w-0 max-w-full overflow-hidden hover:border-emerald-500/30 transition-colors">
+              <div key={idx} className="p-3.5 sm:p-4 rounded-xl bg-muted/30 border border-border/50 flex flex-col justify-between min-w-0 max-w-full overflow-hidden hover:border-emerald-500/30 transition-colors">
                 <div className="min-w-0">
                   <div className="flex items-center gap-1 text-amber-500 mb-1.5">
                     {Array.from({ length: Number(r.rating) || 5 }).map((_, i) => (
@@ -550,7 +550,7 @@ export function AdminOverview({
                   <p className="text-xs font-bold text-foreground truncate block">{r.productName || r.product_name || "Organic Produce"}</p>
                   <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 break-words">"{r.comment || r.content || 'Great organic product'}"</p>
                 </div>
-                <div className="mt-3 pt-2 border-t border-border/50 flex items-center justify-between text-[10px] min-w-0 gap-2">
+                <div className="mt-3.5 pt-2.5 border-t border-border/50 flex items-center justify-between text-[10px] min-w-0 gap-2">
                   <span className="font-semibold text-foreground truncate min-w-0">{r.author || r.customerName || "Patron"}</span>
                   <span className="text-emerald-600 font-bold flex items-center gap-0.5 shrink-0">
                     <ShieldCheck className="size-3 shrink-0" /> Verified
