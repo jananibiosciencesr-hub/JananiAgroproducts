@@ -1,11 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   ArrowRight,
   ChevronRight,
   Package,
-  Search,
-  X,
   Sprout,
   ShieldAlert,
   Layers,
@@ -114,20 +112,6 @@ function CategoriesIndexPage() {
   }, [rawCats]);
   const allProds = storeProds && storeProds.length > 0 ? storeProds : products;
 
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredCategories = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return allCats;
-    return allCats.filter((cat) => {
-      return (
-        cat.name.toLowerCase().includes(q) ||
-        (cat.description && cat.description.toLowerCase().includes(q)) ||
-        cat.slug.toLowerCase().includes(q)
-      );
-    });
-  }, [allCats, searchQuery]);
-
   return (
     <>
       {/* Compact Categories Header */}
@@ -156,28 +140,7 @@ function CategoriesIndexPage() {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 mt-2 md:mt-0">
-              {/* Quick Search moved beside heading & actions */}
-              <div className="relative w-full sm:w-64 md:w-72">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search categories..."
-                  className="h-9 w-full rounded-xl border border-input bg-white pl-9 pr-8 text-xs outline-none focus:border-[#075B32] focus:ring-1 focus:ring-[#075B32] transition shadow-xs"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label="Clear search"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                )}
-              </div>
-
+            <div className="flex items-center gap-2.5 shrink-0 mt-2 md:mt-0">
               <Button
                 asChild
                 size="sm"
@@ -196,27 +159,25 @@ function CategoriesIndexPage() {
 
       {/* Categories Grid (Restored Large Card Layout) */}
       <div className="mx-auto max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 sm:py-8">
-        {filteredCategories.length === 0 ? (
+        {allCats.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-border/80 p-8 shadow-xs">
             <Layers className="size-10 mx-auto text-muted-foreground/60 mb-3" />
-            <h3 className="font-bold text-base text-foreground">No Categories Found</h3>
+            <h3 className="font-bold text-base text-foreground">No Categories Available</h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-              No categories match your search term "{searchQuery}". Try searching for bio, fertilizer, or stimulants.
+              Please check back shortly or explore our full product catalog directly.
             </p>
             <Button
-              onClick={() => {
-                setSearchQuery("");
-              }}
+              asChild
               variant="outline"
               size="sm"
               className="mt-4 rounded-xl text-xs font-bold"
             >
-              Clear Search
+              <Link to="/products">View All Products</Link>
             </Button>
           </div>
         ) : (
           <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5">
-            {filteredCategories.map((cat) => {
+            {allCats.map((cat) => {
               const count = allProds.filter((p: any) => isProductInCategory(p, cat)).length;
               const catImg = (cat.image && typeof cat.image === "string" && cat.image.trim().length > 0)
                 ? getCategoryImage(cat.slug || cat.name, cat.image)
