@@ -205,12 +205,12 @@ export function CheckoutPage() {
   );
 
   // GST 5% (2.5% CGST + 2.5% SGST) added on top of items subtotal
-  const gstAmount = Math.round(subtotal * 0.05);
-  const cgst = Math.round(gstAmount / 2);
-  const sgst = gstAmount - cgst;
+  const cgst = Number((subtotal * 0.025).toFixed(2));
+  const sgst = Number((subtotal * 0.025).toFixed(2));
+  const gstAmount = Number((cgst + sgst).toFixed(2));
 
   // Net before gift card: Subtotal + GST + Shipping - Discount
-  const grossPayable = Math.max(0, subtotal + gstAmount + totalShippingCharges - couponDiscount);
+  const grossPayable = Number(Math.max(0, subtotal + gstAmount + totalShippingCharges - couponDiscount).toFixed(2));
   const walletDeduction = 0;
   const payableAfterWallet = grossPayable;
 
@@ -219,7 +219,7 @@ export function CheckoutPage() {
     ? Math.min(appliedGiftCard.totalBalance, payableAfterWallet)
     : 0;
 
-  const finalTotal = Math.max(0, payableAfterWallet - giftCardDeduction);
+  const finalTotal = Number(Math.max(0, payableAfterWallet - giftCardDeduction).toFixed(2));
 
   const totalSavings =
     couponDiscount +
@@ -244,19 +244,14 @@ export function CheckoutPage() {
       return;
     }
 
-    const cachedSqlPhone = (typeof window !== "undefined" && user?.email)
-      ? sessionStorage.getItem(`janani_sql_phone_${user.email}`) || ""
-      : "";
-    const effectiveCustomerPhone = (cachedSqlPhone && !cachedSqlPhone.includes("8522901998"))
-      ? cachedSqlPhone
-      : ((user?.phone && !user.phone.includes("8522901998") && !user.phone.includes("9848022338"))
-          ? user.phone
-          : (selectedAddress.phone && !selectedAddress.phone.includes("8522901998") ? selectedAddress.phone : ""));
+    const effectiveCustomerName = (selectedAddress.fullName || user?.name || "Valued Customer").trim();
+    const effectiveCustomerEmail = (selectedAddress.email || user?.email || "").trim().toLowerCase();
+    const effectiveCustomerPhone = (selectedAddress.phone || user?.phone || "").trim();
 
     const pendingCheckout = {
       orderNumber: generateNextOrderNumber(),
-      customerName: selectedAddress.fullName || user?.name || "Valued Patron",
-      customerEmail: user?.email || "patron@jananiagro.com",
+      customerName: effectiveCustomerName,
+      customerEmail: effectiveCustomerEmail,
       customerPhone: effectiveCustomerPhone,
       address: selectedAddress,
       deliverySlot: "Standard Delivery (2-3 Business Days)",
@@ -273,10 +268,15 @@ export function CheckoutPage() {
       cgst,
       sgst,
       shippingFee: standardShippingFee,
-      slotFee: 0,
+      deliveryFee: standardShippingFee,
       couponDiscount,
-      walletDeduction: 0,
+      discount: couponDiscount,
+      coupon: appliedCoupon,
+      couponCode: couponDiscount > 0 ? (appliedCoupon?.code || "") : "",
+      walletDeduction,
+      giftCardDeduction,
       finalTotal,
+      total: finalTotal,
       totalSavings,
       paymentMethod,
     };
@@ -417,22 +417,23 @@ export function CheckoutPage() {
           ],
         };
 
-        const resolvedEmail =
-          user?.email ||
-          pendingCheckout.customerEmail ||
+        const resolvedEmail = (
           selectedAddress.email ||
+          pendingCheckout.customerEmail ||
+          user?.email ||
           (() => {
             if (typeof window !== "undefined") {
               try {
                 const u = JSON.parse(localStorage.getItem("janani_user") || "{}");
-                if (u?.email) return u.email;
+                if (u?.email && !u.email.endsWith("@jananiagro.com")) return u.email;
                 const au = JSON.parse(localStorage.getItem("janani_auth_user") || "{}");
-                if (au?.email) return au.email;
+                if (au?.email && !au.email.endsWith("@jananiagro.com")) return au.email;
               } catch (e) {}
             }
             return "";
           })() ||
-          "patron@jananiagro.com";
+          ""
+        ).trim().toLowerCase();
 
         if (typeof window !== "undefined") {
           localStorage.setItem("janani_latest_order", JSON.stringify({
@@ -520,8 +521,13 @@ export function CheckoutPage() {
               })),
               subtotal,
               gstAmount,
+              cgst,
+              sgst,
               delivery_fee: standardShippingFee,
+              shippingFee: standardShippingFee,
               discount: couponDiscount,
+              couponDiscount,
+              coupon_code: couponDiscount > 0 ? (appliedCoupon?.code || "") : "",
               total: finalTotal,
               finalTotal,
               payment_method: "Cash on Delivery",

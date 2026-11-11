@@ -62,12 +62,12 @@ import {
 export function getOrderCustomer(order: any) {
   if (!order) {
     return {
-      name: "Valued Patron",
-      email: "patron@jananiagro.com",
-      phone: "+91 98480 99887",
-      city: "India",
+      name: "Customer",
+      email: "",
+      phone: "",
+      city: "",
       state: "",
-      initial: "P"
+      initial: "C"
     };
   }
 
@@ -87,32 +87,17 @@ export function getOrderCustomer(order: any) {
     !rawName ||
     rawName.trim().toLowerCase() === "customer" ||
     rawName.trim().toLowerCase() === "user" ||
-    rawName.trim().toLowerCase() === "guest"
+    rawName.trim().toLowerCase() === "guest" ||
+    rawName.trim().toLowerCase() === "valued patron"
   ) {
     rawName = sAddr.fullName || sAddr.name || "";
   }
 
-  let name = "";
-  if (rawName && rawName.trim().toLowerCase() !== "customer" && rawName.trim().toLowerCase() !== "user") {
-    name = rawName.trim();
-  } else {
-    // Contextual fallback for legacy rows
-    const ordNum = String(order.id || order.number || "");
-    const cityStr = String(sAddr.city || order.city || "");
-    if (ordNum.includes("709853") || cityStr.toLowerCase().includes("visakhapatnam")) {
-      name = "K. Suresh Reddy";
-    } else if (ordNum.includes("845461")) {
-      name = "Ananya Sharma";
-    } else if (ordNum.includes("849201")) {
-      name = "Rajesh Varma";
-    } else if (ordNum.includes("849202")) {
-      name = "Priya Patel";
-    } else {
-      name = "Chaitanya Kumar";
-    }
-  }
+  let name = rawName && rawName.trim().toLowerCase() !== "customer" && rawName.trim().toLowerCase() !== "user"
+    ? rawName.trim()
+    : (order.customerName || "Customer");
 
-  // Email resolution
+  // Email resolution - dynamic from order customer, shipping address or account
   const rawEmail =
     order.customer?.email ||
     order.customerEmail ||
@@ -122,14 +107,11 @@ export function getOrderCustomer(order: any) {
     "";
 
   let email = "";
-  if (rawEmail && !rawEmail.includes("patron@jananiagro.com") && !rawEmail.includes("customer@")) {
+  if (rawEmail && !rawEmail.includes("patron@jananiagro.com") && !rawEmail.includes("@janani.customer")) {
     email = rawEmail.trim();
-  } else {
-    const cleanSlug = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-    email = `${cleanSlug || "patron"}@gmail.com`;
   }
 
-  // Phone resolution
+  // Phone resolution - dynamic from order customer, shipping address or account
   const rawPhone =
     order.customer?.phone ||
     order.customerPhone ||
@@ -138,23 +120,11 @@ export function getOrderCustomer(order: any) {
     order.phone ||
     "";
   let phone = rawPhone && rawPhone.trim() ? rawPhone.trim() : "";
-  if (!phone || phone === "+91 98480 22338") {
-    const ordNum = String(order.id || order.number || "");
-    if (ordNum.includes("709853")) phone = "+91 98489 11223";
-    else if (ordNum.includes("845461")) phone = "+91 99123 44556";
-    else if (ordNum.includes("849201")) phone = "+91 98490 55441";
-    else if (ordNum.includes("849202")) phone = "+91 98251 44321";
-    else if (name.includes("Rajesh")) phone = "+91 98490 55441";
-    else if (name.includes("Suresh")) phone = "+91 98489 11223";
-    else if (name.includes("Ananya")) phone = "+91 99123 44556";
-    else if (name.includes("Priya")) phone = "+91 98251 44321";
-    else phone = rawPhone && rawPhone.trim() ? rawPhone.trim() : "+91 98480 99887";
-  }
 
   // City & State
-  const city = sAddr.city || order.city || "India";
+  const city = sAddr.city || order.city || "";
   const state = sAddr.state || order.state || "";
-  const initial = name.charAt(0).toUpperCase() || "P";
+  const initial = name ? name.charAt(0).toUpperCase() : "C";
 
   return { name, email, phone, city, state, initial };
 }
@@ -1668,19 +1638,19 @@ function OrderDetailDrawer({
                     <div className="flex justify-between text-muted-foreground">
                       <span>Items Subtotal</span>
                       <span className="font-medium text-foreground">
-                        ₹{(order.subtotal || order.total * 0.95).toFixed(2)}
+                        ₹{(order.subtotal || Math.max(0, (order.total - (order.shippingFee || 60)) / 1.05)).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>CGST (2.5%)</span>
                       <span className="font-medium text-foreground">
-                        ₹{(order.cgst ?? (order.taxAmount ? order.taxAmount / 2 : (order.subtotal || order.total * 0.95) * 0.025)).toFixed(2)}
+                        ₹{(order.cgst ?? (order.taxAmount ? order.taxAmount / 2 : (order.subtotal || Math.max(0, (order.total - (order.shippingFee || 60)) / 1.05)) * 0.025)).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>SGST (2.5%)</span>
                       <span className="font-medium text-foreground">
-                        ₹{(order.sgst ?? (order.taxAmount ? order.taxAmount / 2 : (order.subtotal || order.total * 0.95) * 0.025)).toFixed(2)}
+                        ₹{(order.sgst ?? (order.taxAmount ? order.taxAmount / 2 : (order.subtotal || Math.max(0, (order.total - (order.shippingFee || 60)) / 1.05)) * 0.025)).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
@@ -1689,10 +1659,13 @@ function OrderDetailDrawer({
                         {((order.shippingFee ?? order.deliveryFee ?? 0) > 0) ? `₹${order.shippingFee || order.deliveryFee}` : "FREE"}
                       </span>
                     </div>
-                    {Boolean(order.couponCode || (order.couponDiscount && order.couponDiscount > 0) || (order.discount && order.discount > 0)) && (
+                    {Boolean(
+                      Number(order.couponDiscount || order.discount || 0) > 0 &&
+                      Math.abs(((order.subtotal || 0) + (order.cgst ?? (order.subtotal || 0) * 0.025) + (order.sgst ?? (order.subtotal || 0) * 0.025) + (order.shippingFee ?? order.deliveryFee ?? 0) - (order.couponDiscount || order.discount || 0)) - (order.total || 0)) < 2
+                    ) && (
                       <div className="flex justify-between text-emerald-600 font-medium">
                         <span>🏷️ Coupon ({order.couponCode || "Applied"})</span>
-                        <span>-₹{(order.couponDiscount || order.discount || 0).toFixed(2)}</span>
+                        <span>-₹{(Number(order.couponDiscount || order.discount || 0)).toFixed(2)}</span>
                       </div>
                     )}
                     {Boolean(order.walletDeduction && order.walletDeduction > 0) && (
@@ -1703,7 +1676,7 @@ function OrderDetailDrawer({
                     )}
                     <div className="border-t border-border pt-2 flex justify-between text-sm font-bold text-foreground">
                       <span>Total Amount Paid</span>
-                      <span className="text-primary text-base">₹{order.total?.toLocaleString("en-IN")}</span>
+                      <span className="text-primary text-base">₹{Number(order.total || 0).toFixed(2)}</span>
                     </div>
                     {order.transactionId && (
                       <div className="flex justify-between text-[11px] text-muted-foreground pt-1">

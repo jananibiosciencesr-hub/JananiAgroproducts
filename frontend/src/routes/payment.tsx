@@ -95,34 +95,55 @@ export function PaymentPage() {
   });
 
   // Effective Order Values
-  const effectiveAmount = checkoutData?.finalTotal || (subtotal > 0 ? subtotal : 420);
+  const effectiveAmount = checkoutData?.finalTotal ?? (checkoutData?.total ?? (subtotal > 0 ? subtotal : 0));
   const effectiveOrderNumber = checkoutData?.orderNumber || transactionDetails.orderNumber;
-  const customerName = user?.name || checkoutData?.customerName || checkoutData?.address?.fullName || "Valued Patron";
-  const customerPhone = user?.phone || checkoutData?.customerPhone || checkoutData?.address?.phone || "";
-  const customerEmail = user?.email || checkoutData?.customerEmail || "patron@jananiagro.com";
+  const customerName = (
+    checkoutData?.customerName ||
+    checkoutData?.address?.fullName ||
+    checkoutData?.address?.name ||
+    user?.name ||
+    "Valued Customer"
+  ).trim();
+  const customerPhone = (
+    checkoutData?.customerPhone ||
+    checkoutData?.address?.phone ||
+    user?.phone ||
+    ""
+  ).trim();
   
   const resolvedCustomerEmail = useMemo(() => {
-    if (user?.email && user.email.includes("@")) return user.email;
-    if (checkoutData?.customerEmail && checkoutData.customerEmail.includes("@")) return checkoutData.customerEmail;
-    if (checkoutData?.address?.email && checkoutData.address.email.includes("@")) return checkoutData.address.email;
+    const candidates = [
+      checkoutData?.address?.email,
+      checkoutData?.customerEmail,
+      user?.email,
+    ];
+    for (const c of candidates) {
+      if (c && typeof c === "string" && c.includes("@") && !c.endsWith("@jananiagro.com") && !c.endsWith("@janani.customer")) {
+        return c.trim().toLowerCase();
+      }
+    }
     if (typeof window !== "undefined") {
       try {
         const u = JSON.parse(localStorage.getItem("janani_user") || "{}");
-        if (u?.email && u.email.includes("@")) return u.email;
+        if (u?.email && u.email.includes("@") && !u.email.endsWith("@jananiagro.com")) {
+          return u.email.trim().toLowerCase();
+        }
         const au = JSON.parse(localStorage.getItem("janani_auth_user") || "{}");
-        if (au?.email && au.email.includes("@")) return au.email;
+        if (au?.email && au.email.includes("@") && !au.email.endsWith("@jananiagro.com")) {
+          return au.email.trim().toLowerCase();
+        }
       } catch (e) {}
     }
-    return customerEmail || "patron@jananiagro.com";
-  }, [user, checkoutData, customerEmail]);
+    return "";
+  }, [user?.email, checkoutData]);
 
   // Query SQL directly for the user's phone associated with this specific email
   const [sqlPhone, setSqlPhone] = useState<string>(() => {
     if (typeof window !== "undefined") {
       try {
         const cached = sessionStorage.getItem(`janani_sql_phone_${resolvedCustomerEmail}`);
-        if (cached && !cached.includes("8522901998") && !cached.includes("9848022338")) {
-          return cached;
+        if (cached && cached.trim()) {
+          return cached.trim();
         }
       } catch (e) {}
     }
@@ -131,7 +152,7 @@ export function PaymentPage() {
 
   useEffect(() => {
     const targetEmail = resolvedCustomerEmail || user?.email;
-    if (!targetEmail || targetEmail === "patron@jananiagro.com") return;
+    if (!targetEmail || targetEmail.endsWith("@jananiagro.com")) return;
 
     fetch(`/api.php?action=get-user-phone&email=${encodeURIComponent(targetEmail)}`)
       .then((res) => (res.ok ? res.json() : null))
@@ -160,21 +181,28 @@ export function PaymentPage() {
   }, [resolvedCustomerEmail, user?.email]);
 
   const resolvedCustomerPhone = useMemo(() => {
-    // 1. Strictly prioritize phone directly associated with this email in SQL
-    if (sqlPhone && sqlPhone.trim()) return sqlPhone.trim();
-    if (user?.phone && user.phone.trim() && !user.phone.includes("8522901998") && !user.phone.includes("9848022338")) {
-      return user.phone.trim();
+    const candidates = [
+      checkoutData?.address?.phone,
+      checkoutData?.customerPhone,
+      sqlPhone,
+      user?.phone,
+      customerPhone,
+    ];
+    for (const p of candidates) {
+      if (p && typeof p === "string" && p.trim()) {
+        return p.trim();
+      }
     }
     if (typeof window !== "undefined") {
       try {
         const u = JSON.parse(localStorage.getItem("janani_user") || "{}");
-        if (u?.phone && !u.phone.includes("8522901998") && !u.phone.includes("9848022338")) {
-          return u.phone;
+        if (u?.phone && typeof u.phone === "string" && u.phone.trim()) {
+          return u.phone.trim();
         }
       } catch (e) {}
     }
     return "";
-  }, [sqlPhone, user?.phone]);
+  }, [checkoutData, sqlPhone, user?.phone, customerPhone]);
   const deliveryDate = checkoutData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
   const city = checkoutData?.address?.city || "Ahmedabad";
 
@@ -406,12 +434,12 @@ export function PaymentPage() {
           pincode: checkoutData?.address?.pincode || "380054",
         },
         subtotal: checkoutData?.subtotal || subtotal,
-        gstAmount: checkoutData?.gstAmount || Math.round((checkoutData?.subtotal || subtotal) * 0.05),
-        cgst: checkoutData?.cgst,
-        sgst: checkoutData?.sgst,
-        discount: checkoutData?.discount || 0,
-        couponCode: checkoutData?.coupon?.code || checkoutData?.couponCode || "",
-        couponDiscount: checkoutData?.couponDiscount || (checkoutData?.coupon?.code ? checkoutData?.discount : 0) || 0,
+        gstAmount: checkoutData?.gstAmount ?? Number(((checkoutData?.subtotal || subtotal) * 0.05).toFixed(2)),
+        cgst: checkoutData?.cgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
+        sgst: checkoutData?.sgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
+        discount: checkoutData?.couponDiscount || 0,
+        couponCode: checkoutData?.couponDiscount > 0 ? (checkoutData?.coupon?.code || checkoutData?.couponCode || "") : "",
+        couponDiscount: checkoutData?.couponDiscount || 0,
         walletDeduction: checkoutData?.walletDeduction || 0,
         deliveryFee: checkoutData?.shippingFee || 0,
         shippingFee: checkoutData?.shippingFee || 0,
@@ -456,9 +484,14 @@ export function PaymentPage() {
             quantity: i.qty || i.quantity || 1,
           })),
           subtotal: checkoutData?.subtotal || subtotal,
-          gstAmount: checkoutData?.gstAmount || Math.round((checkoutData?.subtotal || subtotal) * 0.05),
+          gstAmount: checkoutData?.gstAmount ?? Number(((checkoutData?.subtotal || subtotal) * 0.05).toFixed(2)),
+          cgst: checkoutData?.cgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
+          sgst: checkoutData?.sgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
           delivery_fee: checkoutData?.shippingFee || 0,
-          discount: checkoutData?.couponDiscount || checkoutData?.discount || 0,
+          shippingFee: checkoutData?.shippingFee || 0,
+          discount: checkoutData?.couponDiscount || 0,
+          couponDiscount: checkoutData?.couponDiscount || 0,
+          coupon_code: checkoutData?.couponDiscount > 0 ? (checkoutData?.coupon?.code || checkoutData?.couponCode || "") : "",
           total: effectiveAmount,
           finalTotal: effectiveAmount,
           payment_method: details.method || "Razorpay",

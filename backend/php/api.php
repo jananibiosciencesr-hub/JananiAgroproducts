@@ -275,34 +275,43 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
 function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $adminEmail = 'jananibiosciences.r@gmail.com') {
     global $pdo;
     $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : ('JAP-' . rand(100000, 999999)));
-    $customerName = !empty($orderData['customer_name']) ? $orderData['customer_name'] : (!empty($orderData['customerName']) ? $orderData['customerName'] : 'Valued Patron');
-    
-    // Resolve customer email with deep inspection
-    $toEmail = strtolower(trim(!empty($orderData['customer_email']) ? $orderData['customer_email'] : (!empty($orderData['customerEmail']) ? $orderData['customerEmail'] : (!empty($orderData['customer']['email']) ? $orderData['customer']['email'] : (!empty($orderData['email']) ? $orderData['email'] : '')))));
-
     $sAddr = $orderData['shipping_address'] ?? ($orderData['shippingAddress'] ?? ($orderData['address'] ?? []));
     if (is_string($sAddr)) {
         $sAddr = json_decode($sAddr, true) ?: [];
     }
-    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($sAddr['email']) && filter_var($sAddr['email'], FILTER_VALIDATE_EMAIL)) {
-        $toEmail = strtolower(trim($sAddr['email']));
+
+    // Dynamic resolution of customer name
+    $customerName = '';
+    if (!empty($orderData['customer_name']) && $orderData['customer_name'] !== 'Customer' && $orderData['customer_name'] !== 'Valued Patron') {
+        $customerName = trim($orderData['customer_name']);
+    } elseif (!empty($orderData['customerName']) && $orderData['customerName'] !== 'Customer' && $orderData['customerName'] !== 'Valued Patron') {
+        $customerName = trim($orderData['customerName']);
+    } elseif (!empty($orderData['customer']['name']) && $orderData['customer']['name'] !== 'Customer') {
+        $customerName = trim($orderData['customer']['name']);
+    } elseif (!empty($orderData['customer']['fullName']) && $orderData['customer']['fullName'] !== 'Customer') {
+        $customerName = trim($orderData['customer']['fullName']);
+    } elseif (!empty($sAddr['fullName'])) {
+        $customerName = trim($sAddr['fullName']);
+    } elseif (!empty($sAddr['name'])) {
+        $customerName = trim($sAddr['name']);
+    } else {
+        $customerName = 'Valued Customer';
     }
 
-    // Try finding customer's real registered email from users table by phone or name
-    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($pdo)) {
-        $custPhone = !empty($orderData['customer_phone']) ? $orderData['customer_phone'] : (!empty($orderData['customerPhone']) ? $orderData['customerPhone'] : (!empty($sAddr['phone']) ? $sAddr['phone'] : ''));
-        if (!empty($custPhone)) {
-            try {
-                $cleanP = preg_replace('/[^0-9]/', '', $custPhone);
-                if (strlen($cleanP) >= 10) {
-                    $uStmt = $pdo->prepare("SELECT `email` FROM `users` WHERE (`phone` LIKE ? OR REPLACE(REPLACE(`phone`, ' ', ''), '+91', '') LIKE ?) AND `email` != '' AND `email` NOT LIKE '%@jananiagro.com' ORDER BY `id` DESC LIMIT 1");
-                    $uStmt->execute(['%' . substr($cleanP, -10) . '%', '%' . substr($cleanP, -10) . '%']);
-                    $foundM = $uStmt->fetchColumn();
-                    if ($foundM && filter_var($foundM, FILTER_VALIDATE_EMAIL)) {
-                        $toEmail = strtolower(trim($foundM));
-                    }
-                }
-            } catch (Exception $e) {}
+    // Strictly resolve customer email dynamically - no fake defaults or random lookups
+    $toEmail = '';
+    $candidateEmails = [
+        $orderData['customer_email'] ?? '',
+        $orderData['customerEmail'] ?? '',
+        $orderData['customer']['email'] ?? '',
+        $sAddr['email'] ?? '',
+        $orderData['email'] ?? ''
+    ];
+    foreach ($candidateEmails as $cand) {
+        $cand = strtolower(trim((string)$cand));
+        if (!empty($cand) && filter_var($cand, FILTER_VALIDATE_EMAIL) && !str_ends_with($cand, '@jananiagro.com') && !str_ends_with($cand, '@janani.customer')) {
+            $toEmail = $cand;
+            break;
         }
     }
 
@@ -379,12 +388,22 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
         $itemsSubtotal = (float)($orderData['subtotal'] ?? 0);
     }
 
-    $totalGst = isset($orderData['gstAmount']) ? (float)$orderData['gstAmount'] : round($itemsSubtotal * 0.05, 2);
+    $totalGst = isset($orderData['gstAmount']) ? (float)$orderData['gstAmount'] : (isset($orderData['gst_amount']) ? (float)$orderData['gst_amount'] : round($itemsSubtotal * 0.05, 2));
     $cgstTotal = isset($orderData['cgst']) ? (float)$orderData['cgst'] : round($totalGst / 2, 2);
-    $sgstTotal = isset($orderData['sgst']) ? (float)$orderData['sgst'] : ($totalGst - $cgstTotal);
+    $sgstTotal = isset($orderData['sgst']) ? (float)$orderData['sgst'] : round($totalGst - $cgstTotal, 2);
     $deliveryFee = isset($orderData['delivery_fee']) ? (float)$orderData['delivery_fee'] : (isset($orderData['shippingFee']) ? (float)$orderData['shippingFee'] : ($itemsSubtotal >= 799 ? 0 : 60));
-    $discount = (float)($orderData['discount'] ?? ($orderData['coupon_discount'] ?? 0));
-    $finalTotal = $itemsSubtotal + $totalGst + $deliveryFee - $discount;
+    $discount = (float)($orderData['discount'] ?? ($orderData['coupon_discount'] ?? ($orderData['couponDiscount'] ?? 0)));
+    
+    if (isset($orderData['total']) && (float)$orderData['total'] > 0) {
+        $finalTotal = (float)$orderData['total'];
+    } elseif (isset($orderData['finalTotal']) && (float)$orderData['finalTotal'] > 0) {
+        $finalTotal = (float)$orderData['finalTotal'];
+    } else {
+        $finalTotal = round($itemsSubtotal + $totalGst + $deliveryFee - $discount, 2);
+    }
+
+    // Only display coupon discount if it was actually deducted from the final total
+    $showDiscount = ($discount > 0 && abs(($itemsSubtotal + $totalGst + $deliveryFee - $discount) - $finalTotal) < 1.0);
 
     $invoiceNumber = "INV-" . str_replace("JAP-", "2026-", $orderNumber);
     $rawSubject = "🧾 Order Confirmation & GST Tax Invoice #{$orderNumber} - Janani Agro Products";
@@ -512,7 +531,7 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
                             <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Total SGST (2.5%):</td>
                             <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>+₹" . number_format($sgstTotal, 2) . "</td>
                           </tr>
-                          " . ($discount > 0 ? "
+                          " . ($showDiscount ? "
                           <tr>
                             <td style='padding: 4px 0; color: #059669; font-weight: 600;'>Coupon Discount:</td>
                             <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>-₹" . number_format($discount, 2) . "</td>
@@ -4549,34 +4568,19 @@ try {
                         $rawCName = !empty($order['customer_name']) ? trim($order['customer_name']) : '';
                         $rawAddrName = !empty($sAddr['fullName']) ? trim($sAddr['fullName']) : (!empty($sAddr['name']) ? trim($sAddr['name']) : '');
 
-                        if (!empty($rawCName) && strcasecmp($rawCName, 'Customer') !== 0 && strcasecmp($rawCName, 'User') !== 0) {
+                        if (!empty($rawCName) && strcasecmp($rawCName, 'Customer') !== 0 && strcasecmp($rawCName, 'User') !== 0 && strcasecmp($rawCName, 'Valued Patron') !== 0) {
                             $cName = $rawCName;
                         } elseif (!empty($rawAddrName) && strcasecmp($rawAddrName, 'Customer') !== 0 && strcasecmp($rawAddrName, 'User') !== 0) {
                             $cName = $rawAddrName;
                         } else {
-                            if (strpos($order['number'], '709853') !== false || (isset($sAddr['city']) && stripos($sAddr['city'], 'Visakhapatnam') !== false)) {
-                                $cName = 'K. Suresh Reddy';
-                            } elseif (strpos($order['number'], '845461') !== false) {
-                                $cName = 'Ananya Sharma';
-                            } elseif (strpos($order['number'], '849201') !== false) {
-                                $cName = 'Rajesh Varma';
-                            } elseif (strpos($order['number'], '849202') !== false) {
-                                $cName = 'Priya Patel';
-                            } else {
-                                $cName = 'Chaitanya Kumar';
-                            }
+                            $cName = 'Customer';
                         }
 
                         $rawEmail = !empty($order['customer_email']) ? trim($order['customer_email']) : (!empty($sAddr['email']) ? trim($sAddr['email']) : '');
-                        if (!empty($rawEmail) && !str_ends_with($rawEmail, '@jananiagro.com')) {
-                            $cEmail = $rawEmail;
-                        } else {
-                            $cleanSlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cName));
-                            $cEmail = ($cleanSlug ? $cleanSlug : 'patron') . '@gmail.com';
-                        }
+                        $cEmail = (!empty($rawEmail) && !str_ends_with($rawEmail, '@jananiagro.com') && !str_ends_with($rawEmail, '@janani.customer')) ? $rawEmail : '';
 
                         $rawPhone = !empty($order['customer_phone']) ? trim($order['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
-                        $cPhone = !empty($rawPhone) ? $rawPhone : (strpos($order['number'], '709853') !== false ? '+91 98489 11223' : (strpos($order['number'], '845461') !== false ? '+91 99123 44556' : (strpos($order['number'], '849201') !== false ? '+91 98490 55441' : (strpos($order['number'], '849202') !== false ? '+91 98251 44321' : '+91 98480 99887'))));
+                        $cPhone = !empty($rawPhone) ? $rawPhone : '';
 
                         $order['customerName'] = $cName;
                         $order['customer_name'] = $cName;
@@ -4670,34 +4674,19 @@ try {
                     $rawCName = !empty($ord['customer_name']) ? trim($ord['customer_name']) : '';
                     $rawAddrName = !empty($sAddr['fullName']) ? trim($sAddr['fullName']) : (!empty($sAddr['name']) ? trim($sAddr['name']) : '');
 
-                    if (!empty($rawCName) && strcasecmp($rawCName, 'Customer') !== 0 && strcasecmp($rawCName, 'User') !== 0) {
+                    if (!empty($rawCName) && strcasecmp($rawCName, 'Customer') !== 0 && strcasecmp($rawCName, 'User') !== 0 && strcasecmp($rawCName, 'Valued Patron') !== 0) {
                         $cName = $rawCName;
                     } elseif (!empty($rawAddrName) && strcasecmp($rawAddrName, 'Customer') !== 0 && strcasecmp($rawAddrName, 'User') !== 0) {
                         $cName = $rawAddrName;
                     } else {
-                        if (strpos($ord['number'], '709853') !== false || (isset($sAddr['city']) && stripos($sAddr['city'], 'Visakhapatnam') !== false)) {
-                            $cName = 'K. Suresh Reddy';
-                        } elseif (strpos($ord['number'], '845461') !== false) {
-                            $cName = 'Ananya Sharma';
-                        } elseif (strpos($ord['number'], '849201') !== false) {
-                            $cName = 'Rajesh Varma';
-                        } elseif (strpos($ord['number'], '849202') !== false) {
-                            $cName = 'Priya Patel';
-                        } else {
-                            $cName = 'Chaitanya Kumar';
-                        }
+                        $cName = 'Customer';
                     }
 
                     $rawEmail = !empty($ord['customer_email']) ? trim($ord['customer_email']) : (!empty($sAddr['email']) ? trim($sAddr['email']) : '');
-                    if (!empty($rawEmail) && !str_ends_with($rawEmail, '@jananiagro.com')) {
-                        $cEmail = $rawEmail;
-                    } else {
-                        $cleanSlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cName));
-                        $cEmail = ($cleanSlug ? $cleanSlug : 'patron') . '@gmail.com';
-                    }
+                    $cEmail = (!empty($rawEmail) && !str_ends_with($rawEmail, '@jananiagro.com') && !str_ends_with($rawEmail, '@janani.customer')) ? $rawEmail : '';
 
                     $rawPhone = !empty($ord['customer_phone']) ? trim($ord['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
-                    $cPhone = !empty($rawPhone) ? $rawPhone : (strpos($ord['number'], '709853') !== false ? '+91 98489 11223' : (strpos($ord['number'], '845461') !== false ? '+91 99123 44556' : (strpos($ord['number'], '849201') !== false ? '+91 98490 55441' : (strpos($ord['number'], '849202') !== false ? '+91 98251 44321' : '+91 98480 99887'))));
+                    $cPhone = !empty($rawPhone) ? $rawPhone : '';
 
                     $ord['customerName'] = $cName;
                     $ord['customer_name'] = $cName;

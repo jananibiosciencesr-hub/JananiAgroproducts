@@ -24,6 +24,7 @@ export interface ShippingAddress {
   fullName: string;
   phone: string;
   alternatePhone?: string;
+  email?: string;
   houseFlat: string;
   street: string;
   landmark?: string;
@@ -147,6 +148,7 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
     fullName: user?.name || "",
     phone: user?.phone || "",
     alternatePhone: "",
+    email: user?.email || "",
     houseFlat: "",
     street: "",
     landmark: "",
@@ -303,6 +305,7 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
       fullName: user?.name || "",
       phone: user?.phone || "",
       alternatePhone: "",
+      email: user?.email || "",
       houseFlat: "",
       street: "",
       landmark: "",
@@ -322,6 +325,7 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
       fullName: addr.fullName,
       phone: addr.phone,
       alternatePhone: addr.alternatePhone || "",
+      email: addr.email || user?.email || "",
       houseFlat: addr.houseFlat,
       street: addr.street,
       landmark: addr.landmark || "",
@@ -503,6 +507,11 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                       <Phone className="size-3" /> {addr.phone}
                     </span>
                   </div>
+                  {addr.email && (
+                    <p className="text-[11px] text-brand-leaf font-medium truncate">
+                      ✉ {addr.email}
+                    </p>
+                  )}
                   <p className="text-muted-foreground line-clamp-1 font-medium">
                     {addr.houseFlat}, {addr.street}
                   </p>
@@ -584,7 +593,7 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
             </div>
 
             <form onSubmit={handleSaveAddress} className="space-y-3 sm:space-y-3.5 text-xs font-semibold">
-              {/* Row 1: Full Name, Primary Phone, Alternate Phone */}
+              {/* Row 1: Full Name, Primary Phone, Email Address */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3">
                 <div className="grid gap-1 min-w-0">
                   <span className="text-foreground">Full Name *</span>
@@ -618,22 +627,14 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
                 </div>
 
                 <div className="grid gap-1 min-w-0">
-                  <span className="text-muted-foreground">Alternate Phone (Optional)</span>
-                  <div className="flex items-center rounded-xl border border-input bg-background shadow-xs focus-within:border-brand-leaf w-full min-w-0 overflow-hidden">
-                    <span className="inline-flex items-center gap-1 border-r border-border/70 px-2 py-2 text-xs font-semibold text-muted-foreground select-none pointer-events-none shrink-0 whitespace-nowrap bg-muted/20">
-                      <span className="text-sm leading-none shrink-0">🇮🇳</span>
-                      <span className="shrink-0 font-semibold">+91</span>
-                    </span>
-                    <input
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={10}
-                      placeholder="Backup mobile"
-                      value={formData.alternatePhone || ""}
-                      onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                      className="h-10 w-full min-w-0 rounded-r-xl bg-transparent px-2.5 text-xs outline-none text-foreground font-mono font-medium"
-                    />
-                  </div>
+                  <span className="text-foreground">Email Address (Optional)</span>
+                  <input
+                    type="email"
+                    placeholder={user?.email || "customer@example.com"}
+                    value={formData.email || ""}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="h-10 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-xs outline-none focus:border-brand-leaf text-foreground shadow-xs box-border"
+                  />
                 </div>
               </div>
 

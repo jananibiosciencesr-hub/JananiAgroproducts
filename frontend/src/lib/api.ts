@@ -751,19 +751,19 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
   const couponDiscount = orderPayload.couponDiscount ?? (orderPayload.couponCode ? (orderPayload.discount ?? 0) : 0);
   const walletDeduction = orderPayload.walletDeduction ?? 0;
   const discount = orderPayload.discount ?? couponDiscount;
-  const gstAmount = orderPayload.gstAmount ?? Math.round(subtotal * 0.05);
-  const cgst = orderPayload.cgst ?? Math.round(gstAmount / 2);
-  const sgst = orderPayload.sgst ?? (gstAmount - cgst);
+  const gstAmount = orderPayload.gstAmount ?? Number((subtotal * 0.05).toFixed(2));
+  const cgst = orderPayload.cgst ?? Number((subtotal * 0.025).toFixed(2));
+  const sgst = orderPayload.sgst ?? Number((subtotal * 0.025).toFixed(2));
   const deliveryFee = orderPayload.deliveryFee ?? orderPayload.shippingFee ?? (subtotal >= 799 ? 0 : 60);
-  const total = orderPayload.finalTotal ?? orderPayload.total ?? Math.max(0, subtotal + gstAmount - couponDiscount - walletDeduction + deliveryFee);
+  const total = orderPayload.finalTotal ?? orderPayload.total ?? Number(Math.max(0, subtotal + gstAmount - couponDiscount - walletDeduction + deliveryFee).toFixed(2));
 
   const nextSeqOrderNum = generateNextOrderNumber();
   let generatedId = orderPayload.orderNumber || orderPayload.number || orderPayload.id;
   if (!generatedId || /^(?:JAP|ORD)-\d{5,}$/i.test(generatedId)) {
     generatedId = nextSeqOrderNum;
   }
-  const custName = orderPayload.customer.name || `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim() || "Valued Patron";
-  const custEmail = orderPayload.customer.email || "patron@jananiagro.com";
+  const custName = orderPayload.customer.name || `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim() || "Customer";
+  const custEmail = orderPayload.customer.email || "";
   const streetAddr = orderPayload.customer.streetAddress || orderPayload.customer.address || orderPayload.customer.street || "";
   const deliverySlot = orderPayload.deliverySlot || (orderPayload.slot?.dateStr ?? "Tomorrow Morning (9:00 AM – 1:00 PM)");
   const expectedDelivery = orderPayload.expectedDelivery || deliverySlot;
