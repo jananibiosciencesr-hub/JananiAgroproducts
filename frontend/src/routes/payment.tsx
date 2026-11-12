@@ -121,7 +121,7 @@ export function PaymentPage() {
     user?.phone ||
     ""
   ).trim();
-  
+
   const resolvedCustomerEmail = useMemo(() => {
     const candidates = [
       user?.email,
@@ -143,7 +143,7 @@ export function PaymentPage() {
         if (au?.email && au.email.includes("@") && !au.email.endsWith("@jananiagro.com")) {
           return au.email.trim().toLowerCase();
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return "";
   }, [user?.email, checkoutData]);
@@ -156,7 +156,7 @@ export function PaymentPage() {
         if (cached && cached.trim()) {
           return cached.trim();
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return "";
   });
@@ -184,11 +184,11 @@ export function PaymentPage() {
                 au.phone = p;
                 localStorage.setItem("janani_auth_user", JSON.stringify(au));
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [resolvedCustomerEmail, user?.email]);
 
   const resolvedCustomerPhone = useMemo(() => {
@@ -210,7 +210,7 @@ export function PaymentPage() {
         if (u?.phone && typeof u.phone === "string" && u.phone.trim()) {
           return u.phone.trim();
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return "";
   }, [checkoutData, sqlPhone, user?.phone, customerPhone]);
@@ -525,9 +525,9 @@ export function PaymentPage() {
           finalTotal: effectiveAmount,
           payment_method: details.method || "Razorpay",
         }),
-      }).catch(() => {});
+      }).catch(() => { });
       sessionStorage.setItem(`janani_invoice_dispatched_${finalAssignedOrderNumber}`, "true");
-    } catch (e) {}
+    } catch (e) { }
 
     clearCart();
     if (checkoutData?.walletDeduction > 0) {
@@ -584,7 +584,7 @@ export function PaymentPage() {
             }
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!activePhone && resolvedCustomerPhone) {

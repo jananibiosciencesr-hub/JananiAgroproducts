@@ -76,11 +76,11 @@ export function CheckoutPage() {
                 u.phone = p;
                 localStorage.setItem("janani_user", JSON.stringify(u));
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [user?.email]);
 
   const [step, setStep] = useState<"checkout" | "success">("checkout");
@@ -127,7 +127,7 @@ export function CheckoutPage() {
           });
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [subtotal]);
 
 
@@ -436,7 +436,7 @@ export function CheckoutPage() {
                 if (u?.email && !u.email.endsWith("@jananiagro.com")) return u.email;
                 const au = JSON.parse(localStorage.getItem("janani_auth_user") || "{}");
                 if (au?.email && !au.email.endsWith("@jananiagro.com")) return au.email;
-              } catch (e) {}
+              } catch (e) { }
             }
             return "";
           })() ||
@@ -541,9 +541,9 @@ export function CheckoutPage() {
               finalTotal,
               payment_method: "Cash on Delivery",
             }),
-          }).catch(() => {});
+          }).catch(() => { });
           sessionStorage.setItem(`janani_invoice_dispatched_${orderNumber}`, "true");
-        } catch (e) {}
+        } catch (e) { }
 
         clearCart();
         toast.success(`Cash on Delivery order ${orderNumber} placed successfully!`);
@@ -642,8 +642,8 @@ export function CheckoutPage() {
                 {placedOrderSummary?.paymentMethod === "upi"
                   ? "Instant UPI / QR"
                   : placedOrderSummary?.paymentMethod === "card"
-                  ? "Card & Banking"
-                  : "Cash on Delivery"}
+                    ? "Card & Banking"
+                    : "Cash on Delivery"}
               </span>
             </div>
 
