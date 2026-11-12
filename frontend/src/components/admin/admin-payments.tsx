@@ -532,7 +532,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
           </div>
 
           {/* Transactions Table */}
-          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
+          <div className="rounded-none border border-border bg-card overflow-hidden shadow-soft">
             {loading ? (
               <div className="p-16 text-center">
                 <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto mb-3" />

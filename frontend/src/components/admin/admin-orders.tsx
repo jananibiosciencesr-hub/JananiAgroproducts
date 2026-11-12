@@ -634,7 +634,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col rounded-2xl sm:rounded-3xl border border-border/80 bg-card shadow-xs overflow-hidden">
+    <div className="w-full flex-1 flex flex-col rounded-none border border-border/80 bg-card shadow-xs overflow-hidden">
 
       {/* Page Title & Action Subheader */}
       <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-4">

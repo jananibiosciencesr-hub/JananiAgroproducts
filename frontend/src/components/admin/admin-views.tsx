@@ -163,7 +163,7 @@ export function ProductsView({
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
+      <div className="rounded-none border border-border bg-card shadow-soft overflow-hidden">
         <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
@@ -294,7 +294,7 @@ export function OrdersView({
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
+      <div className="rounded-none border border-border bg-card shadow-soft overflow-hidden">
         <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
@@ -548,7 +548,7 @@ export function InventoryView({
       </div>
 
       {/* Main Table Card - fills the height to eliminate bottom gap */}
-      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden min-w-0 flex-1 flex flex-col min-h-[calc(100vh-210px)]">
+      <div className="rounded-none border border-border bg-card shadow-soft overflow-hidden min-w-0 flex-1 flex flex-col min-h-[calc(100vh-210px)]">
         <div className="overflow-auto flex-1 w-full relative">
           <table className="w-full text-left text-xs min-w-[600px] border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">

@@ -770,7 +770,7 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
 
           {/* Compact Table View */}
           {!loading && coupons.length > 0 && viewMode === "table" && (
-            <div className="bg-card rounded-2xl border border-border/80 shadow-sm overflow-hidden">
+            <div className="bg-card rounded-none border border-border/80 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-muted/60 text-xs uppercase tracking-wider font-semibold text-muted-foreground border-b border-border/80">
