@@ -1,3 +1,4 @@
+import { downloadExcelSheet } from "@/lib/excel-export";
 import React, { useState, useEffect } from "react";
 import {
   Star,
@@ -203,31 +204,39 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
     }
   };
 
-  const handleExportCSV = () => {
-    const headers = ["Review ID", "Product", "Customer", "Email", "Rating", "Status", "Verified", "Photos Count", "Helpful Votes", "Date"];
-    const rows = reviews.map(r => [
-      r.id,
-      `"${r.productName.replace(/"/g, '""')}"`,
-      `"${r.customerName.replace(/"/g, '""')}"`,
-      r.customerEmail,
-      r.rating,
-      r.status,
-      r.verifiedPurchase ? "Yes" : "No",
-      r.images ? r.images.length : 0,
-      r.helpfulCount,
-      r.createdAt
-    ]);
+  // Genuine Microsoft Excel Export (.xlsx)
+  const handleExportExcel = () => {
+    if (reviews.length === 0) {
+      toast.error("No reviews available to export");
+      return;
+    }
+    const rows = reviews.map((r) => ({
+      "Review ID": r.id,
+      "Product Name": r.productName || "",
+      "Customer Name": r.customerName || "",
+      "Customer Email": r.customerEmail || "",
+      "Rating (Stars)": r.rating || 5,
+      "Moderation Status": r.status || "Approved",
+      "Verified Purchase": r.verifiedPurchase ? "Yes" : "No",
+      "Review Headline": r.title || "",
+      "Review Content": r.comment || "",
+      "Photos Count": r.images ? r.images.length : 0,
+      "Helpful Votes": r.helpfulCount || 0,
+      "Created Date": r.createdAt || ""
+    }));
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `janani-reviews-export-${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Reviews export CSV downloaded successfully!");
+    const success = downloadExcelSheet(
+      rows,
+      "Reviews",
+      `Janani_Agro_Reviews_${new Date().toISOString().slice(0, 10)}`
+    );
+    if (success) {
+      toast.success(`Exported ${reviews.length} reviews to Excel (.xlsx)`);
+    } else {
+      toast.error("Failed to generate Excel sheet");
+    }
   };
+  const handleExportCSV = handleExportExcel;
 
   // Collect all images across reviews for the UGC gallery tab
   const allUgcImages: Array<{ image: ReviewImage; review: AdminReview }> = [];
@@ -250,11 +259,13 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
           </span>
         </div>
         <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
+          type="button"
+          onClick={handleExportExcel}
+          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+          title="Download Reviews as Microsoft Excel (.xlsx)"
         >
-          <Download className="w-3.5 h-3.5 text-muted-foreground" />
-          Export CSV
+          <Download className="size-4 stroke-[2.5]" />
+          <span>Download Excel Sheet</span>
         </button>
       </div>
 

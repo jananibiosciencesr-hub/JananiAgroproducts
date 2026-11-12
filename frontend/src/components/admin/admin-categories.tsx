@@ -25,9 +25,11 @@ import {
   ImageIcon,
   Eye,
   Package,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { downloadExcelSheet } from "@/lib/excel-export";
 import {
   getAdminProducts,
   getAdminFullCategories,
@@ -392,53 +394,40 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
     toast.success("Category display sequence updated");
   };
 
-  // CSV Export
-  const exportCSV = () => {
-    const headers = [
-      "ID",
-      "Name",
-      "Slug",
-      "Level",
-      "Parent ID",
-      "Icon",
-      "Description",
-      "Featured",
-      "Trending",
-      "Active",
-      "Products Count",
-      "Meta Title",
-      "Meta Description"
-    ];
-    const rows = categories.map((c) => [
-      c.id,
-      `"${c.name}"`,
-      c.slug,
-      c.level,
-      c.parentId || "",
-      `"${c.icon || ''}"`,
-      `"${(c.description || '').replace(/"/g, '""')}"`,
-      c.featured,
-      c.trending,
-      c.active,
-      c.productsCount || 0,
-      `"${(c.seo?.metaTitle || '').replace(/"/g, '""')}"`,
-      `"${(c.seo?.metaDescription || '').replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const link = document.createElement("a");
-    link.href = encodeURI(csvContent);
-    link.download = `Janani_Agro_Categories_${Date.now()}.csv`;
-    link.click();
-    toast.success("Categories exported to CSV");
-  };
-
   // Parent name resolver helper
   const getParentName = (parentId: string | null) => {
     if (!parentId) return "None (Top Root)";
     const p = categories.find((c) => c.id === parentId);
     return p ? p.name : parentId;
+  };
+
+  // Genuine Microsoft Excel Export (.xlsx)
+  const handleExportExcel = () => {
+    const rows = categories.map((c) => ({
+      "ID": c.id,
+      "Name": c.name || "",
+      "Slug": c.slug || "",
+      "Hierarchy Level": c.level === "root" ? "Root Level (Primary)" : c.level === "sub" ? "Sub-Category" : String(c.level || "Category"),
+      "Parent Category": getParentName(c.parentId),
+      "Description": c.description || "",
+      "Status": c.active !== false ? "Active" : "Inactive",
+      "Featured": c.featured ? "Yes" : "No",
+      "Trending": c.trending ? "Yes" : "No",
+      "Assigned Products": c.productsCount || 0,
+      "Meta Title": c.seo?.metaTitle || "",
+      "Meta Description": c.seo?.metaDescription || ""
+    }));
+
+    const success = downloadExcelSheet(
+      rows,
+      "Categories",
+      `Janani_Agro_Categories_${new Date().toISOString().slice(0, 10)}`
+    );
+    if (success) {
+      toast.success(`Exported ${rows.length} categories to Excel (.xlsx)`);
+    } else {
+      toast.error("No categories data to export");
+    }
   };
 
   if (isFormModalOpen) {
@@ -499,7 +488,17 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
             </span>
           )}
         </div>
-        <Button
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+            title="Download Categories as Microsoft Excel (.xlsx)"
+          >
+            <Download className="size-4 stroke-[2.5]" />
+            <span>Download Excel Sheet</span>
+          </button>
+          <Button
           onClick={() => {
             setEditingCategory(null);
             setIsFormModalOpen(true);
@@ -510,6 +509,7 @@ export function CategoriesManagement({ searchQuery, addTrigger, products: propPr
           <Plus className="size-4 stroke-[2.5]" />
           <span>Add Category</span>
         </Button>
+        </div>
       </div>
       {/* Bulk Action Bar (When 1+ rows selected) */}
       {selectedIds.length > 0 && (

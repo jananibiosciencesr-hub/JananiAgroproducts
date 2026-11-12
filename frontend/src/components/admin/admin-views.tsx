@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from "react";
+import { toast } from "sonner";
+import { downloadExcelSheet } from "@/lib/excel-export";
 import {
   FolderTree,
   Package,
@@ -468,31 +470,32 @@ export function InventoryView({
   const lowStockCount = filteredInventory.filter((i) => (i?.stock ?? 45) > 0 && (i?.stock ?? 45) < 20).length;
   const outOfStockCount = filteredInventory.filter((i) => (i?.stock ?? 45) === 0).length;
 
-  const handleExportCSV = () => {
-    const headers = ["Product Name", "SKU", "Category", "Current Stock (Units)", "Min Threshold", "Status", "Warehouse"];
-    const rows = filteredInventory.map((i) => [
-      `"${(i.name || "").replace(/"/g, '""')}"`,
-      `"${i.sku || ""}"`,
-      `"${i.category || ""}"`,
-      i.stock ?? 0,
-      i.threshold || i.lowStockThreshold || 20,
-      `"${(i.stock === 0 ? "Out of Stock" : i.stock < 20 ? "Low Stock Alert" : "Healthy Stock")}"`,
-      `"${i.warehouse || "Lodhika GIDC Central Facility"}"`
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `warehouse-inventory-${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportExcel = () => {
+    const rows = filteredInventory.map((i) => ({
+      "Product Name": i.name || "",
+      "SKU": i.sku || "",
+      "Category": i.category || "",
+      "Current Stock (Units)": i.stock ?? 0,
+      "Min Safety Threshold": i.threshold || i.lowStockThreshold || 20,
+      "Stock Status": i.stock === 0 ? "Out of Stock" : i.stock < 20 ? "Low Stock Alert" : "Healthy Stock",
+      "Warehouse Location": i.warehouse || "Janani Central Warehouse Hub"
+    }));
+    const success = downloadExcelSheet(
+      rows,
+      "Warehouse Stock",
+      `Janani_Agro_Warehouse_Inventory_${new Date().toISOString().slice(0, 10)}`
+    );
+    if (success) {
+      toast.success(`Exported ${rows.length} inventory items to Excel (.xlsx)`);
+    } else {
+      toast.error("No inventory data to export");
+    }
   };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 space-y-4 min-w-0 max-w-full">
-      {/* Inventory Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
+      {/* Inventory Header Bar - with generous left spacing and Excel download */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0 pl-4 sm:pl-6 pr-2 py-1">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
             Warehouse Inventory & Stock
@@ -500,49 +503,19 @@ export function InventoryView({
               {filteredInventory.length} Items
             </span>
           </h2>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Monitor real-time warehouse stock, safety reorder thresholds, and restock actions
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-700 dark:text-emerald-400">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-            {healthyStockCount} In Stock
-          </span>
-          {lowStockCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-bold text-amber-700 dark:text-amber-400">
-              <span className="size-2 rounded-full bg-amber-500" />
-              {lowStockCount} Low Stock
-            </span>
-          )}
-          {outOfStockCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 font-bold text-rose-700 dark:text-rose-400">
-              <span className="size-2 rounded-full bg-rose-500" />
-              {outOfStockCount} Out of Stock
-            </span>
-          )}
-
-          {onRefresh && (
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
-              title="Refresh warehouse inventory live"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isRefreshing ? "animate-spin text-emerald-600" : ""}`} />
-              <span>Refresh</span>
-            </button>
-          )}
-
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
-            title="Download Inventory CSV"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+            title="Download Warehouse Inventory as Microsoft Excel (.xlsx)"
           >
-            <Download className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>Export CSV</span>
+            <Download className="size-4 stroke-[2.5]" />
+            <span>Download Excel Sheet</span>
           </button>
         </div>
       </div>

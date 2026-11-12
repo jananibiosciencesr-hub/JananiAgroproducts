@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { downloadExcelSheet } from "@/lib/excel-export";
 import {
   getAdminProducts,
   createAdminProduct,
@@ -200,7 +201,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
             try {
               const dParsed = delRaw ? JSON.parse(delRaw) : [];
               delList = Array.isArray(dParsed) ? dParsed.map((s) => String(s).toLowerCase().trim()) : [];
-            } catch {}
+            } catch { }
             return parsed
               .filter((c: any) => c && c.active !== false && !c.deletedAt && !c.deleted_at && !delList.includes(String(c.name || "").toLowerCase().trim()) && !delList.includes(String(c.id || "").toLowerCase().trim()) && !delList.includes(String(c.slug || "").toLowerCase().trim()))
               .map((c: any) => (typeof c.name === "string" ? c.name.trim() : (c.name ? String(c.name).trim() : "")))
@@ -457,57 +458,39 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
     toast.success(`Deleted ${selectedIds.length} products from database`);
   };
 
-  // CSV Export
-  const exportCSV = () => {
-    const headers = [
-      "ID",
-      "Name",
-      "SKU",
-      "Category",
-      "Brand",
-      "Price",
-      "MRP",
-      "Available Stock",
-      "Warehouse Stock",
-      "Reserved Stock",
-      "Status",
-      "Active",
-      "Featured",
-      "Trending",
-      "New Arrival",
-      "Badge",
-      "Meta Title",
-      "Meta Description"
-    ];
+  // Genuine Microsoft Excel Export (.xlsx)
+  const handleExportExcel = () => {
+    const rows = products.map((p) => ({
+      "ID": p.id,
+      "Name": p.name || "",
+      "SKU": p.sku || "",
+      "Category": typeof p.category === "object" && p.category !== null ? (p.category as any).name : String(p.category || ""),
+      "Brand": typeof p.brand === "object" && p.brand !== null ? (p.brand as any).name : String(p.brand || "Janani Agro Products"),
+      "Price (₹)": p.price ?? 0,
+      "MRP (₹)": p.originalPrice || Math.round((p.price || 0) * 1.2),
+      "Available Stock": p.stock ?? 0,
+      "Warehouse Stock": p.warehouseStock || p.stock || 0,
+      "Reserved Stock": p.reservedStock || 0,
+      "Status": p.status || "In Stock",
+      "Active": p.active !== false ? "Active" : "Inactive",
+      "Featured": p.featured ? "Yes" : "No",
+      "Trending": p.trending ? "Yes" : "No",
+      "New Arrival": p.isNewArrival ? "Yes" : "No",
+      "Badge": p.badge || "",
+      "Meta Title": p.seo?.metaTitle || "",
+      "Meta Description": p.seo?.metaDescription || ""
+    }));
 
-    const rows = products.map((p) => [
-      p.id,
-      `"${p.name}"`,
-      p.sku,
-      `"${p.category}"`,
-      `"${p.brand || 'Janani Gold Reserve'}"`,
-      p.price,
-      p.originalPrice || Math.round(p.price * 1.2),
-      p.stock,
-      p.warehouseStock || p.stock,
-      p.reservedStock || 0,
-      p.status || "In Stock",
-      p.active,
-      p.featured,
-      p.trending,
-      p.isNewArrival,
-      `"${p.badge || ''}"`,
-      `"${(p.seo?.metaTitle || '').replace(/"/g, '""')}"`,
-      `"${(p.seo?.metaDescription || '').replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const link = document.createElement("a");
-    link.href = encodeURI(csvContent);
-    link.download = `Janani_Agro_Products_${Date.now()}.csv`;
-    link.click();
-    toast.success("Products catalog exported to CSV");
+    const success = downloadExcelSheet(
+      rows,
+      "Products",
+      `Janani_Agro_Products_${new Date().toISOString().slice(0, 10)}`
+    );
+    if (success) {
+      toast.success(`Exported ${rows.length} products to Excel (.xlsx)`);
+    } else {
+      toast.error("No products data to export");
+    }
   };
 
   if (isFormModalOpen) {
@@ -563,23 +546,34 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
             </span>
           )}
         </div>
-        <Button
-          onClick={() => {
-            setEditingProduct(null);
-            setIsFormModalOpen(true);
-          }}
-          size="sm"
-          className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer px-3.5 sm:px-4 shrink-0"
-        >
-          <Plus className="size-4 stroke-[2.5]" />
-          <span>Add Product</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+            title="Download Products as Microsoft Excel (.xlsx)"
+          >
+            <Download className="size-4 stroke-[2.5]" />
+            <span>Download Excel Sheet</span>
+          </button>
+          <Button
+            onClick={() => {
+              setEditingProduct(null);
+              setIsFormModalOpen(true);
+            }}
+            size="sm"
+            className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer px-3.5 sm:px-4 shrink-0"
+          >
+            <Plus className="size-4 stroke-[2.5]" />
+            <span>Add Product</span>
+          </Button>
+        </div>
       </div>
 
       {/* Bulk Action Toolbar */}
       {selectedIds.length > 0 && (
         <div className="w-full border-b border-border bg-card p-3 sm:p-4 shadow-2xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-none bg-emerald-500/10 p-3 border border-emerald-500/30 animate-in fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-none bg-emerald-500/10 p-3 border border-emerald-500/30 animate-in fade-in">
             <div className="flex items-center gap-2">
               <span className="rounded-xl bg-emerald-600 px-2.5 py-0.5 text-xs font-extrabold text-white">
                 {selectedIds.length} Products Selected
@@ -655,7 +649,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Pricing</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Featured</th>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Trending</th>
-                
+
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -781,11 +775,10 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                                       [p.id]: String(v.id || v.label || v.unit || vIdx)
                                     }));
                                   }}
-                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all cursor-pointer border ${
-                                    isSelected
+                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all cursor-pointer border ${isSelected
                                       ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs scale-105"
                                       : "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70"
-                                  }`}
+                                    }`}
                                   title={`${rawLbl}: ₹${v.price} (Original ₹${v.originalPrice || v.oldPrice || Math.round(v.price * 1.2)})`}
                                 >
                                   {shortLbl}
@@ -1076,7 +1069,7 @@ function ProductViewModal({
   const reservedUnits = Number(product.reservedStock) || 0;
   const availableStock = product.stock !== undefined && typeof product.stock === "number" ? product.stock : (warehouseUnits - reservedUnits);
 
-  const categoryName = typeof product.category === "object" && product.category !== null 
+  const categoryName = typeof product.category === "object" && product.category !== null
     ? String((product.category as any).name || "Organic Crop Care")
     : String(product.category || "Organic Crop Care");
 
@@ -1084,7 +1077,7 @@ function ProductViewModal({
     ? String((product.brand as any).name || "Janani Agro Products")
     : String(product.brand || "Janani Agro Products");
 
-  const galleryList: string[] = Array.isArray(product.gallery) 
+  const galleryList: string[] = Array.isArray(product.gallery)
     ? product.gallery.filter((g) => typeof g === "string" && g.trim())
     : (typeof product.gallery === "string" && (product.gallery as string).trim() ? [product.gallery] : []);
 
@@ -1099,7 +1092,7 @@ function ProductViewModal({
         if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
           return Object.entries(parsed);
         }
-      } catch {}
+      } catch { }
     }
     return [];
   })();
@@ -1107,7 +1100,7 @@ function ProductViewModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl bg-card border border-border/80 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
-        
+
         {/* Header */}
         <div className="relative p-5 sm:p-6 border-b border-border/70 bg-gradient-to-r from-emerald-500/10 via-emerald-600/5 to-transparent flex items-start justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
@@ -1159,7 +1152,7 @@ function ProductViewModal({
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            
+
             {/* Left Column: Image & Gallery */}
             <div className="md:col-span-5 space-y-4">
               <div className="h-64 sm:h-72 w-full rounded-2xl bg-muted/60 border border-border/80 overflow-hidden shadow-inner flex items-center justify-center p-2">
@@ -1178,9 +1171,8 @@ function ProductViewModal({
                       key={i}
                       type="button"
                       onClick={() => setSelectedImage(img)}
-                      className={`size-13 rounded-xl border-2 overflow-hidden shrink-0 transition-all cursor-pointer ${
-                        selectedImage === img ? "border-emerald-600 shadow-md scale-105" : "border-border/60 opacity-60 hover:opacity-100"
-                      }`}
+                      className={`size-13 rounded-xl border-2 overflow-hidden shrink-0 transition-all cursor-pointer ${selectedImage === img ? "border-emerald-600 shadow-md scale-105" : "border-border/60 opacity-60 hover:opacity-100"
+                        }`}
                     >
                       <img src={img} alt={`thumb-${i}`} className="size-full object-cover" />
                     </button>
@@ -1211,7 +1203,7 @@ function ProductViewModal({
 
             {/* Right Column: Pricing, Inventory, Variants & Specs */}
             <div className="md:col-span-7 space-y-4">
-              
+
               {/* Pricing & Stock Card */}
               <div className="p-4 rounded-2xl bg-muted/40 border border-border/70 flex items-center justify-between">
                 <div>
@@ -1264,11 +1256,10 @@ function ProductViewModal({
                           key={v.id || idx}
                           type="button"
                           onClick={() => setSelectedVariant(v)}
-                          className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
-                            isSel
+                          className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${isSel
                               ? "border-emerald-600 bg-emerald-500/10 font-bold shadow-xs"
                               : "border-border bg-card hover:bg-muted/50"
-                          }`}
+                            }`}
                         >
                           <span className="block font-bold truncate">{String(v.name || v.label || v.unit || `Variant ${idx + 1}`)}</span>
                           <span className="text-emerald-700 dark:text-emerald-400 font-extrabold block mt-0.5">₹{Number(v.price) || 0}</span>
@@ -2134,168 +2125,168 @@ function ProductFormView({
 
           <div className="space-y-4">
 
-              <div className="space-y-3">
-                {(Array.isArray(formData.variants) ? formData.variants : []).map((v, i) => (
-                  <div key={v.id || i} className="rounded-2xl border border-border bg-card p-3.5 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-foreground">Variant #{i + 1}</span>
-                      <button type="button" onClick={() => handleRemoveVariant(i)} className="text-rose-500 hover:text-rose-700 text-xs">
-                        Remove
-                      </button>
+            <div className="space-y-3">
+              {(Array.isArray(formData.variants) ? formData.variants : []).map((v, i) => (
+                <div key={v.id || i} className="rounded-2xl border border-border bg-card p-3.5 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-foreground">Variant #{i + 1}</span>
+                    <button type="button" onClick={() => handleRemoveVariant(i)} className="text-rose-500 hover:text-rose-700 text-xs">
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-muted-foreground block">Name / Size</label>
+                      <input
+                        value={v.name || v.label || ""}
+                        placeholder="e.g. 500 ml Pack"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                          updated[i] = { ...v, name: val, label: val, unit: val };
+                          setFormData({ ...formData, variants: updated });
+                        }}
+                        className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-bold outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-muted-foreground block">SKU</label>
+                      <input
+                        value={v.sku || ""}
+                        placeholder="e.g. JAP-500ML"
+                        onChange={(e) => {
+                          const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                          updated[i] = { ...v, sku: e.target.value };
+                          setFormData({ ...formData, variants: updated });
+                        }}
+                        className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-mono outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-muted-foreground block">Price (₹)</label>
+                      <input
+                        type="number"
+                        value={v.price}
+                        onChange={(e) => {
+                          const pVal = Number(e.target.value) || 0;
+                          const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                          updated[i] = {
+                            ...v,
+                            price: pVal,
+                            originalPrice: v.originalPrice || Math.round(pVal * 1.2),
+                            oldPrice: v.oldPrice || Math.round(pVal * 1.2)
+                          };
+                          setFormData({ ...formData, variants: updated });
+                        }}
+                        className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-bold text-emerald-600 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-muted-foreground block">Stock</label>
+                      <input
+                        type="number"
+                        value={v.stock}
+                        onChange={(e) => {
+                          const sVal = Number(e.target.value) || 0;
+                          const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                          updated[i] = { ...v, stock: sVal, inStock: sVal > 0 };
+                          setFormData({ ...formData, variants: updated });
+                        }}
+                        className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Variant Specific Image Section */}
+                  <div className="pt-2 border-t border-border/60">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                        <ImageIcon className="size-3 text-emerald-600" />
+                        <span>Variant Specific Image (1L Bottle / 5L Can / Custom Size Photo)</span>
+                      </label>
+                      {v.image && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                            updated[i] = { ...v, image: "" };
+                            setFormData({ ...formData, variants: updated });
+                          }}
+                          className="text-[10px] text-rose-500 hover:text-rose-700 font-semibold cursor-pointer"
+                        >
+                          Clear Image
+                        </button>
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-muted-foreground block">Name / Size</label>
-                        <input
-                          value={v.name || v.label || ""}
-                          placeholder="e.g. 500 ml Pack"
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
-                            updated[i] = { ...v, name: val, label: val, unit: val };
-                            setFormData({ ...formData, variants: updated });
-                          }}
-                          className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-bold outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-muted-foreground block">SKU</label>
-                        <input
-                          value={v.sku || ""}
-                          placeholder="e.g. JAP-500ML"
-                          onChange={(e) => {
-                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
-                            updated[i] = { ...v, sku: e.target.value };
-                            setFormData({ ...formData, variants: updated });
-                          }}
-                          className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-mono outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-muted-foreground block">Price (₹)</label>
-                        <input
-                          type="number"
-                          value={v.price}
-                          onChange={(e) => {
-                            const pVal = Number(e.target.value) || 0;
-                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
-                            updated[i] = {
-                              ...v,
-                              price: pVal,
-                              originalPrice: v.originalPrice || Math.round(pVal * 1.2),
-                              oldPrice: v.oldPrice || Math.round(pVal * 1.2)
-                            };
-                            setFormData({ ...formData, variants: updated });
-                          }}
-                          className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-bold text-emerald-600 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-muted-foreground block">Stock</label>
-                        <input
-                          type="number"
-                          value={v.stock}
-                          onChange={(e) => {
-                            const sVal = Number(e.target.value) || 0;
-                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
-                            updated[i] = { ...v, stock: sVal, inStock: sVal > 0 };
-                            setFormData({ ...formData, variants: updated });
-                          }}
-                          className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Variant Specific Image Section */}
-                    <div className="pt-2 border-t border-border/60">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                          <ImageIcon className="size-3 text-emerald-600" />
-                          <span>Variant Specific Image (1L Bottle / 5L Can / Custom Size Photo)</span>
-                        </label>
-                        {v.image && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
-                              updated[i] = { ...v, image: "" };
-                              setFormData({ ...formData, variants: updated });
+                    <div className="flex items-center gap-2">
+                      {/* Mini Thumbnail Preview */}
+                      <div className="size-9 rounded-xl border border-border bg-muted/40 overflow-hidden shrink-0 flex items-center justify-center">
+                        {v.image ? (
+                          <img
+                            src={v.image}
+                            alt={v.name || `Variant ${i + 1}`}
+                            className="size-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "/products/placeholder.webp";
                             }}
-                            className="text-[10px] text-rose-500 hover:text-rose-700 font-semibold cursor-pointer"
-                          >
-                            Clear Image
-                          </button>
+                          />
+                        ) : (
+                          <ImageIcon className="size-4 text-muted-foreground/40" />
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {/* Mini Thumbnail Preview */}
-                        <div className="size-9 rounded-xl border border-border bg-muted/40 overflow-hidden shrink-0 flex items-center justify-center">
-                          {v.image ? (
-                            <img
-                              src={v.image}
-                              alt={v.name || `Variant ${i + 1}`}
-                              className="size-full object-cover"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).src = "/products/placeholder.webp";
-                              }}
-                            />
-                          ) : (
-                            <ImageIcon className="size-4 text-muted-foreground/40" />
-                          )}
-                        </div>
+                      {/* Paste Image URL Input */}
+                      <input
+                        type="text"
+                        value={v.image || ""}
+                        placeholder="Paste Image URL (e.g. /products/harit-5l.jpg or web link)"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                          updated[i] = { ...v, image: val };
+                          setFormData({ ...formData, variants: updated });
+                        }}
+                        className="h-8 flex-1 rounded-xl border border-border bg-background px-2.5 text-xs font-mono outline-none focus:border-emerald-600"
+                      />
 
-                        {/* Paste Image URL Input */}
-                        <input
-                          type="text"
-                          value={v.image || ""}
-                          placeholder="Paste Image URL (e.g. /products/harit-5l.jpg or web link)"
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
-                            updated[i] = { ...v, image: val };
-                            setFormData({ ...formData, variants: updated });
-                          }}
-                          className="h-8 flex-1 rounded-xl border border-border bg-background px-2.5 text-xs font-mono outline-none focus:border-emerald-600"
-                        />
-
-                        {/* Upload Button */}
-                        <input
-                          type="file"
-                          id={`variant-upload-${i}`}
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const dataUrl = event.target?.result as string;
-                              if (dataUrl) {
-                                const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
-                                updated[i] = { ...v, image: dataUrl };
-                                setFormData({ ...formData, variants: updated });
-                                toast.success(`Variant image loaded for ${v.name || `Variant #${i + 1}`}!`);
-                              }
-                            };
-                            reader.readAsDataURL(file);
-                            e.target.value = "";
-                          }}
-                        />
-                        <label
-                          htmlFor={`variant-upload-${i}`}
-                          className="h-8 px-3 rounded-xl border border-emerald-600/30 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-xs"
-                        >
-                          <Upload className="size-3.5" />
-                          Upload
-                        </label>
-                      </div>
+                      {/* Upload Button */}
+                      <input
+                        type="file"
+                        id={`variant-upload-${i}`}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            const dataUrl = event.target?.result as string;
+                            if (dataUrl) {
+                              const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                              updated[i] = { ...v, image: dataUrl };
+                              setFormData({ ...formData, variants: updated });
+                              toast.success(`Variant image loaded for ${v.name || `Variant #${i + 1}`}!`);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                          e.target.value = "";
+                        }}
+                      />
+                      <label
+                        htmlFor={`variant-upload-${i}`}
+                        className="h-8 px-3 rounded-xl border border-emerald-600/30 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-xs"
+                      >
+                        <Upload className="size-3.5" />
+                        Upload
+                      </label>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
+          </div>
         </div>
 
         {/* SECTION 3: Product Video Showcase */}
@@ -2451,446 +2442,446 @@ function ProductFormView({
               <p className="text-[11px] text-muted-foreground">Formulation details, dosage, application steps, crops, technical specs, reviews, and FAQs</p>
             </div>
           </div>
-              {/* 7-Subtab Header Navigation */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-border/80 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                {[
-                  { id: "desc", label: "1. Description", icon: Info },
-                  { id: "benefits", label: "2. Key Benefits", icon: CheckCircle2 },
-                  { id: "usage", label: "3. How to Use", icon: ShieldCheck },
-                  { id: "crops", label: "4. Suitable Crops", icon: Check },
-                  { id: "specs", label: "5. Technical Details", icon: Layers },
-                  { id: "reviews", label: `6. Reviews (${formData.reviewsCount})`, icon: Star },
-                  { id: "faqs", label: `7. FAQs (${formData.faqs.length})`, icon: HelpCircle }
-                ].map((st) => (
-                  <button
-                    key={st.id}
-                    type="button"
-                    onClick={() => setSpecsSubTab(st.id as any)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${specsSubTab === st.id
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                  >
-                    <st.icon className="size-3.5" />
-                    <span>{st.label}</span>
-                  </button>
-                ))}
+          {/* 7-Subtab Header Navigation */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-border/80 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {[
+              { id: "desc", label: "1. Description", icon: Info },
+              { id: "benefits", label: "2. Key Benefits", icon: CheckCircle2 },
+              { id: "usage", label: "3. How to Use", icon: ShieldCheck },
+              { id: "crops", label: "4. Suitable Crops", icon: Check },
+              { id: "specs", label: "5. Technical Details", icon: Layers },
+              { id: "reviews", label: `6. Reviews (${formData.reviewsCount})`, icon: Star },
+              { id: "faqs", label: `7. FAQs (${formData.faqs.length})`, icon: HelpCircle }
+            ].map((st) => (
+              <button
+                key={st.id}
+                type="button"
+                onClick={() => setSpecsSubTab(st.id as any)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${specsSubTab === st.id
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+              >
+                <st.icon className="size-3.5" />
+                <span>{st.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Subtab 1: Description & Formulation */}
+          {specsSubTab === "desc" && (
+            <div className="space-y-3.5 animate-in fade-in">
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Product Formulation Subtitle
+                </label>
+                <input
+                  value={formData.subtitle}
+                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                  placeholder="e.g. Trichoderma Viride Liquid Biofungal Formulation"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-semibold"
+                />
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                  Displays directly underneath the product title on the details page.
+                </span>
               </div>
 
-              {/* Subtab 1: Description & Formulation */}
-              {specsSubTab === "desc" && (
-                <div className="space-y-3.5 animate-in fade-in">
-                  <div>
-                    <label className="text-xs font-bold text-foreground block mb-1">
-                      Product Formulation Subtitle
-                    </label>
-                    <input
-                      value={formData.subtitle}
-                      onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                      placeholder="e.g. Trichoderma Viride Liquid Biofungal Formulation"
-                      className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-semibold"
-                    />
-                    <span className="text-[10px] text-muted-foreground mt-0.5 block">
-                      Displays directly underneath the product title on the details page.
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-foreground block mb-1">
-                        Active Organism / Strain Identity
-                      </label>
-                      <input
-                        value={formData.activeOrganism}
-                        onChange={(e) => setFormData({ ...formData, activeOrganism: e.target.value })}
-                        placeholder="e.g. Trichoderma viride 1.5% W.P (2x10^6 CFU/ml)"
-                        className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-foreground block mb-1">
-                        Target Pathogens / Diseases Suppressed
-                      </label>
-                      <input
-                        value={formData.targetDiseases}
-                        onChange={(e) => setFormData({ ...formData, targetDiseases: e.target.value })}
-                        placeholder="e.g. Root rot, Wilt, Damping-off, Collar rot"
-                        className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-foreground block mb-1">
-                      Full Product Description (Detailed Narrative)
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Elaborate on how this biological formula enriches soil health, enhances root systems, and protects crops..."
-                      className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600 leading-relaxed"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Subtab 2: Key Benefits */}
-              {specsSubTab === "benefits" && (
-                <div className="space-y-3.5 animate-in fade-in">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-xs font-bold text-foreground block">
-                        Key Agricultural Benefits (1 benefit per line)
-                      </label>
-                      <span className="text-[10px] text-muted-foreground">
-                        Each line renders as a dedicated benefit feature card on the storefront.
-                      </span>
-                    </div>
-                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                      {formData.benefits ? formData.benefits.split("\n").filter((x) => x.trim()).length : 0} Cards Active
-                    </span>
-                  </div>
-
-                  <textarea
-                    rows={5}
-                    value={formData.benefits}
-                    onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
-                    placeholder={"Controls and suppresses soil-borne fungal pathogens and root rot\nStimulates vigorous root system and lateral feeder roots growth\nImproves rhizosphere beneficial microbial biodiversity\n100% Residue-free and safe for certified organic farming"}
-                    className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600 font-sans leading-relaxed"
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Active Organism / Strain Identity
+                  </label>
+                  <input
+                    value={formData.activeOrganism}
+                    onChange={(e) => setFormData({ ...formData, activeOrganism: e.target.value })}
+                    placeholder="e.g. Trichoderma viride 1.5% W.P (2x10^6 CFU/ml)"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
                   />
-
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                      Quick 1-Click Benefit Presets (Click to append):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {BENEFIT_PRESETS.map((b, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => handleAddBenefitPreset(b)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium text-foreground transition-all text-left"
-                        >
-                          <span className="text-emerald-600 font-bold">+</span> {b.slice(0, 42)}...
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
-              )}
-
-              {/* Subtab 3: How to Use */}
-              {specsSubTab === "usage" && (
-                <div className="space-y-3.5 animate-in fade-in">
-                  <div>
-                    <label className="text-xs font-bold text-foreground block mb-1">
-                      Recommended General Dosage Guidelines
-                    </label>
-                    <input
-                      value={formData.dosage}
-                      onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                      placeholder="e.g. Foliar Spray: 2–3 ml/L | Drip Fertigation: 1 L/acre | Seed Treatment: 5–10 ml/kg"
-                      className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-medium"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-foreground block mb-1">
-                      Methods of Application
-                    </label>
-                    <input
-                      value={formData.methodOfApplication}
-                      onChange={(e) => setFormData({ ...formData, methodOfApplication: e.target.value })}
-                      placeholder="e.g. Soil Application, Drip Fertigation, Seed Treatment, Foliar Spray"
-                      className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-foreground block mb-1">
-                      Compatibility Guidelines
-                    </label>
-                    <input
-                      value={formData.compatibility}
-                      onChange={(e) => setFormData({ ...formData, compatibility: e.target.value })}
-                      placeholder="e.g. Compatible with biofertilizers and organic manures; avoid tank-mixing with chemical copper fungicides"
-                      className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-foreground block mb-1">
-                      Storage & Safety Guidelines
-                    </label>
-                    <input
-                      value={formData.storageNotice}
-                      onChange={(e) => setFormData({ ...formData, storageNotice: e.target.value })}
-                      placeholder="e.g. Store in a cool, dry place away from direct sunlight. Shelf life is 18–24 months."
-                      className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
-                    />
-                  </div>
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Target Pathogens / Diseases Suppressed
+                  </label>
+                  <input
+                    value={formData.targetDiseases}
+                    onChange={(e) => setFormData({ ...formData, targetDiseases: e.target.value })}
+                    placeholder="e.g. Root rot, Wilt, Damping-off, Collar rot"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                  />
                 </div>
-              )}
+              </div>
 
-              {/* Subtab 4: Suitable Crops */}
-              {specsSubTab === "crops" && (
-                <div className="space-y-3.5 animate-in fade-in">
-                  <div>
-                    <label className="text-xs font-bold text-foreground block mb-1">
-                      Suitable Crops (Comma-separated for badges)
-                    </label>
-                    <input
-                      value={formData.recommendedCrops}
-                      onChange={(e) => setFormData({ ...formData, recommendedCrops: e.target.value })}
-                      placeholder="e.g. Paddy / Rice, Cotton, Chilli, Tomato, Brinjal, Sugarcane, Banana, Mango, Groundnut, Pulses"
-                      className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-medium"
-                    />
-                  </div>
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Full Product Description (Detailed Narrative)
+                </label>
+                <textarea
+                  rows={4}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Elaborate on how this biological formula enriches soil health, enhances root systems, and protects crops..."
+                  className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600 leading-relaxed"
+                />
+              </div>
+            </div>
+          )}
 
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                      1-Click Popular Crop Badges (Click to toggle in/out):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {COMMON_CROPS.map((crop) => {
-                        const isSelected = formData.recommendedCrops
-                          .toLowerCase()
-                          .includes(crop.toLowerCase().split("/")[0]?.trim() || crop.toLowerCase());
-                        return (
-                          <button
-                            key={crop}
-                            type="button"
-                            onClick={() => handleToggleCrop(crop)}
-                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${isSelected
-                              ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
-                              : "bg-muted/40 border-border text-foreground hover:bg-muted"
-                              }`}
-                          >
-                            {isSelected ? <Check className="size-3.5" /> : "+"} {crop}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+          {/* Subtab 2: Key Benefits */}
+          {specsSubTab === "benefits" && (
+            <div className="space-y-3.5 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold text-foreground block">
+                    Key Agricultural Benefits (1 benefit per line)
+                  </label>
+                  <span className="text-[10px] text-muted-foreground">
+                    Each line renders as a dedicated benefit feature card on the storefront.
+                  </span>
                 </div>
-              )}
+                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  {formData.benefits ? formData.benefits.split("\n").filter((x) => x.trim()).length : 0} Cards Active
+                </span>
+              </div>
 
-              {/* Subtab 5: Technical Details */}
-              {specsSubTab === "specs" && (
-                <div className="space-y-3.5 animate-in fade-in">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-foreground block mb-1">
-                        Formulation Shelf Life
-                      </label>
-                      <input
-                        value={formData.shelfLife}
-                        onChange={(e) => setFormData({ ...formData, shelfLife: e.target.value })}
-                        placeholder="e.g. 18–24 Months from manufacturing date"
-                        className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button
+              <textarea
+                rows={5}
+                value={formData.benefits}
+                onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                placeholder={"Controls and suppresses soil-borne fungal pathogens and root rot\nStimulates vigorous root system and lateral feeder roots growth\nImproves rhizosphere beneficial microbial biodiversity\n100% Residue-free and safe for certified organic farming"}
+                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600 font-sans leading-relaxed"
+              />
+
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  Quick 1-Click Benefit Presets (Click to append):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {BENEFIT_PRESETS.map((b, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleAddBenefitPreset(b)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium text-foreground transition-all text-left"
+                    >
+                      <span className="text-emerald-600 font-bold">+</span> {b.slice(0, 42)}...
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Subtab 3: How to Use */}
+          {specsSubTab === "usage" && (
+            <div className="space-y-3.5 animate-in fade-in">
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Recommended General Dosage Guidelines
+                </label>
+                <input
+                  value={formData.dosage}
+                  onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
+                  placeholder="e.g. Foliar Spray: 2–3 ml/L | Drip Fertigation: 1 L/acre | Seed Treatment: 5–10 ml/kg"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Methods of Application
+                </label>
+                <input
+                  value={formData.methodOfApplication}
+                  onChange={(e) => setFormData({ ...formData, methodOfApplication: e.target.value })}
+                  placeholder="e.g. Soil Application, Drip Fertigation, Seed Treatment, Foliar Spray"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Compatibility Guidelines
+                </label>
+                <input
+                  value={formData.compatibility}
+                  onChange={(e) => setFormData({ ...formData, compatibility: e.target.value })}
+                  placeholder="e.g. Compatible with biofertilizers and organic manures; avoid tank-mixing with chemical copper fungicides"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Storage & Safety Guidelines
+                </label>
+                <input
+                  value={formData.storageNotice}
+                  onChange={(e) => setFormData({ ...formData, storageNotice: e.target.value })}
+                  placeholder="e.g. Store in a cool, dry place away from direct sunlight. Shelf life is 18–24 months."
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Subtab 4: Suitable Crops */}
+          {specsSubTab === "crops" && (
+            <div className="space-y-3.5 animate-in fade-in">
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">
+                  Suitable Crops (Comma-separated for badges)
+                </label>
+                <input
+                  value={formData.recommendedCrops}
+                  onChange={(e) => setFormData({ ...formData, recommendedCrops: e.target.value })}
+                  placeholder="e.g. Paddy / Rice, Cotton, Chilli, Tomato, Brinjal, Sugarcane, Banana, Mango, Groundnut, Pulses"
+                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-medium"
+                />
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  1-Click Popular Crop Badges (Click to toggle in/out):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {COMMON_CROPS.map((crop) => {
+                    const isSelected = formData.recommendedCrops
+                      .toLowerCase()
+                      .includes(crop.toLowerCase().split("/")[0]?.trim() || crop.toLowerCase());
+                    return (
+                      <button
+                        key={crop}
                         type="button"
-                        onClick={handleAddBlankSpec}
-                        size="sm"
-                        variant="outline"
-                        className="h-10 w-full rounded-2xl border-dashed border-emerald-600 text-emerald-700 dark:text-emerald-400 font-bold text-xs gap-1.5"
+                        onClick={() => handleToggleCrop(crop)}
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${isSelected
+                          ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
+                          : "bg-muted/40 border-border text-foreground hover:bg-muted"
+                          }`}
                       >
-                        <Plus className="size-3.5" /> Add Custom Specification Row
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Quick Preset Specifications */}
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                      Quick Technical Spec Presets:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {SPEC_PRESETS.map((p, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => handleAddSpecPreset(p.key, p.value)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium text-foreground transition-all"
-                        >
-                          <span className="text-emerald-600 font-bold">+</span> {p.key}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Dynamic Specifications Table */}
-                  <div className="rounded-2xl border border-border bg-muted/20 p-3 space-y-2">
-                    <span className="text-xs font-bold text-foreground block">
-                      Custom Technical Specifications ({formData.customSpecs.length})
-                    </span>
-
-                    {formData.customSpecs.length === 0 ? (
-                      <p className="text-xs text-muted-foreground italic py-2">
-                        No custom specifications added. Click "Add Custom Specification Row" above.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {formData.customSpecs.map((spec, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <input
-                              value={spec.key}
-                              onChange={(e) => handleUpdateSpec(i, "key", e.target.value)}
-                              placeholder="Parameter (e.g. CFU Count)"
-                              className="h-8 w-2/5 rounded-xl border border-border bg-background px-2.5 text-xs font-bold outline-none focus:border-emerald-600"
-                            />
-                            <input
-                              value={spec.value}
-                              onChange={(e) => handleUpdateSpec(i, "value", e.target.value)}
-                              placeholder="Value (e.g. 2 x 10^8 CFU/ml)"
-                              className="h-8 flex-1 rounded-xl border border-border bg-background px-2.5 text-xs outline-none focus:border-emerald-600"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveSpec(i)}
-                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition"
-                              title="Delete row"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                        {isSelected ? <Check className="size-3.5" /> : "+"} {crop}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
+            </div>
+          )}
 
-              {/* Subtab 6: Reviews & Rating */}
-              {specsSubTab === "reviews" && (
-                <div className="space-y-3.5 animate-in fade-in">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-foreground block mb-1">
-                        Storefront Average Rating Score (1.0 - 5.0)
-                      </label>
-                      <div className="flex items-center gap-2">
+          {/* Subtab 5: Technical Details */}
+          {specsSubTab === "specs" && (
+            <div className="space-y-3.5 animate-in fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Formulation Shelf Life
+                  </label>
+                  <input
+                    value={formData.shelfLife}
+                    onChange={(e) => setFormData({ ...formData, shelfLife: e.target.value })}
+                    placeholder="e.g. 18–24 Months from manufacturing date"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    onClick={handleAddBlankSpec}
+                    size="sm"
+                    variant="outline"
+                    className="h-10 w-full rounded-2xl border-dashed border-emerald-600 text-emerald-700 dark:text-emerald-400 font-bold text-xs gap-1.5"
+                  >
+                    <Plus className="size-3.5" /> Add Custom Specification Row
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick Preset Specifications */}
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  Quick Technical Spec Presets:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {SPEC_PRESETS.map((p, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleAddSpecPreset(p.key, p.value)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-[11px] font-medium text-foreground transition-all"
+                    >
+                      <span className="text-emerald-600 font-bold">+</span> {p.key}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dynamic Specifications Table */}
+              <div className="rounded-2xl border border-border bg-muted/20 p-3 space-y-2">
+                <span className="text-xs font-bold text-foreground block">
+                  Custom Technical Specifications ({formData.customSpecs.length})
+                </span>
+
+                {formData.customSpecs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic py-2">
+                    No custom specifications added. Click "Add Custom Specification Row" above.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {formData.customSpecs.map((spec, i) => (
+                      <div key={i} className="flex items-center gap-2">
                         <input
-                          type="number"
-                          step="0.1"
-                          min="1"
-                          max="5"
-                          value={formData.rating}
-                          onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
-                          className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                          value={spec.key}
+                          onChange={(e) => handleUpdateSpec(i, "key", e.target.value)}
+                          placeholder="Parameter (e.g. CFU Count)"
+                          className="h-8 w-2/5 rounded-xl border border-border bg-background px-2.5 text-xs font-bold outline-none focus:border-emerald-600"
                         />
-                        <div className="flex text-amber-500 shrink-0">
-                          <Star className="size-5 fill-current" />
-                        </div>
+                        <input
+                          value={spec.value}
+                          onChange={(e) => handleUpdateSpec(i, "value", e.target.value)}
+                          placeholder="Value (e.g. 2 x 10^8 CFU/ml)"
+                          className="h-8 flex-1 rounded-xl border border-border bg-background px-2.5 text-xs outline-none focus:border-emerald-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSpec(i)}
+                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition"
+                          title="Delete row"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
                       </div>
-                    </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-                    <div>
-                      <label className="text-xs font-bold text-foreground block mb-1">
-                        Total Verified Reviews Count (e.g. 53)
-                      </label>
+          {/* Subtab 6: Reviews & Rating */}
+          {specsSubTab === "reviews" && (
+            <div className="space-y-3.5 animate-in fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Storefront Average Rating Score (1.0 - 5.0)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="1"
+                      max="5"
+                      value={formData.rating}
+                      onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
+                      className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                    />
+                    <div className="flex text-amber-500 shrink-0">
+                      <Star className="size-5 fill-current" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1">
+                    Total Verified Reviews Count (e.g. 53)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.reviewsCount}
+                    onChange={(e) => setFormData({ ...formData, reviewsCount: e.target.value })}
+                    placeholder="53"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-emerald-500/10 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                  <Star className="size-4 fill-emerald-600 text-emerald-600" />
+                  <span>Storefront Reviews Tab Preview</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  On the customer storefront, this will show: <strong>Reviews ({formData.reviewsCount})</strong> with an average score of <strong>{formData.rating} / 5.0</strong>. Verified farmer testimonials and moderation are handled in the Admin Reviews console.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Subtab 7: FAQs Accordion Manager */}
+          {specsSubTab === "faqs" && (
+            <div className="space-y-3.5 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold text-foreground block">
+                    Product Frequently Asked Questions ({formData.faqs.length})
+                  </label>
+                  <span className="text-[10px] text-muted-foreground">
+                    Custom interactive accordion for this product listing.
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={handleLoadFaqTemplates}
+                    size="sm"
+                    variant="outline"
+                    className="h-8 rounded-xl text-xs font-bold gap-1"
+                  >
+                    <ListPlus className="size-3.5" /> Load Presets
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleAddBlankFaq}
+                    size="sm"
+                    className="h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1"
+                  >
+                    <Plus className="size-3.5" /> Add FAQ
+                  </Button>
+                </div>
+              </div>
+
+              {formData.faqs.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
+                  <HelpCircle className="size-8 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-xs font-bold text-foreground">No FAQs added yet</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Click "Load Presets" to add standard agri questions, or "+ Add FAQ".</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                  {formData.faqs.map((faq, i) => (
+                    <div key={i} className="rounded-2xl border border-border bg-card p-3 space-y-2 shadow-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                          Question #{i + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFaq(i)}
+                          className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition"
+                          title="Delete FAQ"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
                       <input
-                        type="number"
-                        min="0"
-                        value={formData.reviewsCount}
-                        onChange={(e) => setFormData({ ...formData, reviewsCount: e.target.value })}
-                        placeholder="53"
-                        className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                        value={faq.q}
+                        onChange={(e) => handleUpdateFaq(i, "q", e.target.value)}
+                        placeholder="e.g. When and how should I apply this product?"
+                        className="h-8 w-full rounded-xl border border-border bg-background px-2.5 text-xs font-bold outline-none focus:border-emerald-600"
+                      />
+                      <textarea
+                        rows={2}
+                        value={faq.a}
+                        onChange={(e) => handleUpdateFaq(i, "a", e.target.value)}
+                        placeholder="Detailed farmer guidance and answer..."
+                        className="w-full rounded-xl border border-border bg-background p-2 text-xs outline-none focus:border-emerald-600 leading-relaxed"
                       />
                     </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-border bg-emerald-500/10 p-4 space-y-2">
-                    <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
-                      <Star className="size-4 fill-emerald-600 text-emerald-600" />
-                      <span>Storefront Reviews Tab Preview</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      On the customer storefront, this will show: <strong>Reviews ({formData.reviewsCount})</strong> with an average score of <strong>{formData.rating} / 5.0</strong>. Verified farmer testimonials and moderation are handled in the Admin Reviews console.
-                    </p>
-                  </div>
+                  ))}
                 </div>
               )}
-
-              {/* Subtab 7: FAQs Accordion Manager */}
-              {specsSubTab === "faqs" && (
-                <div className="space-y-3.5 animate-in fade-in">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-xs font-bold text-foreground block">
-                        Product Frequently Asked Questions ({formData.faqs.length})
-                      </label>
-                      <span className="text-[10px] text-muted-foreground">
-                        Custom interactive accordion for this product listing.
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        onClick={handleLoadFaqTemplates}
-                        size="sm"
-                        variant="outline"
-                        className="h-8 rounded-xl text-xs font-bold gap-1"
-                      >
-                        <ListPlus className="size-3.5" /> Load Presets
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleAddBlankFaq}
-                        size="sm"
-                        className="h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1"
-                      >
-                        <Plus className="size-3.5" /> Add FAQ
-                      </Button>
-                    </div>
-                  </div>
-
-                  {formData.faqs.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
-                      <HelpCircle className="size-8 mx-auto text-muted-foreground/50 mb-2" />
-                      <p className="text-xs font-bold text-foreground">No FAQs added yet</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Click "Load Presets" to add standard agri questions, or "+ Add FAQ".</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                      {formData.faqs.map((faq, i) => (
-                        <div key={i} className="rounded-2xl border border-border bg-card p-3 space-y-2 shadow-xs">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                              Question #{i + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFaq(i)}
-                              className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition"
-                              title="Delete FAQ"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </button>
-                          </div>
-                          <input
-                            value={faq.q}
-                            onChange={(e) => handleUpdateFaq(i, "q", e.target.value)}
-                            placeholder="e.g. When and how should I apply this product?"
-                            className="h-8 w-full rounded-xl border border-border bg-background px-2.5 text-xs font-bold outline-none focus:border-emerald-600"
-                          />
-                          <textarea
-                            rows={2}
-                            value={faq.a}
-                            onChange={(e) => handleUpdateFaq(i, "a", e.target.value)}
-                            placeholder="Detailed farmer guidance and answer..."
-                            className="w-full rounded-xl border border-border bg-background p-2 text-xs outline-none focus:border-emerald-600 leading-relaxed"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+            </div>
+          )}
         </div>
 
         {/* SECTION 5: SEO Meta Suite */}

@@ -40,6 +40,7 @@ import {
   Barcode
 } from "lucide-react";
 import { toast } from "sonner";
+import { downloadExcelSheet } from "@/lib/excel-export";
 import {
   getAdminOrders,
   getAdminOrderById,
@@ -566,8 +567,8 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
     return sortOrdersLIFO(list);
   }, [orders, startDate, endDate]);
 
-  // Export Excel CSV
-  const handleExportCSV = () => {
+  // Export Genuine Microsoft Excel (.xlsx)
+  const handleExportExcel = () => {
     const exportData = filteredOrders.filter((o) =>
       selectedOrderIds.length > 0 ? selectedOrderIds.includes(o.id) : true
     );
@@ -577,60 +578,40 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
       return;
     }
 
-    const headers = [
-      "Order ID",
-      "Date",
-      "Customer Name",
-      "Customer Email",
-      "Customer Phone",
-      "Shipping City",
-      "Shipping State",
-      "Pincode",
-      "Total Amount (INR)",
-      "Payment Method",
-      "Payment Status",
-      "Order Status",
-      "Warehouse",
-      "Courier Partner",
-      "Shiprocket AWB",
-      "Items Count"
-    ];
-
     const rows = exportData.map((o) => {
       const cust = getOrderCustomer(o);
-      return [
-        `"${o.id || o.number}"`,
-        `"${o.date || o.order_date || o.created_at || ""}"`,
-        `"${cust.name}"`,
-        `"${cust.email}"`,
-        `"${cust.phone}"`,
-        `"${cust.city}"`,
-        `"${cust.state}"`,
-        `"${o.shippingAddress?.pincode || ""}"`,
-        o.total || 0,
-        `"${o.paymentMethod || o.payment_method || ""}"`,
-        `"${o.paymentStatus || o.payment_status || ""}"`,
-        `"${o.orderStatus || o.status || ""}"`,
-        `"${getWarehouseName(o.warehouse)}"`,
-        `"${o.courier || ""}"`,
-        `"${o.trackingId || o.awb || ""}"`,
-        o.items?.length || 0
-      ];
+      const fin = getOrderFinancials(o);
+      return {
+        "Order ID": o.id || o.number || "",
+        "Date": o.date || o.order_date || o.created_at || "",
+        "Customer Name": cust.name || "",
+        "Customer Email": cust.email || "",
+        "Customer Phone": cust.phone || "",
+        "Shipping City": cust.city || "",
+        "Shipping State": cust.state || "",
+        "Pincode": o.shippingAddress?.pincode || "",
+        "Total Amount (₹)": fin.total || o.total || 0,
+        "Payment Method": o.paymentMethod || o.payment_method || "",
+        "Payment Status": o.paymentStatus || o.payment_status || "",
+        "Order Status": o.orderStatus || o.status || "",
+        "Warehouse": getWarehouseName(o.warehouse),
+        "Courier Partner": o.courier || "",
+        "Shiprocket AWB": o.trackingId || o.awb || "",
+        "Items Count": o.items?.length || 0
+      };
     });
 
-    // Add UTF-8 BOM so Microsoft Excel opens it with proper character encoding
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
     const dateTag = startDate && endDate ? `${startDate}_to_${endDate}` : (startDate ? `from_${startDate}` : (endDate ? `until_${endDate}` : new Date().toISOString().slice(0, 10)));
-    link.download = `Janani_Agro_Orders_${dateTag}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${exportData.length} orders to Excel spreadsheet`);
+    const success = downloadExcelSheet(
+      rows,
+      "Orders",
+      `Janani_Agro_Orders_${dateTag}`
+    );
+    if (success) {
+      toast.success(`Exported ${exportData.length} orders to Excel (.xlsx)`);
+    } else {
+      toast.error("Failed to generate Excel sheet");
+    }
   };
 
   return (
@@ -653,9 +634,9 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
         </div>
         <button
           type="button"
-          onClick={handleExportCSV}
+          onClick={handleExportExcel}
           className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
-          title="Download filtered orders as Excel spreadsheet (.csv)"
+          title="Download filtered orders as Microsoft Excel (.xlsx)"
         >
           <Download className="size-4 stroke-[2.5]" />
           <span>Download Excel Sheet</span>
@@ -766,7 +747,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                 Update Status
               </button>
               <button
-                onClick={handleExportCSV}
+                onClick={handleExportExcel}
                 className="flex-1 sm:flex-none px-3 py-1.5 text-xs font-medium rounded-lg bg-background border border-input text-foreground hover:bg-muted transition-colors shadow-sm cursor-pointer"
               >
                 Export

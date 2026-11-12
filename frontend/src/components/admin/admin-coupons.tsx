@@ -1,3 +1,4 @@
+import { downloadExcelSheet } from "@/lib/excel-export";
 import React, { useState, useEffect } from "react";
 import {
   Ticket,
@@ -414,62 +415,67 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
     }
   };
 
-  // Export CSV
-  const exportCouponsCsv = () => {
-    if (coupons.length === 0) return;
-    const headers = ["ID", "Code", "Title", "Type", "Discount", "Min Cart (₹)", "Max Discount (₹)", "Uses", "Max Uses", "Status", "Expiry Date", "Tier Target"];
-    const rows = coupons.map(c => [
-      c.id,
-      `"${c.code}"`,
-      `"${c.title}"`,
-      c.type,
-      c.type === "percentage" ? `${c.discount}%` : `₹${c.discount}`,
-      c.minCart,
-      c.maxDiscount,
-      c.uses,
-      c.maxUses,
-      c.active ? "Active" : "Paused",
-      c.expiryDate ? c.expiryDate.split("T")[0] : "N/A",
-      c.userSpecificTier || "All"
-    ]);
+  // Genuine Microsoft Excel Export (.xlsx)
+  const handleExportExcel = () => {
+    if (coupons.length === 0) {
+      showNotification("error", "No coupons available to export");
+      return;
+    }
+    const rows = coupons.map((c) => ({
+      "Coupon ID": c.id,
+      "Coupon Code": c.code || "",
+      "Campaign Title": c.title || "",
+      "Discount Type": c.type === "percentage" ? "Percentage (%)" : "Flat Amount (₹)",
+      "Discount Value": c.type === "percentage" ? `${c.discount}%` : `₹${c.discount}`,
+      "Min Cart Value (₹)": c.minCart || 0,
+      "Max Discount (₹)": c.maxDiscount || "Unlimited",
+      "Redemptions Count": c.uses || 0,
+      "Max Redemptions": c.maxUses || "Unlimited",
+      "Coupon Status": c.active ? "Active" : "Paused",
+      "Expiry Date": c.expiryDate ? c.expiryDate.split("T")[0] : "No Expiry",
+      "Customer Tier Target": c.userSpecificTier || "All Patrons"
+    }));
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Janani_Agro_Coupons_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showNotification("success", "Coupons catalog exported to CSV");
+    const success = downloadExcelSheet(
+      rows,
+      "Coupons",
+      `Janani_Agro_Coupons_${new Date().toISOString().slice(0, 10)}`
+    );
+    if (success) {
+      showNotification("success", `Exported ${coupons.length} coupons to Excel (.xlsx)`);
+    } else {
+      showNotification("error", "Failed to generate Excel sheet");
+    }
   };
-  const handleExportCSV = exportCouponsCsv;
+  const exportCouponsCsv = handleExportExcel;
+  const handleExportCSV = handleExportExcel;
 
   const exportUsageLedgerCsv = () => {
-    if (usageHistory.length === 0) return;
-    const headers = ["Audit ID", "Coupon Code", "Order ID", "Customer Name", "Customer Email", "Cart Total (₹)", "Discount Saved (₹)", "Final Paid (₹)", "Applied Date", "Order Status"];
-    const rows = usageHistory.map(u => [
-      u.id,
-      `"${u.couponCode}"`,
-      u.orderId,
-      `"${u.customerName}"`,
-      u.customerEmail,
-      u.orderTotal,
-      u.discountAmount,
-      u.finalPaid,
-      `"${u.appliedAt}"`,
-      u.orderStatus
-    ]);
+    if (usageHistory.length === 0) {
+      showNotification("error", "No coupon usage history records to export");
+      return;
+    }
+    const rows = usageHistory.map((u) => ({
+      "Audit ID": u.id,
+      "Coupon Code": u.code || "",
+      "Order ID": u.orderId || "",
+      "Customer Name": u.customerName || "",
+      "Customer Email": u.customerEmail || "",
+      "Cart Total (₹)": u.cartTotal || 0,
+      "Discount Saved (₹)": u.discountSaved || 0,
+      "Final Paid (₹)": u.finalPaid || 0,
+      "Applied Date": u.appliedAt || "",
+      "Order Status": u.orderStatus || ""
+    }));
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Janani_Coupon_Usage_Ledger_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showNotification("success", "Coupon usage audit history exported to CSV");
+    const success = downloadExcelSheet(
+      rows,
+      "Usage Ledger",
+      `Janani_Coupon_Usage_Ledger_${new Date().toISOString().slice(0, 10)}`
+    );
+    if (success) {
+      showNotification("success", `Exported ${usageHistory.length} coupon audit records to Excel (.xlsx)`);
+    }
   };
 
   const getStatusBadge = (coupon: AdminCoupon) => {
@@ -543,6 +549,15 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+                title="Download Coupons as Microsoft Excel (.xlsx)"
+              >
+                <Download className="size-4 stroke-[2.5]" />
+                <span>Download Excel Sheet</span>
+              </button>
               <button
                 type="button"
                 onClick={handleOpenCreate}

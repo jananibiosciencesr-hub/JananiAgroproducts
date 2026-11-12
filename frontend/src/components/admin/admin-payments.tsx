@@ -1,3 +1,4 @@
+import { downloadExcelSheet } from "@/lib/excel-export";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   CreditCard,
@@ -20,6 +21,7 @@ import {
   Smartphone,
   Wallet,
   Receipt,
+  Download,
   Check,
   X,
   MessageSquare,
@@ -373,33 +375,39 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
     }
   };
 
-  // Export CSV
-  const handleExportCsv = () => {
+  // Genuine Microsoft Excel Export (.xlsx)
+  const handleExportExcel = () => {
     const listToExport = filteredTransactions.length > 0 ? filteredTransactions : transactions;
-    const headers = ["Transaction ID", "Order ID", "Customer", "Gateway", "Method", "Gross Amount", "Gateway Fee", "Net Settled", "Status", "Bank UTR", "Date"];
-    const rows = listToExport.map(t => [
-      t.id,
-      t.orderId,
-      `"${t.customer.name}"`,
-      t.gateway,
-      t.method,
-      t.grossAmount,
-      t.gatewayFee,
-      t.netSettledAmount,
-      t.status,
-      t.bankUtr || "N/A",
-      `"${t.createdAt}"`
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Janani_Agro_Payment_Ledger_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast("Payment ledger exported as CSV!", "success");
+    if (listToExport.length === 0) {
+      showToast("No payment records available to export", "error");
+      return;
+    }
+    const rows = listToExport.map((t) => ({
+      "Transaction ID": t.id,
+      "Order ID": t.orderId || "",
+      "Customer Name": t.customer?.name || "",
+      "Gateway": t.gateway || "",
+      "Payment Method": t.method || "",
+      "Gross Amount (₹)": t.grossAmount || 0,
+      "Gateway Fee (₹)": t.gatewayFee || 0,
+      "Net Settled Amount (₹)": t.netSettledAmount || 0,
+      "Payment Status": t.status || "",
+      "Bank UTR": t.bankUtr || "N/A",
+      "Date": t.createdAt || ""
+    }));
+
+    const success = downloadExcelSheet(
+      rows,
+      "Payments Ledger",
+      `Janani_Agro_Payment_Ledger_${new Date().toISOString().slice(0, 10)}`
+    );
+    if (success) {
+      showToast(`Exported ${listToExport.length} payment records to Excel (.xlsx)!`, "success");
+    } else {
+      showToast("Failed to generate Excel sheet", "error");
+    }
   };
+  const handleExportCsv = handleExportExcel;
 
   return (
     <div className="space-y-8 pb-16">
@@ -438,11 +446,13 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
               </span>
             </div>
             <button
-              onClick={handleExportCsv}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
+              type="button"
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+              title="Download Payment Ledger as Microsoft Excel (.xlsx)"
             >
-              <Receipt className="w-3.5 h-3.5 text-muted-foreground" />
-              Export CSV
+              <Download className="size-4 stroke-[2.5]" />
+              <span>Download Excel Sheet</span>
             </button>
           </div>
 

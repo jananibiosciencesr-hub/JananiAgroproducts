@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { downloadExcelSheet } from "@/lib/excel-export";
 import {
   getAdminInquiries,
   updateAdminInquiryStatus,
@@ -244,54 +245,70 @@ export function InquiriesManagement({
     }
   };
 
-  const handleExportCSV = () => {
+  // Genuine Microsoft Excel Export (.xlsx)
+  const handleExportExcel = () => {
     if (inquiries.length === 0) {
-      toast.error("No inquiries to export.");
+      toast.error("No inquiries to export");
       return;
     }
+    const rows = inquiries.map((i) => ({
+      "Inquiry ID": i.id,
+      "Date": i.createdAt || i.created_at || "",
+      "Full Name": i.name || "",
+      "Business / Organization": i.businessName || i.business_name || "",
+      "Phone Number": i.phone || "",
+      "Email Address": i.email || "",
+      "Service / Inquired Crop": i.service || i.subject || "",
+      "Quantity / Budget": i.quantity || "",
+      "Message / Details": i.message || "",
+      "Status": i.status || "New",
+      "Priority": i.priority || "Medium",
+      "Internal Notes": i.internalNotes || ""
+    }));
 
-    const headers = [
-      "Inquiry ID",
-      "Date",
-      "Full Name",
-      "Business / Org",
-      "Phone",
-      "Email",
-      "Service / Type",
-      "Quantity / Budget",
-      "Message",
-      "Status",
-      "Priority"
-    ];
-
-    const rows = inquiries.map((i) => [
-      `"${i.id}"`,
-      `"${i.createdAt || i.created_at || ""}"`,
-      `"${(i.name || "").replace(/"/g, '""')}"`,
-      `"${(i.businessName || i.business_name || "").replace(/"/g, '""')}"`,
-      `"${i.phone || ""}"`,
-      `"${i.email || ""}"`,
-      `"${(i.service || i.subject || "").replace(/"/g, '""')}"`,
-      `"${(i.quantity || "").replace(/"/g, '""')}"`,
-      `"${(i.message || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
-      `"${i.status}"`,
-      `"${i.priority || "Medium"}"`
-    ]);
-
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Janani_Agro_Inquiries_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Inquiries CSV exported successfully!");
+    const success = downloadExcelSheet(
+      rows,
+      "Inquiries",
+      `Janani_Agro_Inquiries_${new Date().toISOString().slice(0, 10)}`
+    );
+    if (success) {
+      toast.success(`Exported ${inquiries.length} inquiries to Excel (.xlsx)`);
+    } else {
+      toast.error("Failed to generate Excel sheet");
+    }
   };
+  const handleExportCSV = handleExportExcel;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Inquiries Header */}
+      <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-4 rounded-2xl">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Commercial Inquiries & B2B Leads</h2>
+          <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
+            {inquiries.length} Inquiries
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+            title="Download Inquiries as Microsoft Excel (.xlsx)"
+          >
+            <Download className="size-4 stroke-[2.5]" />
+            <span>Download Excel Sheet</span>
+          </button>
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            size="sm"
+            className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer px-3.5 sm:px-4 shrink-0"
+          >
+            <Plus className="size-4 stroke-[2.5]" />
+            <span>Record Inquiry</span>
+          </Button>
+        </div>
+      </div>
       {/* Key Metrics Cards (Compact & Sleek) */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         <div className="rounded-2xl border border-border bg-card p-3 sm:p-3.5 shadow-2xs">

@@ -1,3 +1,5 @@
+import { downloadExcelSheet } from "@/lib/excel-export";
+import { toast } from "sonner";
 import { useState, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -23,7 +25,8 @@ import {
   ShieldCheck,
   Star,
   Search,
-  Sparkles
+  Sparkles,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type AdminTab } from "./admin-sidebar";
@@ -311,6 +314,32 @@ export function AdminOverview({
             </div>
 
             <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 max-w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  const rows = (filteredOrders || []).map((o) => {
+                    const cust = getOrderCustomer(o);
+                    return {
+                      "Order ID": o.id || o.number || "",
+                      "Date": o.date || o.order_date || o.created_at || "",
+                      "Customer Name": cust.name || "",
+                      "Customer Email": cust.email || "",
+                      "Customer Phone": cust.phone || "",
+                      "City": cust.city || "",
+                      "Total (₹)": o.total || 0,
+                      "Payment Method": o.paymentMethod || o.payment_method || "",
+                      "Status": o.orderStatus || o.status || ""
+                    };
+                  });
+                  const ok = downloadExcelSheet(rows, "Orders Feed", `Janani_Dashboard_Orders_${new Date().toISOString().slice(0, 10)}`);
+                  if (ok) toast.success(`Exported ${rows.length} orders to Excel (.xlsx)`);
+                }}
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3 py-1.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer shrink-0"
+                title="Download Orders Feed as Microsoft Excel (.xlsx)"
+              >
+                <Download className="size-3.5 stroke-[2.5]" />
+                <span>Download Excel Sheet</span>
+              </button>
               <div className="flex items-center rounded-xl border border-border bg-muted/40 p-1 text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
                 {["all", "pending", "processing", "shipped", "delivered"].map((status) => (
                   <button
