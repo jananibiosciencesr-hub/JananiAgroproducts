@@ -54,7 +54,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) { }
 
-// Wishlist is loaded only after verifying authenticated user below
+    // Wishlist is loaded only after verifying authenticated user below
 
     try {
       const storedCats = localStorage.getItem("janani_admin_categories") || localStorage.getItem("janani_admin_categories_v3");
@@ -99,10 +99,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
       const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
       const now = Date.now();
-      const userTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
-      const isUserExpired = !userTimestamp || isNaN(userTimestamp) || now - userTimestamp > TWENTY_FOUR_HOURS;
+      let userTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+      if (userTimestamp && userTimestamp < 10000000000) userTimestamp *= 1000;
 
       if (storedUser) {
+        if (!userTimestamp) {
+          // If missing, initialize to now so user gets full 24h from session
+          localStorage.setItem("janani_user_auth_time", now.toString());
+          localStorage.setItem("janani_auth_time", now.toString());
+          userTimestamp = now;
+        }
+
+        const isUserExpired = userTimestamp > 0 && (now - userTimestamp > TWENTY_FOUR_HOURS);
+
         if (isUserExpired) {
           // Strictly enforce 24-hour expiration: wipe stale customer session
           localStorage.removeItem("janani_user");
@@ -155,7 +164,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Unregistered / non-signed-in patrons MUST NOT have any wishlist items
     if (!activeUser) {
       setWishlist([]);
-      try { localStorage.removeItem("janani_wishlist"); } catch (e) {}
+      try { localStorage.removeItem("janani_wishlist"); } catch (e) { }
     } else {
       try {
         const storedWishlist = localStorage.getItem("janani_wishlist");
@@ -358,13 +367,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (user && user.role !== "Super Admin" && user.role !== "Admin") {
         localStorage.setItem("janani_user", JSON.stringify(user));
         localStorage.setItem("janani_auth_user", JSON.stringify(user));
-      } else if (!user) {
-        localStorage.removeItem("janani_user");
-        localStorage.removeItem("janani_auth_user");
-        localStorage.removeItem("janani_token");
-        localStorage.removeItem("janani_auth_token");
-        localStorage.removeItem("janani_user_auth_time");
-        localStorage.removeItem("janani_auth_time");
       }
     }
   }, [user]);
@@ -392,7 +394,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 return s !== "2124" && !s.includes("mortein");
               });
             const finalW = combined;
-            try { localStorage.setItem("janani_wishlist", JSON.stringify(finalW)); } catch (e) {}
+            try { localStorage.setItem("janani_wishlist", JSON.stringify(finalW)); } catch (e) { }
             return finalW;
           });
         }
@@ -403,7 +405,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           try {
             const aKey = getUserAddressKey(srv.email || targetEmail);
             localStorage.setItem(aKey, JSON.stringify(srvAddrs));
-          } catch (e) {}
+          } catch (e) { }
         }
 
         setUser((prev) => {
@@ -449,8 +451,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const adminSession = localStorage.getItem("janani_admin_session");
         const adminAuthTime = localStorage.getItem("janani_admin_auth_time");
         if (adminSession === "true") {
-          const adminTimestamp = adminAuthTime ? parseInt(adminAuthTime, 10) : 0;
-          if (!adminTimestamp || isNaN(adminTimestamp) || now - adminTimestamp > TWENTY_FOUR_HOURS) {
+          let adminTimestamp = adminAuthTime ? parseInt(adminAuthTime, 10) : 0;
+          if (adminTimestamp && adminTimestamp < 10000000000) adminTimestamp *= 1000;
+          if (!adminTimestamp) {
+            localStorage.setItem("janani_admin_auth_time", now.toString());
+          } else if (now - adminTimestamp > TWENTY_FOUR_HOURS) {
             localStorage.removeItem("janani_admin_session");
             localStorage.removeItem("janani_admin_user");
             localStorage.removeItem("janani_admin_token");
@@ -462,10 +467,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // 2. Customer 24-hour auto-logout check
         const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
         const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
-        if (storedUser || user) {
-          const userTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
-          if (!userTimestamp || isNaN(userTimestamp) || now - userTimestamp > TWENTY_FOUR_HOURS) {
-            // Clear customer storage keys
+        if (storedUser) {
+          let userTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+          if (userTimestamp && userTimestamp < 10000000000) userTimestamp *= 1000;
+          if (!userTimestamp) {
+            localStorage.setItem("janani_user_auth_time", now.toString());
+            localStorage.setItem("janani_auth_time", now.toString());
+          } else if (now - userTimestamp > TWENTY_FOUR_HOURS) {
+            // Clear customer storage keys strictly after 24 hours
             localStorage.removeItem("janani_token");
             localStorage.removeItem("janani_auth_token");
             localStorage.removeItem("janani_user");
@@ -510,7 +519,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Run immediately on mount
     checkAutoLogout();
 
-    const intervalId = setInterval(checkAutoLogout, 15 * 1000);
+    const intervalId = setInterval(checkAutoLogout, 30 * 1000);
     window.addEventListener("focus", checkAutoLogout);
     document.addEventListener("visibilitychange", checkAutoLogout);
 
@@ -519,7 +528,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("focus", checkAutoLogout);
       document.removeEventListener("visibilitychange", checkAutoLogout);
     };
-  }, [user]);
+  }, []);
 
   // Sync cart to localStorage reliably (never overwrite with initial empty state before hydration)
   useEffect(() => {
@@ -903,9 +912,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
           try {
             localStorage.setItem("janani_wishlist", JSON.stringify(nextList));
-          } catch (e) {}
+          } catch (e) { }
           if (user?.email && user.email !== "guest") {
-            updateUserProfileApi(user.email, { wishlist: nextList }).catch(() => {});
+            updateUserProfileApi(user.email, { wishlist: nextList }).catch(() => { });
           }
           return nextList;
         });
@@ -914,9 +923,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setWishlist([]);
         try {
           localStorage.setItem("janani_wishlist", JSON.stringify([]));
-        } catch (e) {}
+        } catch (e) { }
         if (user?.email && user.email !== "guest") {
-          updateUserProfileApi(user.email, { wishlist: [] }).catch(() => {});
+          updateUserProfileApi(user.email, { wishlist: [] }).catch(() => { });
         }
         toast.info("Wishlist cleared");
       },

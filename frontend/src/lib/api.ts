@@ -8160,10 +8160,14 @@ export function getCurrentUser(): AuthUser | null {
 
     // Strict 24-hour expiration check for customer
     const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
-    const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+    let authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+    if (authTimestamp && authTimestamp < 10000000000) authTimestamp *= 1000;
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-    if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+    if (!authTimestamp) {
+      localStorage.setItem("janani_user_auth_time", Date.now().toString());
+      localStorage.setItem("janani_auth_time", Date.now().toString());
+    } else if (Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
       localStorage.removeItem("janani_user");
       localStorage.removeItem("janani_auth_user");
       localStorage.removeItem("janani_token");
@@ -8897,9 +8901,13 @@ export async function getAuthProfile() {
   if (typeof window !== "undefined") {
     // Check 24-hour expiration for customer
     const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
-    const authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+    let authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
+    if (authTimestamp && authTimestamp < 10000000000) authTimestamp *= 1000;
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-    if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+    if (!authTimestamp) {
+      localStorage.setItem("janani_user_auth_time", Date.now().toString());
+      localStorage.setItem("janani_auth_time", Date.now().toString());
+    } else if (Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
       localStorage.removeItem("janani_user");
       localStorage.removeItem("janani_auth_user");
       localStorage.removeItem("janani_token");

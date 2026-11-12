@@ -200,9 +200,12 @@ function AdminDashboardPage() {
       const sessionTime = localStorage.getItem("janani_admin_auth_time");
 
       if (sessionActive === "true" && sessionToken && storedAdmin) {
-        const authTimestamp = sessionTime ? parseInt(sessionTime, 10) : 0;
+        let authTimestamp = sessionTime ? parseInt(sessionTime, 10) : 0;
+        if (authTimestamp && authTimestamp < 10000000000) authTimestamp *= 1000;
         const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-        if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+        if (!authTimestamp) {
+          localStorage.setItem("janani_admin_auth_time", Date.now().toString());
+        } else if (Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
           localStorage.removeItem("janani_admin_session");
           localStorage.removeItem("janani_admin_token");
           localStorage.removeItem("janani_admin_user");
@@ -470,8 +473,11 @@ function AdminDashboardPage() {
         const sessionActive = localStorage.getItem("janani_admin_session");
         const sessionTime = localStorage.getItem("janani_admin_auth_time");
         if (sessionActive === "true") {
-          const authTimestamp = sessionTime ? parseInt(sessionTime, 10) : 0;
-          if (!authTimestamp || isNaN(authTimestamp) || Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
+          let authTimestamp = sessionTime ? parseInt(sessionTime, 10) : 0;
+          if (authTimestamp && authTimestamp < 10000000000) authTimestamp *= 1000;
+          if (!authTimestamp) {
+            localStorage.setItem("janani_admin_auth_time", Date.now().toString());
+          } else if (Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
             handleLogout();
             toast.info("Admin session expired after 24 hours. Please log in again.");
           }

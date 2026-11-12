@@ -384,6 +384,8 @@ export function AuthenticationPage() {
           toast.success("Welcome Super Admin! Redirecting to Command Center...");
           navigate({ to: "/admin" });
         } else {
+          localStorage.setItem("janani_user_auth_time", Date.now().toString());
+          localStorage.setItem("janani_auth_time", Date.now().toString());
           loginUser(res.user, res.token);
           navigate({ to: getDestinationUrl() as any });
         }
@@ -546,6 +548,8 @@ export function AuthenticationPage() {
               toast.success("Welcome Super Admin! Redirecting to Command Center...");
               navigate({ to: "/admin" });
             } else {
+              localStorage.setItem("janani_user_auth_time", Date.now().toString());
+              localStorage.setItem("janani_auth_time", Date.now().toString());
               loginUser(res.user, res.token);
               if (res.isNewUser) {
                 setIsOnboardingOpen(true);
@@ -648,6 +652,8 @@ export function AuthenticationPage() {
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"
       });
       if (res?.success && res.user) {
+        localStorage.setItem("janani_user_auth_time", Date.now().toString());
+        localStorage.setItem("janani_auth_time", Date.now().toString());
         loginUser(res.user, res.token);
         if (res.isNewUser) {
           setIsOnboardingOpen(true);
