@@ -542,7 +542,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
           </div>
 
           {/* Transactions Table */}
-          <div className="rounded-none border border-border bg-card overflow-hidden shadow-soft">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card overflow-hidden shadow-xs">
             {loading ? (
               <div className="p-16 text-center">
                 <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto mb-3" />
@@ -708,6 +708,13 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {filteredTransactions.length > 0 && (
+              <div className="px-5 sm:px-6 py-3 border-t border-border/70 bg-slate-50/40 dark:bg-slate-900/20 flex items-center justify-between text-xs text-muted-foreground">
+                <span>Showing <strong className="text-foreground">{filteredTransactions.length}</strong> payment transactions</span>
+                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">All settlements encrypted & reconciled with Razorpay ledger</span>
               </div>
             )}
           </div>

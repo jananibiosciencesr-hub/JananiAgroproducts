@@ -251,9 +251,9 @@ export function ReviewsManagement({ searchQuery: initialSearch = "", addTrigger 
   return (
     <div className="space-y-4">
       {/* Reviews Header Bar */}
-      <div className="flex items-center justify-between pb-1">
-        <div className="flex items-center gap-3 pl-4 sm:pl-6">
-          <h2 className="text-lg font-bold text-foreground tracking-tight">Customer Reviews</h2>
+      <div className="w-full bg-card border border-slate-200/90 dark:border-slate-800 rounded-2xl px-5 sm:px-6 py-4 flex items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Customer Reviews</h2>
           <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
             {stats.totalReviews || reviews.length} Reviews
           </span>

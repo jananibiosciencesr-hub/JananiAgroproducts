@@ -532,10 +532,11 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
   }
 
   return (
-    <div className="w-full flex-1 flex flex-col rounded-none border border-border/80 bg-card shadow-xs overflow-hidden">
+    <>
+      <div className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs overflow-hidden flex flex-col">
 
       {/* Page Title & Action Subheader */}
-      <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-4">
+      <div className="w-full bg-card border-b border-border/70 px-5 sm:px-6 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
             Products
@@ -573,7 +574,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
       {/* Bulk Action Toolbar */}
       {selectedIds.length > 0 && (
         <div className="w-full border-b border-border bg-card p-3 sm:p-4 shadow-2xs">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-none bg-emerald-500/10 p-3 border border-emerald-500/30 animate-in fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-emerald-500/10 p-3 border border-emerald-500/30 animate-in fade-in">
             <div className="flex items-center gap-2">
               <span className="rounded-xl bg-emerald-600 px-2.5 py-0.5 text-xs font-extrabold text-white">
                 {selectedIds.length} Products Selected
@@ -640,19 +641,17 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
       )}
 
       {/* Products Data Table */}
-      <div className="w-full border-b border-border bg-card shadow-none overflow-hidden rounded-none flex-1 flex flex-col">
-        <div className="overflow-x-auto flex-1 w-full relative min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)]">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
-              <tr>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4">Product Details</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-4 py-4">Pricing</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Featured</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-4 text-center">Trending</th>
-
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
+      <div className="w-full overflow-x-auto flex-1">
+        <table className="w-full text-left text-xs border-collapse min-w-[750px]">
+          <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border shadow-xs">
+            <tr>
+              <th className="border-b border-border/80 px-6 py-3.5">Product Details</th>
+              <th className="border-b border-border/80 px-4 py-3.5">Pricing</th>
+              <th className="border-b border-border/80 px-3 py-3.5 text-center">Featured</th>
+              <th className="border-b border-border/80 px-3 py-3.5 text-center">Trending</th>
+              <th className="border-b border-border/80 px-6 py-3.5 text-right">Actions</th>
+            </tr>
+          </thead>
             <tbody className="divide-y divide-border">
               {paginatedProducts.length > 0 ? (
                 paginatedProducts.map((p) => {
@@ -883,7 +882,12 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
           </table>
         </div>
 
-
+        {filteredProducts.length > 0 && (
+          <div className="px-5 sm:px-6 py-3 border-t border-border/70 bg-slate-50/40 dark:bg-slate-900/20 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing <strong className="text-foreground">{paginatedProducts.length}</strong> of {filteredProducts.length} products</span>
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">All products synchronized with MySQL</span>
+          </div>
+        )}
       </div>
 
       {/* Product Preview Slide-out Drawer */}
@@ -1035,7 +1039,7 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

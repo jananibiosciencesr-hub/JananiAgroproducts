@@ -282,9 +282,9 @@ export function InquiriesManagement({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Inquiries Header */}
-      <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-4 rounded-xl">
-        <div className="flex items-center gap-2.5">
-          <h2 className="text-lg font-bold text-foreground tracking-tight">Commercial Inquiries</h2>
+      <div className="w-full bg-card border border-slate-200/90 dark:border-slate-800 px-5 sm:px-6 py-4 flex items-center justify-between gap-4 rounded-2xl shadow-xs">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Commercial Inquiries</h2>
           <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
             {inquiries.length} Inquiries
           </span>

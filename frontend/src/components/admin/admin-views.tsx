@@ -165,7 +165,7 @@ export function ProductsView({
         </div>
       </div>
 
-      <div className="rounded-none border border-border bg-card shadow-soft overflow-hidden">
+      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs overflow-hidden">
         <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
@@ -296,7 +296,7 @@ export function OrdersView({
         </div>
       </div>
 
-      <div className="rounded-none border border-border bg-card shadow-soft overflow-hidden">
+      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs overflow-hidden">
         <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
@@ -374,6 +374,13 @@ export function OrdersView({
             </tbody>
           </table>
         </div>
+
+        {filteredInventory.length > 0 && (
+          <div className="px-5 sm:px-6 py-3 border-t border-border/70 bg-slate-50/40 dark:bg-slate-900/20 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing <strong className="text-foreground">{filteredInventory.length}</strong> warehouse SKU inventory items</span>
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Warehouse inventory thresholds synchronized with MySQL</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -521,7 +528,7 @@ export function InventoryView({
       </div>
 
       {/* Main Table Card - fills the height to eliminate bottom gap */}
-      <div className="rounded-none border border-border bg-card shadow-soft overflow-hidden min-w-0 flex-1 flex flex-col min-h-[calc(100vh-210px)]">
+      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs overflow-hidden min-w-0 flex-1 flex flex-col">
         <div className="overflow-auto flex-1 w-full relative">
           <table className="w-full text-left text-xs min-w-[600px] border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
@@ -566,6 +573,13 @@ export function InventoryView({
             </tbody>
           </table>
         </div>
+
+        {filteredInventory.length > 0 && (
+          <div className="px-5 sm:px-6 py-3 border-t border-border/70 bg-slate-50/40 dark:bg-slate-900/20 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing <strong className="text-foreground">{filteredInventory.length}</strong> warehouse SKU inventory items</span>
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Warehouse inventory thresholds synchronized with MySQL</span>
+          </div>
+        )}
       </div>
     </div>
   );

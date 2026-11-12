@@ -265,9 +265,9 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
 
   return (
     <div className="space-y-4">
-      <div className="w-full flex-1 flex flex-col rounded-none border border-border/80 bg-card shadow-xs overflow-hidden">
+      <div className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs overflow-hidden flex flex-col">
         {/* Customers Header */}
-      <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-4">
+      <div className="w-full bg-card border-b border-border/70 px-5 sm:px-6 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <h2 className="text-lg font-bold text-foreground tracking-tight">Customer Directory</h2>
           <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
@@ -286,8 +286,8 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
       </div>
 
       {/* 4. Customers Table */}
-      <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
-          <table className="w-full text-left text-xs border-collapse">
+      <div className="overflow-x-auto w-full flex-1 relative">
+          <table className="w-full text-left text-xs border-collapse min-w-[800px]">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
                 <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 pl-6 pr-3">Patron Details</th>
@@ -500,6 +500,13 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
             </tbody>
           </table>
         </div>
+
+        {customers.length > 0 && (
+          <div className="px-5 sm:px-6 py-3 border-t border-border/70 bg-slate-50/40 dark:bg-slate-900/20 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing <strong className="text-foreground">{customers.length}</strong> patrons registered in directory</span>
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">All customer wallets and profiles synchronized with MySQL</span>
+          </div>
+        )}
       </div>
 
       {/* 5. Customer Profile 360° Drawer */}

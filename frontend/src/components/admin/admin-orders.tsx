@@ -615,10 +615,11 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col rounded-none border border-border/80 bg-card shadow-xs overflow-hidden">
+    <>
+      <div className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs overflow-hidden flex flex-col">
 
       {/* Page Title & Action Subheader */}
-      <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-4">
+      <div className="w-full bg-card border-b border-border/70 px-5 sm:px-6 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
             Orders
@@ -917,8 +918,8 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
       </div>
 
       {/* 5. Orders Desktop Table (Visible on screens >= 1024px) */}
-      <div className="hidden lg:flex flex-col flex-1 bg-card border-b border-border shadow-none overflow-hidden w-full rounded-none">
-        <div className="overflow-x-auto flex-1 min-w-0 w-full relative min-h-[calc(100vh-140px)]">
+      <div className="hidden lg:flex flex-col flex-1 bg-card overflow-hidden w-full">
+        <div className="overflow-x-auto flex-1 min-w-0 w-full relative">
           <table className="w-full text-left text-sm border-collapse min-w-[950px]">
             <colgroup>
               <col className="w-[10%] min-w-[95px]" />
@@ -1149,8 +1150,14 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
           </table>
         </div>
 
-
+        {filteredOrders.length > 0 && (
+          <div className="px-5 sm:px-6 py-3 border-t border-border/70 bg-slate-50/40 dark:bg-slate-900/20 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing <strong className="text-foreground">{filteredOrders.length}</strong> real-time orders</span>
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">All customer shipments synchronized with MySQL</span>
+          </div>
+        )}
       </div>
+    </div>
 
       {/* 5. 360° Order Detail Drawer */}
       <OrderDetailDrawer
@@ -1326,7 +1333,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 

@@ -899,8 +899,8 @@ function AdminDashboardPage() {
           onAddAction={handleContextualAdd}
         />
 
-        {/* Dynamic View Body with generous breathing space from sidebar border */}
-        <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-clip pl-6 sm:pl-10 lg:pl-16 xl:pl-20 pr-6 sm:pr-8 lg:pr-10 xl:pr-12 py-5 sm:py-7 lg:py-9 max-w-[1600px] xl:max-w-[1800px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] mx-auto gap-6 sm:gap-8">
+        {/* Dynamic View Body with unified responsive container */}
+        <main className="flex-1 flex flex-col min-w-0 w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8 gap-5 sm:gap-6">
           {activeTab === "dashboard" && (
             <AdminOverview
               stats={stats}

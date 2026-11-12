@@ -424,7 +424,7 @@ export function CmsManagement() {
       {/* 4. TAB 1: SECTION LAYOUT BUILDER */}
       {activeTab === "layout" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 sm:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
             <div>
               <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-emerald-600" />
@@ -560,7 +560,7 @@ export function CmsManagement() {
       {/* 5. TAB 2: HERO CAROUSEL BANNERS */}
       {activeTab === "hero" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 sm:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
             <div>
               <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-emerald-600" />
@@ -697,7 +697,7 @@ export function CmsManagement() {
       {/* 6. TAB 3: OFFER BANNERS & PROMO TICKERS */}
       {activeTab === "offers" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 sm:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
             <div className="flex items-center gap-3">
               <div>
                 <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
@@ -822,7 +822,7 @@ export function CmsManagement() {
       {/* 7. TAB 4: CATEGORY SHOWCASES */}
       {activeTab === "categories" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 sm:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
             <div>
               <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-emerald-600" />
@@ -917,7 +917,7 @@ export function CmsManagement() {
       {/* 8. TAB 5: FLASH SALE URGENT CAMPAIGNS */}
       {activeTab === "flashSale" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 sm:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
             <div>
               <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Flame className="w-4 h-4 text-rose-500" />

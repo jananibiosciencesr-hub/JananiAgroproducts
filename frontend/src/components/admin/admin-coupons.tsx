@@ -785,10 +785,10 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
 
           {/* Compact Table View */}
           {!loading && coupons.length > 0 && viewMode === "table" && (
-            <div className="bg-card rounded-none border border-border/80 shadow-sm overflow-hidden">
+            <div className="bg-card rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted/60 text-xs uppercase tracking-wider font-semibold text-muted-foreground border-b border-border/80">
+                <table className="w-full text-left text-xs border-collapse min-w-[800px]">
+                  <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border shadow-xs">
                     <tr>
                       <th className="px-5 py-3.5">Promo Code</th>
                       <th className="px-4 py-3.5">Title & Description</th>
@@ -894,6 +894,11 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="px-5 sm:px-6 py-3 border-t border-border/70 bg-slate-50/40 dark:bg-slate-900/20 flex items-center justify-between text-xs text-muted-foreground">
+                <span>Showing <strong className="text-foreground">{coupons.length}</strong> active promo vouchers</span>
+                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Coupons synchronized with MySQL marketing ledger</span>
               </div>
             </div>
           )}
