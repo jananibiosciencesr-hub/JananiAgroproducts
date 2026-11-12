@@ -1560,53 +1560,164 @@ const parseSeq = (o) => {
   return m ? parseInt(m[1], 10) : 0;
 };
 
-export const getAdminOrders = (req, res) => {
+export const getAdminOrders = async (req, res) => {
   const {
     status = "all",
     paymentStatus = "all",
     warehouse = "all",
     courier = "all",
     search = "",
-    sortBy = "newest"
+    sortBy = "newest",
+    email,
+    customer_email,
+    phone,
+    customer_phone
   } = req.query;
 
-  let results = adminOrders.filter(o => !isDummyOrder(o));
+  const filterEmail = (email || customer_email || "").trim().toLowerCase();
+  const filterPhone = (phone || customer_phone || "").replace(/\D/g, "");
 
-  // Status Filter
-  if (status !== "all") {
-    if (status === "Cancelled / Returns") {
-      results = results.filter(o => o.orderStatus === "Cancelled" || o.orderStatus === "Refunded" || o.orderStatus === "Returned");
-    } else {
-      results = results.filter(o => o.orderStatus.toLowerCase() === status.toLowerCase());
+  let results = [];
+
+  // 1. Prioritize MySQL orders table
+  try {
+    let sql = "SELECT * FROM `orders` WHERE 1=1";
+    const params = [];
+
+    if (filterEmail && filterPhone) {
+      sql += " AND (LOWER(customer_email) = ? OR customer_phone LIKE ?)";
+      params.push(filterEmail, `%${filterPhone.slice(-10)}%`);
+    } else if (filterEmail) {
+      sql += " AND LOWER(customer_email) = ?";
+      params.push(filterEmail);
+    } else if (filterPhone) {
+      sql += " AND customer_phone LIKE ?";
+      params.push(`%${filterPhone.slice(-10)}%`);
     }
+
+    if (status !== "all") {
+      if (status === "Cancelled / Returns") {
+        sql += " AND (order_status = 'Cancelled' OR order_status = 'Refunded' OR order_status = 'Returned')";
+      } else {
+        sql += " AND (LOWER(order_status) = ? OR LOWER(order_status) LIKE ?)";
+        params.push(status.toLowerCase(), `%${status.toLowerCase()}%`);
+      }
+    }
+
+    if (paymentStatus !== "all") {
+      sql += " AND LOWER(payment_status) = ?";
+      params.push(paymentStatus.toLowerCase());
+    }
+
+    if (search && search.trim()) {
+      const q = `%${search.trim().toLowerCase()}%`;
+      sql += " AND (LOWER(number) LIKE ? OR LOWER(customer_name) LIKE ? OR LOWER(customer_email) LIKE ? OR customer_phone LIKE ? OR LOWER(tracking_id) LIKE ?)";
+      params.push(q, q, q, q, q);
+    }
+
+    sql += " ORDER BY created_at DESC LIMIT 200";
+
+    const rows = await query(sql, params);
+    if (Array.isArray(rows) && rows.length > 0) {
+      results = rows.map((o) => {
+        const shippingAddress = typeof o.shipping_address === "string" ? JSON.parse(o.shipping_address) : (o.shipping_address || {});
+        const billingAddress = typeof o.billing_address === "string" ? JSON.parse(o.billing_address) : (o.billing_address || shippingAddress);
+        const items = typeof o.items === "string" ? JSON.parse(o.items) : (Array.isArray(o.items) ? o.items : []);
+        const timeline = typeof o.timeline === "string" ? JSON.parse(o.timeline) : (Array.isArray(o.timeline) ? o.timeline : []);
+
+        const orderNum = o.number || o.id;
+        const cName = o.customer_name || shippingAddress.fullName || shippingAddress.name || "Valued Patron";
+        const cEmail = o.customer_email || shippingAddress.email || "";
+        const cPhone = o.customer_phone || shippingAddress.phone || "";
+
+        return {
+          id: o.id || orderNum,
+          number: orderNum,
+          orderNumber: orderNum,
+          date: o.order_date || (o.created_at ? new Date(o.created_at).toLocaleString("en-IN") : "Recent"),
+          orderStatus: o.order_status || "Processing",
+          status: o.order_status || "Processing",
+          paymentStatus: o.payment_status || "Paid",
+          paymentMethod: o.payment_method || "UPI",
+          paymentGatewayId: o.transaction_id || o.razorpay_order_id || "",
+          customer: {
+            id: o.customer_id || "CUST-001",
+            name: cName,
+            fullName: cName,
+            email: cEmail,
+            phone: cPhone,
+            tier: "Silver"
+          },
+          shippingAddress,
+          billingAddress,
+          items,
+          subtotal: Number(o.subtotal || 0),
+          taxAmount: Number(o.tax_amount || 0),
+          discount: Number(o.discount || 0),
+          couponCode: o.coupon_code || null,
+          couponDiscount: Number(o.coupon_discount || 0),
+          walletDeduction: Number(o.wallet_deduction || 0),
+          shippingFee: Number(o.delivery_fee || 0),
+          deliveryFee: Number(o.delivery_fee || 0),
+          total: Number(o.total || 0),
+          finalTotal: Number(o.total || 0),
+          courier: o.courier || "Delhivery Air Express & Janani Direct",
+          trackingId: o.tracking_id || o.awb || "",
+          awb: o.awb || o.tracking_id || "",
+          deliverySlot: o.delivery_slot || "Standard Delivery (2-3 Business Days)",
+          expectedDelivery: o.expected_delivery || "2-3 Business Days",
+          timeline,
+          customerNote: o.customer_note || "",
+          adminNotes: []
+        };
+      });
+    }
+  } catch (dbErr) {
+    console.warn("⚠️ [getAdminOrders] MySQL fetch fallback note:", dbErr.message);
   }
 
-  // Payment Status Filter
-  if (paymentStatus !== "all") {
-    results = results.filter(o => o.paymentStatus.toLowerCase() === paymentStatus.toLowerCase());
-  }
+  // 2. Fallback to in-memory orders if MySQL returned empty or error
+  if (results.length === 0) {
+    results = adminOrders.filter(o => !isDummyOrder(o));
 
-  // Warehouse Filter
-  if (warehouse !== "all") {
-    results = results.filter(o => o.warehouse?.id === warehouse || o.warehouse?.name.toLowerCase().includes(warehouse.toLowerCase()));
-  }
+    if (filterEmail) {
+      results = results.filter(o => (o.customer?.email || "").toLowerCase() === filterEmail);
+    } else if (filterPhone) {
+      results = results.filter(o => (o.customer?.phone || "").replace(/\D/g, "").endsWith(filterPhone.slice(-10)));
+    }
 
-  // Courier Filter
-  if (courier !== "all") {
-    results = results.filter(o => o.courier?.toLowerCase().includes(courier.toLowerCase()));
-  }
+    if (status !== "all") {
+      if (status === "Cancelled / Returns") {
+        results = results.filter(o => o.orderStatus === "Cancelled" || o.orderStatus === "Refunded" || o.orderStatus === "Returned");
+      } else {
+        results = results.filter(o => (o.orderStatus || "").toLowerCase() === status.toLowerCase());
+      }
+    }
 
-  // Search Filter
-  if (search) {
-    const q = search.toLowerCase();
-    results = results.filter(o =>
-      o.id.toLowerCase().includes(q) ||
-      o.customer?.name?.toLowerCase().includes(q) ||
-      o.customer?.email?.toLowerCase().includes(q) ||
-      o.customer?.phone?.includes(q) ||
-      o.trackingId?.toLowerCase().includes(q) ||
-      o.shippingAddress?.city?.toLowerCase().includes(q)
-    );
+    if (paymentStatus !== "all") {
+      results = results.filter(o => (o.paymentStatus || "").toLowerCase() === paymentStatus.toLowerCase());
+    }
+
+    if (warehouse !== "all") {
+      results = results.filter(o => o.warehouse?.id === warehouse || o.warehouse?.name?.toLowerCase().includes(warehouse.toLowerCase()));
+    }
+
+    if (courier !== "all") {
+      results = results.filter(o => (o.courier || "").toLowerCase().includes(courier.toLowerCase()));
+    }
+
+    if (search) {
+      const q = search.toLowerCase();
+      results = results.filter(o =>
+        (o.id || "").toLowerCase().includes(q) ||
+        (o.number || "").toLowerCase().includes(q) ||
+        o.customer?.name?.toLowerCase().includes(q) ||
+        o.customer?.email?.toLowerCase().includes(q) ||
+        o.customer?.phone?.includes(q) ||
+        o.trackingId?.toLowerCase().includes(q) ||
+        o.shippingAddress?.city?.toLowerCase().includes(q)
+      );
+    }
   }
 
   // Sorting
@@ -1618,28 +1729,29 @@ export const getAdminOrders = (req, res) => {
       return parseBackendOrderTime(b) - parseBackendOrderTime(a);
     });
   } else if (sortBy === "amount_desc") {
-    results.sort((a, b) => b.total - a.total);
+    results.sort((a, b) => (b.total || 0) - (a.total || 0));
   } else if (sortBy === "amount_asc") {
-    results.sort((a, b) => a.total - b.total);
+    results.sort((a, b) => (a.total || 0) - (b.total || 0));
   }
 
-  const pendingCount = adminOrders.filter(o => o.orderStatus === "Pending").length;
-  const processingCount = adminOrders.filter(o => o.orderStatus === "Processing").length;
-  const shippedCount = adminOrders.filter(o => o.orderStatus === "Shipped").length;
-  const deliveredCount = adminOrders.filter(o => o.orderStatus === "Delivered").length;
-  const cancelledCount = adminOrders.filter(o => o.orderStatus === "Cancelled" || o.orderStatus === "Refunded" || o.orderStatus === "Returned").length;
-  const totalRevenue = adminOrders.reduce((sum, o) => o.paymentStatus === "Paid" ? sum + (o.total || 0) : sum, 0);
+  const pendingCount = results.filter(o => o.orderStatus === "Pending").length;
+  const processingCount = results.filter(o => o.orderStatus === "Processing").length;
+  const shippedCount = results.filter(o => o.orderStatus === "Shipped").length;
+  const deliveredCount = results.filter(o => o.orderStatus === "Delivered").length;
+  const cancelledCount = results.filter(o => o.orderStatus === "Cancelled" || o.orderStatus === "Refunded" || o.orderStatus === "Returned").length;
+  const totalRevenue = results.reduce((sum, o) => o.paymentStatus === "Paid" ? sum + (o.total || 0) : sum, 0);
 
-  res.json({
+  return res.json({
     success: true,
     count: results.length,
-    total: adminOrders.length,
+    total: results.length,
     pendingCount,
     processingCount,
     shippedCount,
     deliveredCount,
     cancelledCount,
     totalRevenue,
+    orders: results,
     data: results
   });
 };
@@ -2308,13 +2420,59 @@ export const getAdminCustomers = (req, res) => {
   });
 };
 
-export const getAdminCustomerById = (req, res) => {
+export const getAdminCustomerById = async (req, res) => {
   const { id } = req.params;
-  const customer = adminCustomers.find(c => c.id === id);
+  const cleanId = (id || "").trim();
+  const cleanEmail = cleanId.toLowerCase();
+  const cleanPhone = cleanId.replace(/\D/g, "");
+
+  // 1. Check MySQL users table
+  try {
+    const rows = await query(
+      "SELECT * FROM users WHERE id = ? OR LOWER(email) = ? OR (phone = ? AND phone != '') LIMIT 1",
+      [cleanId, cleanEmail, cleanPhone]
+    );
+    if (rows && rows.length > 0) {
+      const u = rows[0];
+      const prefs = typeof u.preferences === "string" ? JSON.parse(u.preferences) : (u.preferences || {});
+      const addrs = Array.isArray(prefs?.addresses) ? prefs.addresses : [];
+      const formatted = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        avatar: u.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.name || "Customer")}`,
+        role: u.role || "Customer",
+        walletBalance: Number(u.wallet_balance || 0),
+        loyaltyPoints: Number(u.loyalty_points || 0),
+        tier: u.tier || "Silver",
+        status: u.status || "Active",
+        referralCode: u.referral_code,
+        isVerified: !!u.is_verified,
+        preferences: prefs,
+        addresses: addrs,
+        savedAddresses: addrs,
+        totalOrders: 0,
+        totalSpent: 0
+      };
+      return res.json({ success: true, customer: formatted, data: formatted, user: formatted });
+    }
+  } catch (dbErr) {
+    console.warn("[getAdminCustomerById] MySQL lookup fallback note:", dbErr.message);
+  }
+
+  // 2. Check in-memory store
+  const customer = adminCustomers.find(c => 
+    c.id === cleanId || 
+    (c.email && c.email.toLowerCase() === cleanEmail) || 
+    (cleanPhone && c.phone && c.phone.replace(/\D/g, "") === cleanPhone)
+  );
+
   if (!customer) {
     return res.status(404).json({ success: false, message: "Customer profile not found" });
   }
-  res.json({ success: true, data: customer });
+
+  return res.json({ success: true, customer, data: customer, user: customer });
 };
 
 export const createAdminCustomer = (req, res) => {

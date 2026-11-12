@@ -94,7 +94,8 @@ export function MyOrdersPage() {
         const res = await fetch(`/api.php?action=orders${qs ? `&${qs}` : ""}`);
         if (res.ok) {
           const data = await res.json();
-          if (data?.success && Array.isArray(data.orders)) {
+          const ordersListRaw = Array.isArray(data?.orders) ? data.orders : (Array.isArray(data?.data) ? data.data : null);
+          if (data?.success && Array.isArray(ordersListRaw)) {
             const serverOrders: CustomerOrder[] = data.orders.map((o: any) => ({
               id: o.id || `ord-${o.number}`,
               number: o.number || o.orderNumber,

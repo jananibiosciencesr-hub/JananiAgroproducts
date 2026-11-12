@@ -504,10 +504,10 @@ export function AuthenticationPage() {
       const cleanDigits = phone.replace(/\D/g, "");
       const formattedPhone = cleanDigits.length === 10
         ? `+91 ${cleanDigits.slice(0, 5)} ${cleanDigits.slice(5)}`
-        : (cleanDigits ? `+91 ${cleanDigits}` : (isEmail ? undefined : otpTarget));
+        : (cleanDigits ? `+91 ${cleanDigits}` : (isEmail ? "" : otpTarget));
 
       const res = await verifyAuthOtp({
-        phone: formattedPhone,
+        phone: formattedPhone || undefined,
         email: isEmail ? otpTarget : undefined,
         name: (name || "").trim() || undefined,
         otp: fullOtp
@@ -518,8 +518,8 @@ export function AuthenticationPage() {
           // Complete registration
           const signupRes = await signupCustomer({
             name,
-            email: otpTarget,
-            phone: formattedPhone || "+91 93114 16225",
+            email: isEmail ? otpTarget : (email || ""),
+            phone: formattedPhone || (isEmail ? "" : otpTarget),
             password,
             referralCode,
             agreeTerms,

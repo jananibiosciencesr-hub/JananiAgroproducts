@@ -102,3 +102,138 @@ export async function sendOtpEmail({ to, otp, purpose = "login", name = "Valued 
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Send Official Order Tax Invoice Email strictly to the Customer
+ */
+export async function sendOrderInvoiceEmail({
+  to,
+  customerName = "Valued Patron",
+  orderNumber,
+  items = [],
+  total = 0,
+  subtotal = 0,
+  gstAmount = 0,
+  shippingFee = 0,
+  discount = 0,
+  paymentMethod = "Prepaid Online / UPI",
+  shippingAddress = "Registered Delivery Address",
+  orderDate
+}) {
+  try {
+    if (!to || !to.includes("@") || to.endsWith("@jananiagro.com")) {
+      return { success: false, error: "Invalid customer recipient email." };
+    }
+
+    const cleanTo = to.trim().toLowerCase();
+    const formattedDate = orderDate || new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    const formattedTotal = Number(total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const subject = `Order Confirmed: #${orderNumber} - Janani Agro Products Official Tax Invoice`;
+
+    const itemsListHtml = (Array.isArray(items) ? items : []).map((it, idx) => {
+      const name = it.name || it.title || "Agro Formulation Product";
+      const qty = Number(it.quantity || it.qty || 1);
+      const price = Number(it.price || 0);
+      const lineTotal = (qty * price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 10px 8px; font-size: 13px; color: #334155;">${idx + 1}. ${name}</td>
+          <td style="padding: 10px 8px; font-size: 13px; color: #334155; text-align: center;">${qty}</td>
+          <td style="padding: 10px 8px; font-size: 13px; color: #334155; text-align: right;">₹${price.toLocaleString("en-IN")}</td>
+          <td style="padding: 10px 8px; font-size: 13px; color: #1e293b; font-weight: 600; text-align: right;">₹${lineTotal}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const info = await transporter.sendMail({
+      from: SMTP_FROM,
+      to: cleanTo,
+      subject,
+      text: `Hello ${customerName},\n\nThank you for choosing Janani Agro Products! Your order #${orderNumber} has been confirmed.\n\nTotal Paid: ₹${formattedTotal}\nPayment Mode: ${paymentMethod}\nShipping To: ${shippingAddress}\n\nWe will notify you once your order is dispatched.`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
+            .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+            .header { background: #075B32; padding: 28px 24px; text-align: center; color: white; }
+            .badge { display: inline-block; background: #E7A91A; color: #075B32; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 8px; }
+            .content { padding: 28px 24px; }
+            .order-meta { background: #f8fafc; border-radius: 8px; padding: 14px 18px; margin: 20px 0; border: 1px solid #e2e8f0; }
+            table { width: 100%; border-collapse: collapse; }
+            th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; padding: 8px; border-bottom: 2px solid #e2e8f0; }
+            .total-row { border-top: 2px solid #e2e8f0; font-size: 15px; font-weight: 700; color: #075B32; }
+            .footer { background: #f8fafc; padding: 16px 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <span class="badge">Official GST Tax Invoice</span>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;">JANANI AGRO PRODUCTS</h1>
+              <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.9;">Order Confirmation & Receipt</p>
+            </div>
+            <div class="content">
+              <p style="font-size: 15px; margin: 0 0 12px; font-weight: 600;">Namaste, ${customerName}!</p>
+              <p style="font-size: 13px; color: #475569; line-height: 1.6; margin: 0 0 18px;">
+                Thank you for choosing Janani Agro Products. Your order <strong>#${orderNumber}</strong> has been confirmed and scheduled for dispatch from our Lodhika GIDC facility.
+              </p>
+
+              <div class="order-meta">
+                <table style="width: 100%;">
+                  <tr>
+                    <td style="font-size: 12px; color: #64748b;">Order Date:</td>
+                    <td style="font-size: 12px; font-weight: 600; text-align: right;">${formattedDate}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 12px; color: #64748b;">Payment Method:</td>
+                    <td style="font-size: 12px; font-weight: 600; text-align: right;">${paymentMethod}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 12px; color: #64748b;">Deliver To:</td>
+                    <td style="font-size: 12px; font-weight: 600; text-align: right;">${shippingAddress}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <table style="width: 100%; margin-top: 18px;">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th style="text-align: center;">Qty</th>
+                    <th style="text-align: right;">Price</th>
+                    <th style="text-align: right;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsListHtml}
+                  <tr class="total-row">
+                    <td colspan="3" style="padding: 12px 8px; text-align: right;">Final Total:</td>
+                    <td style="padding: 12px 8px; text-align: right; color: #075B32; font-size: 16px;">₹${formattedTotal}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p style="font-size: 12px; color: #64748b; margin-top: 24px; text-align: center;">
+                Need help with your order? Reach our farm advisory desk at <a href="tel:+919311416225" style="color: #075B32; font-weight: 600;">+91 93114 16225</a>.
+              </p>
+            </div>
+            <div class="footer">
+              &copy; ${new Date().getFullYear()} Janani Agro Products Pvt. Ltd. &bull; Lodhika GIDC, Gujarat, India.<br>
+              This invoice was sent strictly to your registered email (${cleanTo}).
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+
+    console.log(`[ORDER INVOICE SUCCESS] Invoice sent strictly to customer ${cleanTo} for order #${orderNumber}. MessageId: ${info.messageId}`);
+    return { success: true, messageId: info.messageId, recipient: cleanTo };
+  } catch (err) {
+    console.error(`[ORDER INVOICE ERROR] Failed to send invoice to ${to}:`, err);
+    return { success: false, error: err.message };
+  }
+}

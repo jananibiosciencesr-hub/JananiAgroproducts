@@ -277,41 +277,20 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : generateNextOrderNumber($pdo));
     $customerName = !empty($orderData['customer_name']) ? $orderData['customer_name'] : (!empty($orderData['customerName']) ? $orderData['customerName'] : 'Valued Patron');
     
-    // Resolve customer email with deep inspection
+    // Resolve customer email strictly for this specific order
     $toEmail = strtolower(trim(!empty($orderData['customer_email']) ? $orderData['customer_email'] : (!empty($orderData['customerEmail']) ? $orderData['customerEmail'] : (!empty($orderData['customer']['email']) ? $orderData['customer']['email'] : (!empty($orderData['email']) ? $orderData['email'] : '')))));
 
     $sAddr = $orderData['shipping_address'] ?? ($orderData['shippingAddress'] ?? ($orderData['address'] ?? []));
     if (is_string($sAddr)) {
         $sAddr = json_decode($sAddr, true) ?: [];
     }
-    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($sAddr['email']) && filter_var($sAddr['email'], FILTER_VALIDATE_EMAIL)) {
+    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) && !empty($sAddr['email']) && filter_var($sAddr['email'], FILTER_VALIDATE_EMAIL)) {
         $toEmail = strtolower(trim($sAddr['email']));
     }
 
-    // Try finding customer's real registered email from users table by phone or name
-    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($pdo)) {
-        $custPhone = !empty($orderData['customer_phone']) ? $orderData['customer_phone'] : (!empty($orderData['customerPhone']) ? $orderData['customerPhone'] : (!empty($sAddr['phone']) ? $sAddr['phone'] : ''));
-        if (!empty($custPhone)) {
-            try {
-                $cleanP = preg_replace('/[^0-9]/', '', $custPhone);
-                if (strlen($cleanP) >= 10) {
-                    $uStmt = $pdo->prepare("SELECT `email` FROM `users` WHERE (`phone` LIKE ? OR REPLACE(REPLACE(`phone`, ' ', ''), '+91', '') LIKE ?) AND `email` != '' AND `email` NOT LIKE '%@jananiagro.com' ORDER BY `id` DESC LIMIT 1");
-                    $uStmt->execute(['%' . substr($cleanP, -10) . '%', '%' . substr($cleanP, -10) . '%']);
-                    $foundM = $uStmt->fetchColumn();
-                    if ($foundM && filter_var($foundM, FILTER_VALIDATE_EMAIL)) {
-                        $toEmail = strtolower(trim($foundM));
-                    }
-                }
-            } catch (Exception $e) {}
-        }
-    }
-
+    // Guard: Only send if a valid customer email exists for this order. Never guess someone else's email or fallback to admin!
     if (empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
-        if (!empty($adminEmail) && filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-            $toEmail = $adminEmail;
-        } else {
-            return ['success' => false, 'error' => 'Invalid or missing customer email address'];
-        }
+        return ['success' => false, 'error' => 'No valid customer email address found for this order.'];
     }
 
     $orderDate = !empty($orderData['order_date']) ? $orderData['order_date'] : (!empty($orderData['date']) ? $orderData['date'] : date('d M Y, h:i A'));
@@ -560,9 +539,6 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     ])));
 
     $recipients = [$toEmail];
-    if (!empty($adminEmail) && filter_var($adminEmail, FILTER_VALIDATE_EMAIL) && strtolower(trim($adminEmail)) !== strtolower($toEmail)) {
-        $recipients[] = strtolower(trim($adminEmail));
-    }
 
     // --- TIER 1: SSL Direct (Port 465) ---
     foreach ($passCandidates as $testPass) {
@@ -598,9 +574,6 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
                 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
                 $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
                 $headers .= "To: <{$toEmail}>\r\n";
-                if (in_array(strtolower(trim($adminEmail)), $recipients)) {
-                    $headers .= "Bcc: <{$adminEmail}>\r\n";
-                }
                 $headers .= "Reply-To: {$smtpUser}\r\n";
                 $headers .= "Subject: {$subject}\r\n";
                 fputs($socket, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
@@ -649,9 +622,6 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
                     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
                     $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
                     $headers .= "To: <{$toEmail}>\r\n";
-                    if (in_array(strtolower(trim($adminEmail)), $recipients)) {
-                        $headers .= "Bcc: <{$adminEmail}>\r\n";
-                    }
                     $headers .= "Reply-To: {$smtpUser}\r\n";
                     $headers .= "Subject: {$subject}\r\n";
                     fputs($socket587, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
@@ -684,9 +654,6 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     $mailHeaders .= "X-Mailer: PHP/" . phpversion();
 
     $mailSent = @mail($toEmail, $rawSubject, $emailBody, $mailHeaders, "-f {$domainSender}");
-    if ($adminEmail && strtolower(trim($adminEmail)) !== strtolower($toEmail)) {
-        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $emailBody, $mailHeaders, "-f {$domainSender}");
-    }
     return $mailSent ? ['success' => true, 'method' => 'hostinger_mail', 'recipient' => $toEmail] : ['success' => false, 'error' => 'Mail delivery failed'];
 }
 

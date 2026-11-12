@@ -150,8 +150,9 @@ function DashboardPage() {
             const res = await fetch(`/api.php?action=orders${qs.toString() ? `&${qs.toString()}` : ""}`);
             if (res.ok) {
               const data = await res.json();
-              if (data?.success && Array.isArray(data.orders)) {
-                const serverOrders: CustomerOrder[] = data.orders.map((o: any) => ({
+              const ordersListRaw = Array.isArray(data?.orders) ? data.orders : (Array.isArray(data?.data) ? data.data : null);
+              if (data?.success && Array.isArray(ordersListRaw)) {
+                const serverOrders: CustomerOrder[] = ordersListRaw.map((o: any) => ({
                   id: o?.id || `ord-${o?.number || Date.now()}`,
                   number: o?.number || o?.orderNumber || "ORD-000",
                   orderNumber: o?.number || o?.orderNumber || "ORD-000",

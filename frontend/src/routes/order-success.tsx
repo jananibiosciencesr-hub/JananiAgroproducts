@@ -25,6 +25,7 @@ import { products, getProductImage, pantryImage, formatProductName } from "@/lib
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
+import { loadCustomerOrders } from "@/components/orders/orders-seed";
 
 export const Route = createFileRoute("/order-success")({
   head: () => ({
@@ -43,7 +44,7 @@ export function OrderSuccessPage() {
   const { user, products: storeProducts } = useStore();
   const allProducts = storeProducts && storeProducts.length > 0 ? storeProducts : products;
 
-  // Load latest order from localStorage or fallback
+  // Load latest order from localStorage or fallback to customer order history
   const [orderData] = useState<any>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -58,12 +59,25 @@ export function OrderSuccessPage() {
     return null;
   });
 
+  const effectiveOrder = useMemo(() => {
+    if (orderData) return orderData;
+    if (typeof window !== "undefined") {
+      try {
+        const uOrders = loadCustomerOrders(user?.email || user?.phone);
+        if (Array.isArray(uOrders) && uOrders.length > 0) {
+          return uOrders[0];
+        }
+      } catch (e) {}
+    }
+    return null;
+  }, [orderData, user]);
+
   // Modals state
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
   // Effective order values
-  const orderNumber = orderData?.orderNumber || orderData?.number || "JAP-749215";
+  const orderNumber = effectiveOrder?.orderNumber || effectiveOrder?.number || "";
   const formattedDate = useMemo(() => {
     return new Date().toLocaleDateString("en-IN", {
       day: "numeric",
@@ -72,15 +86,15 @@ export function OrderSuccessPage() {
     });
   }, []);
 
-  const deliveryDate = orderData?.slot?.dateStr || orderData?.deliverySlot || orderData?.expectedDelivery || "2-3 Business Days";
-  const customerName = orderData?.customerName || orderData?.address?.fullName || user?.name || "Valued Patron";
-  const customerPhone = orderData?.customerPhone || orderData?.address?.phone || user?.phone || "";
-  const customerEmail = orderData?.customerEmail || orderData?.customer_email || orderData?.address?.email || user?.email || "";
+  const deliveryDate = effectiveOrder?.slot?.dateStr || effectiveOrder?.deliverySlot || effectiveOrder?.expectedDelivery || "2-3 Business Days";
+  const customerName = effectiveOrder?.customerName || effectiveOrder?.address?.fullName || user?.name || "Valued Patron";
+  const customerPhone = effectiveOrder?.customerPhone || effectiveOrder?.address?.phone || user?.phone || "";
+  const customerEmail = effectiveOrder?.customerEmail || effectiveOrder?.customer_email || effectiveOrder?.address?.email || user?.email || "";
   
   const resolvedCustomerEmail = useMemo(() => {
-    if (orderData?.customerEmail && orderData.customerEmail.includes("@")) return orderData.customerEmail;
-    if (orderData?.customer_email && orderData.customer_email.includes("@")) return orderData.customer_email;
-    if (orderData?.address?.email && orderData.address.email.includes("@")) return orderData.address.email;
+    if (effectiveOrder?.customerEmail && effectiveOrder.customerEmail.includes("@")) return effectiveOrder.customerEmail;
+    if (effectiveOrder?.customer_email && effectiveOrder.customer_email.includes("@")) return effectiveOrder.customer_email;
+    if (effectiveOrder?.address?.email && effectiveOrder.address.email.includes("@")) return effectiveOrder.address.email;
     if (user?.email && user.email.includes("@")) return user.email;
     if (typeof window !== "undefined") {
       try {
@@ -91,45 +105,42 @@ export function OrderSuccessPage() {
       } catch (e) {}
     }
     return customerEmail || "";
-  }, [orderData, user, customerEmail]);
+  }, [effectiveOrder, user, customerEmail]);
 
   const [isResendingEmail, setIsResendingEmail] = useState(false);
   const [emailDispatchedNotice, setEmailDispatchedNotice] = useState(false);
   
-  const customerAddress = orderData?.customerAddress || (orderData?.address
-    ? `${orderData.address.streetAddress || orderData.address.houseFlat || ""}${orderData.address.street ? ", " + orderData.address.street : ""}${orderData.address.landmark ? ", " + orderData.address.landmark : ""}, ${orderData.address.city || ""}, ${orderData.address.state || ""} - ${orderData.address.pincode || ""}`
+  const customerAddress = effectiveOrder?.customerAddress || (effectiveOrder?.address
+    ? `${effectiveOrder.address.streetAddress || effectiveOrder.address.houseFlat || ""}${effectiveOrder.address.street ? ", " + effectiveOrder.address.street : ""}${effectiveOrder.address.landmark ? ", " + effectiveOrder.address.landmark : ""}, ${effectiveOrder.address.city || ""}, ${effectiveOrder.address.state || ""} - ${effectiveOrder.address.pincode || ""}`
     : "Registered Delivery Address");
 
-  const recipientCity = orderData?.address?.city || "Your Location";
-  const paymentMethod = orderData?.paymentMethod === "upi"
+  const recipientCity = effectiveOrder?.address?.city || "Your Location";
+  const paymentMethod = effectiveOrder?.paymentMethod === "upi"
     ? "Instant UPI / QR"
-    : orderData?.paymentMethod === "card"
+    : effectiveOrder?.paymentMethod === "card"
     ? "Credit / Debit Card"
-    : orderData?.paymentMethod === "cod"
+    : effectiveOrder?.paymentMethod === "cod"
     ? "Cash on Delivery"
-    : (orderData?.paymentMethod || "Verified Online Payment");
+    : (effectiveOrder?.paymentMethod || "Verified Online Payment");
 
-  const items = orderData?.items?.length
-    ? orderData.items.map((it: any) => ({
+  const items = effectiveOrder?.items?.length
+    ? effectiveOrder.items.map((it: any) => ({
         id: it.productId || it.product?.id || Math.random(),
         name: formatProductName(it.name || it.product?.name || "Agro Formulation Product"),
         quantity: it.qty || it.quantity || 1,
         price: it.price || it.product?.price || 420,
         image: it.image || it.product?.image || pantryImage,
       }))
-    : [
-        { id: 1, name: "Bio-NPK Soil Booster - 1 Litre", quantity: 2, price: 420, image: pantryImage },
-        { id: 2, name: "Neem Shield Organic Pest Controller - 500ml", quantity: 1, price: 410, image: pantryImage },
-      ];
+    : [];
 
-  const subtotal = orderData?.subtotal || items.reduce((sum: number, it: any) => sum + it.price * it.quantity, 0);
-  const discount = orderData?.couponDiscount || orderData?.discount || 0;
-  const deliveryFee = orderData?.shippingFee !== undefined 
-    ? orderData.shippingFee 
-    : (orderData?.deliveryFee !== undefined ? orderData.deliveryFee : (subtotal >= 799 ? 0 : 60));
-  const gstAmount = orderData?.gstAmount !== undefined ? orderData.gstAmount : Math.round(subtotal * 0.05);
-  const finalTotal = orderData?.finalTotal || orderData?.total || Math.max(0, subtotal + gstAmount + deliveryFee - discount);
-  const awbNumber = orderData?.awb || `DEL-${orderNumber.replace(/[^0-9]/g, "") || "892144"}`;
+  const subtotal = effectiveOrder?.subtotal || items.reduce((sum: number, it: any) => sum + it.price * it.quantity, 0);
+  const discount = effectiveOrder?.couponDiscount || effectiveOrder?.discount || 0;
+  const deliveryFee = effectiveOrder?.shippingFee !== undefined 
+    ? effectiveOrder.shippingFee 
+    : (effectiveOrder?.deliveryFee !== undefined ? effectiveOrder.deliveryFee : (subtotal >= 799 ? 0 : 60));
+  const gstAmount = effectiveOrder?.gstAmount !== undefined ? effectiveOrder.gstAmount : Math.round(subtotal * 0.05);
+  const finalTotal = effectiveOrder?.finalTotal || effectiveOrder?.total || Math.max(0, subtotal + gstAmount + deliveryFee - discount);
+  const awbNumber = effectiveOrder?.awb || `DEL-${orderNumber.replace(/[^0-9]/g, "") || "892144"}`;
 
   // Recommended catalog items
   const recommendedProducts = useMemo(() => {
@@ -278,6 +289,30 @@ export function OrderSuccessPage() {
       icon: PackageCheck,
     },
   ];
+
+  if (!effectiveOrder) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6">
+        <div className="size-20 mx-auto rounded-3xl bg-brand-leaf/10 text-brand-leaf grid place-items-center">
+          <ShoppingBag className="size-10" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="font-display text-2xl font-bold text-foreground">No Recent Order Found</h2>
+          <p className="text-sm text-muted-foreground">
+            You don't have an active order session in this window. You can check your past orders or browse our catalog.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row justify-center gap-3">
+          <Button asChild variant="gold" size="lg" className="rounded-full px-6 font-bold">
+            <Link to="/orders">View My Orders <ArrowRight className="size-4 ml-1.5" /></Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="rounded-full px-6 font-semibold">
+            <Link to="/products">Browse Crop Care</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-3 sm:px-6 py-4 sm:py-8 pb-32 md:pb-16 space-y-6 sm:space-y-8 animate-in fade-in duration-300">

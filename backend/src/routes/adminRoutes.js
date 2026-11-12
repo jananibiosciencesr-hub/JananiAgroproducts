@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { createOrder } from '../controllers/orderController.js';
 import {
   getDashboardStats,
   getAnalyticsCharts,
@@ -204,6 +205,7 @@ router.post('/categories/import', importCategories);
 
 // Orders Management & Logistics
 router.get('/orders', getAdminOrders);
+router.post('/orders', createOrder);
 router.get('/orders/:id', getAdminOrderById);
 router.patch('/orders/:id/status', updateOrderStatus);
 router.post('/orders/:id/warehouse', updateAdminOrderWarehouse);

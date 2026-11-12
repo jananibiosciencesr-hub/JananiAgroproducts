@@ -418,9 +418,9 @@ export function CheckoutPage() {
         };
 
         const resolvedEmail = (
+          (user?.email && !user.email.endsWith("@jananiagro.com") ? user.email : "") ||
           selectedAddress.email ||
           pendingCheckout.customerEmail ||
-          user?.email ||
           (() => {
             if (typeof window !== "undefined") {
               try {
@@ -436,6 +436,7 @@ export function CheckoutPage() {
         ).trim().toLowerCase();
 
         if (typeof window !== "undefined") {
+          sessionStorage.setItem(`janani_invoice_dispatched_${orderNumber}`, "true");
           localStorage.setItem("janani_latest_order", JSON.stringify({
             ...confirmedOrder,
             customerEmail: resolvedEmail,

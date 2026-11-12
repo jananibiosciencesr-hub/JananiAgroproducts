@@ -11,6 +11,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import { getCategories, getCategoryBySlug } from "./controllers/productController.js";
 import { getStorefrontCoupons, validateCouponOffer, getPublicReviews } from "./controllers/adminController.js";
+import { sendOrderInvoiceEmail } from "./services/emailService.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 import { initDatabase } from "./config/initDb.js";
@@ -159,9 +160,64 @@ app.all(["/api.php", "/api/api.php"], (req, res, next) => {
     }
   }
 
+  // Auth actions compatibility mapping
+  if (action === "signup") {
+    req.url = "/signup";
+    return authRoutes(req, res, next);
+  }
+  if (action === "login" || action === "login-email") {
+    req.url = "/login-email";
+    return authRoutes(req, res, next);
+  }
+  if (action === "send-otp") {
+    req.url = "/send-otp";
+    return authRoutes(req, res, next);
+  }
+  if (action === "verify-otp") {
+    req.url = "/verify-otp";
+    return authRoutes(req, res, next);
+  }
+  if (action === "check-user") {
+    req.url = "/check-user";
+    return authRoutes(req, res, next);
+  }
+  if (action === "forgot-password") {
+    req.url = "/forgot-password";
+    return authRoutes(req, res, next);
+  }
+  if (action === "reset-password") {
+    req.url = "/reset-password";
+    return authRoutes(req, res, next);
+  }
+
   if (action === "orders") {
     req.url = `/orders${id ? `/${id}` : ""}`;
     return adminRoutes(req, res, next);
+  }
+
+  if (action === "send-order-email") {
+    const to = req.body?.customer_email || req.body?.customerEmail || req.body?.email;
+    if (!to || !to.includes("@")) {
+      return res.status(400).json({ success: false, error: "Valid customer email required." });
+    }
+    return sendOrderInvoiceEmail({
+      to,
+      customerName: req.body?.customer_name || req.body?.customerName || "Valued Patron",
+      orderNumber: req.body?.orderNumber || req.body?.number || "JAP-" + Date.now().toString().slice(-6),
+      items: req.body?.items || [],
+      total: req.body?.total || req.body?.finalTotal || 0,
+      subtotal: req.body?.subtotal || 0,
+      gstAmount: req.body?.gstAmount || 0,
+      shippingFee: req.body?.delivery_fee || req.body?.shippingFee || 0,
+      discount: req.body?.discount || 0,
+      paymentMethod: req.body?.payment_method || req.body?.paymentMethod || "Prepaid Online / UPI",
+      shippingAddress: typeof req.body?.shipping_address === "object"
+        ? (req.body?.shipping_address?.streetAddress || req.body?.shipping_address?.street || "Registered Delivery Address")
+        : (req.body?.shipping_address || "Registered Delivery Address"),
+      orderDate: req.body?.order_date || req.body?.date
+    })
+      .then((emailResult) => res.status(emailResult.success ? 200 : 500).json(emailResult))
+      .catch((err) => res.status(500).json({ success: false, error: err.message }));
   }
 
   req.url = `/${action}${id ? `/${id}` : ""}`;

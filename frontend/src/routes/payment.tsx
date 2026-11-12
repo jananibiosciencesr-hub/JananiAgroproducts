@@ -113,9 +113,9 @@ export function PaymentPage() {
   
   const resolvedCustomerEmail = useMemo(() => {
     const candidates = [
-      checkoutData?.address?.email,
-      checkoutData?.customerEmail,
       user?.email,
+      checkoutData?.customerEmail,
+      checkoutData?.address?.email,
     ];
     for (const c of candidates) {
       if (c && typeof c === "string" && c.includes("@") && !c.endsWith("@jananiagro.com") && !c.endsWith("@janani.customer")) {
@@ -391,6 +391,9 @@ export function PaymentPage() {
 
     // 1. Save latest order & customer orders strictly scoped to current user
     try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(`janani_invoice_dispatched_${effectiveOrderNumber}`, "true");
+      }
       localStorage.setItem("janani_latest_order", JSON.stringify({
         ...confirmedOrder,
         customerEmail: resolvedCustomerEmail,
