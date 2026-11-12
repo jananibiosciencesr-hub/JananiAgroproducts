@@ -282,9 +282,9 @@ export function InquiriesManagement({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Inquiries Header */}
-      <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-4 rounded-2xl">
+      <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-4 rounded-xl">
         <div className="flex items-center gap-2.5">
-          <h2 className="text-lg font-bold text-foreground tracking-tight">Commercial Inquiries & B2B Leads</h2>
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Commercial Inquiries</h2>
           <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
             {inquiries.length} Inquiries
           </span>
@@ -299,68 +299,69 @@ export function InquiriesManagement({
             <Download className="size-4 stroke-[2.5]" />
             <span>Download Excel Sheet</span>
           </button>
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            size="sm"
-            className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 shadow-sm shadow-emerald-700/20 transition-all cursor-pointer px-3.5 sm:px-4 shrink-0"
-          >
-            <Plus className="size-4 stroke-[2.5]" />
-            <span>Record Inquiry</span>
-          </Button>
         </div>
       </div>
+
       {/* Key Metrics Cards (Compact & Sleek) */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        <div className="rounded-2xl border border-border bg-card p-3 sm:p-3.5 shadow-2xs">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2.5">
+        <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground">Total Inquiries</span>
-            <div className="grid size-7 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <MessageSquareText className="size-3.5" />
+            <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground">Total Inquiries</span>
+            <div className="grid size-5 sm:size-6 place-items-center rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <MessageSquareText className="size-3" />
             </div>
           </div>
-          <p className="mt-1.5 text-xl font-black tracking-tight text-foreground sm:text-2xl">
-            {stats.total}
-          </p>
-          <span className="mt-0.5 block text-[10px] text-muted-foreground">All time submissions</span>
+          <div className="mt-1 flex items-baseline justify-between gap-1">
+            <p className="text-base sm:text-lg font-black tracking-tight text-foreground">
+              {stats.total}
+            </p>
+            <span className="text-[9px] text-muted-foreground truncate">All time</span>
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 sm:p-3.5 shadow-2xs">
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">New Leads</span>
-            <div className="grid size-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600">
-              <Sparkles className="size-3.5" />
+            <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">New Leads</span>
+            <div className="grid size-5 sm:size-6 place-items-center rounded-md bg-emerald-500/10 text-emerald-600">
+              <Sparkles className="size-3" />
             </div>
           </div>
-          <p className="mt-1.5 text-xl font-black tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-2xl">
-            {stats.newCount}
-          </p>
-          <span className="mt-0.5 block text-[10px] text-emerald-600/80">Action required</span>
+          <div className="mt-1 flex items-baseline justify-between gap-1">
+            <p className="text-base sm:text-lg font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+              {stats.newCount}
+            </p>
+            <span className="text-[9px] text-emerald-600/80 truncate">Action required</span>
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3 sm:p-3.5 shadow-2xs">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">Dealerships</span>
-            <div className="grid size-7 place-items-center rounded-lg bg-amber-500/10 text-amber-600">
-              <Briefcase className="size-3.5" />
+            <span className="text-[10px] sm:text-[11px] font-semibold text-amber-700 dark:text-amber-300">Dealerships</span>
+            <div className="grid size-5 sm:size-6 place-items-center rounded-md bg-amber-500/10 text-amber-600">
+              <Briefcase className="size-3" />
             </div>
           </div>
-          <p className="mt-1.5 text-xl font-black tracking-tight text-amber-600 dark:text-amber-400 sm:text-2xl">
-            {stats.dealershipCount}
-          </p>
-          <span className="mt-0.5 block text-[10px] text-amber-600/80">Retailers & distributors</span>
+          <div className="mt-1 flex items-baseline justify-between gap-1">
+            <p className="text-base sm:text-lg font-black tracking-tight text-amber-600 dark:text-amber-400">
+              {stats.dealershipCount}
+            </p>
+            <span className="text-[9px] text-amber-600/80 truncate">Retail & distrib.</span>
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-3 sm:p-3.5 shadow-2xs">
+        <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground">Resolution Rate</span>
-            <div className="grid size-7 place-items-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <CheckCircle2 className="size-3.5" />
+            <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground">Resolution Rate</span>
+            <div className="grid size-5 sm:size-6 place-items-center rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
+              <CheckCircle2 className="size-3" />
             </div>
           </div>
-          <p className="mt-1.5 text-xl font-black tracking-tight text-foreground sm:text-2xl">
-            {stats.resolutionRate}%
-          </p>
-          <span className="mt-0.5 block text-[10px] text-muted-foreground">{stats.resolvedCount} completed</span>
+          <div className="mt-1 flex items-baseline justify-between gap-1">
+            <p className="text-base sm:text-lg font-black tracking-tight text-foreground">
+              {stats.resolutionRate}%
+            </p>
+            <span className="text-[9px] text-muted-foreground truncate">{stats.resolvedCount} completed</span>
+          </div>
         </div>
       </div>
 
@@ -403,7 +404,7 @@ export function InquiriesManagement({
                   setSelectedInquiry(inq);
                   setInternalNoteInput(inq.internalNotes || "");
                 }}
-                className={`group cursor-pointer rounded-3xl border bg-card p-5 sm:p-6 shadow-soft transition-colors hover:border-emerald-500/40 ${
+                className={`group cursor-pointer rounded-xl border bg-card p-3.5 sm:p-4.5 shadow-2xs transition-colors hover:border-emerald-500/40 ${
                   inq.status === "New"
                     ? "border-emerald-500/30 ring-1 ring-emerald-500/10 bg-emerald-500/[0.02]"
                     : "border-border"
@@ -462,7 +463,7 @@ export function InquiriesManagement({
                       </div>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2 bg-secondary/30 p-3 rounded-2xl border border-border/50">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2 bg-secondary/30 p-2.5 rounded-xl border border-border/50">
                       "{inq.message}"
                     </p>
 
@@ -485,7 +486,7 @@ export function InquiriesManagement({
                         target="_blank"
                         rel="noreferrer"
                         title="Chat on WhatsApp"
-                        className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white px-3 text-xs font-bold shadow-sm transition"
+                        className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3 text-xs font-bold shadow-sm transition"
                       >
                         <MessageCircle className="size-3.5" /> WhatsApp
                       </a>
@@ -495,7 +496,7 @@ export function InquiriesManagement({
                     <a
                       href={`tel:${inq.phone}`}
                       title="Direct Call"
-                      className="inline-flex h-9 items-center gap-1.5 rounded-2xl border border-border bg-secondary/80 hover:bg-secondary text-foreground px-3 text-xs font-semibold transition"
+                      className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-xl border border-border bg-secondary/80 hover:bg-secondary text-foreground px-3 text-xs font-semibold transition"
                     >
                       <PhoneCall className="size-3.5 text-brand-leaf" /> Call
                     </a>
@@ -505,7 +506,7 @@ export function InquiriesManagement({
                       <a
                         href={`mailto:${inq.email}?subject=Janani%20Agro%20Response%20-%20${encodeURIComponent(inq.service || "Inquiry")}`}
                         title="Send Email"
-                        className="inline-flex h-9 items-center justify-center rounded-2xl border border-border bg-secondary/80 hover:bg-secondary text-foreground px-2.5 text-xs transition"
+                        className="inline-flex h-8 sm:h-9 items-center justify-center rounded-xl border border-border bg-secondary/80 hover:bg-secondary text-foreground px-2.5 text-xs transition"
                       >
                         <Mail className="size-3.5 text-blue-500" />
                       </a>
@@ -515,7 +516,7 @@ export function InquiriesManagement({
                     <select
                       value={inq.status}
                       onChange={(e) => handleStatusChange(inq, e.target.value as any)}
-                      className="h-9 rounded-2xl border border-input bg-background px-2.5 text-xs font-bold text-foreground outline-none focus:border-brand-leaf"
+                      className="h-8 sm:h-9 rounded-xl border border-input bg-background px-2.5 text-xs font-bold text-foreground outline-none focus:border-brand-leaf"
                     >
                       <option value="New">Mark New</option>
                       <option value="Contacted">Mark Contacted</option>
