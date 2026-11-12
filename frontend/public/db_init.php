@@ -333,34 +333,17 @@ $schema = [
             'ip_address' => 'VARCHAR(50) DEFAULT NULL',
             'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
         ]
-    ],
-
-    'newsletter_subscribers' => [
-        'columns' => [
-            'id' => 'INT AUTO_INCREMENT PRIMARY KEY',
-            'email' => 'VARCHAR(255) UNIQUE NOT NULL',
-            'source' => "VARCHAR(100) DEFAULT 'website_footer'",
-            'status' => "VARCHAR(50) DEFAULT 'Subscribed'",
-            'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-        ]
-    ],
-
-    'pickup_locations' => [
-        'columns' => [
-            'id' => 'VARCHAR(64) PRIMARY KEY',
-            'name' => 'VARCHAR(255) NOT NULL',
-            'address' => 'TEXT NOT NULL',
-            'city' => 'VARCHAR(100) NOT NULL',
-            'state' => 'VARCHAR(100) NOT NULL',
-            'pincode' => 'VARCHAR(20) NOT NULL',
-            'phone' => 'VARCHAR(50) NOT NULL',
-            'email' => 'VARCHAR(255) DEFAULT NULL',
-            'is_default' => 'TINYINT(1) DEFAULT 0',
-            'active' => 'TINYINT(1) DEFAULT 1',
-            'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-        ]
     ]
 ];
+
+// Drop deprecated/unwanted tables requested by user
+try {
+    $pdo->exec("DROP TABLE IF EXISTS `pickup_locations`");
+    $pdo->exec("DROP TABLE IF EXISTS `newsletter_subscribers`");
+    $pdo->exec("DROP TABLE IF EXISTS `order_items`");
+} catch (Throwable $e) {}
+
+
 
 // ---------------------------------------------------------
 // DYNAMIC TABLE & COLUMN MIGRATION ENGINE

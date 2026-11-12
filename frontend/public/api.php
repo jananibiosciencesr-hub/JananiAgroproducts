@@ -718,6 +718,13 @@ foreach ($attempts as $att) {
 }
 
 if ($pdo) {
+    // Drop deprecated tables requested by user: pickup_locations, newsletter_subscribers, order_items
+    try {
+        $pdo->exec("DROP TABLE IF EXISTS `pickup_locations`");
+        $pdo->exec("DROP TABLE IF EXISTS `newsletter_subscribers`");
+        $pdo->exec("DROP TABLE IF EXISTS `order_items`");
+    } catch (Throwable $e) {}
+
     try {
         // Automatically reset any demo/seed wallet balances for all Customers in database
         $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
@@ -1625,19 +1632,9 @@ function ensureOrdersTableSchema($pdo) {
             `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-        $pdo->exec("CREATE TABLE IF NOT EXISTS `order_items` (
-            `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            `order_id` VARCHAR(64) NOT NULL,
-            `product_id` VARCHAR(64) NOT NULL,
-            `product_name` VARCHAR(255) NOT NULL,
-            `product_image` VARCHAR(500) DEFAULT NULL,
-            `sku` VARCHAR(100) DEFAULT NULL,
-            `unit` VARCHAR(50) DEFAULT '1 kg',
-            `price` DECIMAL(10,2) NOT NULL,
-            `quantity` INT(11) NOT NULL DEFAULT 1,
-            `total` DECIMAL(10,2) NOT NULL,
-            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $pdo->exec("DROP TABLE IF EXISTS `order_items`");
+        $pdo->exec("DROP TABLE IF EXISTS `pickup_locations`");
+        $pdo->exec("DROP TABLE IF EXISTS `newsletter_subscribers`");
     } catch (Exception $e) {}
 }
 
@@ -6077,7 +6074,10 @@ try {
 
                 $pickups = [];
                 try {
-                    $pickups = $pdo->query("SELECT * FROM `pickup_locations` WHERE `active` = 1 ORDER BY `created_at` DESC")->fetchAll();
+                    $pStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'pickup_locations' LIMIT 1");
+                    $pStmt->execute();
+                    $pRow = $pStmt->fetchColumn();
+                    $pickups = $pRow ? (json_decode($pRow, true) ?: []) : [];
                 } catch (Exception $e) {}
 
                 echo json_encode([
@@ -6093,18 +6093,42 @@ try {
 
                 if ($type === 'pickup') {
                     $pId = !empty($body['id']) ? $body['id'] : ('LOC-' . time());
-                    $name = $body['name'] ?? 'Main Warehouse';
-                    $address = $body['address'] ?? '';
-                    $city = $body['city'] ?? 'Rajkot';
-                    $state = $body['state'] ?? 'Gujarat';
-                    $pincode = $body['pincode'] ?? '360024';
-                    $phone = $body['phone'] ?? '+91 98480 22338';
-                    $email = $body['email'] ?? 'warehouse@jananiagro.com';
-                    $isDef = !empty($body['is_default']) ? 1 : 0;
+                    $pickups = [];
+                    try {
+                        $pStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'pickup_locations' LIMIT 1");
+                        $pStmt->execute();
+                        $pRow = $pStmt->fetchColumn();
+                        $pickups = $pRow ? (json_decode($pRow, true) ?: []) : [];
+                    } catch (Exception $e) {}
 
-                    $stmt = $pdo->prepare("INSERT INTO `pickup_locations` (`id`, `name`, `address`, `city`, `state`, `pincode`, `phone`, `email`, `is_default`, `active`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `address` = VALUES(`address`), `phone` = VALUES(`phone`)");
-                    $stmt->execute([$pId, $name, $address, $city, $state, $pincode, $phone, $email, $isDef]);
-                    echo json_encode(['success' => true, 'message' => 'Pickup location saved in MySQL', 'id' => $pId]);
+                    $newLoc = [
+                        'id' => $pId,
+                        'name' => $body['name'] ?? 'Main Warehouse',
+                        'address' => $body['address'] ?? '',
+                        'city' => $body['city'] ?? 'Rajkot',
+                        'state' => $body['state'] ?? 'Gujarat',
+                        'pincode' => $body['pincode'] ?? '360024',
+                        'phone' => $body['phone'] ?? '+91 98480 22338',
+                        'email' => $body['email'] ?? 'warehouse@jananiagro.com',
+                        'is_default' => !empty($body['is_default']) ? 1 : 0,
+                        'active' => 1
+                    ];
+
+                    $found = false;
+                    foreach ($pickups as &$loc) {
+                        if (is_array($loc) && ($loc['id'] ?? '') === $pId) {
+                            $loc = array_merge($loc, $newLoc);
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        $pickups[] = $newLoc;
+                    }
+
+                    $upStmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('pickup_locations', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                    $upStmt->execute([json_encode($pickups)]);
+                    echo json_encode(['success' => true, 'message' => 'Pickup location saved successfully', 'id' => $pId]);
                     exit;
                 } else {
                     $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('shipping_config', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
@@ -6115,8 +6139,19 @@ try {
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
                 if ($id) {
-                    $pdo->prepare("DELETE FROM `pickup_locations` WHERE `id` = ?")->execute([$id]);
-                    echo json_encode(['success' => true, 'message' => 'Pickup location removed from MySQL']);
+                    $pickups = [];
+                    try {
+                        $pStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'pickup_locations' LIMIT 1");
+                        $pStmt->execute();
+                        $pRow = $pStmt->fetchColumn();
+                        $pickups = $pRow ? (json_decode($pRow, true) ?: []) : [];
+                        $pickups = array_values(array_filter($pickups, function($l) use ($id) {
+                            return is_array($l) ? (($l['id'] ?? '') !== $id) : true;
+                        }));
+                        $upStmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('pickup_locations', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                        $upStmt->execute([json_encode($pickups)]);
+                    } catch (Exception $e) {}
+                    echo json_encode(['success' => true, 'message' => 'Pickup location removed']);
                     exit;
                 }
             }
@@ -7502,22 +7537,49 @@ try {
                 $email = trim($body['email'] ?? '');
                 $source = $body['source'] ?? 'website_footer';
                 if (!empty($email)) {
-                    $stmt = $pdo->prepare("INSERT IGNORE INTO `newsletter_subscribers` (`email`, `source`) VALUES (?, ?)");
-                    $stmt->execute([$email, $source]);
-                    
                     try {
                         $name = explode('@', $email)[0] ?: 'Subscriber';
                         $inqStmt = $pdo->prepare("INSERT INTO `customer_inquiries` (`name`, `business_name`, `email`, `phone`, `service`, `quantity`, `message`, `status`, `priority`) VALUES (?, ?, ?, ?, ?, ?, ?, 'New', 'Low')");
                         $inqStmt->execute([$name, 'Janani Newsletter Subscriber', $email, '+91 -', 'Newsletter Subscription', 'Direct Subscriber', 'Subscribed to Janani Agro newsletter via website footer.']);
                     } catch (Exception $e) {}
+
+                    try {
+                        $subStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'newsletter_subscribers' LIMIT 1");
+                        $subStmt->execute();
+                        $existingJson = $subStmt->fetchColumn();
+                        $subList = $existingJson ? (json_decode($existingJson, true) ?: []) : [];
+                        $found = false;
+                        foreach ($subList as $s) {
+                            if (is_array($s) && strtolower($s['email'] ?? '') === strtolower($email)) {
+                                $found = true;
+                                break;
+                            }
+                        }
+                        if (!$found) {
+                            $subList[] = [
+                                'id' => count($subList) + 1,
+                                'email' => $email,
+                                'source' => $source,
+                                'status' => 'Subscribed',
+                                'created_at' => date('Y-m-d H:i:s')
+                            ];
+                            $upSubStmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('newsletter_subscribers', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                            $upSubStmt->execute([json_encode($subList)]);
+                        }
+                    } catch (Exception $e) {}
                 }
-                echo json_encode(['success' => true, 'message' => 'Subscribed successfully in MySQL database']);
+                echo json_encode(['success' => true, 'message' => 'Subscribed successfully']);
                 exit;
             }
             if ($method === 'GET') {
-                $stmt = $pdo->query("SELECT * FROM `newsletter_subscribers` ORDER BY `id` DESC");
-                $subs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                echo json_encode(['success' => true, 'subscribers' => $subs]);
+                $subList = [];
+                try {
+                    $subStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'newsletter_subscribers' LIMIT 1");
+                    $subStmt->execute();
+                    $existingJson = $subStmt->fetchColumn();
+                    $subList = $existingJson ? (json_decode($existingJson, true) ?: []) : [];
+                } catch (Exception $e) {}
+                echo json_encode(['success' => true, 'subscribers' => $subList]);
                 exit;
             }
             break;
