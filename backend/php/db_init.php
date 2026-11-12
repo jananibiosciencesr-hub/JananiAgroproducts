@@ -565,30 +565,40 @@ try {
     $pdo->exec("UPDATE `users` SET `wishlist` = '[1, 2]' WHERE (`email` = 'kameswarip98@gmail.com' OR `email` = 'sravanipachipulusu98@gmail.com') AND (`wishlist` LIKE '%2124%' OR `wishlist` LIKE '%mortein%' OR `wishlist` IS NULL OR `wishlist` = '[]' OR `wishlist` = '')");
 } catch (Exception $e) {}
 
-// Auto-hash any unhashed passwords or missing password hashes in users table
+// Store bcrypt hashcode in BOTH password and password_hash columns; purge all synthetic defaults
 try {
-    $unhashedUsers = $pdo->query("SELECT \`id\`, \`password\` FROM \`users\` WHERE \`password\` IS NOT NULL AND \`password\` != '' AND (\`password_hash\` IS NULL OR \`password_hash\` = '')")->fetchAll(PDO::FETCH_ASSOC);
+    // 1. Purge synthetic default passwords from customers who never set one
+    $pdo->exec("UPDATE `users` SET `password` = NULL, `password_hash` = NULL WHERE (`password` LIKE 'Janani@%' OR `password` = 'Janani@123') AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
+
+    // 2. Explicitly enforce secure bcrypt hash for Super Admin
+    $aHash = password_hash('Jananiagro@123', PASSWORD_DEFAULT);
+    $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = 'ADMIN-ROOT' OR `email` = 'jananibiosciences.r@gmail.com'")->execute([$aHash, $aHash]);
+
+    // 3. Explicitly enforce secure bcrypt hash for Kameswari (Sravs@98) in both columns
+    $kHash = password_hash('Sravs@98', PASSWORD_DEFAULT);
+    $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = 'kameswarip98@gmail.com'")->execute([$kHash, $kHash]);
+
+    // 4. Explicitly enforce secure bcrypt hash for Sai Rama (Rama@123) in both columns
+    $rHash = password_hash('Rama@123', PASSWORD_DEFAULT);
+    $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash, $rHash]);
+
+    // 5. Convert any remaining unhashed passwords to bcrypt hashcode in both columns
+    $unhashedUsers = $pdo->query("SELECT `id`, `password`, `password_hash` FROM `users` WHERE `password` IS NOT NULL AND `password` != '' AND `password` NOT LIKE '\$2y\$%' AND `password` NOT LIKE '\$2a\$%' AND `password` NOT LIKE '\$2b\$%'")->fetchAll(PDO::FETCH_ASSOC);
     if (!empty($unhashedUsers)) {
-        $upHashStmt = $pdo->prepare("UPDATE \`users\` SET \`password_hash\` = ? WHERE \`id\` = ?");
+        $upHashStmt = $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ?");
         foreach ($unhashedUsers as $uRow) {
             $rawPass = trim($uRow['password']);
             if ($rawPass !== '') {
-                $computedHash = preg_match('/^\\$2[ayb]\\$[0-9]{2}\\$/', $rawPass) ? $rawPass : password_hash($rawPass, PASSWORD_DEFAULT);
-                $upHashStmt->execute([$computedHash, $uRow['id']]);
+                $computedHash = (!empty($uRow['password_hash']) && preg_match('/^\$2[ayb]\$[0-9]{2}\$/', $uRow['password_hash']))
+                    ? $uRow['password_hash']
+                    : password_hash($rawPass, PASSWORD_DEFAULT);
+                $upHashStmt->execute([$computedHash, $computedHash, $uRow['id']]);
             }
         }
     }
 
-    $noPassUsers = $pdo->query("SELECT \`id\`, \`email\`, \`phone\` FROM \`users\` WHERE (\`password_hash\` IS NULL OR \`password_hash\` = '') AND (\`password\` IS NULL OR \`password\` = '')")->fetchAll(PDO::FETCH_ASSOC);
-    if (!empty($noPassUsers)) {
-        $genHashStmt = $pdo->prepare("UPDATE \`users\` SET \`password\` = ?, \`password_hash\` = ? WHERE \`id\` = ?");
-        foreach ($noPassUsers as $npUser) {
-            $cleanPhoneDigits = preg_replace('/\\D/', '', $npUser['phone'] ?? '');
-            $derivedPass = strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123';
-            $derivedHash = password_hash($derivedPass, PASSWORD_DEFAULT);
-            $genHashStmt->execute([$derivedPass, $derivedHash, $npUser['id']]);
-        }
-    }
+    // 6. Ensure password column matches password_hash
+    $pdo->exec("UPDATE `users` SET `password` = `password_hash` WHERE `password_hash` LIKE '\$2y\$%' AND (`password` IS NULL OR `password` != `password_hash`)");
 } catch (Exception $e) {}
 
 // 6. Purge dummy/mock orders

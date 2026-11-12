@@ -738,42 +738,42 @@ if ($pdo) {
         }
     } catch (Throwable $e) {}
 
-    // Explicitly enforce correct user password for kameswarip98@gmail.com
+    // Enforce secure bcrypt hashcode storage in BOTH `password` and `password_hash` columns
+    // No plaintext passwords and NO synthetic default passwords
     try {
-        $kPass = 'Sravs@98';
-        $kHash = password_hash($kPass, PASSWORD_DEFAULT);
-        $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = 'kameswarip98@gmail.com'")->execute([$kPass, $kHash]);
-    } catch (Throwable $e) {}
+        // 1. Purge synthetic default passwords (Janani@...) from customers who never set one
+        $pdo->exec("UPDATE `users` SET `password` = NULL, `password_hash` = NULL WHERE (`password` LIKE 'Janani@%' OR `password` = 'Janani@123') AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
 
-    // Ensure all existing users in MySQL table have a valid bcrypt password_hash
-    try {
-        // A. Any user with a plaintext password but missing password_hash -> compute bcrypt hash and store it
-        $unhashedStmt = $pdo->query("SELECT `id`, `password` FROM `users` WHERE `password` IS NOT NULL AND `password` != '' AND (`password_hash` IS NULL OR `password_hash` = '')");
+        // 2. Explicitly enforce secure bcrypt hash for Super Admin
+        $aHash = password_hash('Jananiagro@123', PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = 'ADMIN-ROOT' OR `email` = 'jananibiosciences.r@gmail.com'")->execute([$aHash, $aHash]);
+
+        // 3. Explicitly enforce secure bcrypt hash for Kameswari (Sravs@98) in both columns
+        $kHash = password_hash('Sravs@98', PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = 'kameswarip98@gmail.com'")->execute([$kHash, $kHash]);
+
+        // 4. Explicitly enforce secure bcrypt hash for Sai Rama (Rama@123) in both columns
+        $rHash = password_hash('Rama@123', PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash, $rHash]);
+
+        // 5. For any user with a plaintext password, compute bcrypt hash and store it in BOTH `password` and `password_hash`
+        $unhashedStmt = $pdo->query("SELECT `id`, `password`, `password_hash` FROM `users` WHERE (`password` IS NOT NULL AND `password` != '' AND `password` NOT LIKE '\$2y\$%' AND `password` NOT LIKE '\$2a\$%' AND `password` NOT LIKE '\$2b\$%')");
         $unhashedUsers = $unhashedStmt ? $unhashedStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         if (!empty($unhashedUsers)) {
-            $upHashStmt = $pdo->prepare("UPDATE `users` SET `password_hash` = ? WHERE `id` = ?");
+            $upHashStmt = $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ?");
             foreach ($unhashedUsers as $uRow) {
                 $rawPass = trim($uRow['password']);
                 if ($rawPass !== '') {
-                    $computedHash = preg_match('/^\$2[ayb]\$[0-9]{2}\$/', $rawPass) ? $rawPass : password_hash($rawPass, PASSWORD_DEFAULT);
-                    $upHashStmt->execute([$computedHash, $uRow['id']]);
+                    $computedHash = (!empty($uRow['password_hash']) && preg_match('/^\$2[ayb]\$[0-9]{2}\$/', $uRow['password_hash']))
+                        ? $uRow['password_hash']
+                        : password_hash($rawPass, PASSWORD_DEFAULT);
+                    $upHashStmt->execute([$computedHash, $computedHash, $uRow['id']]);
                 }
             }
         }
 
-        // B. Any user with NEITHER password NOR password_hash (e.g. patrons synced from guest checkout/orders):
-        // Assign a default patron password and compute its secure password_hash so phpMyAdmin shows valid hash
-        $noPassStmt = $pdo->query("SELECT `id`, `email`, `phone` FROM `users` WHERE (`password_hash` IS NULL OR `password_hash` = '') AND (`password` IS NULL OR `password` = '')");
-        $noPassUsers = $noPassStmt ? $noPassStmt->fetchAll(PDO::FETCH_ASSOC) : [];
-        if (!empty($noPassUsers)) {
-            $genHashStmt = $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ?");
-            foreach ($noPassUsers as $npUser) {
-                $cleanPhoneDigits = preg_replace('/\D/', '', $npUser['phone'] ?? '');
-                $derivedPass = strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123';
-                $derivedHash = password_hash($derivedPass, PASSWORD_DEFAULT);
-                $genHashStmt->execute([$derivedPass, $derivedHash, $npUser['id']]);
-            }
-        }
+        // 6. If password_hash is valid bcrypt hash but password is NULL or different, sync password column to bcrypt hash
+        $pdo->exec("UPDATE `users` SET `password` = `password_hash` WHERE `password_hash` LIKE '\$2y\$%' AND (`password` IS NULL OR `password` != `password_hash`)");
     } catch (Throwable $e) {}
 
     // Purge legacy duplicate / obsolete dummy product (ID 112 or ROOT PLUS) so Bio Fertilizers strictly matches Admin & DB (2 products)
@@ -1832,24 +1832,24 @@ function ensureJananiCatalogSynced($pdo) {
             $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
         } catch (Exception $e) {}
 
-        // Auto-repair: Guarantee ramaofficial.d@gmail.com is correctly set for Sai Rama and clean legacy dummy dr.ananya
+        // Auto-repair: Guarantee ramaofficial.d@gmail.com is correctly set for Sai Rama with bcrypt hash in both columns
         try {
             $rHash = password_hash('Rama@123', PASSWORD_DEFAULT);
             $pdo->prepare("UPDATE `users` SET 
                 `email` = 'ramaofficial.d@gmail.com', 
                 `name` = 'Sai Rama', 
-                `password` = 'Rama@123', 
+                `password` = ?, 
                 `password_hash` = ?, 
                 `status` = 'Active' 
-                WHERE `email` = 'dr.ananya@heritagehealth.org' OR `name` = 'Sai Rama'")->execute([$rHash]);
+                WHERE `email` = 'dr.ananya@heritagehealth.org' OR `name` = 'Sai Rama'")->execute([$rHash, $rHash]);
 
             $checkRama = (int)$pdo->query("SELECT COUNT(*) FROM `users` WHERE `email` = 'ramaofficial.d@gmail.com'")->fetchColumn();
             if ($checkRama === 0) {
                 $nextId = generateNextCustomerId($pdo);
                 $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `is_verified`, `referral_code`) 
-                VALUES (?, 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999', 'Rama@123', ?, 'Customer', 0.00, 850, 'Silver', 'Active', 1, 'JANANI7788')")->execute([$nextId, $rHash]);
+                VALUES (?, 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999', ?, ?, 'Customer', 0.00, 850, 'Silver', 'Active', 1, 'JANANI7788')")->execute([$nextId, $rHash, $rHash]);
             } else {
-                $pdo->prepare("UPDATE `users` SET `password` = 'Rama@123', `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash]);
+                $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash, $rHash]);
             }
 
             $pdo->exec("DELETE FROM `users` WHERE `email` = 'dr.ananya@heritagehealth.org' AND `email` != 'ramaofficial.d@gmail.com'");
@@ -2028,12 +2028,10 @@ try {
                     exit;
                 }
 
-                // Guarantee password_hash is persisted in MySQL whenever user signs in
+                // Guarantee bcrypt hashcode is stored in BOTH password and password_hash columns
                 try {
-                    if (empty($dbHash) || password_needs_rehash($dbHash, PASSWORD_DEFAULT)) {
-                        $freshHash = password_hash($password, PASSWORD_DEFAULT);
-                        $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ? OR `email` = ?")->execute([$password, $freshHash, $foundUser['id'], $email]);
-                    }
+                    $freshHash = password_hash($password, PASSWORD_DEFAULT);
+                    $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ? OR `email` = ?")->execute([$freshHash, $freshHash, $foundUser['id'], $email]);
                 } catch (Exception $e) {}
 
                 $custPhone = ($foundUser['phone'] && $foundUser['phone'] !== '+91 98480 22338') ? $foundUser['phone'] : '';
@@ -2127,18 +2125,17 @@ try {
                     ];
 
                     try {
-                        $cleanPhoneDigits = preg_replace('/\D/', '', $phone ?: ($existingUserRow['phone'] ?? ''));
-                        $passToStore = $password ?: (strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123');
-                        $hashToStore = password_hash($passToStore, PASSWORD_DEFAULT);
+                        $pTrim = trim((string)$password);
+                        $hashToStore = !empty($pTrim) ? password_hash($pTrim, PASSWORD_DEFAULT) : null;
 
                         $upStmt = $pdo->prepare("UPDATE `users` SET 
                             `name` = ?, 
                             `phone` = IF(? != '' AND ? IS NOT NULL, ?, `phone`),
-                            `password` = ?,
-                            `password_hash` = ?,
+                            `password` = IF(? IS NOT NULL, ?, `password`),
+                            `password_hash` = IF(? IS NOT NULL, ?, `password_hash`),
                             `status` = 'Active'
                             WHERE `id` = ? OR `email` = ?");
-                        $upStmt->execute([$name, $phone, $phone, $phone, $passToStore, $hashToStore, $userId, $email]);
+                        $upStmt->execute([$name, $phone, $phone, $phone, $hashToStore, $hashToStore, $hashToStore, $hashToStore, $userId, $email]);
                     } catch (Exception $e) {}
 
                     echo json_encode([
@@ -2172,9 +2169,8 @@ try {
                 ];
 
                 try {
-                    $cleanPhoneDigits = preg_replace('/\D/', '', $phone ?? '');
-                    $passToStore = $password ?: (strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123');
-                    $hashToStore = password_hash($passToStore, PASSWORD_DEFAULT);
+                    $pTrim = trim((string)$password);
+                    $hashToStore = !empty($pTrim) ? password_hash($pTrim, PASSWORD_DEFAULT) : null;
 
                     $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
                         VALUES (?, ?, ?, ?, ?, ?, 'Customer', ?, 'Silver', 'Active', 1, ?) 
@@ -2182,10 +2178,10 @@ try {
                             `name` = VALUES(`name`), 
                             `email` = VALUES(`email`),
                             `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
-                            `password` = VALUES(`password`),
-                            `password_hash` = VALUES(`password_hash`),
+                            `password` = IF(VALUES(`password`) IS NOT NULL, VALUES(`password`), `password`),
+                            `password_hash` = IF(VALUES(`password_hash`) IS NOT NULL, VALUES(`password_hash`), `password_hash`),
                             `status` = 'Active'");
-                    $stmt->execute([$userId, $name, $email, $phone, $passToStore, $hashToStore, $user['walletBalance'], $user['referralCode']]);
+                    $stmt->execute([$userId, $name, $email, $phone, $hashToStore, $hashToStore, $user['walletBalance'], $user['referralCode']]);
                 } catch (Exception $e) {}
 
                 echo json_encode([
@@ -2572,24 +2568,18 @@ try {
                     'wishlist' => $existingUser['wishlist'] ?? []
                 ];
 
-                // Synchronize user to MySQL users table with password & password_hash
+                // Synchronize user to MySQL users table without synthesizing default passwords
                 try {
-                    $cleanPhoneDigits = preg_replace('/\D/', '', $user['phone'] ?? '');
-                    $defaultOtpPass = strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123';
-                    $defaultOtpHash = password_hash($defaultOtpPass, PASSWORD_DEFAULT);
-
                     $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', 1, ?) 
+                        VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, 'Active', 1, ?) 
                         ON DUPLICATE KEY UPDATE 
                             `email` = VALUES(`email`),
                             `role` = VALUES(`role`), 
                             `status` = 'Active', 
                             `tier` = VALUES(`tier`),
                             `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
-                            `name` = IF(VALUES(`name`) != '' AND VALUES(`name`) != 'Customer' AND VALUES(`name`) != SUBSTRING_INDEX(VALUES(`email`), '@', 1), VALUES(`name`), `name`),
-                            `password` = IF(`password` IS NULL OR `password` = '', VALUES(`password`), `password`),
-                            `password_hash` = IF(`password_hash` IS NULL OR `password_hash` = '', VALUES(`password_hash`), `password_hash`)");
-                    $stmt->execute([$user['id'], $user['name'], $user['email'], $user['phone'], $defaultOtpPass, $defaultOtpHash, $user['role'], $user['walletBalance'], $user['tier'], $user['referralCode']]);
+                            `name` = IF(VALUES(`name`) != '' AND VALUES(`name`) != 'Customer' AND VALUES(`name`) != SUBSTRING_INDEX(VALUES(`email`), '@', 1), VALUES(`name`), `name`)");
+                    $stmt->execute([$user['id'], $user['name'], $user['email'], $user['phone'], $user['role'], $user['walletBalance'], $user['tier'], $user['referralCode']]);
                 } catch (Exception $e) {}
 
                 echo json_encode([
@@ -2734,15 +2724,15 @@ try {
                     exit;
                 }
 
-                // Update user password in MySQL database
+                // Update user password in MySQL database strictly as bcrypt hash in both columns
                 try {
                     $hash = password_hash($newPassword, PASSWORD_DEFAULT);
                     $stmt = $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = ? OR (`phone` = ? AND `phone` != '')");
-                    $stmt->execute([$newPassword, $hash, $identifier, $cleanPhone ?: $identifier]);
+                    $stmt->execute([$hash, $hash, $identifier, $cleanPhone ?: $identifier]);
                 } catch (Exception $e) {
                     try {
                         $stmt = $pdo->prepare("UPDATE `users` SET `password` = ? WHERE `email` = ? OR (`phone` = ? AND `phone` != '')");
-                        $stmt->execute([$newPassword, $identifier, $cleanPhone ?: $identifier]);
+                        $stmt->execute([$hash, $identifier, $cleanPhone ?: $identifier]);
                     } catch (Exception $e2) {}
                 }
 
@@ -5196,12 +5186,8 @@ try {
                             $cPhone = trim($oc['customer_phone'] ?? '');
                             $sAddr = !empty($oc['shipping_address']) ? (is_string($oc['shipping_address']) ? json_decode($oc['shipping_address'], true) : $oc['shipping_address']) : [];
                             $prefs = json_encode(['addresses' => !empty($sAddr) ? [$sAddr] : []]);
-                            $cleanPhoneDigits = preg_replace('/\D/', '', $cPhone);
-                            $defaultCustPass = strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123';
-                            $defaultCustHash = password_hash($defaultCustPass, PASSWORD_DEFAULT);
-
-                            $insU = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `tier`, `wallet_balance`, `loyalty_points`, `status`, `preferences`, `is_verified`) VALUES (?, ?, ?, ?, ?, ?, 'Customer', 'Active Patron', 0, 0, 'Active', ?, 1)");
-                            $insU->execute([$nextCId, $cName, $cEmail, $cPhone, $defaultCustPass, $defaultCustHash, $prefs]);
+                            $insU = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `tier`, `wallet_balance`, `loyalty_points`, `status`, `preferences`, `is_verified`) VALUES (?, ?, ?, ?, NULL, NULL, 'Customer', 'Active Patron', 0, 0, 'Active', ?, 1)");
+                            $insU->execute([$nextCId, $cName, $cEmail, $cPhone, $prefs]);
                         }
                     }
                 } catch (Exception $e) {}
@@ -5367,12 +5353,11 @@ try {
                     $avatar = $body['avatar'] ?? null;
                     $prefs = isset($body['preferences']) ? json_encode($body['preferences']) : null;
 
-                    $cleanPhoneDigits = preg_replace('/\D/', '', $phone ?? '');
-                    $defaultAdminPass = !empty($body['password']) ? trim($body['password']) : (strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123');
-                    $defaultAdminHash = password_hash($defaultAdminPass, PASSWORD_DEFAULT);
+                    $rawAdminPass = !empty($body['password']) ? trim((string)$body['password']) : null;
+                    $storedAdminHash = !empty($rawAdminPass) ? password_hash($rawAdminPass, PASSWORD_DEFAULT) : null;
 
-                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `tier`, `wallet_balance`, `loyalty_points`, `status`, `avatar`, `preferences`, `is_verified`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `phone` = VALUES(`phone`), `tier` = VALUES(`tier`), `status` = VALUES(`status`), `wallet_balance` = VALUES(`wallet_balance`), `password` = IF(`password` IS NULL OR `password` = '', VALUES(`password`), `password`), `password_hash` = IF(`password_hash` IS NULL OR `password_hash` = '', VALUES(`password_hash`), `password_hash`)");
-                    $stmt->execute([$custId, $name, $email, $phone, $defaultAdminPass, $defaultAdminHash, $role, $tier, $wallet, $loyalty, $status, $avatar, $prefs]);
+                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `tier`, `wallet_balance`, `loyalty_points`, `status`, `avatar`, `preferences`, `is_verified`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `phone` = VALUES(`phone`), `tier` = VALUES(`tier`), `status` = VALUES(`status`), `wallet_balance` = VALUES(`wallet_balance`), `password` = IF(VALUES(`password`) IS NOT NULL, VALUES(`password`), `password`), `password_hash` = IF(VALUES(`password_hash`) IS NOT NULL, VALUES(`password_hash`), `password_hash`)");
+                    $stmt->execute([$custId, $name, $email, $phone, $storedAdminHash, $storedAdminHash, $role, $tier, $wallet, $loyalty, $status, $avatar, $prefs]);
 
                     $fStmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
                     $fStmt->execute([$custId, $email]);
@@ -5449,7 +5434,7 @@ try {
                         $pStr = trim($body['password']);
                         $hStr = password_hash($pStr, PASSWORD_DEFAULT);
                         $fields[] = "`password` = ?";
-                        $vals[] = $pStr;
+                        $vals[] = $hStr;
                         $fields[] = "`password_hash` = ?";
                         $vals[] = $hStr;
                     }
@@ -5561,13 +5546,12 @@ try {
                             $newWallet = (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 0.00));
                             $jsonPrefs = !empty($prefs) ? json_encode($prefs) : null;
 
-                            $cleanPhoneDigits = preg_replace('/\D/', '', $newPhone ?? '');
-                            $defaultAdminPass = !empty($body['password']) ? trim($body['password']) : (strlen($cleanPhoneDigits) >= 4 ? ('Janani@' . substr($cleanPhoneDigits, -4)) : 'Janani@123');
-                            $defaultAdminHash = password_hash($defaultAdminPass, PASSWORD_DEFAULT);
+                            $rawAdminPass = !empty($body['password']) ? trim((string)$body['password']) : null;
+                            $storedAdminHash = !empty($rawAdminPass) ? password_hash($rawAdminPass, PASSWORD_DEFAULT) : null;
 
                             try {
-                                $insStmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `tier`, `wallet_balance`, `status`, `is_verified`, `preferences`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', 1, ?) ON DUPLICATE KEY UPDATE `phone` = VALUES(`phone`), `name` = VALUES(`name`), `preferences` = VALUES(`preferences`), `password` = IF(`password` IS NULL OR `password` = '', VALUES(`password`), `password`), `password_hash` = IF(`password_hash` IS NULL OR `password_hash` = '', VALUES(`password_hash`), `password_hash`)");
-                                $insStmt->execute([$newId, $newName, $newEmail, $newPhone, $defaultAdminPass, $defaultAdminHash, $newRole, $newTier, $newWallet, $jsonPrefs]);
+                                $insStmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `tier`, `wallet_balance`, `status`, `is_verified`, `preferences`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', 1, ?) ON DUPLICATE KEY UPDATE `phone` = VALUES(`phone`), `name` = VALUES(`name`), `preferences` = VALUES(`preferences`), `password` = IF(VALUES(`password`) IS NOT NULL, VALUES(`password`), `password`), `password_hash` = IF(VALUES(`password_hash`) IS NOT NULL, VALUES(`password_hash`), `password_hash`)");
+                                $insStmt->execute([$newId, $newName, $newEmail, $newPhone, $storedAdminHash, $storedAdminHash, $newRole, $newTier, $newWallet, $jsonPrefs]);
                             } catch (Exception $e) {}
                         } else {
                             $vals[] = $existingUser['id'];
