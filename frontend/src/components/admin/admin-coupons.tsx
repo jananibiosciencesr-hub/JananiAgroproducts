@@ -543,41 +543,6 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
             </div>
 
             <div className="flex items-center gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("table")}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === "table" ? "bg-card text-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Line by Line (Table)"
-                >
-                  <List className="w-3.5 h-3.5" />
-                  <span>Line by Line</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("grid")}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === "grid" ? "bg-card text-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Cards View"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>Cards</span>
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleExportCSV}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
-              >
-                <Download className="w-3.5 h-3.5 text-muted-foreground" />
-                Export CSV
-              </button>
-
               <button
                 type="button"
                 onClick={handleOpenCreate}
@@ -586,72 +551,6 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Create Coupon</span>
               </button>
-            </div>
-          </div>
-
-          {/* Filtering Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 bg-card p-4 rounded-xl border border-border/70 shadow-sm">
-            {/* Search Input */}
-            <div className="relative lg:col-span-2">
-              <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search coupon code, campaign name or ID..."
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-
-            {/* Status Filter */}
-            <div>
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active & Running</option>
-                <option value="paused">Paused / Disabled</option>
-                <option value="expired">Expired Codes</option>
-                <option value="depleted">Fully Depleted</option>
-              </select>
-            </div>
-
-            {/* Type Filter */}
-            <div>
-              <select
-                value={typeFilter}
-                onChange={e => setTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              >
-                <option value="all">All Discount Types</option>
-                <option value="percentage">Percentage Off (%)</option>
-                <option value="flat">Flat Cash Off (₹)</option>
-                <option value="free_shipping">Free Shipping</option>
-              </select>
-            </div>
-
-            {/* Sort Order */}
-            <div>
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              >
-                <option value="newest">Newest First</option>
-                <option value="uses_desc">Highest Redemptions</option>
-                <option value="discount_desc">Highest Discount</option>
-                <option value="alphabetical">Alphabetical (A-Z)</option>
-              </select>
             </div>
           </div>
 
