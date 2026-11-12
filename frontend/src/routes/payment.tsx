@@ -77,6 +77,8 @@ export function PaymentPage() {
   // UI States
   const [viewState, setViewState] = useState<"payment" | "success" | "failure">("payment");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyingText, setVerifyingText] = useState("Connecting to Razorpay Secure Gateway...");
   const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
   const [simulateFailure, setSimulateFailure] = useState(false);
 
@@ -257,6 +259,9 @@ export function PaymentPage() {
 
   // Handle Payment Success & Order Settlement
   const handlePaymentSuccess = async (details: { method: string; transactionId: string; razorpayOrderId?: string }) => {
+    setIsProcessing(true);
+    setIsVerifying(true);
+    setVerifyingText("Payment verified! Confirming your order with Janani Agro...");
     setTransactionDetails((prev) => ({
       ...prev,
       transactionId: details.transactionId,
@@ -402,50 +407,54 @@ export function PaymentPage() {
 
     // 1. Persist order to MySQL backend database in real time
     let finalAssignedOrderNumber = effectiveOrderNumber;
+    setVerifyingText("Recording order in database & generating official GST invoice...");
     try {
-      const createdOrder = await createOrder({
-        id: effectiveOrderNumber,
-        number: effectiveOrderNumber,
-        orderNumber: effectiveOrderNumber,
-        items: cartItems.map((i: any) => ({
-          productId: i.product.id,
-          name: i.product.name,
-          price: i.product.price,
-          quantity: i.qty || 1,
-          image: i.product.image || pantryImage,
-        })),
-        customer: {
-          name: customerName,
-          firstName: customerName.split(" ")[0] || "Valued",
-          lastName: customerName.split(" ").slice(1).join(" ") || "Patron",
-          phone: resolvedCustomerPhone,
-          email: resolvedCustomerEmail,
-          address: streetAddr,
-          streetAddress: streetAddr,
-          city: checkoutData?.address?.city || city,
-          state: checkoutData?.address?.state || "Gujarat",
-          pincode: checkoutData?.address?.pincode || "380054",
-        },
-        subtotal: checkoutData?.subtotal || subtotal,
-        gstAmount: checkoutData?.gstAmount ?? Number(((checkoutData?.subtotal || subtotal) * 0.05).toFixed(2)),
-        cgst: checkoutData?.cgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
-        sgst: checkoutData?.sgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
-        discount: checkoutData?.couponDiscount || 0,
-        couponCode: checkoutData?.couponDiscount > 0 ? (checkoutData?.coupon?.code || checkoutData?.couponCode || "") : "",
-        couponDiscount: checkoutData?.couponDiscount || 0,
-        walletDeduction: checkoutData?.walletDeduction || 0,
-        deliveryFee: checkoutData?.shippingFee || 0,
-        shippingFee: checkoutData?.shippingFee || 0,
-        finalTotal: effectiveAmount,
-        total: effectiveAmount,
-        paymentMethod: details.method || (isCod ? "Cash on Delivery" : "Razorpay"),
-        paymentStatus: details.method === "Cash on Delivery" || isCod ? "Pending (COD)" : "Paid",
-        transactionId: details.transactionId,
-        ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
-        deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
-        expectedDelivery: deliveryDate,
-        timeline: newCustomerOrder.timeline,
-      });
+      const createdOrder = await Promise.race([
+        createOrder({
+          id: effectiveOrderNumber,
+          number: effectiveOrderNumber,
+          orderNumber: effectiveOrderNumber,
+          items: cartItems.map((i: any) => ({
+            productId: i.product.id,
+            name: i.product.name,
+            price: i.product.price,
+            quantity: i.qty || 1,
+            image: i.product.image || pantryImage,
+          })),
+          customer: {
+            name: customerName,
+            firstName: customerName.split(" ")[0] || "Valued",
+            lastName: customerName.split(" ").slice(1).join(" ") || "Patron",
+            phone: resolvedCustomerPhone,
+            email: resolvedCustomerEmail,
+            address: streetAddr,
+            streetAddress: streetAddr,
+            city: checkoutData?.address?.city || city,
+            state: checkoutData?.address?.state || "Gujarat",
+            pincode: checkoutData?.address?.pincode || "380054",
+          },
+          subtotal: checkoutData?.subtotal || subtotal,
+          gstAmount: checkoutData?.gstAmount ?? Number(((checkoutData?.subtotal || subtotal) * 0.05).toFixed(2)),
+          cgst: checkoutData?.cgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
+          sgst: checkoutData?.sgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
+          discount: checkoutData?.couponDiscount || 0,
+          couponCode: checkoutData?.couponDiscount > 0 ? (checkoutData?.coupon?.code || checkoutData?.couponCode || "") : "",
+          couponDiscount: checkoutData?.couponDiscount || 0,
+          walletDeduction: checkoutData?.walletDeduction || 0,
+          deliveryFee: checkoutData?.shippingFee || 0,
+          shippingFee: checkoutData?.shippingFee || 0,
+          finalTotal: effectiveAmount,
+          total: effectiveAmount,
+          paymentMethod: details.method || (isCod ? "Cash on Delivery" : "Razorpay"),
+          paymentStatus: details.method === "Cash on Delivery" || isCod ? "Pending (COD)" : "Paid",
+          transactionId: details.transactionId,
+          ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
+          deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
+          expectedDelivery: deliveryDate,
+          timeline: newCustomerOrder.timeline,
+        }),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Server order creation timeout")), 7000))
+      ]);
 
       if (createdOrder?.number) {
         finalAssignedOrderNumber = createdOrder.number;
@@ -535,16 +544,34 @@ export function PaymentPage() {
     }
     localStorage.removeItem("janani_pending_checkout");
 
+    setVerifyingText(`Order ${finalAssignedOrderNumber} confirmed! Redirecting to confirmation page...`);
+
     if (details.method === "Cash on Delivery" || isCod) {
       toast.success(`Cash on Delivery order ${finalAssignedOrderNumber} placed successfully!`);
     } else {
       toast.success(`Payment verified via Razorpay! Order ${finalAssignedOrderNumber} placed successfully.`);
     }
-    navigate({ to: "/order-success" });
+
+    try {
+      navigate({ to: "/order-success" });
+    } catch (navErr) {
+      console.warn("Router navigate failed:", navErr);
+    }
+
+    // High-reliability hard redirect fallback
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        if (window.location.pathname !== "/order-success") {
+          window.location.href = "/order-success";
+        }
+      }, 250);
+    }
   };
 
   // Handle Payment Failure
   const handlePaymentFailure = (reason: string) => {
+    setIsProcessing(false);
+    setIsVerifying(false);
     setTransactionDetails((prev) => ({
       ...prev,
       failureReason: reason,
@@ -598,7 +625,9 @@ export function PaymentPage() {
       customerEmail: resolvedCustomerEmail,
       customerPhone: activePhone,
       onSuccess: (res) => {
-        setIsProcessing(false);
+        setIsProcessing(true);
+        setIsVerifying(true);
+        setVerifyingText("Payment verified via Razorpay! Finalizing your harvest order...");
         handlePaymentSuccess({
           method: "Razorpay Standard Checkout",
           transactionId: res.razorpay_payment_id || `pay_${Date.now()}`
@@ -606,10 +635,12 @@ export function PaymentPage() {
       },
       onFailure: (err) => {
         setIsProcessing(false);
+        setIsVerifying(false);
         handlePaymentFailure(err.description || "Razorpay transaction failed.");
       },
       onDismiss: () => {
         setIsProcessing(false);
+        setIsVerifying(false);
         toast.info("Payment window closed. Click below when ready to complete your order.");
       }
     });
@@ -617,6 +648,7 @@ export function PaymentPage() {
     if (!opened) {
       // If popup blocked or offline, open styled Razorpay component modal
       setIsProcessing(false);
+      setIsVerifying(false);
       setIsRazorpayModalOpen(true);
     }
   };
@@ -642,6 +674,9 @@ export function PaymentPage() {
         reason={transactionDetails.failureReason || "Authorization timed out or transaction cancelled."}
         onRetryPayment={handleRetryPayment}
         onSwitchToCod={() => {
+          setIsProcessing(true);
+          setIsVerifying(true);
+          setVerifyingText("Switching to Cash on Delivery and placing order...");
           handlePaymentSuccess({
             method: "Cash on Delivery",
             transactionId: `COD-${Date.now().toString().slice(-6)}`
@@ -753,6 +788,8 @@ export function PaymentPage() {
                 onClick={() => {
                   if (isCod) {
                     setIsProcessing(true);
+                    setIsVerifying(true);
+                    setVerifyingText("Confirming Cash on Delivery Order...");
                     handlePaymentSuccess({
                       method: "Cash on Delivery",
                       transactionId: `COD-${Date.now().toString().slice(-6)}`,
@@ -761,13 +798,13 @@ export function PaymentPage() {
                     handleLaunchRazorpay();
                   }
                 }}
-                disabled={isProcessing}
-                className="w-full min-h-[3.25rem] sm:h-14 py-3 px-4 rounded-2xl bg-[#0c2340] hover:bg-[#153a66] text-white font-display text-sm sm:text-base font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 sm:gap-3 cursor-pointer text-center"
+                disabled={isProcessing || isVerifying}
+                className="w-full min-h-[3.25rem] sm:h-14 py-3 px-4 rounded-2xl bg-[#0c2340] hover:bg-[#153a66] text-white font-display text-sm sm:text-base font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 sm:gap-3 cursor-pointer text-center disabled:opacity-75"
               >
-                {isProcessing ? (
+                {isProcessing || isVerifying ? (
                   <>
                     <div className="size-4 sm:size-5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                    <span className="truncate">{isCod ? "Confirming Cash on Delivery Order..." : "Connecting to Razorpay..."}</span>
+                    <span className="truncate">{verifyingText || (isCod ? "Confirming Cash on Delivery Order..." : "Processing Razorpay Payment...")}</span>
                   </>
                 ) : (
                   <>
@@ -919,6 +956,44 @@ export function PaymentPage() {
         onPaymentFailure={handlePaymentFailure}
         simulateFailure={simulateFailure}
       />
+
+      {/* Full-Screen Payment Processing & Order Verification Overlay */}
+      {isVerifying && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md p-4 text-center animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl border border-emerald-500/40 bg-card p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 text-foreground">
+            {/* Animated Brand Dual-Ring Spinner */}
+            <div className="relative size-20 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 animate-ping opacity-75" />
+              <div className="size-20 rounded-full border-4 border-emerald-500/30 border-t-emerald-600 animate-spin" />
+              <ShieldCheck className="absolute size-9 text-emerald-600 animate-pulse" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-3.5 py-1 rounded-full border border-emerald-500/20">
+                <Sparkles className="size-3" />
+                <span>Razorpay Secure Settlement</span>
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+                Finalizing Your Order
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
+                {verifyingText || "Verifying payment with bank and confirming your harvest shipment..."}
+              </p>
+            </div>
+
+            {/* Order & Amount Snapshot Badge */}
+            <div className="rounded-2xl bg-muted/60 p-3.5 border border-border/80 flex items-center justify-between text-xs font-mono">
+              <span className="text-muted-foreground">Order Reference: <strong className="text-foreground">{effectiveOrderNumber}</strong></span>
+              <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm">₹{effectiveAmount}</span>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 text-[11px] text-muted-foreground/80">
+              <Lock className="size-3 text-emerald-600 shrink-0" />
+              <span>Please do not close or refresh this tab. Redirecting automatically...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
