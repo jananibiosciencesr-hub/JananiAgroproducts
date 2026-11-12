@@ -109,7 +109,7 @@ function AdminErrorFallback({ error, reset }: { error: any; reset: () => void })
       localStorage.removeItem("janani_admin_user");
       localStorage.removeItem("janani_admin_auth_time");
       sessionStorage.clear();
-    } catch (e) {}
+    } catch (e) { }
     if (typeof window !== "undefined") {
       window.location.href = "/admin";
     } else {
@@ -288,7 +288,7 @@ function AdminDashboardPage() {
     if (tab === "inventory" || tab === "products") {
       getAdminInventory().then((freshInv) => {
         if (Array.isArray(freshInv) && freshInv.length > 0) setInventory(freshInv);
-      }).catch(() => {});
+      }).catch(() => { });
     }
   };
 
@@ -450,7 +450,7 @@ function AdminDashboardPage() {
       localStorage.removeItem("janani_admin_token");
       localStorage.removeItem("janani_admin_auth_time");
       sessionStorage.clear();
-    } catch (e) {}
+    } catch (e) { }
     setAdminUser(null);
     setIsAuthenticated(false);
     setIsOtpStep(false);
@@ -476,7 +476,7 @@ function AdminDashboardPage() {
             toast.info("Admin session expired after 24 hours. Please log in again.");
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     };
 
     const handleExpiredEvent = () => {

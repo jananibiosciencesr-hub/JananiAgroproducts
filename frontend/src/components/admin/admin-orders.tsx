@@ -938,16 +938,23 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
       {/* 5. Orders Desktop Table (Visible on screens >= 1024px) */}
       <div className="hidden lg:flex flex-col flex-1 bg-card border-b border-border shadow-none overflow-hidden w-full rounded-none">
         <div className="overflow-x-auto flex-1 min-w-0 w-full relative min-h-[calc(100vh-140px)]">
-          <table className="w-full text-left text-sm border-collapse">
+          <table className="w-full text-left text-sm border-collapse min-w-[950px]">
+            <colgroup>
+              <col className="w-[10%] min-w-[95px]" />
+              <col className="w-[18%] min-w-[160px]" />
+              <col className="w-[13%] min-w-[125px]" />
+              <col className="w-[27%] min-w-[210px]" />
+              <col className="w-[18%] min-w-[150px]" />
+              <col className="w-[14%] min-w-[85px]" />
+            </colgroup>
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md shadow-xs">
               <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Order Details</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Customer</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Items</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4">Financials</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-center">Fulfillment Status</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-right">Actions</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-[10%]">Order Details</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-[18%]">Customer</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-[13%]">Items</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-[27%]">Financials</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-center w-[18%]">Fulfillment Status</th>
+                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-right w-[14%]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -992,7 +999,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
 
 
                       {/* Order Details */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 w-[10%]">
                         <div className="flex flex-col">
                           <button
                             onClick={() => handleOpenDrawer(order)}
@@ -1004,7 +1011,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                       </td>
 
                       {/* Customer */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 w-[18%]">
                         {(() => {
                           const cust = getOrderCustomer(order);
                           return (
@@ -1013,10 +1020,10 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                                 {cust.initial}
                               </div>
                               <div className="min-w-0">
-                                <p className="font-semibold text-sm text-foreground truncate max-w-[150px]" title={cust.name}>
+                                <p className="font-semibold text-sm text-foreground truncate max-w-[180px]" title={cust.name}>
                                   {cust.name}
                                 </p>
-                                <p className="text-xs text-muted-foreground truncate max-w-[150px]" title={cust.email}>
+                                <p className="text-xs text-muted-foreground truncate max-w-[180px]" title={cust.email}>
                                   {cust.email}
                                 </p>
                                 <p className="text-[11px] text-muted-foreground/80 flex items-center gap-1 font-mono">
@@ -1029,7 +1036,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                       </td>
 
                       {/* Items */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 w-[13%]">
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1.5 shrink-0">
                             {order.items?.slice(0, 3).map((item: any, idx: number) => (
@@ -1043,7 +1050,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                             ))}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold text-foreground truncate max-w-[120px]">
+                            <p className="text-xs font-semibold text-foreground truncate max-w-[140px]" title={order.items?.[0] ? getItemTitle(order.items[0]) : "Item"}>
                               {order.items?.[0] ? getItemTitle(order.items[0]) : "Item"}
                             </p>
                             <p className="text-[11px] text-muted-foreground">
@@ -1054,11 +1061,11 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                       </td>
 
                       {/* Financials */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 w-[27%]">
                         {(() => {
                           const fin = getOrderFinancials(order);
                           return (
-                            <div className="flex flex-col gap-1.5 min-w-[155px]">
+                            <div className="flex flex-col gap-1.5 min-w-[155px] max-w-[240px]">
                               {/* Total Amount Paid */}
                               <div className="flex items-baseline justify-between gap-1.5">
                                 <span className="font-black text-sm sm:text-base text-foreground font-mono">
@@ -1123,7 +1130,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                       </td>
 
                       {/* Fulfillment Status Dropdown */}
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3.5 px-4 text-center w-[18%]">
                         <select
                           value={order.orderStatus}
                           onChange={(e) => handleQuickStatusChange(order.id, e.target.value)}
@@ -1142,7 +1149,7 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right w-[14%]">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleOpenDrawer(order)}
