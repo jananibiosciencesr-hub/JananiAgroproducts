@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { generateNextOrderNumber, createOrder, normalizeCouponData } from "@/lib/api";
+import { generateNextOrderNumber, getAuthoritativeNextOrderNumber, createOrder, normalizeCouponData } from "@/lib/api";
 import { saveCustomerOrders, loadCustomerOrders } from "@/components/orders/orders-seed";
 import React, { useState, useMemo, useEffect } from "react";
 import {
@@ -248,8 +248,16 @@ export function CheckoutPage() {
     const effectiveCustomerEmail = (selectedAddress.email || user?.email || "").trim().toLowerCase();
     const effectiveCustomerPhone = (selectedAddress.phone || user?.phone || "").trim();
 
+    setIsSubmitting(true);
+    let liveOrderNumber = generateNextOrderNumber();
+    try {
+      liveOrderNumber = await getAuthoritativeNextOrderNumber();
+    } catch (e) {
+      console.warn("Failed to query live next order number, fallback to client sequence", e);
+    }
+
     const pendingCheckout = {
-      orderNumber: generateNextOrderNumber(),
+      orderNumber: liveOrderNumber,
       customerName: effectiveCustomerName,
       customerEmail: effectiveCustomerEmail,
       customerPhone: effectiveCustomerPhone,

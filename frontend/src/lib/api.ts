@@ -747,6 +747,19 @@ export function parseSequentialNum(o: any): number {
   return 0;
 }
 
+export async function getAuthoritativeNextOrderNumber(): Promise<string> {
+  try {
+    const res = await fetch("/api.php?action=next-order-number");
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.success && data?.nextOrderNumber) {
+        return data.nextOrderNumber;
+      }
+    }
+  } catch (e) {}
+  return generateNextOrderNumber();
+}
+
 export function generateNextOrderNumber(): string {
   const storedOrders = (getStored<any[]>(STORAGE_KEYS.ORDERS, []) || []).filter((o) => !isDummyOrder(o));
   let nextOrderNum = 1;

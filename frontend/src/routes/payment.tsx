@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { generateNextOrderNumber } from "@/lib/api";
+import { generateNextOrderNumber, getAuthoritativeNextOrderNumber } from "@/lib/api";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   ShieldCheck,
@@ -93,6 +93,17 @@ export function PaymentPage() {
     method: checkoutData?.paymentMethod === "cod" ? "Cash on Delivery" : "Razorpay Standard Gateway",
     amount: checkoutData?.finalTotal || (subtotal > 0 ? subtotal : 420),
   });
+
+  // Query live database for next authoritative order number if not supplied in pending checkout
+  useEffect(() => {
+    if (!checkoutData?.orderNumber) {
+      getAuthoritativeNextOrderNumber().then((liveNum) => {
+        if (liveNum) {
+          setTransactionDetails((prev) => ({ ...prev, orderNumber: liveNum }));
+        }
+      });
+    }
+  }, [checkoutData?.orderNumber]);
 
   // Effective Order Values
   const effectiveAmount = checkoutData?.finalTotal ?? (checkoutData?.total ?? (subtotal > 0 ? subtotal : 0));
@@ -389,31 +400,10 @@ export function PaymentPage() {
       ],
     };
 
-    // 1. Save latest order & customer orders strictly scoped to current user
+    // 1. Persist order to MySQL backend database in real time
+    let finalAssignedOrderNumber = effectiveOrderNumber;
     try {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(`janani_invoice_dispatched_${effectiveOrderNumber}`, "true");
-      }
-      localStorage.setItem("janani_latest_order", JSON.stringify({
-        ...confirmedOrder,
-        customerEmail: resolvedCustomerEmail,
-        customerPhone: resolvedCustomerPhone,
-      }));
-
-      const userIdentifier = resolvedCustomerEmail || user?.email || resolvedCustomerPhone;
-      const existingUserOrders = loadCustomerOrders(userIdentifier);
-      const updatedOrders = [newCustomerOrder, ...existingUserOrders.filter((o: any) => o.number !== effectiveOrderNumber && o.id !== newCustomerOrder.id)];
-      saveCustomerOrders(updatedOrders, userIdentifier);
-
-      // Clean un-scoped legacy key to avoid cross-user bleed
-      localStorage.removeItem("janani_customer_orders");
-    } catch (e) {
-      console.error("Failed to save order to localStorage", e);
-    }
-
-    // 2. Persist order to MySQL backend database in real time
-    try {
-      await createOrder({
+      const createdOrder = await createOrder({
         id: effectiveOrderNumber,
         number: effectiveOrderNumber,
         orderNumber: effectiveOrderNumber,
@@ -456,8 +446,44 @@ export function PaymentPage() {
         expectedDelivery: deliveryDate,
         timeline: newCustomerOrder.timeline,
       });
+
+      if (createdOrder?.number) {
+        finalAssignedOrderNumber = createdOrder.number;
+      } else if (createdOrder?.orderNumber) {
+        finalAssignedOrderNumber = createdOrder.orderNumber;
+      } else if (createdOrder?.id) {
+        finalAssignedOrderNumber = createdOrder.id;
+      }
     } catch (apiErr) {
       console.warn("Backend order creation sync note:", apiErr);
+    }
+
+    confirmedOrder.orderNumber = finalAssignedOrderNumber;
+    newCustomerOrder.number = finalAssignedOrderNumber;
+    newCustomerOrder.orderNumber = finalAssignedOrderNumber;
+    newCustomerOrder.id = `ord-${finalAssignedOrderNumber}`;
+    setTransactionDetails((prev) => ({ ...prev, orderNumber: finalAssignedOrderNumber }));
+
+    // 2. Save latest order & customer orders strictly scoped to current user
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(`janani_invoice_dispatched_${finalAssignedOrderNumber}`, "true");
+      }
+      localStorage.setItem("janani_latest_order", JSON.stringify({
+        ...confirmedOrder,
+        customerEmail: resolvedCustomerEmail,
+        customerPhone: resolvedCustomerPhone,
+      }));
+
+      const userIdentifier = resolvedCustomerEmail || user?.email || resolvedCustomerPhone;
+      const existingUserOrders = loadCustomerOrders(userIdentifier);
+      const updatedOrders = [newCustomerOrder, ...existingUserOrders.filter((o: any) => o.number !== finalAssignedOrderNumber && o.id !== newCustomerOrder.id)];
+      saveCustomerOrders(updatedOrders, userIdentifier);
+
+      // Clean un-scoped legacy key to avoid cross-user bleed
+      localStorage.removeItem("janani_customer_orders");
+    } catch (e) {
+      console.error("Failed to save order to localStorage", e);
     }
 
     // 3. Dispatch official GST Tax Invoice email to customer & admin
@@ -467,8 +493,8 @@ export function PaymentPage() {
         headers: { "Content-Type": "application/json" },
         keepalive: true,
         body: JSON.stringify({
-          number: effectiveOrderNumber,
-          orderNumber: effectiveOrderNumber,
+          number: finalAssignedOrderNumber,
+          orderNumber: finalAssignedOrderNumber,
           customer_name: customerName,
           customerName: customerName,
           customer_email: resolvedCustomerEmail,
@@ -500,7 +526,7 @@ export function PaymentPage() {
           payment_method: details.method || "Razorpay",
         }),
       }).catch(() => {});
-      sessionStorage.setItem(`janani_invoice_dispatched_${effectiveOrderNumber}`, "true");
+      sessionStorage.setItem(`janani_invoice_dispatched_${finalAssignedOrderNumber}`, "true");
     } catch (e) {}
 
     clearCart();
@@ -510,9 +536,9 @@ export function PaymentPage() {
     localStorage.removeItem("janani_pending_checkout");
 
     if (details.method === "Cash on Delivery" || isCod) {
-      toast.success(`Cash on Delivery order ${effectiveOrderNumber} placed successfully!`);
+      toast.success(`Cash on Delivery order ${finalAssignedOrderNumber} placed successfully!`);
     } else {
-      toast.success(`Payment verified via Razorpay! Order ${effectiveOrderNumber} placed successfully.`);
+      toast.success(`Payment verified via Razorpay! Order ${finalAssignedOrderNumber} placed successfully.`);
     }
     navigate({ to: "/order-success" });
   };

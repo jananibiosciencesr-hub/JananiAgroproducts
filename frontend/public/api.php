@@ -915,6 +915,27 @@ if ($pdo) {
         reindexAllCustomersSequentially($pdo);
     } catch (Throwable $e) {}
 
+    // Auto-repair: Restore Meena's legitimate placed order JAP-003 with correct customer details & delete dummy Ananya seed
+    try {
+        $pdo->exec("UPDATE `orders` SET 
+            `customer_name` = 'Meena',
+            `customer_email` = 'meena.varalaksmi@gmail.com',
+            `customer_phone` = '+91 91823 67695',
+            `subtotal` = 5600.00,
+            `total` = 5680.00,
+            `tax_amount` = 280.00,
+            `payment_method` = 'Razorpay Standard Checkout',
+            `payment_status` = 'Paid',
+            `order_status` = 'Processing',
+            `coupon_code` = 'JANANI10',
+            `coupon_discount` = 200.00,
+            `transaction_id` = 'pay_TzFKDGqHvJs2B7',
+            `shipping_address` = '{\"name\":\"Meena\",\"fullName\":\"Meena\",\"street\":\"ravi\",\"streetAddress\":\"ravi\",\"city\":\"Visakhapatnam\",\"state\":\"Andhra Pradesh\",\"pincode\":\"530040\",\"phone\":\"+91 91823 67695\"}',
+            `billing_address` = '{\"name\":\"Meena\",\"fullName\":\"Meena\",\"street\":\"ravi\",\"streetAddress\":\"ravi\",\"city\":\"Visakhapatnam\",\"state\":\"Andhra Pradesh\",\"pincode\":\"530040\",\"phone\":\"+91 91823 67695\"}',
+            `items` = '[{\"productId\":\"balavan\",\"name\":\"BALAVAN - Bacillus Subtilis (5L)\",\"price\":5600,\"quantity\":1,\"image\":\"/products/balavan.jpg\"}]'
+            WHERE (`number` = 'JAP-003' OR `id` = 'JAP-003') AND (`transaction_id` = 'pay_TzFKDGqHvJs2B7' OR `coupon_code` = 'JANANI10' OR `customer_email` = 'ananya.s@gmail.com')");
+    } catch (Throwable $e) {}
+
     try {
         // Automatically reset any demo/seed wallet balances for all Customers in database
         $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
@@ -2003,6 +2024,13 @@ try {
                 'success' => true,
                 'message' => 'All customer IDs re-indexed sequentially starting from CUST-001',
                 'users' => $allUsers
+            ]);
+            exit;
+
+        case 'next-order-number':
+            echo json_encode([
+                'success' => true,
+                'nextOrderNumber' => generateNextOrderNumber($pdo)
             ]);
             exit;
 
@@ -4969,19 +4997,38 @@ try {
 
                 if (!$isUpdateAction) {
                     // Create Flipkart-grade Order
-                    $incomingNumber = !empty($body['number']) ? $body['number'] : (!empty($body['orderNumber']) ? $body['orderNumber'] : '');
-                    if (empty($incomingNumber) || preg_match('/^(JAP|ORD)-[0-9]{5,}$/i', $incomingNumber)) {
-                        $orderNum = generateNextOrderNumber($pdo);
-                    } else {
-                        $orderNum = $incomingNumber;
-                    }
-                    $orderId = (!empty($body['id']) && !preg_match('/^(JAP|ORD)-[0-9]{5,}$/i', $body['id'])) ? $body['id'] : $orderNum;
-                    $orderDate = $body['order_date'] ?? ($body['date'] ?? date('d M Y, H:i'));
-
                     $sAddrObj = $body['shipping_address'] ?? ($body['shippingAddress'] ?? ($body['address'] ?? []));
                     $custName = !empty($body['customer_name']) && $body['customer_name'] !== 'Customer' ? $body['customer_name'] : (!empty($body['customerName']) && $body['customerName'] !== 'Customer' ? $body['customerName'] : (!empty($body['customer']['name']) && $body['customer']['name'] !== 'Customer' ? $body['customer']['name'] : (!empty($body['customer']['fullName']) ? $body['customer']['fullName'] : (!empty($sAddrObj['fullName']) ? $sAddrObj['fullName'] : (!empty($sAddrObj['name']) ? $sAddrObj['name'] : 'Valued Patron')))));
                     $custEmail = strtolower(trim(!empty($body['customer_email']) ? $body['customer_email'] : (!empty($body['customerEmail']) ? $body['customerEmail'] : (!empty($body['customer']['email']) ? $body['customer']['email'] : (!empty($sAddrObj['email']) ? $sAddrObj['email'] : 'patron@jananiagro.com')))));
                     $custPhone = !empty($body['customer_phone']) ? $body['customer_phone'] : (!empty($body['customerPhone']) ? $body['customerPhone'] : (!empty($body['customer']['phone']) ? $body['customer']['phone'] : (!empty($sAddrObj['phone']) ? $sAddrObj['phone'] : '')));
+
+                    $incomingNumber = !empty($body['number']) ? $body['number'] : (!empty($body['orderNumber']) ? $body['orderNumber'] : '');
+                    $needsNewOrderNumber = false;
+                    if (empty($incomingNumber) || preg_match('/^(JAP|ORD)-[0-9]{5,}$/i', $incomingNumber)) {
+                        $needsNewOrderNumber = true;
+                    } else {
+                        // Check if incomingNumber already exists in DB for a different customer
+                        try {
+                            $chkStmt = $pdo->prepare("SELECT `id`, `customer_email` FROM `orders` WHERE `number` = ? OR `id` = ? LIMIT 1");
+                            $chkStmt->execute([$incomingNumber, $incomingNumber]);
+                            $existingOrdRow = $chkStmt->fetch();
+                            if ($existingOrdRow) {
+                                $existingEmail = strtolower(trim($existingOrdRow['customer_email'] ?? ''));
+                                if ($existingEmail !== '' && $existingEmail !== $custEmail) {
+                                    $needsNewOrderNumber = true;
+                                }
+                            }
+                        } catch (Exception $e) {}
+                    }
+
+                    if ($needsNewOrderNumber) {
+                        $orderNum = generateNextOrderNumber($pdo);
+                        $orderId = $orderNum;
+                    } else {
+                        $orderNum = $incomingNumber;
+                        $orderId = (!empty($body['id']) && !preg_match('/^(JAP|ORD)-[0-9]{5,}$/i', $body['id'])) ? $body['id'] : $orderNum;
+                    }
+                    $orderDate = $body['order_date'] ?? ($body['date'] ?? date('d M Y, H:i'));
                     
                     $shippingAddr = isset($body['shipping_address']) ? json_encode($body['shipping_address']) : (isset($body['shippingAddress']) ? json_encode($body['shippingAddress']) : (isset($body['address']) ? json_encode($body['address']) : '{}'));
                     $billingAddr = isset($body['billing_address']) ? json_encode($body['billing_address']) : (isset($body['billingAddress']) ? json_encode($body['billingAddress']) : $shippingAddr);
@@ -5066,6 +5113,17 @@ try {
                         `tracking_id`, `awb`, `warehouse`, `delivery_slot`, `expected_delivery`, `timeline`
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
+                        `customer_name` = VALUES(`customer_name`),
+                        `customer_email` = VALUES(`customer_email`),
+                        `customer_phone` = VALUES(`customer_phone`),
+                        `shipping_address` = VALUES(`shipping_address`),
+                        `billing_address` = VALUES(`billing_address`),
+                        `items` = VALUES(`items`),
+                        `subtotal` = VALUES(`subtotal`),
+                        `discount` = VALUES(`discount`),
+                        `delivery_fee` = VALUES(`delivery_fee`),
+                        `total` = VALUES(`total`),
+                        `payment_method` = VALUES(`payment_method`),
                         `order_status` = VALUES(`order_status`),
                         `payment_status` = VALUES(`payment_status`),
                         `transaction_id` = VALUES(`transaction_id`),

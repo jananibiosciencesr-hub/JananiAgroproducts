@@ -169,47 +169,47 @@ function DashboardPage() {
                     return false;
                   })
                   .map((o: any) => ({
-                  id: o?.id || `ord-${o?.number || Date.now()}`,
-                  number: o?.number || o?.orderNumber || "ORD-000",
-                  orderNumber: o?.number || o?.orderNumber || "ORD-000",
-                  customerEmail: o?.customer_email || o?.customerEmail || "",
-                  customerPhone: o?.customer_phone || o?.customerPhone || "",
-                  date: o?.order_date || o?.date || "Recent",
-                  isoDate: o?.created_at ? o.created_at.split(" ")[0] : new Date().toISOString().split("T")[0]!,
-                  status: (o?.order_status || o?.status || "Processing") as any,
-                  courier: o?.courier || "Delhivery Air Express & Janani Direct",
-                  awb: o?.awb || o?.tracking_id || `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-                  expectedDelivery: o?.expected_delivery || o?.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
-                  deliverySlot: o?.delivery_slot || o?.deliverySlot,
-                  subtotal: Number(o?.subtotal) || 0,
-                  discount: Number(o?.discount) || 0,
-                  couponCode: o?.coupon_code || o?.couponCode,
-                  couponDiscount: Number(o?.coupon_discount || o?.couponDiscount || 0),
-                  walletDeduction: Number(o?.wallet_deduction || o?.walletDeduction || 0),
-                  deliveryFee: Number(o?.delivery_fee || o?.deliveryFee || 0),
-                  total: Number(o?.total || o?.finalTotal || 0),
-                  finalTotal: Number(o?.total || o?.finalTotal || 0),
-                  paymentMethod: o?.payment_method || o?.paymentMethod || "Razorpay (Online)",
-                  paymentStatus: o?.payment_status || o?.paymentStatus || "Paid",
-                  transactionId: o?.transaction_id || o?.transactionId || "pay_rzp_verified",
-                  address: {
-                    fullName: o?.shippingAddress?.fullName || o?.shippingAddress?.name || o?.customer_name || user?.name || "Valued Patron",
-                    phone: o?.shippingAddress?.phone || o?.customer_phone || user?.phone || "",
-                    streetAddress: o?.shippingAddress?.streetAddress || o?.shippingAddress?.street || "Registered Delivery Address",
-                    city: o?.shippingAddress?.city || "Ahmedabad",
-                    state: o?.shippingAddress?.state || "Gujarat",
-                    pincode: o?.shippingAddress?.pincode || "380054",
-                  },
-                  items: Array.isArray(o?.items) ? o.items.map((it: any) => ({
-                    productId: it?.productId || it?.id || 1,
-                    name: it?.title || it?.name || "Single-Origin Organic Harvest",
-                    variant: it?.variant || "Standard Pack",
-                    quantity: it?.quantity || it?.qty || 1,
-                    price: Number(it?.price) || 399,
-                    image: it?.image || "",
-                  })) : [],
-                  timeline: Array.isArray(o?.timeline) ? o.timeline : []
-                }));
+                    id: o?.id || `ord-${o?.number || Date.now()}`,
+                    number: o?.number || o?.orderNumber || "ORD-000",
+                    orderNumber: o?.number || o?.orderNumber || "ORD-000",
+                    customerEmail: o?.customer_email || o?.customerEmail || "",
+                    customerPhone: o?.customer_phone || o?.customerPhone || "",
+                    date: o?.order_date || o?.date || "Recent",
+                    isoDate: o?.created_at ? o.created_at.split(" ")[0] : new Date().toISOString().split("T")[0]!,
+                    status: (o?.order_status || o?.status || "Processing") as any,
+                    courier: o?.courier || "Delhivery Air Express & Janani Direct",
+                    awb: o?.awb || o?.tracking_id || `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+                    expectedDelivery: o?.expected_delivery || o?.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
+                    deliverySlot: o?.delivery_slot || o?.deliverySlot,
+                    subtotal: Number(o?.subtotal) || 0,
+                    discount: Number(o?.discount) || 0,
+                    couponCode: o?.coupon_code || o?.couponCode,
+                    couponDiscount: Number(o?.coupon_discount || o?.couponDiscount || 0),
+                    walletDeduction: Number(o?.wallet_deduction || o?.walletDeduction || 0),
+                    deliveryFee: Number(o?.delivery_fee || o?.deliveryFee || 0),
+                    total: Number(o?.total || o?.finalTotal || 0),
+                    finalTotal: Number(o?.total || o?.finalTotal || 0),
+                    paymentMethod: o?.payment_method || o?.paymentMethod || "Razorpay (Online)",
+                    paymentStatus: o?.payment_status || o?.paymentStatus || "Paid",
+                    transactionId: o?.transaction_id || o?.transactionId || "pay_rzp_verified",
+                    address: {
+                      fullName: o?.shippingAddress?.fullName || o?.shippingAddress?.name || o?.customer_name || user?.name || "Valued Patron",
+                      phone: o?.shippingAddress?.phone || o?.customer_phone || user?.phone || "",
+                      streetAddress: o?.shippingAddress?.streetAddress || o?.shippingAddress?.street || "Registered Delivery Address",
+                      city: o?.shippingAddress?.city || "Ahmedabad",
+                      state: o?.shippingAddress?.state || "Gujarat",
+                      pincode: o?.shippingAddress?.pincode || "380054",
+                    },
+                    items: Array.isArray(o?.items) ? o.items.map((it: any) => ({
+                      productId: it?.productId || it?.id || 1,
+                      name: it?.title || it?.name || "Single-Origin Organic Harvest",
+                      variant: it?.variant || "Standard Pack",
+                      quantity: it?.quantity || it?.qty || 1,
+                      price: Number(it?.price) || 399,
+                      image: it?.image || "",
+                    })) : [],
+                    timeline: Array.isArray(o?.timeline) ? o.timeline : []
+                  }));
                 setCustomerOrders(serverOrders);
                 saveCustomerOrders(serverOrders, user.email || user.phone);
               }
@@ -424,11 +424,10 @@ function DashboardPage() {
               key={item.id}
               type="button"
               onClick={() => handleTabChange(item.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shrink-0 ${
-                isActive
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shrink-0 ${isActive
                   ? "bg-[#075B32] text-white shadow-sm ring-1 ring-[#075B32]"
                   : "bg-secondary text-foreground hover:bg-secondary/80"
-              }`}
+                }`}
             >
               <Icon className="size-3.5" />
               <span>{item.label.replace("My ", "").replace(" & Shipments", "")}</span>
@@ -443,17 +442,15 @@ function DashboardPage() {
         <button
           type="button"
           onClick={() => handleTabChange("wallet")}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shrink-0 cursor-pointer ${
-            activeTab === "wallet"
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shrink-0 cursor-pointer ${activeTab === "wallet"
               ? "bg-[#075B32] text-white shadow-sm ring-1 ring-[#075B32]"
               : "bg-secondary text-foreground hover:bg-secondary/80"
-          }`}
+            }`}
         >
           <Wallet className={`size-3.5 ${activeTab === "wallet" ? "text-white" : "text-brand-leaf"}`} />
           <span>Wallet</span>
-          <span className={`rounded-full px-1.5 py-0.2 text-[9.5px] font-mono ${
-            activeTab === "wallet" ? "bg-white/25 text-white" : "bg-emerald-500/15 text-emerald-700"
-          }`}>
+          <span className={`rounded-full px-1.5 py-0.2 text-[9.5px] font-mono ${activeTab === "wallet" ? "bg-white/25 text-white" : "bg-emerald-500/15 text-emerald-700"
+            }`}>
             ₹{(user?.walletBalance ?? 0).toLocaleString("en-IN")}
           </span>
         </button>
@@ -471,11 +468,10 @@ function DashboardPage() {
                 key={item.id}
                 type="button"
                 onClick={() => handleTabChange(item.id)}
-                className={`flex w-full items-start justify-between gap-3 rounded-2xl p-3.5 text-left transition ${
-                  isActive
+                className={`flex w-full items-start justify-between gap-3 rounded-2xl p-3.5 text-left transition ${isActive
                     ? "bg-brand-leaf text-white shadow-sm"
                     : "text-foreground hover:bg-secondary"
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <Icon className={`size-4.5 mt-0.5 shrink-0 ${isActive ? "text-white" : "text-brand-leaf"}`} />
@@ -488,9 +484,8 @@ function DashboardPage() {
                 </div>
                 {item.count !== undefined && item.count > 0 && (
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono shrink-0 ${
-                      isActive ? "bg-white text-brand-leaf" : "bg-primary/10 text-primary"
-                    }`}
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono shrink-0 ${isActive ? "bg-white text-brand-leaf" : "bg-primary/10 text-primary"
+                      }`}
                   >
                     {item.count}
                   </span>
@@ -503,11 +498,10 @@ function DashboardPage() {
             <button
               type="button"
               onClick={() => handleTabChange("wallet")}
-              className={`flex w-full items-center justify-between rounded-2xl p-3 text-xs font-semibold transition cursor-pointer ${
-                activeTab === "wallet"
+              className={`flex w-full items-center justify-between rounded-2xl p-3 text-xs font-semibold transition cursor-pointer ${activeTab === "wallet"
                   ? "bg-brand-leaf text-white shadow-sm"
                   : "text-foreground hover:bg-secondary"
-              }`}
+                }`}
             >
               <span className="flex items-center gap-2.5">
                 <Wallet className={`size-4.5 ${activeTab === "wallet" ? "text-white" : "text-brand-gold"}`} />
@@ -519,11 +513,10 @@ function DashboardPage() {
                 </span>
               </span>
               <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono shrink-0 ${
-                  activeTab === "wallet"
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono shrink-0 ${activeTab === "wallet"
                     ? "bg-white text-brand-leaf"
                     : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                }`}
+                  }`}
               >
                 ₹{(user?.walletBalance ?? 0).toLocaleString("en-IN")}
               </span>
@@ -611,13 +604,12 @@ function DashboardPage() {
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <strong className="font-mono text-sm sm:text-base font-bold text-foreground truncate">{orderNum}</strong>
-                              <span className={`rounded-full px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold shrink-0 ${
-                                o.status === "Delivered"
+                              <span className={`rounded-full px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold shrink-0 ${o.status === "Delivered"
                                   ? "bg-brand-leaf/15 text-brand-leaf"
                                   : o.status === "Cancelled"
-                                  ? "bg-destructive/15 text-destructive"
-                                  : "bg-brand-gold/20 text-brand-gold"
-                              }`}>
+                                    ? "bg-destructive/15 text-destructive"
+                                    : "bg-brand-gold/20 text-brand-gold"
+                                }`}>
                                 ● {o.status || "Processing"}
                               </span>
                             </div>
