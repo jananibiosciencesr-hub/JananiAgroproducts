@@ -22,8 +22,7 @@ import {
   Search,
   Heart,
   ShoppingBag,
-  User,
-  ChevronRight
+  User
 } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
@@ -854,27 +853,6 @@ function AdminDashboardPage() {
   const safeReturns = Array.isArray(returns) ? returns : [];
   const safeReviews = Array.isArray(reviews) ? reviews : [];
 
-  const tabMeta: Record<AdminTab, { group: string; label: string }> = {
-    dashboard: { group: "Core", label: "Dashboard" },
-    categories: { group: "Catalog", label: "Categories" },
-    products: { group: "Catalog", label: "Products" },
-    orders: { group: "Sales", label: "Orders" },
-    customers: { group: "Sales", label: "Customers" },
-    inquiries: { group: "Sales", label: "Inquiries" },
-    inventory: { group: "Operations", label: "Warehouse Inventory" },
-    payments: { group: "Operations", label: "Payments" },
-    coupons: { group: "Marketing", label: "Coupons" },
-    referrals: { group: "Marketing", label: "Referrals" },
-    shipping: { group: "Operations", label: "Shipping" },
-    reviews: { group: "Customer", label: "Reviews" },
-    returns: { group: "Customer", label: "Returns" },
-    cms: { group: "Storefront", label: "Banners & CMS" },
-    marketing: { group: "Marketing", label: "Marketing" },
-    reports: { group: "Analytics", label: "Reports" },
-    settings: { group: "System", label: "Settings" },
-    roles: { group: "System", label: "Roles & Permissions" },
-  };
-
   return (
     <div data-admin="true" className="admin-portal flex min-h-screen w-full max-w-full overflow-x-clip bg-slate-50/70 dark:bg-slate-950/80 text-foreground font-sans antialiased">
       {/* Collapsible Sidebar */}
@@ -915,21 +893,8 @@ function AdminDashboardPage() {
           onAddAction={handleContextualAdd}
         />
 
-        {/* Dynamic View Body */}
-        <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-clip px-5 sm:px-8 lg:px-10 xl:px-12 py-5 sm:py-7 lg:py-9 max-w-[1600px] xl:max-w-[1800px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] mx-auto gap-5">
-          {/* Top Breadcrumb Trail (Zaga Acme Cloud Style) */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground/80 shrink-0 select-none pb-1">
-            <button
-              onClick={() => handleNavigateTab("dashboard")}
-              className="hover:text-foreground transition-colors cursor-pointer"
-            >
-              Seller Admin
-            </button>
-            <ChevronRight className="size-3.5 text-muted-foreground/50 shrink-0" />
-            <span className="text-muted-foreground/70">{tabMeta[activeTab]?.group || "General"}</span>
-            <ChevronRight className="size-3.5 text-muted-foreground/50 shrink-0" />
-            <span className="text-foreground font-bold">{tabMeta[activeTab]?.label || activeTab}</span>
-          </div>
+        {/* Dynamic View Body with generous breathing space from sidebar border */}
+        <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-clip pl-6 sm:pl-10 lg:pl-16 xl:pl-20 pr-6 sm:pr-8 lg:pr-10 xl:pr-12 py-5 sm:py-7 lg:py-9 max-w-[1600px] xl:max-w-[1800px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] mx-auto gap-6 sm:gap-8">
           {activeTab === "dashboard" && (
             <AdminOverview
               stats={stats}
