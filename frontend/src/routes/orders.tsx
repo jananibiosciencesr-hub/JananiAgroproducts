@@ -96,7 +96,7 @@ export function MyOrdersPage() {
           const data = await res.json();
           const ordersListRaw = Array.isArray(data?.orders) ? data.orders : (Array.isArray(data?.data) ? data.data : null);
           if (data?.success && Array.isArray(ordersListRaw)) {
-            const serverOrders: CustomerOrder[] = data.orders.map((o: any) => ({
+            const serverOrders: CustomerOrder[] = ordersListRaw.map((o: any) => ({
               id: o.id || `ord-${o.number}`,
               number: o.number || o.orderNumber,
               orderNumber: o.number || o.orderNumber,

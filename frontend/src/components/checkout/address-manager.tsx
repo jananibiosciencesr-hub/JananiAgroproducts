@@ -340,15 +340,15 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
 
   const handleDeleteAddress = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (addresses.length <= 1) {
-      toast.error("You must have at least one delivery address.");
-      return;
-    }
     const updated = addresses.filter((a) => a.id !== id);
     setAddresses(updated);
     toast.success("Delivery address removed");
-    if (selectedAddressId === id && updated[0]) {
-      onSelectAddress(updated[0]);
+    if (selectedAddressId === id) {
+      if (updated[0]) {
+        onSelectAddress(updated[0]);
+      } else {
+        onSelectAddress(null as any);
+      }
     }
   };
 

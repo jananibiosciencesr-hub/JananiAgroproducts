@@ -4,733 +4,9 @@ import { query, getPool, isDbConnected } from '../config/db.js';
 // In-memory admin data stores
 export let adminProducts = [...products];
 
-export let adminOrders = [
-  {
-    id: "ORD-94812",
-    date: "2026-09-11 10:45 AM",
-    orderStatus: "Delivered",
-    paymentStatus: "Paid",
-    paymentMethod: "UPI (PhonePe)",
-    paymentGatewayId: "pay_NL8820491823",
-    customer: { id: "CUST-001", name: "Ananya Sharma", email: "ananya.s@gmail.com", phone: "+91 98451 22345", tier: "Platinum Gold", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80" },
-    shippingAddress: {
-      name: "Ananya Sharma",
-      street: "Flat 402, Green Glen Heights, Bellandur Outer Ring Road",
-      landmark: "Opp. EcoSpace Business Park",
-      city: "Bengaluru",
-      state: "Karnataka",
-      pincode: "560103",
-      country: "India",
-      phone: "+91 98451 22345"
-    },
-    billingAddress: {
-      name: "Ananya Sharma",
-      street: "Flat 402, Green Glen Heights, Bellandur Outer Ring Road",
-      landmark: "Opp. EcoSpace Business Park",
-      city: "Bengaluru",
-      state: "Karnataka",
-      pincode: "560103",
-      country: "India",
-      phone: "+91 98451 22345"
-    },
-    items: [
-      {
-        id: "PROD-001",
-        title: "Harit (1 L) — Trichoderma Viride Biofungicide",
-        sku: "JAP-HARIT-1L",
-        hsnCode: "04059020",
-        taxRate: 5,
-        price: 1450,
-        mrp: 1800,
-        qty: 2,
-        unit: "500ml glass jar",
-        image: "https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=300&q=80",
-        subtotal: 2900
-      },
-      {
-        id: "PROD-003",
-        title: "Janani Neem Oil 1000 PPM Botanical Repellent (1 L)",
-        sku: "JAN-BOT-NEEM-1L",
-        hsnCode: "38089910",
-        taxRate: 5,
-        price: 680,
-        mrp: 850,
-        qty: 1,
-        unit: "1 L Bottle",
-        image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80",
-        subtotal: 680
-      },
-      {
-        id: "PROD-002",
-        title: "Bhumi Shakti (1 L) — Humic & Fulvic Acid",
-        sku: "JAP-BHUMI-1L",
-        hsnCode: "15089091",
-        taxRate: 5,
-        price: 420,
-        mrp: 520,
-        qty: 1,
-        unit: "1 Litre Tin",
-        image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&q=80",
-        subtotal: 420
-      }
-    ],
-    subtotal: 4000,
-    taxAmount: 200,
-    discount: 160,
-    couponCode: "JANANI10",
-    shippingFee: 0,
-    total: 4040,
-    warehouse: { id: "WH-BLR-01", name: "Bengaluru South Fulfillment Center", location: "Electronic City Phase 1", state: "Karnataka" },
-    courier: "Shiprocket (Bluedart Air)",
-    trackingId: "SR-BLR-884910",
-    awbGeneratedAt: "2026-09-11 11:15 AM",
-    pickupScheduled: "2026-09-11 04:30 PM",
-    packageWeight: "3.2 kg",
-    packageDimensions: "32 x 22 x 18 cm",
-    timeline: [
-      { status: "placed", title: "Order Confirmed", description: "Customer paid ₹4,040 via PhonePe UPI", time: "2026-09-11 10:45 AM", done: true, current: false },
-      { status: "processing", title: "Quality Check & Packing", description: "Packed in Lodhika certified nitrogen pouch", time: "2026-09-11 11:30 AM", done: true, current: false },
-      { status: "shipped", title: "Dispatched via Shiprocket", description: "Handed over to Bluedart Air Courier (AWB: SR-BLR-884910)", time: "2026-09-11 04:45 PM", done: true, current: false },
-      { status: "delivered", title: "Delivered to Patron", description: "Received by customer with OTP verification", time: "2026-09-12 02:15 PM", done: true, current: true }
-    ],
-    customerNote: "Please deliver between 10 AM to 4 PM. If unavailable, leave with reception.",
-    adminNotes: [
-      { id: "NOTE-1", text: "Special eco-friendly gift wrap included upon request.", author: "Doddi Sai Rama", date: "2026-09-11 11:00 AM" }
-    ],
-    refundDetails: null,
-    returnDetails: null,
-    exchangeDetails: null
-  },
-  {
-    id: "ORD-94811",
-    date: "2026-09-11 09:30 AM",
-    orderStatus: "Processing",
-    paymentStatus: "Paid",
-    paymentMethod: "Credit Card (HDFC)",
-    paymentGatewayId: "pay_CC9912048912",
-    customer: { id: "CUST-002", name: "Rajesh Kulkarni", email: "rajesh.k@rediffmail.com", phone: "+91 97123 44556", tier: "Gold Member", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80" },
-    shippingAddress: {
-      name: "Rajesh Kulkarni",
-      street: "B-12, Mayur Vihar, Kothrud",
-      landmark: "Near MIT College",
-      city: "Pune",
-      state: "Maharashtra",
-      pincode: "411038",
-      country: "India",
-      phone: "+91 97123 44556"
-    },
-    billingAddress: {
-      name: "Rajesh Kulkarni",
-      street: "B-12, Mayur Vihar, Kothrud",
-      landmark: "Near MIT College",
-      city: "Pune",
-      state: "Maharashtra",
-      pincode: "411038",
-      country: "India",
-      phone: "+91 97123 44556"
-    },
-    items: [
-      {
-        id: "PROD-004",
-        title: "Harit Bio-Fungicide (1 L)",
-        sku: "JAN-RICE-KAV-1000",
-        hsnCode: "10063090",
-        taxRate: 5,
-        price: 310,
-        mrp: 390,
-        qty: 3,
-        unit: "1kg Eco Pouch",
-        image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&q=80",
-        subtotal: 930
-      },
-      {
-        id: "PROD-002",
-        title: "Harit Bio-Fungicide (1L)",
-        sku: "JAP-BHUMI-1L",
-        hsnCode: "15089091",
-        taxRate: 5,
-        price: 420,
-        mrp: 520,
-        qty: 1,
-        unit: "1 Litre Tin",
-        image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&q=80",
-        subtotal: 420
-      }
-    ],
-    subtotal: 1350,
-    taxAmount: 67,
-    discount: 238,
-    couponCode: "HARVESTFEST",
-    shippingFee: 0,
-    total: 1179,
-    warehouse: { id: "WH-GIDC-01", name: "Central Lodhika GIDC Facility", location: "Metoda, Rajkot", state: "Gujarat" },
-    courier: "Shiprocket (Delhivery Surface)",
-    trackingId: "SR-PUN-992104",
-    awbGeneratedAt: "2026-09-11 10:00 AM",
-    pickupScheduled: "2026-09-11 05:00 PM",
-    packageWeight: "4.5 kg",
-    packageDimensions: "30 x 25 x 20 cm",
-    timeline: [
-      { status: "placed", title: "Order Received", description: "HDFC Credit Card verified ₹1,179", time: "2026-09-11 09:30 AM", done: true, current: false },
-      { status: "processing", title: "Allocated to Lodhika Warehouse", description: "Packing slips printed, bin #B4", time: "2026-09-11 10:00 AM", done: true, current: true },
-      { status: "shipped", title: "Awaiting Carrier Pickup", description: "Manifest scheduled for Delhivery Surface", time: "Pending", done: false, current: false },
-      { status: "delivered", title: "Delivery to Customer", description: "Estimated in 2 days", time: "Pending", done: false, current: false }
-    ],
-    customerNote: "Please ensure glass jars have extra air bubble cushion.",
-    adminNotes: [],
-    refundDetails: null,
-    returnDetails: null,
-    exchangeDetails: null
-  },
-  {
-    id: "ORD-94810",
-    date: "2026-09-11 08:15 AM",
-    orderStatus: "Pending",
-    paymentStatus: "Pending",
-    paymentMethod: "Cash on Delivery",
-    paymentGatewayId: "cod_94810",
-    customer: { id: "CUST-003", name: "Sunita Iyer", email: "sunita.iyer@yahoo.com", phone: "+91 94451 67890", tier: "Silver", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80" },
-    shippingAddress: {
-      name: "Sunita Iyer",
-      street: "4th Cross, RA Puram",
-      landmark: "Near Sangeetha Restaurant",
-      city: "Chennai",
-      state: "Tamil Nadu",
-      pincode: "600028",
-      country: "India",
-      phone: "+91 94451 67890"
-    },
-    billingAddress: {
-      name: "Sunita Iyer",
-      street: "4th Cross, RA Puram",
-      landmark: "Near Sangeetha Restaurant",
-      city: "Chennai",
-      state: "Tamil Nadu",
-      pincode: "600028",
-      country: "India",
-      phone: "+91 94451 67890"
-    },
-    items: [
-      {
-        id: "PROD-001",
-        title: "Harit Trichoderma Viride (1 L) (500ml)",
-        sku: "JAP-HARIT-1L",
-        hsnCode: "04059020",
-        taxRate: 5,
-        price: 1450,
-        mrp: 1800,
-        qty: 1,
-        unit: "500ml glass jar",
-        image: "https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=300&q=80",
-        subtotal: 1450
-      }
-    ],
-    subtotal: 1450,
-    taxAmount: 72,
-    discount: 72,
-    couponCode: "",
-    shippingFee: 0,
-    total: 1450,
-    warehouse: { id: "WH-SRI-02", name: "Srikakulam Natural Valley Reserve", location: "Srikakulam Valley", state: "Andhra Pradesh" },
-    courier: "Shiprocket (Xpressbees)",
-    trackingId: "",
-    awbGeneratedAt: null,
-    pickupScheduled: null,
-    packageWeight: "1.2 kg",
-    packageDimensions: "18 x 14 x 14 cm",
-    timeline: [
-      { status: "placed", title: "COD Order Placed", description: "Verification SMS dispatched to patron", time: "2026-09-11 08:15 AM", done: true, current: true },
-      { status: "processing", title: "Pending Admin Confirmation", description: "Verify address before label creation", time: "Pending", done: false, current: false }
-    ],
-    customerNote: "",
-    adminNotes: [],
-    refundDetails: null,
-    returnDetails: null,
-    exchangeDetails: null
-  },
-  {
-    id: "ORD-94809",
-    date: "2026-09-10 06:20 PM",
-    orderStatus: "Shipped",
-    paymentStatus: "Paid",
-    paymentMethod: "NetBanking (ICICI)",
-    paymentGatewayId: "pay_NB8819204",
-    customer: { id: "CUST-004", name: "Vikram Malhotra", email: "v.malhotra@techcorp.in", phone: "+91 99887 66554", tier: "VIP Patron", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80" },
-    shippingAddress: {
-      name: "Vikram Malhotra",
-      street: "Villa 18, Palm Drive, Golf Course Ext Road",
-      landmark: "Near Club House",
-      city: "Gurugram",
-      state: "Haryana",
-      pincode: "122002",
-      country: "India",
-      phone: "+91 99887 66554"
-    },
-    billingAddress: {
-      name: "Vikram Malhotra",
-      street: "Villa 18, Palm Drive, Golf Course Ext Road",
-      landmark: "Near Club House",
-      city: "Gurugram",
-      state: "Haryana",
-      pincode: "122002",
-      country: "India",
-      phone: "+91 99887 66554"
-    },
-    items: [
-      {
-        id: "PROD-003",
-        title: "Janani Neem Oil 1000 PPM Botanical Repellent (1 L)",
-        sku: "JAN-BOT-NEEM-1L",
-        hsnCode: "38089910",
-        taxRate: 5,
-        price: 680,
-        mrp: 850,
-        qty: 2,
-        unit: "1 L Bottle",
-        image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80",
-        subtotal: 1360
-      },
-      {
-        id: "PROD-005",
-        title: "Harit Bio-Fungicide (1 L)",
-        sku: "JAN-BIO-HAR-1L",
-        hsnCode: "38089910",
-        taxRate: 12,
-        price: 1899,
-        mrp: 2499,
-        qty: 1,
-        unit: "20g Jar with Spoon",
-        image: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=300&q=80",
-        subtotal: 1899
-      }
-    ],
-    subtotal: 3259,
-    taxAmount: 281,
-    discount: 400,
-    couponCode: "BULKAGRO",
-    shippingFee: 0,
-    total: 3140,
-    warehouse: { id: "WH-GIDC-01", name: "Central Lodhika GIDC Facility", location: "Metoda, Rajkot", state: "Gujarat" },
-    courier: "Shiprocket (Bluedart Air)",
-    trackingId: "SR-DEL-441209",
-    awbGeneratedAt: "2026-09-10 07:00 PM",
-    pickupScheduled: "2026-09-11 11:00 AM",
-    packageWeight: "2.1 kg",
-    packageDimensions: "24 x 18 x 14 cm",
-    timeline: [
-      { status: "placed", title: "Order Verified", description: "VIP Patron order via ICICI NetBanking", time: "2026-09-10 06:20 PM", done: true, current: false },
-      { status: "processing", title: "Packed & Sealed", description: "Gold seal applied with tamper proof barcode", time: "2026-09-10 07:30 PM", done: true, current: false },
-      { status: "shipped", title: "In Transit via Air Express", description: "Departed Delhi Cargo Hub (SR-DEL-441209)", time: "2026-09-11 08:30 AM", done: true, current: true }
-    ],
-    customerNote: "VIP Priority delivery requested.",
-    adminNotes: [],
-    refundDetails: null,
-    returnDetails: null,
-    exchangeDetails: null
-  },
-  {
-    id: "ORD-94807",
-    date: "2026-09-10 11:00 AM",
-    orderStatus: "Cancelled",
-    paymentStatus: "Refunded",
-    paymentMethod: "Credit Card (Axis)",
-    paymentGatewayId: "pay_AX9920194",
-    customer: { id: "CUST-006", name: "Kunal Singhania", email: "kunal.singh@gmail.com", phone: "+91 93310 99887", tier: "Bronze", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&q=80" },
-    shippingAddress: {
-      name: "Kunal Singhania",
-      street: "Ballygunge Circular Road",
-      landmark: "Near Ice Skating Rink",
-      city: "Kolkata",
-      state: "West Bengal",
-      pincode: "700019",
-      country: "India",
-      phone: "+91 93310 99887"
-    },
-    billingAddress: {
-      name: "Kunal Singhania",
-      street: "Ballygunge Circular Road",
-      landmark: "Near Ice Skating Rink",
-      city: "Kolkata",
-      state: "West Bengal",
-      pincode: "700019",
-      country: "India",
-      phone: "+91 93310 99887"
-    },
-    items: [
-      {
-        id: "PROD-001",
-        title: "Harit (1 L) — Trichoderma Viride Biofungicide",
-        sku: "JAP-HARIT-1L",
-        hsnCode: "04059020",
-        taxRate: 5,
-        price: 1450,
-        mrp: 1800,
-        qty: 2,
-        unit: "500ml glass jar",
-        image: "https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=300&q=80",
-        subtotal: 2900
-      },
-      {
-        id: "PROD-003",
-        title: "Janani Neem Oil 1000 PPM Botanical Repellent (1 L)",
-        sku: "JAN-BOT-NEEM-1L",
-        hsnCode: "38089910",
-        taxRate: 5,
-        price: 680,
-        mrp: 850,
-        qty: 1,
-        unit: "1 L Bottle",
-        image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80",
-        subtotal: 680
-      }
-    ],
-    subtotal: 3580,
-    taxAmount: 179,
-    discount: 259,
-    couponCode: "",
-    shippingFee: 0,
-    total: 3500,
-    warehouse: { id: "WH-GIDC-01", name: "Central Lodhika GIDC Facility", location: "Metoda, Rajkot", state: "Gujarat" },
-    courier: "None",
-    trackingId: "",
-    awbGeneratedAt: null,
-    pickupScheduled: null,
-    packageWeight: "2.8 kg",
-    packageDimensions: "28 x 20 x 16 cm",
-    timeline: [
-      { status: "placed", title: "Order Placed", description: "Paid ₹3,500 via Axis Bank", time: "2026-09-10 11:00 AM", done: true, current: false },
-      { status: "cancelled", title: "Order Cancelled by Customer", description: "Customer changed delivery requirement", time: "2026-09-10 11:45 AM", done: true, current: false },
-      { status: "refunded", title: "Refund Issued", description: "Full ₹3,500 refunded to original source", time: "2026-09-10 12:30 PM", done: true, current: true }
-    ],
-    customerNote: "Please cancel my order as I selected wrong item size.",
-    adminNotes: [
-      { id: "NOTE-1", text: "Customer initiated cancellation within 1 hour. Full refund processed.", author: "Doddi Sai Rama", date: "2026-09-10 12:30 PM" }
-    ],
-    refundDetails: {
-      amount: 3500,
-      mode: "Original Credit Card (Axis)",
-      reason: "Customer requested cancellation before dispatch",
-      refundedAt: "2026-09-10 12:30 PM"
-    },
-    returnDetails: null,
-    exchangeDetails: null
-  }
-];
+export let adminOrders = [];
 
-export let adminCustomers = [
-  {
-    id: "CUST-KAMESWARI",
-    name: "Kameswari Pachipulusu",
-    email: "kameswarip98@gmail.com",
-    phone: "+91 98480 22338",
-    city: "Visakhapatnam",
-    state: "Andhra Pradesh",
-    pincode: "530001",
-    totalSpent: 930,
-    totalOrders: 1,
-    avgOrderValue: 930,
-    tier: "Silver Member",
-    status: "Active",
-    suspensionReason: null,
-    joinDate: "2026-10-13",
-    lastActive: "Just now",
-    walletBalance: 250,
-    loyaltyPoints: 100,
-    avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kameswari%20Pachipulusu",
-    addresses: [
-      { id: "ADDR-K1", label: "Home (Default)", street: "D.No 4-56, Main Road", city: "Visakhapatnam", state: "Andhra Pradesh", pincode: "530001", isDefault: true, phone: "+91 98480 22338" }
-    ],
-    orderHistory: [
-      { id: "JAP-356429", date: "2026-10-06 11:09 AM", itemsSummary: "BHUMI SHAKTI Bio Fertilizer 5KG x1, NEEM GUARD Botanical Extract 1L x1", itemsCount: 2, total: 930, paymentMethod: "Razorpay (Online)", paymentStatus: "Paid", orderStatus: "Pending", trackingId: "DEL-3928172635" }
-    ],
-    wishlist: [],
-    cart: [],
-    walletTransactions: [
-      { id: "TXN-K1", date: "2026-10-13", type: "credit", amount: 150, description: "Welcome bonus credited", balanceAfter: 150 },
-      { id: "TXN-K2", date: "2026-10-13", type: "credit", amount: 100, description: "Harvest festive reward credited", balanceAfter: 250 }
-    ],
-    loyaltyHistory: [],
-    referrals: {
-      code: "JANANI98",
-      count: 0,
-      totalEarned: 0,
-      friends: []
-    },
-    couponsUsed: []
-  },
-  {
-    id: "CUST-001",
-    name: "Ananya Sharma",
-    email: "ananya.s@gmail.com",
-    phone: "+91 98451 22345",
-    city: "Bengaluru",
-    state: "Karnataka",
-    pincode: "560038",
-    totalSpent: 38450,
-    totalOrders: 14,
-    avgOrderValue: 2746,
-    tier: "Platinum Gold",
-    status: "Active",
-    suspensionReason: null,
-    joinDate: "2025-11-12",
-    lastActive: "10 mins ago",
-    walletBalance: 1250,
-    loyaltyPoints: 3840,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80",
-    addresses: [
-      { id: "ADDR-101", label: "Home (Default)", street: "Flat 402, Green Glen Heights, Bellandur Outer Ring Road", city: "Bengaluru", state: "Karnataka", pincode: "560103", isDefault: true, phone: "+91 98451 22345" },
-      { id: "ADDR-102", label: "Office", street: "Tower B, 7th Floor, EcoWorld Tech Park", city: "Bengaluru", state: "Karnataka", pincode: "560103", isDefault: false, phone: "+91 98451 22345" }
-    ],
-    orderHistory: [
-      { id: "ORD-94812", date: "2026-09-11 10:45 AM", itemsSummary: "Harit Bio-Fungicide (1L) x2, Neem Oil 1000 PPM (1L) x1", itemsCount: 3, total: 4040, paymentMethod: "UPI (PhonePe)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-884910" },
-      { id: "ORD-94730", date: "2026-08-28 04:15 PM", itemsSummary: "Harit Bio-Fungicide (1L) x1, Bhumi Shakti (1L) x1", itemsCount: 2, total: 2620, paymentMethod: "Credit Card (HDFC)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-748921" },
-      { id: "ORD-94610", date: "2026-08-10 11:30 AM", itemsSummary: "Bhumi Shakti Soil Booster (5L) x1", itemsCount: 1, total: 1450, paymentMethod: "UPI (Google Pay)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-BLR-661209" }
-    ],
-    wishlist: [
-      { id: "neem-oil-1l", name: "Janani Neem Oil 1000 PPM (1 L)", price: 380, originalPrice: 480, image: "https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=300&q=80", inStock: true, unit: "1 L Bottle" },
-      { id: "harit-bio-fungicide-1l", name: "Harit Bio-Fungicide (1 L)", price: 310, originalPrice: 390, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&q=80", inStock: true, unit: "1kg Pouch" }
-    ],
-    cart: [
-      { id: "bhumi-shakti-1l", name: "Bhumi Shakti Soil Conditioner", price: 1450, qty: 1, image: "https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=300&q=80", unit: "500ml Jar" },
-      { id: "neem-oil-1000-ppm-1l", name: "Neem Oil 1000 PPM Botanical Repellent", price: 680, qty: 2, image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&q=80", unit: "1 L Bottle" }
-    ],
-    walletTransactions: [
-      { id: "TXN-8821", date: "2026-09-01", type: "credit", amount: 500, description: "Referral bonus credited (Kavita Joined)", balanceAfter: 1250 },
-      { id: "TXN-8740", date: "2026-08-28", type: "debit", amount: 250, description: "Applied wallet balance on ORD-94730", balanceAfter: 750 },
-      { id: "TXN-8612", date: "2026-08-15", type: "credit", amount: 1000, description: "Independence Day Cashback Loyalty Grant", balanceAfter: 1000 }
-    ],
-    loyaltyHistory: [
-      { id: "LPT-101", date: "2026-09-11", type: "earned", points: 404, description: "Earned 10% points on ORD-94812" },
-      { id: "LPT-102", date: "2026-08-28", type: "earned", points: 262, description: "Earned 10% points on ORD-94730" }
-    ],
-    referrals: {
-      code: "ANANYA-AGRO-77",
-      count: 6,
-      totalEarned: 3000,
-      friends: [
-        { name: "Kavita Rao", date: "2026-09-01", reward: 500, status: "First Order Placed" },
-        { name: "Pooja Reddy", date: "2026-08-19", reward: 500, status: "First Order Placed" },
-        { name: "Rohan V.", date: "2026-07-22", reward: 500, status: "First Order Placed" }
-      ]
-    },
-    couponsUsed: [
-      { code: "JANANI10", discount: 404, orderId: "ORD-94812", date: "2026-09-11" },
-      { code: "FIRSTORGANIC", discount: 200, orderId: "ORD-94610", date: "2026-08-10" }
-    ]
-  },
-  {
-    id: "CUST-002",
-    name: "Rajesh Kulkarni",
-    email: "rajesh.k@rediffmail.com",
-    phone: "+91 97123 44556",
-    city: "Pune",
-    state: "Maharashtra",
-    pincode: "411038",
-    totalSpent: 18900,
-    totalOrders: 7,
-    avgOrderValue: 2700,
-    tier: "Gold Member",
-    status: "Active",
-    suspensionReason: null,
-    joinDate: "2026-01-04",
-    lastActive: "1 hour ago",
-    walletBalance: 450,
-    loyaltyPoints: 1890,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-    addresses: [
-      { id: "ADDR-201", label: "Home (Default)", street: "B-12, Mayur Vihar, Kothrud", city: "Pune", state: "Maharashtra", pincode: "411038", isDefault: true, phone: "+91 97123 44556" }
-    ],
-    orderHistory: [
-      { id: "ORD-94811", date: "2026-09-11 09:30 AM", itemsSummary: "Harit Bio-Fungicide (1L) x3, Bhumi Shakti (1L) x1", itemsCount: 4, total: 1179, paymentMethod: "Credit Card (HDFC)", paymentStatus: "Paid", orderStatus: "Processing", trackingId: "SR-PUN-992104" }
-    ],
-    wishlist: [
-      { id: "harit-5l", name: "Harit Bio-Fungicide Trichoderma Viride (5L)", price: 1450, originalPrice: 1800, image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&q=80", inStock: true, unit: "5L Canister" }
-    ],
-    cart: [],
-    walletTransactions: [
-      { id: "TXN-7901", date: "2026-08-20", type: "credit", amount: 450, description: "Promotional loyalty cashback", balanceAfter: 450 }
-    ],
-    loyaltyHistory: [
-      { id: "LPT-201", date: "2026-09-11", type: "earned", points: 118, description: "Points from ORD-94811" }
-    ],
-    referrals: {
-      code: "RAJESH-PUNE-12",
-      count: 2,
-      totalEarned: 1000,
-      friends: [
-        { name: "Sanjay Deshmukh", date: "2026-06-14", reward: 500, status: "First Order Placed" }
-      ]
-    },
-    couponsUsed: [
-      { code: "HARVESTFEST", discount: 177, orderId: "ORD-94811", date: "2026-09-11" }
-    ]
-  },
-  {
-    id: "CUST-003",
-    name: "Sunita Iyer",
-    email: "sunita.iyer@yahoo.com",
-    phone: "+91 94451 67890",
-    city: "Chennai",
-    state: "Tamil Nadu",
-    pincode: "600028",
-    totalSpent: 7450,
-    totalOrders: 3,
-    avgOrderValue: 2483,
-    tier: "Silver",
-    status: "Active",
-    suspensionReason: null,
-    joinDate: "2026-04-18",
-    lastActive: "Yesterday",
-    walletBalance: 0,
-    loyaltyPoints: 745,
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80",
-    addresses: [
-      { id: "ADDR-301", label: "Home (Default)", street: "4th Cross, RA Puram", city: "Chennai", state: "Tamil Nadu", pincode: "600028", isDefault: true, phone: "+91 94451 67890" }
-    ],
-    orderHistory: [
-      { id: "ORD-94810", date: "2026-09-11 08:15 AM", itemsSummary: "Bhumi Shakti Soil Booster (5L) x1", itemsCount: 1, total: 1450, paymentMethod: "Cash on Delivery", paymentStatus: "Pending", orderStatus: "Pending", trackingId: "" }
-    ],
-    wishlist: [],
-    cart: [
-      { id: "harit-bio-fungicide-1l", name: "Ancient Black Kavuni Heritage Rice", price: 310, qty: 3, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&q=80", unit: "1kg Bag" }
-    ],
-    walletTransactions: [],
-    loyaltyHistory: [
-      { id: "LPT-301", date: "2026-09-11", type: "earned", points: 145, description: "Points from ORD-94810" }
-    ],
-    referrals: {
-      code: "SUNITA-CHN-90",
-      count: 0,
-      totalEarned: 0,
-      friends: []
-    },
-    couponsUsed: []
-  },
-  {
-    id: "CUST-004",
-    name: "Vikram Malhotra",
-    email: "v.malhotra@techcorp.in",
-    phone: "+91 99887 66554",
-    city: "Gurugram",
-    state: "Haryana",
-    pincode: "122002",
-    totalSpent: 52100,
-    totalOrders: 21,
-    avgOrderValue: 2480,
-    tier: "VIP Patron",
-    status: "Active",
-    suspensionReason: null,
-    joinDate: "2025-08-20",
-    lastActive: "Just now",
-    walletBalance: 3450,
-    loyaltyPoints: 5210,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
-    addresses: [
-      { id: "ADDR-401", label: "Villa (Default)", street: "Villa 18, Palm Drive, Golf Course Ext Road", city: "Gurugram", state: "Haryana", pincode: "122002", isDefault: true, phone: "+91 99887 66554" }
-    ],
-    orderHistory: [
-      { id: "ORD-94809", date: "2026-09-10 06:20 PM", itemsSummary: "Bhumi Shakti (1L) x2, Harit Bio-Fungicide (1L) x1", itemsCount: 3, total: 3140, paymentMethod: "NetBanking (ICICI)", paymentStatus: "Paid", orderStatus: "Shipped", trackingId: "SR-DEL-441209" }
-    ],
-    wishlist: [
-      { id: "pushkal-humic-1l", name: "Pushkal Humic Acid Liquid (1 L)", price: 550, originalPrice: 650, image: "https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=300&q=80", inStock: true, unit: "1 L Bottle" }
-    ],
-    cart: [],
-    walletTransactions: [
-      { id: "TXN-9010", date: "2026-09-05", type: "credit", amount: 2000, description: "VIP Patron Quarterly Wellness Grant", balanceAfter: 3450 }
-    ],
-    loyaltyHistory: [
-      { id: "LPT-401", date: "2026-09-10", type: "earned", points: 314, description: "Points from ORD-94809" }
-    ],
-    referrals: {
-      code: "VIKRAM-VIP-01",
-      count: 9,
-      totalEarned: 4500,
-      friends: [
-        { name: "Aditya Roy", date: "2026-08-30", reward: 500, status: "First Order Placed" },
-        { name: "Sameer Joshi", date: "2026-08-14", reward: 500, status: "First Order Placed" }
-      ]
-    },
-    couponsUsed: [
-      { code: "BULKAGRO", discount: 500, orderId: "ORD-94809", date: "2026-09-10" }
-    ]
-  },
-  {
-    id: "CUST-005",
-    name: "Dr. Meenakshi Rao",
-    email: "dr.m.rao@aiims.edu",
-    phone: "+91 98231 11223",
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "500034",
-    totalSpent: 26800,
-    totalOrders: 11,
-    avgOrderValue: 2436,
-    tier: "Gold Member",
-    status: "Active",
-    suspensionReason: null,
-    joinDate: "2025-12-01",
-    lastActive: "3 days ago",
-    walletBalance: 800,
-    loyaltyPoints: 2680,
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&q=80",
-    addresses: [
-      { id: "ADDR-501", label: "Clinic (Default)", street: "Road No 12, Banjara Hills", city: "Hyderabad", state: "Telangana", pincode: "500034", isDefault: true, phone: "+91 98231 11223" }
-    ],
-    orderHistory: [
-      { id: "ORD-94808", date: "2026-09-10 03:10 PM", itemsSummary: "Bhumi Shakti Soil Conditioner (5L) x2", itemsCount: 2, total: 960, paymentMethod: "UPI (Google Pay)", paymentStatus: "Paid", orderStatus: "Delivered", trackingId: "SR-HYD-119283" }
-    ],
-    wishlist: [],
-    cart: [],
-    walletTransactions: [],
-    loyaltyHistory: [
-      { id: "LPT-501", date: "2026-09-10", type: "earned", points: 96, description: "Points from ORD-94808" }
-    ],
-    referrals: {
-      code: "MEENAKSHI-HYD-44",
-      count: 3,
-      totalEarned: 1500,
-      friends: []
-    },
-    couponsUsed: []
-  },
-  {
-    id: "CUST-006",
-    name: "Kunal Singhania",
-    email: "kunal.singh@gmail.com",
-    phone: "+91 93310 99887",
-    city: "Kolkata",
-    state: "West Bengal",
-    pincode: "700019",
-    totalSpent: 3500,
-    totalOrders: 1,
-    avgOrderValue: 3500,
-    tier: "Bronze",
-    status: "Suspended",
-    suspensionReason: "Suspected abuse of return policy and failed payment chargebacks.",
-    joinDate: "2026-08-15",
-    lastActive: "1 week ago",
-    walletBalance: 0,
-    loyaltyPoints: 350,
-    avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&q=80",
-    addresses: [
-      { id: "ADDR-601", label: "Residence (Default)", street: "Ballygunge Circular Road", city: "Kolkata", state: "West Bengal", pincode: "700019", isDefault: true, phone: "+91 93310 99887" }
-    ],
-    orderHistory: [
-      { id: "ORD-94807", date: "2026-09-10 11:00 AM", itemsSummary: "Harit Bio-Fungicide (5L) x1", itemsCount: 1, total: 3500, paymentMethod: "Credit Card (Axis)", paymentStatus: "Refunded", orderStatus: "Cancelled", trackingId: "" }
-    ],
-    wishlist: [],
-    cart: [],
-    walletTransactions: [],
-    loyaltyHistory: [],
-    referrals: {
-      code: "KUNAL-KOL-88",
-      count: 0,
-      totalEarned: 0,
-      friends: []
-    },
-    couponsUsed: []
-  }
-];
+export let adminCustomers = [];
 
 export let adminCoupons = [
   {
@@ -873,574 +149,79 @@ export let adminCoupons = [
   }
 ];
 
-export let couponUsageHistory = [
-  {
-    id: "USG-8801",
-    couponCode: "JANANI10",
-    orderId: "ORD-94812",
-    customerName: "Ananya Sharma",
-    customerEmail: "ananya.s@gmail.com",
-    customerPhone: "+91 98451 22345",
-    orderTotal: 4340.00,
-    discountAmount: 300.00,
-    netPaid: 4040.00,
-    usedAt: "2026-09-11 10:45 AM",
-    orderStatus: "Delivered"
-  },
-  {
-    id: "USG-8802",
-    couponCode: "FIRSTORGANIC",
-    orderId: "ORD-94808",
-    customerName: "Vikram Patel",
-    customerEmail: "vikram.p@gmail.com",
-    customerPhone: "+91 98231 44556",
-    orderTotal: 2990.00,
-    discountAmount: 200.00,
-    netPaid: 2790.00,
-    usedAt: "2026-09-11 09:12 AM",
-    orderStatus: "Shipped"
-  },
-  {
-    id: "USG-8803",
-    couponCode: "HARVESTFEST",
-    orderId: "ORD-94801",
-    customerName: "Rajesh Iyer",
-    customerEmail: "rajesh.iyer@tcs.com",
-    customerPhone: "+91 97412 88990",
-    orderTotal: 3150.00,
-    discountAmount: 472.50,
-    netPaid: 2677.50,
-    usedAt: "2026-09-10 03:20 PM",
-    orderStatus: "Delivered"
-  },
-  {
-    id: "USG-8804",
-    couponCode: "FREESHIPAGRO",
-    orderId: "ORD-94792",
-    customerName: "Priya Sundaram",
-    customerEmail: "priya.s@wipro.com",
-    customerPhone: "+91 98801 33221",
-    orderTotal: 980.00,
-    discountAmount: 120.00,
-    netPaid: 860.00,
-    usedAt: "2026-09-10 11:15 AM",
-    orderStatus: "Delivered"
-  },
-  {
-    id: "USG-8805",
-    couponCode: "VIPPLATINUM25",
-    orderId: "ORD-94784",
-    customerName: "Sunita Rao",
-    customerEmail: "sunita.rao@gmail.com",
-    customerPhone: "+91 94480 66778",
-    orderTotal: 4800.00,
-    discountAmount: 1200.00,
-    netPaid: 3600.00,
-    usedAt: "2026-09-09 05:45 PM",
-    orderStatus: "Delivered"
-  },
-  {
-    id: "USG-8806",
-    couponCode: "JANANI10",
-    orderId: "ORD-94770",
-    customerName: "Karthik Raja",
-    customerEmail: "karthik.r@yahoo.com",
-    customerPhone: "+91 99001 55443",
-    orderTotal: 2150.00,
-    discountAmount: 215.00,
-    netPaid: 1935.00,
-    usedAt: "2026-09-08 02:10 PM",
-    orderStatus: "Delivered"
-  }
-];
+export let couponUsageHistory = [];
 
-export let adminReviews = [
-  {
-    id: "REV-101",
-    productId: "3",
-    productName: "BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant",
-    productCategory: "Soil Conditioner",
-    location: "Mango Farmer, Andhra Pradesh",
-    productImage: "/products/bhumi-shakti.jpg",
-    customerId: "CUST-1001",
-    customerName: "Ramesh Kumar",
-    customerEmail: "ramesh.kumar@gmail.com",
-    customerAvatar: "/images/farmer_ramesh.jpg",
-    orderId: "ORD-94807",
-    rating: 5,
-    title: "Increased soil health and bumper yield",
-    comment: "Using Janani products improved my soil health and increased my yield significantly. Highly recommended!",
-    images: [],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: true,
-    helpfulCount: 42,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: {
-      authorName: "Doddi Sai Rama",
-      authorRole: "Head of Agronomy & Founder",
-      message: "Dear Ramesh garu, we are truly delighted to hear about your mango crop yield! Bhumi Shakti ensures complete micronutrient uptake in alkaline soils.",
-      repliedAt: "2026-09-10 04:30 PM"
-    },
-    customerReplies: [],
-    createdAt: "2026-09-10 11:20 AM",
-    updatedAt: "2026-09-10 04:30 PM"
-  },
-  {
-    id: "REV-102",
-    productId: "1",
-    productName: "HARIT — Trichoderma Viride Liquid Biofungal Formulation",
-    productCategory: "Bio Fungicide",
-    location: "Vegetable Farmer, Telangana",
-    productImage: "/products/harit.jpg",
-    customerId: "CUST-1002",
-    customerName: "Srinivas Reddy",
-    customerEmail: "srinivas.reddy@gmail.com",
-    customerAvatar: "/images/farmer_srinivas.jpg",
-    orderId: "ORD-94792",
-    rating: 5,
-    title: "Root rot under complete control",
-    comment: "HARIT helped in controlling root rot and my plants are now much healthier.",
-    images: [],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: true,
-    helpfulCount: 29,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-09 09:45 AM",
-    updatedAt: "2026-09-09 09:45 AM"
-  },
-  {
-    id: "REV-103",
-    productId: "2",
-    productName: "NEEM OIL — Containing Azadirachtin 1000 PPM",
-    productCategory: "Bio Insecticide",
-    location: "Cotton Farmer, Gujarat",
-    productImage: "/products/neem-oil.jpg",
-    customerId: "CUST-1003",
-    customerName: "Mahesh Patel",
-    customerEmail: "mahesh.patel@gmail.com",
-    customerAvatar: "/images/farmer_mahesh.jpg",
-    orderId: "ORD-94760",
-    rating: 5,
-    title: "Excellent cotton crop improvement",
-    comment: "Good quality products and excellent results. My cotton crop showed great improvement.",
-    images: [],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: true,
-    helpfulCount: 18,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-08 02:30 PM",
-    updatedAt: "2026-09-08 02:30 PM"
-  },
-  {
-    id: "REV-104",
-    productId: "4",
-    productName: "PUSHKAL — Flowering & Fruit Set Biostimulant",
-    productCategory: "Bio Stimulant",
-    location: "Sugarcane Farmer, Maharashtra",
-    productImage: "/products/pushkal.jpg",
-    customerId: "CUST-1004",
-    customerName: "Suresh Patil",
-    customerEmail: "suresh.patil@gmail.com",
-    customerAvatar: "/images/farmer_suresh.jpg",
-    orderId: "ORD-94715",
-    rating: 5,
-    title: "Thicker stalks and higher sugar recovery",
-    comment: "Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!",
-    images: [],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: true,
-    helpfulCount: 15,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-07 10:15 AM",
-    updatedAt: "2026-09-07 10:15 AM"
-  },
-  {
-    id: "REV-105",
-    productId: "5",
-    productName: "ANNADA — Fish Amino Acid Organic Growth Promoter",
-    productCategory: "Plant Nutrients",
-    location: "Wheat & Paddy Farmer, Punjab",
-    productImage: "/products/annada.jpg",
-    customerId: "CUST-1005",
-    customerName: "Balwinder Singh",
-    customerEmail: "balwinder.singh@gmail.com",
-    customerAvatar: "/images/farmer_balwinder.jpg",
-    orderId: "ORD-94680",
-    rating: 5,
-    title: "Noticeable jump in harvest grain weight",
-    comment: "Bhumi Shakti improved soil aeration and water retention. Noticeable jump in harvest grain weight.",
-    images: [],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: true,
-    helpfulCount: 21,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-06 04:30 PM",
-    updatedAt: "2026-09-06 04:30 PM"
-  },
-  {
-    id: "REV-106",
-    productId: "PROD-1",
-    productName: "Harit Bio-Fungicide (1 L)",
-    productCategory: "Bio-Pesticides",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-1001",
-    customerName: "Pooja Hegde",
-    customerEmail: "pooja.hegde@gmail.com",
-    customerAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-    orderId: "ORD-94807",
-    rating: 5,
-    title: "Extraordinary root health and fungal control!",
-    comment: "Outstanding Trichoderma viride formulation. Controlled root rot completely in my chilli crops within 10 days of drenching. Highly recommend for all organic farmers.",
-    images: [
-      { id: "IMG-101A", url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80", caption: "Chilli crop field response after 10 days", status: "Approved" },
-      { id: "IMG-101B", url: "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=600&auto=format&fit=crop&q=80", caption: "Healthy root colonization and fungal barrier", status: "Approved" }
-    ],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: true,
-    helpfulCount: 42,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: {
-      authorName: "Doddi Sai Rama",
-      authorRole: "Head of Quality & Founder",
-      message: "Dear Pooja, thank you so much for your heartwarming feedback! Harit is manufactured with high CFU count (2 x 10^8 CFU/g) for rapid root colonization. Happy farming!",
-      repliedAt: "2026-09-10 04:30 PM"
-    },
-    customerReplies: [
-      { id: "REP-101", customerName: "Rajesh Kannan", message: "Did you soak for 30 mins before boiling?", createdAt: "2026-09-10 06:15 PM", likes: 4 }
-    ],
-    createdAt: "2026-09-10 11:20 AM",
-    updatedAt: "2026-09-10 04:30 PM"
-  },
-  {
-    id: "REV-102",
-    productId: "PROD-6",
-    productName: "Bhumi Shakti Soil Conditioner (1 L)",
-    productCategory: "Biological Crop Protection",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-1002",
-    customerName: "Narayanan Subramaniam",
-    customerEmail: "narayanan.s@outlook.com",
-    customerAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
-    orderId: "ORD-94792",
-    rating: 5,
-    title: "Authentic organic formulation, outstanding soil response!",
-    comment: "Authentic microbial formulation with high CFU count. Reminds me of traditional natural farming methods. Excellent results on cotton and vegetables.",
-    images: [
-      { id: "IMG-102A", url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80", caption: "Microbial formulation field application", status: "Approved" }
-    ],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: true,
-    helpfulCount: 29,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: {
-      authorName: "Kavitha Ranganathan",
-      authorRole: "Customer Delight Lead",
-      message: "Vanakkam Narayanan! We cold-press single-origin native Saurashtra groundnuts in Vaagai wood presses at under 38°C to retain all natural antioxidants. Thank you for your continued trust!",
-      repliedAt: "2026-09-09 03:00 PM"
-    },
-    customerReplies: [],
-    createdAt: "2026-09-09 09:45 AM",
-    updatedAt: "2026-09-09 03:00 PM"
-  },
-  {
-    id: "REV-103",
-    productId: "PROD-3",
-    productName: "Lakadong Turmeric Powder (200 g)",
-    productCategory: "Spices",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-1003",
-    customerName: "Arun Verma",
-    customerEmail: "arun.verma@gmail.com",
-    customerAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
-    orderId: "ORD-94760",
-    rating: 4,
-    title: "Incredible 7.5% curcumin content & deep golden hue",
-    comment: "High curcumin content is clearly visible from the deep orange color and potent fragrance. We use it daily for golden turmeric latte. Minus 1 star only because the resealable zipper on the pouch was slightly stiff to seal.",
-    images: [
-      { id: "IMG-103A", url: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=80", caption: "Deep golden color comparison", status: "Approved" }
-    ],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: false,
-    helpfulCount: 18,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: {
-      authorName: "Doddi Sai Rama",
-      authorRole: "Founder",
-      message: "Thank you Arun for the feedback! We have upgraded to airtight triple-laminate Japanese zip-lock pouches in our new batch starting this week. Reach out to support for a complimentary jar.",
-      repliedAt: "2026-09-08 05:15 PM"
-    },
-    customerReplies: [],
-    createdAt: "2026-09-08 02:30 PM",
-    updatedAt: "2026-09-08 05:15 PM"
-  },
-  {
-    id: "REV-104",
-    productId: "PROD-19",
-    productName: "Virgin Coconut Oil (500 ml)",
-    productCategory: "Biological Crop Protection",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-1004",
-    customerName: "Divya Nair",
-    customerEmail: "divya.nair@gmail.com",
-    customerAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80",
-    orderId: "ORD-94715",
-    rating: 5,
-    title: "Unrefined raw scent with solid snow-white crystal texture",
-    comment: "Unfiltered with natural sweet coconut notes. Genuine raw oil without sulphur bleaching. Great for both Kerala curries and hair nourishment.",
-    images: [
-      { id: "IMG-104A", url: "https://images.unsplash.com/photo-1526947425960-945c6e72858f?w=600&auto=format&fit=crop&q=80", caption: "Glass jar packaging", status: "Approved" }
-    ],
-    verifiedPurchase: true,
-    status: "Pending",
-    isFeatured: false,
-    helpfulCount: 5,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-11 10:15 AM",
-    updatedAt: "2026-09-11 10:15 AM"
-  },
-  {
-    id: "REV-105",
-    productId: "PROD-9",
-    productName: "Dharani Bio-Fertilizer (1 kg)",
-    productCategory: "Pulses",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-1005",
-    customerName: "Meera Krishnan",
-    customerEmail: "meera.k@yahoo.in",
-    customerAvatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
-    orderId: "ORD-94680",
-    rating: 5,
-    title: "Cooks fast and makes rich, creamy sambar!",
-    comment: "Zero water polishing or oil coating. Cooks evenly in 3 whistles and creates the thickest, most flavorful sambar. You can taste the purity compared to supermarket brands.",
-    images: [],
-    verifiedPurchase: true,
-    status: "Pending",
-    isFeatured: false,
-    helpfulCount: 2,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-11 08:30 AM",
-    updatedAt: "2026-09-11 08:30 AM"
-  },
-  {
-    id: "REV-106",
-    productId: "PROD-18",
-    productName: "Black Pepper Whole (150 g)",
-    productCategory: "Spices",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-1006",
-    customerName: "Vikram Malhotra",
-    customerEmail: "vikram.m@gmail.com",
-    customerAvatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100&auto=format&fit=crop&q=80",
-    orderId: "ORD-94640",
-    rating: 5,
-    title: "Bold Tellicherry grade peppercorns with intense heat",
-    comment: "Big berries, heavy density, and incredible piperine bite when freshly crushed in a pepper mill. Will definitely reorder!",
-    images: [
-      { id: "IMG-106A", url: "https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=600&auto=format&fit=crop&q=80", caption: "Bold size peppercorns", status: "Approved" }
-    ],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: true,
-    helpfulCount: 14,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-06 01:20 PM",
-    updatedAt: "2026-09-06 01:20 PM"
-  },
-  {
-    id: "REV-107",
-    productId: "PROD-11",
-    productName: "Pushkal Plant Booster (500 ml)",
-    productCategory: "Dry Fruits",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-1007",
-    customerName: "Ananya Deshmukh",
-    customerEmail: "ananya.d@gmail.com",
-    customerAvatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80",
-    orderId: "ORD-94590",
-    rating: 5,
-    title: "Chemical-free unbleached sweetness for chai and desserts",
-    comment: "Doesn't curdle milk when added to hot tea! That proves it is 100% free of baking soda and sodium hydrosulphite. Perfect caramel notes.",
-    images: [],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: false,
-    helpfulCount: 22,
-    abuseReportsCount: 0,
-    abuseReports: [],
-    adminReply: {
-      authorName: "Kavitha Ranganathan",
-      authorRole: "Customer Delight Lead",
-      message: "Hi Ananya, thank you! Our organic sugarcane juice is clarified using plant extracts (Bhindi mucilage) rather than harmful chemicals. Enjoy your daily chai!",
-      repliedAt: "2026-09-05 11:40 AM"
-    },
-    customerReplies: [],
-    createdAt: "2026-09-05 09:10 AM",
-    updatedAt: "2026-09-05 11:40 AM"
-  },
-  {
-    id: "REV-108",
-    productId: "PROD-21",
-    productName: "Almonds Premium (500 g)",
-    productCategory: "Dry Fruits",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-1008",
-    customerName: "Karan Johar B.",
-    customerEmail: "karan.j@gmail.com",
-    customerAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-    orderId: "ORD-94510",
-    rating: 2,
-    title: "Outer carton was squashed during courier transit",
-    comment: "Almonds inside were intact and crunchy, but the outer box arrived crushed and tape was loose. BlueDart logistics in Pune needs improvement.",
-    images: [
-      { id: "IMG-108A", url: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop&q=80", caption: "Damaged outer shipping carton", status: "Approved" }
-    ],
-    verifiedPurchase: true,
-    status: "Approved",
-    isFeatured: false,
-    helpfulCount: 8,
-    abuseReportsCount: 1,
-    abuseReports: [
-      { id: "ABUSE-1", reporterName: "Store Auditor", reason: "Irrelevant / Courier Issue", reportedAt: "2026-09-04 02:30 PM" }
-    ],
-    adminReply: {
-      authorName: "Doddi Sai Rama",
-      authorRole: "Founder",
-      message: "Dear Karan, we sincerely apologize for the transit mishandling. We have escalated this directly to the BlueDart zonal manager and added double air-column cushioning for all fragile parcels.",
-      repliedAt: "2026-09-04 04:00 PM"
-    },
-    customerReplies: [],
-    createdAt: "2026-09-04 11:15 AM",
-    updatedAt: "2026-09-04 04:00 PM"
-  },
-  {
-    id: "REV-109",
-    productId: "PROD-1",
-    productName: "Harit Bio-Fungicide (1 L)",
-    productCategory: "Bio-Pesticides",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-9999",
-    customerName: "SpamBot 2000",
-    customerEmail: "freegiftcards99@fakemail.org",
-    customerAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-    orderId: null,
-    rating: 1,
-    title: "GET FREE ₹5000 AMAZON VOUCHERS AT HTTP://SPAM-LINK.XYZ",
-    comment: "Visit http://free-crypto-giveaway.xyz to claim your instant cash prizes right now! Limited slots available!",
-    images: [],
-    verifiedPurchase: false,
-    status: "Rejected",
-    rejectionReason: "Competitor Spam / Promotion & Malicious Links",
-    isFeatured: false,
-    helpfulCount: 0,
-    abuseReportsCount: 3,
-    abuseReports: [
-      { id: "ABUSE-2", reporterName: "AI Abuse Shield", reason: "Spam / Promotion", reportedAt: "2026-09-03 01:10 PM" },
-      { id: "ABUSE-3", reporterName: "Pooja Hegde", reason: "Spam / Promotion", reportedAt: "2026-09-03 01:25 PM" }
-    ],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-03 01:00 PM",
-    updatedAt: "2026-09-03 01:30 PM"
-  },
-  {
-    id: "REV-110",
-    productId: "PROD-7",
-    productName: "Neem Oil 1000 PPM (1 L)",
-    productCategory: "Biological Crop Protection",
-    productImage: "/assets/janani-products.jpg",
-    customerId: "CUST-8888",
-    customerName: "Anonymous Troller",
-    customerEmail: "trolluser@tempmail.com",
-    customerAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-    orderId: null,
-    rating: 1,
-    title: "Horrible fake products don't buy anything from here!!!",
-    comment: "All items are completely adulterated and toxic junk from fake farms. Go buy from Brand XYZ instead which is 100x better!",
-    images: [],
-    verifiedPurchase: false,
-    status: "Rejected",
-    rejectionReason: "Fake / Unverified Accusations without purchase proof",
-    isFeatured: false,
-    helpfulCount: 0,
-    abuseReportsCount: 2,
-    abuseReports: [
-      { id: "ABUSE-4", reporterName: "Automated Fraud Shield", reason: "Fake / Inaccurate", reportedAt: "2026-09-02 04:15 PM" }
-    ],
-    adminReply: null,
-    customerReplies: [],
-    createdAt: "2026-09-02 04:00 PM",
-    updatedAt: "2026-09-02 04:20 PM"
-  }
-];
-
-let adminReturns = [
-  { id: "RET-501", orderId: "ORD-94807", customer: "Kunal Singhania", product: "Harit Bio-Fungicide (5L)", reason: "Ordered duplicate size by mistake", type: "Bank Refund", amount: 3500, status: "Refund Completed", date: "2026-09-10" },
-  { id: "RET-502", orderId: "ORD-94750", customer: "Harish Gupta", product: "Neem Oil 1000 PPM (1L)", reason: "Outer seal damaged in transit", type: "Free Replacement", amount: 340, status: "Replacement Dispatched", date: "2026-09-08" },
-  { id: "RET-503", orderId: "ORD-94712", customer: "Shweta Tiwari", product: "Bhumi Shakti (1L)", reason: "Late delivery request cancelled", type: "Store Credit", amount: 549, status: "Under Review", date: "2026-09-06" }
-];
+export let adminReviews = [];
 
 let adminRoles = [
-  { id: "ROLE-1", name: "Doddi Sai Rama", email: "admin@jananiagro.com", role: "Super Admin", permissions: ["all"], status: "Active", lastLogin: "Just now" },
-  { id: "ROLE-2", name: "Suresh Patwardhan", email: "operations@jananiagro.com", role: "Warehouse & Logistics Manager", permissions: ["orders", "inventory", "shipping"], status: "Active", lastLogin: "2 hours ago" },
-  { id: "ROLE-3", name: "Kavitha Ranganathan", email: "support@jananiagro.com", role: "Customer Delight Lead", permissions: ["orders", "reviews", "returns", "inquiries"], status: "Active", lastLogin: "Yesterday" }
+  { id: "ROLE-1", name: "Janani Administrator", email: "jananibiosciences.r@gmail.com", role: "Super Admin", permissions: ["all"], status: "Active", lastLogin: "Just now" }
 ];
 
-export const getDashboardStats = (req, res) => {
-  const stats = {
-    totalOrders: 38,
-    totalOrdersTrend: "+14.2%",
-    todayOrders: 38,
-    todayOrdersTrend: "+14.2%",
-    todayRevenue: 84250,
-    todayRevenueTrend: "+18.6%",
-    monthlyRevenue: 2485600,
-    monthlyRevenueTrend: "+24.5%",
-    pendingOrders: 9,
-    deliveredOrders: 412,
-    cancelledOrders: 4,
-    refundRequests: 3,
-    activeUsers: 1420,
-    activeUsersTrend: "+8.9%",
-    outOfStockProducts: 1,
-    lowStockProducts: 4,
-    couponsUsedToday: 47,
-    referralEarnings: 38500,
-    referralEarningsTrend: "+31.2%"
-  };
-  res.json({ success: true, data: stats });
+export const getDashboardStats = async (req, res) => {
+  try {
+    const totalOrdersRes = await query("SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as rev FROM `orders`");
+    const pendingOrdersRes = await query("SELECT COUNT(*) as count FROM `orders` WHERE order_status = 'Pending' OR order_status = 'Processing'");
+    const deliveredOrdersRes = await query("SELECT COUNT(*) as count FROM `orders` WHERE order_status = 'Delivered'");
+    const cancelledOrdersRes = await query("SELECT COUNT(*) as count FROM `orders` WHERE order_status = 'Cancelled' OR order_status = 'Refunded'");
+    const usersRes = await query("SELECT COUNT(*) as count FROM `users` WHERE role = 'Customer'");
+
+    const totalOrders = Number(totalOrdersRes[0]?.count || 0);
+    const totalRevenue = Number(totalOrdersRes[0]?.rev || 0);
+    const pendingOrders = Number(pendingOrdersRes[0]?.count || 0);
+    const deliveredOrders = Number(deliveredOrdersRes[0]?.count || 0);
+    const cancelledOrders = Number(cancelledOrdersRes[0]?.count || 0);
+    const activeUsers = Number(usersRes[0]?.count || 0);
+
+    const stats = {
+      totalOrders,
+      totalOrdersTrend: "+0%",
+      todayOrders: totalOrders,
+      todayOrdersTrend: "+0%",
+      todayRevenue: totalRevenue,
+      todayRevenueTrend: "+0%",
+      monthlyRevenue: totalRevenue,
+      monthlyRevenueTrend: "+0%",
+      pendingOrders,
+      deliveredOrders,
+      cancelledOrders,
+      refundRequests: 0,
+      activeUsers,
+      activeUsersTrend: "+0%",
+      outOfStockProducts: 0,
+      lowStockProducts: 0,
+      couponsUsedToday: 0,
+      referralEarnings: 0,
+      referralEarningsTrend: "+0%"
+    };
+    return res.json({ success: true, data: stats });
+  } catch (err) {
+    console.warn("Dashboard stats error:", err);
+  }
+
+  res.json({
+    success: true,
+    data: {
+      totalOrders: 0,
+      totalOrdersTrend: "+0%",
+      todayOrders: 0,
+      todayOrdersTrend: "+0%",
+      todayRevenue: 0,
+      todayRevenueTrend: "+0%",
+      monthlyRevenue: 0,
+      monthlyRevenueTrend: "+0%",
+      pendingOrders: 0,
+      deliveredOrders: 0,
+      cancelledOrders: 0,
+      refundRequests: 0,
+      activeUsers: 0,
+      activeUsersTrend: "+0%",
+      outOfStockProducts: 0,
+      lowStockProducts: 0,
+      couponsUsedToday: 0,
+      referralEarnings: 0,
+      referralEarningsTrend: "+0%"
+    }
+  });
 };
 
 export const getAnalyticsCharts = (req, res) => {
@@ -1618,7 +399,9 @@ export const getAdminOrders = async (req, res) => {
     sql += " ORDER BY created_at DESC LIMIT 200";
 
     const rows = await query(sql, params);
-    if (Array.isArray(rows) && rows.length > 0) {
+    let mysqlQueried = false;
+    if (Array.isArray(rows)) {
+      mysqlQueried = true;
       results = rows.map((o) => {
         const shippingAddress = typeof o.shipping_address === "string" ? JSON.parse(o.shipping_address) : (o.shipping_address || {});
         const billingAddress = typeof o.billing_address === "string" ? JSON.parse(o.billing_address) : (o.billing_address || shippingAddress);
@@ -1641,12 +424,12 @@ export const getAdminOrders = async (req, res) => {
           paymentMethod: o.payment_method || "UPI",
           paymentGatewayId: o.transaction_id || o.razorpay_order_id || "",
           customer: {
-            id: o.customer_id || "CUST-001",
+            id: o.customer_id || o.id || "",
             name: cName,
             fullName: cName,
             email: cEmail,
             phone: cPhone,
-            tier: "Silver"
+            tier: "Active Member"
           },
           shippingAddress,
           billingAddress,
@@ -1676,8 +459,8 @@ export const getAdminOrders = async (req, res) => {
     console.warn("⚠️ [getAdminOrders] MySQL fetch fallback note:", dbErr.message);
   }
 
-  // 2. Fallback to in-memory orders if MySQL returned empty or error
-  if (results.length === 0) {
+  // 2. Fallback to in-memory orders only if MySQL query failed to execute
+  if (!mysqlQueried && results.length === 0) {
     results = adminOrders.filter(o => !isDummyOrder(o));
 
     if (filterEmail) {
@@ -2356,7 +1139,7 @@ export const importProducts = (req, res) => {
 // 👥 JANANI AGRO CUSTOMERS CONTROLLER
 // ==========================================
 
-export const getAdminCustomers = (req, res) => {
+export const getAdminCustomers = async (req, res) => {
   const {
     status = "all",
     tier = "all",
@@ -2364,59 +1147,89 @@ export const getAdminCustomers = (req, res) => {
     sortBy = "spent_desc"
   } = req.query;
 
-  let results = [...adminCustomers];
+  try {
+    let sql = "SELECT * FROM `users` WHERE (`role` = 'Customer' OR `role` IS NULL OR `role` = '')";
+    const params = [];
 
-  // Status Filter
-  if (status !== "all") {
-    results = results.filter(c => c.status.toLowerCase() === status.toLowerCase());
+    if (status !== "all") {
+      sql += " AND `status` = ?";
+      params.push(status);
+    }
+    if (tier !== "all") {
+      sql += " AND `tier` = ?";
+      params.push(tier);
+    }
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      sql += " AND (`name` LIKE ? OR `email` LIKE ? OR `phone` LIKE ? OR `id` LIKE ?)";
+      params.push(q, q, q, q);
+    }
+
+    if (sortBy === "spent_desc") {
+      sql += " ORDER BY `wallet_balance` DESC";
+    } else {
+      sql += " ORDER BY `created_at` DESC";
+    }
+
+    const rows = await query(sql, params);
+    if (Array.isArray(rows)) {
+      const formatted = rows.map((u) => {
+        let addresses = [];
+        try {
+          const parsed = typeof u.preferences === "string" ? JSON.parse(u.preferences) : u.preferences;
+          addresses = parsed?.addresses || [];
+        } catch (e) {}
+
+        return {
+          id: u.id,
+          name: u.name || "Customer",
+          email: u.email || "",
+          phone: u.phone || "",
+          city: u.city || (addresses[0]?.city || ""),
+          state: u.state || (addresses[0]?.state || ""),
+          pincode: u.pincode || (addresses[0]?.pincode || ""),
+          tier: u.tier || "Active Patron",
+          status: u.status || "Active",
+          suspensionReason: null,
+          joinDate: u.created_at ? String(u.created_at).split("T")[0] : "2026-01-01",
+          lastActive: "Recent",
+          walletBalance: Number(u.wallet_balance || 0),
+          loyaltyPoints: Number(u.loyalty_points || 0),
+          totalSpent: Number(u.wallet_balance || 0) * 10,
+          totalOrders: 1,
+          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.name || "Customer")}`,
+          addresses
+        };
+      });
+
+      return res.json({
+        success: true,
+        count: formatted.length,
+        total: formatted.length,
+        activeCount: formatted.filter((c) => c.status === "Active").length,
+        suspendedCount: formatted.filter((c) => c.status === "Suspended").length,
+        inactiveCount: formatted.filter((c) => c.status === "Inactive").length,
+        totalLtv: formatted.reduce((sum, c) => sum + (c.totalSpent || 0), 0),
+        totalWallet: formatted.reduce((sum, c) => sum + (c.walletBalance || 0), 0),
+        totalLoyalty: formatted.reduce((sum, c) => sum + (c.loyaltyPoints || 0), 0),
+        data: formatted
+      });
+    }
+  } catch (err) {
+    console.warn("⚠️ [getAdminCustomers] MySQL query error:", err.message);
   }
-
-  // Tier Filter
-  if (tier !== "all") {
-    results = results.filter(c => c.tier.toLowerCase() === tier.toLowerCase());
-  }
-
-  // Search
-  if (search) {
-    const q = search.toLowerCase();
-    results = results.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q) ||
-      c.phone.includes(q) ||
-      c.city.toLowerCase().includes(q) ||
-      c.id.toLowerCase().includes(q)
-    );
-  }
-
-  // Sorting
-  if (sortBy === "spent_desc") {
-    results.sort((a, b) => b.totalSpent - a.totalSpent);
-  } else if (sortBy === "orders_desc") {
-    results.sort((a, b) => b.totalOrders - a.totalOrders);
-  } else if (sortBy === "wallet_desc") {
-    results.sort((a, b) => b.walletBalance - a.walletBalance);
-  } else if (sortBy === "newest") {
-    results.sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
-  }
-
-  const activeCount = adminCustomers.filter(c => c.status === "Active").length;
-  const suspendedCount = adminCustomers.filter(c => c.status === "Suspended").length;
-  const inactiveCount = adminCustomers.filter(c => c.status === "Inactive").length;
-  const totalLtv = adminCustomers.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
-  const totalWallet = adminCustomers.reduce((sum, c) => sum + (c.walletBalance || 0), 0);
-  const totalLoyalty = adminCustomers.reduce((sum, c) => sum + (c.loyaltyPoints || 0), 0);
 
   res.json({
     success: true,
-    count: results.length,
-    total: adminCustomers.length,
-    activeCount,
-    suspendedCount,
-    inactiveCount,
-    totalLtv,
-    totalWallet,
-    totalLoyalty,
-    data: results
+    count: 0,
+    total: 0,
+    activeCount: 0,
+    suspendedCount: 0,
+    inactiveCount: 0,
+    totalLtv: 0,
+    totalWallet: 0,
+    totalLoyalty: 0,
+    data: []
   });
 };
 
@@ -3233,100 +2046,107 @@ export const getCouponAnalytics = (req, res) => {
   res.json({ success: true, data: analytics });
 };
 
-export const getAdminReviews = (req, res) => {
+export const getAdminReviews = async (req, res) => {
   const {
     status,
     rating,
-    verified,
-    hasImages,
-    hasAbuse,
     search,
     sortBy = "newest"
   } = req.query;
 
-  let filtered = [...adminReviews];
-
-  if (status && status !== "all") {
-    if (status === "flagged") {
-      filtered = filtered.filter(r => r.abuseReportsCount > 0 || (r.abuseReports && r.abuseReports.length > 0));
-    } else {
-      filtered = filtered.filter(r => r.status.toLowerCase() === status.toLowerCase());
+  try {
+    let sql = "SELECT * FROM `reviews` WHERE 1=1";
+    const params = [];
+    if (status && status !== "all") {
+      sql += " AND LOWER(status) = ?";
+      params.push(status.toLowerCase());
     }
+    if (rating && rating !== "all") {
+      sql += " AND rating = ?";
+      params.push(Number(rating));
+    }
+    if (search && search.trim()) {
+      const q = `%${search.trim().toLowerCase()}%`;
+      sql += " AND (LOWER(product_name) LIKE ? OR LOWER(customer_name) LIKE ? OR LOWER(title) LIKE ? OR LOWER(comment) LIKE ?)";
+      params.push(q, q, q, q);
+    }
+    sql += " ORDER BY created_at DESC";
+
+    const rows = await query(sql, params);
+    if (Array.isArray(rows)) {
+      const mapped = rows.map((r) => ({
+        id: r.id,
+        productId: r.product_id,
+        productName: r.product_name,
+        productCategory: r.product_category || "Agriculture Inputs",
+        productImage: r.product_image || "/products/harit.jpg",
+        customerId: r.customer_id || "",
+        customerName: r.customer_name || "Verified Farmer",
+        customerEmail: r.customer_email || "",
+        customerAvatar: r.customer_avatar || "/images/farmer_ramesh.jpg",
+        location: r.location || "",
+        rating: Number(r.rating || 5),
+        title: r.title || "",
+        comment: r.comment || "",
+        verifiedPurchase: Boolean(r.verified_purchase),
+        status: r.status || "Approved",
+        isFeatured: Boolean(r.is_featured),
+        helpfulCount: Number(r.helpful_count || 0),
+        images: typeof r.images === "string" ? JSON.parse(r.images || "[]") : (r.images || []),
+        createdAt: r.created_at || "Recent"
+      }));
+
+      const totalReviews = mapped.length;
+      const approvedCount = mapped.filter((r) => r.status.toLowerCase() === "approved").length;
+      const pendingCount = mapped.filter((r) => r.status.toLowerCase() === "pending").length;
+      const rejectedCount = mapped.filter((r) => r.status.toLowerCase() === "rejected").length;
+      const avgRating = totalReviews > 0 ? (mapped.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1) : "5.0";
+
+      return res.json({
+        success: true,
+        count: mapped.length,
+        total: totalReviews,
+        approvedCount,
+        pendingCount,
+        rejectedCount,
+        averageRating: Number(avgRating),
+        stats: {
+          totalReviews,
+          approvedCount,
+          pendingCount,
+          rejectedCount,
+          averageRating: Number(avgRating)
+        },
+        reviews: mapped,
+        data: mapped
+      });
+    }
+  } catch (err) {
+    console.warn("⚠️ [getAdminReviews] MySQL query error:", err.message);
   }
 
-  if (rating && rating !== "all") {
-    filtered = filtered.filter(r => r.rating === Number(rating));
-  }
-
-  if (verified === "true") {
-    filtered = filtered.filter(r => r.verifiedPurchase === true);
-  }
-
-  if (hasImages === "true") {
-    filtered = filtered.filter(r => r.images && r.images.length > 0);
-  }
-
-  if (hasAbuse === "true") {
-    filtered = filtered.filter(r => r.abuseReportsCount > 0);
-  }
-
-  if (search) {
-    const q = search.toLowerCase();
-    filtered = filtered.filter(r =>
-      r.id.toLowerCase().includes(q) ||
-      r.productName.toLowerCase().includes(q) ||
-      r.customerName.toLowerCase().includes(q) ||
-      r.customerEmail.toLowerCase().includes(q) ||
-      r.title.toLowerCase().includes(q) ||
-      r.comment.toLowerCase().includes(q)
-    );
-  }
-
-  // Sorting
-  if (sortBy === "newest") {
-    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  } else if (sortBy === "oldest") {
-    filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  } else if (sortBy === "rating_high") {
-    filtered.sort((a, b) => b.rating - a.rating);
-  } else if (sortBy === "rating_low") {
-    filtered.sort((a, b) => a.rating - b.rating);
-  } else if (sortBy === "helpful") {
-    filtered.sort((a, b) => (b.helpfulCount || 0) - (a.helpfulCount || 0));
-  }
-
-  const totalReviews = adminReviews.length;
-  const approvedCount = adminReviews.filter(r => r.status === "Approved").length;
-  const pendingCount = adminReviews.filter(r => r.status === "Pending").length;
-  const rejectedCount = adminReviews.filter(r => r.status === "Rejected").length;
-  const flaggedCount = adminReviews.filter(r => (r.abuseReportsCount || 0) > 0).length;
-  const photoReviewsCount = adminReviews.filter(r => r.images && r.images.length > 0).length;
-  const totalRatingSum = adminReviews.reduce((sum, r) => sum + r.rating, 0);
-  const averageRating = totalReviews > 0 ? (totalRatingSum / totalReviews).toFixed(1) : "5.0";
-
-  const stats = {
-    totalReviews,
-    approvedCount,
-    pendingCount,
-    rejectedCount,
-    flaggedCount,
-    photoReviewsCount,
-    averageRating: Number(averageRating),
-    responseRate: "96.4%",
-    recommendationRate: "94.8%"
-  };
-
-  res.json({
+  return res.json({
     success: true,
-    count: filtered.length,
-    total: totalReviews,
-    stats,
-    data: filtered
+    count: 0,
+    total: 0,
+    approvedCount: 0,
+    pendingCount: 0,
+    rejectedCount: 0,
+    averageRating: 5.0,
+    reviews: [],
+    data: []
   });
 };
 
-export const getAdminReviewById = (req, res) => {
+export const getAdminReviewById = async (req, res) => {
   const { id } = req.params;
+  try {
+    const rows = await query("SELECT * FROM `reviews` WHERE id = ? LIMIT 1", [id]);
+    if (rows && rows.length > 0) {
+      return res.json({ success: true, data: rows[0] });
+    }
+  } catch (e) {}
+
   const review = adminReviews.find(r => r.id === id);
   if (!review) return res.status(404).json({ success: false, message: "Review not found" });
 
@@ -4325,223 +3145,9 @@ export let pickupLocations = [
   }
 ];
 
-export let shipmentRecords = [
-  {
-    id: "SHP-882101",
-    orderId: "ORD-94812",
-    awbCode: "SR-BLR-884910",
-    courier: "Shiprocket (Bluedart Air)",
-    courierLogo: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=100&q=80",
-    pickupLocation: "Bengaluru Central Fulfillment Hub",
-    customer: {
-      name: "Ananya Sharma",
-      phone: "+91 98451 22345",
-      email: "ananya.s@gmail.com",
-      address: "Flat 402, Green Glen Heights, Bellandur",
-      city: "Bengaluru",
-      state: "Karnataka",
-      pincode: "560103"
-    },
-    itemsCount: 4,
-    itemsSummary: "Harit (1L) x2, Neem Oil 1000 PPM (1L) x1, Bhumi Shakti (1L) x1",
-    packageWeight: "3.2 kg",
-    dimensions: "32 x 22 x 18 cm",
-    paymentType: "Prepaid (UPI)",
-    orderAmount: 4040,
-    shippingCharges: 115,
-    status: "Delivered",
-    etd: "2026-09-12",
-    createdAt: "2026-09-11 10:45 AM",
-    pickupDate: "2026-09-11 04:30 PM",
-    deliveredAt: "2026-09-12 02:15 PM",
-    trackingTimeline: [
-      { status: "Manifested", title: "AWB Generated & Manifest Created", location: "Bengaluru Central Hub", time: "2026-09-11 11:15 AM", done: true },
-      { status: "Picked Up", title: "Handed over to Bluedart Executive", location: "KIADB Hub, Bengaluru", time: "2026-09-11 04:45 PM", done: true },
-      { status: "In Transit", title: "Departed Sorting Facility (Air Hub)", location: "HAL Airport Cargo Complex", time: "2026-09-11 09:20 PM", done: true },
-      { status: "Out for Delivery", title: "Out for Doorstep Delivery", location: "Bellandur Delivery Center", time: "2026-09-12 09:00 AM", done: true },
-      { status: "Delivered", title: "Delivered to Patron with OTP Verification", location: "Bengaluru, KA", time: "2026-09-12 02:15 PM", done: true }
-    ]
-  },
-  {
-    id: "SHP-882102",
-    orderId: "ORD-94811",
-    awbCode: "SR-HYD-552190",
-    courier: "Shiprocket (Delhivery Surface)",
-    courierLogo: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=100&q=80",
-    pickupLocation: "Bengaluru Central Fulfillment Hub",
-    customer: {
-      name: "Dr. Vikramaditya Rao",
-      phone: "+91 97400 11928",
-      email: "vikram.rao@aiims.edu",
-      address: "B-12, Green Park Main, Near AIIMS Campus",
-      city: "New Delhi",
-      state: "Delhi",
-      pincode: "110016"
-    },
-    itemsCount: 5,
-    itemsSummary: "Bhumi Shakti (1L) x2, Pushkal (500ml) x1, Harit (1L) x2",
-    packageWeight: "4.8 kg",
-    dimensions: "38 x 28 x 20 cm",
-    paymentType: "Prepaid (Razorpay Card)",
-    orderAmount: 7600,
-    shippingCharges: 165,
-    status: "In Transit",
-    etd: "2026-09-13",
-    createdAt: "2026-09-11 09:15 AM",
-    pickupDate: "2026-09-11 05:00 PM",
-    deliveredAt: null,
-    trackingTimeline: [
-      { status: "Manifested", title: "Shipping Label Created", location: "Bengaluru Central Hub", time: "2026-09-11 10:00 AM", done: true },
-      { status: "Picked Up", title: "Picked Up by Delhivery Logistics", location: "Bengaluru Central Hub", time: "2026-09-11 05:15 PM", done: true },
-      { status: "In Transit", title: "Departed National Surface Transit Hub", location: "Nagpur Central Logistics Park", time: "2026-09-12 04:30 AM", done: true },
-      { status: "Out for Delivery", title: "Awaiting Delhi Mother Hub Arrival", location: "Delhi NCR Cargo Zone", time: "Expected 2026-09-13", done: false },
-      { status: "Delivered", title: "Doorstep Handover", location: "New Delhi", time: "Pending", done: false }
-    ]
-  },
-  {
-    id: "SHP-882103",
-    orderId: "ORD-94810",
-    awbCode: "SR-BOM-110294",
-    courier: "Shiprocket (Ekart Logistics)",
-    courierLogo: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=100&q=80",
-    pickupLocation: "Bengaluru Central Fulfillment Hub",
-    customer: {
-      name: "Sneha Mukherjee",
-      phone: "+91 98301 77654",
-      email: "sneha.m@kolkata.org",
-      address: "14/A Ballygunge Circular Road, Flat 3B",
-      city: "Kolkata",
-      state: "West Bengal",
-      pincode: "700019"
-    },
-    itemsCount: 2,
-    itemsSummary: "Bhumi Shakti (5L) x2",
-    packageWeight: "10.4 kg",
-    dimensions: "45 x 30 x 25 cm",
-    paymentType: "Cash on Delivery (COD)",
-    orderAmount: 1450,
-    shippingCharges: 210,
-    status: "Out for Delivery",
-    etd: "2026-09-12",
-    createdAt: "2026-09-10 03:30 PM",
-    pickupDate: "2026-09-10 06:00 PM",
-    deliveredAt: null,
-    trackingTimeline: [
-      { status: "Manifested", title: "AWB Generated", location: "Bengaluru Central Hub", time: "2026-09-10 03:45 PM", done: true },
-      { status: "Picked Up", title: "Package Picked Up", location: "Bengaluru Central Hub", time: "2026-09-10 06:10 PM", done: true },
-      { status: "In Transit", title: "Arrived at Kolkata Hub", location: "Dankuni Logistics Center", time: "2026-09-12 05:00 AM", done: true },
-      { status: "Out for Delivery", title: "Driver Out with COD Cash Bag (₹1,450)", location: "Ballygunge Delivery Station", time: "2026-09-12 08:30 AM", done: true },
-      { status: "Delivered", title: "Delivered & Cash Collected", location: "Kolkata, WB", time: "In Progress", done: false }
-    ]
-  },
-  {
-    id: "SHP-882104",
-    orderId: "ORD-94808",
-    awbCode: "SR-NDR-772911",
-    courier: "Shiprocket (Shadowfax Local)",
-    courierLogo: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=100&q=80",
-    pickupLocation: "Hyderabad Agro-Logistics Depot",
-    customer: {
-      name: "Arjun Reddy",
-      phone: "+91 99890 55432",
-      email: "arjun.r@hyderabad.in",
-      address: "Plot 88, Jubilee Hills Road No. 36",
-      city: "Hyderabad",
-      state: "Telangana",
-      pincode: "500033"
-    },
-    itemsCount: 3,
-    itemsSummary: "Harit Bio-Fungicide (1L) x2, Bhumi Shakti (1L) x1",
-    packageWeight: "2.8 kg",
-    dimensions: "28 x 20 x 16 cm",
-    paymentType: "Cash on Delivery (COD)",
-    orderAmount: 1850,
-    shippingCharges: 85,
-    status: "NDR / Action Required",
-    etd: "2026-09-11",
-    createdAt: "2026-09-10 11:20 AM",
-    pickupDate: "2026-09-10 03:00 PM",
-    deliveredAt: null,
-    trackingTimeline: [
-      { status: "Manifested", title: "Label Created", location: "Hyderabad Agro Depot", time: "2026-09-10 11:30 AM", done: true },
-      { status: "Picked Up", title: "Dispatched via Shadowfax", location: "Hyderabad Agro Depot", time: "2026-09-10 03:15 PM", done: true },
-      { status: "Out for Delivery", title: "Out for Doorstep Delivery", location: "Jubilee Hills Station", time: "2026-09-11 10:30 AM", done: true },
-      { status: "NDR", title: "Delivery Failed: Customer Unavailable / Door Locked", location: "Hyderabad, TS", time: "2026-09-11 02:40 PM", done: true }
-    ]
-  },
-  {
-    id: "SHP-882105",
-    orderId: "ORD-94806",
-    awbCode: "SR-MAA-992144",
-    courier: "Shiprocket (Xpressbees Surface)",
-    courierLogo: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=100&q=80",
-    pickupLocation: "Bengaluru Central Fulfillment Hub",
-    customer: {
-      name: "Pooja Hegde",
-      phone: "+91 97411 66522",
-      email: "pooja.h@mangalore.edu",
-      address: "Kadri Temple Road, Near Circuit House",
-      city: "Mangaluru",
-      state: "Karnataka",
-      pincode: "575002"
-    },
-    itemsCount: 2,
-    itemsSummary: "Bhumi Shakti (1 L) x1, Harit (1 L) x1",
-    packageWeight: "1.9 kg",
-    dimensions: "24 x 18 x 14 cm",
-    paymentType: "Prepaid (UPI)",
-    orderAmount: 2600,
-    shippingCharges: 95,
-    status: "Ready for Pickup",
-    etd: "2026-09-13",
-    createdAt: "2026-09-11 01:10 PM",
-    pickupDate: "2026-09-11 05:30 PM",
-    deliveredAt: null,
-    trackingTimeline: [
-      { status: "Manifested", title: "AWB Generated & Slotted for Pickup", location: "Bengaluru Central Hub", time: "2026-09-11 01:15 PM", done: true },
-      { status: "Pickup Scheduled", title: "Pickup Scheduled for 05:30 PM Slot", location: "Bengaluru Central Hub", time: "2026-09-11 01:20 PM", done: true }
-    ]
-  }
-];
+export let shipmentRecords = [];
 
-export let ndrRecords = [
-  {
-    id: "NDR-001",
-    shipmentId: "SHP-882104",
-    orderId: "ORD-94808",
-    awbCode: "SR-NDR-772911",
-    courier: "Shadowfax Local",
-    customerName: "Arjun Reddy",
-    customerPhone: "+91 99890 55432",
-    city: "Hyderabad",
-    reason: "Customer phone not reachable & premises locked",
-    attemptCount: 1,
-    lastAttemptDate: "2026-09-11 02:40 PM",
-    orderValue: 1850,
-    paymentMode: "COD",
-    status: "Action Required", // "Action Required" | "Reattempt Scheduled" | "RTO Initiated" | "Resolved"
-    actionHistory: []
-  },
-  {
-    id: "NDR-002",
-    shipmentId: "SHP-882098",
-    orderId: "ORD-94792",
-    awbCode: "SR-DEL-338291",
-    courier: "Delhivery Surface",
-    customerName: "Meenakshi Sundaram",
-    customerPhone: "+91 94440 12890",
-    city: "Chennai",
-    reason: "Customer requested delivery on Sunday instead",
-    attemptCount: 2,
-    lastAttemptDate: "2026-09-10 04:15 PM",
-    orderValue: 3400,
-    paymentMode: "Prepaid",
-    status: "Reattempt Scheduled",
-    actionHistory: [
-      { action: "Re-attempt Scheduled", date: "2026-09-11 10:00 AM", note: "Rescheduled for Sunday 10 AM by operations team" }
-    ]
-  }
-];
+export let ndrRecords = [];
 
 // -------------------------------------------------------------
 // CONTROLLER HANDLERS
@@ -4925,197 +3531,7 @@ export const generateManifest = (req, res) => {
 // PAYMENT MANAGEMENT DATA STORES & CONTROLLERS
 // -------------------------------------------------------------
 
-export let paymentTransactions = [
-  {
-    id: "txn_rzp_9841280",
-    orderId: "ORD-94812",
-    gateway: "Razorpay",
-    paymentMethod: "UPI (PhonePe)",
-    customer: {
-      name: "Ananya Sharma",
-      email: "ananya.s@gmail.com",
-      phone: "+91 98451 22345",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80"
-    },
-    grossAmount: 4040,
-    gatewayFee: 0, // 0% UPI
-    gstOnFee: 0,
-    netSettledAmount: 4040,
-    currency: "INR",
-    status: "Captured", // "Captured" | "Pending" | "Failed" | "Refunded" | "Partially Refunded"
-    bankUtr: "UTR-HDFC-9921448201",
-    gatewayRef: "pay_NL8820491823",
-    cardLast4: null,
-    upiVpa: "ananya@ybl",
-    refundedAmount: 0,
-    settlementStatus: "Settled",
-    settlementBatchId: "SETTL-2026-09-11-01",
-    createdAt: "2026-09-11 10:45 AM",
-    capturedAt: "2026-09-11 10:45 AM"
-  },
-  {
-    id: "txn_rzp_9841279",
-    orderId: "ORD-94811",
-    gateway: "Razorpay",
-    paymentMethod: "Credit Card (HDFC Visa)",
-    customer: {
-      name: "Dr. Vikramaditya Rao",
-      email: "vikram.rao@aiims.edu",
-      phone: "+91 97400 11928",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80"
-    },
-    grossAmount: 7600,
-    gatewayFee: 144.40, // 1.9%
-    gstOnFee: 26.00,
-    netSettledAmount: 7429.60,
-    currency: "INR",
-    status: "Captured",
-    bankUtr: "UTR-ICICI-4412093811",
-    gatewayRef: "pay_NL8819448190",
-    cardLast4: "4242",
-    upiVpa: null,
-    refundedAmount: 0,
-    settlementStatus: "Settled",
-    settlementBatchId: "SETTL-2026-09-11-01",
-    createdAt: "2026-09-11 09:15 AM",
-    capturedAt: "2026-09-11 09:16 AM"
-  },
-  {
-    id: "txn_cod_9841278",
-    orderId: "ORD-94810",
-    gateway: "COD (Cash on Delivery)",
-    paymentMethod: "Cash on Delivery",
-    customer: {
-      name: "Sneha Mukherjee",
-      email: "sneha.m@kolkata.org",
-      phone: "+91 98301 77654",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80"
-    },
-    grossAmount: 1450,
-    gatewayFee: 35.00, // Courier COD collection fee
-    gstOnFee: 6.30,
-    netSettledAmount: 1408.70,
-    currency: "INR",
-    status: "Pending", // In transit with courier
-    bankUtr: null,
-    gatewayRef: "COD-EKART-110294",
-    cardLast4: null,
-    upiVpa: null,
-    refundedAmount: 0,
-    settlementStatus: "Pending Courier Remittance",
-    settlementBatchId: null,
-    createdAt: "2026-09-10 03:30 PM",
-    capturedAt: null
-  },
-  {
-    id: "txn_str_9841277",
-    orderId: "ORD-94809",
-    gateway: "Stripe",
-    paymentMethod: "International Card (Mastercard)",
-    customer: {
-      name: "Rajesh Kothari",
-      email: "rajesh.k@gmail.com",
-      phone: "+91 99201 44556",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80"
-    },
-    grossAmount: 3140,
-    gatewayFee: 94.20, // 3%
-    gstOnFee: 16.95,
-    netSettledAmount: 3028.85,
-    currency: "INR",
-    status: "Partially Refunded",
-    bankUtr: "UTR-CITI-8829104419",
-    gatewayRef: "ch_3N8819283019",
-    cardLast4: "8899",
-    upiVpa: null,
-    refundedAmount: 850,
-    settlementStatus: "Settled",
-    settlementBatchId: "SETTL-2026-09-10-02",
-    createdAt: "2026-09-10 06:20 PM",
-    capturedAt: "2026-09-10 06:21 PM"
-  },
-  {
-    id: "txn_upi_9841276",
-    orderId: "ORD-94807",
-    gateway: "UPI Direct",
-    paymentMethod: "UPI Direct (Google Pay)",
-    customer: {
-      name: "Pooja Hegde",
-      email: "pooja.h@mangalore.edu",
-      phone: "+91 97411 66522",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80"
-    },
-    grossAmount: 2600,
-    gatewayFee: 0,
-    gstOnFee: 0,
-    netSettledAmount: 2600,
-    currency: "INR",
-    status: "Captured",
-    bankUtr: "UTR-SBI-7729104822",
-    gatewayRef: "upi_gpay_998129038",
-    cardLast4: null,
-    upiVpa: "pooja@okhdfcbank",
-    refundedAmount: 0,
-    settlementStatus: "Settled",
-    settlementBatchId: "SETTL-2026-09-10-01",
-    createdAt: "2026-09-10 01:10 PM",
-    capturedAt: "2026-09-10 01:11 PM"
-  },
-  {
-    id: "txn_rzp_9841275",
-    orderId: "ORD-94805",
-    gateway: "Razorpay",
-    paymentMethod: "Credit Card",
-    customer: {
-      name: "Siddharth Verma",
-      email: "siddharth.v@gmail.com",
-      phone: "+91 98110 33445",
-      avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&q=80"
-    },
-    grossAmount: 2200,
-    gatewayFee: 41.80,
-    gstOnFee: 7.52,
-    netSettledAmount: 2150.68,
-    currency: "INR",
-    status: "Refunded",
-    bankUtr: "UTR-HDFC-6638190281",
-    gatewayRef: "pay_NL8799120938",
-    cardLast4: "1122",
-    upiVpa: null,
-    refundedAmount: 2200,
-    settlementStatus: "Settled",
-    settlementBatchId: "SETTL-2026-09-09-01",
-    createdAt: "2026-09-09 11:40 AM",
-    capturedAt: "2026-09-09 11:41 AM"
-  },
-  {
-    id: "txn_rzp_9841274",
-    orderId: "ORD-94804",
-    gateway: "Razorpay",
-    paymentMethod: "UPI (Paytm)",
-    customer: {
-      name: "Meera Nair",
-      email: "meera.n@kerala.org",
-      phone: "+91 94470 55667",
-      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80"
-    },
-    grossAmount: 1850,
-    gatewayFee: 0,
-    gstOnFee: 0,
-    netSettledAmount: 0,
-    currency: "INR",
-    status: "Failed",
-    bankUtr: null,
-    gatewayRef: "pay_NL8788910293",
-    cardLast4: null,
-    upiVpa: "meera@paytm",
-    refundedAmount: 0,
-    settlementStatus: "Failed / Dropped",
-    settlementBatchId: null,
-    createdAt: "2026-09-09 09:15 AM",
-    capturedAt: null
-  }
-];
+export let paymentTransactions = [];
 
 export let gatewayConfigurations = {
   razorpay: {
@@ -5165,120 +3581,11 @@ export let gatewayConfigurations = {
   }
 };
 
-export let refundRecords = [
-  {
-    id: "rfd_rzp_88410",
-    transactionId: "txn_str_9841277",
-    orderId: "ORD-94809",
-    customerName: "Rajesh Kothari",
-    customerEmail: "rajesh.k@gmail.com",
-    refundType: "Partial Refund",
-    amount: 850,
-    totalOrderAmount: 3140,
-    destination: "Original Payment Card (Stripe)",
-    reason: "Outer cap seal loose in courier - Replacement approved",
-    status: "Completed",
-    gatewayRefundId: "re_3N8819283019_rfd1",
-    processedAt: "2026-09-10 07:45 PM"
-  },
-  {
-    id: "rfd_rzp_88409",
-    transactionId: "txn_rzp_9841275",
-    orderId: "ORD-94805",
-    customerName: "Siddharth Verma",
-    customerEmail: "siddharth.v@gmail.com",
-    refundType: "Full Refund",
-    amount: 2200,
-    totalOrderAmount: 2200,
-    destination: "Customer Store Wallet Credit (Instant)",
-    reason: "Customer requested cancellation before warehouse dispatch",
-    status: "Completed",
-    gatewayRefundId: "rfnd_NL8799120938_wal",
-    processedAt: "2026-09-09 01:20 PM"
-  }
-];
+export let refundRecords = [];
 
-export let settlementReports = [
-  {
-    batchId: "SETTL-2026-09-11-01",
-    gateway: "Razorpay (UPI / Cards)",
-    settlementDate: "2026-09-11",
-    transactionsCount: 18,
-    grossVolume: 48650.00,
-    gatewayDeductions: 412.30,
-    netBankDeposit: 48237.70,
-    bankAccount: "HDFC Bank (A/C: ****2211)",
-    bankUtr: "UTR-HDFC-SETTL-9912048",
-    status: "Settled to Bank"
-  },
-  {
-    batchId: "SETTL-2026-09-10-02",
-    gateway: "Stripe International",
-    settlementDate: "2026-09-10",
-    transactionsCount: 4,
-    grossVolume: 12450.00,
-    gatewayDeductions: 373.50,
-    netBankDeposit: 12076.50,
-    bankAccount: "HDFC Bank (A/C: ****2211)",
-    bankUtr: "UTR-CITI-SETTL-3382910",
-    status: "Settled to Bank"
-  },
-  {
-    batchId: "SETTL-2026-09-10-01",
-    gateway: "UPI Direct (GPay / PhonePe)",
-    settlementDate: "2026-09-10",
-    transactionsCount: 22,
-    grossVolume: 34800.00,
-    gatewayDeductions: 0.00,
-    netBankDeposit: 34800.00,
-    bankAccount: "HDFC Bank (A/C: ****2211)",
-    bankUtr: "UTR-UPI-DIRECT-INSTANT",
-    status: "Instant Real-Time Settlement"
-  },
-  {
-    batchId: "SETTL-2026-09-09-01",
-    gateway: "Shiprocket COD Remittance",
-    settlementDate: "2026-09-09",
-    transactionsCount: 12,
-    grossVolume: 19800.00,
-    gatewayDeductions: 420.00,
-    netBankDeposit: 19380.00,
-    bankAccount: "HDFC Bank (A/C: ****2211)",
-    bankUtr: "UTR-SR-COD-8829104",
-    status: "Settled to Bank"
-  }
-];
+export let settlementReports = [];
 
-export let failedPaymentRetries = [
-  {
-    id: "REC-9921",
-    customerName: "Meera Nair",
-    customerEmail: "meera.n@kerala.org",
-    customerPhone: "+91 94470 55667",
-    cartAmount: 1850,
-    cartItems: "Neem Oil 1000 PPM (1 L) x1, Harit (1 L) Bio-Fungicide x1",
-    failureReason: "UPI App session timed out / VPA rejected",
-    errorCode: "BAD_REQUEST_PAYMENT_TIMEDOUT",
-    failedAt: "2026-09-09 09:15 AM",
-    recoveryStatus: "Pending Link Send", // "Pending Link Send" | "Link Sent" | "Recovered" | "Converted to COD"
-    retryLink: "https://jananiagro.com/checkout/pay?token=rec_9921_retry",
-    lastSentAt: null
-  },
-  {
-    id: "REC-9920",
-    customerName: "Gaurav Sen",
-    customerEmail: "gaurav.s@gmail.com",
-    customerPhone: "+91 98200 77112",
-    cartAmount: 3200,
-    cartItems: "Bhumi Shakti (5L) x2, Harit Bio-Fungicide (1L) x1",
-    failureReason: "Card issuing bank 3D-Secure OTP verification failed",
-    errorCode: "CARD_AUTHENTICATION_FAILED",
-    failedAt: "2026-09-08 04:30 PM",
-    recoveryStatus: "Recovered",
-    retryLink: "https://jananiagro.com/checkout/pay?token=rec_9920_retry",
-    lastSentAt: "2026-09-08 04:35 PM"
-  }
-];
+export let failedPaymentRetries = [];
 
 // -------------------------------------------------------------
 // CONTROLLER METHODS
@@ -5493,278 +3800,9 @@ export let walletProgramConfig = {
   lastUpdated: "2026-09-11 11:30 AM"
 };
 
-export let referralRecords = [
-  {
-    id: "REF-1001",
-    referrerId: "CUST-001",
-    referrerName: "Aarav Patel",
-    referrerEmail: "aarav.patel@gmail.com",
-    referrerCode: "AARAV-AGRO-22",
-    referrerTier: "Silver",
-    refereeName: "Neha Sharma",
-    refereeEmail: "neha.sharma@yahoo.com",
-    refereePhone: "+91 98201 11223",
-    orderId: "ORD-99214",
-    orderTotal: 1850,
-    orderStatus: "Delivered",
-    rewardAmount: 150,
-    status: "Approved",
-    createdAt: "2026-09-01 10:30 AM",
-    holdingExpiryDate: "2026-09-08 10:30 AM",
-    approvedAt: "2026-09-08 04:30 PM",
-    rejectedAt: null,
-    rejectionReason: null,
-    fraudScore: "Low (0.02)"
-  },
-  {
-    id: "REF-1002",
-    referrerId: "CUST-002",
-    referrerName: "Priya Sundaram",
-    referrerEmail: "priya.sundaram@outlook.com",
-    referrerCode: "PRIYA-AGRO-91",
-    referrerTier: "Silver",
-    refereeName: "Rajesh Gupta",
-    refereeEmail: "rajesh.gupta@gmail.com",
-    refereePhone: "+91 98765 44321",
-    orderId: "ORD-99248",
-    orderTotal: 2450,
-    orderStatus: "Delivered",
-    rewardAmount: 150,
-    status: "Pending",
-    createdAt: "2026-09-07 02:15 PM",
-    holdingExpiryDate: "Tomorrow 05:00 PM",
-    approvedAt: null,
-    rejectedAt: null,
-    rejectionReason: null,
-    fraudScore: "Low (0.05)"
-  },
-  {
-    id: "REF-1003",
-    referrerId: "CUST-003",
-    referrerName: "Sanjeev Organic Farms",
-    referrerEmail: "sanjeev.farms@agriportal.in",
-    referrerCode: "SANJEEV-AGRI-01",
-    referrerTier: "Gold",
-    refereeName: "Vikram Malhotra",
-    refereeEmail: "vikram.m@corporatemail.com",
-    refereePhone: "+91 98112 33445",
-    orderId: "ORD-99301",
-    orderTotal: 4200,
-    orderStatus: "Delivered",
-    rewardAmount: 225,
-    status: "Approved",
-    createdAt: "2026-09-02 04:00 PM",
-    holdingExpiryDate: "2026-09-09 04:00 PM",
-    approvedAt: "2026-09-09 11:15 AM",
-    rejectedAt: null,
-    rejectionReason: null,
-    fraudScore: "Low (0.01)"
-  },
-  {
-    id: "REF-1004",
-    referrerId: "CUST-004",
-    referrerName: "Kavya Wellness",
-    referrerEmail: "kavya@wellnesshub.org",
-    referrerCode: "KAVYA-WELLNESS-05",
-    referrerTier: "Platinum",
-    refereeName: "Ananya Joshi",
-    refereeEmail: "ananya.joshi@gmail.com",
-    refereePhone: "+91 99001 88776",
-    orderId: "ORD-99320",
-    orderTotal: 1299,
-    orderStatus: "In Transit",
-    rewardAmount: 225,
-    status: "Pending",
-    createdAt: "2026-09-09 11:45 AM",
-    holdingExpiryDate: "2026-09-16 11:45 AM",
-    approvedAt: null,
-    rejectedAt: null,
-    rejectionReason: null,
-    fraudScore: "Low (0.04)"
-  },
-  {
-    id: "REF-1005",
-    referrerId: "CUST-005",
-    referrerName: "Pooja Hegde",
-    referrerEmail: "pooja.hegde@organiclife.com",
-    referrerCode: "POOJA-ORGANIC-77",
-    referrerTier: "Silver",
-    refereeName: "Deepak Verma",
-    refereeEmail: "deepak.verma@rediffmail.com",
-    refereePhone: "+91 98450 12398",
-    orderId: "ORD-99342",
-    orderTotal: 899,
-    orderStatus: "Returned",
-    rewardAmount: 150,
-    status: "Rejected",
-    createdAt: "2026-09-03 09:10 AM",
-    holdingExpiryDate: "2026-09-10 09:10 AM",
-    approvedAt: null,
-    rejectedAt: "2026-09-10 02:20 PM",
-    rejectionReason: "Order Returned & Full Refund Processed",
-    fraudScore: "Medium (0.42)"
-  },
-  {
-    id: "REF-1006",
-    referrerId: "CUST-006",
-    referrerName: "Rohan Mehra",
-    referrerEmail: "rohan.mehra@gmail.com",
-    referrerCode: "ROHAN-AGRO-11",
-    referrerTier: "Silver",
-    refereeName: "Suresh Nair",
-    refereeEmail: "suresh.nair@nairassociates.com",
-    refereePhone: "+91 97401 55667",
-    orderId: "ORD-99365",
-    orderTotal: 3100,
-    orderStatus: "Delivered",
-    rewardAmount: 150,
-    status: "Pending",
-    createdAt: "2026-09-08 03:30 PM",
-    holdingExpiryDate: "2026-09-15 03:30 PM",
-    approvedAt: null,
-    rejectedAt: null,
-    rejectionReason: null,
-    fraudScore: "Low (0.03)"
-  },
-  {
-    id: "REF-1007",
-    referrerId: "CUST-007",
-    referrerName: "Meera Nambiar",
-    referrerEmail: "meera.nambiar@gmail.com",
-    referrerCode: "MEERA-AGRO-44",
-    referrerTier: "Silver",
-    refereeName: "Shreya Sen",
-    refereeEmail: "shreya.sen@kolkataarts.in",
-    refereePhone: "+91 98300 44556",
-    orderId: "ORD-99380",
-    orderTotal: 1650,
-    orderStatus: "Delivered",
-    rewardAmount: 150,
-    status: "Approved",
-    createdAt: "2026-08-28 01:00 PM",
-    holdingExpiryDate: "2026-09-04 01:00 PM",
-    approvedAt: "2026-09-05 10:00 AM",
-    rejectedAt: null,
-    rejectionReason: null,
-    fraudScore: "Low (0.01)"
-  },
-  {
-    id: "REF-1008",
-    referrerId: "CUST-008",
-    referrerName: "Vikram Malhotra",
-    referrerEmail: "vikram.m@corporatemail.com",
-    referrerCode: "VIKRAM-AGRO-88",
-    referrerTier: "Silver",
-    refereeName: "Vikram Malhotra (Alt)",
-    refereeEmail: "vikram.personal@gmail.com",
-    refereePhone: "+91 98112 33445",
-    orderId: "ORD-99399",
-    orderTotal: 750,
-    orderStatus: "Cancelled",
-    rewardAmount: 150,
-    status: "Rejected",
-    createdAt: "2026-09-06 05:40 PM",
-    holdingExpiryDate: "2026-09-13 05:40 PM",
-    approvedAt: null,
-    rejectedAt: "2026-09-07 11:00 AM",
-    rejectionReason: "Self-Referral IP Match & Same Phone Detected",
-    fraudScore: "High (0.95)"
-  }
-];
+export let referralRecords = [];
 
-export let globalWalletTransactions = [
-  {
-    id: "TXN-WAL-101",
-    customerId: "CUST-001",
-    customerName: "Aarav Patel",
-    customerEmail: "aarav.patel@gmail.com",
-    type: "credit",
-    amount: 150,
-    balanceAfter: 450,
-    category: "Referral Reward",
-    referenceId: "REF-1001",
-    notes: "Referral reward approved for Neha Sharma's order ORD-99214",
-    createdAt: "2026-09-08 04:30 PM"
-  },
-  {
-    id: "TXN-WAL-102",
-    customerId: "CUST-003",
-    customerName: "Sanjeev Organic Farms",
-    customerEmail: "sanjeev.farms@agriportal.in",
-    type: "credit",
-    amount: 225,
-    balanceAfter: 1425,
-    category: "Referral Reward",
-    referenceId: "REF-1003",
-    notes: "Gold Tier 1.5x commission approved for Vikram Malhotra's order ORD-99301",
-    createdAt: "2026-09-09 11:15 AM"
-  },
-  {
-    id: "TXN-WAL-103",
-    customerId: "CUST-002",
-    customerName: "Neha Sharma",
-    customerEmail: "neha.sharma@yahoo.com",
-    type: "debit",
-    amount: 200,
-    balanceAfter: 100,
-    category: "Order Payment",
-    referenceId: "ORD-99255",
-    notes: "Redeemed wallet points at checkout for Biological Crop Protection",
-    createdAt: "2026-09-09 02:40 PM"
-  },
-  {
-    id: "TXN-WAL-104",
-    customerId: "CUST-009",
-    customerName: "Rajesh Gupta",
-    customerEmail: "rajesh.gupta@gmail.com",
-    type: "credit",
-    amount: 50,
-    balanceAfter: 50,
-    category: "Signup Bonus",
-    referenceId: "WELCOME-50",
-    notes: "New account registration welcome bonus credited",
-    createdAt: "2026-09-10 10:00 AM"
-  },
-  {
-    id: "TXN-WAL-105",
-    customerId: "CUST-002",
-    customerName: "Priya Sundaram",
-    customerEmail: "priya.sundaram@outlook.com",
-    type: "credit",
-    amount: 250,
-    balanceAfter: 650,
-    category: "Manual Admin Credit",
-    referenceId: "ADJ-ADMIN-01",
-    notes: "Customer goodwill compensation for delivery delay",
-    createdAt: "2026-09-10 03:20 PM"
-  },
-  {
-    id: "TXN-WAL-106",
-    customerId: "CUST-010",
-    customerName: "Ananya Joshi",
-    customerEmail: "ananya.joshi@gmail.com",
-    type: "credit",
-    amount: 65,
-    balanceAfter: 115,
-    category: "Order Cashback",
-    referenceId: "ORD-99320",
-    notes: "5% Prepaid Razorpay UPI order cashback credited",
-    createdAt: "2026-09-10 06:15 PM"
-  },
-  {
-    id: "TXN-WAL-107",
-    customerId: "CUST-007",
-    customerName: "Meera Nambiar",
-    customerEmail: "meera.nambiar@gmail.com",
-    type: "debit",
-    amount: 150,
-    balanceAfter: 200,
-    category: "Order Payment",
-    referenceId: "ORD-99410",
-    notes: "Applied wallet credits on Harit Trichoderma (5L) purchase",
-    createdAt: "2026-09-11 09:30 AM"
-  }
-];
+export let globalWalletTransactions = [];
 
 // ==========================================
 // 🤝 REFER & EARN AND WALLET CONTROLLERS
@@ -6934,83 +4972,7 @@ export let marketingCampaigns = [
   }
 ];
 
-export let notificationHistory = [
-  {
-    id: "NOTIF-701",
-    campaignId: "CAMP-101",
-    campaignName: "Diwali Organic Sweetness & Biological Crop Protection Extravaganza",
-    channel: "email",
-    segment: "All Registered Customers",
-    recipients: 12850,
-    delivered: 12650,
-    status: "Delivered",
-    sentAt: "2026-09-10T09:00:00.000Z",
-    openRate: 40.9,
-    clickRate: 15.3,
-    revenue: 345600,
-    providerStatus: "Delivered via AWS SES / Brevo SMTP"
-  },
-  {
-    id: "NOTIF-702",
-    campaignId: "CAMP-102",
-    campaignName: "Kisan Special: Extra ₹200 OFF on Bio-Fertilizers & Bio-Pesticides",
-    channel: "sms",
-    segment: "VIP High LTV Champions (Spent > ₹5,000)",
-    recipients: 1420,
-    delivered: 1390,
-    status: "Delivered",
-    sentAt: "2026-09-11T14:30:00.000Z",
-    openRate: 100.0,
-    clickRate: 34.5,
-    revenue: 148200,
-    providerStatus: "Delivered via Gupshup DLT Gateway"
-  },
-  {
-    id: "NOTIF-703",
-    campaignId: "CAMP-103",
-    campaignName: "🌱 Bio-Shield Formulations & Soil Conditioners Just Arrived!",
-    channel: "push",
-    segment: "Commercial Crop Growers & Farmers",
-    recipients: 4120,
-    delivered: 3950,
-    status: "Delivered",
-    sentAt: "2026-09-11T17:00:00.000Z",
-    openRate: 13.6,
-    clickRate: 8.1,
-    revenue: 68400,
-    providerStatus: "Dispatched via Firebase Cloud Messaging & OneSignal"
-  },
-  {
-    id: "NOTIF-704",
-    campaignId: "CAMP-104",
-    campaignName: "Festive Announcement: Free Farm-Fresh Sweets with Orders Above ₹999",
-    channel: "announcement_banner",
-    segment: "All Registered Customers",
-    recipients: 12850,
-    delivered: 12850,
-    status: "Active",
-    sentAt: "2026-09-01T00:00:00.000Z",
-    openRate: 73.1,
-    clickRate: 22.1,
-    revenue: 412000,
-    providerStatus: "Live on Storefront Header"
-  },
-  {
-    id: "NOTIF-705",
-    campaignId: "CAMP-105",
-    campaignName: "Win Back: We Miss You! Here's ₹150 OFF Your Next Farm Basket",
-    channel: "email",
-    segment: "Dormant / Inactive (> 60 Days)",
-    recipients: 2150,
-    delivered: 0,
-    status: "Scheduled",
-    sentAt: "2026-09-18T10:00:00.000Z",
-    openRate: 0,
-    clickRate: 0,
-    revenue: 0,
-    providerStatus: "Scheduled for automated cron queue"
-  }
-];
+export let notificationHistory = [];
 
 export const getMarketingOverview = (req, res) => {
   const totalCampaigns = marketingCampaigns.length;
@@ -7346,7 +5308,7 @@ export const getMarketingAnalytics = (req, res) => {
 // REPORTS & ANALYTICS ENTERPRISE ENGINE
 // ==========================================
 
-export const getReportsAnalytics = (req, res) => {
+export const getReportsAnalytics = async (req, res) => {
   const { period = "30d", startDate, endDate } = req.query;
 
   // Period multiplier for realistic aggregate values
@@ -7598,18 +5560,32 @@ export const getReportsAnalytics = (req, res) => {
   ];
 
   // 14. Top Customers
-  const topCustomers = [
-    { rank: 1, id: "CUST-004", name: "Vikram Malhotra", email: "v.malhotra@techcorp.in", city: "Gurugram, HR", tier: "VIP Patron Elite", ordersCount: 21, totalSpend: 52100, aov: 2480, loyaltyPoints: 5210, lastOrder: "2026-09-10" },
-    { rank: 2, id: "CUST-001", name: "Ananya Sharma", email: "ananya.s@gmail.com", city: "Bengaluru, KA", tier: "Platinum Gold", ordersCount: 16, totalSpend: 44850, aov: 2803, loyaltyPoints: 4485, lastOrder: "2026-09-11" },
-    { rank: 3, id: "CUST-006", name: "Dr. Arvind Swamy", email: "arvind.swamy@apollo.org", city: "Hyderabad, TS", tier: "Platinum Gold", ordersCount: 14, totalSpend: 38400, aov: 2742, loyaltyPoints: 3840, lastOrder: "2026-09-08" },
-    { rank: 4, id: "CUST-008", name: "Kavita Nair", email: "kavita.nair@cochinresorts.com", city: "Kochi, KL", tier: "Gold Member", ordersCount: 12, totalSpend: 29500, aov: 2458, loyaltyPoints: 2950, lastOrder: "2026-09-06" },
-    { rank: 5, id: "CUST-009", name: "Meera Patel", email: "meera.patel@gujarattextiles.in", city: "Ahmedabad, GJ", tier: "Gold Member", ordersCount: 11, totalSpend: 26800, aov: 2436, loyaltyPoints: 2680, lastOrder: "2026-09-09" },
-    { rank: 6, id: "CUST-002", name: "Rajesh Kulkarni", email: "rajesh.k@rediffmail.com", city: "Pune, MH", tier: "Gold Member", ordersCount: 8, totalSpend: 19450, aov: 2431, loyaltyPoints: 1945, lastOrder: "2026-09-11" },
-    { rank: 7, id: "CUST-010", name: "Siddharth Sen", email: "siddharth.sen@calcuttaoils.com", city: "Kolkata, WB", tier: "Gold Member", ordersCount: 7, totalSpend: 16800, aov: 2400, loyaltyPoints: 1680, lastOrder: "2026-09-04" },
-    { rank: 8, id: "CUST-003", name: "Sunita Iyer", email: "sunita.iyer@yahoo.com", city: "Chennai, TN", tier: "Silver Patron", ordersCount: 3, totalSpend: 7450, aov: 2483, loyaltyPoints: 745, lastOrder: "2026-09-11" },
-    { rank: 9, id: "CUST-005", name: "Pooja Hegde", email: "pooja.hegde@infosys.com", city: "Mysuru, KA", tier: "Silver Patron", ordersCount: 3, totalSpend: 6900, aov: 2300, loyaltyPoints: 690, lastOrder: "2026-09-07" },
-    { rank: 10, id: "CUST-007", name: "Amitabh Verma", email: "amitabh.verma@delhicapitals.in", city: "New Delhi, DL", tier: "Silver Patron", ordersCount: 2, totalSpend: 5120, aov: 2560, loyaltyPoints: 512, lastOrder: "2026-09-05" }
-  ];
+  let topCustomers = [];
+  try {
+    const custRows = await query(`
+      SELECT customer_name, customer_email, customer_phone, COUNT(*) as ordersCount, SUM(total) as totalSpend
+      FROM \`orders\`
+      WHERE customer_email IS NOT NULL AND customer_email != ''
+      GROUP BY customer_email
+      ORDER BY totalSpend DESC
+      LIMIT 10
+    `);
+    if (Array.isArray(custRows)) {
+      topCustomers = custRows.map((r, i) => ({
+        rank: i + 1,
+        id: `CUST-${String(i + 1).padStart(3, "0")}`,
+        name: r.customer_name || "Valued Patron",
+        email: r.customer_email || "",
+        city: "India",
+        tier: "Customer",
+        ordersCount: Number(r.ordersCount || 1),
+        totalSpend: Number(r.totalSpend || 0),
+        aov: Math.round(Number(r.totalSpend || 0) / Math.max(1, Number(r.ordersCount || 1))),
+        loyaltyPoints: Math.round(Number(r.totalSpend || 0) * 0.1),
+        lastOrder: "Recent"
+      }));
+    }
+  } catch (e) {}
 
   res.json({
     success: true,
@@ -7895,7 +5871,7 @@ export const getGstTaxReport = (req, res) => {
 // EXPORT REPORTS DATASET ENGINE (CSV & JSON)
 // ==========================================
 
-export const exportReportData = (req, res) => {
+export const exportReportData = async (req, res) => {
   const { type = "sales", format = "csv", period = "30d" } = req.query;
 
   if (format === "csv") {
@@ -7942,14 +5918,16 @@ export const exportReportData = (req, res) => {
 
       case "customers":
         csvHeader = "Rank,Customer ID,Name,Email,City/State,Loyalty Tier,Orders Count,Total Lifetime Spend (INR),AOV (INR),Loyalty Points";
-        csvRows = [
-          "1,CUST-004,Vikram Malhotra,v.malhotra@techcorp.in,Gurugram HR,VIP Patron Elite,21,52100,2480,5210",
-          "2,CUST-001,Ananya Sharma,ananya.s@gmail.com,Bengaluru KA,Platinum Gold,16,44850,2803,4485",
-          "3,CUST-006,Dr. Arvind Swamy,arvind.swamy@apollo.org,Hyderabad TS,Platinum Gold,14,38400,2742,3840",
-          "4,CUST-008,Kavita Nair,kavita.nair@cochinresorts.com,Kochi KL,Gold Member,12,29500,2458,2950",
-          "5,CUST-009,Meera Patel,meera.patel@gujarattextiles.in,Ahmedabad GJ,Gold Member,11,26800,2436,2680",
-          "6,CUST-002,Rajesh Kulkarni,rajesh.k@rediffmail.com,Pune MH,Gold Member,8,19450,2431,1945"
-        ];
+        try {
+          const uRows = await query("SELECT id, name, email, city, state, tier, wallet_balance, loyalty_points FROM `users` WHERE role = 'Customer' LIMIT 100");
+          if (Array.isArray(uRows) && uRows.length > 0) {
+            csvRows = uRows.map((u, i) => `${i + 1},${u.id},${u.name || 'Customer'},${u.email || ''},${u.city || ''} ${u.state || ''},${u.tier || 'Customer'},1,${u.wallet_balance || 0},${u.wallet_balance || 0},${u.loyalty_points || 0}`);
+          } else {
+            csvRows = [];
+          }
+        } catch (e) {
+          csvRows = [];
+        }
         break;
 
       case "inventory":
@@ -8033,13 +6011,16 @@ export const exportReportData = (req, res) => {
 
       case "top_customers":
         csvHeader = "Rank,Customer ID,Name,Email,City/State,Loyalty Tier,Orders Count,Total Lifetime Spend (INR),AOV (INR),Loyalty Points";
-        csvRows = [
-          "1,CUST-004,Vikram Malhotra,v.malhotra@techcorp.in,Gurugram HR,VIP Patron Elite,21,52100,2480,5210",
-          "2,CUST-001,Ananya Sharma,ananya.s@gmail.com,Bengaluru KA,Platinum Gold,16,44850,2803,4485",
-          "3,CUST-006,Dr. Arvind Swamy,arvind.swamy@apollo.org,Hyderabad TS,Platinum Gold,14,38400,2742,3840",
-          "4,CUST-008,Kavita Nair,kavita.nair@cochinresorts.com,Kochi KL,Gold Member,12,29500,2458,2950",
-          "5,CUST-009,Meera Patel,meera.patel@gujarattextiles.in,Ahmedabad GJ,Gold Member,11,26800,2436,2680"
-        ];
+        try {
+          const uRows = await query("SELECT id, name, email, city, state, tier, wallet_balance, loyalty_points FROM `users` WHERE role = 'Customer' LIMIT 100");
+          if (Array.isArray(uRows) && uRows.length > 0) {
+            csvRows = uRows.map((u, i) => `${i + 1},${u.id},${u.name || 'Customer'},${u.email || ''},${u.city || ''} ${u.state || ''},${u.tier || 'Customer'},1,${u.wallet_balance || 0},${u.wallet_balance || 0},${u.loyalty_points || 0}`);
+          } else {
+            csvRows = [];
+          }
+        } catch (e) {
+          csvRows = [];
+        }
         break;
 
       default:
@@ -8541,269 +6522,13 @@ let adminStaffUsers = [
 ];
 
 // 4. Activity Logs Audit Trail Data Store
-let activityAuditLogs = [
-  {
-    id: "log_act_94812",
-    timestamp: "2026-09-12 09:48 AM",
-    actor: { id: "staff_001", name: "Doddi Sai Rama", email: "sairama@jananiagro.com", role: "Super Administrator" },
-    action: "Updated Store SEO Meta Description & Canonical Base",
-    module: "SEO Settings",
-    severity: "low",
-    ipAddress: "103.142.45.12",
-    device: "MacBook Pro (Chrome 128 / macOS 15)",
-    metadata: { field: "metaDescription", change: "Added GI-tagged heritage rice keywords" }
-  },
-  {
-    id: "log_act_94811",
-    timestamp: "2026-09-12 09:15 AM",
-    actor: { id: "staff_007", name: "Siddharth Rao", email: "siddharth.r@jananiagro.com", role: "Growth Lead" },
-    action: "Dispatched Omnichannel Broadcast: Grand Harvest Festival Offer",
-    module: "Marketing Module",
-    severity: "medium",
-    ipAddress: "49.37.155.62",
-    device: "Dell XPS 15 (Windows 11 / Chrome)",
-    metadata: { recipientsCount: 3840, campaign: "FESTIVAL-HARVEST-2026" }
-  },
-  {
-    id: "log_act_94810",
-    timestamp: "2026-09-12 08:35 AM",
-    actor: { id: "staff_003", name: "Dr. Arvind Swamy", email: "arvind.s@jananiagro.com", role: "Store Manager" },
-    action: "Approved 12 Verified Patron Reviews with Media Badges",
-    module: "Reviews Management",
-    severity: "low",
-    ipAddress: "122.179.88.94",
-    device: "iPad Pro (Safari 18)",
-    metadata: { reviewIds: ["REV-901", "REV-902", "REV-903"] }
-  },
-  {
-    id: "log_act_94809",
-    timestamp: "2026-09-12 07:30 AM",
-    actor: { id: "staff_004", name: "Harish Patel", email: "harish.p@jananiagro.com", role: "Logistics Lead" },
-    action: "Generated Shiprocket AWB Manifest (Batch of 48 orders)",
-    module: "Logistics & Shipping",
-    severity: "medium",
-    ipAddress: "182.73.190.22",
-    device: "Zebra Warehouse Handheld (Android 14)",
-    metadata: { warehouse: "WH-GIDC-01", awbCount: 48 }
-  },
-  {
-    id: "log_act_94808",
-    timestamp: "2026-09-11 11:45 PM",
-    actor: { id: "system_cron", name: "Janani Automation Daemon", email: "system@jananiagro.com", role: "System Service" },
-    action: "Generated Automated Nightly Database Snapshot (janani-db-snap-20260911.json)",
-    module: "Backup & Disaster Recovery",
-    severity: "low",
-    ipAddress: "127.0.0.1",
-    device: "Server Internal (Node.js Engine)",
-    metadata: { snapshotSize: "14.8 MB", recordsCount: 18420, checksum: "sha256-e918abf" }
-  },
-  {
-    id: "log_act_94807",
-    timestamp: "2026-09-11 06:12 PM",
-    actor: { id: "staff_001", name: "Doddi Sai Rama", email: "sairama@jananiagro.com", role: "Super Administrator" },
-    action: "Updated Razorpay Webhook Configuration & Secret Token",
-    module: "Payment Gateways",
-    severity: "high",
-    ipAddress: "103.142.45.12",
-    device: "MacBook Pro (Chrome 128 / macOS 15)",
-    metadata: { gateway: "Razorpay", webhook: "" }
-  },
-  {
-    id: "log_act_94806",
-    timestamp: "2026-09-11 04:30 PM",
-    actor: { id: "staff_006", name: "CA Rajesh Mehta", email: "rajesh.m@jananiagro.com", role: "Financial Auditor" },
-    action: "Exported GSTR-1 HSN Summary for August 2026 (CSV)",
-    module: "Reports & GST",
-    severity: "low",
-    ipAddress: "103.211.54.80",
-    device: "Lenovo ThinkPad (Chrome / Windows 11)",
-    metadata: { month: "Aug 2026", turnover: "₹18,20,400" }
-  },
-  {
-    id: "log_act_94805",
-    timestamp: "2026-09-11 02:20 PM",
-    actor: { id: "staff_005", name: "Pooja Sharma", email: "pooja.s@jananiagro.com", role: "Customer Support" },
-    action: "Processed Wallet Goodwill Credit ₹200 to Customer CUST-001 (Ananya S)",
-    module: "Customer Wallet",
-    severity: "medium",
-    ipAddress: "157.48.92.110",
-    device: "HP Pavilion (Windows 11 / Chrome)",
-    metadata: { customerId: "CUST-001", reason: "Goodwill gesture for delay" }
-  },
-  {
-    id: "log_act_94804",
-    timestamp: "2026-09-10 10:15 PM",
-    actor: { id: "security_guard", name: "Security Firewall Watchdog", email: "firewall@jananiagro.com", role: "Security Sentinel" },
-    action: "Blocked 5 Failed Login Attempts from Unrecognized IP 194.26.29.11",
-    module: "Security Sentinel",
-    severity: "critical",
-    ipAddress: "194.26.29.11",
-    device: "Unknown Bot / Python-requests",
-    metadata: { targetUser: "admin@jananiagro.com", actionTaken: "Auto-IP Banned for 24 hours" }
-  }
-];
+let activityAuditLogs = [];
 
 // 5. Login History Sessions Data Store
-let loginHistorySessions = [
-  {
-    id: "sess_001",
-    userId: "staff_001",
-    userName: "Doddi Sai Rama",
-    userEmail: "sairama@jananiagro.com",
-    role: "Super Administrator",
-    ipAddress: "103.142.45.12",
-    location: "Rajkot, Gujarat, India",
-    deviceType: "Desktop",
-    browser: "Chrome 128.0 (macOS Sequoia)",
-    loginTime: "2026-09-12 09:45 AM",
-    lastActive: "Active Now (Current Session)",
-    twoFactorVerified: true,
-    authMethod: "Password + Authenticator TOTP",
-    status: "Active",
-    isCurrent: true
-  },
-  {
-    id: "sess_002",
-    userId: "staff_007",
-    userName: "Siddharth Rao",
-    userEmail: "siddharth.r@jananiagro.com",
-    role: "Growth Lead",
-    ipAddress: "49.37.155.62",
-    location: "Bengaluru, Karnataka, India",
-    deviceType: "Laptop",
-    browser: "Chrome 128.0 (Windows 11)",
-    loginTime: "2026-09-12 09:00 AM",
-    lastActive: "15 mins ago",
-    twoFactorVerified: true,
-    authMethod: "Password + Authenticator TOTP",
-    status: "Active",
-    isCurrent: false
-  },
-  {
-    id: "sess_003",
-    userId: "staff_003",
-    userName: "Dr. Arvind Swamy",
-    userEmail: "arvind.s@jananiagro.com",
-    role: "Store Manager",
-    ipAddress: "122.179.88.94",
-    location: "Bengaluru, Karnataka, India",
-    deviceType: "Tablet",
-    browser: "Mobile Safari (iPadOS 18)",
-    loginTime: "2026-09-12 08:30 AM",
-    lastActive: "45 mins ago",
-    twoFactorVerified: true,
-    authMethod: "Password + SMS OTP",
-    status: "Active",
-    isCurrent: false
-  },
-  {
-    id: "sess_004",
-    userId: "staff_004",
-    userName: "Harish Patel",
-    userEmail: "harish.p@jananiagro.com",
-    role: "Logistics Lead",
-    ipAddress: "182.73.190.22",
-    location: "Rajkot, Gujarat, India",
-    deviceType: "Handheld Scanner",
-    browser: "Chrome Mobile (Android 14)",
-    loginTime: "2026-09-12 07:15 AM",
-    lastActive: "2 hours ago",
-    twoFactorVerified: true,
-    authMethod: "Password + SMS OTP",
-    status: "Active",
-    isCurrent: false
-  },
-  {
-    id: "sess_005",
-    userId: "staff_002",
-    userName: "Kavya Doddi",
-    userEmail: "kavya.d@jananiagro.com",
-    role: "Super Administrator",
-    ipAddress: "103.142.45.14",
-    location: "Rajkot, Gujarat, India",
-    deviceType: "Desktop",
-    browser: "Safari 18.0 (macOS Sequoia)",
-    loginTime: "2026-09-11 05:20 PM",
-    lastActive: "Terminated (Logged Out)",
-    twoFactorVerified: true,
-    authMethod: "Password + Authenticator TOTP",
-    status: "Terminated",
-    isCurrent: false
-  },
-  {
-    id: "sess_006",
-    userId: "staff_005",
-    userName: "Pooja Sharma",
-    userEmail: "pooja.s@jananiagro.com",
-    role: "Customer Support",
-    ipAddress: "157.48.92.110",
-    location: "Hyderabad, Telangana, India",
-    deviceType: "Laptop",
-    browser: "Edge 128.0 (Windows 11)",
-    loginTime: "2026-09-11 01:10 PM",
-    lastActive: "Terminated (Timeout 45m)",
-    twoFactorVerified: false,
-    authMethod: "Password Only",
-    status: "Terminated",
-    isCurrent: false
-  }
-];
+let loginHistorySessions = [];
 
 // 6. System Database Backups Data Store
-let systemBackupsList = [
-  {
-    id: "bkp_20260912_0945",
-    filename: "janani-db-manual-snapshot-20260912-0945.json",
-    type: "Manual Full Snapshot",
-    scope: "Complete (Products, Orders, Customers, CMS, Settings, Ledger)",
-    size: "14.85 MB",
-    recordCount: 18492,
-    status: "Completed",
-    createdDate: "2026-09-12 09:45 AM",
-    createdBy: "Doddi Sai Rama (Super Admin)",
-    checksum: "sha256-a810fe930129bc48",
-    downloadUrl: "/api/admin/backups/download/bkp_20260912_0945"
-  },
-  {
-    id: "bkp_20260911_2345",
-    filename: "janani-db-auto-nightly-20260911-2345.json",
-    type: "Automated Nightly Backup",
-    scope: "Complete",
-    size: "14.82 MB",
-    recordCount: 18420,
-    status: "Completed",
-    createdDate: "2026-09-11 11:45 PM",
-    createdBy: "System Cron Daemon",
-    checksum: "sha256-e918abf109283401",
-    downloadUrl: "/api/admin/backups/download/bkp_20260911_2345"
-  },
-  {
-    id: "bkp_20260910_2345",
-    filename: "janani-db-auto-nightly-20260910-2345.json",
-    type: "Automated Nightly Backup",
-    scope: "Complete",
-    size: "14.61 MB",
-    recordCount: 18210,
-    status: "Completed",
-    createdDate: "2026-09-10 11:45 PM",
-    createdBy: "System Cron Daemon",
-    checksum: "sha256-cc18293849102834",
-    downloadUrl: "/api/admin/backups/download/bkp_20260910_2345"
-  },
-  {
-    id: "bkp_20260905_1200",
-    filename: "janani-db-pre-marketing-push-20260905.json",
-    type: "Manual Milestone Snapshot",
-    scope: "Complete",
-    size: "14.10 MB",
-    recordCount: 17800,
-    status: "Completed",
-    createdDate: "2026-09-05 12:00 PM",
-    createdBy: "Doddi Sai Rama (Super Admin)",
-    checksum: "sha256-9921038491823019",
-    downloadUrl: "/api/admin/backups/download/bkp_20260905_1200"
-  }
-];
+let systemBackupsList = [];
 
 // ============================================================================
 // SETTINGS CONTROLLER HANDLERS

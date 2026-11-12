@@ -102,7 +102,7 @@ export const loginWithEmail = async (req, res) => {
              ON DUPLICATE KEY UPDATE role = 'Super Admin', status = 'Active', tier = 'Platinum Root Access'`,
             [adminUser.id, adminUser.name, adminUser.email, adminUser.phone, adminUser.role, adminUser.walletBalance, adminUser.tier]
           );
-        } catch (dbErr) {}
+        } catch (dbErr) { }
 
         const token = `janani_jwt_admin_${Date.now()}`;
         return res.status(200).json({
@@ -130,7 +130,7 @@ export const loginWithEmail = async (req, res) => {
       if (rows && rows.length > 0) {
         dbUser = rows[0];
       }
-    } catch (dbErr) {}
+    } catch (dbErr) { }
 
     if (!customersDatabase || customersDatabase.length === 0) {
       customersDatabase = loadCustomersFromDisk();
@@ -227,14 +227,16 @@ export const sendOtp = async (req, res) => {
         userExists = true;
       } else {
         try {
-          const [rows] = await pool.query(
-            "SELECT id, name, email, phone FROM users WHERE (email = ? AND email != '') OR (phone = ? AND phone != '') LIMIT 1",
-            [normalizedEmail || identifier, identifier]
-          );
-          if (rows && rows.length > 0) {
-            userExists = true;
+          if (email) {
+            const [rows] = await pool.query("SELECT id FROM users WHERE email = ? LIMIT 1", [normalizedEmail]);
+            if (rows && rows.length > 0) userExists = true;
+          } else if (phone) {
+            const cleanDigits = phone.replace(/\D/g, "");
+            const last10 = cleanDigits.slice(-10);
+            const [rows] = await pool.query("SELECT id FROM users WHERE phone LIKE ? OR phone LIKE ? LIMIT 1", [`%${last10}`, `%${last10}%`]);
+            if (rows && rows.length > 0) userExists = true;
           }
-        } catch (dbErr) {}
+        } catch (dbErr) { }
       }
     }
 
@@ -244,18 +246,20 @@ export const sendOtp = async (req, res) => {
         success: false,
         notRegistered: true,
         not_registered: true,
-        message: "This email is not registered yet. Only registered patrons can log in. Please create an account to continue."
+        message: email ? "This email is not registered yet. Only registered patrons can log in. Please create an account to continue." : "This mobile number is not registered yet. Please create an account to continue."
       });
     }
 
     // If signing up but user ALREADY exists
-    if ((purpose === "signup" || purpose === "checkout_signup") && userExists && !isAdmin) {
-      return res.status(200).json({
-        success: false,
-        alreadyRegistered: true,
-        already_registered: true,
-        message: "An account with this email address already exists. Please switch to Sign In."
-      });
+    if ((purpose === "signup" || purpose === "checkout_signup") && !isAdmin) {
+      if (userExists) {
+        return res.status(200).json({
+          success: false,
+          alreadyRegistered: true,
+          already_registered: true,
+          message: email ? "An account with this email address already exists. Please switch to Sign In." : "This mobile number is already registered. Please sign in instead."
+        });
+      }
     }
 
     // Generate random 6-digit OTP code
@@ -332,6 +336,14 @@ export const verifyOtp = async (req, res) => {
     // Clean up OTP after successful verification
     activeOtpStore.delete(identifier);
 
+    if (purpose === "signup") {
+      return res.status(200).json({
+        success: true,
+        message: "OTP verified successfully. Proceeding with registration.",
+        isSignup: true
+      });
+    }
+
     const normalizedEmail = email ? email.trim().toLowerCase() : (identifier.includes("@") ? identifier : null);
     const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail === (process.env.ADMIN_EMAIL || "").toLowerCase();
 
@@ -357,7 +369,7 @@ export const verifyOtp = async (req, res) => {
            ON DUPLICATE KEY UPDATE role = 'Super Admin', status = 'Active', tier = 'Platinum Root Access'`,
           [adminUser.id, adminUser.name, adminUser.email, adminUser.phone, adminUser.role, adminUser.walletBalance, adminUser.tier]
         );
-      } catch (dbErr) {}
+      } catch (dbErr) { }
 
       const token = `janani_jwt_admin_${Date.now()}`;
       return res.status(200).json({
@@ -423,7 +435,7 @@ export const verifyOtp = async (req, res) => {
            status = 'Active'`,
         [customer.id, customer.name, customer.email, formattedPhone, customer.walletBalance, customer.tier, formattedPhone, formattedPhone]
       );
-    } catch (dbErr) {}
+    } catch (dbErr) { }
 
     const token = `janani_jwt_${customer.id}_${Date.now()}`;
 
@@ -478,18 +490,24 @@ export const signupCustomer = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
     const cleanPhone = phone.replace(/\D/g, "");
+    const last10 = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
 
     // 1. Check existing customer in MySQL users table
     try {
       const [existingRows] = await pool.query(
-        "SELECT id, email, phone FROM users WHERE LOWER(email) = ? OR (phone = ? AND phone != '') LIMIT 1",
-        [normalizedEmail, cleanPhone]
+        "SELECT id, email, phone FROM users WHERE LOWER(email) = ? OR (phone LIKE ? AND phone != '') LIMIT 1",
+        [normalizedEmail, `%${last10}`]
       );
       if (existingRows && existingRows.length > 0) {
+        const matched = existingRows[0];
+        const isPhoneMatch = Boolean(last10 && matched.phone && matched.phone.replace(/\D/g, "").endsWith(last10));
         return res.status(409).json({
           success: false,
           alreadyRegistered: true,
-          message: "An account with this email address or mobile number already exists. Please log in."
+          phoneAlreadyRegistered: isPhoneMatch,
+          message: isPhoneMatch
+            ? "This mobile number is already registered with another account. Please log in or use a different number."
+            : "An account with this email address already exists. Please log in."
         });
       }
     } catch (dbErr) {
@@ -497,18 +515,21 @@ export const signupCustomer = async (req, res) => {
     }
 
     // Check existing email
-    if (customersDatabase.some((c) => c.email.toLowerCase() === normalizedEmail)) {
+    if (customersDatabase.some((c) => c.email && c.email.toLowerCase() === normalizedEmail)) {
       return res.status(409).json({
         success: false,
+        alreadyRegistered: true,
         message: "An account with this email address already exists. Please log in."
       });
     }
 
     // Check existing phone
-    if (customersDatabase.some((c) => c.phone === cleanPhone)) {
+    if (customersDatabase.some((c) => last10 && c.phone && c.phone.replace(/\D/g, "").endsWith(last10))) {
       return res.status(409).json({
         success: false,
-        message: "An account with this mobile number already exists. Please log in."
+        alreadyRegistered: true,
+        phoneAlreadyRegistered: true,
+        message: "This mobile number is already registered with another account. Please log in or use a different number."
       });
     }
 
@@ -570,7 +591,7 @@ export const signupCustomer = async (req, res) => {
            status = 'Active'`,
         [newCustomer.id, newCustomer.name, newCustomer.email, formattedPhone, password, newCustomer.walletBalance, newCustomer.referralCode, formattedPhone, formattedPhone, password, password]
       );
-    } catch (dbErr) {}
+    } catch (dbErr) { }
 
     const token = `janani_jwt_${newCustomer.id}_${Date.now()}`;
 
@@ -692,7 +713,7 @@ export const forgotPassword = async (req, res) => {
       if (rows && rows.length > 0) {
         dbUser = rows[0];
       }
-    } catch (dbErr) {}
+    } catch (dbErr) { }
 
     if (!customersDatabase || customersDatabase.length === 0) {
       customersDatabase = loadCustomersFromDisk();
@@ -795,9 +816,9 @@ export const resetPassword = async (req, res) => {
             "UPDATE users SET password = ? WHERE email = ? OR (phone = ? AND phone != '')",
             [newPassword, target, cleanPhone]
           );
-        } catch (e2) {}
+        } catch (e2) { }
       }
-    } catch (dbErr) {}
+    } catch (dbErr) { }
 
     // Update memory
     const customer = customersDatabase.find((c) => c.email.toLowerCase() === target || c.phone === cleanPhone);
@@ -852,7 +873,7 @@ export const getMe = async (req, res) => {
             if (rows && rows.length > 0) {
               targetUser = rows[0];
             }
-          } catch (dbErr) {}
+          } catch (dbErr) { }
           if (!targetUser) {
             targetUser = customersDatabase.find(c => c.id === tokenUserId || c.email.toLowerCase() === tokenUserId.toLowerCase());
           }
@@ -870,7 +891,7 @@ export const getMe = async (req, res) => {
             [qEmail, qPhone]
           );
           if (rows && rows.length > 0) targetUser = rows[0];
-        } catch (e) {}
+        } catch (e) { }
         if (!targetUser) {
           targetUser = customersDatabase.find(c => (qEmail && c.email.toLowerCase() === qEmail) || (qPhone && c.phone && c.phone.replace(/\D/g, "") === qPhone));
         }
@@ -936,10 +957,15 @@ export const savePreferences = async (req, res) => {
  */
 export const checkUser = async (req, res) => {
   try {
-    const target = (req.query.target || req.query.email || req.body?.email || req.body?.phone || req.body?.target || "").trim().toLowerCase();
-    if (!target) {
+    const rawTarget = (req.query.target || req.query.email || req.query.phone || req.body?.email || req.body?.phone || req.body?.target || "").trim();
+    if (!rawTarget) {
       return res.status(400).json({ success: false, message: "Target email or phone is required." });
     }
+    const isEmail = rawTarget.includes("@");
+    const target = isEmail ? rawTarget.toLowerCase() : rawTarget;
+    const cleanDigits = target.replace(/\D/g, "");
+    const last10 = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : "";
+
     const isAdmin = target === "jananibiosciences.r@gmail.com" || target.includes("admin@jananiagro.com");
     if (isAdmin) {
       return res.status(200).json({ success: true, exists: true, isAdmin: true });
@@ -948,25 +974,34 @@ export const checkUser = async (req, res) => {
     if (!customersDatabase || customersDatabase.length === 0) {
       customersDatabase = loadCustomersFromDisk();
     }
-    let customer = customersDatabase.find(
-      (c) => (c.email && c.email.toLowerCase() === target) || (c.phone && c.phone.replace(/\D/g, "") === target.replace(/\D/g, ""))
-    );
+    let customer = customersDatabase.find((c) => {
+      if (isEmail && c.email && c.email.toLowerCase() === target) return true;
+      if (last10 && c.phone && c.phone.replace(/\D/g, "").endsWith(last10)) return true;
+      return false;
+    });
 
     if (!customer) {
       try {
-        const [rows] = await pool.query(
-          "SELECT id, name, email, phone, role FROM users WHERE (email = ? AND email != '') OR (phone = ? AND phone != '') LIMIT 1",
-          [target, target]
-        );
-        if (rows && rows.length > 0) {
-          customer = rows[0];
+        if (isEmail) {
+          const [rows] = await pool.query(
+            "SELECT id, name, email, phone, role FROM users WHERE email = ? LIMIT 1",
+            [target]
+          );
+          if (rows && rows.length > 0) customer = rows[0];
+        } else if (last10) {
+          const [rows] = await pool.query(
+            "SELECT id, name, email, phone, role FROM users WHERE phone LIKE ? LIMIT 1",
+            [`%${last10}`]
+          );
+          if (rows && rows.length > 0) customer = rows[0];
         }
-      } catch (dbErr) {}
+      } catch (dbErr) { }
     }
 
     return res.status(200).json({
       success: true,
       exists: !!customer,
+      matchedBy: isEmail ? "email" : "phone",
       user: customer || null
     });
   } catch (error) {

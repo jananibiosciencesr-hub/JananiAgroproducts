@@ -206,10 +206,6 @@ export function AddressManagerTab() {
   };
 
   const handleDelete = (id: string) => {
-    if (addresses.length <= 1) {
-      toast.error("You must maintain at least one delivery address.");
-      return;
-    }
     const updated = addresses.filter((a) => a.id !== id);
     // If we deleted the default, set the first one as default
     if (addresses.find((a) => a.id === id)?.isDefault && updated[0]) {

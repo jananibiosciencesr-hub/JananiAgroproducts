@@ -63,12 +63,12 @@ export function formatOrderResponse(o) {
     customer_phone: customerPhone,
     customerPhone,
     customer: {
-      id: o.customer_id || o.customer?.id || "CUST-001",
+      id: o.customer_id || o.customer?.id || "",
       name: customerName,
       fullName: customerName,
       email: customerEmail,
       phone: customerPhone,
-      tier: o.customer?.tier || "Silver"
+      tier: o.customer?.tier || "Customer"
     },
     shipping_address: shippingAddress,
     shippingAddress,
@@ -455,7 +455,7 @@ export const getOrders = async (req, res) => {
       sql += " ORDER BY created_at DESC LIMIT 200";
 
       const rows = await query(sql, params);
-      if (Array.isArray(rows) && rows.length > 0) {
+      if (Array.isArray(rows)) {
         const formatted = rows.map(formatOrderResponse);
         return res.status(200).json({
           success: true,
@@ -525,7 +525,7 @@ export const getOrderByNumber = async (req, res) => {
           data: formatted
         });
       }
-    } catch (dbErr) {}
+    } catch (dbErr) { }
 
     // 2. Check memory
     const order = orders.find(
@@ -572,7 +572,7 @@ export const trackOrder = async (req, res) => {
           data: formatted
         });
       }
-    } catch (dbErr) {}
+    } catch (dbErr) { }
 
     let order = orders.find(
       (o) =>

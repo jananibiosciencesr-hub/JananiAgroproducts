@@ -479,54 +479,20 @@ export const DEFAULT_SETTINGS = {
 export const DEFAULT_STAFF = [
   {
     id: "STAFF-001",
-    name: "Doddi Sai Rama",
-    email: "admin@jananiagro.com",
+    name: "Janani Admin",
+    email: "jananibiosciences.r@gmail.com",
     phone: "+91 93114 16225",
     roleId: "role_super_admin",
     roleName: "Super Administrator",
     department: "Executive Leadership",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80",
+    avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Janani%20Admin",
     status: "Active" as const,
     twoFactorEnabled: true,
-    lastLogin: "Today, 10:15 AM",
-    lastLoginIp: "103.112.45.19",
-    lastLoginLocation: "Bengaluru, India",
+    lastLogin: "Active",
+    lastLoginIp: "127.0.0.1",
+    lastLoginLocation: "Headquarters",
     assignedWarehouses: ["All Warehouses"],
     createdAt: "2025-10-01"
-  },
-  {
-    id: "STAFF-002",
-    name: "Suresh Patwardhan",
-    email: "operations@jananiagro.com",
-    phone: "+91 98451 90213",
-    roleId: "role_warehouse_manager",
-    roleName: "Logistics & Fulfillment Lead",
-    department: "Warehousing & Supply Chain",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-    status: "Active" as const,
-    twoFactorEnabled: true,
-    lastLogin: "Yesterday, 04:30 PM",
-    lastLoginIp: "115.99.12.84",
-    lastLoginLocation: "Rajkot, Gujarat",
-    assignedWarehouses: ["Lodhika GIDC Gujarat Primary Hub"],
-    createdAt: "2026-01-15"
-  },
-  {
-    id: "STAFF-003",
-    name: "Kavitha Ranganathan",
-    email: "support@jananiagro.com",
-    phone: "+91 98410 44231",
-    roleId: "role_customer_support",
-    roleName: "Customer Delight Specialist",
-    department: "Patron Care & Returns",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80",
-    status: "Active" as const,
-    twoFactorEnabled: false,
-    lastLogin: "Today, 09:40 AM",
-    lastLoginIp: "106.51.78.201",
-    lastLoginLocation: "Chennai, India",
-    assignedWarehouses: ["Remote Hub"],
-    createdAt: "2026-03-10"
   }
 ];
 
@@ -680,131 +646,8 @@ export const DEFAULT_PAYMENTS = {
   }
 };
 
-export const DEFAULT_AUDIT_LOGS = [
-  {
-    id: "LOG-101",
-    timestamp: "2026-09-17 02:15 PM",
-    actor: { id: "STAFF-001", name: "Doddi Sai Rama", email: "admin@jananiagro.com", role: "Super Admin" },
-    action: "Updated Store Identity & GSTIN Settings",
-    module: "Settings",
-    severity: "low" as const,
-    ipAddress: "103.112.45.19",
-    device: "Chrome / Windows 11"
-  },
-  {
-    id: "LOG-102",
-    timestamp: "2026-09-17 11:40 AM",
-    actor: { id: "STAFF-002", name: "Janani Logistics", email: "operations@jananiagro.com", role: "Logistics Manager" },
-    action: "Generated Shiprocket AWB for ORD-002",
-    module: "Shipping & Orders",
-    severity: "low" as const,
-    ipAddress: "115.99.12.84",
-    device: "Firefox / macOS"
-  },
-  {
-    id: "LOG-103",
-    timestamp: "2026-09-16 05:00 PM",
-    actor: { id: "STAFF-001", name: "Doddi Sai Rama", email: "admin@jananiagro.com", role: "Super Admin" },
-    action: "Published New Seasonal Coupon: HARVEST15",
-    module: "Marketing & Coupons",
-    severity: "medium" as const,
-    ipAddress: "103.112.45.19",
-    device: "Chrome / Windows 11"
-  }
-];
+export const DEFAULT_AUDIT_LOGS: any[] = [];
 
-export const DEFAULT_BACKUPS = [
-  {
-    id: "BAK-20260915",
-    filename: "janani_agro_full_snapshot_20260915.json",
-    type: "Manual Pre-Deployment Snapshot",
-    scope: "Full Storefront + Catalog + ACL + Settings",
-    size: "2.4 MB",
-    recordCount: 1840,
-    status: "Verified Clean",
-    createdDate: "2026-09-15 11:00 AM",
-    createdBy: "Doddi Sai Rama",
-    checksum: "SHA256: 8f9b2d8e41a6...",
-    downloadUrl: "#"
-  },
-  {
-    id: "BAK-20260910",
-    filename: "janani_agro_weekly_auto_20260910.json",
-    type: "Automated Weekly Cold Backup",
-    scope: "Full Database State",
-    size: "2.2 MB",
-    recordCount: 1690,
-    status: "Verified Clean",
-    createdDate: "2026-09-10 03:00 AM",
-    createdBy: "System Cron",
-    checksum: "SHA256: 3a1c9e81df4a...",
-    downloadUrl: "#"
-  }
-];
+export const DEFAULT_BACKUPS: any[] = [];
 
-export const DEFAULT_INQUIRIES = [
-  {
-    id: 1,
-    name: "Dr. Meenakshi Rao",
-    businessName: "AIIMS Nutrition & Research Lab",
-    business_name: "AIIMS Nutrition & Research Lab",
-    service: "Bulk Commercial Supply",
-    subject: "Bulk Commercial Supply",
-    email: "dr.m.rao@aiims.edu",
-    phone: "+91 98490 22338",
-    quantity: "500 kg Bulk Requirement",
-    message: "Requesting certified laboratory COA documents and pricing for bulk monthly supply of Harit Bio Fertilizers and Organic Micronutrients.",
-    status: "New",
-    createdAt: "2026-10-04 10:30 AM",
-    created_at: "2026-10-04 10:30:00",
-    priority: "High"
-  },
-  {
-    id: 2,
-    name: "Kishore Patel",
-    businessName: "Patel Kisan Agro Agency",
-    business_name: "Patel Kisan Agro Agency",
-    service: "Dealership & Distributorship (Tier 1)",
-    subject: "Dealership & Distributorship (Tier 1)",
-    email: "kishore.patel@agroagency.in",
-    phone: "+91 98250 11982",
-    quantity: "₹3,00,000 Initial Stock",
-    message: "We operate 3 retail agro input stores in Anand & Vadodara districts. Looking to secure exclusive regional distribution for Janani Bio Pesticides and Botanical Extracts.",
-    status: "In Progress",
-    createdAt: "2026-10-03 04:15 PM",
-    created_at: "2026-10-03 16:15:00",
-    priority: "High"
-  },
-  {
-    id: 3,
-    name: "Suresh Reddy",
-    businessName: "Sri Sai Organic Orchards",
-    business_name: "Sri Sai Organic Orchards",
-    service: "Crop Solution Advisory",
-    subject: "Crop Solution Advisory",
-    email: "suresh.reddy@srisaifarms.com",
-    phone: "+91 94401 55678",
-    quantity: "50 Acres Farm Coverage",
-    message: "Experiencing early fungal blight in chilli crop. Need Janani technical agronomist consultation on bio-fungicide dosage schedule.",
-    status: "Contacted",
-    createdAt: "2026-10-02 11:20 AM",
-    created_at: "2026-10-02 11:20:00",
-    priority: "Medium"
-  },
-  {
-    id: 4,
-    name: "Ananya Deshmukh",
-    businessName: "Green Earth Export Consortium",
-    business_name: "Green Earth Export Consortium",
-    service: "Contract Farming & Private Label",
-    subject: "Contract Farming & Private Label",
-    email: "ananya@greenearthconsortium.com",
-    phone: "+91 97660 33411",
-    quantity: "Export Grade FPO",
-    message: "Inquiring about certified residue-free bio-stimulants for export table grapes with EU compliance documentation.",
-    status: "Resolved",
-    createdAt: "2026-09-28 02:40 PM",
-    created_at: "2026-09-28 14:40:00",
-    priority: "Medium"
-  }
-];
+export const DEFAULT_INQUIRIES: any[] = [];

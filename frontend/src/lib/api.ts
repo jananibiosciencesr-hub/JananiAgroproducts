@@ -1649,7 +1649,7 @@ export async function getAdminOrders(params?: OrderQueryParams) {
     }>(`/admin/orders?${query.toString()}`);
   }
 
-  if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+  if (res?.success && Array.isArray(res.data)) {
     res.data = sortOrdersLIFO(res.data);
     return res;
   }
@@ -8061,18 +8061,25 @@ export interface OtpSendResponse {
   resendCooldownSeconds?: number;
 }
 
-export async function checkCustomerExists(emailOrPhone: string): Promise<{ exists: boolean; isAdmin?: boolean; user?: Partial<AuthUser> | null }> {
-  const cleanTarget = (emailOrPhone || "").trim().toLowerCase();
+export async function checkCustomerExists(emailOrPhone: string): Promise<{ exists: boolean; isAdmin?: boolean; matchedBy?: string; user?: Partial<AuthUser> | null }> {
+  const cleanTarget = (emailOrPhone || "").trim();
   if (!cleanTarget) return { exists: false };
 
-  const isAdmin = cleanTarget === "jananibiosciences.r@gmail.com" || cleanTarget.includes("admin@jananiagro.com") || cleanTarget === "admin";
+  const isEmail = cleanTarget.includes("@");
+  const targetParam = isEmail ? cleanTarget.toLowerCase() : cleanTarget;
+  const phoneParam = !isEmail ? cleanTarget.replace(/\D/g, "") : "";
+
+  const isAdmin = targetParam.toLowerCase() === "jananibiosciences.r@gmail.com" || targetParam.includes("admin@jananiagro.com") || targetParam === "admin";
   if (isAdmin) {
     return { exists: true, isAdmin: true };
   }
 
   // 1. Check PHP API
   try {
-    const phpRes = await fetch(`/api.php?action=check-user&target=${encodeURIComponent(cleanTarget)}`);
+    const url = isEmail
+      ? `/api.php?action=check-user&email=${encodeURIComponent(targetParam)}`
+      : `/api.php?action=check-user&phone=${encodeURIComponent(phoneParam || targetParam)}`;
+    const phpRes = await fetch(url);
     if (phpRes.ok) {
       const data = await phpRes.json();
       if (data && typeof data === "object" && typeof data.exists === "boolean") {
@@ -8083,7 +8090,9 @@ export async function checkCustomerExists(emailOrPhone: string): Promise<{ exist
 
   // 2. Check Node API
   try {
-    const nodeRes = await fetchJson<{ success: boolean; exists: boolean; isAdmin?: boolean; user?: any }>(`/auth/check-user?target=${encodeURIComponent(cleanTarget)}`);
+    const nodeRes = await fetchJson<{ success: boolean; exists: boolean; isAdmin?: boolean; matchedBy?: string; user?: any }>(
+      `/auth/check-user?target=${encodeURIComponent(targetParam)}`
+    );
     if (nodeRes && typeof nodeRes.exists === "boolean") {
       return nodeRes;
     }
@@ -8241,8 +8250,10 @@ export async function loginWithEmail(payload: { email: string; password: string;
       try {
         const phpData = JSON.parse(text);
         if (phpData && typeof phpData === "object") {
-          if (phpData.success && phpData.user) {
-            persistAuthSession(phpData.user, phpData.token);
+          if (phpData.success) {
+            if (payload.purpose !== "signup" && phpData.user) {
+              persistAuthSession(phpData.user, phpData.token);
+            }
             return phpData;
           }
           if (phpData.success === false) {
@@ -8481,8 +8492,10 @@ export async function verifyAuthOtp(payload: { phone?: string | undefined; email
       try {
         const phpData = JSON.parse(text);
         if (phpData && typeof phpData === "object") {
-          if (phpData.success && phpData.user) {
-            persistAuthSession(phpData.user, phpData.token);
+          if (phpData.success) {
+            if (payload.purpose !== "signup" && phpData.user) {
+              persistAuthSession(phpData.user, phpData.token);
+            }
             return phpData;
           }
           if (phpData.success === false) {

@@ -29,7 +29,8 @@ import {
   ArrowLeft,
   Smartphone,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
@@ -41,7 +42,8 @@ import {
   loginWithGoogle,
   forgotPassword,
   resetPassword,
-  saveOnboardingPreferences
+  saveOnboardingPreferences,
+  checkCustomerExists
 } from "@/lib/api";
 import { validatePhone, validateEmail } from "@/lib/validation";
 
@@ -104,6 +106,8 @@ export function AuthenticationPage() {
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [loginUnregisteredWarn, setLoginUnregisteredWarn] = useState<string | null>(null);
   const [signupAlreadyExistsWarn, setSignupAlreadyExistsWarn] = useState<string | null>(null);
+  const [signupPhoneExistsWarn, setSignupPhoneExistsWarn] = useState<string | null>(null);
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false);
   const [unlockedInputs, setUnlockedInputs] = useState(false);
 
   // Form input cleanup on initial page load to prevent unwanted browser autofill
@@ -151,6 +155,8 @@ export function AuthenticationPage() {
     setFormErrors({});
     setLoginUnregisteredWarn(null);
     setSignupAlreadyExistsWarn(null);
+    setSignupPhoneExistsWarn(null);
+    setIsCheckingPhone(false);
   };
 
   const handleSwitchToSignup = () => {
@@ -166,12 +172,45 @@ export function AuthenticationPage() {
     setFormErrors({});
     setLoginUnregisteredWarn(null);
     setSignupAlreadyExistsWarn(null);
+    setSignupPhoneExistsWarn(null);
+    setIsCheckingPhone(false);
+  };
+
+  const checkPhoneRegistration = async (digits: string) => {
+    if (digits.length !== 10) return;
+    setIsCheckingPhone(true);
+    try {
+      const res = await checkCustomerExists(digits);
+      if (res?.exists) {
+        setSignupPhoneExistsWarn(digits);
+        setFormErrors((prev) => ({
+          ...prev,
+          phone: "This mobile number is already registered. Please sign in instead.",
+        }));
+      } else {
+        setSignupPhoneExistsWarn(null);
+        setFormErrors((prev) => {
+          if (prev.phone?.includes("already registered")) {
+            return { ...prev, phone: undefined };
+          }
+          return prev;
+        });
+      }
+    } catch (e) {
+      // ignore network errors
+    } finally {
+      setIsCheckingPhone(false);
+    }
   };
 
   const handlePhoneChange = (val: string) => {
     const digitsOnly = val.replace(/\D/g, "").slice(0, 10);
     setPhone(digitsOnly);
     setFormTouched((prev) => ({ ...prev, phone: true }));
+
+    if (signupPhoneExistsWarn && digitsOnly !== signupPhoneExistsWarn) {
+      setSignupPhoneExistsWarn(null);
+    }
 
     if (!digitsOnly) {
       setFormErrors((prev) => ({ ...prev, phone: "Mobile number is required." }));
@@ -180,16 +219,27 @@ export function AuthenticationPage() {
 
     const res = validatePhone(digitsOnly);
     setFormErrors((prev) => ({ ...prev, phone: res.isValid ? undefined : res.error }));
+
+    if (authMode === "signup" && digitsOnly.length === 10 && res.isValid) {
+      checkPhoneRegistration(digitsOnly);
+    }
   };
 
   const handlePhoneBlur = () => {
     setFormTouched((prev) => ({ ...prev, phone: true }));
     const res = validatePhone(phone);
     setFormErrors((prev) => ({ ...prev, phone: res.isValid ? undefined : res.error }));
+
+    if (authMode === "signup" && phone.length === 10 && res.isValid) {
+      checkPhoneRegistration(phone);
+    }
   };
 
   const handleEmailChange = (val: string) => {
     setEmail(val);
+    if (signupAlreadyExistsWarn && val.toLowerCase() !== signupAlreadyExistsWarn.toLowerCase()) {
+      setSignupAlreadyExistsWarn(null);
+    }
     if (formTouched.email || val.includes("@") || val.length > 3) {
       setFormTouched((prev) => ({ ...prev, email: true }));
       const res = validateEmail(val);
@@ -211,6 +261,16 @@ export function AuthenticationPage() {
       email: res.isValid ? undefined : res.error,
       emailSuggestion: res.suggestion,
     }));
+
+    if (authMode === "signup" && res.isValid && email.includes("@")) {
+      checkCustomerExists(email).then((chk) => {
+        if (chk?.exists) {
+          setSignupAlreadyExistsWarn(email.trim().toLowerCase());
+        } else {
+          setSignupAlreadyExistsWarn(null);
+        }
+      }).catch(() => { });
+    }
   };
 
   const handleApplyEmailSuggestion = () => {
@@ -236,7 +296,10 @@ export function AuthenticationPage() {
     }
   };
 
-  const isPhoneValid = phone.length === 10 && /^[6-9][0-9]{9}$/.test(phone);
+  const isPhoneValid =
+    phone.length === 10 &&
+    /^[6-9][0-9]{9}$/.test(phone) &&
+    (authMode !== "signup" || !signupPhoneExistsWarn);
   const isEmailValid = Boolean(email && !formErrors.email && !formErrors.emailSuggestion && validateEmail(email).isValid);
   const isConfirmFilled = confirmPassword.length > 0;
   const isPasswordMismatch = isConfirmFilled && password !== confirmPassword;
@@ -510,16 +573,17 @@ export function AuthenticationPage() {
         phone: formattedPhone || undefined,
         email: isEmail ? otpTarget : undefined,
         name: (name || "").trim() || undefined,
-        otp: fullOtp
+        otp: fullOtp,
+        purpose: otpPurpose
       });
 
       if (res?.success) {
         if (otpPurpose === "signup") {
-          // Complete registration
+          // Complete registration with the actual user details entered in signup form
           const signupRes = await signupCustomer({
-            name,
-            email: isEmail ? otpTarget : (email || ""),
-            phone: formattedPhone || (isEmail ? "" : otpTarget),
+            name: (name || "").trim(),
+            email: isEmail ? otpTarget : (email || "").trim(),
+            phone: formattedPhone || (isEmail ? (phone || "") : otpTarget),
             password,
             referralCode,
             agreeTerms,
@@ -528,9 +592,9 @@ export function AuthenticationPage() {
           if (signupRes?.success && signupRes.user) {
             loginUser(signupRes.user, signupRes.token);
             setIsOnboardingOpen(true);
+            toast.success("Welcome to Janani Agro Products! Account created successfully.");
           } else {
-            loginUser(res.user, res.token);
-            setIsOnboardingOpen(true);
+            toast.error(signupRes?.message || "Failed to complete registration. Please try again.");
           }
         } else {
           // Login Flow
@@ -542,7 +606,7 @@ export function AuthenticationPage() {
 
             if (isAdmin) {
               localStorage.setItem("janani_admin_session", "true");
-          localStorage.setItem("janani_admin_auth_time", Date.now().toString());
+              localStorage.setItem("janani_admin_auth_time", Date.now().toString());
               localStorage.setItem("janani_admin_user", JSON.stringify(res.user));
               if (res.token) localStorage.setItem("janani_admin_token", res.token);
               toast.success("Welcome Super Admin! Redirecting to Command Center...");
@@ -606,14 +670,46 @@ export function AuthenticationPage() {
       toast.error("You must accept the Terms of Service & Privacy Policy.");
       return;
     }
+    if (signupPhoneExistsWarn) {
+      toast.error("This mobile number is already registered. Please sign in instead.");
+      return;
+    }
 
     // Send verification OTP to the user's email
     setLoading(true);
     setLoginUnregisteredWarn(null);
     setSignupAlreadyExistsWarn(null);
     try {
+      const cleanDigits = phone.replace(/\D/g, "");
+      const formattedPhone = cleanDigits.length === 10
+        ? `+91 ${cleanDigits.slice(0, 5)} ${cleanDigits.slice(5)}`
+        : `+91 ${cleanDigits}`;
       const emailToSend = email.trim().toLowerCase();
-      const res = await sendAuthOtp({ email: emailToSend, purpose: "signup" });
+
+      // Real-time pre-check on mobile uniqueness
+      const checkPhone = await checkCustomerExists(cleanDigits);
+      if (checkPhone?.exists) {
+        setSignupPhoneExistsWarn(cleanDigits);
+        setFormErrors((prev) => ({
+          ...prev,
+          phone: "This mobile number is already registered. Please sign in instead.",
+        }));
+        toast.error("This mobile number is already registered with an existing account. Please sign in instead.");
+        return;
+      }
+
+      const res = await sendAuthOtp({
+        email: emailToSend,
+        phone: formattedPhone,
+        purpose: "signup"
+      });
+
+      if (res?.phoneAlreadyRegistered) {
+        setSignupPhoneExistsWarn(cleanDigits);
+        toast.error(res.message || "This mobile number is already registered. Please sign in instead.");
+        return;
+      }
+
       if (res?.alreadyRegistered || (res as any)?.already_registered) {
         setSignupAlreadyExistsWarn(emailToSend);
         toast.error(res.message || `An account with ${emailToSend} already exists. Please sign in instead.`);
@@ -759,7 +855,7 @@ export function AuthenticationPage() {
       <div className="w-full max-w-3xl lg:max-w-[780px] xl:max-w-[840px] 2xl:max-w-[880px] mx-auto">
         {/* Main Dual-Pane Auth Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/70 bg-card/60 backdrop-blur-2xl shadow-xl transition-all w-full">
-          
+
           {/* LEFT PANE: Premium Organic Heritage Banner (Desktop 5 cols on lg, 4 cols on xl) */}
           <div className="relative hidden lg:flex lg:col-span-5 xl:col-span-4 overflow-hidden bg-gradient-to-b from-[#075B32] via-[#064A29] to-[#042A17] items-center justify-center p-3.5 sm:p-5">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(79,174,42,0.18),transparent_70%)] pointer-events-none" />
@@ -773,7 +869,7 @@ export function AuthenticationPage() {
 
           {/* RIGHT PANE: Interactive Glassmorphism Form (7 cols on lg, 8 cols on xl) */}
           <div className="lg:col-span-7 xl:col-span-8 px-4 sm:px-6 py-2.5 sm:py-3.5 flex flex-col justify-center bg-card/70 backdrop-blur-xl">
-            
+
             {/* Top Navigation Mode Pill */}
             <div>
               <div className="mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -785,8 +881,8 @@ export function AuthenticationPage() {
                     {isOtpStep
                       ? "Verify Security Code"
                       : authMode === "login"
-                      ? "Sign In to Your Account"
-                      : "Create Your Janani Account"}
+                        ? "Sign In to Your Account"
+                        : "Create Your Janani Account"}
                   </h1>
                 </div>
 
@@ -796,22 +892,20 @@ export function AuthenticationPage() {
                     <button
                       type="button"
                       onClick={handleSwitchToLogin}
-                      className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                        authMode === "login"
+                      className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${authMode === "login"
                           ? "bg-card text-foreground shadow-sm font-bold"
                           : "text-muted-foreground hover:text-foreground"
-                      }`}
+                        }`}
                     >
                       Sign In
                     </button>
                     <button
                       type="button"
                       onClick={handleSwitchToSignup}
-                      className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                        authMode === "signup"
+                      className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${authMode === "signup"
                           ? "bg-card text-foreground shadow-sm font-bold"
                           : "text-muted-foreground hover:text-foreground"
-                      }`}
+                        }`}
                     >
                       Register
                     </button>
@@ -943,11 +1037,10 @@ export function AuthenticationPage() {
                         setLoginUnregisteredWarn(null);
                         setSignupAlreadyExistsWarn(null);
                       }}
-                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition ${
-                        loginMethod === "email_otp"
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition ${loginMethod === "email_otp"
                           ? "bg-card text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
-                      }`}
+                        }`}
                     >
                       <Mail className="size-3.5 shrink-0" /> Email OTP
                     </button>
@@ -961,11 +1054,10 @@ export function AuthenticationPage() {
                         setLoginUnregisteredWarn(null);
                         setSignupAlreadyExistsWarn(null);
                       }}
-                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition ${
-                        loginMethod === "email"
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold whitespace-nowrap shrink-0 transition ${loginMethod === "email"
                           ? "bg-card text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
-                      }`}
+                        }`}
                     >
                       <Lock className="size-3.5 shrink-0" /> Password
                     </button>
@@ -1011,13 +1103,12 @@ export function AuthenticationPage() {
                             }}
                             onBlur={handleEmailBlur}
                             placeholder="e.g. jananibiosciences.r@gmail.com"
-                            className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${
-                              formTouched.email && formErrors.email
+                            className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${formTouched.email && formErrors.email
                                 ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
                                 : isEmailValid
-                                ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
-                                : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            }`}
+                                  ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                                  : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              }`}
                           />
                           {email.length > 0 ? (
                             <button
@@ -1135,13 +1226,12 @@ export function AuthenticationPage() {
                             onChange={(e) => handleEmailChange(e.target.value)}
                             onBlur={handleEmailBlur}
                             placeholder="e.g. jananibiosciences.r@gmail.com"
-                            className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${
-                              formTouched.email && formErrors.email
+                            className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${formTouched.email && formErrors.email
                                 ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
                                 : isEmailValid
-                                ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
-                                : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            }`}
+                                  ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                                  : "border-input focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              }`}
                           />
                           {email.length > 0 ? (
                             <button
@@ -1321,12 +1411,14 @@ export function AuthenticationPage() {
                           onChange={(e) => handlePhoneChange(e.target.value)}
                           onBlur={handlePhoneBlur}
                           placeholder="93114 16225"
-                          className={`h-9.5 sm:h-10 w-full min-w-0 rounded-r-xl bg-transparent px-2.5 text-xs sm:text-sm font-medium outline-none font-mono ${
-                            formTouched.phone && formErrors.phone ? "text-destructive" : ""
-                          }`}
+                          className={`h-9.5 sm:h-10 w-full min-w-0 rounded-r-xl bg-transparent px-2.5 text-xs sm:text-sm font-medium outline-none font-mono ${formTouched.phone && formErrors.phone ? "text-destructive" : ""
+                            }`}
                         />
-                        {isPhoneValid && (
+                        {isPhoneValid && !isCheckingPhone && (
                           <CheckCircle2 className="absolute right-2.5 top-2.5 size-4 text-emerald-600 pointer-events-none" />
+                        )}
+                        {isCheckingPhone && (
+                          <Loader2 className="absolute right-2.5 top-2.5 size-4 animate-spin text-primary pointer-events-none" />
                         )}
                       </div>
                       {formTouched.phone && formErrors.phone ? (
@@ -1334,6 +1426,32 @@ export function AuthenticationPage() {
                           <AlertCircle className="size-3 shrink-0" /> {formErrors.phone}
                         </p>
                       ) : null}
+                      {signupPhoneExistsWarn && (
+                        <div className="mt-1.5 rounded-xl border border-amber-300 bg-amber-50/95 dark:bg-amber-950/40 dark:border-amber-700/60 p-2.5 text-xs shadow-xs animate-in fade-in duration-200">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="flex-1 space-y-1">
+                              <p className="font-bold text-amber-950 dark:text-amber-200 text-[11.5px] leading-tight">
+                                Mobile Number Already Used!
+                              </p>
+                              <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-normal">
+                                +91 {signupPhoneExistsWarn} is already registered. Each account requires a unique mobile number.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleSwitchToLogin();
+                                  setLoginMethod("phone");
+                                  setPhone(signupPhoneExistsWarn);
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:underline pt-0.5"
+                              >
+                                Sign In with this Mobile Number &rarr;
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Email Address / Gmail Field with real-time validation (Full width in row 2) */}
@@ -1366,13 +1484,12 @@ export function AuthenticationPage() {
                           onChange={(e) => handleEmailChange(e.target.value)}
                           onBlur={handleEmailBlur}
                           placeholder="e.g. farmer.name@gmail.com"
-                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none transition ${
-                            formTouched.email && formErrors.email
+                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-9 text-xs sm:text-sm outline-none transition ${formTouched.email && formErrors.email
                               ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
                               : isEmailValid
-                              ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
-                              : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
-                          }`}
+                                ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20"
+                                : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
+                            }`}
                         />
                         {email.length > 0 ? (
                           <button
@@ -1444,13 +1561,12 @@ export function AuthenticationPage() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Min 6 characters"
-                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-14 text-xs sm:text-sm outline-none transition ${
-                            password.length > 0 && password.length < 6
+                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-14 text-xs sm:text-sm outline-none transition ${password.length > 0 && password.length < 6
                               ? "border-amber-500/70 focus:border-amber-600 ring-1 ring-amber-500/20"
                               : password.length >= 6
-                              ? "border-emerald-500/70 focus:border-emerald-600"
-                              : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
-                          }`}
+                                ? "border-emerald-500/70 focus:border-emerald-600"
+                                : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
+                            }`}
                         />
                         <div className="absolute right-2 top-2 flex items-center gap-1">
                           {password.length > 0 && (
@@ -1507,13 +1623,12 @@ export function AuthenticationPage() {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Re-enter password"
-                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-14 text-xs sm:text-sm outline-none transition ${
-                            isPasswordMismatch
+                          className={`h-9.5 sm:h-10 w-full rounded-xl border bg-background/90 pl-9 pr-14 text-xs sm:text-sm outline-none transition ${isPasswordMismatch
                               ? "border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5 focus:border-destructive"
                               : isPasswordMatch
-                              ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20 text-foreground"
-                              : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
-                          }`}
+                                ? "border-emerald-500/70 focus:border-emerald-600 bg-emerald-50/20 text-foreground"
+                                : "border-input focus:border-primary focus:ring-1 focus:ring-primary/20"
+                            }`}
                         />
                         <div className="absolute right-2 top-2 flex items-center gap-1">
                           {confirmPassword.length > 0 && (
@@ -1559,9 +1674,8 @@ export function AuthenticationPage() {
                         {[1, 2, 3, 4].map((step) => (
                           <div
                             key={step}
-                            className={`h-1 rounded-full transition-all duration-300 ${
-                              passwordStrength.score >= step ? passwordStrength.color : "bg-border"
-                            }`}
+                            className={`h-1 rounded-full transition-all duration-300 ${passwordStrength.score >= step ? passwordStrength.color : "bg-border"
+                              }`}
                           />
                         ))}
                       </div>
@@ -1829,7 +1943,7 @@ export function AuthenticationPage() {
       {isOnboardingOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-forest/60 backdrop-blur-lg p-4">
           <div className="w-full max-w-xl rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95">
-            
+
             {/* Progress indicator */}
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1844,9 +1958,8 @@ export function AuthenticationPage() {
                 {[1, 2, 3].map((s) => (
                   <div
                     key={s}
-                    className={`h-1.5 w-8 rounded-full transition ${
-                      onboardingStep >= s ? "bg-brand-gold" : "bg-secondary"
-                    }`}
+                    className={`h-1.5 w-8 rounded-full transition ${onboardingStep >= s ? "bg-brand-gold" : "bg-secondary"
+                      }`}
                   />
                 ))}
               </div>
@@ -1923,11 +2036,10 @@ export function AuthenticationPage() {
                             isSelected ? prev.filter((c) => c !== category) : [...prev, category]
                           );
                         }}
-                        className={`flex items-center justify-between p-3 rounded-2xl border text-xs font-semibold transition ${
-                          isSelected
+                        className={`flex items-center justify-between p-3 rounded-2xl border text-xs font-semibold transition ${isSelected
                             ? "border-primary bg-primary/10 text-primary shadow-sm font-bold"
                             : "border-border bg-background hover:bg-secondary text-foreground"
-                        }`}
+                          }`}
                       >
                         <span>{category}</span>
                         {isSelected && <Check className="size-4 text-primary" />}
@@ -1983,9 +2095,8 @@ export function AuthenticationPage() {
                   </div>
 
                   {pinAvailable !== null && (
-                    <div className={`p-3 rounded-2xl text-xs font-medium flex items-center gap-2 ${
-                      pinAvailable ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20" : "bg-amber-500/10 text-amber-700 border border-amber-500/20"
-                    }`}>
+                    <div className={`p-3 rounded-2xl text-xs font-medium flex items-center gap-2 ${pinAvailable ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20" : "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+                      }`}>
                       {pinAvailable ? <CheckCircle2 className="size-4 text-emerald-600" /> : <Truck className="size-4 text-amber-600" />}
                       <span>
                         {pinAvailable
