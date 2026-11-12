@@ -50,7 +50,18 @@ export function downloadExcelSheet<T extends Record<string, any> | any[]>(
 
     // 4. Generate binary XLSX buffer and trigger download as true .xlsx
     const cleanFilename = filename.toLowerCase().endsWith(".xlsx") ? filename : `${filename}.xlsx`;
-    XLSX.writeFile(wb, cleanFilename, { bookType: "xlsx", type: "binary" });
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = cleanFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     return true;
   } catch (err) {
     console.error("Excel generation error:", err);
