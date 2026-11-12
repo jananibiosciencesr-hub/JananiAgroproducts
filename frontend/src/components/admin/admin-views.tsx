@@ -698,7 +698,7 @@ export function ShippingView({
 export function ReviewsView({ reviews, onUpdateReview }: { reviews: any[]; onUpdateReview: (id: string, status: string) => void }) {
   return (
     <div className="space-y-6">
-      <div>
+      <div className="pl-4 sm:pl-6">
         <h2 className="text-xl font-bold text-foreground">Customer Reviews & Ratings Moderation</h2>
         <p className="text-xs text-muted-foreground">Approve, hide or verify organic harvest testimonials</p>
       </div>
