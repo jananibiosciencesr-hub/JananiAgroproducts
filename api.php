@@ -4847,16 +4847,18 @@ try {
                 $query = "SELECT * FROM `orders` WHERE `number` NOT LIKE '%8492%' AND `number` NOT LIKE '%356429%' AND `id` NOT LIKE '%8492%' AND `id` NOT LIKE '%356429%' AND `id` NOT LIKE 'ORD-%'";
                 $params = [];
 
-                if ($customerEmail && $customerPhone) {
-                    $query .= " AND (`customer_email` = ? OR `customer_phone` = ?)";
-                    $params[] = strtolower(trim($customerEmail));
-                    $params[] = trim($customerPhone);
-                } elseif ($customerEmail) {
-                    $query .= " AND `customer_email` = ?";
+                if ($customerEmail) {
+                    $query .= " AND LOWER(`customer_email`) = ?";
                     $params[] = strtolower(trim($customerEmail));
                 } elseif ($customerPhone) {
-                    $query .= " AND `customer_phone` = ?";
-                    $params[] = trim($customerPhone);
+                    $cleanDigits = preg_replace('/\D/', '', $customerPhone);
+                    if (strlen($cleanDigits) >= 10) {
+                        $query .= " AND `customer_phone` LIKE ?";
+                        $params[] = '%' . substr($cleanDigits, -10) . '%';
+                    } else {
+                        $query .= " AND `customer_phone` = ?";
+                        $params[] = trim($customerPhone);
+                    }
                 }
                 if ($status && $status !== 'all') {
                     $query .= " AND (`order_status` = ? OR `order_status` LIKE ?)";

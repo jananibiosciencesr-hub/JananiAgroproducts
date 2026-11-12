@@ -430,11 +430,8 @@ export const getOrders = async (req, res) => {
       let sql = "SELECT * FROM `orders` WHERE 1=1";
       const params = [];
 
-      if (filterEmail && filterPhone) {
-        sql += " AND (customer_email = ? OR customer_phone LIKE ?)";
-        params.push(filterEmail, `%${filterPhone.slice(-10)}%`);
-      } else if (filterEmail) {
-        sql += " AND customer_email = ?";
+      if (filterEmail) {
+        sql += " AND LOWER(customer_email) = ?";
         params.push(filterEmail);
       } else if (filterPhone) {
         sql += " AND customer_phone LIKE ?";

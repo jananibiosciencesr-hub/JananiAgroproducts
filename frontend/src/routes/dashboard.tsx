@@ -145,14 +145,30 @@ function DashboardPage() {
         const fetchLiveOrders = async () => {
           try {
             const qs = new URLSearchParams();
-            if (user.email) qs.append("email", user.email);
-            if (user.phone) qs.append("phone", user.phone);
+            if (user.email) {
+              qs.append("email", user.email);
+            } else if (user.phone) {
+              qs.append("phone", user.phone);
+            }
             const res = await fetch(`/api.php?action=orders${qs.toString() ? `&${qs.toString()}` : ""}`);
             if (res.ok) {
               const data = await res.json();
               const ordersListRaw = Array.isArray(data?.orders) ? data.orders : (Array.isArray(data?.data) ? data.data : null);
               if (data?.success && Array.isArray(ordersListRaw)) {
-                const serverOrders: CustomerOrder[] = ordersListRaw.map((o: any) => ({
+                const userEmailNorm = (user.email || "").toLowerCase().trim();
+                const userPhoneDigits = (user.phone || "").replace(/\D/g, "");
+                const serverOrders: CustomerOrder[] = ordersListRaw
+                  .filter((o: any) => {
+                    if (userEmailNorm) {
+                      return (o?.customer_email || o?.customerEmail || "").toLowerCase().trim() === userEmailNorm;
+                    }
+                    if (userPhoneDigits.length >= 10) {
+                      const oPhone = (o?.customer_phone || o?.customerPhone || "").replace(/\D/g, "");
+                      return oPhone.length >= 10 && oPhone.endsWith(userPhoneDigits.slice(-10));
+                    }
+                    return false;
+                  })
+                  .map((o: any) => ({
                   id: o?.id || `ord-${o?.number || Date.now()}`,
                   number: o?.number || o?.orderNumber || "ORD-000",
                   orderNumber: o?.number || o?.orderNumber || "ORD-000",
