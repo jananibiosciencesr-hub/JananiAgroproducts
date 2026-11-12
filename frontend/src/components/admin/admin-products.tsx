@@ -776,8 +776,8 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                                     }));
                                   }}
                                   className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all cursor-pointer border ${isSelected
-                                      ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs scale-105"
-                                      : "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70"
+                                    ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs scale-105"
+                                    : "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70"
                                     }`}
                                   title={`${rawLbl}: ₹${v.price} (Original ₹${v.originalPrice || v.oldPrice || Math.round(v.price * 1.2)})`}
                                 >
@@ -1257,8 +1257,8 @@ function ProductViewModal({
                           type="button"
                           onClick={() => setSelectedVariant(v)}
                           className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${isSel
-                              ? "border-emerald-600 bg-emerald-500/10 font-bold shadow-xs"
-                              : "border-border bg-card hover:bg-muted/50"
+                            ? "border-emerald-600 bg-emerald-500/10 font-bold shadow-xs"
+                            : "border-border bg-card hover:bg-muted/50"
                             }`}
                         >
                           <span className="block font-bold truncate">{String(v.name || v.label || v.unit || `Variant ${idx + 1}`)}</span>

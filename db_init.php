@@ -343,18 +343,18 @@ try {
     $pdo->exec("DROP TABLE IF EXISTS `order_items`");
 } catch (Throwable $e) {}
 
-// Purge deleted customer 'Tarun' and test orders
+// Ensure registered customer 'tarun' is active and unblocked
 try {
-    $pdo->exec("DELETE FROM `users` WHERE LOWER(`name`) LIKE '%tarun%' OR LOWER(`email`) LIKE '%tarun%'");
-    $pdo->exec("DELETE FROM `orders` WHERE LOWER(`customer_name`) LIKE '%tarun%' OR LOWER(`customer_email`) LIKE '%tarun%'");
-
     $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
     $delCustStmt->execute();
     $exDel = $delCustStmt->fetchColumn();
-    $dList = $exDel ? (json_decode($exDel, true) ?: []) : [];
-    if (!in_array('tarun', $dList)) {
-        $dList[] = 'tarun';
-        $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('deleted_customers', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")->execute([json_encode($dList)]);
+    if ($exDel) {
+        $dList = json_decode($exDel, true) ?: [];
+        $cleaned = array_values(array_filter($dList, function($d) {
+            $dl = strtolower((string)$d);
+            return $dl !== 'tarun' && $dl !== 'tarunbehara360@gmail.com';
+        }));
+        $pdo->prepare("UPDATE `settings` SET `setting_value` = ? WHERE `setting_key` = 'deleted_customers'")->execute([json_encode($cleaned)]);
     }
 } catch (Throwable $e) {}
 

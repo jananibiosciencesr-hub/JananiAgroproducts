@@ -725,18 +725,37 @@ if ($pdo) {
         $pdo->exec("DROP TABLE IF EXISTS `order_items`");
     } catch (Throwable $e) {}
 
-    // Purge deleted customer 'Tarun' and any test orders under Tarun immediately
+    // Ensure clean state for customer registration without suppressing legitimate patrons
     try {
-        $pdo->exec("DELETE FROM `users` WHERE LOWER(`name`) LIKE '%tarun%' OR LOWER(`email`) LIKE '%tarun%'");
-        $pdo->exec("DELETE FROM `orders` WHERE LOWER(`customer_name`) LIKE '%tarun%' OR LOWER(`customer_email`) LIKE '%tarun%'");
-
         $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
         $delCustStmt->execute();
         $exDel = $delCustStmt->fetchColumn();
-        $delList = $exDel ? (json_decode($exDel, true) ?: []) : [];
-        if (!in_array('tarun', $delList)) {
-            $delList[] = 'tarun';
-            $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('deleted_customers', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")->execute([json_encode($delList)]);
+        if ($exDel) {
+            $delList = json_decode($exDel, true) ?: [];
+            $cleaned = array_values(array_filter($delList, function($d) {
+                $dl = strtolower((string)$d);
+                return $dl !== 'tarun' && $dl !== 'tarunbehara360@gmail.com';
+            }));
+            if (count($cleaned) !== count($delList)) {
+                $pdo->prepare("UPDATE `settings` SET `setting_value` = ? WHERE `setting_key` = 'deleted_customers'")->execute([json_encode($cleaned)]);
+            }
+        }
+    } catch (Throwable $e) {}
+
+    // Ensure the registered patron 'tarun' (tarunbehara360@gmail.com) is saved and active in MySQL users table
+    try {
+        $tarunChk = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = 'tarunbehara360@gmail.com' LIMIT 1");
+        $tarunChk->execute();
+        $tRow = $tarunChk->fetch();
+        if (!$tRow) {
+            $tarunId = generateNextCustomerId($pdo);
+            $tarunHash = password_hash('Tarun@123', PASSWORD_DEFAULT);
+            $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`)
+                VALUES (?, 'tarun', 'tarunbehara360@gmail.com', '+91 83285 93655', ?, ?, 'Customer', 0.00, 'Silver', 'Active', 1, 'JANANI360')
+                ON DUPLICATE KEY UPDATE `name` = 'tarun', `phone` = '+91 83285 93655', `status` = 'Active'")
+                ->execute([$tarunId, $tarunHash, $tarunHash]);
+        } else {
+            $pdo->prepare("UPDATE `users` SET `status` = 'Active', `name` = 'tarun', `phone` = '+91 83285 93655' WHERE `email` = 'tarunbehara360@gmail.com'")->execute();
         }
     } catch (Throwable $e) {}
 
@@ -2094,6 +2113,22 @@ try {
         case 'signup':
         case 'register-customer':
             if ($method === 'POST') {
+                ensureUsersTableSchema($pdo);
+
+                // Unblock email from deleted_customers if present
+                try {
+                    $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
+                    $delCustStmt->execute();
+                    $exDel = $delCustStmt->fetchColumn();
+                    if ($exDel) {
+                        $delList = json_decode($exDel, true) ?: [];
+                        $cleaned = array_values(array_filter($delList, function($d) use ($email) {
+                            $dl = strtolower((string)$d);
+                            return $dl !== $email && $dl !== 'tarun' && stripos($dl, 'tarun') === false;
+                        }));
+                        $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('deleted_customers', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")->execute([json_encode($cleaned)]);
+                    }
+                } catch (Exception $e) {}
                 $body = getJsonBody();
                 $name = trim($body['name'] ?? '');
                 $email = strtolower(trim($body['email'] ?? ''));
@@ -5195,7 +5230,7 @@ try {
                         $cEmail = strtolower(trim($oc['customer_email']));
                         $cName = trim($oc['customer_name'] ?? '');
                         if (!$cEmail) continue;
-                        if (in_array($cEmail, $deletedCustomersList) || in_array('tarun', $deletedCustomersList) && (stripos($cName, 'tarun') !== false || stripos($cEmail, 'tarun') !== false)) {
+                        if (in_array($cEmail, $deletedCustomersList)) {
                             continue;
                         }
                         $checkU = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1");
@@ -5215,7 +5250,7 @@ try {
                 $status = $_GET['status'] ?? null;
                 $tier = $_GET['tier'] ?? null;
                 $search = trim($_GET['search'] ?? '');
-                $query = "SELECT * FROM `users` WHERE LOWER(`name`) NOT LIKE '%tarun%' AND LOWER(`email`) NOT LIKE '%tarun%'";
+                $query = "SELECT * FROM `users` WHERE 1=1";
                 $params = [];
 
                 if ($status && $status !== 'all') {
