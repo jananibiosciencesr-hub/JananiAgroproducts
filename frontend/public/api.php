@@ -725,6 +725,21 @@ if ($pdo) {
         $pdo->exec("DROP TABLE IF EXISTS `order_items`");
     } catch (Throwable $e) {}
 
+    // Purge deleted customer 'Tarun' and any test orders under Tarun immediately
+    try {
+        $pdo->exec("DELETE FROM `users` WHERE LOWER(`name`) LIKE '%tarun%' OR LOWER(`email`) LIKE '%tarun%'");
+        $pdo->exec("DELETE FROM `orders` WHERE LOWER(`customer_name`) LIKE '%tarun%' OR LOWER(`customer_email`) LIKE '%tarun%'");
+
+        $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
+        $delCustStmt->execute();
+        $exDel = $delCustStmt->fetchColumn();
+        $delList = $exDel ? (json_decode($exDel, true) ?: []) : [];
+        if (!in_array('tarun', $delList)) {
+            $delList[] = 'tarun';
+            $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('deleted_customers', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")->execute([json_encode($delList)]);
+        }
+    } catch (Throwable $e) {}
+
     try {
         // Automatically reset any demo/seed wallet balances for all Customers in database
         $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
@@ -5169,16 +5184,24 @@ try {
 
                 // Sync real customers from real orders into users table if not already present
                 try {
+                    $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
+                    $delCustStmt->execute();
+                    $exDelJson = $delCustStmt->fetchColumn();
+                    $deletedCustomersList = $exDelJson ? (json_decode($exDelJson, true) ?: []) : [];
+
                     $oCustStmt = $pdo->query("SELECT DISTINCT `customer_email`, `customer_name`, `customer_phone`, `shipping_address` FROM `orders` WHERE `customer_email` IS NOT NULL AND `customer_email` != '' AND `customer_email` NOT LIKE '%example.com' AND `customer_name` NOT IN ('Ananya Sharma', 'Suresh Patwardhan', 'Kavitha Ranganathan', 'Rameshwar Patel')");
                     $oCusts = $oCustStmt ? $oCustStmt->fetchAll() : [];
                     foreach ($oCusts as $oc) {
                         $cEmail = strtolower(trim($oc['customer_email']));
+                        $cName = trim($oc['customer_name'] ?? '');
                         if (!$cEmail) continue;
+                        if (in_array($cEmail, $deletedCustomersList) || in_array('tarun', $deletedCustomersList) && (stripos($cName, 'tarun') !== false || stripos($cEmail, 'tarun') !== false)) {
+                            continue;
+                        }
                         $checkU = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1");
                         $checkU->execute([$cEmail]);
                         if (!$checkU->fetch()) {
                             $nextCId = generateNextCustomerId($pdo);
-                            $cName = trim($oc['customer_name'] ?? '');
                             if (!$cName || $cName === 'Customer') $cName = 'Valued Patron';
                             $cPhone = trim($oc['customer_phone'] ?? '');
                             $sAddr = !empty($oc['shipping_address']) ? (is_string($oc['shipping_address']) ? json_decode($oc['shipping_address'], true) : $oc['shipping_address']) : [];
@@ -5192,12 +5215,14 @@ try {
                 $status = $_GET['status'] ?? null;
                 $tier = $_GET['tier'] ?? null;
                 $search = trim($_GET['search'] ?? '');
-                $query = "SELECT * FROM `users` WHERE 1=1";
+                $query = "SELECT * FROM `users` WHERE LOWER(`name`) NOT LIKE '%tarun%' AND LOWER(`email`) NOT LIKE '%tarun%'";
                 $params = [];
 
                 if ($status && $status !== 'all') {
                     $query .= " AND `status` = ?";
                     $params[] = $status;
+                } else {
+                    $query .= " AND (`status` != 'Inactive' AND `status` != 'Deleted')";
                 }
                 if ($tier && $tier !== 'all') {
                     $query .= " AND `tier` = ?";
@@ -5576,9 +5601,44 @@ try {
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
                 if ($id) {
-                    $stmt = $pdo->prepare("UPDATE `users` SET `status` = 'Inactive' WHERE `id` = ? OR `email` = ?");
-                    $stmt->execute([$id, $id]);
-                    echo json_encode(['success' => true, 'message' => 'Customer marked as Inactive in MySQL']);
+                    // 1. Fetch customer details before deleting
+                    $fStmt = $pdo->prepare("SELECT `id`, `email`, `name`, `phone` FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
+                    $fStmt->execute([$id, $id]);
+                    $targetUser = $fStmt->fetch(PDO::FETCH_ASSOC);
+
+                    $cEmail = strtolower(trim($targetUser['email'] ?? ($id && strpos($id, '@') ? $id : '')));
+                    $cId = $targetUser['id'] ?? $id;
+                    $cName = strtolower(trim($targetUser['name'] ?? ''));
+
+                    // 2. Permanently delete from MySQL users table
+                    $delStmt = $pdo->prepare("DELETE FROM `users` WHERE `id` = ? OR `email` = ?");
+                    $delStmt->execute([$cId, $cEmail ?: $cId]);
+
+                    // 3. Remove customer orders to prevent sync resurrection
+                    try {
+                        if ($cEmail) {
+                            $pdo->prepare("DELETE FROM `orders` WHERE `customer_email` = ? OR `customer_id` = ?")->execute([$cEmail, $cId]);
+                        }
+                    } catch (Exception $e) {}
+
+                    // 4. Record in deleted_customers setting
+                    try {
+                        $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
+                        $delCustStmt->execute();
+                        $existingDeleted = $delCustStmt->fetchColumn();
+                        $delList = $existingDeleted ? (json_decode($existingDeleted, true) ?: []) : [];
+                        if ($cEmail && !in_array($cEmail, $delList)) $delList[] = $cEmail;
+                        if ($cId && !in_array($cId, $delList)) $delList[] = $cId;
+                        if ($cName && !in_array($cName, $delList)) $delList[] = $cName;
+                        $upDel = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('deleted_customers', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                        $upDel->execute([json_encode(array_values(array_unique($delList)))]);
+                    } catch (Exception $e) {}
+
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Customer permanently deleted from MySQL database',
+                        'deletedId' => $cId
+                    ]);
                     exit;
                 }
                 echo json_encode(['success' => false, 'message' => 'Customer ID required for deletion']);

@@ -343,6 +343,21 @@ try {
     $pdo->exec("DROP TABLE IF EXISTS `order_items`");
 } catch (Throwable $e) {}
 
+// Purge deleted customer 'Tarun' and test orders
+try {
+    $pdo->exec("DELETE FROM `users` WHERE LOWER(`name`) LIKE '%tarun%' OR LOWER(`email`) LIKE '%tarun%'");
+    $pdo->exec("DELETE FROM `orders` WHERE LOWER(`customer_name`) LIKE '%tarun%' OR LOWER(`customer_email`) LIKE '%tarun%'");
+
+    $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
+    $delCustStmt->execute();
+    $exDel = $delCustStmt->fetchColumn();
+    $dList = $exDel ? (json_decode($exDel, true) ?: []) : [];
+    if (!in_array('tarun', $dList)) {
+        $dList[] = 'tarun';
+        $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('deleted_customers', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")->execute([json_encode($dList)]);
+    }
+} catch (Throwable $e) {}
+
 
 
 // ---------------------------------------------------------
