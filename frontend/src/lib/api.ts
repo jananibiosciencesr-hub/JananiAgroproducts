@@ -709,19 +709,21 @@ export interface CreateOrderPayload {
 
 export function generateNextCustomerId(): string {
   const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
-  let nextNum = 1;
-  if (Array.isArray(stored) && stored.length > 0) {
-    const nums = stored
-      .map(c => {
-        const match = String(c.id || "").match(/CUST-(\d+)/i) || String(c.id || "").match(/^(\d+)$/);
-        return (match && match[1]) ? parseInt(match[1], 10) : 0;
-      })
-      .filter(n => !isNaN(n) && n > 0 && n < 10000);
-    if (nums.length > 0) {
-      nextNum = Math.max(...nums) + 1;
-    } else {
-      nextNum = stored.length + 1;
+  const usedNums = new Set<number>();
+  if (Array.isArray(stored)) {
+    for (const c of stored) {
+      const match = String(c?.id || "").match(/CUST-(\d+)/i) || String(c?.id || "").match(/^(\d+)$/);
+      if (match && match[1]) {
+        const n = parseInt(match[1], 10);
+        if (!isNaN(n) && n > 0 && n < 10000) {
+          usedNums.add(n);
+        }
+      }
     }
+  }
+  let nextNum = 1;
+  while (usedNums.has(nextNum)) {
+    nextNum++;
   }
   return `CUST-${String(nextNum).padStart(3, "0")}`;
 }
@@ -2994,7 +2996,7 @@ export async function getAdminReviews(params?: ReviewQueryParams) {
       ...r,
       productId: String(r.productId || r.product_id || ""),
       productName: r.productName || r.product_name || "Janani Agro Product",
-      customerId: r.customerId || r.customer_id || "CUST-1001",
+      customerId: r.customerId || r.customer_id || "CUST-001",
       customerName: r.customerName || r.customer_name || "Verified Farmer",
       customerEmail: r.customerEmail || r.customer_email || "farmer@jananiagro.com",
       customerAvatar:
@@ -8804,7 +8806,7 @@ export async function loginWithGoogle(payload?: {
   if (res?.success && res.user) return res;
 
   const user: AuthUser = {
-    id: `CUST-GGL-${Date.now().toString().slice(-4)}`,
+    id: generateNextCustomerId(),
     name: payload?.name || "Google Patron",
     email: payload?.email || "patron.google@gmail.com",
     phone: "",

@@ -274,7 +274,7 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
  */
 function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $adminEmail = 'jananibiosciences.r@gmail.com') {
     global $pdo;
-    $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : ('JAP-' . rand(100000, 999999)));
+    $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : generateNextOrderNumber($pdo));
     $customerName = !empty($orderData['customer_name']) ? $orderData['customer_name'] : (!empty($orderData['customerName']) ? $orderData['customerName'] : 'Valued Patron');
     
     // Resolve customer email with deep inspection
@@ -717,6 +717,190 @@ foreach ($attempts as $att) {
     }
 }
 
+function generateNextCustomerId($pdo) {
+    if (!$pdo) {
+        return 'CUST-001';
+    }
+    try {
+        $stmt = $pdo->query("SELECT `id` FROM `users` WHERE `id` REGEXP '^CUST-[0-9]+$'");
+        $used = [];
+        if ($stmt) {
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if (preg_match('/^CUST-([0-9]+)$/i', $row['id'], $m)) {
+                    $used[(int)$m[1]] = true;
+                }
+            }
+        }
+        $next = 1;
+        while (isset($used[$next])) {
+            $next++;
+        }
+        $candidate = 'CUST-' . str_pad((string)$next, 3, '0', STR_PAD_LEFT);
+        
+        while (true) {
+            $chkStmt = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
+            $chkStmt->execute([$candidate]);
+            if ((int)$chkStmt->fetchColumn() === 0) {
+                break;
+            }
+            $next++;
+            $candidate = 'CUST-' . str_pad((string)$next, 3, '0', STR_PAD_LEFT);
+        }
+        return $candidate;
+    } catch (Exception $e) {
+        return 'CUST-001';
+    }
+}
+
+function generateNextStaffId($pdo) {
+    if (!$pdo) {
+        return 'STAFF-001';
+    }
+    try {
+        $stmt = $pdo->query("SELECT `id` FROM `users` WHERE `id` REGEXP '^STAFF-[0-9]+$'");
+        $used = [];
+        if ($stmt) {
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if (preg_match('/^STAFF-([0-9]+)$/i', $row['id'], $m)) {
+                    $used[(int)$m[1]] = true;
+                }
+            }
+        }
+        $next = 1;
+        while (isset($used[$next])) {
+            $next++;
+        }
+        $candidate = 'STAFF-' . str_pad((string)$next, 3, '0', STR_PAD_LEFT);
+        
+        while (true) {
+            $chkStmt = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
+            $chkStmt->execute([$candidate]);
+            if ((int)$chkStmt->fetchColumn() === 0) {
+                break;
+            }
+            $next++;
+            $candidate = 'STAFF-' . str_pad((string)$next, 3, '0', STR_PAD_LEFT);
+        }
+        return $candidate;
+    } catch (Exception $e) {
+        return 'STAFF-001';
+    }
+}
+
+function generateNextOrderNumber($pdo) {
+    if (!$pdo) {
+        return 'JAP-001';
+    }
+    try {
+        $stmt = $pdo->query("SELECT MAX(num) AS max_num FROM (
+            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(number, 5) AS UNSIGNED) < 1000
+            UNION
+            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(id, 5) AS UNSIGNED) < 1000
+        ) AS t");
+        $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
+        $nextNum = max(1, $maxNum + 1);
+        return 'JAP-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
+    } catch (Exception $e) {
+        return 'JAP-001';
+    }
+}
+
+function reindexAllCustomersSequentially($pdo, $force = false) {
+    if (!$pdo) return;
+    static $done = false;
+    if ($done && !$force) return;
+    $done = true;
+
+    try {
+        $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
+
+        // Fetch all customer rows that need sequential IDs
+        $stmt = $pdo->query("SELECT `id`, `email`, `name`, `created_at` FROM `users` 
+            WHERE (`role` != 'Super Admin' OR `role` IS NULL) 
+              AND `id` != 'ADMIN-ROOT' 
+              AND `id` NOT LIKE 'STAFF-%' 
+            ORDER BY 
+              CASE WHEN `id` REGEXP '^CUST-[0-9]+$' THEN CAST(SUBSTRING(`id`, 6) AS UNSIGNED) ELSE 999999 END ASC,
+              `created_at` ASC, 
+              `id` ASC");
+        $customers = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        if (empty($customers)) {
+            $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+            return;
+        }
+
+        // Check if re-indexing is actually needed
+        $alreadySequential = true;
+        foreach ($customers as $idx => $c) {
+            $expected = 'CUST-' . str_pad((string)($idx + 1), 3, '0', STR_PAD_LEFT);
+            if ($c['id'] !== $expected) {
+                $alreadySequential = false;
+                break;
+            }
+        }
+
+        if (!$alreadySequential || $force) {
+            $idMap = []; // oldId => info
+
+            // Pass 1: rename old IDs to temporary unique placeholders to prevent primary key collisions
+            $upTempStmt = $pdo->prepare("UPDATE `users` SET `id` = ? WHERE `id` = ?");
+            foreach ($customers as $idx => $c) {
+                $oldId = $c['id'];
+                $tempId = 'TMP_CUST_' . ($idx + 1) . '_' . time();
+                $newId = 'CUST-' . str_pad((string)($idx + 1), 3, '0', STR_PAD_LEFT);
+                $idMap[$oldId] = [
+                    'temp' => $tempId, 
+                    'new' => $newId, 
+                    'email' => $c['email']
+                ];
+                $upTempStmt->execute([$tempId, $oldId]);
+            }
+
+            // Pass 2: assign clean sequential CUST-001..CUST-xxx IDs
+            $upFinalStmt = $pdo->prepare("UPDATE `users` SET `id` = ? WHERE `id` = ?");
+            foreach ($idMap as $oldId => $info) {
+                $upFinalStmt->execute([$info['new'], $info['temp']]);
+            }
+
+            // Pass 3: sync orders table (customer_id column)
+            try {
+                $upOrdById = $pdo->prepare("UPDATE `orders` SET `customer_id` = ? WHERE `customer_id` = ?");
+                $upOrdByEmail = $pdo->prepare("UPDATE `orders` SET `customer_id` = ? WHERE `customer_email` = ? AND (`customer_id` LIKE 'CUST-%' OR `customer_id` IS NULL OR `customer_id` = '')");
+                foreach ($idMap as $oldId => $info) {
+                    $upOrdById->execute([$info['new'], $oldId]);
+                    if (!empty($info['email'])) {
+                        $upOrdByEmail->execute([$info['new'], $info['email']]);
+                    }
+                }
+            } catch (Throwable $e) {}
+
+            // Pass 4: sync reviews table if present
+            try {
+                $upRevById = $pdo->prepare("UPDATE `reviews` SET `customer_id` = ? WHERE `customer_id` = ?");
+                $upRevByEmail = $pdo->prepare("UPDATE `reviews` SET `customer_id` = ? WHERE `customer_email` = ?");
+                foreach ($idMap as $oldId => $info) {
+                    $upRevById->execute([$info['new'], $oldId]);
+                    if (!empty($info['email'])) {
+                        $upRevByEmail->execute([$info['new'], $info['email']]);
+                    }
+                }
+            } catch (Throwable $e) {}
+
+            // Pass 5: sync activity_logs table if present
+            try {
+                $upLogById = $pdo->prepare("UPDATE `activity_logs` SET `user_id` = ? WHERE `user_id` = ?");
+                foreach ($idMap as $oldId => $info) {
+                    $upLogById->execute([$info['new'], $oldId]);
+                }
+            } catch (Throwable $e) {}
+        }
+
+        $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+    } catch (Throwable $e) {
+        try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;"); } catch (Throwable $ignore) {}
+    }
+}
+
 if ($pdo) {
     // Drop deprecated tables requested by user: pickup_locations, newsletter_subscribers, order_items
     try {
@@ -757,6 +941,11 @@ if ($pdo) {
         } else {
             $pdo->prepare("UPDATE `users` SET `status` = 'Active', `name` = 'tarun', `phone` = '+91 83285 93655' WHERE `email` = 'tarunbehara360@gmail.com'")->execute();
         }
+    } catch (Throwable $e) {}
+
+    // Automatically enforce strictly sequential CUST-001..CUST-xxx customer IDs for all existing patrons in MySQL
+    try {
+        reindexAllCustomersSequentially($pdo);
     } catch (Throwable $e) {}
 
     try {
@@ -1156,8 +1345,8 @@ if (!$pdo) {
                 'product_name' => 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant',
                 'productCategory' => 'Bio Stimulant',
                 'productImage' => '/products/annada.jpg',
-                'customerId' => 'CUST-1001',
-                'customer_id' => 'CUST-1001',
+                'customerId' => 'CUST-001',
+                'customer_id' => 'CUST-001',
                 'customerName' => 'Ramesh Kumar',
                 'customer_name' => 'Ramesh Kumar',
                 'customerEmail' => 'ramesh.kumar@gmail.com',
@@ -1187,8 +1376,8 @@ if (!$pdo) {
                 'product_name' => 'HARIT — Trichoderma Viride Liquid Biofungicide',
                 'productCategory' => 'Bio Fungicide',
                 'productImage' => '/products/suraksha.jpg',
-                'customerId' => 'CUST-1002',
-                'customer_id' => 'CUST-1002',
+                'customerId' => 'CUST-002',
+                'customer_id' => 'CUST-002',
                 'customerName' => 'Srinivas Reddy',
                 'customer_name' => 'Srinivas Reddy',
                 'customerEmail' => 'srinivas.reddy@gmail.com',
@@ -1218,8 +1407,8 @@ if (!$pdo) {
                 'product_name' => 'SURAKSHA — Bio Pesticide & Crop Shield',
                 'productCategory' => 'Bio Pesticide',
                 'productImage' => '/products/suraksha.jpg',
-                'customerId' => 'CUST-1003',
-                'customer_id' => 'CUST-1003',
+                'customerId' => 'CUST-003',
+                'customer_id' => 'CUST-003',
                 'customerName' => 'Mahesh Patel',
                 'customer_name' => 'Mahesh Patel',
                 'customerEmail' => 'mahesh.patel@gmail.com',
@@ -1333,13 +1522,13 @@ function ensureReviewsTableSchema($pdo) {
         $cnt = (int)$pdo->query("SELECT COUNT(*) FROM `reviews`")->fetchColumn();
         if ($cnt === 0) {
             $seeds = [
-                ['REV-101', 'prod-bhumi-shakti', 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant', 'CUST-1001', 'Ramesh Kumar', 'ramesh.kumar@gmail.com', '/images/farmer_ramesh.jpg', 'Mango Farmer, Andhra Pradesh', 5, 'Increased soil health and bumper yield', 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!', 1, 'Approved', 1, 42],
-                ['REV-102', 'prod-harit', 'HARIT — Trichoderma Viride Liquid Biofungicide', 'CUST-1002', 'Srinivas Reddy', 'srinivas.reddy@gmail.com', '/images/farmer_srinivas.jpg', 'Vegetable Farmer, Telangana', 5, 'Root rot under complete control', 'HARIT helped in controlling root rot and my plants are now much healthier.', 1, 'Approved', 1, 29],
-                ['REV-103', 'prod-suraksha', 'SURAKSHA — Bio Pesticide & Crop Shield', 'CUST-1003', 'Mahesh Patel', 'mahesh.patel@gmail.com', '/images/farmer_mahesh.jpg', 'Cotton Farmer, Gujarat', 5, 'Excellent cotton crop improvement', 'Good quality products and excellent results. My cotton crop showed great improvement.', 1, 'Approved', 1, 18],
-                ['REV-104', 'prod-pushkal', 'PUSHKAL — Flowering & Fruit Set Biostimulant', 'CUST-1004', 'Suresh Patil', 'suresh.patil@gmail.com', '/images/farmer_suresh.jpg', 'Sugarcane Farmer, Maharashtra', 5, 'Thicker stalks and higher sugar recovery', 'Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!', 1, 'Approved', 1, 15],
-                ['REV-105', 'prod-annada', 'ANNADA — Fish Amino Acid Organic Growth Promoter', 'CUST-1005', 'Baldev Singh', 'baldev.singh@gmail.com', '/images/farmer_baldev.jpg', 'Wheat & Paddy Farmer, Punjab', 5, 'Zero chemical residue and vigorous tillering', 'Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.', 1, 'Approved', 1, 21],
-                ['REV-106', 'prod-neem-oil', 'NEEM OIL — Cold Pressed Azadirachtin Formulation', 'CUST-1006', 'Radhika K.', 'radhika.k@gmail.com', '/images/farmer_radhika.jpg', 'Spice Farmer, Kerala', 5, 'Authentic aroma and pure traditional extraction!', 'The fragrance and texture of this Neem formulation are completely unmatched compared to commercially refined market brands.', 1, 'Approved', 1, 24],
-                ['REV-107', 'prod-dharani', 'DHARANI — Complete Organic Bio Fertilizer', 'CUST-1007', 'Suresh Narayanan', 'suresh.n@gmail.com', '/images/farmer_suresh.jpg', 'Bio Fertilizer & Protection', 5, 'Clean packing, fast delivery and authentic results', 'Ordered the farm pack. Eco-packaging is top notch, no leakage, and crops show vigorous healthy canopy within 10 days.', 1, 'Approved', 1, 19]
+                ['REV-101', 'prod-bhumi-shakti', 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant', 'CUST-001', 'Ramesh Kumar', 'ramesh.kumar@gmail.com', '/images/farmer_ramesh.jpg', 'Mango Farmer, Andhra Pradesh', 5, 'Increased soil health and bumper yield', 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!', 1, 'Approved', 1, 42],
+                ['REV-102', 'prod-harit', 'HARIT — Trichoderma Viride Liquid Biofungicide', 'CUST-002', 'Srinivas Reddy', 'srinivas.reddy@gmail.com', '/images/farmer_srinivas.jpg', 'Vegetable Farmer, Telangana', 5, 'Root rot under complete control', 'HARIT helped in controlling root rot and my plants are now much healthier.', 1, 'Approved', 1, 29],
+                ['REV-103', 'prod-suraksha', 'SURAKSHA — Bio Pesticide & Crop Shield', 'CUST-003', 'Mahesh Patel', 'mahesh.patel@gmail.com', '/images/farmer_mahesh.jpg', 'Cotton Farmer, Gujarat', 5, 'Excellent cotton crop improvement', 'Good quality products and excellent results. My cotton crop showed great improvement.', 1, 'Approved', 1, 18],
+                ['REV-104', 'prod-pushkal', 'PUSHKAL — Flowering & Fruit Set Biostimulant', 'CUST-004', 'Suresh Patil', 'suresh.patil@gmail.com', '/images/farmer_suresh.jpg', 'Sugarcane Farmer, Maharashtra', 5, 'Thicker stalks and higher sugar recovery', 'Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!', 1, 'Approved', 1, 15],
+                ['REV-105', 'prod-annada', 'ANNADA — Fish Amino Acid Organic Growth Promoter', 'CUST-005', 'Baldev Singh', 'baldev.singh@gmail.com', '/images/farmer_baldev.jpg', 'Wheat & Paddy Farmer, Punjab', 5, 'Zero chemical residue and vigorous tillering', 'Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.', 1, 'Approved', 1, 21],
+                ['REV-106', 'prod-neem-oil', 'NEEM OIL — Cold Pressed Azadirachtin Formulation', 'CUST-006', 'Radhika K.', 'radhika.k@gmail.com', '/images/farmer_radhika.jpg', 'Spice Farmer, Kerala', 5, 'Authentic aroma and pure traditional extraction!', 'The fragrance and texture of this Neem formulation are completely unmatched compared to commercially refined market brands.', 1, 'Approved', 1, 24],
+                ['REV-107', 'prod-dharani', 'DHARANI — Complete Organic Bio Fertilizer', 'CUST-007', 'Suresh Narayanan', 'suresh.n@gmail.com', '/images/farmer_suresh.jpg', 'Bio Fertilizer & Protection', 5, 'Clean packing, fast delivery and authentic results', 'Ordered the farm pack. Eco-packaging is top notch, no leakage, and crops show vigorous healthy canopy within 10 days.', 1, 'Approved', 1, 19]
             ];
             $stmt = $pdo->prepare("INSERT IGNORE INTO `reviews` (`id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `customer_email`, `customer_avatar`, `location`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `is_featured`, `helpful_count`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             foreach ($seeds as $s) {
@@ -1672,51 +1861,6 @@ function ensureOrdersTableSchema($pdo) {
     } catch (Exception $e) {}
 }
 
-
-function generateNextCustomerId($pdo) {
-    if (!$pdo) {
-        return 'CUST-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
-    }
-    try {
-        $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(id, 6) AS UNSIGNED)) AS max_num FROM `users` WHERE `id` REGEXP '^CUST-[0-9]{1,6}$'");
-        $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
-        if ($maxNum <= 0) {
-            $cStmt = $pdo->query("SELECT COUNT(*) FROM `users` WHERE `role` != 'Super Admin' AND `id` != 'ADMIN-ROOT'");
-            $maxNum = $cStmt ? (int)$cStmt->fetchColumn() : 0;
-        }
-        $nextNum = max(1, $maxNum + 1);
-        $candidate = 'CUST-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
-        
-        // Double check candidate uniqueness
-        $chkStmt = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
-        $chkStmt->execute([$candidate]);
-        if ((int)$chkStmt->fetchColumn() > 0) {
-            $candidate = 'CUST-' . str_pad((string)($nextNum + rand(1, 50)), 3, '0', STR_PAD_LEFT);
-        }
-        return $candidate;
-    } catch (Exception $e) {
-        return 'CUST-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
-    }
-}
-
-function generateNextOrderNumber($pdo) {
-    if (!$pdo) {
-        return 'JAP-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
-    }
-    try {
-        $stmt = $pdo->query("SELECT MAX(num) AS max_num FROM (
-            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(number, 5) AS UNSIGNED) < 1000
-            UNION
-            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(id, 5) AS UNSIGNED) < 1000
-        ) AS t");
-        $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
-        $nextNum = max(13, $maxNum + 1);
-        return 'JAP-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
-    } catch (Exception $e) {
-        return 'JAP-' . str_pad((string)rand(100, 999), 3, '0', STR_PAD_LEFT);
-    }
-}
-
 function ensureJananiCatalogSynced($pdo) {
     static $synced = false;
     if ($synced) return;
@@ -1893,6 +2037,17 @@ try {
     switch ($action) {
         case 'init':
             require_once __DIR__ . '/db_init.php';
+            exit;
+
+        case 'reindex_customers':
+        case 'reindex-customers':
+            reindexAllCustomersSequentially($pdo, true);
+            $allUsers = $pdo->query("SELECT `id`, `name`, `email`, `role`, `status` FROM `users` ORDER BY `id` ASC")->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'success' => true,
+                'message' => 'All customer IDs re-indexed sequentially starting from CUST-001',
+                'users' => $allUsers
+            ]);
             exit;
 
         case 'check-user':
@@ -2199,7 +2354,7 @@ try {
                 $chkId = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
                 $chkId->execute([$userId]);
                 if ((int)$chkId->fetchColumn() > 0) {
-                    $userId = 'CUST-' . str_pad((string)rand(100, 9999), 3, '0', STR_PAD_LEFT);
+                    $userId = generateNextCustomerId($pdo);
                 }
 
                 $user = [
@@ -4609,7 +4764,7 @@ try {
                         $order['customerPhone'] = $cPhone;
                         $order['customer_phone'] = $cPhone;
                         $order['customer'] = [
-                            'id' => 'CUST-' . substr(md5($cEmail . $cPhone), 0, 6),
+                            'id' => (!empty($order['customer_id']) && $order['customer_id'] !== 'CUST-1001') ? $order['customer_id'] : 'CUST-001',
                             'name' => $cName,
                             'fullName' => $cName,
                             'email' => $cEmail,
@@ -4715,7 +4870,7 @@ try {
                     $ord['customerPhone'] = $cPhone;
                     $ord['customer_phone'] = $cPhone;
                     $ord['customer'] = [
-                        'id' => 'CUST-' . substr(md5($cEmail . $cPhone), 0, 6),
+                        'id' => (!empty($ord['customer_id']) && $ord['customer_id'] !== 'CUST-1001') ? $ord['customer_id'] : 'CUST-001',
                         'name' => $cName,
                         'fullName' => $cName,
                         'email' => $cEmail,
@@ -5173,6 +5328,7 @@ try {
         case 'users':
         case 'customers':
             if ($method === 'GET') {
+                reindexAllCustomersSequentially($pdo);
                 $id = $_GET['id'] ?? ($_GET['userId'] ?? ($_GET['email'] ?? null));
                 if ($id) {
                     $cleanId = trim($id);
@@ -5748,8 +5904,8 @@ try {
                         'product_name' => $r['product_name'] ?? 'Janani Agro Product',
                         'productCategory' => 'Bio Fertilizer & Protection',
                         'productImage' => '/products/annada.jpg',
-                        'customerId' => $r['customer_id'] ?: 'CUST-1001',
-                        'customer_id' => $r['customer_id'] ?: 'CUST-1001',
+                        'customerId' => $r['customer_id'] ?: 'CUST-001',
+                        'customer_id' => $r['customer_id'] ?: 'CUST-001',
                         'customerName' => $cName,
                         'customer_name' => $cName,
                         'customerEmail' => $r['customer_email'] ?: 'farmer@jananiagro.com',
@@ -6796,7 +6952,7 @@ try {
                 $rawId = $_GET['id'] ?? ($body['id'] ?? null);
 
                 if (empty($rawId)) {
-                    $id = !empty($body['id']) ? $body['id'] : ('STAFF-' . rand(100, 999));
+                    $id = !empty($body['id']) ? $body['id'] : generateNextStaffId($pdo);
                     $name = $body['name'] ?? 'Staff Member';
                     $email = strtolower(trim($body['email'] ?? ($id . '@janani.staff')));
                     $role = $body['roleName'] ?? ($body['role'] ?? 'Operations Manager');
@@ -7712,6 +7868,17 @@ try {
 
         case 'init':
             require_once __DIR__ . '/db_init.php';
+            exit;
+
+        case 'reindex_customers':
+        case 'reindex-customers':
+            reindexAllCustomersSequentially($pdo, true);
+            $allUsers = $pdo->query("SELECT `id`, `name`, `email`, `role`, `status` FROM `users` ORDER BY `id` ASC")->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'success' => true,
+                'message' => 'All customer IDs re-indexed sequentially starting from CUST-001',
+                'users' => $allUsers
+            ]);
             exit;
 
         default:

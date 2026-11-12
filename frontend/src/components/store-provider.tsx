@@ -131,13 +131,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             !parsed?.name?.toLowerCase().includes("neha patel") &&
             parsed?.id !== "cust-101"
           ) {
-            if (parsed?.email?.toLowerCase() === "kameswarip98@gmail.com" && parsed?.id !== "CUST-001") {
-              parsed.id = "CUST-001";
-              try {
-                localStorage.setItem("janani_user", JSON.stringify(parsed));
-                localStorage.setItem("janani_auth_user", JSON.stringify(parsed));
-              } catch (e) { }
-            }
             activeUser = parsed;
             setUser(parsed);
           } else if (
@@ -248,12 +241,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             if (prev.email && serverUser.email && prev.email.toLowerCase() !== serverUser.email.toLowerCase()) {
               return prev;
             }
-            const effectiveUserId = (serverUser.email?.toLowerCase() === "kameswarip98@gmail.com")
-              ? "CUST-001"
-              : (serverUser.id || prev.id);
             const updated: AuthUser = {
               ...prev,
-              id: effectiveUserId,
+              id: serverUser.id || prev.id,
               name: serverUser.name || prev.name,
               email: serverUser.email || prev.email,
               phone: serverUser.phone !== undefined && serverUser.phone !== null && serverUser.phone !== "" ? serverUser.phone : prev.phone,
