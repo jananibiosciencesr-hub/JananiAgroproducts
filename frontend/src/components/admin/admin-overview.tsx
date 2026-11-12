@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { Link } from "@tanstack/react-router";
+import jananiEmblem from "@/assets/janani-emblem.png";
 import {
   ShoppingBag,
   Package,
@@ -21,7 +23,9 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Star,
-  Search
+  Search,
+  Sparkles,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type AdminTab } from "./admin-sidebar";
@@ -219,6 +223,96 @@ export function AdminOverview({
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8 lg:gap-10 pb-16 min-w-0 max-w-full overflow-x-hidden">
+
+      {/* Acme Cloud Style Hero Banner (Zaga Dashboard Design) */}
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-600/10 p-5 sm:p-7 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
+            <div className="size-12 sm:size-14 rounded-2xl bg-white dark:bg-slate-900 shadow-md border border-emerald-500/30 flex items-center justify-center p-2 shrink-0">
+              <img src={jananiEmblem} alt="Janani Agro" className="size-full object-contain" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Operational
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">• Hostinger Cloud MySQL • 2026 Season</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight">
+                Seller Admin Command Center
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 max-w-2xl">
+                Real-time crop protection catalog, live order dispatch ledger, warehouse reorder alerts, and farmer customer directory.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
+            <Link
+              to="/"
+              target="_blank"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-all shadow-2xs hover:shadow-xs"
+            >
+              <ExternalLink className="size-3.5 text-emerald-600" />
+              <span>Live Store</span>
+            </Link>
+            <button
+              onClick={() => onNavigateTab("products")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <Package className="size-3.5" />
+              <span>Products ({totalProductsCount})</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Sub-tabs / Quick Navigation Bar like Acme Cloud */}
+        <div className="mt-6 pt-3 border-t border-emerald-500/20 flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar scrollbar-none text-xs font-semibold">
+          <button
+            onClick={() => onNavigateTab("dashboard")}
+            className="pb-2 text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-600 font-bold whitespace-nowrap cursor-pointer"
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => onNavigateTab("orders")}
+            className="pb-2 text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Orders ({liveOrders.length})
+          </button>
+          <button
+            onClick={() => onNavigateTab("products")}
+            className="pb-2 text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Products ({totalProductsCount})
+          </button>
+          <button
+            onClick={() => onNavigateTab("categories")}
+            className="pb-2 text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Categories ({totalCategoriesCount})
+          </button>
+          <button
+            onClick={() => onNavigateTab("inventory")}
+            className="pb-2 text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Warehouse Stock
+          </button>
+          <button
+            onClick={() => onNavigateTab("customers")}
+            className="pb-2 text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Customers ({liveCustomers.length})
+          </button>
+          <button
+            onClick={() => onNavigateTab("reviews")}
+            className="pb-2 text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Reviews ({liveReviews.length})
+          </button>
+        </div>
+      </div>
 
       {/* Search Filter Status Banner */}
       {cleanSearch && (

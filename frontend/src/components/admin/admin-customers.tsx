@@ -265,8 +265,9 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
 
   return (
     <div className="space-y-4">
-      {/* Customers Header */}
-      <div className="flex items-center justify-between pb-1">
+      <div className="w-full flex-1 flex flex-col rounded-2xl sm:rounded-3xl border border-border/80 bg-card shadow-xs overflow-hidden">
+        {/* Customers Header */}
+      <div className="w-full bg-card border-b border-border px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <h2 className="text-lg font-bold text-foreground tracking-tight">Customer Directory</h2>
           <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border border-border">
@@ -283,8 +284,7 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
       </div>
 
       {/* 4. Customers Table */}
-      <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden">
-        <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
+      <div className="overflow-auto max-h-[calc(100vh-190px)] min-h-[260px] relative">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
               <tr>
