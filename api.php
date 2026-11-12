@@ -277,41 +277,20 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : generateNextOrderNumber($pdo));
     $customerName = !empty($orderData['customer_name']) ? $orderData['customer_name'] : (!empty($orderData['customerName']) ? $orderData['customerName'] : 'Valued Patron');
     
-    // Resolve customer email with deep inspection
+    // Resolve customer email strictly for this specific order
     $toEmail = strtolower(trim(!empty($orderData['customer_email']) ? $orderData['customer_email'] : (!empty($orderData['customerEmail']) ? $orderData['customerEmail'] : (!empty($orderData['customer']['email']) ? $orderData['customer']['email'] : (!empty($orderData['email']) ? $orderData['email'] : '')))));
 
     $sAddr = $orderData['shipping_address'] ?? ($orderData['shippingAddress'] ?? ($orderData['address'] ?? []));
     if (is_string($sAddr)) {
         $sAddr = json_decode($sAddr, true) ?: [];
     }
-    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($sAddr['email']) && filter_var($sAddr['email'], FILTER_VALIDATE_EMAIL)) {
+    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) && !empty($sAddr['email']) && filter_var($sAddr['email'], FILTER_VALIDATE_EMAIL)) {
         $toEmail = strtolower(trim($sAddr['email']));
     }
 
-    // Try finding customer's real registered email from users table by phone or name
-    if ((empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || str_ends_with($toEmail, '@jananiagro.com')) && !empty($pdo)) {
-        $custPhone = !empty($orderData['customer_phone']) ? $orderData['customer_phone'] : (!empty($orderData['customerPhone']) ? $orderData['customerPhone'] : (!empty($sAddr['phone']) ? $sAddr['phone'] : ''));
-        if (!empty($custPhone)) {
-            try {
-                $cleanP = preg_replace('/[^0-9]/', '', $custPhone);
-                if (strlen($cleanP) >= 10) {
-                    $uStmt = $pdo->prepare("SELECT `email` FROM `users` WHERE (`phone` LIKE ? OR REPLACE(REPLACE(`phone`, ' ', ''), '+91', '') LIKE ?) AND `email` != '' AND `email` NOT LIKE '%@jananiagro.com' ORDER BY `id` DESC LIMIT 1");
-                    $uStmt->execute(['%' . substr($cleanP, -10) . '%', '%' . substr($cleanP, -10) . '%']);
-                    $foundM = $uStmt->fetchColumn();
-                    if ($foundM && filter_var($foundM, FILTER_VALIDATE_EMAIL)) {
-                        $toEmail = strtolower(trim($foundM));
-                    }
-                }
-            } catch (Exception $e) {}
-        }
-    }
-
+    // Guard: Only send if a valid customer email exists for this order. Never guess someone else's email or fallback to admin!
     if (empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
-        if (!empty($adminEmail) && filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-            $toEmail = $adminEmail;
-        } else {
-            return ['success' => false, 'error' => 'Invalid or missing customer email address'];
-        }
+        return ['success' => false, 'error' => 'No valid customer email address found for this order.'];
     }
 
     $orderDate = !empty($orderData['order_date']) ? $orderData['order_date'] : (!empty($orderData['date']) ? $orderData['date'] : date('d M Y, h:i A'));
@@ -560,9 +539,6 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     ])));
 
     $recipients = [$toEmail];
-    if (!empty($adminEmail) && filter_var($adminEmail, FILTER_VALIDATE_EMAIL) && strtolower(trim($adminEmail)) !== strtolower($toEmail)) {
-        $recipients[] = strtolower(trim($adminEmail));
-    }
 
     // --- TIER 1: SSL Direct (Port 465) ---
     foreach ($passCandidates as $testPass) {
@@ -598,9 +574,6 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
                 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
                 $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
                 $headers .= "To: <{$toEmail}>\r\n";
-                if (in_array(strtolower(trim($adminEmail)), $recipients)) {
-                    $headers .= "Bcc: <{$adminEmail}>\r\n";
-                }
                 $headers .= "Reply-To: {$smtpUser}\r\n";
                 $headers .= "Subject: {$subject}\r\n";
                 fputs($socket, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
@@ -649,9 +622,6 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
                     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
                     $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
                     $headers .= "To: <{$toEmail}>\r\n";
-                    if (in_array(strtolower(trim($adminEmail)), $recipients)) {
-                        $headers .= "Bcc: <{$adminEmail}>\r\n";
-                    }
                     $headers .= "Reply-To: {$smtpUser}\r\n";
                     $headers .= "Subject: {$subject}\r\n";
                     fputs($socket587, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
@@ -684,9 +654,6 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     $mailHeaders .= "X-Mailer: PHP/" . phpversion();
 
     $mailSent = @mail($toEmail, $rawSubject, $emailBody, $mailHeaders, "-f {$domainSender}");
-    if ($adminEmail && strtolower(trim($adminEmail)) !== strtolower($toEmail)) {
-        @mail($adminEmail, "[Admin Copy] " . $rawSubject, $emailBody, $mailHeaders, "-f {$domainSender}");
-    }
     return $mailSent ? ['success' => true, 'method' => 'hostinger_mail', 'recipient' => $toEmail] : ['success' => false, 'error' => 'Mail delivery failed'];
 }
 
@@ -1175,15 +1142,15 @@ if (!$pdo) {
                 }
         echo json_encode([
             'success' => true,
-            'exists' => true,
+            'exists' => $isAdmin,
             'isAdmin' => $isAdmin,
-            'user' => [
-                'id' => $isAdmin ? 'ADMIN-ROOT' : 'usr_' . substr(md5($target ?: 'user'), 0, 8),
-                'name' => $isAdmin ? 'Janani Admin (Root)' : 'Valued Patron',
-                'email' => $email ?: 'jananibiosciences.r@gmail.com',
-                'phone' => $phone ?: '+91 98480 22338',
-                'role' => $isAdmin ? 'Super Admin' : 'Customer'
-            ]
+            'user' => $isAdmin ? [
+                'id' => 'ADMIN-ROOT',
+                'name' => 'Janani Admin (Root)',
+                'email' => 'jananibiosciences.r@gmail.com',
+                'phone' => '+91 98480 22338',
+                'role' => 'Super Admin'
+            ] : null
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;
     }
@@ -1809,20 +1776,9 @@ function enrichUserLocationAndAddresses(&$u) {
 
     if (!empty($u['wishlist'])) {
         $rawW = is_string($u['wishlist']) ? (json_decode($u['wishlist'], true) ?: []) : $u['wishlist'];
-        if (is_array($rawW)) {
-            $cleanedW = array_values(array_filter($rawW, function($item) {
-                $s = strtolower((string)$item);
-                return $s !== '2124' && strpos($s, 'mortein') === false;
-            }));
-            if (empty($cleanedW) && (strtolower(trim($u['email'] ?? '')) === 'kameswarip98@gmail.com' || strtolower(trim($u['email'] ?? '')) === 'sravanipachipulusu98@gmail.com')) {
-                $cleanedW = [1, 2];
-            }
-            $u['wishlist'] = $cleanedW;
-        } else {
-            $u['wishlist'] = (strtolower(trim($u['email'] ?? '')) === 'kameswarip98@gmail.com' || strtolower(trim($u['email'] ?? '')) === 'sravanipachipulusu98@gmail.com') ? [1, 2] : [];
-        }
+        $u['wishlist'] = is_array($rawW) ? array_values($rawW) : [];
     } else {
-        $u['wishlist'] = (strtolower(trim($u['email'] ?? '')) === 'kameswarip98@gmail.com' || strtolower(trim($u['email'] ?? '')) === 'sravanipachipulusu98@gmail.com') ? [1, 2] : [];
+        $u['wishlist'] = [];
     }
 }
 
@@ -2052,8 +2008,25 @@ try {
 
         case 'check-user':
             $body = getJsonBody();
-            $email = strtolower(trim($_GET['email'] ?? $_GET['target'] ?? $body['email'] ?? $body['target'] ?? ''));
+            $rawTarget = trim($_GET['target'] ?? $body['target'] ?? '');
+            $email = strtolower(trim($_GET['email'] ?? $body['email'] ?? ''));
             $phone = trim($_GET['phone'] ?? $body['phone'] ?? '');
+
+            if ($rawTarget !== '') {
+                if (strpos($rawTarget, '@') !== false) {
+                    $email = strtolower($rawTarget);
+                } else {
+                    $phone = $rawTarget;
+                }
+            }
+
+            if ($email !== '' && strpos($email, '@') === false) {
+                if (empty($phone)) {
+                    $phone = $email;
+                }
+                $email = '';
+            }
+
             $target = $email ?: $phone;
 
             if (!$target) {
@@ -2063,14 +2036,6 @@ try {
 
             $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
 
-                // ADMIN STRICT LOCKDOWN in send-otp
-                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
-                    ]);
-                    exit;
-                }
             if ($isAdmin) {
                 echo json_encode([
                     'success' => true,
@@ -2087,15 +2052,30 @@ try {
             }
 
             $foundUser = null;
+            $matchedBy = null;
             try {
-                $stmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier` FROM `users` WHERE (`email` = ? AND `email` != '') OR (`phone` = ? AND `phone` != '' AND `phone` != '+91 98480 22338') LIMIT 1");
-                $stmt->execute([$email ?: '__none__', $phone ?: '__none__']);
-                $foundUser = $stmt->fetch();
+                if (!empty($email)) {
+                    $stmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier` FROM `users` WHERE `email` = ? LIMIT 1");
+                    $stmt->execute([$email]);
+                    $foundUser = $stmt->fetch();
+                    if ($foundUser) $matchedBy = 'email';
+                }
+                if (!$foundUser && !empty($phone)) {
+                    $cleanDigits = preg_replace('/\D/', '', $phone);
+                    if (strlen($cleanDigits) >= 10) {
+                        $last10 = substr($cleanDigits, -10);
+                        $stmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier` FROM `users` WHERE (`phone` LIKE ? OR `phone` LIKE ?) AND `phone` != '+91 98480 22338' LIMIT 1");
+                        $stmt->execute(['%' . $last10, '%' . $last10 . '%']);
+                        $foundUser = $stmt->fetch();
+                        if ($foundUser) $matchedBy = 'phone';
+                    }
+                }
             } catch (Exception $e) {}
 
             echo json_encode([
                 'success' => true,
                 'exists' => !!$foundUser,
+                'matchedBy' => $matchedBy,
                 'user' => $foundUser ?: null
             ]);
             exit;
@@ -2301,6 +2281,28 @@ try {
                     exit;
                 }
 
+                // Check if mobile number is already registered under a different account
+                if (!empty($phone)) {
+                    $cleanDigits = preg_replace('/\D/', '', $phone);
+                    if (strlen($cleanDigits) >= 10) {
+                        $last10 = substr($cleanDigits, -10);
+                        try {
+                            $chkPhoneStmt = $pdo->prepare("SELECT `id`, `name`, `email` FROM `users` WHERE (`phone` LIKE ? OR `phone` LIKE ?) AND `email` != ? AND `phone` != '+91 98480 22338' LIMIT 1");
+                            $chkPhoneStmt->execute(['%' . $last10, '%' . $last10 . '%', $email]);
+                            $existingPhoneUser = $chkPhoneStmt->fetch();
+                            if ($existingPhoneUser) {
+                                echo json_encode([
+                                    'success' => false,
+                                    'alreadyRegistered' => true,
+                                    'phoneAlreadyRegistered' => true,
+                                    'message' => 'This mobile number is already registered with another account. Please sign in or use a different mobile number.'
+                                ]);
+                                exit;
+                            }
+                        } catch (Exception $e) {}
+                    }
+                }
+
                 // Check if user already exists
                 $existingUserRow = null;
                 try {
@@ -2484,42 +2486,76 @@ try {
                     exit;
                 }
 
-                // Look up if user already exists in DB
-                $userExists = false;
-                $existingUserRow = null;
-                if ($isAdmin) {
-                    $userExists = true;
-                } else {
-                    try {
-                        $stmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone`, `role` FROM `users` WHERE (`email` = ? AND `email` != '') OR (`phone` = ? AND `phone` != '' AND `phone` != '+91 98480 22338') LIMIT 1");
-                        $stmt->execute([$email ?: '__none__', $phone ?: '__none__']);
-                        $existingUserRow = $stmt->fetch();
-                        if ($existingUserRow) {
-                            $userExists = true;
+                // If signing up: check BOTH email and phone specifically to prevent duplicates
+                if (($purpose === 'signup' || $purpose === 'checkout_signup') && !$isAdmin) {
+                    if (!empty($email)) {
+                        try {
+                            $chkE = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1");
+                            $chkE->execute([$email]);
+                            if ($chkE->fetch()) {
+                                echo json_encode([
+                                    'success' => false,
+                                    'alreadyRegistered' => true,
+                                    'already_registered' => true,
+                                    'emailAlreadyRegistered' => true,
+                                    'message' => 'An account with this email address already exists. Please switch to Sign In.'
+                                ]);
+                                exit;
+                            }
+                        } catch (Exception $e) {}
+                    }
+                    if (!empty($phone)) {
+                        $cleanDigits = preg_replace('/\D/', '', $phone);
+                        if (strlen($cleanDigits) >= 10) {
+                            $last10 = substr($cleanDigits, -10);
+                            try {
+                                $chkP = $pdo->prepare("SELECT `id`, `name`, `phone` FROM `users` WHERE (`phone` LIKE ? OR `phone` LIKE ?) AND `phone` != '+91 98480 22338' LIMIT 1");
+                                $chkP->execute(['%' . $last10, '%' . $last10 . '%']);
+                                if ($chkP->fetch()) {
+                                    echo json_encode([
+                                        'success' => false,
+                                        'alreadyRegistered' => true,
+                                        'already_registered' => true,
+                                        'phoneAlreadyRegistered' => true,
+                                        'message' => 'This mobile number is already registered with another account. Please use a different mobile number or sign in.'
+                                    ]);
+                                    exit;
+                                }
+                            } catch (Exception $e) {}
                         }
-                    } catch (Exception $e) {}
+                    }
                 }
 
                 // If logging in but user is NOT registered
-                if (($purpose === 'login' || $purpose === 'checkout_login' || $purpose === 'checkout') && !$userExists) {
-                    echo json_encode([
-                        'success' => false,
-                        'notRegistered' => true,
-                        'not_registered' => true,
-                        'message' => 'This email is not registered yet. Only registered patrons can sign in. Please create an account to continue.'
-                    ]);
-                    exit;
-                }
+                if (($purpose === 'login' || $purpose === 'checkout_login' || $purpose === 'checkout') && !$isAdmin) {
+                    $foundLogin = false;
+                    try {
+                        if (!empty($email)) {
+                            $stmt = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1");
+                            $stmt->execute([$email]);
+                            $foundLogin = !!$stmt->fetch();
+                        } elseif (!empty($phone)) {
+                            $cleanDigits = preg_replace('/\D/', '', $phone);
+                            if (strlen($cleanDigits) >= 10) {
+                                $last10 = substr($cleanDigits, -10);
+                                $stmt = $pdo->prepare("SELECT `id` FROM `users` WHERE (`phone` LIKE ? OR `phone` LIKE ?) AND `phone` != '+91 98480 22338' LIMIT 1");
+                                $stmt->execute(['%' . $last10, '%' . $last10 . '%']);
+                                $foundLogin = !!$stmt->fetch();
+                            }
+                        }
+                    } catch (Exception $e) {}
 
-                // If signing up but user ALREADY exists
-                if (($purpose === 'signup' || $purpose === 'checkout_signup') && $userExists && !$isAdmin) {
-                    echo json_encode([
-                        'success' => false,
-                        'alreadyRegistered' => true,
-                        'already_registered' => true,
-                        'message' => 'An account with this email address already exists. Please switch to Sign In.'
-                    ]);
-                    exit;
+                    if (!$foundLogin) {
+                        echo json_encode([
+                            'success' => false,
+                            'notRegistered' => true,
+                            'not_registered' => true,
+                            'message' => !empty($email)
+                                ? 'This email is not registered yet. Only registered patrons can sign in. Please create an account to continue.'
+                                : 'This mobile number is not registered yet. Please create an account to continue.'
+                        ]);
+                        exit;
+                    }
                 }
 
                 $otp = (string)rand(100000, 999999);
@@ -2668,12 +2704,28 @@ try {
                     @unlink($tmpDir . '/janani_otp_' . md5($target) . '.json');
                 } catch (Exception $e) {}
 
-                // Look up existing user in DB
+                // If this OTP verification was for SIGNUP, return immediately without synthesizing or borrowing existing profiles!
+                if ($purpose === 'signup') {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Verification code verified successfully. Proceeding with registration.',
+                        'isSignup' => true
+                    ]);
+                    exit;
+                }
+
+                // Look up existing user in DB strictly by matching the exact requested identifier
                 $existingUser = null;
                 try {
-                    $uStmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? OR (`phone` = ? AND `phone` != '' AND `phone` != '+91 98480 22338') LIMIT 1");
-                    $uStmt->execute([$email ?: '', $phone ?: '']);
-                    $existingUser = $uStmt->fetch();
+                    if (!empty($email)) {
+                        $uStmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
+                        $uStmt->execute([$email]);
+                        $existingUser = $uStmt->fetch();
+                    } elseif (!empty($phone)) {
+                        $uStmt = $pdo->prepare("SELECT * FROM `users` WHERE `phone` = ? AND `phone` != '' AND `phone` != '+91 98480 22338' LIMIT 1");
+                        $uStmt->execute([$phone]);
+                        $existingUser = $uStmt->fetch();
+                    }
                 } catch (Exception $e) {}
 
                 // Check if admin
@@ -2715,10 +2767,6 @@ try {
                                     $userPhone = trim($addr['phone']);
                                 }
                             }
-                            $isGeneric = empty($userName) || $userName === 'Customer' || $userName === 'Valued Patron' || (strlen($email) > 3 && strtolower($userName) === strtolower(explode('@', $email)[0]));
-                            if ($isGeneric && (!empty($addr['fullName']) || !empty($addr['name']))) {
-                                $userName = trim($addr['fullName'] ?? $addr['name']);
-                            }
                         }
                     }
                 }
@@ -2732,10 +2780,6 @@ try {
                         if ($ord) {
                             if (!empty($ord['customer_phone'])) {
                                 $userPhone = $ord['customer_phone'];
-                            }
-                            $isGeneric = empty($userName) || $userName === 'Customer' || (strlen($email) > 3 && strtolower($userName) === strtolower(explode('@', $email)[0]));
-                            if ($isGeneric && !empty($ord['customer_name'])) {
-                                $userName = $ord['customer_name'];
                             }
                         }
                     } catch (Exception $e) {}
@@ -4752,7 +4796,7 @@ try {
                         }
 
                         $rawEmail = !empty($order['customer_email']) ? trim($order['customer_email']) : (!empty($sAddr['email']) ? trim($sAddr['email']) : '');
-                        $cEmail = !empty($rawEmail) ? $rawEmail : 'patron@jananiagro.com';
+                        $cEmail = $rawEmail;
 
                         $rawPhone = !empty($order['customer_phone']) ? trim($order['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
                         $cPhone = !empty($rawPhone) ? $rawPhone : '';
@@ -4764,12 +4808,12 @@ try {
                         $order['customerPhone'] = $cPhone;
                         $order['customer_phone'] = $cPhone;
                         $order['customer'] = [
-                            'id' => (!empty($order['customer_id']) && $order['customer_id'] !== 'CUST-1001') ? $order['customer_id'] : 'CUST-001',
+                            'id' => $order['customer_id'] ?? ($order['id'] ?? ''),
                             'name' => $cName,
                             'fullName' => $cName,
                             'email' => $cEmail,
                             'phone' => $cPhone,
-                            'tier' => 'Platinum Gold'
+                            'tier' => $order['customer_tier'] ?? 'Customer'
                         ];
 
                         $order['items'] = is_string($order['items']) ? json_decode($order['items'], true) : $order['items'];
@@ -4858,7 +4902,7 @@ try {
                     }
 
                     $rawEmail = !empty($ord['customer_email']) ? trim($ord['customer_email']) : (!empty($sAddr['email']) ? trim($sAddr['email']) : '');
-                    $cEmail = !empty($rawEmail) ? $rawEmail : 'patron@jananiagro.com';
+                    $cEmail = $rawEmail;
 
                     $rawPhone = !empty($ord['customer_phone']) ? trim($ord['customer_phone']) : (!empty($sAddr['phone']) ? trim($sAddr['phone']) : '');
                     $cPhone = !empty($rawPhone) ? $rawPhone : '';
@@ -4870,12 +4914,12 @@ try {
                     $ord['customerPhone'] = $cPhone;
                     $ord['customer_phone'] = $cPhone;
                     $ord['customer'] = [
-                        'id' => (!empty($ord['customer_id']) && $ord['customer_id'] !== 'CUST-1001') ? $ord['customer_id'] : 'CUST-001',
+                        'id' => $ord['customer_id'] ?? ($ord['id'] ?? ''),
                         'name' => $cName,
                         'fullName' => $cName,
                         'email' => $cEmail,
                         'phone' => $cPhone,
-                        'tier' => 'Platinum Gold'
+                        'tier' => $ord['customer_tier'] ?? 'Customer'
                     ];
 
                     $ord['items'] = is_string($ord['items']) ? json_decode($ord['items'], true) : $ord['items'];
@@ -5904,8 +5948,8 @@ try {
                         'product_name' => $r['product_name'] ?? 'Janani Agro Product',
                         'productCategory' => 'Bio Fertilizer & Protection',
                         'productImage' => '/products/annada.jpg',
-                        'customerId' => $r['customer_id'] ?: 'CUST-001',
-                        'customer_id' => $r['customer_id'] ?: 'CUST-001',
+                        'customerId' => $r['customer_id'] ?: ($r['id'] ?? ''),
+                        'customer_id' => $r['customer_id'] ?: ($r['id'] ?? ''),
                         'customerName' => $cName,
                         'customer_name' => $cName,
                         'customerEmail' => $r['customer_email'] ?: 'farmer@jananiagro.com',

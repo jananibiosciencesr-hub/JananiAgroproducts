@@ -1142,15 +1142,15 @@ if (!$pdo) {
                 }
         echo json_encode([
             'success' => true,
-            'exists' => true,
+            'exists' => $isAdmin,
             'isAdmin' => $isAdmin,
-            'user' => [
-                'id' => $isAdmin ? 'ADMIN-ROOT' : 'usr_' . substr(md5($target ?: 'user'), 0, 8),
-                'name' => $isAdmin ? 'Janani Admin (Root)' : 'Valued Patron',
-                'email' => $email ?: 'jananibiosciences.r@gmail.com',
-                'phone' => $phone ?: '+91 98480 22338',
-                'role' => $isAdmin ? 'Super Admin' : 'Customer'
-            ]
+            'user' => $isAdmin ? [
+                'id' => 'ADMIN-ROOT',
+                'name' => 'Janani Admin (Root)',
+                'email' => 'jananibiosciences.r@gmail.com',
+                'phone' => '+91 98480 22338',
+                'role' => 'Super Admin'
+            ] : null
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;
     }

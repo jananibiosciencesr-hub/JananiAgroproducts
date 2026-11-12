@@ -96,12 +96,16 @@ async function syncBuild() {
     fs.cpSync(rootVideosDir, publicVideosDir, { recursive: true });
   }
 
-  // Sync PHP files
+  // Sync PHP files from backend/php/ (source of truth) to frontend/public/ and rootDir
   for (const phpFile of ['api.php', 'db_init.php']) {
-    const src = path.join(rootDir, 'frontend', 'public', phpFile);
-    const dest = path.join(rootDir, phpFile);
-    if (fs.existsSync(src)) {
-      fs.copyFileSync(src, dest);
+    const backendSrc = path.join(rootDir, 'backend', 'php', phpFile);
+    const publicDest = path.join(rootDir, 'frontend', 'public', phpFile);
+    const rootDest = path.join(rootDir, phpFile);
+    if (fs.existsSync(backendSrc)) {
+      fs.copyFileSync(backendSrc, publicDest);
+      fs.copyFileSync(backendSrc, rootDest);
+    } else if (fs.existsSync(publicDest)) {
+      fs.copyFileSync(publicDest, rootDest);
     }
   }
 
