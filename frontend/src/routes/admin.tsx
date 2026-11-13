@@ -902,22 +902,36 @@ function AdminDashboardPage() {
         {/* Dynamic View Body with unified responsive container */}
         <main className="admin-main flex-1 flex flex-col min-w-0 w-full max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-10 py-6 sm:py-8 gap-6">
           {activeTab === "dashboard" && (
-            <AdminOverview
-              stats={stats}
-              charts={charts}
-              widgets={widgets}
-              orders={safeOrders}
-              products={products}
-              categories={categories}
-              customers={customers}
-              reviews={safeReviews}
-              searchQuery={adminSearch}
-              onClearSearch={() => setAdminSearch("")}
-              onNavigateTab={handleNavigateTab}
-              onOpenShiprocketModal={setSelectedOrderForShipping}
-              onOpenRestockModal={setSelectedItemForRestock}
-              onOpenInvoiceModal={setSelectedOrderForInvoice}
-            />
+            loading && safeOrders.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center min-h-[420px] gap-4 py-16 text-center">
+                <div className="size-10 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    Connecting to Database...
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Syncing live orders, revenue, and inventory metrics from MySQL
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <AdminOverview
+                stats={stats}
+                charts={charts}
+                widgets={widgets}
+                orders={safeOrders}
+                products={products}
+                categories={categories}
+                customers={customers}
+                reviews={safeReviews}
+                searchQuery={adminSearch}
+                onClearSearch={() => setAdminSearch("")}
+                onNavigateTab={handleNavigateTab}
+                onOpenShiprocketModal={setSelectedOrderForShipping}
+                onOpenRestockModal={setSelectedItemForRestock}
+                onOpenInvoiceModal={setSelectedOrderForInvoice}
+              />
+            )
           )}
 
           {activeTab === "categories" && (
