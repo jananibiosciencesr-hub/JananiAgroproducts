@@ -501,8 +501,8 @@ export function InventoryView({
 
   return (
     <div className="flex-1 flex flex-col min-h-0 space-y-4 min-w-0 max-w-full">
-      {/* Inventory Header Bar - with generous left spacing and Excel download */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0 pl-4 sm:pl-6 pr-2 py-1">
+      {/* Inventory Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0 py-1">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
             Warehouse Inventory & Stock

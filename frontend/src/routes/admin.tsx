@@ -900,7 +900,7 @@ function AdminDashboardPage() {
         />
 
         {/* Dynamic View Body with unified responsive container */}
-        <main className="flex-1 flex flex-col min-w-0 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-7 gap-6">
+        <main className="admin-main flex-1 flex flex-col min-w-0 w-full max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-10 py-6 sm:py-8 gap-6">
           {activeTab === "dashboard" && (
             <AdminOverview
               stats={stats}

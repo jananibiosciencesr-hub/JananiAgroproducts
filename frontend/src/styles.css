@@ -290,8 +290,8 @@ header.sticky,
   }
 }
 
-/* Global Zero-Gap & Compact Layout System */
-main {
+/* Global Zero-Gap & Compact Layout System for Storefront (Exempt Admin Portal) */
+body:not([data-admin="true"]) main:not(.admin-main) {
   margin: 0 !important;
   padding: 0;
   overflow: visible !important;
@@ -327,8 +327,8 @@ main {
   }
 }
 
-main>section,
-main section {
+body:not([data-admin="true"]) main:not(.admin-main)>section,
+body:not([data-admin="true"]) main:not(.admin-main) section {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
@@ -608,6 +608,48 @@ img {
 
 .admin-portal [class*="transition-"] {
   transition-property: color, background-color, border-color, opacity !important;
+}
+
+/* ========================================================= */
+/* ADMIN PORTAL CANONICAL RESPONSIVE LAYOUT CONTAINER        */
+/* ========================================================= */
+.admin-portal main,
+main.admin-main {
+  width: 100% !important;
+  max-width: 1440px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 3.5rem !important;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+  gap: 1.5rem !important;
+}
+
+@media (min-width: 640px) {
+  .admin-portal main,
+  main.admin-main {
+    padding-top: 1.75rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-portal main,
+  main.admin-main {
+    padding-top: 2rem !important;
+    padding-bottom: 4rem !important;
+    padding-left: 2.5rem !important;
+    padding-right: 2.5rem !important;
+    gap: 1.75rem !important;
+  }
+}
+
+.admin-portal main > section,
+.admin-portal main section {
+  margin-top: unset !important;
+  margin-bottom: unset !important;
 }
 
 /* User accessibility preference for reduced motion */
