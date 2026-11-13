@@ -345,7 +345,7 @@ export function AdminNavbar({
 
   return (
     <header style={{ position: "sticky", top: 0, zIndex: 40 }} className={`sticky top-0 z-40 flex h-16 sm:h-18 w-full max-w-full items-center border-b bg-card/95 backdrop-blur-md border-border transition-all duration-200 ${isScrolled ? "shadow-md" : "shadow-xs"}`}>
-      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
       {/* Left Area: Mobile Menu, Dynamic Search & Contextual Add */}
       <div className="flex items-center gap-1.5 sm:gap-3 flex-1 max-w-2xl min-w-0 mr-1.5 sm:mr-2">
         <button

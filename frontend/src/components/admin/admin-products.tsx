@@ -1984,7 +1984,7 @@ function ProductFormView({
   return (
     <div className="w-full flex-1 flex flex-col min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-72px)] bg-card animate-in fade-in">
       {/* Top Page Header Bar */}
-      <div className="w-full bg-card border-b border-border px-4 sm:px-6 py-3.5 sm:py-4 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30 shadow-2xs">
+      <div className="w-full bg-card border-b border-border px-4 sm:px-6 py-3.5 sm:py-4 flex flex-wrap items-center justify-between gap-3 sticky top-16 sm:top-18 z-20 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
             type="button"

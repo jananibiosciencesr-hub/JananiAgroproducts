@@ -288,15 +288,15 @@ export function CustomersManagement({ searchQuery, addTrigger }: CustomersManage
       {/* 4. Customers Table */}
       <div className="overflow-x-auto w-full flex-1 relative">
           <table className="w-full text-left text-xs border-collapse min-w-[800px]">
-            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md text-[11px] font-bold uppercase tracking-wider text-muted-foreground shadow-xs">
+            <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border shadow-xs">
               <tr>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 pl-6 pr-3">Patron Details</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Location</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Tier & Rewards</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Phone Number</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Lifetime Spend</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 px-3 py-3.5">Account Status</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 pl-3 pr-6 text-right">Actions</th>
+                <th className="border-b border-border/80 py-3.5 pl-6 pr-3">Patron Details</th>
+                <th className="border-b border-border/80 px-3 py-3.5">Location</th>
+                <th className="border-b border-border/80 px-3 py-3.5">Tier & Rewards</th>
+                <th className="border-b border-border/80 px-3 py-3.5">Phone Number</th>
+                <th className="border-b border-border/80 px-3 py-3.5">Lifetime Spend</th>
+                <th className="border-b border-border/80 px-3 py-3.5">Account Status</th>
+                <th className="border-b border-border/80 py-3.5 pl-3 pr-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">

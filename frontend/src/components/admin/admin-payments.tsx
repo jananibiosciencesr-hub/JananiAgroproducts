@@ -457,7 +457,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
           </div>
 
           {/* Date to Date Range Filter Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl border border-border bg-card shadow-soft">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-card shadow-xs">
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="font-bold text-foreground flex items-center gap-1.5 shrink-0">
                 <Calendar className="size-3.5 text-emerald-600" /> Date Range:
@@ -573,15 +573,15 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-muted/70 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border shadow-2xs">
+                  <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border shadow-xs">
                     <tr>
-                      <th className="px-5 py-3.5">Transaction ID & Date</th>
-                      <th className="px-5 py-3.5">Order & Customer</th>
-                      <th className="px-5 py-3.5 text-right">Gross Amount</th>
-                      <th className="px-5 py-3.5 text-right">Fee / MDR</th>
-                      <th className="px-5 py-3.5 text-right">Net Settled</th>
-                      <th className="px-5 py-3.5">Bank Settlement / UTR</th>
-                      <th className="px-5 py-3.5 text-right">Actions</th>
+                      <th className="px-5 py-3.5 w-[220px]">Transaction ID & Date</th>
+                      <th className="px-5 py-3.5 w-[220px]">Order & Customer</th>
+                      <th className="px-5 py-3.5 text-right w-[140px]">Gross Amount</th>
+                      <th className="px-5 py-3.5 text-right w-[120px]">Fee / MDR</th>
+                      <th className="px-5 py-3.5 text-right w-[140px]">Net Settled</th>
+                      <th className="px-5 py-3.5 w-[240px]">Bank Settlement / UTR</th>
+                      <th className="px-5 py-3.5 text-right w-[120px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border font-sans">

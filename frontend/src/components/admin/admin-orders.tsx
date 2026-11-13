@@ -929,14 +929,14 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
               <col className="w-[18%] min-w-[150px]" />
               <col className="w-[14%] min-w-[85px]" />
             </colgroup>
-            <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md shadow-xs">
+            <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border shadow-xs">
               <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-[10%]">Order Details</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-[18%]">Customer</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-[13%]">Items</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 w-[27%]">Financials</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-center w-[18%]">Fulfillment Status</th>
-                <th className="sticky top-0 z-20 bg-muted/95 backdrop-blur-md border-b border-border/80 py-3.5 px-4 text-right w-[14%]">Actions</th>
+                <th className="border-b border-border/80 py-3.5 px-4 w-[10%]">Order Details</th>
+                <th className="border-b border-border/80 py-3.5 px-4 w-[18%]">Customer</th>
+                <th className="border-b border-border/80 py-3.5 px-4 w-[13%]">Items</th>
+                <th className="border-b border-border/80 py-3.5 px-4 w-[27%]">Financials</th>
+                <th className="border-b border-border/80 py-3.5 px-4 text-center w-[18%]">Fulfillment Status</th>
+                <th className="border-b border-border/80 py-3.5 px-4 text-right w-[14%]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
