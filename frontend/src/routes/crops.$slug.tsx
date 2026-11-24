@@ -23,7 +23,7 @@ import { PesticideCard } from "@/components/shop/pesticide-card";
 import { WhatsAppIcon } from "@/components/ui/brand-icons";
 
 export const Route = createFileRoute("/crops/$slug")({
-  head: ({ params }) => {
+  head: ({ params }: { params: { slug: string } }) => {
     const crop = getCropById(params.slug);
     const cropName = crop?.name || "Crop Protection";
     const title = crop

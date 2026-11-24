@@ -12,7 +12,7 @@ interface ExchangeOrderModalProps {
     originalItem: string;
     replacementItem: string;
     reason: string;
-  }) => void;
+  }) => Promise<boolean> | boolean | void;
 }
 
 const EXCHANGE_REASONS = [
@@ -50,16 +50,17 @@ export function ExchangeOrderModal({
     e.preventDefault();
     setSubmitting(true);
 
-    setTimeout(() => {
+    Promise.resolve(
       onConfirmExchange(order.id, {
         originalItem: `${currentItem.name} (${currentItem.variant || "Standard"})`,
         replacementItem: replacementChoice,
         reason: selectedReason,
-      });
-      setSubmitting(false);
-      onClose();
-      toast.success(`Exchange request placed for Order ${order.number}!`);
-    }, 400);
+      })
+    )
+      .then((ok) => {
+        if (ok !== false) onClose();
+      })
+      .finally(() => setSubmitting(false));
   };
 
   return (

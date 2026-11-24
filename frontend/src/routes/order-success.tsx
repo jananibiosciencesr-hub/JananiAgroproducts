@@ -168,6 +168,7 @@ export function OrderSuccessPage() {
     }
     setEmailDispatchedNotice(true);
 
+    // The server emails the invoice when the order is created; this only confirms it (never sends twice).
     fetch("/api.php?action=send-order-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -220,6 +221,7 @@ export function OrderSuccessPage() {
         headers: { "Content-Type": "application/json" },
         keepalive: true,
         body: JSON.stringify({
+          resend: true, // explicit customer request (the server sends the invoice once automatically)
           number: orderNumber,
           orderNumber: orderNumber,
           customer_name: customerName,

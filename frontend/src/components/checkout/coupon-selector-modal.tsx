@@ -126,7 +126,8 @@ export function CouponSelector({
 }: CouponSelectorProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [manualCode, setManualCode] = useState("");
-  const [couponsList, setCouponsList] = useState<CouponRule[]>(AVAILABLE_COUPONS);
+  // Only coupons that exist and are active in the database (the server re-validates at order time)
+  const [couponsList, setCouponsList] = useState<CouponRule[]>([]);
 
   useEffect(() => {
     let active = true;

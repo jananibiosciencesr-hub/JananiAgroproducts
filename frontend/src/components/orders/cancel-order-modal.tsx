@@ -8,7 +8,8 @@ interface CancelOrderModalProps {
   order: CustomerOrder | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirmCancel: (orderId: string, reason: string, refundMethod: string) => void;
+  /** Resolves to true when the server confirmed the cancellation. */
+  onConfirmCancel: (orderId: string, reason: string, refundMethod: string) => Promise<boolean> | boolean | void;
 }
 
 const CANCEL_REASONS = [
@@ -27,7 +28,8 @@ export function CancelOrderModal({
   onConfirmCancel,
 }: CancelOrderModalProps) {
   const [selectedReason, setSelectedReason] = useState(CANCEL_REASONS[0]!);
-  const [refundMethod, setRefundMethod] = useState<"wallet" | "original">("wallet");
+  // Refunds are issued to the original payment method (wallet credit is not offered).
+  const [refundMethod, setRefundMethod] = useState<"wallet" | "original">("original");
   const [customNote, setCustomNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -45,12 +47,11 @@ export function CancelOrderModal({
       ? "Instant Farm Wallet Credit"
       : `Original Method (${order.paymentMethod})`;
 
-    setTimeout(() => {
-      onConfirmCancel(order.id, finalReason, refundLabel);
-      setSubmitting(false);
-      onClose();
-      toast.success(`Order ${order.number} has been cancelled.`);
-    }, 400);
+    Promise.resolve(onConfirmCancel(order.id, finalReason, refundLabel))
+      .then((ok) => {
+        if (ok !== false) onClose();
+      })
+      .finally(() => setSubmitting(false));
   };
 
   return (
@@ -122,33 +123,9 @@ export function CancelOrderModal({
           {/* Refund Destination Selection */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-foreground uppercase tracking-wider">
-              Refund Destination Preference
+              Refund Destination
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label
-                className={`flex flex-col justify-between rounded-2xl border p-3.5 text-xs cursor-pointer transition ${
-                  refundMethod === "wallet"
-                    ? "border-brand-gold bg-brand-gold/10 font-medium text-foreground"
-                    : "border-border hover:bg-secondary/60 text-muted-foreground"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="refundMethod"
-                    value="wallet"
-                    checked={refundMethod === "wallet"}
-                    onChange={() => setRefundMethod("wallet")}
-                    className="accent-brand-gold"
-                  />
-                  <Wallet className="size-4 text-brand-gold" />
-                  <span className="font-bold">Farm Wallet</span>
-                </div>
-                <p className="mt-2 text-[11px] text-muted-foreground leading-snug">
-                  <strong>Instant credit</strong> of ₹{order.total}. Available immediately for next harvest purchase.
-                </p>
-              </label>
-
+            <div className="grid grid-cols-1 gap-3">
               <label
                 className={`flex flex-col justify-between rounded-2xl border p-3.5 text-xs cursor-pointer transition ${
                   refundMethod === "original"

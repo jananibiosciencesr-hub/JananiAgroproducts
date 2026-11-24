@@ -229,7 +229,14 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Start server and trigger DB auto-initialization
-app.listen(PORT, async () => {
+// This Express server is a LOCAL DEVELOPMENT mock of the API. Production runs api.php on Hostinger.
+// It has no production-grade authentication, so it refuses to run in production and only listens on localhost.
+if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEV_API_IN_PRODUCTION !== "true") {
+  console.error("[janani] backend/src/server.js is a development-only API. Use api.php in production.");
+  process.exit(1);
+}
+
+app.listen(PORT, "127.0.0.1", async () => {
   console.log(`\n🌱 JANANI AGRO PRODUCTS Backend Server running on http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📦 Database status: http://localhost:${PORT}/api/db/status`);

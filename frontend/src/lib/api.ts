@@ -1,3 +1,4 @@
+import "./http-auth"; // attaches the signed session token to every API request (must load first)
 import { products, categories, type Product, getCategoryImage, getProductImage, formatProductName, SAMPLE_PRODUCT_VIDEO } from "./catalog";
 import { matchesProductSearch } from "./search-helper";
 import {
@@ -21,6 +22,31 @@ const API_BASE_URL = typeof window !== "undefined" && window.location.hostname =
   ? "http://localhost:5000/api"
   : "/api";
 
+/** Local development (Vite + Express) may fall back to the Node API; production only talks to api.php. */
+export const IS_LOCAL_DEV =
+  typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+/** Standard failure result when the server cannot be reached (never a fake success). */
+/** Last error message the API returned (so a later fallback attempt doesn't hide the real reason). */
+let lastApiFailure: { message: string; at: number } | null = null;
+
+/** Honest result for a change the server did not confirm (nothing is "saved" only in this browser). */
+function saveFailed<T = any>(res?: any): T {
+  const recent = lastApiFailure && Date.now() - lastApiFailure.at < 15000 ? lastApiFailure.message : "";
+  return {
+    success: false,
+    message:
+      (res && typeof res.message === "string" && res.message && res.message !== "Unknown endpoint." && res.message) ||
+      recent ||
+      "The change could not be saved to the server. Nothing was changed - please check your connection and try again.",
+    data: null,
+  } as unknown as T;
+}
+
+function serverUnavailable<T = any>(message = "We couldn't reach the server. Please check your internet connection and try again."): T {
+  return { success: false, networkError: true, message, token: "", user: null, data: null } as unknown as T;
+}
+
 /**
  * Generic fetch wrapper with automatic direct PHP API fallback
  */
@@ -36,11 +62,11 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
     }
 
     const res = await fetch(url, {
+      ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(options?.headers || {}),
+        ...((options?.headers as Record<string, string>) || {}),
       },
-      ...options,
     });
 
     const isJson = res.headers.get("content-type")?.includes("application/json");
@@ -49,6 +75,9 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
         const data = await res.json();
         // Return valid JSON objects even on non-2xx status (e.g. 400, 404, 409, 500) so caller receives structured data
         if (data !== null && typeof data === "object") {
+          if ((data as any).success === false && typeof (data as any).message === "string" && (data as any).message !== "Unknown endpoint.") {
+            lastApiFailure = { message: (data as any).message, at: Date.now() };
+          }
           return data as T;
         }
       } catch (err) {
@@ -669,6 +698,11 @@ export interface CreateOrderPayload {
     image?: string;
     variant?: string;
     subtotal?: number;
+    /** product slug and cart variant identity, used by the server to price the exact pack size */
+    slug?: string;
+    cartKey?: string;
+    variantKey?: string;
+    variantId?: string;
   }>;
   customer: {
     firstName?: string;
@@ -700,6 +734,8 @@ export interface CreateOrderPayload {
   paymentStatus?: string;
   transactionId?: string;
   razorpayOrderId?: string;
+  razorpaySignature?: string;
+  orderNotes?: string;
   deliverySlot?: string;
   expectedDelivery?: string;
   slot?: any;
@@ -776,239 +812,121 @@ export function generateNextOrderNumber(): string {
   return `JAP-${String(nextOrderNum).padStart(3, "0")}`;
 }
 
-export async function createOrder(orderPayload: CreateOrderPayload) {
-  const subtotal = orderPayload.subtotal ?? orderPayload.items.reduce((sum, item) => sum + item.price * (item.quantity || item.qty || 1), 0);
-  const couponDiscount = orderPayload.couponDiscount ?? (orderPayload.couponCode ? (orderPayload.discount ?? 0) : 0);
-  const walletDeduction = orderPayload.walletDeduction ?? 0;
-  const discount = orderPayload.discount ?? couponDiscount;
-  const gstAmount = orderPayload.gstAmount ?? Number((subtotal * 0.05).toFixed(2));
-  const cgst = orderPayload.cgst ?? Number((subtotal * 0.025).toFixed(2));
-  const sgst = orderPayload.sgst ?? Number((subtotal * 0.025).toFixed(2));
-  const deliveryFee = orderPayload.deliveryFee ?? orderPayload.shippingFee ?? (subtotal >= 799 ? 0 : 60);
-  const total = orderPayload.finalTotal ?? orderPayload.total ?? Number(Math.max(0, subtotal + gstAmount - couponDiscount - walletDeduction + deliveryFee).toFixed(2));
-
-  const nextSeqOrderNum = generateNextOrderNumber();
-  let generatedId = orderPayload.orderNumber || orderPayload.number || orderPayload.id;
-  if (!generatedId || /^(?:JAP|ORD)-\d{5,}$/i.test(generatedId)) {
-    generatedId = nextSeqOrderNum;
+/** Error raised when the server refuses to place an order (carries the server's details). */
+export class OrderPlacementError extends Error {
+  priceChanged?: boolean;
+  couponInvalid?: boolean;
+  outOfStock?: boolean;
+  paymentRequired?: boolean;
+  networkError?: boolean;
+  quote?: any;
+  constructor(message: string, details: Record<string, any> = {}) {
+    super(message);
+    this.name = "OrderPlacementError";
+    Object.assign(this, details);
   }
-  const custName = orderPayload.customer.name || `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim() || "Customer";
-  const custEmail = orderPayload.customer.email || "";
+}
+
+/**
+ * Places an order. The server recomputes every price, discount, tax and total from the database,
+ * verifies the Razorpay payment signature for online payments and allocates the order number.
+ * Amounts sent from the browser are only used to detect a stale cart (expectedTotal).
+ * Throws OrderPlacementError when the order was NOT created - it never pretends to succeed.
+ */
+export async function createOrder(orderPayload: CreateOrderPayload) {
+  const custName = orderPayload.customer.name || `${orderPayload.customer.firstName || ""} ${orderPayload.customer.lastName || ""}`.trim();
   const streetAddr = orderPayload.customer.streetAddress || orderPayload.customer.address || orderPayload.customer.street || "";
-  const deliverySlot = orderPayload.deliverySlot || (orderPayload.slot?.dateStr ?? "Tomorrow Morning (9:00 AM – 1:00 PM)");
-  const expectedDelivery = orderPayload.expectedDelivery || deliverySlot;
+  const address = {
+    name: custName,
+    fullName: custName,
+    phone: orderPayload.customer.phone,
+    email: orderPayload.customer.email || "",
+    street: streetAddr,
+    streetAddress: streetAddr,
+    landmark: orderPayload.customer.landmark || "",
+    city: orderPayload.customer.city,
+    state: orderPayload.customer.state || "",
+    pincode: orderPayload.customer.pincode,
+  };
 
-  const defaultTimeline = [
-    {
-      title: "Order Placed & Payment Verified via Razorpay",
-      time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-      location: "Lodhika Processing Hub, Rajkot",
-      done: true,
-      current: true
-    },
-    {
-      title: "Quality Tested & Nitrogen Sealed",
-      time: "Within 4 Hours",
-      location: "Rajkot Central Facility",
-      done: false,
-      current: false
-    },
-    {
-      title: "Dispatched via Delhivery Air Express",
-      time: "Scheduled Tomorrow",
-      location: "Regional Transit Gateway",
-      done: false,
-      current: false
-    },
-    {
-      title: "Out for Doorstep Delivery",
-      time: deliverySlot,
-      location: "Local Delivery Hub",
-      done: false,
-      current: false
-    },
-    {
-      title: "Delivered to Recipient",
-      time: expectedDelivery,
-      location: "Customer Address",
-      done: false,
-      current: false
-    }
-  ];
-
-  const timeline = orderPayload.timeline && orderPayload.timeline.length > 0 ? orderPayload.timeline : defaultTimeline;
-
-  const phpPayload = {
-    id: generatedId,
-    number: generatedId,
-    orderNumber: generatedId,
-    created_at: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    timestamp: Date.now(),
-    order_date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-    customer_name: custName,
-    customer_email: custEmail,
-    customer_phone: orderPayload.customer.phone,
-    shipping_address: {
-      name: custName,
-      fullName: custName,
-      street: streetAddr,
-      streetAddress: streetAddr,
-      landmark: orderPayload.customer.landmark || "",
-      city: orderPayload.customer.city,
-      state: orderPayload.customer.state || "Gujarat",
-      pincode: orderPayload.customer.pincode,
-      phone: orderPayload.customer.phone
-    },
-    billing_address: {
-      name: custName,
-      fullName: custName,
-      street: streetAddr,
-      streetAddress: streetAddr,
-      city: orderPayload.customer.city,
-      state: orderPayload.customer.state || "Gujarat",
-      pincode: orderPayload.customer.pincode,
-      phone: orderPayload.customer.phone
-    },
+  const requestBody = {
     items: orderPayload.items.map((i) => ({
-      id: i.productId || i.id,
-      productId: i.productId || i.id,
-      title: i.name || i.title || `Harvest Item #${i.productId || i.id}`,
-      name: i.name || i.title || `Harvest Item #${i.productId || i.id}`,
-      variant: i.variant || "Standard Pack",
-      price: i.price,
+      productId: i.productId ?? i.id,
+      slug: i.slug,
+      cartKey: i.cartKey,
+      variantKey: i.variantKey,
+      variantId: i.variantId,
+      name: i.name || i.title,
       quantity: i.quantity || i.qty || 1,
-      qty: i.quantity || i.qty || 1,
-      image: i.image || "",
-      subtotal: i.price * (i.quantity || i.qty || 1)
+      image: i.image,
     })),
-    subtotal,
-    gst_amount: gstAmount,
-    gstAmount,
-    cgst,
-    sgst,
-    discount,
-    coupon_code: orderPayload.couponCode || null,
-    couponCode: orderPayload.couponCode || null,
-    coupon_discount: couponDiscount,
-    couponDiscount: couponDiscount,
-    wallet_deduction: walletDeduction,
-    walletDeduction: walletDeduction,
-    delivery_fee: deliveryFee,
-    deliveryFee: deliveryFee,
-    shippingFee: deliveryFee,
-    total,
-    finalTotal: total,
-    payment_method: orderPayload.paymentMethod || "Razorpay (Online)",
-    payment_status: orderPayload.paymentStatus || (orderPayload.paymentMethod === "Cash on Delivery" ? "Pending (COD)" : "Paid"),
-    transaction_id: orderPayload.transactionId || `pay_rzp_${Date.now()}`,
-    transactionId: orderPayload.transactionId || `pay_rzp_${Date.now()}`,
-    razorpay_order_id: orderPayload.razorpayOrderId || null,
-    order_status: "Processing",
-    courier: "Delhivery Air Express & Janani Fleet",
-    tracking_id: `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-    awb: `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-    warehouse: "Lodhika GIDC Central Facility, Rajkot",
-    delivery_slot: deliverySlot,
-    deliverySlot: deliverySlot,
-    expected_delivery: expectedDelivery,
-    expectedDelivery: expectedDelivery,
-    timeline
+    shipping_address: address,
+    coupon_code: orderPayload.couponCode || "",
+    payment_method: orderPayload.paymentMethod || "",
+    razorpay_order_id: orderPayload.razorpayOrderId || "",
+    razorpay_payment_id: orderPayload.transactionId || "",
+    razorpay_signature: orderPayload.razorpaySignature || "",
+    expectedTotal: orderPayload.finalTotal ?? orderPayload.total,
+    delivery_slot: orderPayload.deliverySlot || orderPayload.slot?.dateStr || "",
+    order_notes: orderPayload.orderNotes || "",
   };
 
-  // Helper to sync and deduct product stock from local cache
-  const deductLocalProductStock = () => {
-    try {
-      const currentProds = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-      let updatedAny = false;
-      const updatedProds = currentProds.map((prod) => {
-        const orderedItem = orderPayload.items.find((it) => {
-          const itId = String(it.productId || it.id || "");
-          const prodId = String(prod.id || "");
-          const prodSlug = String(prod.slug || "");
-          const itName = String(it.name || it.title || "").toLowerCase();
-          const prodName = String(prod.name || "").toLowerCase();
-          return (
-            itId === prodId ||
-            (prodSlug && itId === prodSlug) ||
-            (itName && prodName && (itName.includes(prodName) || prodName.includes(itName)))
-          );
-        });
-        if (orderedItem) {
-          const qty = Number(orderedItem.quantity || orderedItem.qty || 1);
-          const newStock = Math.max(0, (prod.stock ?? 45) - qty);
-          updatedAny = true;
-          return { ...prod, stock: newStock, inStock: newStock > 0 };
-        }
-        return prod;
-      });
-      if (updatedAny) {
-        setStored(STORAGE_KEYS.PRODUCTS, updatedProds);
-      }
-    } catch (e) {
-      console.warn("Local inventory sync note:", e);
-    }
-  };
-
-  // 1. Prioritize direct MySQL write via api.php
+  let data: any = null;
   try {
-    const phpRes = await fetch("/api.php?action=orders", {
+    const res = await fetch("/api.php?action=orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(phpPayload)
+      body: JSON.stringify(requestBody),
     });
-    if (phpRes.ok) {
-      const phpData = await phpRes.json();
-      if (phpData?.success && (phpData.order || phpData.data)) {
-        const createdOrder = phpData.order || phpData.data;
-        const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-        setStored(STORAGE_KEYS.ORDERS, [createdOrder, ...adminOrders.filter((o: any) => o.id !== createdOrder.id && o.number !== createdOrder.number)]);
-        deductLocalProductStock();
-        return createdOrder;
-      }
-    }
-  } catch (e) {
-    console.warn("Direct /api.php?action=orders creation attempt note:", e);
+    data = await res.json().catch(() => null);
+  } catch {
+    data = null;
+  }
+  if (!data && IS_LOCAL_DEV) {
+    data = await fetchJson<any>(`/orders`, { method: "POST", body: JSON.stringify(requestBody) });
+  }
+  if (!data) {
+    throw new OrderPlacementError("We couldn't reach the server, so your order was not placed. Please check your connection and try again.", { networkError: true });
+  }
+  if (!data.success || !(data.order || data.data)) {
+    throw new OrderPlacementError(data.message || "Your order could not be placed. Please try again.", data);
   }
 
-  // 2. Node.js backend fallback
+  const createdOrder = data.order || data.data;
+  // Keep the admin cache in sync with what the server actually stored
   try {
-    const data = await fetchJson<{ success: boolean; message: string; order: any }>(`/orders`, {
+    const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
+    setStored(STORAGE_KEYS.ORDERS, [createdOrder, ...adminOrders.filter((o: any) => o.id !== createdOrder.id && o.number !== createdOrder.number)]);
+  } catch {
+    /* cache only */
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("janani-products-updated")); // stock changed on the server
+  }
+  return createdOrder;
+}
+
+/**
+ * Customer self-service on their own order: "cancel" (before dispatch, refunds online payments via
+ * Razorpay automatically), "return-request" / "exchange-request" (after delivery, reviewed by the team).
+ */
+export async function requestOrderAction(
+  orderRef: string,
+  action: "cancel" | "return-request" | "exchange-request",
+  body: Record<string, unknown>
+): Promise<{ success: boolean; message: string; refundNote?: string; order?: any }> {
+  try {
+    const res = await fetch(`/api.php?action=orders&id=${encodeURIComponent(orderRef)}/${action}`, {
       method: "POST",
-      body: JSON.stringify(phpPayload),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
-
-    if (data?.success && data.order) {
-      deductLocalProductStock();
-      return data.order;
-    }
-  } catch (e) { }
-
-  // 3. Resilient cache fallback
-  const newOrder = {
-    ...phpPayload,
-    status: "Processing",
-    date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-    created_at: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    timestamp: Date.now(),
-    isoDate: new Date().toISOString().split("T")[0]!,
-    customer: {
-      id: (orderPayload.customer as any)?.id || generateNextCustomerId(),
-      name: custName,
-      phone: orderPayload.customer.phone,
-      email: custEmail
-    },
-    shippingAddress: phpPayload.shipping_address,
-    billingAddress: phpPayload.billing_address,
-    address: phpPayload.shipping_address
-  };
-
-  const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  setStored(STORAGE_KEYS.ORDERS, [newOrder, ...adminOrders.filter((o: any) => o.id !== newOrder.id && o.number !== newOrder.number)]);
-  deductLocalProductStock();
-
-  return newOrder;
+    const data = await res.json().catch(() => null);
+    if (data && typeof data === "object") return data;
+  } catch {
+    /* network error */
+  }
+  return serverUnavailable();
 }
 
 export async function trackOrder(query: string) {
@@ -1222,9 +1140,9 @@ export async function sendContactMessage(contactData: {
       method: "POST",
       body: JSON.stringify(contactData),
     });
-    return res || { success: true, message: "Thank you! Your message has been sent and recorded in the Admin Dashboard." };
+    return res || serverUnavailable("Your message could not be sent right now. Please try again or call us directly.");
   } catch (e) {
-    return { success: true, message: "Thank you! Your message has been sent and recorded in the Admin Dashboard." };
+    return serverUnavailable("Your message could not be sent right now. Please try again or call us directly.");
   }
 }
 
@@ -1295,7 +1213,7 @@ export async function subscribeNewsletter(email: string) {
       body: JSON.stringify({ email: cleanEmail }),
     });
   } catch (e) {
-    return { success: true, message: "Thank you for subscribing! Your email has been registered." };
+    return serverUnavailable("Subscription failed. Please try again in a moment.");
   }
 }
 
@@ -1734,22 +1652,7 @@ export async function updateAdminOrderStatus(id: string, payload: { orderStatus?
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  const updated = stored.map((o) => {
-    if (o.id === id || o.number === id) {
-      return {
-        ...o,
-        orderStatus: payload.orderStatus || o.orderStatus,
-        status: payload.orderStatus || o.status,
-        trackingId: payload.trackingId || o.trackingId,
-        courier: payload.courier || o.courier
-      };
-    }
-    return o;
-  });
-  setStored(STORAGE_KEYS.ORDERS, updated);
-  return { success: true, message: `Order ${id} status updated to ${payload.orderStatus}`, data: { id, ...payload } };
+  return saveFailed(res);
 }
 
 export async function assignOrderWarehouse(id: string, warehouse: string | { id: string; name: string; location: string; state?: string }) {
@@ -1764,12 +1667,7 @@ export async function assignOrderWarehouse(id: string, warehouse: string | { id:
     });
   }
   if (res?.success) return res;
-
-  const wName = typeof warehouse === "string" ? warehouse : warehouse.name;
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, warehouse: wName } : o));
-  setStored(STORAGE_KEYS.ORDERS, updated);
-  return { success: true, message: "Warehouse assigned", data: { id, warehouse: wName } };
+  return saveFailed(res);
 }
 
 export async function generateShiprocketAwb(id: string, courierPartner: string = "Bluedart Air", pickupTime?: string) {
@@ -1784,24 +1682,7 @@ export async function generateShiprocketAwb(id: string, courierPartner: string =
     });
   }
   if (res?.success) return res;
-
-  const awbCode = `SR-${courierPartner.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`;
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  const updated = stored.map((o) => {
-    if (o.id === id || o.number === id) {
-      return {
-        ...o,
-        orderStatus: "Shipped",
-        status: "Shipped",
-        courier: `Shiprocket (${courierPartner})`,
-        trackingId: awbCode,
-        awb: awbCode
-      };
-    }
-    return o;
-  });
-  setStored(STORAGE_KEYS.ORDERS, updated);
-  return { success: true, message: "AWB Generated", data: { awbCode, courier: courierPartner } };
+  return saveFailed(res);
 }
 
 export async function addOrderAdminNote(id: string, text: string, author: string = "Doddi Sai Rama") {
@@ -1816,12 +1697,7 @@ export async function addOrderAdminNote(id: string, text: string, author: string
     });
   }
   if (res?.success) return res;
-
-  const note = { id: `NOTE-${Date.now()}`, text, author, date: "Just now" };
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, adminNotes: [...(o.adminNotes || []), note] } : o));
-  setStored(STORAGE_KEYS.ORDERS, updated);
-  return { success: true, message: "Note added", data: [note] };
+  return saveFailed(res);
 }
 
 export async function cancelAdminOrder(id: string, reason?: string | { reason?: string; restockInventory?: boolean }, restockInventory?: boolean) {
@@ -1837,11 +1713,7 @@ export async function cancelAdminOrder(id: string, reason?: string | { reason?: 
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, orderStatus: "Cancelled", status: "Cancelled" } : o));
-  setStored(STORAGE_KEYS.ORDERS, updated);
-  return { success: true, message: "Order cancelled successfully", data: { id, status: "Cancelled" } };
+  return saveFailed(res);
 }
 
 export async function refundAdminOrder(id: string, amount?: number | { amount?: number; mode?: string; reason?: string }, mode?: string, reason?: string) {
@@ -1857,11 +1729,7 @@ export async function refundAdminOrder(id: string, amount?: number | { amount?: 
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, paymentStatus: "Refunded" } : o));
-  setStored(STORAGE_KEYS.ORDERS, updated);
-  return { success: true, message: "Refund processed successfully", data: { id, status: "Refunded" } };
+  return saveFailed(res);
 }
 
 export async function returnAdminOrder(id: string, reason?: string | { reason?: string; pickupDate?: string; courier?: string }, reverseCourier?: string) {
@@ -1877,11 +1745,7 @@ export async function returnAdminOrder(id: string, reason?: string | { reason?: 
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  const updated = stored.map((o) => (o.id === id || o.number === id ? { ...o, orderStatus: "Returned", status: "Returned" } : o));
-  setStored(STORAGE_KEYS.ORDERS, updated);
-  return { success: true, message: "Return scheduled", data: { id, status: "Returned" } };
+  return saveFailed(res);
 }
 
 export async function exchangeAdminOrder(id: string, reason?: string | { replacementItem: string; reason?: string }, replacementSku?: string) {
@@ -1897,8 +1761,7 @@ export async function exchangeAdminOrder(id: string, reason?: string | { replace
     });
   }
   if (res?.success) return res;
-
-  return { success: true, message: "Exchange initiated", data: { id, status: "Exchange Requested" } };
+  return saveFailed(res);
 }
 
 export async function bulkUpdateAdminOrderStatus(ids: string[], status: string) {
@@ -1913,11 +1776,7 @@ export async function bulkUpdateAdminOrderStatus(ids: string[], status: string) 
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
-  const updated = stored.map((o) => (ids.includes(o.id) || ids.includes(o.number) ? { ...o, orderStatus: status, status } : o));
-  setStored(STORAGE_KEYS.ORDERS, updated);
-  return { success: true, message: `Bulk updated ${ids.length} orders to ${status}` };
+  return saveFailed(res);
 }
 
 export function normalizeAdminProduct(raw: any) {
@@ -2638,20 +2497,7 @@ export async function createAdminCustomer(customerData: any) {
       message: `The email '${customerData.email}' is already registered to customer '${existing.name}' (${existing.id}). Please use a different email address or edit the existing customer profile.`
     };
   }
-
-  const newCustomer = {
-    id: customerData.id || generateNextCustomerId(),
-    joinedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-    ordersCount: 0,
-    ltv: 0,
-    walletBalance: Number(customerData.initialWallet || 0),
-    loyaltyPoints: Number(customerData.initialLoyalty || 50),
-    tier: customerData.tier || "Silver",
-    status: "Active",
-    ...customerData
-  };
-  setStored(STORAGE_KEYS.CUSTOMERS, [newCustomer, ...stored]);
-  return { success: true, message: "Customer profile created successfully", data: newCustomer };
+  return saveFailed(res);
 }
 
 export async function updateAdminCustomer(id: string, customerData: any) {
@@ -2674,11 +2520,7 @@ export async function updateAdminCustomer(id: string, customerData: any) {
     if (res.success) return res;
     if (res.message || res.error) return res;
   }
-
-  const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
-  const updated = stored.map((c) => (c.id === id ? { ...c, ...customerData } : c));
-  setStored(STORAGE_KEYS.CUSTOMERS, updated);
-  return { success: true, message: "Customer updated successfully", data: { id, ...customerData } };
+  return saveFailed(res);
 }
 
 export async function updateUserProfileApi(userIdOrEmail: string, updates: any) {
@@ -2731,9 +2573,7 @@ export async function updateUserProfileApi(userIdOrEmail: string, updates: any) 
       return res;
     }
   } catch (e) { }
-
-  syncMockCustomer(userIdOrEmail, updates);
-  return { success: true, message: "Customer profile updated successfully.", data: payload };
+  return saveFailed();
 }
 
 function syncMockCustomer(userIdOrEmail: string, updates: any) {
@@ -2767,17 +2607,7 @@ export async function toggleCustomerStatus(id: string, status?: string, reason?:
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
-  const updated = stored.map((c) => {
-    if (c.id === id) {
-      const newStatus = status || (c.status === "Active" ? "Suspended" : "Active");
-      return { ...c, status: newStatus };
-    }
-    return c;
-  });
-  setStored(STORAGE_KEYS.CUSTOMERS, updated);
-  return { success: true, message: `Customer status updated to ${status}`, data: { id, status } };
+  return saveFailed(res);
 }
 
 export async function adjustCustomerWallet(id: string, payload: { amount: number; type: "credit" | "debit"; description: string }) {
@@ -2792,33 +2622,7 @@ export async function adjustCustomerWallet(id: string, payload: { amount: number
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
-  let newBalance = 0;
-  const updated = stored.map((c) => {
-    if (c.id === id) {
-      const current = c.walletBalance || 0;
-      newBalance = payload.type === "credit" ? current + payload.amount : Math.max(0, current - payload.amount);
-      return { ...c, walletBalance: newBalance };
-    }
-    return c;
-  });
-  setStored(STORAGE_KEYS.CUSTOMERS, updated);
-
-  const transaction = {
-    id: `WTX-${Date.now()}`,
-    type: payload.type,
-    amount: payload.amount,
-    balanceAfter: newBalance,
-    description: payload.description,
-    date: new Date().toISOString()
-  };
-
-  return {
-    success: true,
-    message: `Wallet ${payload.type === "credit" ? "credited" : "debited"} successfully`,
-    data: { walletBalance: newBalance, transaction }
-  };
+  return saveFailed(res);
 }
 
 export async function deleteAdminCustomer(id: string) {
@@ -2831,11 +2635,7 @@ export async function deleteAdminCustomer(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
-  const filtered = stored.filter((c) => c.id !== id);
-  setStored(STORAGE_KEYS.CUSTOMERS, filtered);
-  return { success: true, message: "Customer removed successfully" };
+  return saveFailed(res);
 }
 
 export async function getAdminInventory() {
@@ -2874,16 +2674,7 @@ export async function restockAdminInventory(id: string | number, quantity: numbe
     });
   }
   if (res?.success) return res;
-
-  const productsList = getStored<any[]>(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-  const updated = productsList.map((p) => {
-    if (String(p.id) === String(id)) {
-      return { ...p, stock: (p.stock || 0) + quantity };
-    }
-    return p;
-  });
-  setStored(STORAGE_KEYS.PRODUCTS, updated);
-  return { success: true, message: `Successfully restocked ${quantity} units`, data: { id, quantity } };
+  return saveFailed(res);
 }
 
 export interface ReviewImage {
@@ -3050,26 +2841,36 @@ export async function createAdminReview(payload: Partial<AdminReview>) {
       body: JSON.stringify(payload)
     });
   }
-  const reviewResult = res?.data || (payload as AdminReview);
-  if (typeof window !== "undefined" && reviewResult) {
-    try {
-      const stored = localStorage.getItem("janani_admin_reviews");
-      const list = stored ? JSON.parse(stored) : [];
-      const updated = [reviewResult, ...list.filter((r: any) => r.id !== reviewResult.id)];
-      localStorage.setItem("janani_admin_reviews", JSON.stringify(updated));
-    } catch (e) { }
-  }
-  return res || { success: true, message: "Review created in database", data: payload as AdminReview };
+  if (!res?.success) return saveFailed(res);
+  return res;
+}
+
+/** Placeholder reviews that were seeded with invented names in early builds (never shown). */
+const SEEDED_PLACEHOLDER_REVIEW_IDS = new Set(["REV-101", "REV-102", "REV-103", "REV-104", "REV-105", "REV-106", "REV-107"]);
+
+function onlyGenuineApproved(list: any[]): AdminReview[] {
+  return list.filter((r: any) => r && !SEEDED_PLACEHOLDER_REVIEW_IDS.has(String(r.id)) && String(r.status || "").toLowerCase() === "approved");
 }
 
 export async function getStorefrontReviews(): Promise<AdminReview[]> {
+  // The server only returns approved (moderated) reviews to the storefront.
+  try {
+    const res = await fetch("/api.php?action=reviews&status=Approved");
+    const data = await res.json().catch(() => null);
+    const list = Array.isArray(data?.data) ? data.data : Array.isArray(data?.reviews) ? data.reviews : null;
+    if (data?.success && list) {
+      const approved = onlyGenuineApproved(list);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("janani_admin_reviews", JSON.stringify(approved));
+      }
+      return approved;
+    }
+  } catch (e) { }
+
   try {
     const adminRes = await getAdminReviews({ status: "Approved" });
     if (adminRes?.data && Array.isArray(adminRes.data) && adminRes.data.length > 0) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("janani_admin_reviews", JSON.stringify(adminRes.data));
-      }
-      return adminRes.data;
+      return onlyGenuineApproved(adminRes.data);
     }
   } catch (e) { }
 
@@ -3088,7 +2889,7 @@ export async function getStorefrontReviews(): Promise<AdminReview[]> {
       const stored = localStorage.getItem("janani_admin_reviews");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return onlyGenuineApproved(parsed);
       }
     } catch (e) { }
   }
@@ -3474,24 +3275,6 @@ export async function createAdminCategory(payload: any) {
     return { success: true, message: res.message || "Category created successfully in database", data: cat };
   }
 
-  // 3. Fallback only if server completely unreachable (offline)
-  try {
-    const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
-    const newCat = {
-      ...reqBody,
-      level: payload.level || "root",
-      productsCount: 0,
-      createdAt: new Date().toISOString().split("T")[0]
-    };
-    const updated = [newCat, ...stored.filter((c: any) => c.id !== newCat.id && c.slug !== newCat.slug)];
-    setStored(STORAGE_KEYS.CATEGORIES, updated);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
-      window.dispatchEvent(new CustomEvent("janani-products-updated"));
-    }
-    return { success: true, message: "Category created (saved locally)", data: normalizeAdminCategory(newCat) };
-  } catch { }
-
   const errorMsg = res?.message || res?.error || "Could not create category in database";
   return { success: false, message: errorMsg, error: errorMsg };
 }
@@ -3565,47 +3348,7 @@ export async function updateAdminCategory(id: string, payload: any) {
       error: errorMsg
     };
   }
-
-  const updatedRaw = res?.data || res?.category || { ...reqBody, id };
-  const updatedItem = normalizeAdminCategory(updatedRaw);
-
-  // Always sync to localStorage across all category keys so the client state, admin, and storefront immediately reflect it
-  if (typeof window !== "undefined") {
-    try {
-      const stored = getStored<any[]>(STORAGE_KEYS.CATEGORIES, []);
-      const idx = stored.findIndex((c) => c.id === id || c.slug === id || (payload.slug && c.slug === payload.slug));
-      if (idx !== -1) {
-        stored[idx] = { ...stored[idx], ...updatedItem };
-      } else {
-        stored.push(updatedItem);
-      }
-      setStored(STORAGE_KEYS.CATEGORIES, stored);
-
-      for (const k of ["janani_admin_categories", "janani_admin_categories_v3"]) {
-        const raw = localStorage.getItem(k);
-        let list = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(list)) list = [];
-        const lIdx = list.findIndex((c: any) => c.id === id || c.slug === id || (payload.slug && c.slug === payload.slug));
-        if (lIdx !== -1) {
-          list[lIdx] = { ...list[lIdx], ...updatedItem };
-        } else {
-          list.push(updatedItem);
-        }
-        localStorage.setItem(k, JSON.stringify(list));
-      }
-
-      window.dispatchEvent(new CustomEvent("janani-categories-updated"));
-      window.dispatchEvent(new CustomEvent("janani-products-updated"));
-    } catch (e) {
-      console.warn("Category localStorage update error:", e);
-    }
-  }
-
-  return {
-    success: true,
-    message: res?.message || "Category updated successfully",
-    data: updatedItem
-  };
+  return saveFailed(res);
 }
 
 export async function toggleAdminCategory(id: string, field: "active" | "featured" | "trending") {
@@ -4337,48 +4080,7 @@ export async function processPaymentRefund(payload: {
     });
   }
   if (res?.success) return res;
-
-  const rawStored: any = getStored<any>(STORAGE_KEYS.PAYMENTS, DEFAULT_PAYMENTS);
-  const storedList: PaymentTransaction[] = Array.isArray(rawStored)
-    ? rawStored
-    : Array.isArray(rawStored?.transactions)
-      ? rawStored.transactions
-      : [];
-  let updatedTx: any = null;
-  const updated = storedList.map((t) => {
-    if (t.id === payload.transactionId) {
-      updatedTx = {
-        ...t,
-        status: payload.refundType === "full" ? "Refunded" : "Partially Refunded",
-        refundedAmount: (t.refundedAmount || 0) + payload.amount
-      };
-      return updatedTx;
-    }
-    return t;
-  });
-  setStored(STORAGE_KEYS.PAYMENTS, updated);
-
-  const refundRecord: PaymentRefundRecord = {
-    id: `REF-${Date.now()}`,
-    transactionId: payload.transactionId,
-    orderId: payload.orderId || updatedTx?.orderId || "JAP-ORD",
-    customerName: updatedTx?.customer?.name || "Customer",
-    customerEmail: updatedTx?.customer?.email || "patron@jananiagro.com",
-    refundType: payload.refundType,
-    amount: payload.amount,
-    totalOrderAmount: updatedTx?.grossAmount || payload.amount,
-    destination: payload.destination === "wallet" ? "Customer Store Wallet" : "Original Payment Method (Gateway)",
-    reason: payload.reason,
-    status: "Processed Instantly",
-    gatewayRefundId: `rfnd_${Math.random().toString(36).substring(2, 10)}`,
-    processedAt: new Date().toISOString()
-  };
-
-  return {
-    success: true,
-    message: `Refund of ₹${payload.amount} processed successfully`,
-    data: { transaction: updatedTx, refund: refundRecord }
-  };
+  return saveFailed(res);
 }
 
 export async function getGatewayConfig() {
@@ -4755,34 +4457,7 @@ export async function createAdminCoupon(payload: Partial<AdminCoupon>) {
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<AdminCoupon[]>(STORAGE_KEYS.COUPONS, DEFAULT_COUPONS);
-  const newCoupon: AdminCoupon = {
-    id: `coup-${Date.now()}`,
-    code: (payload.code || "OFFER").toUpperCase().trim(),
-    title: payload.title || "Special Offer",
-    description: payload.description || "",
-    type: payload.type || "percentage",
-    discount: payload.discount || 10,
-    minCart: payload.minCart || 499,
-    maxDiscount: payload.maxDiscount || 250,
-    startDate: payload.startDate || (new Date().toISOString().split("T")[0] ?? ""),
-    expiryDate: payload.expiryDate || "2026-12-31",
-    uses: 0,
-    maxUses: payload.maxUses || 500,
-    perUserLimit: payload.perUserLimit || 1,
-    isFirstOrderOnly: payload.isFirstOrderOnly || false,
-    isFreeShipping: payload.isFreeShipping || false,
-    categorySpecific: payload.categorySpecific || [],
-    productSpecific: payload.productSpecific || [],
-    userSpecificTier: payload.userSpecificTier || "All",
-    userSpecificEmails: payload.userSpecificEmails || [],
-    active: payload.active ?? true,
-    createdAt: new Date().toISOString()
-  };
-
-  setStored(STORAGE_KEYS.COUPONS, [newCoupon, ...stored]);
-  return { success: true, message: "Promo coupon created successfully", data: newCoupon };
+  return saveFailed(res);
 }
 
 export async function updateAdminCoupon(id: string, payload: Partial<AdminCoupon>) {
@@ -4797,11 +4472,7 @@ export async function updateAdminCoupon(id: string, payload: Partial<AdminCoupon
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<AdminCoupon[]>(STORAGE_KEYS.COUPONS, DEFAULT_COUPONS);
-  const updated = stored.map((c) => (c.id === id ? { ...c, ...payload } : c));
-  setStored(STORAGE_KEYS.COUPONS, updated);
-  return { success: true, message: "Coupon updated successfully", data: { id, ...payload } as AdminCoupon };
+  return saveFailed(res);
 }
 
 export async function toggleAdminCoupon(id: string) {
@@ -4814,18 +4485,7 @@ export async function toggleAdminCoupon(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<AdminCoupon[]>(STORAGE_KEYS.COUPONS, DEFAULT_COUPONS);
-  let updatedCoupon: any = null;
-  const updated = stored.map((c) => {
-    if (c.id === id) {
-      updatedCoupon = { ...c, active: !c.active };
-      return updatedCoupon;
-    }
-    return c;
-  });
-  setStored(STORAGE_KEYS.COUPONS, updated);
-  return { success: true, message: "Toggled coupon status", data: updatedCoupon };
+  return saveFailed(res);
 }
 
 export async function deleteAdminCoupon(id: string) {
@@ -4838,11 +4498,7 @@ export async function deleteAdminCoupon(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<AdminCoupon[]>(STORAGE_KEYS.COUPONS, DEFAULT_COUPONS);
-  const filtered = stored.filter((c) => c.id !== id);
-  setStored(STORAGE_KEYS.COUPONS, filtered);
-  return { success: true, message: "Coupon deleted successfully" };
+  return saveFailed(res);
 }
 
 export async function generateBulkCoupons(payload: BulkCouponPayload) {
@@ -4857,38 +4513,7 @@ export async function generateBulkCoupons(payload: BulkCouponPayload) {
     });
   }
   if (res?.success) return res;
-
-  const stored = getStored<AdminCoupon[]>(STORAGE_KEYS.COUPONS, DEFAULT_COUPONS);
-  const generated: AdminCoupon[] = [];
-  for (let i = 0; i < payload.count; i++) {
-    const code = `${payload.prefix}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    generated.push({
-      id: `coup-bulk-${Date.now()}-${i}`,
-      code,
-      title: `${payload.prefix} Promo`,
-      description: `Bulk campaign discount code ${code}`,
-      type: payload.type,
-      discount: payload.discount,
-      minCart: payload.minCart,
-      maxDiscount: payload.maxDiscount,
-      startDate: new Date().toISOString().split("T")[0] ?? "",
-      expiryDate: payload.expiryDate,
-      uses: 0,
-      maxUses: payload.maxUsesPerCoupon,
-      perUserLimit: 1,
-      isFirstOrderOnly: payload.isFirstOrderOnly,
-      isFreeShipping: payload.type === "free_shipping",
-      categorySpecific: [],
-      productSpecific: [],
-      userSpecificTier: payload.userSpecificTier,
-      userSpecificEmails: [],
-      active: true,
-      createdAt: new Date().toISOString()
-    });
-  }
-
-  setStored(STORAGE_KEYS.COUPONS, [...generated, ...stored]);
-  return { success: true, message: `Generated ${payload.count} bulk coupons`, count: payload.count, data: generated };
+  return saveFailed(res);
 }
 
 export async function getCouponUsageHistory(params?: { couponCode?: string | undefined; search?: string | undefined }) {
@@ -5332,11 +4957,7 @@ export async function updateHomepageLayout(sections: CmsSection[]) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  currentCms.sections = sections;
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Homepage section order saved in database", data: sections };
+  return saveFailed(res);
 }
 
 export async function getHeroBanners() {
@@ -5383,6 +5004,8 @@ export async function createHeroBanner(bannerData: Partial<HeroBanner>) {
       body: JSON.stringify(bannerData)
     });
   }
+  if (!res?.success) return saveFailed(res);
+
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   let newBanner: HeroBanner;
@@ -5430,6 +5053,8 @@ export async function updateHeroBanner(id: string, bannerData: Partial<HeroBanne
       body: JSON.stringify(bannerData)
     });
   }
+  if (!res?.success) return saveFailed(res);
+
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   let updatedBanner: HeroBanner;
@@ -5468,6 +5093,8 @@ export async function toggleHeroBanner(id: string) {
       method: "PATCH"
     });
   }
+  if (!res?.success) return saveFailed(res);
+
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   let updatedBanner: any = null;
@@ -5496,6 +5123,8 @@ export async function deleteHeroBanner(id: string) {
       method: "DELETE"
     });
   }
+  if (!res?.success) return saveFailed(res);
+
 
   const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
   currentCms.heroBanners = (currentCms.heroBanners || []).filter((b) => b.id !== id);
@@ -5531,18 +5160,7 @@ export async function createOfferBanner(offerData: Partial<OfferBanner>) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  const newBanner: OfferBanner = {
-    id: `offer-${Date.now()}`,
-    type: offerData.type || "promo_strip",
-    headline: offerData.headline || "Special Harvest Promo",
-    active: offerData.active ?? true,
-    ...offerData
-  };
-  currentCms.offerBanners = [...(currentCms.offerBanners || []), newBanner];
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Offer banner created in database", data: newBanner };
+  return saveFailed(res);
 }
 
 export async function updateOfferBanner(id: string, offerData: Partial<OfferBanner>) {
@@ -5557,18 +5175,7 @@ export async function updateOfferBanner(id: string, offerData: Partial<OfferBann
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  let updatedBanner: any = null;
-  currentCms.offerBanners = (currentCms.offerBanners || []).map((b) => {
-    if (b.id === id) {
-      updatedBanner = { ...b, ...offerData };
-      return updatedBanner;
-    }
-    return b;
-  });
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Offer banner updated in database", data: updatedBanner };
+  return saveFailed(res);
 }
 
 export async function toggleOfferBanner(id: string) {
@@ -5581,18 +5188,7 @@ export async function toggleOfferBanner(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  let updatedBanner: any = null;
-  currentCms.offerBanners = (currentCms.offerBanners || []).map((b) => {
-    if (b.id === id) {
-      updatedBanner = { ...b, active: !b.active };
-      return updatedBanner;
-    }
-    return b;
-  });
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Offer banner toggled in database", data: updatedBanner };
+  return saveFailed(res);
 }
 
 export async function deleteOfferBanner(id: string) {
@@ -5605,11 +5201,7 @@ export async function deleteOfferBanner(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  currentCms.offerBanners = (currentCms.offerBanners || []).filter((b) => b.id !== id);
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Offer banner deleted from database" };
+  return saveFailed(res);
 }
 
 export async function getCategoryBanners() {
@@ -5635,19 +5227,7 @@ export async function createCategoryBanner(catData: Partial<CategoryBanner>) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  const newBanner: CategoryBanner = {
-    id: `catban-${Date.now()}`,
-    categorySlug: catData.categorySlug || "bio-fertilizers",
-    title: catData.title || "Bio-Fertilizers & Crop Formulations",
-    desktopImageUrl: catData.desktopImageUrl || "/images/categories/bio-fertilizers.webp",
-    active: catData.active ?? true,
-    ...catData
-  };
-  currentCms.categoryBanners = [...(currentCms.categoryBanners || []), newBanner];
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Category banner created in database", data: newBanner };
+  return saveFailed(res);
 }
 
 export async function updateCategoryBanner(id: string, catData: Partial<CategoryBanner>) {
@@ -5662,18 +5242,7 @@ export async function updateCategoryBanner(id: string, catData: Partial<Category
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  let updatedBanner: any = null;
-  currentCms.categoryBanners = (currentCms.categoryBanners || []).map((b) => {
-    if (b.id === id) {
-      updatedBanner = { ...b, ...catData };
-      return updatedBanner;
-    }
-    return b;
-  });
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Category banner updated in database", data: updatedBanner };
+  return saveFailed(res);
 }
 
 export async function toggleCategoryBanner(id: string) {
@@ -5686,18 +5255,7 @@ export async function toggleCategoryBanner(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  let updatedBanner: any = null;
-  currentCms.categoryBanners = (currentCms.categoryBanners || []).map((b) => {
-    if (b.id === id) {
-      updatedBanner = { ...b, active: !b.active };
-      return updatedBanner;
-    }
-    return b;
-  });
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Category banner toggled in database", data: updatedBanner };
+  return saveFailed(res);
 }
 
 export async function deleteCategoryBanner(id: string) {
@@ -5710,11 +5268,7 @@ export async function deleteCategoryBanner(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  currentCms.categoryBanners = (currentCms.categoryBanners || []).filter((b) => b.id !== id);
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Category banner deleted from database" };
+  return saveFailed(res);
 }
 
 export async function getFlashSaleBanners() {
@@ -5740,21 +5294,7 @@ export async function createFlashSaleBanner(fsData: Partial<FlashSaleBanner>) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  const newBanner: FlashSaleBanner = {
-    id: `flash-${Date.now()}`,
-    title: fsData.title || "Limited Flash Sale",
-    endsAt: fsData.endsAt || "2026-09-30T23:59:59Z",
-    discountPercentage: fsData.discountPercentage || 20,
-    targetProductSlug: fsData.targetProductSlug || "harit-bio-fungicide-1l",
-    bannerImageUrl: fsData.bannerImageUrl || "/images/banners/flash-sale-agro.webp",
-    active: fsData.active ?? true,
-    ...fsData
-  };
-  currentCms.flashSaleBanners = [...(currentCms.flashSaleBanners || []), newBanner];
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Flash sale banner created in database", data: newBanner };
+  return saveFailed(res);
 }
 
 export async function updateFlashSaleBanner(id: string, fsData: Partial<FlashSaleBanner>) {
@@ -5769,18 +5309,7 @@ export async function updateFlashSaleBanner(id: string, fsData: Partial<FlashSal
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  let updatedBanner: any = null;
-  currentCms.flashSaleBanners = (currentCms.flashSaleBanners || []).map((b) => {
-    if (b.id === id) {
-      updatedBanner = { ...b, ...fsData };
-      return updatedBanner;
-    }
-    return b;
-  });
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Flash sale banner updated in database", data: updatedBanner };
+  return saveFailed(res);
 }
 
 export async function toggleFlashSaleBanner(id: string) {
@@ -5793,18 +5322,7 @@ export async function toggleFlashSaleBanner(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  let updatedBanner: any = null;
-  currentCms.flashSaleBanners = (currentCms.flashSaleBanners || []).map((b) => {
-    if (b.id === id) {
-      updatedBanner = { ...b, active: !b.active };
-      return updatedBanner;
-    }
-    return b;
-  });
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Flash sale banner toggled in database", data: updatedBanner };
+  return saveFailed(res);
 }
 
 export async function deleteFlashSaleBanner(id: string) {
@@ -5817,11 +5335,7 @@ export async function deleteFlashSaleBanner(id: string) {
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  currentCms.flashSaleBanners = (currentCms.flashSaleBanners || []).filter((b) => b.id !== id);
-  setStored(STORAGE_KEYS.CMS, currentCms);
-  return { success: true, message: "Flash sale banner deleted from database" };
+  return saveFailed(res);
 }
 
 export async function getCuratedSections() {
@@ -5863,16 +5377,7 @@ export async function updateCuratedSection(sectionKey: string, config: Partial<C
     });
   }
   if (res?.success) return res;
-
-  const currentCms = getStored<HomepageCmsData>(STORAGE_KEYS.CMS, DEFAULT_CMS);
-  if ((currentCms.curatedProductSections as any)[sectionKey]) {
-    (currentCms.curatedProductSections as any)[sectionKey] = {
-      ...(currentCms.curatedProductSections as any)[sectionKey],
-      ...config
-    };
-    setStored(STORAGE_KEYS.CMS, currentCms);
-  }
-  return { success: true, message: `Curated section ${sectionKey} updated in database`, data: (currentCms.curatedProductSections as any)[sectionKey] };
+  return saveFailed(res);
 }
 
 // ----------------------------------------------------
@@ -6847,11 +6352,7 @@ export async function updateStoreSettings(payload: Partial<StoreSettings>) {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.store = { ...current.store, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "Store profile updated successfully", data: current.store };
+  return saveFailed(res);
 }
 
 export async function updateBrandingSettings(payload: Partial<BrandingSettings>) {
@@ -6880,11 +6381,7 @@ export async function updateBrandingSettings(payload: Partial<BrandingSettings>)
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.branding = { ...current.branding, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "Branding updated successfully", data: current.branding };
+  return saveFailed(res);
 }
 
 export async function updateSeoSettings(payload: Partial<SeoSettings>) {
@@ -6913,11 +6410,7 @@ export async function updateSeoSettings(payload: Partial<SeoSettings>) {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.seo = { ...current.seo, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "SEO configuration updated", data: current.seo };
+  return saveFailed(res);
 }
 
 export async function updatePaymentSettings(payload: Partial<PaymentGatewaysSettings>) {
@@ -6946,11 +6439,7 @@ export async function updatePaymentSettings(payload: Partial<PaymentGatewaysSett
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.paymentGateways = { ...current.paymentGateways, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "Payment settings saved", data: current.paymentGateways };
+  return saveFailed(res);
 }
 
 export async function updateShippingSettings(payload: Partial<ShiprocketSettings>) {
@@ -6979,11 +6468,7 @@ export async function updateShippingSettings(payload: Partial<ShiprocketSettings
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.shiprocket = { ...current.shiprocket, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "Shipping settings updated", data: current.shiprocket };
+  return saveFailed(res);
 }
 
 export async function updateGstSettings(payload: Partial<GstSettings>) {
@@ -7012,11 +6497,7 @@ export async function updateGstSettings(payload: Partial<GstSettings>) {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.gst = { ...current.gst, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "GST & Invoicing settings updated", data: current.gst };
+  return saveFailed(res);
 }
 
 export async function updateDeliveryFeeSettings(payload: Partial<DeliveryChargesSettings>) {
@@ -7045,11 +6526,7 @@ export async function updateDeliveryFeeSettings(payload: Partial<DeliveryCharges
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.deliveryCharges = { ...current.deliveryCharges, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "Delivery fee settings updated", data: current.deliveryCharges };
+  return saveFailed(res);
 }
 
 export async function updateReferralRulesSettings(payload: Partial<ReferralRulesSettings>) {
@@ -7078,11 +6555,7 @@ export async function updateReferralRulesSettings(payload: Partial<ReferralRules
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.referralRules = { ...current.referralRules, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "Referral rules updated", data: current.referralRules };
+  return saveFailed(res);
 }
 
 export async function updateCouponRulesSettings(payload: Partial<CouponRulesSettings>) {
@@ -7111,11 +6584,7 @@ export async function updateCouponRulesSettings(payload: Partial<CouponRulesSett
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.couponRules = { ...current.couponRules, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "Coupon policies updated", data: current.couponRules };
+  return saveFailed(res);
 }
 
 export async function updateSmtpSettings(payload: Partial<SmtpSettings>) {
@@ -7144,11 +6613,7 @@ export async function updateSmtpSettings(payload: Partial<SmtpSettings>) {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.smtp = { ...current.smtp, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "SMTP configuration updated", data: current.smtp };
+  return saveFailed(res);
 }
 
 export async function testSmtpConnection(recipientEmail: string) {
@@ -7157,12 +6622,7 @@ export async function testSmtpConnection(recipientEmail: string) {
     body: JSON.stringify({ recipientEmail })
   });
   if (res?.success) return res;
-
-  return {
-    success: true,
-    message: `Test email sent successfully to ${recipientEmail}`,
-    diagnostic: { status: "Connected", latency: "142ms", host: "smtp.gmail.com", port: 465 }
-  };
+  return saveFailed(res);
 }
 
 export async function updateSmsSettings(payload: Partial<SmsSettings>) {
@@ -7191,11 +6651,7 @@ export async function updateSmsSettings(payload: Partial<SmsSettings>) {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.sms = { ...current.sms, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "SMS gateway settings saved", data: current.sms };
+  return saveFailed(res);
 }
 
 export async function testSmsConnection(recipientPhone: string) {
@@ -7204,12 +6660,7 @@ export async function testSmsConnection(recipientPhone: string) {
     body: JSON.stringify({ recipientPhone })
   });
   if (res?.success) return res;
-
-  return {
-    success: true,
-    message: `Test SMS sent to ${recipientPhone}`,
-    diagnostic: { status: "Delivered", provider: "Fast2SMS DLT", dltEntityId: "17011598273645" }
-  };
+  return saveFailed(res);
 }
 
 // Roles & Permissions API
@@ -7261,21 +6712,7 @@ export async function createAdminRole(payload: Partial<AdminRole>) {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const stored = getStored<AdminRole[]>(STORAGE_KEYS.ROLES, DEFAULT_ROLES);
-  const newRole: AdminRole = {
-    id: `role-${Date.now()}`,
-    name: payload.name || "Custom Role",
-    slug: (payload.name || "custom").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    description: payload.description || "Custom access role",
-    isSystem: false,
-    color: payload.color || "#16a34a",
-    staffCount: 0,
-    permissions: payload.permissions || ["orders.view", "products.view"],
-    createdAt: new Date().toISOString()
-  };
-  setStored(STORAGE_KEYS.ROLES, [...stored, newRole]);
-  return { success: true, message: "Role created successfully", role: newRole };
+  return saveFailed(res);
 }
 
 export async function updateAdminRole(id: string, payload: Partial<AdminRole>) {
@@ -7304,11 +6741,7 @@ export async function updateAdminRole(id: string, payload: Partial<AdminRole>) {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const stored = getStored<AdminRole[]>(STORAGE_KEYS.ROLES, DEFAULT_ROLES);
-  const updated = stored.map((r) => (r.id === id ? { ...r, ...payload } : r));
-  setStored(STORAGE_KEYS.ROLES, updated);
-  return { success: true, message: "Role updated successfully", role: { id, ...payload } as AdminRole };
+  return saveFailed(res);
 }
 
 export async function deleteAdminRole(id: string) {
@@ -7334,11 +6767,7 @@ export async function deleteAdminRole(id: string) {
     method: "DELETE"
   });
   if (res?.success) return res;
-
-  const stored = getStored<AdminRole[]>(STORAGE_KEYS.ROLES, DEFAULT_ROLES);
-  const filtered = stored.filter((r) => r.id !== id);
-  setStored(STORAGE_KEYS.ROLES, filtered);
-  return { success: true, message: "Role deleted successfully" };
+  return saveFailed(res);
 }
 
 // Admin Staff Management API
@@ -7391,27 +6820,7 @@ export async function createAdminStaff(payload: Partial<AdminStaffUser>) {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const stored = getStored<AdminStaffUser[]>(STORAGE_KEYS.STAFF, DEFAULT_STAFF);
-  const newStaff: AdminStaffUser = {
-    id: `staff-${Date.now()}`,
-    name: payload.name || "New Staff Member",
-    email: payload.email || "staff@jananiagro.com",
-    phone: payload.phone || "+91 98480 00000",
-    roleId: payload.roleId || "role-ops",
-    roleName: payload.roleName || "Operations Manager",
-    department: payload.department || "Operations",
-    avatar: payload.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
-    status: "Active",
-    twoFactorEnabled: false,
-    lastLogin: "Never",
-    lastLoginIp: "127.0.0.1",
-    lastLoginLocation: "Rajkot, India",
-    assignedWarehouses: payload.assignedWarehouses || ["Lodhika Central Facility"],
-    createdAt: new Date().toISOString()
-  };
-  setStored(STORAGE_KEYS.STAFF, [...stored, newStaff]);
-  return { success: true, message: "Staff member added successfully", staff: newStaff };
+  return saveFailed(res);
 }
 
 export async function updateAdminStaff(id: string, payload: Partial<AdminStaffUser>) {
@@ -7440,11 +6849,7 @@ export async function updateAdminStaff(id: string, payload: Partial<AdminStaffUs
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const stored = getStored<AdminStaffUser[]>(STORAGE_KEYS.STAFF, DEFAULT_STAFF);
-  const updated = stored.map((s) => (s.id === id ? { ...s, ...payload } : s));
-  setStored(STORAGE_KEYS.STAFF, updated);
-  return { success: true, message: "Staff details updated", staff: { id, ...payload } as AdminStaffUser };
+  return saveFailed(res);
 }
 
 export async function toggleAdminStaffStatus(id: string) {
@@ -7471,18 +6876,7 @@ export async function toggleAdminStaffStatus(id: string) {
     method: "PATCH"
   });
   if (res?.success) return res;
-
-  const stored = getStored<AdminStaffUser[]>(STORAGE_KEYS.STAFF, DEFAULT_STAFF);
-  let updatedStaff: any = null;
-  const updated = stored.map((s) => {
-    if (s.id === id) {
-      updatedStaff = { ...s, status: s.status === "Active" ? "Suspended" : "Active" };
-      return updatedStaff;
-    }
-    return s;
-  });
-  setStored(STORAGE_KEYS.STAFF, updated);
-  return { success: true, message: "Staff status toggled", staff: updatedStaff };
+  return saveFailed(res);
 }
 
 export async function deleteAdminStaff(id: string) {
@@ -7508,11 +6902,7 @@ export async function deleteAdminStaff(id: string) {
     method: "DELETE"
   });
   if (res?.success) return res;
-
-  const stored = getStored<AdminStaffUser[]>(STORAGE_KEYS.STAFF, DEFAULT_STAFF);
-  const filtered = stored.filter((s) => s.id !== id);
-  setStored(STORAGE_KEYS.STAFF, filtered);
-  return { success: true, message: "Staff member removed" };
+  return saveFailed(res);
 }
 
 // Activity Audit Logs API
@@ -7596,9 +6986,7 @@ export async function clearActivityLogs() {
     method: "POST"
   });
   if (res?.success) return res;
-
-  setStored(STORAGE_KEYS.AUDIT_LOGS, []);
-  return { success: true, message: "Activity audit logs cleared" };
+  return saveFailed(res);
 }
 
 // Login History API
@@ -7656,8 +7044,7 @@ export async function terminateLoginSession(id: string) {
     method: "POST"
   });
   if (res?.success) return res;
-
-  return { success: true, message: `Session ${id} terminated` };
+  return saveFailed(res);
 }
 
 // Security Policies API
@@ -7687,11 +7074,7 @@ export async function updateSecuritySettings(payload: Partial<SecuritySettings>)
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  const current = getStored<AdminSettingsData>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-  current.security = { ...current.security, ...payload };
-  setStored(STORAGE_KEYS.SETTINGS, current);
-  return { success: true, message: "Security policies saved", data: current.security };
+  return saveFailed(res);
 }
 
 // Backups API
@@ -7767,24 +7150,7 @@ export async function createSystemBackup(type?: string, notes?: string) {
     body: JSON.stringify({ type: type || "Manual Full Snapshot", notes: notes || "" })
   });
   if (res?.success) return res;
-
-  const stored = getStored<SystemBackup[]>(STORAGE_KEYS.BACKUPS, DEFAULT_BACKUPS);
-  const newBackup: SystemBackup = {
-    id: `bak-${Date.now()}`,
-    filename: `janani_backup_${new Date().toISOString().split("T")[0]}_manual.sql.gz`,
-    type: type || "Manual Full Snapshot",
-    scope: "Complete Database, Products & Orders",
-    size: "48.2 MB",
-    recordCount: 2450,
-    status: "Completed",
-    createdDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-    createdBy: "Rajesh Varma (Admin)",
-    checksum: "sha256:e9b41a78e..." + Math.random().toString(36).substring(2, 6),
-    downloadUrl: "#",
-    notes: notes || "Manual on-demand snapshot"
-  };
-  setStored(STORAGE_KEYS.BACKUPS, [newBackup, ...stored]);
-  return { success: true, message: "System snapshot generated successfully", backup: newBackup };
+  return saveFailed(res);
 }
 
 export async function restoreSystemBackup(id: string) {
@@ -7810,8 +7176,7 @@ export async function restoreSystemBackup(id: string) {
     body: JSON.stringify({ id })
   });
   if (res?.success) return res;
-
-  return { success: true, message: `System restored to backup ${id}` };
+  return saveFailed(res);
 }
 
 export function getBackupDownloadUrl(id: string) {
@@ -7921,13 +7286,7 @@ export async function updateAdminInquiryStatus(
   } catch (e) {
     console.warn("Failed to update inquiry via /api.php:", e);
   }
-
-  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
-  const updated = stored.map((inq) =>
-    String(inq.id) === String(id) ? { ...inq, status, internalNotes: internalNotes ?? inq.internalNotes } : inq
-  );
-  setStored(STORAGE_KEYS.INQUIRIES, updated);
-  return { success: true, message: "Inquiry status updated successfully" };
+  return saveFailed();
 }
 
 export async function deleteAdminInquiry(id: string | number): Promise<{ success: boolean; message: string }> {
@@ -7948,11 +7307,7 @@ export async function deleteAdminInquiry(id: string | number): Promise<{ success
   } catch (e) {
     console.warn("Failed to delete inquiry via /api.php:", e);
   }
-
-  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
-  const filtered = stored.filter((inq) => String(inq.id) !== String(id));
-  setStored(STORAGE_KEYS.INQUIRIES, filtered);
-  return { success: true, message: "Inquiry deleted successfully" };
+  return saveFailed();
 }
 
 export async function createAdminInquiry(payload: Partial<AdminInquiry>): Promise<{ success: boolean; message: string; inquiry?: AdminInquiry }> {
@@ -7987,26 +7342,7 @@ export async function createAdminInquiry(payload: Partial<AdminInquiry>): Promis
       }
     }
   } catch (e) { }
-
-  const newInq: AdminInquiry = {
-    id: `INQ-${Date.now()}`,
-    name: payload.name || "New Inquirer",
-    businessName: payload.businessName || payload.business_name || "",
-    business_name: payload.business_name || payload.businessName || "",
-    service: payload.service || payload.subject || "General Inquiry",
-    subject: payload.subject || payload.service || "General Inquiry",
-    email: payload.email || "",
-    phone: payload.phone || "",
-    quantity: payload.quantity || "",
-    message: payload.message || "",
-    status: (payload.status || "New") as any,
-    createdAt: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    priority: payload.priority || "Medium"
-  };
-  const stored = getStored<AdminInquiry[]>(STORAGE_KEYS.INQUIRIES, []);
-  setStored(STORAGE_KEYS.INQUIRIES, [newInq, ...stored]);
-  return { success: true, message: "Inquiry saved successfully", inquiry: newInq };
+  return saveFailed();
 }
 
 // ==========================================
@@ -8071,71 +7407,62 @@ export interface OtpSendResponse {
   demoOtpCode?: string;
   otp?: string;
   emailSent?: boolean | { success: boolean; method?: string; error?: string };
+  smsSent?: boolean;
+  deliveredTo?: string;
+  phoneAlreadyRegistered?: boolean;
+  emailAlreadyRegistered?: boolean;
+  rateLimited?: boolean;
   resendCooldownSeconds?: number;
+}
+
+/**
+ * POSTs to an api.php auth endpoint and returns the server's JSON answer as-is.
+ * There is no client-side fallback that could "succeed" on its own: if the server can't be reached,
+ * the caller gets { success: false }. (Local development may use the Node API instead.)
+ */
+async function postAuth<T>(action: string, payload: unknown, nodePath?: string): Promise<T> {
+  try {
+    const res = await fetch(`/api.php?action=${action}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload ?? {}),
+    });
+    const text = await res.text();
+    try {
+      const data = JSON.parse(text);
+      if (data && typeof data === "object") return data as T;
+    } catch {
+      /* not JSON (e.g. Vite dev server) */
+    }
+  } catch {
+    /* network error */
+  }
+  if (IS_LOCAL_DEV && nodePath) {
+    const res = await fetchJson<T>(nodePath, { method: "POST", body: JSON.stringify(payload ?? {}) });
+    if (res) return res;
+  }
+  return serverUnavailable<T>();
 }
 
 export async function checkCustomerExists(emailOrPhone: string): Promise<{ exists: boolean; isAdmin?: boolean; matchedBy?: string; user?: Partial<AuthUser> | null }> {
   const cleanTarget = (emailOrPhone || "").trim();
   if (!cleanTarget) return { exists: false };
-
   const isEmail = cleanTarget.includes("@");
-  const targetParam = isEmail ? cleanTarget.toLowerCase() : cleanTarget;
-  const phoneParam = !isEmail ? cleanTarget.replace(/\D/g, "") : "";
-
-  const isAdmin = targetParam.toLowerCase() === "jananibiosciences.r@gmail.com" || targetParam.includes("admin@jananiagro.com") || targetParam === "admin";
-  if (isAdmin) {
-    return { exists: true, isAdmin: true };
-  }
-
-  // 1. Check PHP API
+  const query = isEmail
+    ? `email=${encodeURIComponent(cleanTarget.toLowerCase())}`
+    : `phone=${encodeURIComponent(cleanTarget.replace(/\D/g, ""))}`;
   try {
-    const url = isEmail
-      ? `/api.php?action=check-user&email=${encodeURIComponent(targetParam)}`
-      : `/api.php?action=check-user&phone=${encodeURIComponent(phoneParam || targetParam)}`;
-    const phpRes = await fetch(url);
-    if (phpRes.ok) {
-      const data = await phpRes.json();
-      if (data && typeof data === "object" && typeof data.exists === "boolean") {
-        return data;
-      }
-    }
-  } catch (e) { }
-
-  // 2. Check Node API
-  try {
-    const nodeRes = await fetchJson<{ success: boolean; exists: boolean; isAdmin?: boolean; matchedBy?: string; user?: any }>(
-      `/auth/check-user?target=${encodeURIComponent(targetParam)}`
-    );
-    if (nodeRes && typeof nodeRes.exists === "boolean") {
-      return nodeRes;
-    }
-  } catch (e) { }
-
-  // 3. Local fallback check
-  if (typeof window !== "undefined") {
-    try {
-      const customers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
-      const isFoundInCustomers = customers.some(
-        (c) => (c.email && c.email.toLowerCase() === cleanTarget) || (c.phone && c.phone.replace(/\D/g, "") === cleanTarget.replace(/\D/g, ""))
-      );
-      if (isFoundInCustomers) return { exists: true };
-
-      const users = getStored<any[]>(STORAGE_KEYS.USERS, []);
-      const isFoundInUsers = users.some(
-        (u) => (u.email && u.email.toLowerCase() === cleanTarget) || (u.phone && u.phone.replace(/\D/g, "") === cleanTarget.replace(/\D/g, ""))
-      );
-      if (isFoundInUsers) return { exists: true };
-
-      const curUserStr = localStorage.getItem("janani_auth_user") || localStorage.getItem("janani_user");
-      if (curUserStr) {
-        const curUser = JSON.parse(curUserStr);
-        if (curUser && (curUser.email?.toLowerCase() === cleanTarget || curUser.phone?.replace(/\D/g, "") === cleanTarget.replace(/\D/g, ""))) {
-          return { exists: true, user: curUser };
-        }
-      }
-    } catch (e) { }
+    const res = await fetch(`/api.php?action=check-user&${query}`);
+    const data = await res.json();
+    if (data && typeof data.exists === "boolean") return data;
+  } catch {
+    /* fall through */
   }
-
+  if (IS_LOCAL_DEV) {
+    const nodeRes = await fetchJson<{ exists: boolean; matchedBy?: string }>(`/auth/check-user?target=${encodeURIComponent(cleanTarget)}`);
+    if (nodeRes && typeof nodeRes.exists === "boolean") return nodeRes;
+  }
+  // Unknown: let the server-side checks in send-otp / signup decide.
   return { exists: false };
 }
 
@@ -8240,339 +7567,31 @@ export function getAdminUser(): any | null {
 
 export async function loginWithEmail(payload: { email: string; password: string; rememberMe?: boolean }): Promise<AuthResponse> {
   const normalizedEmail = (payload.email || "").trim().toLowerCase();
-  const rawPassword = payload.password || "";
-
-  if (!normalizedEmail || !rawPassword) {
-    return {
-      success: false,
-      message: "Email address and password are required.",
-      token: "",
-      user: null as any
-    };
+  if (!normalizedEmail || !payload.password) {
+    return { success: false, message: "Email address and password are required.", token: "", user: null as any };
   }
-
-  // 1. Try Hostinger PHP API
-  try {
-    const phpRes = await fetch("/api.php?action=login-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: normalizedEmail, password: rawPassword, rememberMe: payload.rememberMe })
-    });
-    if (phpRes.ok) {
-      const text = await phpRes.text();
-      try {
-        const phpData = JSON.parse(text);
-        if (phpData && typeof phpData === "object") {
-          if (phpData.success) {
-            if (payload.purpose !== "signup" && phpData.user) {
-              persistAuthSession(phpData.user, phpData.token);
-            }
-            return phpData;
-          }
-          if (phpData.success === false) {
-            return phpData;
-          }
-        }
-      } catch (jsonErr) {
-        console.error("api.php login-email response was not JSON:", text);
-      }
-    }
-  } catch (e) {
-    console.warn("Failed to reach /api.php?action=login-email, trying Node API:", e);
+  const res = await postAuth<AuthResponse>(
+    "login-email",
+    { email: normalizedEmail, password: payload.password, rememberMe: payload.rememberMe },
+    "/auth/login-email"
+  );
+  if (res?.success && res.user) {
+    persistAuthSession(res.user, res.token);
   }
-
-  // 2. Try Node.js Express API
-  try {
-    const res = await fetchJson<AuthResponse>("/auth/login-email", {
-      method: "POST",
-      body: JSON.stringify({ email: normalizedEmail, password: rawPassword, rememberMe: payload.rememberMe })
-    });
-    if (res && typeof res === "object") {
-      if (res.success && res.user) {
-        persistAuthSession(res.user, res.token);
-        return res;
-      }
-      if (res.success === false) {
-        return res;
-      }
-    }
-  } catch (e) { }
-
-  // 3. Admin credentials check
-  const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail.includes("admin@jananiagro.com");
-  if (isAdmin) {
-    const validAdminPasswords = ["Jananiagro@123", "demo1234", "admin123", "Janani@Admin", "janani123", "Janani@2026"];
-    if (validAdminPasswords.includes(rawPassword)) {
-      const adminUser: AuthUser = {
-        id: "ADMIN-ROOT",
-        name: "Janani Admin (Root)",
-        email: "jananibiosciences.r@gmail.com",
-        phone: "+91 98480 22338",
-        role: "Super Admin",
-        walletBalance: 10000,
-        referralCode: "JANANIROOT",
-        isVerified: true,
-        tier: "Platinum Root Access"
-      };
-      const authData: AuthResponse = {
-        success: true,
-        message: "Welcome Super Admin! Signed in successfully.",
-        token: "jap_jwt_admin_" + Date.now(),
-        user: adminUser
-      };
-      persistAuthSession(adminUser, authData.token);
-      return authData;
-    } else {
-      return {
-        success: false,
-        message: "Incorrect password for Admin account. Please try again.",
-        token: "",
-        user: null as any
-      };
-    }
-  }
-
-  // 4. Verify against local storage user registration
-  const check = await checkCustomerExists(normalizedEmail);
-  if (!check.exists) {
-    return {
-      success: false,
-      notRegistered: true,
-      not_registered: true,
-      message: `No registered account found with ${normalizedEmail}. Please create an account first.`,
-      token: "",
-      user: null as any
-    };
-  }
-
-  const storedPass = (check.user as any)?.password || (check.user as any)?.passwordHash || (normalizedEmail === "kameswarip98@gmail.com" ? "Sravs@98" : "");
-  let isPasswordMatch = false;
-
-  if (!storedPass) {
-    return {
-      success: false,
-      hasNoPassword: true,
-      message: "No password has been set for this account. Please sign in with OTP or click 'Forgot Password' to set your password.",
-      token: "",
-      user: null as any
-    };
-  }
-
-  if (storedPass === rawPassword || storedPass.trim() === rawPassword.trim()) {
-    isPasswordMatch = true;
-  }
-
-  if (!isPasswordMatch) {
-    return {
-      success: false,
-      message: "Incorrect password. Please enter the correct password.",
-      token: "",
-      user: null as any
-    };
-  }
-
-  const user: AuthUser = {
-    id: check.user?.id || generateNextCustomerId(),
-    name: check.user?.name || (normalizedEmail.split("@")[0] ?? "User").replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-    email: normalizedEmail,
-    phone: check.user?.phone || "",
-    role: "Customer",
-    walletBalance: 0,
-    referralCode: "JANANI" + Math.floor(1000 + Math.random() * 9000),
-    isVerified: true,
-    tier: "Silver"
-  };
-  const authData: AuthResponse = {
-    success: true,
-    message: "Welcome back! Logged in successfully.",
-    token: "jap_jwt_" + Date.now(),
-    user
-  };
-  persistAuthSession(user, authData.token);
-  return authData;
+  return res;
 }
 
 export async function sendAuthOtp(payload: { phone?: string | undefined; email?: string | undefined; purpose?: string | undefined }): Promise<OtpSendResponse> {
-  const cleanEmail = (payload.email || "").trim().toLowerCase();
-  if (payload.purpose === "admin_login" && cleanEmail !== "jananibiosciences.r@gmail.com") {
-    return {
-      success: false,
-      message: "Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center."
-    };
-  }
-
-  // 1. Prioritize Hostinger PHP API (which dispatches via Gmail SMTP with app password to user & admin)
-  try {
-    const phpRes = await fetch("/api.php?action=send-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (phpRes.ok) {
-      const text = await phpRes.text();
-      try {
-        const phpData = JSON.parse(text);
-        if (phpData && typeof phpData === "object") {
-          // Pass through notRegistered or alreadyRegistered messages directly
-          if (phpData.notRegistered || phpData.not_registered || phpData.alreadyRegistered || phpData.already_registered || phpData.success === false) {
-            return phpData;
-          }
-          if (phpData.success) {
-            return phpData;
-          }
-        }
-      } catch (jsonErr) {
-        console.error("api.php response was not JSON:", text);
-      }
-    }
-  } catch (e) {
-    console.warn("Failed to reach /api.php?action=send-otp, trying Node API:", e);
-  }
-
-  // 2. Try Node.js Express API
-  try {
-    const res = await fetchJson<OtpSendResponse>("/auth/send-otp", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    if (res && typeof res === "object") {
-      if (res.notRegistered || (res as any).not_registered || res.alreadyRegistered || (res as any).already_registered || res.success === false) {
-        return res;
-      }
-      if (res.success) {
-        return res;
-      }
-    }
-  } catch (e) { }
-
-  // 3. Local fallback check for purpose === "login" vs "signup"
-  const target = (payload.email || payload.phone || "").trim().toLowerCase();
-  const isAdmin = target === "jananibiosciences.r@gmail.com" || target.includes("admin@jananiagro.com") || target === "admin";
-
-  if ((payload.purpose === "login" || payload.purpose === "checkout_login" || payload.purpose === "checkout") && !isAdmin) {
-    const check = await checkCustomerExists(target);
-    if (!check.exists) {
-      return {
-        success: false,
-        notRegistered: true,
-        not_registered: true,
-        message: `This email (${target}) is not registered yet. Only registered patrons can sign in. Please create an account / register first.`
-      };
-    }
-  }
-
-  if ((payload.purpose === "signup" || payload.purpose === "checkout_signup") && !isAdmin) {
-    const check = await checkCustomerExists(target);
-    if (check.exists) {
-      return {
-        success: false,
-        alreadyRegistered: true,
-        already_registered: true,
-        message: `An account with this email (${target}) already exists. Please switch to Sign In.`
-      };
-    }
-  }
-
-  return {
-    success: true,
-    message: payload.email
-      ? `Real-time 6-digit verification code sent to ${payload.email}. Please check your inbox.`
-      : `Verification code dispatched to +91 ${payload.phone}. Please check your SMS.`,
-    resendCooldownSeconds: 60
-  };
+  // The server decides who may receive a code (registered users, signup, admin mailbox) and delivers it.
+  return postAuth<OtpSendResponse>("send-otp", payload, "/auth/send-otp");
 }
 
 export async function verifyAuthOtp(payload: { phone?: string | undefined; email?: string | undefined; otp: string; name?: string | undefined; purpose?: string | undefined }): Promise<AuthResponse> {
-  const cleanEmail = (payload.email || "").trim().toLowerCase();
-  if (payload.purpose === "admin_login" && cleanEmail !== "jananibiosciences.r@gmail.com") {
-    return {
-      success: false,
-      message: "Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.",
-      token: "",
-      user: null as any
-    };
+  const res = await postAuth<AuthResponse>("verify-otp", payload, "/auth/verify-otp");
+  if (res?.success && res.user && payload.purpose !== "signup") {
+    persistAuthSession(res.user, res.token);
   }
-
-  // 1. Prioritize Hostinger PHP API verification against database settings table
-  try {
-    const phpRes = await fetch("/api.php?action=verify-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (phpRes.ok) {
-      const text = await phpRes.text();
-      try {
-        const phpData = JSON.parse(text);
-        if (phpData && typeof phpData === "object") {
-          if (phpData.success) {
-            if (payload.purpose !== "signup" && phpData.user) {
-              persistAuthSession(phpData.user, phpData.token);
-            }
-            return phpData;
-          }
-          if (phpData.success === false) {
-            return phpData;
-          }
-        }
-      } catch (jsonErr) {
-        console.error("api.php verify response was not JSON:", text);
-      }
-    }
-  } catch (e) {
-    console.warn("Failed to reach /api.php?action=verify-otp, trying Node API:", e);
-  }
-
-  // 2. Try Node.js Express API
-  try {
-    const res = await fetchJson<AuthResponse>("/auth/verify-otp", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    if (res && typeof res === "object") {
-      if (res.success && res.user) {
-        persistAuthSession(res.user, res.token);
-        return res;
-      }
-      if (res.success === false) {
-        return res;
-      }
-    }
-  } catch (e) { }
-
-  // 3. Fallback bypass for test codes "123456", "1234", "000000", "999999" (Strictly for customers only - NEVER for admin)
-  const cleanOtp = (payload.otp || "").trim();
-  const normalizedEmail = (payload.email || "").toLowerCase().trim();
-  const isAdmin = normalizedEmail === "jananibiosciences.r@gmail.com" || normalizedEmail.includes("admin@jananiagro.com") || normalizedEmail === "admin";
-
-  if (!isAdmin && (cleanOtp === "123456" || cleanOtp === "1234" || cleanOtp === "000000" || cleanOtp === "999999")) {
-    const user: AuthUser = {
-      id: generateNextCustomerId(),
-      name: payload.name?.trim() || (payload.phone ? `Customer (${payload.phone.slice(-4)})` : (payload.email?.split("@")[0] || "Valued Patron")),
-      email: payload.email || (payload.phone ? `${payload.phone}@janani.customer` : "patron@jananiagro.com"),
-      phone: payload.phone || "",
-      role: "Customer",
-      walletBalance: 0,
-      referralCode: "JANANI" + Math.floor(1000 + Math.random() * 9000),
-      isVerified: true,
-      tier: "Silver"
-    };
-    const authData: AuthResponse = {
-      success: true,
-      message: "Verification successful! Welcome to Janani Agro.",
-      token: "jap_jwt_" + Date.now(),
-      user
-    };
-    persistAuthSession(user, authData.token);
-    return authData;
-  }
-
-  return {
-    success: false,
-    message: "Invalid or expired OTP code. Please check the code in your email or click Resend OTP.",
-    token: "",
-    user: null as any
-  };
+  return res;
 }
 
 export function getUserAddressKey(userEmailOrId?: string | null): string {
@@ -8719,235 +7738,76 @@ export async function signupCustomer(payload: {
   latitude?: number;
   longitude?: number;
 }): Promise<AuthResponse> {
-  // 1. Try PHP API
-  try {
-    const phpRes = await fetch("/api.php?action=signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (phpRes.ok) {
-      const data = await phpRes.json();
-      if (data?.success && data.user) {
-        if (typeof window !== "undefined") {
-          persistAuthSession(data.user, data.token || "jap_jwt_" + Date.now());
-        }
-        return data;
-      }
-    }
-  } catch (e) { }
-
-  // 2. Try Node API
-  const res = await fetchJson<AuthResponse>("/auth/signup", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
-  if (res?.success && res.user) return res;
-
-  const fullAddr = [payload.houseFlat, payload.street, payload.city, payload.state, payload.pincode].filter(Boolean).join(", ");
-
-  const user: AuthUser = {
-    id: generateNextCustomerId(),
-    name: payload.name,
-    email: payload.email,
-    phone: payload.phone,
-    role: "Customer",
-    walletBalance: payload.referralCode ? 100 : 50,
-    referralCode: "JANANI" + Math.floor(1000 + Math.random() * 9000),
-    isVerified: true,
-    tier: "Silver",
-    address: fullAddr || undefined,
-    houseFlat: payload.houseFlat,
-    street: payload.street,
-    city: payload.city,
-    state: payload.state,
-    pincode: payload.pincode,
-    latitude: payload.latitude,
-    longitude: payload.longitude,
-    preferences: {
-      dietary: ["Bio Fertilizers", "Bio Stimulants"],
-      pinCode: payload.pincode || "380054"
-    }
-  };
-  const authData: AuthResponse = {
-    success: true,
-    message: "Account created successfully! Welcome to Janani Agro.",
-    isNewUser: true,
-    token: "jap_mock_jwt_" + Date.now(),
-    user
-  };
-  if (typeof window !== "undefined") {
-    persistAuthSession(user, authData.token);
-
-    // Save newly entered address to user's scoped saved addresses list
+  // The server only creates the account after the email was verified with an OTP.
+  const res = await postAuth<AuthResponse>("signup", payload, "/auth/signup");
+  if (res?.success && res.user && typeof window !== "undefined") {
+    persistAuthSession(res.user, res.token);
     if (payload.street || payload.houseFlat || payload.city || payload.pincode) {
-      const newSavedAddr = {
-        id: "addr-" + Date.now(),
-        name: payload.name,
-        fullName: payload.name,
-        phone: payload.phone,
-        houseFlat: payload.houseFlat || "",
-        street: payload.street || "",
-        landmark: "",
-        city: payload.city || "Ahmedabad",
-        state: payload.state || "Gujarat",
-        pincode: payload.pincode || "380054",
-        isDefault: true,
-        type: "home",
-        userEmail: payload.email.toLowerCase()
-      };
-      saveUserSavedAddresses(payload.email, [newSavedAddr]);
-    } else {
-      saveUserSavedAddresses(payload.email, []);
+      saveUserSavedAddresses(payload.email, [
+        {
+          id: "addr-" + Date.now(),
+          name: payload.name,
+          fullName: payload.name,
+          phone: payload.phone,
+          houseFlat: payload.houseFlat || "",
+          street: payload.street || "",
+          landmark: "",
+          city: payload.city || "",
+          state: payload.state || "",
+          pincode: payload.pincode || "",
+          isDefault: true,
+          type: "home",
+          userEmail: payload.email.toLowerCase(),
+        },
+      ]);
     }
-
-    // Also register in customer database
-    const customers = getStored<any[]>(STORAGE_KEYS.CUSTOMERS, DEFAULT_CUSTOMERS);
-    setStored(STORAGE_KEYS.CUSTOMERS, [
-      {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        joinedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-        ordersCount: 0,
-        ltv: 0,
-        walletBalance: user.walletBalance,
-        loyaltyPoints: 50,
-        tier: "Silver",
-        status: "Active"
-      },
-      ...customers
-    ]);
   }
-  return authData;
+  return res;
 }
 
-export async function loginWithGoogle(payload?: {
+export async function loginWithGoogle(_payload?: {
   token?: string;
   email?: string;
   name?: string;
   avatar?: string;
 }): Promise<AuthResponse> {
-  const res = await fetchJson<AuthResponse>("/auth/google", {
-    method: "POST",
-    body: JSON.stringify(payload || {})
-  });
-  if (res?.success && res.user) return res;
-
-  const user: AuthUser = {
-    id: generateNextCustomerId(),
-    name: payload?.name || "Google Patron",
-    email: payload?.email || "patron.google@gmail.com",
-    phone: "",
-    avatar: payload?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
-    role: "Customer",
-    walletBalance: 100,
-    referralCode: "JANANI" + Math.floor(1000 + Math.random() * 9000),
-    isVerified: true,
-    tier: "Silver"
+  // Google sign-in is not integrated with a real Google OAuth client yet.
+  return {
+    success: false,
+    message: "Google sign-in is not available yet. Please sign in with your email OTP or password.",
+    token: "",
+    user: null as any,
   };
-  const authData: AuthResponse = {
-    success: true,
-    message: "Google login successful",
-    token: "jap_mock_jwt_" + Date.now(),
-    user
-  };
-  if (typeof window !== "undefined") {
-    persistAuthSession(user, authData.token);
-  }
-  return authData;
 }
 
 export async function forgotPassword(payload: { identifier: string }) {
-  // 1. Prioritize PHP API
-  try {
-    const phpRes = await fetch("/api.php?action=forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (phpRes.ok) {
-      const phpData = await phpRes.json();
-      if (phpData && typeof phpData === "object" && phpData.success) {
-        return phpData;
-      }
-    }
-  } catch (e) { }
-
-  // 2. Try Node API
-  try {
-    const res = await fetchJson<{ success: boolean; message: string; targetPhone?: string; demoOtpCode?: string; otp?: string }>("/auth/forgot-password", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    if (res?.success) return res;
-  } catch (e) { }
-
-  return {
-    success: true,
-    message: `Password reset verification code dispatched to ${payload.identifier}. (Instant Code: 123456)`,
-    demoOtpCode: "123456",
-    otp: "123456"
-  };
+  return postAuth<{ success: boolean; message: string; emailSent?: boolean }>("forgot-password", payload, "/auth/forgot-password");
 }
 
 export async function resetPassword(payload: { phone?: string; identifier?: string; email?: string; otp: string; newPassword: string }) {
-  // 1. Prioritize PHP API
-  try {
-    const phpRes = await fetch("/api.php?action=reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (phpRes.ok) {
-      const phpData = await phpRes.json();
-      if (phpData && typeof phpData === "object") {
-        return phpData;
-      }
-    }
-  } catch (e) { }
-
-  // 2. Try Node API
-  try {
-    const res = await fetchJson<{ success: boolean; message: string }>("/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    if (res) return res;
-  } catch (e) { }
-
-  return { success: true, message: "Password updated successfully. You can now log in with your new credentials." };
+  return postAuth<{ success: boolean; message: string }>("reset-password", payload, "/auth/reset-password");
 }
 
 export async function getAuthProfile() {
-  const res = await fetchJson<{ success: boolean; user: AuthUser }>("/auth/me");
-  if (res?.success && res.user) return res;
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/api.php?action=auth-me");
+    const data = await res.json();
+    if (data?.success && data.user) return { success: true, user: data.user as AuthUser };
+    if (data && data.success === false) return null; // not signed in / session expired
+  } catch {
+    /* offline: use the cached profile below */
+  }
 
-  if (typeof window !== "undefined") {
-    // Check 24-hour expiration for customer
-    const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
-    let authTimestamp = userAuthTime ? parseInt(userAuthTime, 10) : 0;
-    if (authTimestamp && authTimestamp < 10000000000) authTimestamp *= 1000;
-    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-    if (!authTimestamp) {
-      localStorage.setItem("janani_user_auth_time", Date.now().toString());
-      localStorage.setItem("janani_auth_time", Date.now().toString());
-    } else if (Date.now() - authTimestamp > TWENTY_FOUR_HOURS) {
-      localStorage.removeItem("janani_user");
-      localStorage.removeItem("janani_auth_user");
-      localStorage.removeItem("janani_token");
-      localStorage.removeItem("janani_auth_token");
-      localStorage.removeItem("janani_user_auth_time");
-      localStorage.removeItem("janani_auth_time");
-      return null;
-    }
-
-    const raw = localStorage.getItem("janani_auth_user") || localStorage.getItem("janani_user");
-    if (raw) {
-      try {
-        return { success: true, user: JSON.parse(raw) as AuthUser };
-      } catch (e) { }
+  // Offline fallback: cached profile of a real (server-issued) session only
+  const token = localStorage.getItem("janani_auth_token") || localStorage.getItem("janani_token");
+  if (!token || !token.startsWith("jat1.")) return null;
+  const raw = localStorage.getItem("janani_auth_user") || localStorage.getItem("janani_user");
+  if (raw) {
+    try {
+      return { success: true, user: JSON.parse(raw) as AuthUser };
+    } catch {
+      /* ignore */
     }
   }
   return null;
@@ -8964,31 +7824,7 @@ export async function saveOnboardingPreferences(payload: {
     body: JSON.stringify(payload)
   });
   if (res?.success) return res;
-
-  if (typeof window !== "undefined") {
-    const raw = localStorage.getItem("janani_auth_user");
-    if (raw) {
-      try {
-        const u = JSON.parse(raw);
-        u.preferences = {
-          dietary: payload.dietary,
-          pinCode: payload.pinCode,
-          notifications: payload.notifications
-        };
-        localStorage.setItem("janani_auth_user", JSON.stringify(u));
-      } catch (e) { }
-    }
-  }
-
-  return {
-    success: true,
-    message: "Dietary & delivery preferences recorded successfully",
-    preferences: {
-      dietary: payload.dietary,
-      pinCode: payload.pinCode,
-      notifications: payload.notifications
-    }
-  };
+  return saveFailed(res);
 }
 
 

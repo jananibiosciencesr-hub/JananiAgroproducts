@@ -74,7 +74,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const { cartCount, wishlist, user, logoutUser } = useStore();
 
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useRouterState({ select: (s: { location: { pathname: string } }) => s.location.pathname });
   const isAdminRoute = pathname.startsWith("/admin");
   const isCheckoutFlow = pathname === "/checkout" || pathname === "/payment";
   const [isScrolled, setIsScrolled] = useState(false);

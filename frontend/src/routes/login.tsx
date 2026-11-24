@@ -311,7 +311,7 @@ export function AuthenticationPage() {
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpValues, setOtpValues] = useState<string[]>(["", "", "", "", "", ""]);
   const [otpTarget, setOtpTarget] = useState("");
-  const [receivedDemoOtp, setReceivedDemoOtp] = useState<string>("123456");
+  const [receivedDemoOtp, setReceivedDemoOtp] = useState<string>("");
   const [otpPurpose, setOtpPurpose] = useState<"login" | "signup" | "forgot_password">("login");
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
@@ -322,7 +322,7 @@ export function AuthenticationPage() {
   const [forgotIdentifier, setForgotIdentifier] = useState("");
   const [forgotStep, setForgotStep] = useState<"enter_id" | "verify_otp" | "new_password">("enter_id");
   const [forgotOtp, setForgotOtp] = useState("");
-  const [forgotDemoOtp, setForgotDemoOtp] = useState("123456");
+  const [forgotDemoOtp, setForgotDemoOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
   // Terms & Privacy Modal
@@ -408,17 +408,6 @@ export function AuthenticationPage() {
     if (index < 5 && cleaned) {
       otpInputRefs.current[index + 1]?.focus();
     }
-  };
-
-  const handleAutoFillOtp = (codeToFill?: string) => {
-    const code = (codeToFill || receivedDemoOtp || "123456").trim().slice(0, 6);
-    const digits = code.split("");
-    while (digits.length < 6) digits.push("");
-    setOtpValues(digits);
-    toast.success(`Verification code ${code} auto-filled!`);
-    setTimeout(() => {
-      otpInputRefs.current[5]?.focus();
-    }, 100);
   };
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -716,7 +705,7 @@ export function AuthenticationPage() {
         return;
       }
       if (res?.success) {
-        const otpCode = res.demoOtpCode || res.otp || "123456";
+        const otpCode = res.demoOtpCode || res.otp || "";
         setReceivedDemoOtp(otpCode);
         setOtpTarget(emailToSend);
         setOtpPurpose("signup");
@@ -775,7 +764,7 @@ export function AuthenticationPage() {
     try {
       const res = await forgotPassword({ identifier: forgotIdentifier });
       if (res?.success) {
-        const code = (res as any).demoOtpCode || (res as any).otp || "123456";
+        const code = (res as any).demoOtpCode || (res as any).otp || "";
         setForgotDemoOtp(code);
         toast.success(res.message || `Password reset code sent to ${forgotIdentifier}!`);
         setForgotStep("verify_otp");

@@ -215,9 +215,31 @@ function AdminDashboardPage() {
           return;
         }
         const parsed = JSON.parse(storedAdmin);
-        if (parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || parsed.role === "Staff" || parsed.role === "Manager")) {
+        // Only server-issued session tokens are accepted; the server re-checks the role on every request.
+        if (sessionToken.startsWith("jat1.") && parsed && typeof parsed === "object" && (parsed.role === "Super Admin" || parsed.role === "Admin" || parsed.role === "Staff" || parsed.role === "Manager")) {
           setAdminUser(parsed);
           setIsAuthenticated(true);
+          fetch("/api.php?action=auth-me")
+            .then((r) => r.json())
+            .then((me) => {
+              if (!me?.success || !(me.isAdmin || me.isStaff)) {
+                localStorage.removeItem("janani_admin_session");
+                localStorage.removeItem("janani_admin_token");
+                localStorage.removeItem("janani_admin_user");
+                localStorage.removeItem("janani_admin_auth_time");
+                setAdminUser(null);
+                setIsAuthenticated(false);
+              } else if (me.user) {
+                setAdminUser(me.user);
+                localStorage.setItem("janani_admin_user", JSON.stringify(me.user));
+              }
+            })
+            .catch(() => { });
+        } else {
+          localStorage.removeItem("janani_admin_session");
+          localStorage.removeItem("janani_admin_token");
+          localStorage.removeItem("janani_admin_user");
+          localStorage.removeItem("janani_admin_auth_time");
         }
       }
     } catch (e) {
@@ -427,7 +449,11 @@ function AdminDashboardPage() {
           toast.error("Access Denied: You do not have administrator permissions.");
           return;
         }
-        const token = res.token || `jap_jwt_admin_${Date.now()}`;
+        const token = res.token || "";
+        if (!token.startsWith("jat1.")) {
+          toast.error("Sign-in failed: the server did not issue a session. Please try again.");
+          return;
+        }
         localStorage.setItem("janani_admin_session", "true");
         localStorage.setItem("janani_admin_token", token);
         localStorage.setItem("janani_admin_user", JSON.stringify(user));

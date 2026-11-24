@@ -119,7 +119,7 @@ export function OrderInvoiceModal({
   
   // Final total = Subtotal + GST + Shipping - Discount
   const resolvedFinalTotal = resolvedSubtotal + totalGst + resolvedDeliveryFee - resolvedDiscount;
-  const invoiceNumber = `INV-${resolvedOrderNumber.replace("JAP-", "2026-")}`;
+  const invoiceNumber = `INV-${resolvedOrderNumber.replace("JAP-", `${new Date().getFullYear()}-`)}`;
   const resolvedPaymentMethod = paymentMethod || order?.paymentMethod || order?.payment_method || "Prepaid Online / UPI";
 
   const handlePrint = () => {
@@ -134,6 +134,7 @@ export function OrderInvoiceModal({
         headers: { "Content-Type": "application/json" },
         keepalive: true,
         body: JSON.stringify({
+          resend: true,
           number: resolvedOrderNumber,
           orderNumber: resolvedOrderNumber,
           customer_name: resolvedCustomerName,

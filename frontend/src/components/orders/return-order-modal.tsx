@@ -12,7 +12,7 @@ interface ReturnOrderModalProps {
     reason: string;
     pickupSlot: string;
     itemsSummary: string;
-  }) => void;
+  }) => Promise<boolean> | boolean | void;
 }
 
 const RETURN_REASONS = [
@@ -48,16 +48,17 @@ export function ReturnOrderModal({
     e.preventDefault();
     setSubmitting(true);
 
-    setTimeout(() => {
+    Promise.resolve(
       onConfirmReturn(order.id, {
         reason: selectedReason,
         pickupSlot: selectedSlot,
         itemsSummary: `${order.items.length} items (Total: ₹${order.total})`,
-      });
-      setSubmitting(false);
-      onClose();
-      toast.success(`Return pickup scheduled for Order ${order.number}!`);
-    }, 400);
+      })
+    )
+      .then((ok) => {
+        if (ok !== false) onClose();
+      })
+      .finally(() => setSubmitting(false));
   };
 
   return (

@@ -457,12 +457,12 @@ export function CouponsManagement({ searchQuery: propSearchQuery, addTrigger }: 
     }
     const rows = usageHistory.map((u) => ({
       "Audit ID": u.id,
-      "Coupon Code": u.code || "",
+      "Coupon Code": u.couponCode || "",
       "Order ID": u.orderId || "",
       "Customer Name": u.customerName || "",
       "Customer Email": u.customerEmail || "",
-      "Cart Total (₹)": u.cartTotal || 0,
-      "Discount Saved (₹)": u.discountSaved || 0,
+      "Cart Total (₹)": u.orderTotal || 0,
+      "Discount Saved (₹)": u.discountAmount || 0,
       "Final Paid (₹)": u.finalPaid || 0,
       "Applied Date": u.appliedAt || "",
       "Order Status": u.orderStatus || ""

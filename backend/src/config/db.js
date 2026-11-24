@@ -11,9 +11,9 @@ dotenv.config();
 const DB_CONFIG = {
   host: process.env.DB_HOST || "localhost",
   port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER ?? "u409810820_Jananiagropro",
-  password: process.env.DB_PASSWORD ?? "Jananiagro@123",
-  database: process.env.DB_NAME ?? "u409810820_Jananiagro",
+  user: process.env.DB_USER ?? "root",
+  password: process.env.DB_PASSWORD ?? "", // set in backend/.env (never hardcode)
+  database: process.env.DB_NAME ?? "janani_agro",
   waitForConnections: true,
   connectTimeout: 3000,
   connectionLimit: 10,

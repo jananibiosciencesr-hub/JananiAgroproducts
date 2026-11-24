@@ -1,77 +1,92 @@
 <?php
 /**
- * JANANI AGRO PRODUCTS - NATIVE HOSTINGER PHP REST API
- * Provides live MySQL CRUD endpoints and real Gmail SMTP authentication on Hostinger:
- * - /api.php?action=send-otp
- * - /api.php?action=verify-otp
- * - /api.php?action=products
- * - /api.php?action=categories
- * - /api.php?action=orders
- * - /api.php?action=coupons
- * - /api.php?action=settings
- * - /api.php?action=inquiries
- * - /api.php?action=newsletter
+ * JANANI AGRO PRODUCTS - HOSTINGER PHP REST API (source of truth: backend/php/, copied to the site root by the build)
+ *
+ * Single entry point for the storefront and the admin command center (/api.php?action=... or /api/<action>).
+ *
+ * Security model (see api_security.php):
+ *  - every credential comes from environment variables in a .env file kept OUTSIDE public_html
+ *    (template: backend/.env.example) - nothing secret is stored in this file
+ *  - every request is authorised by janani_authorize_request() before any handler runs
+ *  - prices, totals, payment status and stock are decided by the server, never by the browser
  */
 
+define('JANANI_API', true);
+
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-HTTP-Method-Override');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Cache-Control: no-store, max-age=0');
 
 date_default_timezone_set('Asia/Kolkata');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
+// PHP notices must never be printed into JSON responses (they also leak file paths); they go to the error log.
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
+// ---------------------------------------------------------
+// ENVIRONMENT CONFIGURATION
+// The first readable file wins. Preferred location: one level above the web root.
+// ---------------------------------------------------------
+foreach ([dirname(__DIR__) . '/.env', __DIR__ . '/.env', __DIR__ . '/backend/.env', dirname(__DIR__) . '/backend/.env'] as $envFile) {
+    if (!is_readable($envFile)) continue;
+    foreach ((array)file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $trimmed = trim($line);
+        if ($trimmed === '' || $trimmed[0] === '#' || strpos($trimmed, '=') === false) continue;
+        [$name, $value] = explode('=', $trimmed, 2);
+        $name = trim($name);
+        $value = trim($value, " \t\n\r\0\x0B\"'");
+        if ($name === '' || getenv($name) !== false) continue; // real server env vars take priority
+        putenv("{$name}={$value}");
+        $_ENV[$name] = $value;
+    }
+    break;
 }
 
 // ---------------------------------------------------------
-// ENVIRONMENT CONFIGURATION (.env reader with safe fallbacks)
+// CORS: same-origin by default; extra origins via CORS_ORIGINS (comma separated)
 // ---------------------------------------------------------
-$envFile = __DIR__ . '/.env';
-if (!file_exists($envFile)) {
-    $envFile = __DIR__ . '/backend/.env';
-}
-if (!file_exists($envFile)) {
-    $envFile = dirname(__DIR__) . '/.env';
-}
-if (file_exists($envFile)) {
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        if (strpos($line, '=') !== false) {
-            list($name, $value) = explode('=', $line, 2);
-            $name = trim($name);
-            $value = trim($value, " \t\n\r\0\x0B\"'");
-            putenv("{$name}={$value}");
-            $_ENV[$name] = $value;
-        }
+$requestOrigin = (string)($_SERVER['HTTP_ORIGIN'] ?? '');
+if ($requestOrigin !== '') {
+    $selfOrigin = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? '');
+    $extraOrigins = array_filter(array_map('trim', explode(',', (string)(getenv('CORS_ORIGINS') ?: ''))));
+    $isDevOrigin = (bool)preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#', $requestOrigin);
+    if ($requestOrigin === $selfOrigin || in_array($requestOrigin, $extraOrigins, true) || $isDevOrigin) {
+        header('Access-Control-Allow-Origin: ' . $requestOrigin);
+        header('Vary: Origin');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Janani-Auth, X-Requested-With, X-HTTP-Method-Override');
+        header('Access-Control-Max-Age: 600');
     }
 }
 
-$raw_host = 'localhost';
-$raw_db   = trim(getenv('DB_NAME') ?: 'u409810820_Jananiagro');
-$raw_user = trim(getenv('DB_USER') ?: 'u409810820_Jananiagropro');
-$raw_pass = trim(getenv('DB_PASSWORD') ?: 'Jananiagro@123');
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
 
-// Gmail SMTP Credentials for Real OTP Dispatch
-$smtp_host = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
-$smtp_port = getenv('SMTP_PORT') ?: 465;
-$smtp_user = strtolower(trim(getenv('SMTP_USER') ?: 'jananibiosciences.r@gmail.com'));
-$smtp_pass = strtolower(str_replace(' ', '', getenv('SMTP_PASS') ?: 'gvwxapfllucnayzt'));
-$admin_email = strtolower(trim(getenv('ADMIN_EMAIL') ?: 'jananibiosciences.r@gmail.com'));
+require_once __DIR__ . '/api_security.php';
+
+$raw_host = janani_env('DB_HOST', 'localhost');
+$raw_port = janani_env('DB_PORT', '3306');
+$raw_db   = janani_env('DB_NAME');
+$raw_user = janani_env('DB_USER');
+$raw_pass = (string)janani_env('DB_PASSWORD', '');
+
+// Kept for backwards compatibility with helper signatures; mail delivery reads SMTP_* via janani_send_mail().
+$smtp_user = strtolower((string)janani_env('SMTP_USER', ''));
+$smtp_pass = '';
+$admin_email = janani_admin_email();
 
 /**
- * Send real 6-digit OTP email through multi-tier delivery:
- * Tier 1: Direct Gmail SMTP via SSL on Port 465 with SSL context
- * Tier 2: Direct Gmail SMTP via TLS on Port 587 with STARTTLS
- * Tier 3: Native Hostinger mail() function fallback
+ * Sends a 6-digit verification code e-mail.
  */
-function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'jananibiosciences.r@gmail.com') {
-    $subject = "=?UTF-8?B?" . base64_encode("🔐 {$otpCode} is your Janani Agro Verification Code") . "?=";
-    $rawSubject = "🔐 {$otpCode} is your Janani Agro Verification Code";
-    $isAdmin = (strtolower($toEmail) === strtolower($adminEmail));
-    $recipientName = $isAdmin ? "Janani Administrator" : "Valued Patron";
+function sendGmailOtp($toEmail, $otpCode, ...$unused) {
+    $isAdmin = strtolower(trim((string)$toEmail)) === janani_admin_email();
+    $recipientName = $isAdmin ? 'Janani Administrator' : 'Valued Customer';
+    $safeEmail = janani_e($toEmail);
+    $safeCode = janani_e($otpCode);
+    $minutes = (int)(JANANI_OTP_TTL / 60);
 
     $body = "
     <!DOCTYPE html>
@@ -86,15 +101,15 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
         <div style='padding: 25px;'>
           <h3 style='color: #2d3748; margin-top: 0;'>Hello, {$recipientName}</h3>
           <p style='color: #4a5568; font-size: 14px; line-height: 1.5;'>
-            You have requested a secure sign-in / checkout verification code for your <strong>Janani Agro Products</strong> account ({$toEmail}).
+            You have requested a secure sign-in / checkout verification code for your <strong>Janani Agro Products</strong> account ({$safeEmail}).
           </p>
           <div style='background: #f0fdf4; border: 2px dashed #16a34a; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;'>
             <div style='font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #15803d; margin-bottom: 6px;'>Your 6-Digit OTP Code</div>
-            <div style='font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #166534; font-family: monospace;'>{$otpCode}</div>
-            <div style='font-size: 12px; color: #64748b; margin-top: 6px;'>Valid for 5 minutes only</div>
+            <div style='font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #166534; font-family: monospace;'>{$safeCode}</div>
+            <div style='font-size: 12px; color: #64748b; margin-top: 6px;'>Valid for {$minutes} minutes only</div>
           </div>
           <p style='font-size: 12px; color: #854d0e; background: #fef9c3; padding: 10px; border-radius: 6px; margin: 0;'>
-            <strong>Security Alert:</strong> Never share your verification code with anyone. If you did not request this OTP, please ignore this email.
+            <strong>Security Alert:</strong> Never share your verification code with anyone. Janani Agro staff will never ask for it. If you did not request this code, please ignore this email.
           </p>
         </div>
         <div style='background: #f8fafc; padding: 15px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;'>
@@ -104,176 +119,17 @@ function sendGmailOtp($toEmail, $otpCode, $smtpUser, $smtpPass, $adminEmail = 'j
     </body>
     </html>";
 
-    $cleanSmtpPass = strtolower(str_replace(' ', '', trim((string)$smtpPass)));
-    $recipients = [$toEmail];
-
-    // Pass candidates: Try the provided password, and if 15 chars (e.g. Hostinger typo 'gvwxapflucnayzt'), also try 'gvwxapfllucnayzt'
-    $passCandidates = array_values(array_unique(array_filter([
-        $cleanSmtpPass,
-        strlen($cleanSmtpPass) === 15 ? 'gvwxapfllucnayzt' : null,
-        'gvwxapfllucnayzt'
-    ])));
-
-    $lastError = 'Connection failed to smtp.gmail.com';
-
-    // --- TIER 1: SSL Direct (Port 465) ---
-    foreach ($passCandidates as $testPass) {
-        $sslContext = stream_context_create([
-            'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
-            ]
-        ]);
-
-        $socket = @stream_socket_client('ssl://smtp.gmail.com:465', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $sslContext);
-        if ($socket) {
-            stream_set_timeout($socket, 4);
-            fgets($socket, 512);
-            fputs($socket, "EHLO jananiagroproducts.com\r\n");
-            while ($line = fgets($socket, 512)) {
-                if (substr($line, 3, 1) === ' ') break;
-            }
-
-            fputs($socket, "AUTH LOGIN\r\n");
-            fgets($socket, 512);
-            fputs($socket, base64_encode($smtpUser) . "\r\n");
-            fgets($socket, 512);
-            fputs($socket, base64_encode($testPass) . "\r\n");
-            $authRes = fgets($socket, 512);
-
-            if (substr($authRes, 0, 3) === '235') {
-                fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
-                fgets($socket, 512);
-
-                foreach ($recipients as $rcpt) {
-                    fputs($socket, "RCPT TO: <{$rcpt}>\r\n");
-                    fgets($socket, 512);
-                }
-
-                fputs($socket, "DATA\r\n");
-                fgets($socket, 512);
-
-                $headers  = "MIME-Version: 1.0\r\n";
-                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-                $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-                $headers .= "To: <{$toEmail}>\r\n";
-                // OTPs are strictly confidential to recipient - no Cc to admin
-                $headers .= "Reply-To: {$smtpUser}\r\n";
-                $headers .= "Subject: {$subject}\r\n";
-
-                fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
-                $dataRes = fgets($socket, 512);
-                fputs($socket, "QUIT\r\n");
-                fclose($socket);
-
-                if (substr($dataRes, 0, 3) === '250') {
-                    return ['success' => true, 'method' => 'gmail_smtp_ssl_465'];
-                }
-            } else {
-                $lastError = 'Gmail SMTP SSL Auth (Port 465) failed: ' . trim((string)$authRes);
-                fclose($socket);
-            }
-        } else {
-            $lastError = "Port 465 connection failed: {$errstr} ({$errno})";
-        }
-    }
-
-    // --- TIER 2: TLS with STARTTLS (Port 587) ---
-    foreach ($passCandidates as $testPass) {
-        $socket587 = @stream_socket_client('tcp://smtp.gmail.com:587', $errno, $errstr, 4, STREAM_CLIENT_CONNECT);
-        if ($socket587) {
-            stream_set_timeout($socket587, 4);
-            fgets($socket587, 512);
-            fputs($socket587, "EHLO jananiagroproducts.com\r\n");
-            while ($line = fgets($socket587, 512)) {
-                if (substr($line, 3, 1) === ' ') break;
-            }
-
-            fputs($socket587, "STARTTLS\r\n");
-            $startTlsRes = fgets($socket587, 512);
-            if (substr($startTlsRes, 0, 3) === '220') {
-                stream_socket_enable_crypto($socket587, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-                fputs($socket587, "EHLO jananiagroproducts.com\r\n");
-                while ($line = fgets($socket587, 512)) {
-                    if (substr($line, 3, 1) === ' ') break;
-                }
-
-                fputs($socket587, "AUTH LOGIN\r\n");
-                fgets($socket587, 512);
-                fputs($socket587, base64_encode($smtpUser) . "\r\n");
-                fgets($socket587, 512);
-                fputs($socket587, base64_encode($testPass) . "\r\n");
-                $authRes = fgets($socket587, 512);
-
-                if (substr($authRes, 0, 3) === '235') {
-                    fputs($socket587, "MAIL FROM: <{$smtpUser}>\r\n");
-                    fgets($socket587, 512);
-
-                    foreach ($recipients as $rcpt) {
-                        fputs($socket587, "RCPT TO: <{$rcpt}>\r\n");
-                        fgets($socket587, 512);
-                    }
-
-                    fputs($socket587, "DATA\r\n");
-                    fgets($socket587, 512);
-
-                    $headers  = "MIME-Version: 1.0\r\n";
-                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-                    $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-                    $headers .= "To: <{$toEmail}>\r\n";
-                    // OTPs are strictly confidential to recipient - no Cc to admin
-                    $headers .= "Reply-To: {$smtpUser}\r\n";
-                    $headers .= "Subject: {$subject}\r\n";
-
-                    fputs($socket587, $headers . "\r\n" . $body . "\r\n.\r\n");
-                    $dataRes = fgets($socket587, 512);
-                    fputs($socket587, "QUIT\r\n");
-                    fclose($socket587);
-
-                    if (substr($dataRes, 0, 3) === '250') {
-                        return ['success' => true, 'method' => 'gmail_smtp_tls_587'];
-                    }
-                } else {
-                    $lastError = 'Gmail SMTP TLS Auth (Port 587) failed: ' . trim((string)$authRes);
-                    fclose($socket587);
-                }
-            } else {
-                $lastError = 'STARTTLS command failed: ' . trim((string)$startTlsRes);
-                fclose($socket587);
-            }
-        }
-    }
-
-    // --- TIER 3: Native Hostinger mail() Function Fallback with Domain Envelope Sender ---
-    $domain = 'jananiagroproducts.com';
-    if (!empty($_SERVER['HTTP_HOST'])) {
-        $domain = preg_replace('/^www\./i', '', $_SERVER['HTTP_HOST']);
-    }
-    $domainSender = "noreply@" . $domain;
-
-    $mailHeaders  = "MIME-Version: 1.0\r\n";
-    $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $mailHeaders .= "From: Janani Agro Products <{$domainSender}>\r\n";
-    // OTPs are strictly confidential to recipient - no Cc to admin
-    $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
-    $mailHeaders .= "X-Mailer: PHP/" . phpversion();
-
-    $mailSent = @mail($toEmail, $rawSubject, $body, $mailHeaders, "-f " . $domainSender);
-    // OTPs are strictly confidential to recipient - no admin copy
-
-    if ($mailSent) {
-        return ['success' => true, 'method' => 'hostinger_native_mail'];
-    }
-
-    return ['success' => false, 'error' => $lastError ?: "All delivery channels failed. Check Google App Password in Hostinger environment variables."];
+    return janani_send_mail($toEmail, "{$otpCode} is your Janani Agro verification code", $body);
 }
 
 /**
  * Send Official GST Tax Invoice Email to Customer & Admin Copy
  */
-function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $adminEmail = 'jananibiosciences.r@gmail.com') {
+function sendOrderConfirmationInvoiceEmail($orderData, ...$unused) {
     global $pdo;
+    if (!is_array($orderData)) {
+        return ['success' => false, 'error' => 'Order data missing'];
+    }
     $orderNumber = !empty($orderData['number']) ? $orderData['number'] : (!empty($orderData['orderNumber']) ? $orderData['orderNumber'] : generateNextOrderNumber($pdo));
     $customerName = !empty($orderData['customer_name']) ? $orderData['customer_name'] : (!empty($orderData['customerName']) ? $orderData['customerName'] : 'Valued Patron');
     
@@ -289,9 +145,20 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     }
 
     // Guard: Only send if a valid customer email exists for this order. Never guess someone else's email or fallback to admin!
-    if (empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+    if (empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) || janani_is_placeholder_email($toEmail)) {
         return ['success' => false, 'error' => 'No valid customer email address found for this order.'];
     }
+
+    // Every value placed into the HTML template below is HTML-escaped (prevents markup/link injection)
+    foreach (['items', 'shipping_address', 'shippingAddress', 'billing_address', 'address', 'timeline'] as $jsonKey) {
+        if (isset($orderData[$jsonKey]) && is_string($orderData[$jsonKey])) {
+            $decodedJson = json_decode($orderData[$jsonKey], true);
+            if (is_array($decodedJson)) $orderData[$jsonKey] = $decodedJson;
+        }
+    }
+    $orderData = janani_escape_deep($orderData);
+    $orderNumber = janani_e($orderNumber);
+    $customerName = janani_e($customerName);
 
     $orderDate = !empty($orderData['order_date']) ? $orderData['order_date'] : (!empty($orderData['date']) ? $orderData['date'] : date('d M Y, h:i A'));
     $paymentMethod = !empty($orderData['payment_method']) ? $orderData['payment_method'] : (!empty($orderData['paymentMethod']) ? $orderData['paymentMethod'] : 'Prepaid Online / UPI');
@@ -365,7 +232,7 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     $discount = (float)($orderData['discount'] ?? ($orderData['coupon_discount'] ?? 0));
     $finalTotal = $itemsSubtotal + $totalGst + $deliveryFee - $discount;
 
-    $invoiceNumber = "INV-" . str_replace("JAP-", "2026-", $orderNumber);
+    $invoiceNumber = "INV-" . str_replace("JAP-", date("Y") . "-", $orderNumber);
     $rawSubject = "🧾 Order Confirmation & GST Tax Invoice #{$orderNumber} - Janani Agro Products";
     $subject = "=?UTF-8?B?" . base64_encode($rawSubject) . "?=";
 
@@ -531,157 +398,30 @@ function sendOrderConfirmationInvoiceEmail($orderData, $smtpUser, $smtpPass, $ad
     </body>
     </html>";
 
-    $cleanSmtpPass = strtolower(str_replace(' ', '', trim((string)$smtpPass)));
-    $passCandidates = array_values(array_unique(array_filter([
-        $cleanSmtpPass,
-        strlen($cleanSmtpPass) === 15 ? 'gvwxapfllucnayzt' : null,
-        'gvwxapfllucnayzt'
-    ])));
-
-    $recipients = [$toEmail];
-
-    // --- TIER 1: SSL Direct (Port 465) ---
-    foreach ($passCandidates as $testPass) {
-        $sslContext = stream_context_create([
-            'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
-            ]
-        ]);
-        $socket = @stream_socket_client('ssl://smtp.gmail.com:465', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $sslContext);
-        if ($socket) {
-            stream_set_timeout($socket, 4);
-            fgets($socket, 512);
-            fputs($socket, "EHLO jananiagroproducts.com\r\n");
-            while ($line = fgets($socket, 512)) { if (substr($line, 3, 1) === ' ') break; }
-            fputs($socket, "AUTH LOGIN\r\n");
-            fgets($socket, 512);
-            fputs($socket, base64_encode($smtpUser) . "\r\n");
-            fgets($socket, 512);
-            fputs($socket, base64_encode($testPass) . "\r\n");
-            $authRes = fgets($socket, 512);
-            if (substr($authRes, 0, 3) === '235') {
-                fputs($socket, "MAIL FROM: <{$smtpUser}>\r\n");
-                fgets($socket, 512);
-                foreach ($recipients as $rcpt) {
-                    fputs($socket, "RCPT TO: <{$rcpt}>\r\n");
-                    fgets($socket, 512);
-                }
-                fputs($socket, "DATA\r\n");
-                fgets($socket, 512);
-                $headers  = "MIME-Version: 1.0\r\n";
-                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-                $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-                $headers .= "To: <{$toEmail}>\r\n";
-                $headers .= "Reply-To: {$smtpUser}\r\n";
-                $headers .= "Subject: {$subject}\r\n";
-                fputs($socket, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
-                $dataRes = fgets($socket, 512);
-                fputs($socket, "QUIT\r\n");
-                fclose($socket);
-                if (substr($dataRes, 0, 3) === '250') {
-                    return ['success' => true, 'method' => 'gmail_smtp_ssl_465', 'recipient' => $toEmail];
-                }
-            } else {
-                fclose($socket);
-            }
-        }
-    }
-
-    // --- TIER 2: TLS with STARTTLS (Port 587) ---
-    foreach ($passCandidates as $testPass) {
-        $socket587 = @stream_socket_client('tcp://smtp.gmail.com:587', $errno, $errstr, 4, STREAM_CLIENT_CONNECT);
-        if ($socket587) {
-            stream_set_timeout($socket587, 4);
-            fgets($socket587, 512);
-            fputs($socket587, "EHLO jananiagroproducts.com\r\n");
-            while ($line = fgets($socket587, 512)) { if (substr($line, 3, 1) === ' ') break; }
-            fputs($socket587, "STARTTLS\r\n");
-            $startTlsRes = fgets($socket587, 512);
-            if (substr($startTlsRes, 0, 3) === '220') {
-                stream_socket_enable_crypto($socket587, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-                fputs($socket587, "EHLO jananiagroproducts.com\r\n");
-                while ($line = fgets($socket587, 512)) { if (substr($line, 3, 1) === ' ') break; }
-                fputs($socket587, "AUTH LOGIN\r\n");
-                fgets($socket587, 512);
-                fputs($socket587, base64_encode($smtpUser) . "\r\n");
-                fgets($socket587, 512);
-                fputs($socket587, base64_encode($testPass) . "\r\n");
-                $authRes = fgets($socket587, 512);
-                if (substr($authRes, 0, 3) === '235') {
-                    fputs($socket587, "MAIL FROM: <{$smtpUser}>\r\n");
-                    fgets($socket587, 512);
-                    foreach ($recipients as $rcpt) {
-                        fputs($socket587, "RCPT TO: <{$rcpt}>\r\n");
-                        fgets($socket587, 512);
-                    }
-                    fputs($socket587, "DATA\r\n");
-                    fgets($socket587, 512);
-                    $headers  = "MIME-Version: 1.0\r\n";
-                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-                    $headers .= "From: Janani Agro Products <{$smtpUser}>\r\n";
-                    $headers .= "To: <{$toEmail}>\r\n";
-                    $headers .= "Reply-To: {$smtpUser}\r\n";
-                    $headers .= "Subject: {$subject}\r\n";
-                    fputs($socket587, $headers . "\r\n" . $emailBody . "\r\n.\r\n");
-                    $dataRes = fgets($socket587, 512);
-                    fputs($socket587, "QUIT\r\n");
-                    fclose($socket587);
-                    if (substr($dataRes, 0, 3) === '250') {
-                        return ['success' => true, 'method' => 'gmail_smtp_tls_587', 'recipient' => $toEmail];
-                    }
-                } else {
-                    fclose($socket587);
-                }
-            } else {
-                fclose($socket587);
-            }
-        }
-    }
-
-    // --- TIER 3: Native Hostinger mail() fallback ---
-    $domain = 'jananiagroproducts.com';
-    if (!empty($_SERVER['HTTP_HOST'])) {
-        $domain = preg_replace('/^www\./i', '', $_SERVER['HTTP_HOST']);
-    }
-    $domainSender = "noreply@" . $domain;
-
-    $mailHeaders  = "MIME-Version: 1.0\r\n";
-    $mailHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $mailHeaders .= "From: Janani Agro Products <{$domainSender}>\r\n";
-    $mailHeaders .= "Reply-To: {$smtpUser}\r\n";
-    $mailHeaders .= "X-Mailer: PHP/" . phpversion();
-
-    $mailSent = @mail($toEmail, $rawSubject, $emailBody, $mailHeaders, "-f {$domainSender}");
-    return $mailSent ? ['success' => true, 'method' => 'hostinger_mail', 'recipient' => $toEmail] : ['success' => false, 'error' => 'Mail delivery failed'];
+    return janani_send_mail($toEmail, $rawSubject, $emailBody, ['bcc' => [janani_admin_email()]]);
 }
 
-// On Hostinger Linux/CageFS, MySQL connects via unix domain socket ('localhost').
+// ---------------------------------------------------------
+// DATABASE CONNECTION (credentials only from environment variables)
+// On Hostinger, DB_HOST=localhost connects through the local MySQL socket.
+// ---------------------------------------------------------
 $pdo = null;
-$connectedDb = $raw_db;
 $lastError = null;
-
-$attempts = [
-    ['host' => 'localhost', 'db' => $raw_db, 'user' => $raw_user, 'pass' => $raw_pass],
-    ['host' => 'localhost', 'db' => 'u409810820_Jananiagro', 'user' => 'u409810820_Jananiagropro', 'pass' => 'Jananiagro@123'],
-    ['host' => 'localhost', 'db' => 'u409810820_jananiagro', 'user' => 'u409810820_jananiagropro', 'pass' => 'Jananiagro@123'],
-    ['host' => 'localhost', 'db' => 'janani_agro', 'user' => 'root', 'pass' => '']
-];
-
-foreach ($attempts as $att) {
+$connectedDb = $raw_db;
+if ($raw_db && $raw_user) {
     try {
-        $pdo = new PDO("mysql:host={$att['host']};dbname={$att['db']};charset=utf8mb4", $att['user'], $att['pass'], [
+        $pdo = new PDO("mysql:host={$raw_host};port={$raw_port};dbname={$raw_db};charset=utf8mb4", $raw_user, $raw_pass, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
-            PDO::ATTR_TIMEOUT => 2
+            PDO::ATTR_TIMEOUT => 5
         ]);
-        $connectedDb = $att['db'];
-        break;
     } catch (Throwable $e) {
         $lastError = $e;
+        error_log('[janani] database connection failed: ' . $e->getMessage());
     }
+} else {
+    error_log('[janani] DB_NAME / DB_USER / DB_PASSWORD are not configured. Create the .env file described in backend/.env.example.');
 }
 
 function generateNextCustomerId($pdo) {
@@ -754,22 +494,12 @@ function generateNextStaffId($pdo) {
     }
 }
 
+/**
+ * Preview of the next order number (display only). Real numbers are allocated atomically
+ * by janani_next_order_number() inside the order INSERT transaction.
+ */
 function generateNextOrderNumber($pdo) {
-    if (!$pdo) {
-        return 'JAP-001';
-    }
-    try {
-        $stmt = $pdo->query("SELECT MAX(num) AS max_num FROM (
-            SELECT CAST(SUBSTRING(number, 5) AS UNSIGNED) AS num FROM `orders` WHERE `number` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(number, 5) AS UNSIGNED) < 1000
-            UNION
-            SELECT CAST(SUBSTRING(id, 5) AS UNSIGNED) AS num FROM `orders` WHERE `id` REGEXP '^JAP-[0-9]{1,4}$' AND CAST(SUBSTRING(id, 5) AS UNSIGNED) < 1000
-        ) AS t");
-        $maxNum = $stmt ? (int)$stmt->fetchColumn() : 0;
-        $nextNum = max(1, $maxNum + 1);
-        return 'JAP-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
-    } catch (Exception $e) {
-        return 'JAP-001';
-    }
+    return $pdo ? janani_peek_order_number($pdo) : 'JAP-001';
 }
 
 function reindexAllCustomersSequentially($pdo, $force = false) {
@@ -868,149 +598,9 @@ function reindexAllCustomersSequentially($pdo, $force = false) {
     }
 }
 
-if ($pdo) {
-    // Drop deprecated tables requested by user: pickup_locations, newsletter_subscribers, order_items
-    try {
-        $pdo->exec("DROP TABLE IF EXISTS `pickup_locations`");
-        $pdo->exec("DROP TABLE IF EXISTS `newsletter_subscribers`");
-        $pdo->exec("DROP TABLE IF EXISTS `order_items`");
-    } catch (Throwable $e) {}
-
-    // Ensure clean state for customer registration without suppressing legitimate patrons
-    try {
-        $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
-        $delCustStmt->execute();
-        $exDel = $delCustStmt->fetchColumn();
-        if ($exDel) {
-            $delList = json_decode($exDel, true) ?: [];
-            $cleaned = array_values(array_filter($delList, function($d) {
-                $dl = strtolower((string)$d);
-                return $dl !== 'tarun' && $dl !== 'tarunbehara360@gmail.com';
-            }));
-            if (count($cleaned) !== count($delList)) {
-                $pdo->prepare("UPDATE `settings` SET `setting_value` = ? WHERE `setting_key` = 'deleted_customers'")->execute([json_encode($cleaned)]);
-            }
-        }
-    } catch (Throwable $e) {}
-
-    // Ensure the registered patron 'tarun' (tarunbehara360@gmail.com) is saved and active in MySQL users table
-    try {
-        $tarunChk = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = 'tarunbehara360@gmail.com' LIMIT 1");
-        $tarunChk->execute();
-        $tRow = $tarunChk->fetch();
-        if (!$tRow) {
-            $tarunId = generateNextCustomerId($pdo);
-            $tarunHash = password_hash('Tarun@123', PASSWORD_DEFAULT);
-            $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`)
-                VALUES (?, 'tarun', 'tarunbehara360@gmail.com', '+91 83285 93655', ?, ?, 'Customer', 0.00, 'Silver', 'Active', 1, 'JANANI360')
-                ON DUPLICATE KEY UPDATE `name` = 'tarun', `phone` = '+91 83285 93655', `status` = 'Active'")
-                ->execute([$tarunId, $tarunHash, $tarunHash]);
-        } else {
-            $pdo->prepare("UPDATE `users` SET `status` = 'Active', `name` = 'tarun', `phone` = '+91 83285 93655' WHERE `email` = 'tarunbehara360@gmail.com'")->execute();
-        }
-    } catch (Throwable $e) {}
-
-    // Automatically enforce strictly sequential CUST-001..CUST-xxx customer IDs for all existing patrons in MySQL
-    try {
-        reindexAllCustomersSequentially($pdo);
-    } catch (Throwable $e) {}
-
-    // Auto-repair: Restore Meena's legitimate placed order JAP-003 with correct customer details & delete dummy Ananya seed
-    try {
-        $pdo->exec("UPDATE `orders` SET 
-            `customer_name` = 'Meena',
-            `customer_email` = 'meena.varalaksmi@gmail.com',
-            `customer_phone` = '+91 91823 67695',
-            `subtotal` = 5600.00,
-            `total` = 5680.00,
-            `tax_amount` = 280.00,
-            `payment_method` = 'Razorpay Standard Checkout',
-            `payment_status` = 'Paid',
-            `order_status` = 'Processing',
-            `coupon_code` = 'JANANI10',
-            `coupon_discount` = 200.00,
-            `transaction_id` = 'pay_TzFKDGqHvJs2B7',
-            `shipping_address` = '{\"name\":\"Meena\",\"fullName\":\"Meena\",\"street\":\"ravi\",\"streetAddress\":\"ravi\",\"city\":\"Visakhapatnam\",\"state\":\"Andhra Pradesh\",\"pincode\":\"530040\",\"phone\":\"+91 91823 67695\"}',
-            `billing_address` = '{\"name\":\"Meena\",\"fullName\":\"Meena\",\"street\":\"ravi\",\"streetAddress\":\"ravi\",\"city\":\"Visakhapatnam\",\"state\":\"Andhra Pradesh\",\"pincode\":\"530040\",\"phone\":\"+91 91823 67695\"}',
-            `items` = '[{\"productId\":\"balavan\",\"name\":\"BALAVAN - Bacillus Subtilis (5L)\",\"price\":5600,\"quantity\":1,\"image\":\"/products/balavan.jpg\"}]'
-            WHERE (`number` = 'JAP-003' OR `id` = 'JAP-003') AND (`transaction_id` = 'pay_TzFKDGqHvJs2B7' OR `coupon_code` = 'JANANI10' OR `customer_email` = 'ananya.s@gmail.com')");
-    } catch (Throwable $e) {}
-
-    try {
-        // Automatically reset any demo/seed wallet balances for all Customers in database
-        $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
-    } catch (Throwable $e) {}
-
-    // Ensure users table schema has both password and password_hash columns safely
-    try {
-        $userCols = [];
-        $colStmt = $pdo->query("SHOW COLUMNS FROM `users`");
-        while ($c = $colStmt->fetch(PDO::FETCH_ASSOC)) {
-            $userCols[strtolower($c['Field'])] = true;
-        }
-        if (!isset($userCols['password'])) {
-            $pdo->exec("ALTER TABLE `users` ADD COLUMN `password` VARCHAR(255) DEFAULT NULL");
-        }
-        if (!isset($userCols['password_hash'])) {
-            $pdo->exec("ALTER TABLE `users` ADD COLUMN `password_hash` VARCHAR(255) DEFAULT NULL");
-        }
-    } catch (Throwable $e) {}
-
-    // Enforce secure bcrypt hashcode storage in BOTH `password` and `password_hash` columns
-    // No plaintext passwords and NO synthetic default passwords
-    try {
-        // 1. Purge synthetic default passwords (Janani@...) from customers who never set one
-        $pdo->exec("UPDATE `users` SET `password` = NULL, `password_hash` = NULL WHERE (`password` LIKE 'Janani@%' OR `password` = 'Janani@123') AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
-
-        // 2. Explicitly enforce secure bcrypt hash for Super Admin
-        $aHash = password_hash('Jananiagro@123', PASSWORD_DEFAULT);
-        $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = 'ADMIN-ROOT' OR `email` = 'jananibiosciences.r@gmail.com'")->execute([$aHash, $aHash]);
-
-        // 3. Explicitly enforce secure bcrypt hash for Kameswari (Sravs@98) in both columns
-        $kHash = password_hash('Sravs@98', PASSWORD_DEFAULT);
-        $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = 'kameswarip98@gmail.com'")->execute([$kHash, $kHash]);
-
-        // 4. Explicitly enforce secure bcrypt hash for Sai Rama (Rama@123) in both columns
-        $rHash = password_hash('Rama@123', PASSWORD_DEFAULT);
-        $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash, $rHash]);
-
-        // 5. For any user with a plaintext password, compute bcrypt hash and store it in BOTH `password` and `password_hash`
-        $unhashedStmt = $pdo->query("SELECT `id`, `password`, `password_hash` FROM `users` WHERE (`password` IS NOT NULL AND `password` != '' AND `password` NOT LIKE '\$2y\$%' AND `password` NOT LIKE '\$2a\$%' AND `password` NOT LIKE '\$2b\$%')");
-        $unhashedUsers = $unhashedStmt ? $unhashedStmt->fetchAll(PDO::FETCH_ASSOC) : [];
-        if (!empty($unhashedUsers)) {
-            $upHashStmt = $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ?");
-            foreach ($unhashedUsers as $uRow) {
-                $rawPass = trim($uRow['password']);
-                if ($rawPass !== '') {
-                    $computedHash = (!empty($uRow['password_hash']) && preg_match('/^\$2[ayb]\$[0-9]{2}\$/', $uRow['password_hash']))
-                        ? $uRow['password_hash']
-                        : password_hash($rawPass, PASSWORD_DEFAULT);
-                    $upHashStmt->execute([$computedHash, $computedHash, $uRow['id']]);
-                }
-            }
-        }
-
-        // 6. If password_hash is valid bcrypt hash but password is NULL or different, sync password column to bcrypt hash
-        $pdo->exec("UPDATE `users` SET `password` = `password_hash` WHERE `password_hash` LIKE '\$2y\$%' AND (`password` IS NULL OR `password` != `password_hash`)");
-    } catch (Throwable $e) {}
-
-    // Purge legacy duplicate / obsolete dummy product (ID 112 or ROOT PLUS) so Bio Fertilizers strictly matches Admin & DB (2 products)
-    try {
-        $pdo->exec("DELETE FROM `products` WHERE `id` = 112 OR `slug` = 'root-plus' OR LOWER(`name`) = 'root plus'");
-        $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE p.active = 1 AND p.status != 'Trash' AND (p.category_name = c.name OR p.category_id = c.id OR LOWER(p.category_name) = LOWER(c.name)))");
-    } catch (Throwable $e) {}
-
-    // Purge corrupt / legacy non-Janani product (ID 2124 or Mortein) from products table
-    try {
-        $pdo->exec("DELETE FROM `products` WHERE `id` = 2124 OR LOWER(`name`) LIKE '%mortein%' OR LOWER(`slug`) LIKE '%mortein%'");
-        $pdo->exec("UPDATE `users` SET `wishlist` = '[1, 2]' WHERE (`email` = 'kameswarip98@gmail.com' OR `email` = 'sravanipachipulusu98@gmail.com') AND (`wishlist` LIKE '%2124%' OR `wishlist` LIKE '%mortein%' OR `wishlist` IS NULL OR `wishlist` = '[]' OR `wishlist` = '')");
-    } catch (Throwable $e) {}
-
-    // Clean up volume suffixes like (5L), (1L), (5 L), (1 L) from product names in MySQL
-    try {
-        $pdo->exec("UPDATE `products` SET `name` = TRIM(REPLACE(REPLACE(REPLACE(REPLACE(`name`, ' (5L)', ''), ' (1L)', ''), ' (5 L)', ''), ' (1 L)', '')) WHERE `name` LIKE '%(5L)%' OR `name` LIKE '%(1L)%' OR `name` LIKE '%(5 L)%' OR `name` LIKE '%(1 L)%'");
-    } catch (Throwable $e) {}
-}
+// One-time, versioned schema/data migrations (see api_security.php).
+// Normal requests never rewrite passwords, wallets, orders or products.
+janani_boot($pdo);
 
 $action = $_GET['action'] ?? '';
 $method = strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? $_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -1055,14 +645,18 @@ function saveBase64ImageFile($dataUri, $folder = 'images/categories', $filePrefi
             return $dataUri;
         }
         $rawExt = strtolower($matches[1]);
+        if ($rawExt === 'svg' || $rawExt === 'svg+xml') {
+            // SVG files can carry scripts when opened directly, so they are never written to the web root.
+            return $dataUri;
+        }
         $ext = 'jpg';
         if ($rawExt === 'png') $ext = 'png';
         elseif ($rawExt === 'webp') $ext = 'webp';
-        elseif ($rawExt === 'svg' || $rawExt === 'svg+xml') $ext = 'svg';
         elseif ($rawExt === 'gif') $ext = 'gif';
-        
-        $base64Data = base64_decode($matches[2]);
-        if (!$base64Data) {
+
+        $base64Data = base64_decode($matches[2], true);
+        // Only genuine raster images up to 8 MB are stored as files.
+        if (!$base64Data || strlen($base64Data) > 8 * 1024 * 1024 || @getimagesizefromstring($base64Data) === false) {
             return $dataUri;
         }
         $targetDir = __DIR__ . '/' . trim($folder, '/');
@@ -1093,9 +687,9 @@ function saveBase64VideoFile($dataUri, $folder = 'videos/products', $filePrefix 
         if ($rawExt === 'webm') $ext = 'webm';
         elseif ($rawExt === 'ogg') $ext = 'ogg';
         elseif ($rawExt === 'quicktime') $ext = 'mov';
-        
-        $base64Data = base64_decode($matches[2]);
-        if (!$base64Data) {
+
+        $base64Data = base64_decode($matches[2], true);
+        if (!$base64Data || strlen($base64Data) > 60 * 1024 * 1024) {
             return $dataUri;
         }
         $targetDir = __DIR__ . '/' . trim($folder, '/');
@@ -1139,41 +733,15 @@ function formatProductRecordForOutput($prod) {
 // ZERO-500 RESILIENT FALLBACK HANDLER WHEN DATABASE IS OFFLINE
 // ---------------------------------------------------------
 if (!$pdo) {
-    http_response_code(200);
-
-    if ($action === 'init') {
-        require_once __DIR__ . '/db_init.php';
-        exit;
-    }
-
-    if ($action === 'check-user') {
-        $body = getJsonBody();
-        $email = strtolower(trim($_GET['email'] ?? $_GET['target'] ?? $body['email'] ?? $body['target'] ?? ''));
-        $phone = trim($_GET['phone'] ?? $body['phone'] ?? '');
-        $target = $email ?: $phone;
-        $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
-
-                // ADMIN STRICT LOCKDOWN in send-otp
-                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
-                    ]);
-                    exit;
-                }
-        echo json_encode([
-            'success' => true,
-            'exists' => $isAdmin,
-            'isAdmin' => $isAdmin,
-            'user' => $isAdmin ? [
-                'id' => 'ADMIN-ROOT',
-                'name' => 'Janani Admin (Root)',
-                'email' => 'jananibiosciences.r@gmail.com',
-                'phone' => '+91 98480 22338',
-                'role' => 'Super Admin'
-            ] : null
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        exit;
+    // Database unreachable: serve a read-only catalogue so storefront pages still render.
+    // Sign-in, checkout, payments and every admin / data-changing action are refused:
+    // no synthetic sessions, no placeholder orders, no fake success responses.
+    if ($method !== 'GET' || !in_array($action, ['products', 'categories', 'reviews'], true)) {
+        janani_json_exit([
+            'success' => false,
+            'serviceUnavailable' => true,
+            'message' => 'Our servers are temporarily unavailable. Please try again in a few minutes.'
+        ], 503);
     }
 
     if ($action === 'categories') {
@@ -1194,104 +762,6 @@ if (!$pdo) {
                 ['id' => 'cat-soil-protection', 'name' => 'Soil Protection', 'slug' => 'soil-protection', 'product_count' => 0, 'image' => '/images/categories/others.jpg', 'icon' => '🌾', 'active' => 1, 'featured' => 0, 'trending' => 0]
             ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        exit;
-    }
-
-    if ($action === 'send-otp') {
-        $body = getJsonBody();
-        $email = strtolower(trim($body['email'] ?? ''));
-        $phone = trim($body['phone'] ?? '');
-        $purpose = trim($body['purpose'] ?? 'login');
-        $target = $email ?: $phone;
-
-        if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
-            ]);
-            exit;
-        }
-        $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
-        
-        $tempOtpFile = sys_get_temp_dir() . '/janani_otp_' . md5($target ?: $email) . '.json';
-        @file_put_contents($tempOtpFile, json_encode(['code' => $otp, 'otp' => $otp, 'time' => time(), 'email' => $email, 'phone' => $phone]));
-        
-        $delivery = ['success' => true, 'method' => 'auto_dispatch'];
-        if ($email) {
-            try {
-                $delivery = sendGmailOtp($email, $otp, $smtp_user, $smtp_pass, $admin_email);
-            } catch (Throwable $e) {
-                $delivery = ['success' => false, 'error' => $e->getMessage()];
-            }
-        }
-
-        $isOk = (is_array($delivery) && !empty($delivery['success']));
-
-        echo json_encode([
-            'success' => true,
-            'message' => $isOk
-                ? ($email ? "Real-time 6-digit OTP code dispatched to {$email}. Please check your inbox!" : "OTP dispatched to +91 {$phone}")
-                : ($email ? "Gmail SMTP delivery failed. Please verify your email or check server settings." : "OTP dispatched to +91 {$phone}"),
-            'emailSent' => $isOk,
-            'delivery' => $delivery,
-            'deliveryError' => $isOk ? null : ($delivery['error'] ?? 'Delivery failed'),
-            'resendCooldownSeconds' => 60
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        exit;
-    }
-
-    if ($action === 'verify-otp') {
-        $body = getJsonBody();
-        $email = strtolower(trim($body['email'] ?? ''));
-        $phone = trim($body['phone'] ?? '');
-        $otp = trim($body['otp'] ?? '');
-        $name = trim($body['name'] ?? 'Valued Patron');
-        $target = $email ?: $phone;
-
-        $tempOtpFile = sys_get_temp_dir() . '/janani_otp_' . md5($target ?: $email) . '.json';
-        $valid = false;
-        if (file_exists($tempOtpFile)) {
-            $savedData = json_decode(@file_get_contents($tempOtpFile), true);
-            if ($savedData && (isset($savedData['otp']) || isset($savedData['code'])) && ((string)($savedData['otp'] ?? $savedData['code']) === $otp) && (time() - ($savedData['time'] ?? 0)) < 900) {
-                $valid = true;
-                @unlink($tempOtpFile);
-            }
-        }
-
-        if ($valid) {
-            $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
-
-                // ADMIN STRICT LOCKDOWN in send-otp
-                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
-                    ]);
-                    exit;
-                }
-            echo json_encode([
-                'success' => true,
-                'message' => 'Signed in successfully!',
-                'user' => [
-                    'id' => $isAdmin ? 'ADMIN-ROOT' : ('usr_' . substr(md5($email ?: 'user'), 0, 8)),
-                    'name' => $isAdmin ? 'Janani Admin (Root)' : $name,
-                    'email' => $email ?: 'jananibiosciences.r@gmail.com',
-                    'phone' => $phone ?: '+91 98480 22338',
-                    'role' => $isAdmin ? 'Super Admin' : 'Customer',
-                    'verified' => true,
-                    'isVerified' => true,
-                    'status' => 'Active',
-                    'walletBalance' => $isAdmin ? 10000 : 0,
-                    'tier' => $isAdmin ? 'Platinum Root Access' : 'Silver'
-                ],
-                'token' => 'janani_jwt_' . md5(($email ?: 'user') . time())
-            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        } else {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Invalid or expired verification code. Please request a new OTP.'
-            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        }
         exit;
     }
 
@@ -1323,135 +793,8 @@ if (!$pdo) {
         exit;
     }
 
-    if ($action === 'reviews') {
-        $mockReviews = [
-            [
-                'id' => 'REV-101',
-                'productId' => 'prod-bhumi-shakti',
-                'product_id' => 'prod-bhumi-shakti',
-                'productName' => 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant',
-                'product_name' => 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant',
-                'productCategory' => 'Bio Stimulant',
-                'productImage' => '/products/annada.jpg',
-                'customerId' => 'CUST-001',
-                'customer_id' => 'CUST-001',
-                'customerName' => 'Ramesh Kumar',
-                'customer_name' => 'Ramesh Kumar',
-                'customerEmail' => 'ramesh.kumar@gmail.com',
-                'customer_email' => 'ramesh.kumar@gmail.com',
-                'customerAvatar' => '/images/farmer_ramesh.jpg',
-                'location' => 'Mango Farmer, Andhra Pradesh',
-                'rating' => 5,
-                'title' => 'Increased soil health and bumper yield',
-                'comment' => 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!',
-                'verifiedPurchase' => true,
-                'verified_purchase' => 1,
-                'status' => 'Approved',
-                'isFeatured' => true,
-                'helpfulCount' => 42,
-                'abuseReportsCount' => 0,
-                'abuseReports' => [],
-                'images' => [],
-                'customerReplies' => [],
-                'createdAt' => '2026-09-10 11:20:00',
-                'created_at' => '2026-09-10 11:20:00'
-            ],
-            [
-                'id' => 'REV-102',
-                'productId' => 'prod-harit',
-                'product_id' => 'prod-harit',
-                'productName' => 'HARIT — Trichoderma Viride Liquid Biofungicide',
-                'product_name' => 'HARIT — Trichoderma Viride Liquid Biofungicide',
-                'productCategory' => 'Bio Fungicide',
-                'productImage' => '/products/suraksha.jpg',
-                'customerId' => 'CUST-002',
-                'customer_id' => 'CUST-002',
-                'customerName' => 'Srinivas Reddy',
-                'customer_name' => 'Srinivas Reddy',
-                'customerEmail' => 'srinivas.reddy@gmail.com',
-                'customer_email' => 'srinivas.reddy@gmail.com',
-                'customerAvatar' => '/images/farmer_srinivas.jpg',
-                'location' => 'Vegetable Farmer, Telangana',
-                'rating' => 5,
-                'title' => 'Root rot under complete control',
-                'comment' => 'HARIT helped in controlling root rot and my plants are now much healthier.',
-                'verifiedPurchase' => true,
-                'verified_purchase' => 1,
-                'status' => 'Approved',
-                'isFeatured' => true,
-                'helpfulCount' => 29,
-                'abuseReportsCount' => 0,
-                'abuseReports' => [],
-                'images' => [],
-                'customerReplies' => [],
-                'createdAt' => '2026-09-09 09:45:00',
-                'created_at' => '2026-09-09 09:45:00'
-            ],
-            [
-                'id' => 'REV-103',
-                'productId' => 'prod-suraksha',
-                'product_id' => 'prod-suraksha',
-                'productName' => 'SURAKSHA — Bio Pesticide & Crop Shield',
-                'product_name' => 'SURAKSHA — Bio Pesticide & Crop Shield',
-                'productCategory' => 'Bio Pesticide',
-                'productImage' => '/products/suraksha.jpg',
-                'customerId' => 'CUST-003',
-                'customer_id' => 'CUST-003',
-                'customerName' => 'Mahesh Patel',
-                'customer_name' => 'Mahesh Patel',
-                'customerEmail' => 'mahesh.patel@gmail.com',
-                'customer_email' => 'mahesh.patel@gmail.com',
-                'customerAvatar' => '/images/farmer_mahesh.jpg',
-                'location' => 'Cotton Farmer, Gujarat',
-                'rating' => 5,
-                'title' => 'Excellent cotton crop improvement',
-                'comment' => 'Good quality products and excellent results. My cotton crop showed great improvement.',
-                'verifiedPurchase' => true,
-                'verified_purchase' => 1,
-                'status' => 'Approved',
-                'isFeatured' => true,
-                'helpfulCount' => 18,
-                'abuseReportsCount' => 0,
-                'abuseReports' => [],
-                'images' => [],
-                'customerReplies' => [],
-                'createdAt' => '2026-09-08 14:30:00',
-                'created_at' => '2026-09-08 14:30:00'
-            ]
-        ];
-        echo json_encode([
-            'success' => true,
-            'db_fallback' => true,
-            'count' => count($mockReviews),
-            'total' => count($mockReviews),
-            'totalReviews' => count($mockReviews),
-            'approvedCount' => count($mockReviews),
-            'pendingCount' => 0,
-            'rejectedCount' => 0,
-            'averageRating' => 5.0,
-            'stats' => [
-                'totalReviews' => count($mockReviews),
-                'approvedCount' => count($mockReviews),
-                'pendingCount' => 0,
-                'rejectedCount' => 0,
-                'flaggedCount' => 0,
-                'photoReviewsCount' => 0,
-                'averageRating' => 5.0,
-                'responseRate' => '96.4%',
-                'recommendationRate' => '94.8%'
-            ],
-            'reviews' => $mockReviews,
-            'data' => $mockReviews
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        exit;
-    }
-
-    echo json_encode([
-        'success' => true,
-        'db_fallback' => true,
-        'data' => []
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    exit;
+    // Reviews and everything else: no placeholder data while the database is offline.
+    janani_json_exit(['success' => true, 'db_fallback' => true, 'reviews' => [], 'data' => []]);
 }
 
 function ensureReviewsTableSchema($pdo) {
@@ -1507,22 +850,7 @@ function ensureReviewsTableSchema($pdo) {
             $pdo->prepare("UPDATE `reviews` SET `customer_avatar` = ? WHERE (`customer_avatar` IS NULL OR `customer_avatar` = '' OR `customer_avatar` LIKE '%dicebear%') AND LOWER(`customer_name`) = ?")->execute([$avatar, strtolower($name)]);
         }
 
-        $cnt = (int)$pdo->query("SELECT COUNT(*) FROM `reviews`")->fetchColumn();
-        if ($cnt === 0) {
-            $seeds = [
-                ['REV-101', 'prod-bhumi-shakti', 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant', 'CUST-001', 'Ramesh Kumar', 'ramesh.kumar@gmail.com', '/images/farmer_ramesh.jpg', 'Mango Farmer, Andhra Pradesh', 5, 'Increased soil health and bumper yield', 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!', 1, 'Approved', 1, 42],
-                ['REV-102', 'prod-harit', 'HARIT — Trichoderma Viride Liquid Biofungicide', 'CUST-002', 'Srinivas Reddy', 'srinivas.reddy@gmail.com', '/images/farmer_srinivas.jpg', 'Vegetable Farmer, Telangana', 5, 'Root rot under complete control', 'HARIT helped in controlling root rot and my plants are now much healthier.', 1, 'Approved', 1, 29],
-                ['REV-103', 'prod-suraksha', 'SURAKSHA — Bio Pesticide & Crop Shield', 'CUST-003', 'Mahesh Patel', 'mahesh.patel@gmail.com', '/images/farmer_mahesh.jpg', 'Cotton Farmer, Gujarat', 5, 'Excellent cotton crop improvement', 'Good quality products and excellent results. My cotton crop showed great improvement.', 1, 'Approved', 1, 18],
-                ['REV-104', 'prod-pushkal', 'PUSHKAL — Flowering & Fruit Set Biostimulant', 'CUST-004', 'Suresh Patil', 'suresh.patil@gmail.com', '/images/farmer_suresh.jpg', 'Sugarcane Farmer, Maharashtra', 5, 'Thicker stalks and higher sugar recovery', 'Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!', 1, 'Approved', 1, 15],
-                ['REV-105', 'prod-annada', 'ANNADA — Fish Amino Acid Organic Growth Promoter', 'CUST-005', 'Baldev Singh', 'baldev.singh@gmail.com', '/images/farmer_baldev.jpg', 'Wheat & Paddy Farmer, Punjab', 5, 'Zero chemical residue and vigorous tillering', 'Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.', 1, 'Approved', 1, 21],
-                ['REV-106', 'prod-neem-oil', 'NEEM OIL — Cold Pressed Azadirachtin Formulation', 'CUST-006', 'Radhika K.', 'radhika.k@gmail.com', '/images/farmer_radhika.jpg', 'Spice Farmer, Kerala', 5, 'Authentic aroma and pure traditional extraction!', 'The fragrance and texture of this Neem formulation are completely unmatched compared to commercially refined market brands.', 1, 'Approved', 1, 24],
-                ['REV-107', 'prod-dharani', 'DHARANI — Complete Organic Bio Fertilizer', 'CUST-007', 'Suresh Narayanan', 'suresh.n@gmail.com', '/images/farmer_suresh.jpg', 'Bio Fertilizer & Protection', 5, 'Clean packing, fast delivery and authentic results', 'Ordered the farm pack. Eco-packaging is top notch, no leakage, and crops show vigorous healthy canopy within 10 days.', 1, 'Approved', 1, 19]
-            ];
-            $stmt = $pdo->prepare("INSERT IGNORE INTO `reviews` (`id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `customer_email`, `customer_avatar`, `location`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `is_featured`, `helpful_count`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            foreach ($seeds as $s) {
-                $stmt->execute($s);
-            }
-        }
+        // Placeholder reviews are no longer seeded: the storefront only shows genuine customer reviews.
     } catch (Exception $e) {}
 }
 
@@ -1645,14 +973,15 @@ function ensureProductsTableSchema($pdo) {
         try {
             $colStmt = $pdo->query("SHOW COLUMNS FROM `products`");
             while ($col = $colStmt->fetch(PDO::FETCH_ASSOC)) {
-                $existingCols[strtolower($col['Field'])] = true;
+                $existingCols[strtolower($col['Field'])] = strtolower($col['Type'] ?? '') ?: true;
             }
         } catch (Exception $e) {}
 
-        if (isset($existingCols['image'])) {
+        // Only widen the column when it is still a short type (avoids an ALTER TABLE on every request)
+        if (isset($existingCols['image']) && is_string($existingCols['image']) && strpos($existingCols['image'], 'mediumtext') === false && strpos($existingCols['image'], 'longtext') === false) {
             try { $pdo->exec("ALTER TABLE `products` MODIFY COLUMN `image` MEDIUMTEXT NULL"); } catch (Exception $e) {}
         }
-        if (isset($existingCols['description'])) {
+        if (isset($existingCols['description']) && is_string($existingCols['description']) && strpos($existingCols['description'], 'mediumtext') === false && strpos($existingCols['description'], 'longtext') === false) {
             try { $pdo->exec("ALTER TABLE `products` MODIFY COLUMN `description` MEDIUMTEXT NULL"); } catch (Exception $e) {}
         }
 
@@ -1832,9 +1161,7 @@ function ensureOrdersTableSchema($pdo) {
             `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-        $pdo->exec("DROP TABLE IF EXISTS `order_items`");
-        $pdo->exec("DROP TABLE IF EXISTS `pickup_locations`");
-        $pdo->exec("DROP TABLE IF EXISTS `newsletter_subscribers`");
+        // Note: legacy tables are never dropped automatically.
     } catch (Exception $e) {}
 }
 
@@ -1848,14 +1175,7 @@ function ensureJananiCatalogSynced($pdo) {
         ensureUsersTableSchema($pdo);
         ensureOrdersTableSchema($pdo);
 
-        // Delete legacy demo grocery categories if any
-        $checkOld = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices')")->fetchColumn();
-        if ($checkOld > 0) {
-            $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee') OR `id` LIKE 'cat-sub-%'");
-        }
-
-        // Purge legacy unused dummy categories
-        $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('termeric', 'turmeric') OR `id` IN ('cat-termeric', 'cat-turmeric')");
+        // Admin-created categories are never deleted automatically.
 
         // 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
         $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
@@ -1939,1176 +1259,584 @@ function ensureJananiCatalogSynced($pdo) {
             }
         } catch (Exception $e) {}
 
-        // Auto-consolidate 'Other' and 'Other Categories' into the primary user other category
-        try {
-            $primaryOther = $pdo->query("SELECT * FROM `categories` 
-                WHERE (`slug` IN ('other-categories', 'other', 'others') OR LOWER(`name`) LIKE '%other%') 
-                  AND `deleted_at` IS NULL 
-                ORDER BY (`slug` = 'other-categories' OR `name` = 'Other Categories') DESC, (`id` != 'cat-other') DESC, `id` ASC 
-                LIMIT 1")->fetch();
-
-            if ($primaryOther) {
-                $primaryId = $primaryOther['id'];
-                $primaryName = $primaryOther['name'];
-                $primarySlug = $primaryOther['slug'];
-
-                // Reassign all products from any 'other' variation to the primary other category
-                $pdo->prepare("UPDATE `products` SET 
-                    `category_name` = ?, 
-                    `category_id` = ?, 
-                    `category_slug` = ? 
-                    WHERE `category_name` IN ('Other', 'Others', 'other', 'others', 'Other Categories') 
-                       OR `category_id` IN ('cat-other', 'cat-others', ?) 
-                       OR `category_slug` IN ('other', 'others', 'other-categories')")->execute([$primaryName, $primaryId, $primarySlug, $primaryId]);
-
-                // If primary is user-created (e.g. 'Other Categories'), purge redundant auto-created cat-other
-                if ($primaryId !== 'cat-other') {
-                    $pdo->exec("DELETE FROM `categories` WHERE `id` = 'cat-other' OR (`slug` = 'other' AND `name` = 'Other')");
-                }
-            }
-        } catch (Exception $e) {}
+        // Category assignments made by the admin are never rewritten automatically.
 
         // Update category product counts dynamically
         try {
             $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR p.category_slug = c.slug OR LOWER(p.category_name) = LOWER(c.name)))");
         } catch (Exception $e) {}
 
-        // Auto-purge any duplicate/copy products created via duplicate action and any trash items
-        try {
-            $pdo->exec("DELETE FROM `products` WHERE `name` LIKE '%(Copy)%' OR `slug` LIKE '%-copy-%' OR `sku` LIKE '%-CPY%' OR `status` = 'Trash' OR `active` = 0");
-        } catch (Exception $e) {}
-
-        // Auto-clean any duplicated store support numbers from customer rows in users table
-        try {
-            $pdo->exec("UPDATE `users` SET `phone` = '' WHERE `phone` = '+91 98480 22338' AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
-            $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
-        } catch (Exception $e) {}
-
-        // Auto-repair: Guarantee ramaofficial.d@gmail.com is correctly set for Sai Rama with bcrypt hash in both columns
-        try {
-            $rHash = password_hash('Rama@123', PASSWORD_DEFAULT);
-            $pdo->prepare("UPDATE `users` SET 
-                `email` = 'ramaofficial.d@gmail.com', 
-                `name` = 'Sai Rama', 
-                `password` = ?, 
-                `password_hash` = ?, 
-                `status` = 'Active' 
-                WHERE `email` = 'dr.ananya@heritagehealth.org' OR `name` = 'Sai Rama'")->execute([$rHash, $rHash]);
-
-            $checkRama = (int)$pdo->query("SELECT COUNT(*) FROM `users` WHERE `email` = 'ramaofficial.d@gmail.com'")->fetchColumn();
-            if ($checkRama === 0) {
-                $nextId = generateNextCustomerId($pdo);
-                $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `is_verified`, `referral_code`) 
-                VALUES (?, 'Sai Rama', 'ramaofficial.d@gmail.com', '+91 99999 99999', ?, ?, 'Customer', 0.00, 850, 'Silver', 'Active', 1, 'JANANI7788')")->execute([$nextId, $rHash, $rHash]);
-            } else {
-                $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash, $rHash]);
-            }
-
-            $pdo->exec("DELETE FROM `users` WHERE `email` = 'dr.ananya@heritagehealth.org' AND `email` != 'ramaofficial.d@gmail.com'");
-            $pdo->exec("UPDATE `orders` SET `customer_email` = 'ramaofficial.d@gmail.com', `customer_name` = 'Sai Rama' WHERE `customer_email` = 'dr.ananya@heritagehealth.org'");
-        } catch (Exception $e) {}
+        // Products are never deleted automatically: deactivated / trashed products stay restorable.
     } catch (Exception $e) {}
 }
 
 try {
+    // Central access control - runs before every handler (see api_security.php)
+    janani_authorize_request($pdo, $action, $method);
+
     switch ($action) {
         case 'init':
+            // Schema repair / seed script. Administrator only (enforced above).
+            if (!defined('JANANI_DB_INIT_ALLOWED')) define('JANANI_DB_INIT_ALLOWED', true);
             require_once __DIR__ . '/db_init.php';
             exit;
 
         case 'reindex_customers':
         case 'reindex-customers':
-            reindexAllCustomersSequentially($pdo, true);
-            $allUsers = $pdo->query("SELECT `id`, `name`, `email`, `role`, `status` FROM `users` ORDER BY `id` ASC")->fetchAll(PDO::FETCH_ASSOC);
-            echo json_encode([
-                'success' => true,
-                'message' => 'All customer IDs re-indexed sequentially starting from CUST-001',
-                'users' => $allUsers
-            ]);
-            exit;
+            // Renumbering customer IDs rewrites primary keys that orders, reviews and active sessions refer to.
+            janani_json_exit([
+                'success' => false,
+                'message' => 'Customer ID re-indexing is disabled: it would change customer identities linked to orders and sessions.'
+            ], 410);
 
         case 'next-order-number':
-            echo json_encode([
+            // Display preview only - the real number is allocated atomically when the order is saved.
+            janani_json_exit(['success' => true, 'preview' => true, 'nextOrderNumber' => janani_peek_order_number($pdo)]);
+
+        case 'auth-me':
+            $me = janani_current_user($pdo);
+            if (!$me) {
+                janani_json_exit(['success' => false, 'authRequired' => true, 'message' => 'Not signed in.'], 401);
+            }
+            janani_json_exit([
                 'success' => true,
-                'nextOrderNumber' => generateNextOrderNumber($pdo)
+                'user' => janani_session_user($me),
+                'isAdmin' => janani_is_admin_user($me),
+                'isStaff' => janani_is_staff_user($me),
             ]);
-            exit;
 
         case 'check-user':
+            janani_rate_limit_or_exit($pdo, 'check-user:' . janani_client_ip(), 60, 600);
             $body = getJsonBody();
-            $rawTarget = trim($_GET['target'] ?? $body['target'] ?? '');
-            $email = strtolower(trim($_GET['email'] ?? $body['email'] ?? ''));
-            $phone = trim($_GET['phone'] ?? $body['phone'] ?? '');
-
-            if ($rawTarget !== '') {
-                if (strpos($rawTarget, '@') !== false) {
-                    $email = strtolower($rawTarget);
-                } else {
-                    $phone = $rawTarget;
-                }
+            $lookup = trim((string)($_GET['target'] ?? ($body['target'] ?? ($_GET['email'] ?? ($body['email'] ?? ($_GET['phone'] ?? ($body['phone'] ?? '')))))));
+            if ($lookup === '') {
+                janani_json_exit(['success' => false, 'message' => 'Please provide an email or mobile number to check.']);
             }
-
-            if ($email !== '' && strpos($email, '@') === false) {
-                if (empty($phone)) {
-                    $phone = $email;
-                }
-                $email = '';
-            }
-
-            $target = $email ?: $phone;
-
-            if (!$target) {
-                echo json_encode(['success' => false, 'message' => 'Please provide an email or mobile number to check.']);
-                exit;
-            }
-
-            $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
-
-            if ($isAdmin) {
-                echo json_encode([
-                    'success' => true,
-                    'exists' => true,
-                    'isAdmin' => true,
-                    'user' => [
-                        'id' => 'ADMIN-ROOT',
-                        'name' => 'Janani Admin (Root)',
-                        'email' => $email ?: 'jananibiosciences.r@gmail.com',
-                        'role' => 'Super Admin'
-                    ]
-                ]);
-                exit;
-            }
-
-            $foundUser = null;
-            $matchedBy = null;
-            try {
-                if (!empty($email)) {
-                    $stmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier` FROM `users` WHERE `email` = ? LIMIT 1");
-                    $stmt->execute([$email]);
-                    $foundUser = $stmt->fetch();
-                    if ($foundUser) $matchedBy = 'email';
-                }
-                if (!$foundUser && !empty($phone)) {
-                    $cleanDigits = preg_replace('/\D/', '', $phone);
-                    if (strlen($cleanDigits) >= 10) {
-                        $last10 = substr($cleanDigits, -10);
-                        $stmt = $pdo->prepare("SELECT `id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier` FROM `users` WHERE (`phone` LIKE ? OR `phone` LIKE ?) AND `phone` != '+91 98480 22338' LIMIT 1");
-                        $stmt->execute(['%' . $last10, '%' . $last10 . '%']);
-                        $foundUser = $stmt->fetch();
-                        if ($foundUser) $matchedBy = 'phone';
-                    }
-                }
-            } catch (Exception $e) {}
-
-            echo json_encode([
+            $found = janani_find_user_by_identifier($pdo, $lookup);
+            // Only existence is disclosed - never names, phone numbers, wallet balances or roles.
+            janani_json_exit([
                 'success' => true,
-                'exists' => !!$foundUser,
-                'matchedBy' => $matchedBy,
-                'user' => $foundUser ?: null
+                'exists' => (bool)$found,
+                'matchedBy' => $found ? (strpos($lookup, '@') !== false ? 'email' : 'phone') : null,
+                'user' => null,
             ]);
-            exit;
 
         case 'login-email':
         case 'login':
-            if ($method === 'POST') {
-                $body = getJsonBody();
-                $email = strtolower(trim($body['email'] ?? ''));
-                $password = trim($body['password'] ?? '');
-
-                if (!$email || !$password) {
-                    echo json_encode(['success' => false, 'message' => 'Email address and password are required.']);
-                    exit;
-                }
-
-                $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
-
-                // ADMIN STRICT LOCKDOWN in send-otp
-                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
-                    ]);
-                    exit;
-                }
-
-                // Check Admin credentials
-                if ($isAdmin) {
-                    $validAdminPasswords = ['Jananiagro@123', 'demo1234', 'admin123', 'Janani@Admin', 'janani123', 'Janani@2026'];
-                    if (in_array($password, $validAdminPasswords)) {
-                        $adminUser = [
-                            'id' => 'ADMIN-ROOT',
-                            'name' => 'Janani Admin (Root)',
-                            'email' => 'jananibiosciences.r@gmail.com',
-                            'phone' => '+91 98480 22338',
-                            'role' => 'Super Admin',
-                            'walletBalance' => 10000,
-                            'referralCode' => 'JANANIROOT',
-                            'isVerified' => true,
-                            'tier' => 'Platinum Root Access'
-                        ];
-
-                        echo json_encode([
-                            'success' => true,
-                            'message' => 'Welcome Super Admin! Signed in successfully.',
-                            'token' => 'janani_jwt_admin_' . time(),
-                            'user' => $adminUser
-                        ]);
-                        exit;
-                    } else {
-                        echo json_encode([
-                            'success' => false,
-                            'message' => 'Incorrect password for Admin account. Please try again.'
-                        ]);
-                        exit;
-                    }
-                }
-
-                // Check Customer in MySQL users table
-                $foundUser = null;
-                try {
-                    $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
-                    $stmt->execute([$email]);
-                    $foundUser = $stmt->fetch();
-                } catch (Exception $e) {}
-
-                if (!$foundUser) {
-                    echo json_encode([
-                        'success' => false,
-                        'notRegistered' => true,
-                        'not_registered' => true,
-                        'message' => "No registered account found with {$email}. Please create an account first."
-                    ]);
-                    exit;
-                }
-
-                // Check password match strictly (supports plain text and password_verify for hashed passwords)
-                $dbPass = trim((string)($foundUser['password'] ?? ''));
-                $dbHash = trim((string)($foundUser['password_hash'] ?? ''));
-
-                // Fallback for user kameswarip98@gmail.com
-                if ($email === 'kameswarip98@gmail.com' && empty($dbPass) && empty($dbHash)) {
-                    $dbPass = 'Sravs@98';
-                }
-
-                if (empty($dbPass) && empty($dbHash)) {
-                    echo json_encode([
-                        'success' => false,
-                        'hasNoPassword' => true,
-                        'message' => 'No password has been set for this account. Please sign in with OTP or click "Forgot Password" to set a password.'
-                    ]);
-                    exit;
-                }
-
-                $passwordMatches = false;
-
-                // 1. Direct match with stored plain text
-                if (!empty($dbPass) && ($password === $dbPass || trim($password) === $dbPass)) {
-                    $passwordMatches = true;
-                }
-                // 2. password_verify against plain column
-                elseif (!empty($dbPass) && (password_verify($password, $dbPass) || password_verify(trim($password), $dbPass))) {
-                    $passwordMatches = true;
-                }
-                // 3. password_verify against password_hash column
-                elseif (!empty($dbHash) && (password_verify($password, $dbHash) || password_verify(trim($password), $dbHash) || $password === $dbHash || trim($password) === $dbHash)) {
-                    $passwordMatches = true;
-                }
-
-                if (!$passwordMatches) {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Incorrect password. Please enter the correct password or click "Forgot Password" to reset.'
-                    ]);
-                    exit;
-                }
-
-                // Guarantee bcrypt hashcode is stored in BOTH password and password_hash columns
-                try {
-                    $freshHash = password_hash($password, PASSWORD_DEFAULT);
-                    $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ? OR `email` = ?")->execute([$freshHash, $freshHash, $foundUser['id'], $email]);
-                } catch (Exception $e) {}
-
-                $custPhone = ($foundUser['phone'] && $foundUser['phone'] !== '+91 98480 22338') ? $foundUser['phone'] : '';
-                if (empty($custPhone) && !empty($foundUser['email'])) {
-                    try {
-                        $oStmt = $pdo->prepare("SELECT `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
-                        $oStmt->execute([$foundUser['email'], '%' . explode('@', $foundUser['email'])[0] . '%']);
-                        $foundOrdPhone = $oStmt->fetchColumn();
-                        if ($foundOrdPhone) {
-                            $custPhone = $foundOrdPhone;
-                            $pdo->prepare("UPDATE `users` SET `phone` = ? WHERE `id` = ? OR `email` = ?")->execute([$custPhone, $foundUser['id'], $foundUser['email']]);
-                        }
-                    } catch (Exception $e) {}
-                }
-
-                enrichUserLocationAndAddresses($foundUser);
-
-                $user = [
-                    'id' => $foundUser['id'],
-                    'name' => $foundUser['name'] ?: explode('@', $email)[0],
-                    'email' => $foundUser['email'],
-                    'phone' => $custPhone ?: ($foundUser['phone'] ?? ''),
-                    'role' => $foundUser['role'] ?: 'Customer',
-                    'walletBalance' => (float)($foundUser['wallet_balance'] ?? 0),
-                    'referralCode' => $foundUser['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
-                    'isVerified' => true,
-                    'tier' => $foundUser['tier'] ?: 'Silver',
-                    'city' => $foundUser['city'] ?? '',
-                    'state' => $foundUser['state'] ?? '',
-                    'address' => $foundUser['address'] ?? '',
-                    'pincode' => $foundUser['pincode'] ?? '',
-                    'landmark' => $foundUser['landmark'] ?? '',
-                    'addresses' => $foundUser['addresses'] ?? [],
-                    'savedAddresses' => $foundUser['savedAddresses'] ?? [],
-                    'wishlist' => $foundUser['wishlist'] ?? []
-                ];
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => "Welcome back, {$user['name']}!",
-                    'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
-                    'user' => $user
-                ]);
-                exit;
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
             }
-            break;
+            $body = getJsonBody();
+            $email = strtolower(trim((string)($body['email'] ?? '')));
+            $password = (string)($body['password'] ?? '');
+            if ($email === '' || $password === '') {
+                janani_json_exit(['success' => false, 'message' => 'Email address and password are required.']);
+            }
+            janani_rate_limit_or_exit($pdo, 'login-ip:' . janani_client_ip(), 30, 900);
+            janani_rate_limit_or_exit($pdo, 'login-account:' . $email, 8, 900, 'Too many sign-in attempts for this account. Please wait 15 minutes or sign in with an email OTP.');
+
+            $found = janani_find_user_by_identifier($pdo, $email);
+            if (!$found) {
+                janani_json_exit([
+                    'success' => false,
+                    'notRegistered' => true,
+                    'not_registered' => true,
+                    'message' => 'No registered account found with this email. Please create an account first.'
+                ]);
+            }
+            if (janani_user_is_blocked($found)) {
+                janani_json_exit(['success' => false, 'message' => 'This account is not active. Please contact support.'], 403);
+            }
+            $storedHash = (string)(($found['password_hash'] ?? '') ?: ($found['password'] ?? ''));
+            if ($storedHash === '' || strpos($storedHash, '$') !== 0) {
+                janani_json_exit([
+                    'success' => false,
+                    'hasNoPassword' => true,
+                    'message' => 'No password has been set for this account. Please sign in with an email OTP or use "Forgot Password" to set one.'
+                ]);
+            }
+            $matched = password_verify($password, $storedHash) || password_verify(trim($password), $storedHash);
+            if (!$matched) {
+                janani_json_exit(['success' => false, 'message' => 'Incorrect password. Please try again or use "Forgot Password".']);
+            }
+            if (password_needs_rehash($storedHash, PASSWORD_DEFAULT)) {
+                $fresh = password_hash($password, PASSWORD_DEFAULT);
+                $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ?")->execute([$fresh, $fresh, $found['id']]);
+            }
+            $displayName = ($found['name'] ?? '') ?: 'there';
+            janani_json_exit(janani_auth_response($pdo, $found, "Welcome back, {$displayName}!"));
 
         case 'signup':
         case 'register-customer':
-            if ($method === 'POST') {
-                ensureUsersTableSchema($pdo);
-
-                // Unblock email from deleted_customers if present
-                try {
-                    $delCustStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'deleted_customers' LIMIT 1");
-                    $delCustStmt->execute();
-                    $exDel = $delCustStmt->fetchColumn();
-                    if ($exDel) {
-                        $delList = json_decode($exDel, true) ?: [];
-                        $cleaned = array_values(array_filter($delList, function($d) use ($email) {
-                            $dl = strtolower((string)$d);
-                            return $dl !== $email && $dl !== 'tarun' && stripos($dl, 'tarun') === false;
-                        }));
-                        $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('deleted_customers', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")->execute([json_encode($cleaned)]);
-                    }
-                } catch (Exception $e) {}
-                $body = getJsonBody();
-                $name = trim($body['name'] ?? '');
-                $email = strtolower(trim($body['email'] ?? ''));
-                $phone = trim($body['phone'] ?? '');
-                $password = trim($body['password'] ?? '');
-                $referralCode = trim($body['referralCode'] ?? $body['referral_code'] ?? '');
-                $houseFlat = trim($body['houseFlat'] ?? $body['house_flat'] ?? '');
-                $street = trim($body['street'] ?? $body['address'] ?? '');
-                $city = trim($body['city'] ?? '');
-                $state = trim($body['state'] ?? '');
-                $pincode = trim($body['pincode'] ?? '');
-
-                if (!$name || !$email) {
-                    echo json_encode(['success' => false, 'message' => 'Full name and email address are required to register.']);
-                    exit;
-                }
-
-                // Check if mobile number is already registered under a different account
-                if (!empty($phone)) {
-                    $cleanDigits = preg_replace('/\D/', '', $phone);
-                    if (strlen($cleanDigits) >= 10) {
-                        $last10 = substr($cleanDigits, -10);
-                        try {
-                            $chkPhoneStmt = $pdo->prepare("SELECT `id`, `name`, `email` FROM `users` WHERE (`phone` LIKE ? OR `phone` LIKE ?) AND `email` != ? AND `phone` != '+91 98480 22338' LIMIT 1");
-                            $chkPhoneStmt->execute(['%' . $last10, '%' . $last10 . '%', $email]);
-                            $existingPhoneUser = $chkPhoneStmt->fetch();
-                            if ($existingPhoneUser) {
-                                echo json_encode([
-                                    'success' => false,
-                                    'alreadyRegistered' => true,
-                                    'phoneAlreadyRegistered' => true,
-                                    'message' => 'This mobile number is already registered with another account. Please sign in or use a different mobile number.'
-                                ]);
-                                exit;
-                            }
-                        } catch (Exception $e) {}
-                    }
-                }
-
-                // Check if user already exists
-                $existingUserRow = null;
-                try {
-                    $chkStmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
-                    $chkStmt->execute([$email]);
-                    $existingUserRow = $chkStmt->fetch();
-                } catch (Exception $e) {}
-
-                $fullAddr = implode(', ', array_filter([$houseFlat, $street, $city, $state, $pincode]));
-
-                if ($existingUserRow) {
-                    $userId = $existingUserRow['id'];
-                    $user = [
-                        'id' => $userId,
-                        'name' => $name,
-                        'email' => $email,
-                        'phone' => $phone ?: ($existingUserRow['phone'] ?? ''),
-                        'role' => $existingUserRow['role'] ?: 'Customer',
-                        'walletBalance' => (float)($existingUserRow['wallet_balance'] ?? 0),
-                        'referralCode' => $existingUserRow['referral_code'] ?? ('JANANI' . rand(1000, 9999)),
-                        'isVerified' => true,
-                        'tier' => $existingUserRow['tier'] ?? 'Silver',
-                        'address' => $fullAddr ?: null
-                    ];
-
-                    try {
-                        $pTrim = trim((string)$password);
-                        $hashToStore = !empty($pTrim) ? password_hash($pTrim, PASSWORD_DEFAULT) : null;
-
-                        $upStmt = $pdo->prepare("UPDATE `users` SET 
-                            `name` = ?, 
-                            `phone` = IF(? != '' AND ? IS NOT NULL, ?, `phone`),
-                            `password` = IF(? IS NOT NULL, ?, `password`),
-                            `password_hash` = IF(? IS NOT NULL, ?, `password_hash`),
-                            `status` = 'Active'
-                            WHERE `id` = ? OR `email` = ?");
-                        $upStmt->execute([$name, $phone, $phone, $phone, $hashToStore, $hashToStore, $hashToStore, $hashToStore, $userId, $email]);
-                    } catch (Exception $e) {}
-
-                    echo json_encode([
-                        'success' => true,
-                        'message' => 'Account created and verified successfully! Welcome to Janani Agro.',
-                        'isNewUser' => false,
-                        'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
-                        'user' => $user
-                    ]);
-                    exit;
-                }
-
-                $userId = generateNextCustomerId($pdo);
-                $chkId = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
-                $chkId->execute([$userId]);
-                if ((int)$chkId->fetchColumn() > 0) {
-                    $userId = generateNextCustomerId($pdo);
-                }
-
-                $user = [
-                    'id' => $userId,
-                    'name' => $name,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'role' => 'Customer',
-                    'walletBalance' => 0,
-                    'referralCode' => 'JANANI' . rand(1000, 9999),
-                    'isVerified' => true,
-                    'tier' => 'Silver',
-                    'address' => $fullAddr ?: null
-                ];
-
-                try {
-                    $pTrim = trim((string)$password);
-                    $hashToStore = !empty($pTrim) ? password_hash($pTrim, PASSWORD_DEFAULT) : null;
-
-                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
-                        VALUES (?, ?, ?, ?, ?, ?, 'Customer', ?, 'Silver', 'Active', 1, ?) 
-                        ON DUPLICATE KEY UPDATE 
-                            `name` = VALUES(`name`), 
-                            `email` = VALUES(`email`),
-                            `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
-                            `password` = IF(VALUES(`password`) IS NOT NULL, VALUES(`password`), `password`),
-                            `password_hash` = IF(VALUES(`password_hash`) IS NOT NULL, VALUES(`password_hash`), `password_hash`),
-                            `status` = 'Active'");
-                    $stmt->execute([$userId, $name, $email, $phone, $hashToStore, $hashToStore, $user['walletBalance'], $user['referralCode']]);
-                } catch (Exception $e) {}
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Account created successfully! Welcome to Janani Agro.',
-                    'isNewUser' => true,
-                    'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
-                    'user' => $user
-                ]);
-                exit;
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
             }
+            ensureUsersTableSchema($pdo);
+            $body = getJsonBody();
+            $name = mb_substr(trim(strip_tags((string)($body['name'] ?? ''))), 0, 100);
+            $email = strtolower(trim((string)($body['email'] ?? '')));
+            $phone = mb_substr(trim((string)($body['phone'] ?? '')), 0, 20);
+            $password = trim((string)($body['password'] ?? ''));
+
+            if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                janani_json_exit(['success' => false, 'message' => 'Full name and a valid email address are required to register.']);
+            }
+            // The e-mail must have been proven with an OTP (verify-otp, purpose "signup") in the last 30 minutes.
+            $signupFlagKey = 'signupok:' . hash('sha256', $email);
+            if (!janani_store_get($pdo, $signupFlagKey)) {
+                janani_json_exit(['success' => false, 'otpRequired' => true, 'message' => 'Please verify your email address with the 6-digit code first.'], 403);
+            }
+            if (janani_find_user_by_identifier($pdo, $email)) {
+                janani_json_exit([
+                    'success' => false,
+                    'alreadyRegistered' => true,
+                    'already_registered' => true,
+                    'emailAlreadyRegistered' => true,
+                    'message' => 'An account with this email address already exists. Please sign in instead.'
+                ]);
+            }
+            $phoneDigits = preg_replace('/\D/', '', $phone);
+            if (strlen($phoneDigits) >= 10 && janani_find_user_by_identifier($pdo, $phoneDigits)) {
+                janani_json_exit([
+                    'success' => false,
+                    'alreadyRegistered' => true,
+                    'phoneAlreadyRegistered' => true,
+                    'message' => 'This mobile number is already registered with another account. Please sign in or use a different mobile number.'
+                ]);
+            }
+            if ($password !== '' && strlen($password) < 6) {
+                janani_json_exit(['success' => false, 'message' => 'Password must be at least 6 characters long.']);
+            }
+            if (strlen($phoneDigits) === 10) {
+                $phone = '+91 ' . substr($phoneDigits, 0, 5) . ' ' . substr($phoneDigits, 5);
+            }
+            $hash = $password !== '' ? password_hash($password, PASSWORD_DEFAULT) : null;
+            $houseFlat = mb_substr(trim(strip_tags((string)($body['houseFlat'] ?? ($body['house_flat'] ?? '')))), 0, 200);
+            $street = mb_substr(trim(strip_tags((string)($body['street'] ?? ($body['address'] ?? '')))), 0, 300);
+            $city = mb_substr(trim(strip_tags((string)($body['city'] ?? ''))), 0, 100);
+            $state = mb_substr(trim(strip_tags((string)($body['state'] ?? ''))), 0, 100);
+            $pincode = preg_replace('/\D/', '', (string)($body['pincode'] ?? ''));
+            $fullAddr = implode(', ', array_filter([$houseFlat, $street]));
+
+            $newUserId = null;
+            for ($attempt = 0; $attempt < 5 && !$newUserId; $attempt++) {
+                $candidateId = generateNextCustomerId($pdo);
+                try {
+                    $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`, `address`, `city`, `state`, `pincode`)
+                        VALUES (?, ?, ?, ?, ?, ?, 'Customer', 0.00, 'Silver', 'Active', 1, ?, ?, ?, ?, ?)")
+                        ->execute([$candidateId, $name, $email, $phone, $hash, $hash, 'JANANI' . random_int(100000, 999999), $fullAddr ?: null, $city ?: null, $state ?: null, $pincode ?: null]);
+                    $newUserId = $candidateId;
+                } catch (PDOException $e) {
+                    if ((int)($e->errorInfo[1] ?? 0) !== 1062) throw $e;
+                    if (janani_find_user_by_identifier($pdo, $email)) {
+                        janani_json_exit(['success' => false, 'alreadyRegistered' => true, 'message' => 'An account with this email address already exists. Please sign in instead.']);
+                    }
+                }
+            }
+            if (!$newUserId) {
+                janani_json_exit(['success' => false, 'message' => 'We could not create your account right now. Please try again.'], 500);
+            }
+            janani_store_delete($pdo, $signupFlagKey);
+            $created = janani_find_user_by_identifier($pdo, $email);
+            $resp = janani_auth_response($pdo, $created, 'Account created successfully! Welcome to Janani Agro.');
+            $resp['isNewUser'] = true;
+            janani_json_exit($resp);
+
         case 'get-user-phone':
         case 'get-contact':
-            $target = strtolower(trim($_GET['email'] ?? $_POST['email'] ?? $_GET['id'] ?? $_POST['id'] ?? ''));
-            $userRow = null;
-            if ($target && $pdo) {
-                try {
-                    $stmt = $pdo->prepare("SELECT `phone`, `name`, `email` FROM `users` WHERE LOWER(TRIM(`email`)) = ? OR `id` = ? LIMIT 1");
-                    $stmt->execute([$target, $target]);
-                    $userRow = $stmt->fetch();
-                } catch (Exception $e) {}
+            // Customers may only read their own contact details; staff may look up any customer.
+            $me = janani_current_user($pdo);
+            $requested = trim((string)($_GET['email'] ?? ($_GET['id'] ?? '')));
+            $row = $me;
+            if ($requested !== '' && janani_is_staff_user($me)) {
+                $row = janani_find_user_by_identifier($pdo, $requested);
+                if (!$row) {
+                    $st = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? LIMIT 1");
+                    $st->execute([$requested]);
+                    $row = $st->fetch() ?: null;
+                }
             }
-            $cleanPhone = $userRow ? trim((string)($userRow['phone'] ?? '')) : '';
-            echo json_encode([
+            janani_json_exit([
                 'success' => true,
-                'email' => $target,
-                'phone' => $cleanPhone,
-                'name' => $userRow ? trim((string)($userRow['name'] ?? '')) : ''
+                'email' => $row['email'] ?? '',
+                'phone' => trim((string)($row['phone'] ?? '')),
+                'name' => trim((string)($row['name'] ?? '')),
             ]);
-            exit;
 
         case 'send-order-email':
-            if ($method === 'POST' || $method === 'GET') {
-                $body = getJsonBody();
-                $ordId = $_GET['id'] ?? ($body['number'] ?? ($body['orderNumber'] ?? null));
-                $orderData = null;
-                if ($ordId && $pdo) {
-                    try {
-                        $stmt = $pdo->prepare("SELECT * FROM `orders` WHERE `number` = ? OR `id` = ? LIMIT 1");
-                        $stmt->execute([$ordId, $ordId]);
-                        $orderData = $stmt->fetch();
-                    } catch (Exception $e) {}
-                }
-                if ($orderData) {
-                    // Prioritize explicit customer email & details passed in body over stale DB data
-                    if (!empty($body['customer_email']) && filter_var($body['customer_email'], FILTER_VALIDATE_EMAIL)) {
-                        $orderData['customer_email'] = $body['customer_email'];
-                    } elseif (!empty($body['customerEmail']) && filter_var($body['customerEmail'], FILTER_VALIDATE_EMAIL)) {
-                        $orderData['customer_email'] = $body['customerEmail'];
-                    }
-                    if (!empty($body['customer_name'])) {
-                        $orderData['customer_name'] = $body['customer_name'];
-                    }
-                    if (!empty($body['customer_phone'])) {
-                        $orderData['customer_phone'] = $body['customer_phone'];
-                    }
-                    if (!empty($body['items']) && (empty($orderData['items']) || $orderData['items'] === '[]')) {
-                        $orderData['items'] = $body['items'];
-                    }
-                    if (!empty($body['shipping_address'])) {
-                        $orderData['shipping_address'] = $body['shipping_address'];
-                    }
-                } else {
-                    $orderData = $body;
-                }
-
-                $res = sendOrderConfirmationInvoiceEmail($orderData, $smtp_user, $smtp_pass, $admin_email);
-                echo json_encode([
-                    'success' => !empty($res['success']),
-                    'message' => !empty($res['success']) ? 'Order invoice email dispatched successfully' : 'Order invoice email delivery status',
-                    'detail' => $res
-                ]);
-                exit;
+            // (Re)sends the GST invoice for an existing order to the customer on record.
+            // Content always comes from the database; the request cannot change recipient or contents.
+            $me = janani_current_user($pdo);
+            $body = getJsonBody();
+            $ordRef = trim((string)($_GET['id'] ?? ($body['number'] ?? ($body['orderNumber'] ?? ''))));
+            $order = $ordRef !== '' ? janani_find_order($pdo, $ordRef) : null;
+            if (!$order) {
+                janani_json_exit(['success' => false, 'message' => 'Order not found.'], 404);
             }
-            break;
+            $isStaffUser = janani_is_staff_user($me);
+            if (!$isStaffUser && !janani_user_owns_order($me, $order)) {
+                janani_json_exit(['success' => false, 'message' => 'You can only request invoices for your own orders.'], 403);
+            }
+            $wantsResend = !empty($body['resend']) || $isStaffUser;
+            if (!empty($order['invoice_sent']) && !$wantsResend) {
+                janani_json_exit(['success' => true, 'alreadySent' => true, 'message' => 'Your invoice has already been emailed.']);
+            }
+            janani_rate_limit_or_exit($pdo, 'invoice:' . $order['id'], 3, 3600, 'The invoice was emailed recently. Please check your inbox and spam folder.');
+            $res = janani_send_order_invoice_once($pdo, $order, true);
+            janani_json_exit([
+                'success' => !empty($res['success']),
+                'message' => !empty($res['success']) ? 'Invoice emailed successfully.' : 'We could not email the invoice right now. Please try again later.',
+            ]);
 
         case 'send-otp':
-            if ($method === 'POST') {
-                $body = getJsonBody();
-                $email = strtolower(trim($body['email'] ?? ''));
-                $phone = trim($body['phone'] ?? '');
-                $purpose = trim($body['purpose'] ?? 'login');
-                $target = $email ?: $phone;
-
-                if (!$target) {
-                    echo json_encode(['success' => false, 'message' => 'Please provide an email or mobile number.']);
-                    exit;
-                }
-
-                $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false);
-
-                // ADMIN STRICT LOCKDOWN in send-otp
-                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
-                    ]);
-                    exit;
-                }
-
-                // If signing up: check BOTH email and phone specifically to prevent duplicates
-                if (($purpose === 'signup' || $purpose === 'checkout_signup') && !$isAdmin) {
-                    if (!empty($email)) {
-                        try {
-                            $chkE = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1");
-                            $chkE->execute([$email]);
-                            if ($chkE->fetch()) {
-                                echo json_encode([
-                                    'success' => false,
-                                    'alreadyRegistered' => true,
-                                    'already_registered' => true,
-                                    'emailAlreadyRegistered' => true,
-                                    'message' => 'An account with this email address already exists. Please switch to Sign In.'
-                                ]);
-                                exit;
-                            }
-                        } catch (Exception $e) {}
-                    }
-                    if (!empty($phone)) {
-                        $cleanDigits = preg_replace('/\D/', '', $phone);
-                        if (strlen($cleanDigits) >= 10) {
-                            $last10 = substr($cleanDigits, -10);
-                            try {
-                                $chkP = $pdo->prepare("SELECT `id`, `name`, `phone` FROM `users` WHERE (`phone` LIKE ? OR `phone` LIKE ?) AND `phone` != '+91 98480 22338' LIMIT 1");
-                                $chkP->execute(['%' . $last10, '%' . $last10 . '%']);
-                                if ($chkP->fetch()) {
-                                    echo json_encode([
-                                        'success' => false,
-                                        'alreadyRegistered' => true,
-                                        'already_registered' => true,
-                                        'phoneAlreadyRegistered' => true,
-                                        'message' => 'This mobile number is already registered with another account. Please use a different mobile number or sign in.'
-                                    ]);
-                                    exit;
-                                }
-                            } catch (Exception $e) {}
-                        }
-                    }
-                }
-
-                // If logging in but user is NOT registered
-                if (($purpose === 'login' || $purpose === 'checkout_login' || $purpose === 'checkout') && !$isAdmin) {
-                    $foundLogin = false;
-                    try {
-                        if (!empty($email)) {
-                            $stmt = $pdo->prepare("SELECT `id` FROM `users` WHERE `email` = ? LIMIT 1");
-                            $stmt->execute([$email]);
-                            $foundLogin = !!$stmt->fetch();
-                        } elseif (!empty($phone)) {
-                            $cleanDigits = preg_replace('/\D/', '', $phone);
-                            if (strlen($cleanDigits) >= 10) {
-                                $last10 = substr($cleanDigits, -10);
-                                $stmt = $pdo->prepare("SELECT `id` FROM `users` WHERE (`phone` LIKE ? OR `phone` LIKE ?) AND `phone` != '+91 98480 22338' LIMIT 1");
-                                $stmt->execute(['%' . $last10, '%' . $last10 . '%']);
-                                $foundLogin = !!$stmt->fetch();
-                            }
-                        }
-                    } catch (Exception $e) {}
-
-                    if (!$foundLogin) {
-                        echo json_encode([
-                            'success' => false,
-                            'notRegistered' => true,
-                            'not_registered' => true,
-                            'message' => !empty($email)
-                                ? 'This email is not registered yet. Only registered patrons can sign in. Please create an account to continue.'
-                                : 'This mobile number is not registered yet. Please create an account to continue.'
-                        ]);
-                        exit;
-                    }
-                }
-
-                $otp = (string)rand(100000, 999999);
-                $expiresAt = time() + 900; // 15 minutes window
-
-                $otpData = json_encode([
-                    'code' => (string)$otp,
-                    'target' => $target,
-                    'purpose' => $purpose,
-                    'expires_at' => $expiresAt,
-                    'created_at' => time()
-                ]);
-
-                // 1. Persist in MySQL settings table (auto-create table if needed)
-                try {
-                    $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
-                    $stmt->execute(['otp_' . md5($target), $otpData]);
-                    $stmt->execute(['otp_' . $target, $otpData]);
-                } catch (Exception $dbErr) {
-                    try {
-                        $pdo->exec("CREATE TABLE IF NOT EXISTS `settings` (`id` INT AUTO_INCREMENT PRIMARY KEY, `setting_key` VARCHAR(191) UNIQUE NOT NULL, `setting_value` LONGTEXT NOT NULL, `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
-                        $stmt->execute(['otp_' . md5($target), $otpData]);
-                        $stmt->execute(['otp_' . $target, $otpData]);
-                    } catch (Exception $ex) {}
-                }
-
-                // 2. File-level cache fallback
-                try {
-                    $tmpDir = sys_get_temp_dir();
-                    @file_put_contents($tmpDir . '/janani_otp_' . md5($target) . '.json', $otpData);
-                } catch (Exception $fErr) {}
-
-                $emailSent = false;
-                if ($email) {
-                    $emailSent = sendGmailOtp($email, $otp, $smtp_user, $smtp_pass, $admin_email);
-                }
-
-                $isEmailDeliveryOk = (is_array($emailSent) && !empty($emailSent['success']));
-
-                if ($isAdmin) {
-                    if ($isEmailDeliveryOk) {
-                        echo json_encode([
-                            'success' => true,
-                            'message' => "Real-time 6-digit verification code sent to {$email}. Please check your Gmail inbox!",
-                            'emailSent' => true,
-                            'delivery' => $emailSent,
-                            'resendCooldownSeconds' => 60
-                        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-                    } else {
-                        $errText = is_array($emailSent) ? ($emailSent['error'] ?? 'SMTP delivery failed') : 'SMTP delivery failed';
-                        echo json_encode([
-                            'success' => true,
-                            'emailSent' => false,
-                            'deliveryError' => $errText,
-                            'delivery' => $emailSent,
-                            'message' => "Gmail SMTP authentication failed. Please check server SMTP configuration.",
-                            'resendCooldownSeconds' => 60
-                        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-                    }
-                    exit;
-                }
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => $email
-                        ? ($isEmailDeliveryOk
-                            ? "Real-time 6-digit verification code sent to {$email}. Please check your inbox."
-                            : "Email delivery attempt failed. Please try again or contact support.")
-                        : "Verification code sent to +91 {$phone}. Please check your messages.",
-                    'emailSent' => $isEmailDeliveryOk,
-                    'delivery' => $emailSent,
-                    'resendCooldownSeconds' => 60
-                ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-                exit;
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
             }
-            break;
+            $body = getJsonBody();
+            $email = strtolower(trim((string)($body['email'] ?? '')));
+            $phone = trim((string)($body['phone'] ?? ''));
+            $purpose = trim((string)($body['purpose'] ?? 'login')) ?: 'login';
+            $group = janani_otp_group($purpose);
+            $target = $email !== '' ? $email : $phone;
+
+            if ($target === '') {
+                janani_json_exit(['success' => false, 'message' => 'Please provide an email or mobile number.']);
+            }
+            if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                janani_json_exit(['success' => false, 'message' => 'Please enter a valid email address.']);
+            }
+            if ($purpose === 'admin_login' && $email !== janani_admin_email()) {
+                janani_json_exit(['success' => false, 'message' => 'This email address is not authorised for the Admin Command Center.'], 403);
+            }
+            janani_rate_limit_or_exit($pdo, 'otp-ip:' . janani_client_ip(), 20, 3600);
+            janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 45, 'Please wait a few seconds before requesting another code.');
+            janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 6, 3600, 'Too many codes requested for this account. Please try again in an hour.');
+
+            $deliverTo = '';
+            $smsTo = '';
+            if ($group === 'signup') {
+                if ($email === '') {
+                    janani_json_exit(['success' => false, 'message' => 'Please enter your email address to create an account.']);
+                }
+                if (janani_find_user_by_identifier($pdo, $email)) {
+                    janani_json_exit([
+                        'success' => false,
+                        'alreadyRegistered' => true,
+                        'already_registered' => true,
+                        'emailAlreadyRegistered' => true,
+                        'message' => 'An account with this email address already exists. Please switch to Sign In.'
+                    ]);
+                }
+                $pd = preg_replace('/\D/', '', $phone);
+                if (strlen($pd) >= 10 && janani_find_user_by_identifier($pdo, $pd)) {
+                    janani_json_exit([
+                        'success' => false,
+                        'alreadyRegistered' => true,
+                        'already_registered' => true,
+                        'phoneAlreadyRegistered' => true,
+                        'message' => 'This mobile number is already registered with another account. Please use a different mobile number or sign in.'
+                    ]);
+                }
+                $deliverTo = $email;
+            } else {
+                $found = janani_find_user_by_identifier($pdo, $target);
+                $isAdminTarget = ($email !== '' && $email === janani_admin_email());
+                if (!$found && !$isAdminTarget) {
+                    janani_json_exit([
+                        'success' => false,
+                        'notRegistered' => true,
+                        'not_registered' => true,
+                        'message' => $email !== ''
+                            ? 'This email is not registered yet. Please create an account to continue.'
+                            : 'This mobile number is not registered yet. Please create an account to continue.'
+                    ]);
+                }
+                if ($found && janani_user_is_blocked($found)) {
+                    janani_json_exit(['success' => false, 'message' => 'This account is not active. Please contact support.'], 403);
+                }
+                $deliverTo = $email !== '' ? $email : (string)($found['email'] ?? '');
+                if ($email === '') $smsTo = $phone;
+                if (janani_is_placeholder_email($deliverTo)) {
+                    $deliverTo = '';
+                }
+            }
+
+            $code = janani_otp_issue($pdo, $target, $purpose);
+            $delivered = [];
+            if ($deliverTo !== '') {
+                $mailRes = sendGmailOtp($deliverTo, $code);
+                if (!empty($mailRes['success'])) $delivered[] = 'email';
+            }
+            if ($smsTo !== '' && janani_env('FAST2SMS_API_KEY')) {
+                $smsRes = janani_send_sms_otp($smsTo, $code);
+                if (!empty($smsRes['success'])) $delivered[] = 'sms';
+            }
+            if (empty($delivered)) {
+                janani_store_delete($pdo, janani_otp_key($target, $group));
+                $noChannel = ($deliverTo === '' && $smsTo !== '');
+                janani_json_exit([
+                    'success' => false,
+                    'emailSent' => false,
+                    'message' => $noChannel
+                        ? 'No email address is linked to this mobile number, and SMS codes are not enabled yet. Please sign in with your email address.'
+                        : 'We could not send the verification code right now. Please try again in a minute.'
+                ], $noChannel ? 400 : 502);
+            }
+            $where = in_array('email', $delivered, true) ? ('your email ' . janani_mask_email($deliverTo)) : ('+91 ' . substr(preg_replace('/\D/', '', $smsTo), -10));
+            janani_json_exit([
+                'success' => true,
+                'emailSent' => in_array('email', $delivered, true),
+                'smsSent' => in_array('sms', $delivered, true),
+                'deliveredTo' => $where,
+                'message' => "We sent a 6-digit verification code to {$where}. It is valid for " . (int)(JANANI_OTP_TTL / 60) . ' minutes.',
+                'resendCooldownSeconds' => 60
+            ]);
 
         case 'verify-otp':
-            if ($method === 'POST') {
-                $body = getJsonBody();
-                $email = strtolower(trim($body['email'] ?? ''));
-                $phone = trim($body['phone'] ?? '');
-                $purpose = trim($body['purpose'] ?? '');
-
-                // ADMIN STRICT LOCKDOWN in verify-otp
-                if ($purpose === 'admin_login' && $email !== 'jananibiosciences.r@gmail.com') {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) is permitted to access the Admin Command Center.'
-                    ]);
-                    exit;
-                }
-                $otp = trim((string)($body['otp'] ?? ''));
-                $target = $email ?: $phone;
-
-                if (!$target || !$otp) {
-                    echo json_encode(['success' => false, 'message' => 'Target and 6-digit OTP code are required.']);
-                    exit;
-                }
-
-                $cleanOtp = $otp;
-                $valid = false;
-
-                // 1. Check stored OTP from database
-                try {
-                    $stmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` IN (?, ?)");
-                    $stmt->execute(['otp_' . md5($target), 'otp_' . $target]);
-                    while ($row = $stmt->fetch()) {
-                        if ($row && !empty($row['setting_value'])) {
-                            $stored = is_array($row['setting_value']) ? $row['setting_value'] : json_decode($row['setting_value'], true);
-                            if ($stored && isset($stored['code'])) {
-                                $storedCode = trim((string)$stored['code']);
-                                if ($storedCode === $cleanOtp) {
-                                    $valid = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                } catch (Exception $e) {}
-
-                // 2. Check stored OTP from file cache fallback
-                if (!$valid) {
-                    try {
-                        $tmpDir = sys_get_temp_dir();
-                        $tmpFile = $tmpDir . '/janani_otp_' . md5($target) . '.json';
-                        if (file_exists($tmpFile)) {
-                            $stored = json_decode(@file_get_contents($tmpFile), true);
-                            if ($stored && isset($stored['code']) && trim((string)$stored['code']) === $cleanOtp) {
-                                $valid = true;
-                            }
-                        }
-                    } catch (Exception $e) {}
-                }
-
-                if (!$valid) {
-                    echo json_encode(['success' => false, 'message' => 'Invalid or expired OTP code. Please check the 6-digit code sent to your email or click Resend OTP.']);
-                    exit;
-                }
-
-                // Delete used OTP
-                try {
-                    $pdo->prepare("DELETE FROM `settings` WHERE `setting_key` IN (?, ?)")->execute(['otp_' . md5($target), 'otp_' . $target]);
-                    $tmpDir = sys_get_temp_dir();
-                    @unlink($tmpDir . '/janani_otp_' . md5($target) . '.json');
-                } catch (Exception $e) {}
-
-                // If this OTP verification was for SIGNUP, return immediately without synthesizing or borrowing existing profiles!
-                if ($purpose === 'signup') {
-                    echo json_encode([
-                        'success' => true,
-                        'message' => 'Verification code verified successfully. Proceeding with registration.',
-                        'isSignup' => true
-                    ]);
-                    exit;
-                }
-
-                // Look up existing user in DB strictly by matching the exact requested identifier
-                $existingUser = null;
-                try {
-                    if (!empty($email)) {
-                        $uStmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
-                        $uStmt->execute([$email]);
-                        $existingUser = $uStmt->fetch();
-                    } elseif (!empty($phone)) {
-                        $uStmt = $pdo->prepare("SELECT * FROM `users` WHERE `phone` = ? AND `phone` != '' AND `phone` != '+91 98480 22338' LIMIT 1");
-                        $uStmt->execute([$phone]);
-                        $existingUser = $uStmt->fetch();
-                    }
-                } catch (Exception $e) {}
-
-                // Check if admin
-                $isAdmin = ($email === strtolower($admin_email) || $email === 'jananibiosciences.r@gmail.com' || strpos($email, 'admin@jananiagro.com') !== false || ($existingUser && in_array($existingUser['role'], ['Super Admin', 'Admin', 'Staff'])));
-
-                $userId = $existingUser ? $existingUser['id'] : ($isAdmin ? 'ADMIN-ROOT' : generateNextCustomerId($pdo));
-                $inputName = trim($body['name'] ?? '');
-                $userName = !empty($inputName) 
-                    ? $inputName 
-                    : (($existingUser && !empty($existingUser['name']) && $existingUser['name'] !== 'Customer') 
-                        ? $existingUser['name'] 
-                        : ($isAdmin ? 'Janani Admin (Root)' : ($email ? explode('@', $email)[0] : 'Patron')));
-                $userEmail = $email ?: ($existingUser ? $existingUser['email'] : ($phone ? ($phone . '@janani.customer') : 'patron@jananiagro.com'));
-
-                // Phone logic:
-                // Only assign store support number to root admin if not already set.
-                // For customer email logins, keep existing customer phone or empty string. NEVER default to +91 98480 22338.
-                $userPhone = '';
-                if (!empty($phone)) {
-                    $userPhone = $phone;
-                } elseif ($existingUser && !empty($existingUser['phone']) && ($isAdmin || $existingUser['phone'] !== '+91 98480 22338')) {
-                    $userPhone = $existingUser['phone'];
-                } elseif ($isAdmin) {
-                    $userPhone = '+91 98480 22338';
-                } else {
-                    $userPhone = '';
-                }
-
-                // If customer phone or real name is still empty, check existing preferences addresses
-                if ($existingUser && !empty($existingUser['preferences'])) {
-                    $prefs = is_string($existingUser['preferences']) ? json_decode($existingUser['preferences'], true) : $existingUser['preferences'];
-                    if (!empty($prefs['addresses']) && is_array($prefs['addresses'])) {
-                        foreach ($prefs['addresses'] as $addr) {
-                            if (empty($userPhone) && !empty($addr['phone'])) {
-                                $c10 = preg_replace('/\D/', '', $addr['phone']);
-                                if (strlen($c10) === 10) {
-                                    $userPhone = '+91 ' . substr($c10, 0, 5) . ' ' . substr($c10, 5);
-                                } elseif (!empty($addr['phone']) && $addr['phone'] !== '+91 98480 22338') {
-                                    $userPhone = trim($addr['phone']);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // If customer phone still empty, check if orders table has phone for this customer
-                if (empty($userPhone) && !$isAdmin && !empty($userEmail)) {
-                    try {
-                        $oStmt = $pdo->prepare("SELECT `customer_name`, `customer_phone` FROM `orders` WHERE (`customer_email` = ? OR `customer_name` LIKE ?) AND `customer_phone` != '' AND `customer_phone` != '+91 98480 22338' ORDER BY `created_at` DESC LIMIT 1");
-                        $oStmt->execute([$userEmail, '%' . explode('@', $userEmail)[0] . '%']);
-                        $ord = $oStmt->fetch();
-                        if ($ord) {
-                            if (!empty($ord['customer_phone'])) {
-                                $userPhone = $ord['customer_phone'];
-                            }
-                        }
-                    } catch (Exception $e) {}
-                }
-
-                $userRole = $existingUser && !empty($existingUser['role']) ? $existingUser['role'] : ($isAdmin ? 'Super Admin' : 'Customer');
-                $walletBalance = $existingUser && isset($existingUser['wallet_balance']) ? (float)$existingUser['wallet_balance'] : ($isAdmin ? 10000 : 0);
-                $tier = $existingUser && !empty($existingUser['tier']) ? $existingUser['tier'] : ($isAdmin ? 'Platinum Root Access' : 'Silver');
-                $referralCode = $existingUser && !empty($existingUser['referral_code']) ? $existingUser['referral_code'] : ($isAdmin ? 'JANANIROOT' : 'JANANI' . rand(1000, 9999));
-
-                if ($existingUser) {
-                    enrichUserLocationAndAddresses($existingUser);
-                }
-
-                $user = [
-                    'id' => $userId,
-                    'name' => $userName,
-                    'email' => $userEmail,
-                    'phone' => $userPhone ?: ($existingUser['phone'] ?? ''),
-                    'role' => $userRole,
-                    'walletBalance' => $walletBalance,
-                    'referralCode' => $referralCode,
-                    'isVerified' => true,
-                    'tier' => $tier,
-                    'city' => $existingUser['city'] ?? '',
-                    'state' => $existingUser['state'] ?? '',
-                    'address' => $existingUser['address'] ?? '',
-                    'pincode' => $existingUser['pincode'] ?? '',
-                    'landmark' => $existingUser['landmark'] ?? '',
-                    'addresses' => $existingUser['addresses'] ?? [],
-                    'savedAddresses' => $existingUser['savedAddresses'] ?? [],
-                    'wishlist' => $existingUser['wishlist'] ?? []
-                ];
-
-                // Synchronize user to MySQL users table without synthesizing default passwords
-                try {
-                    $stmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `password_hash`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`) 
-                        VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, 'Active', 1, ?) 
-                        ON DUPLICATE KEY UPDATE 
-                            `email` = VALUES(`email`),
-                            `role` = VALUES(`role`), 
-                            `status` = 'Active', 
-                            `tier` = VALUES(`tier`),
-                            `phone` = IF(VALUES(`phone`) != '' AND VALUES(`phone`) IS NOT NULL, VALUES(`phone`), `phone`),
-                            `name` = IF(VALUES(`name`) != '' AND VALUES(`name`) != 'Customer' AND VALUES(`name`) != SUBSTRING_INDEX(VALUES(`email`), '@', 1), VALUES(`name`), `name`)");
-                    $stmt->execute([$user['id'], $user['name'], $user['email'], $user['phone'], $user['role'], $user['walletBalance'], $user['tier'], $user['referralCode']]);
-                } catch (Exception $e) {}
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => $isAdmin ? 'Welcome Super Admin! Signed in successfully.' : 'Verification successful! Welcome to Janani Agro.',
-                    'isAdmin' => $isAdmin,
-                    'token' => 'janani_jwt_' . time() . '_' . rand(1000, 9999),
-                    'user' => $user
-                ]);
-                exit;
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
             }
-            break;
+            $body = getJsonBody();
+            $email = strtolower(trim((string)($body['email'] ?? '')));
+            $phone = trim((string)($body['phone'] ?? ''));
+            $purpose = trim((string)($body['purpose'] ?? 'login')) ?: 'login';
+            $otp = trim((string)($body['otp'] ?? ''));
+            $target = $email !== '' ? $email : $phone;
+            $group = janani_otp_group($purpose);
+
+            if ($target === '' || $otp === '') {
+                janani_json_exit(['success' => false, 'message' => 'Please enter the 6-digit verification code.']);
+            }
+            if ($purpose === 'admin_login' && $email !== janani_admin_email()) {
+                janani_json_exit(['success' => false, 'message' => 'This email address is not authorised for the Admin Command Center.'], 403);
+            }
+            janani_rate_limit_or_exit($pdo, 'verify-ip:' . janani_client_ip(), 40, 900);
+            if ($group === 'password_reset') {
+                janani_json_exit(['success' => false, 'message' => 'Use the password reset form to enter this code.']);
+            }
+            if (!janani_otp_verify($pdo, $target, $purpose, $otp)) {
+                janani_json_exit(['success' => false, 'message' => 'Invalid or expired code. Please check the 6-digit code we emailed you, or request a new one.']);
+            }
+
+            if ($group === 'signup') {
+                if ($email === '') {
+                    janani_json_exit(['success' => false, 'message' => 'Email address is required to create an account.']);
+                }
+                janani_store_set($pdo, 'signupok:' . hash('sha256', $email), ['at' => time()], 1800);
+                janani_json_exit(['success' => true, 'isSignup' => true, 'message' => 'Email verified. Completing your registration...']);
+            }
+
+            $userRow = janani_find_user_by_identifier($pdo, $target);
+            if (!$userRow && $email !== '' && $email === janani_admin_email()) {
+                ensureUsersTableSchema($pdo);
+                $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `tier`, `status`, `is_verified`, `referral_code`)
+                    VALUES ('ADMIN-ROOT', 'Janani Admin', ?, '', 'Super Admin', 0.00, 'Admin', 'Active', 1, 'JANANIROOT')
+                    ON DUPLICATE KEY UPDATE `email` = VALUES(`email`), `role` = 'Super Admin', `status` = 'Active'")->execute([$email]);
+                $userRow = janani_find_user_by_identifier($pdo, $email);
+            }
+            if (!$userRow) {
+                janani_json_exit(['success' => false, 'notRegistered' => true, 'message' => 'No account found. Please create an account first.']);
+            }
+            if (janani_user_is_blocked($userRow)) {
+                janani_json_exit(['success' => false, 'message' => 'This account is not active. Please contact support.'], 403);
+            }
+            if ($purpose === 'admin_login' && !janani_is_admin_user($userRow)) {
+                janani_json_exit(['success' => false, 'message' => 'You do not have administrator access.'], 403);
+            }
+            $isAdminLogin = janani_is_admin_user($userRow);
+            janani_json_exit(janani_auth_response($pdo, $userRow, $isAdminLogin ? 'Welcome Super Admin! Signed in successfully.' : 'Verification successful! Welcome to Janani Agro.'));
 
         case 'forgot-password':
-            if ($method === 'POST') {
-                $body = getJsonBody();
-                $identifier = strtolower(trim($body['identifier'] ?? $body['email'] ?? $body['phone'] ?? ''));
-
-                if (!$identifier) {
-                    echo json_encode(['success' => false, 'message' => 'Please provide your registered email or phone number.']);
-                    exit;
-                }
-
-                $cleanPhone = preg_replace('/\D/', '', $identifier);
-                $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
-
-                // Look up user in MySQL
-                $foundUser = null;
-                try {
-                    $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? OR (`phone` = ? AND `phone` != '') LIMIT 1");
-                    $stmt->execute([$identifier, $cleanPhone ?: $identifier]);
-                    $foundUser = $stmt->fetch();
-                } catch (Exception $e) {}
-
-                $targetEmail = $isEmail ? $identifier : ($foundUser['email'] ?? '');
-                $targetPhone = $cleanPhone ?: ($foundUser['phone'] ?? '');
-                $target = $targetEmail ?: $targetPhone ?: $identifier;
-
-                $otp = (string)rand(100000, 999999);
-                $expiresAt = time() + 900; // 15 minutes window
-
-                $otpData = json_encode([
-                    'code' => (string)$otp,
-                    'target' => $target,
-                    'purpose' => 'password_reset',
-                    'expires_at' => $expiresAt,
-                    'created_at' => time()
-                ]);
-
-                // Store in settings table
-                try {
-                    $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
-                    $stmt->execute(['otp_' . md5($target), $otpData]);
-                    $stmt->execute(['otp_' . $target, $otpData]);
-                    if ($targetEmail) {
-                        $stmt->execute(['otp_' . md5($targetEmail), $otpData]);
-                        $stmt->execute(['otp_' . $targetEmail, $otpData]);
-                    }
-                } catch (Exception $dbErr) {}
-
-                // File cache fallback
-                try {
-                    $tmpDir = sys_get_temp_dir();
-                    @file_put_contents($tmpDir . '/janani_otp_' . md5($target) . '.json', $otpData);
-                } catch (Exception $fErr) {}
-
-                // Dispatch Email via Gmail SMTP if email is available
-                $emailSent = false;
-                if ($targetEmail) {
-                    $emailSent = sendGmailOtp($targetEmail, $otp, $smtp_user, $smtp_pass, $admin_email);
-                }
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => $targetEmail
-                        ? "Password reset verification code dispatched to {$targetEmail}. Please check your inbox."
-                        : "Password reset verification code sent to +91 {$targetPhone}. Please check your messages.",
-                    'emailSent' => $emailSent,
-                    'target' => $target
-                ]);
-                exit;
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
             }
-            break;
+            $body = getJsonBody();
+            $identifier = strtolower(trim((string)($body['identifier'] ?? ($body['email'] ?? ($body['phone'] ?? '')))));
+            if ($identifier === '') {
+                janani_json_exit(['success' => false, 'message' => 'Please provide your registered email or phone number.']);
+            }
+            janani_rate_limit_or_exit($pdo, 'forgot-ip:' . janani_client_ip(), 10, 3600);
+            janani_rate_limit_or_exit($pdo, 'forgot-cooldown:' . janani_normalize_target($identifier), 1, 45, 'Please wait a few seconds before requesting another code.');
+            $found = janani_find_user_by_identifier($pdo, $identifier);
+            $sentTo = null;
+            if ($found && !janani_user_is_blocked($found) && !janani_is_placeholder_email($found['email'] ?? '')) {
+                $code = janani_otp_issue($pdo, $found['email'], 'password_reset');
+                $res = sendGmailOtp($found['email'], $code);
+                if (!empty($res['success'])) $sentTo = janani_mask_email($found['email']);
+            }
+            // Same response whether or not the account exists (prevents account discovery).
+            janani_json_exit([
+                'success' => true,
+                'emailSent' => $sentTo !== null,
+                'message' => $sentTo
+                    ? "A password reset code has been sent to {$sentTo}."
+                    : 'If an account exists for these details, a password reset code has been sent to its registered email address.'
+            ]);
 
         case 'reset-password':
-            if ($method === 'POST') {
-                $body = getJsonBody();
-                $identifier = strtolower(trim($body['identifier'] ?? $body['phone'] ?? $body['email'] ?? ''));
-                $otp = trim((string)($body['otp'] ?? ''));
-                $newPassword = trim($body['newPassword'] ?? $body['password'] ?? '');
-
-                if (!$identifier || !$otp || !$newPassword) {
-                    echo json_encode(['success' => false, 'message' => 'Identifier, verification code, and new password are required.']);
-                    exit;
-                }
-
-                if (strlen($newPassword) < 6) {
-                    echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters long.']);
-                    exit;
-                }
-
-                $cleanOtp = $otp;
-                $valid = false;
-                $cleanPhone = preg_replace('/\D/', '', $identifier);
-
-                // 1. Verify OTP in settings table
-                try {
-                    $stmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` IN (?, ?, ?, ?)");
-                    $stmt->execute(['otp_' . md5($identifier), 'otp_' . $identifier, 'otp_' . md5($cleanPhone), 'otp_' . $cleanPhone]);
-                    while ($row = $stmt->fetch()) {
-                        if ($row && !empty($row['setting_value'])) {
-                            $stored = is_array($row['setting_value']) ? $row['setting_value'] : json_decode($row['setting_value'], true);
-                            if ($stored && isset($stored['code']) && trim((string)$stored['code']) === $cleanOtp) {
-                                $valid = true;
-                                break;
-                            }
-                        }
-                    }
-                } catch (Exception $e) {}
-
-                // 2. File fallback
-                if (!$valid) {
-                    try {
-                        $tmpDir = sys_get_temp_dir();
-                        $tmpFile = $tmpDir . '/janani_otp_' . md5($identifier) . '.json';
-                        if (file_exists($tmpFile)) {
-                            $stored = json_decode(@file_get_contents($tmpFile), true);
-                            if ($stored && isset($stored['code']) && trim((string)$stored['code']) === $cleanOtp) {
-                                $valid = true;
-                            }
-                        }
-                    } catch (Exception $e) {}
-                }
-
-                // 3. Test codes bypass
-                if ($cleanOtp === '123456' || $cleanOtp === '1234' || $cleanOtp === '000000' || $cleanOtp === '999999') {
-                    $valid = true;
-                }
-
-                if (!$valid) {
-                    echo json_encode(['success' => false, 'message' => 'Invalid or expired verification code. Please check your email or click Resend.']);
-                    exit;
-                }
-
-                // Update user password in MySQL database strictly as bcrypt hash in both columns
-                try {
-                    $hash = password_hash($newPassword, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = ? OR (`phone` = ? AND `phone` != '')");
-                    $stmt->execute([$hash, $hash, $identifier, $cleanPhone ?: $identifier]);
-                } catch (Exception $e) {
-                    try {
-                        $stmt = $pdo->prepare("UPDATE `users` SET `password` = ? WHERE `email` = ? OR (`phone` = ? AND `phone` != '')");
-                        $stmt->execute([$hash, $identifier, $cleanPhone ?: $identifier]);
-                    } catch (Exception $e2) {}
-                }
-
-                // Delete used OTP
-                try {
-                    $pdo->prepare("DELETE FROM `settings` WHERE `setting_key` IN (?, ?, ?, ?)")->execute(['otp_' . md5($identifier), 'otp_' . $identifier, 'otp_' . md5($cleanPhone), 'otp_' . $cleanPhone]);
-                } catch (Exception $e) {}
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Password reset successfully! You can now log in with your new password.'
-                ]);
-                exit;
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
             }
-            break;
+            $body = getJsonBody();
+            $identifier = strtolower(trim((string)($body['identifier'] ?? ($body['email'] ?? ($body['phone'] ?? '')))));
+            $otp = trim((string)($body['otp'] ?? ''));
+            $newPassword = trim((string)($body['newPassword'] ?? ($body['password'] ?? '')));
+            if ($identifier === '' || $otp === '' || $newPassword === '') {
+                janani_json_exit(['success' => false, 'message' => 'Email/phone, verification code and new password are required.']);
+            }
+            if (strlen($newPassword) < 6) {
+                janani_json_exit(['success' => false, 'message' => 'Password must be at least 6 characters long.']);
+            }
+            janani_rate_limit_or_exit($pdo, 'reset-ip:' . janani_client_ip(), 20, 3600);
+            $found = janani_find_user_by_identifier($pdo, $identifier);
+            if (!$found || !janani_otp_verify($pdo, $found['email'], 'password_reset', $otp)) {
+                janani_json_exit(['success' => false, 'message' => 'Invalid or expired verification code. Please request a new code.']);
+            }
+            $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ?")->execute([$hash, $hash, $found['id']]);
+            janani_json_exit(['success' => true, 'message' => 'Password reset successfully! You can now sign in with your new password.']);
 
         case 'create-razorpay-order':
-            if ($method === 'POST') {
-                $body = getJsonBody();
-                $amount = isset($body['amount']) ? (float)$body['amount'] : 0;
-                $amountInPaise = (int)round($amount * 100);
-                $currency = $body['currency'] ?? 'INR';
-                $receipt = $body['receipt'] ?? ('JAP-' . rand(100000, 999999));
-                $notes = $body['notes'] ?? [];
-
-                $keyId = 'rzp_test_SwedUUn1KgRMs0';
-                $keySecret = 'xdW2Ry7T67sUK4zMKb3oOsZh';
-
-                $orderId = 'order_' . substr(md5(uniqid((string)rand(), true)), 0, 14);
-
-                // Attempt creation with Razorpay REST API
-                if (function_exists('curl_init') && $amountInPaise > 0) {
-                    $ch = curl_init('https://api.razorpay.com/v1/orders');
-                    $payload = json_encode([
-                        'amount' => $amountInPaise,
-                        'currency' => $currency,
-                        'receipt' => $receipt,
-                        'notes' => $notes,
-                        'payment_capture' => 1
-                    ]);
-                    curl_setopt($ch, CURLOPT_USERPWD, "{$keyId}:{$keySecret}");
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                    $response = curl_exec($ch);
-                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    curl_close($ch);
-
-                    if ($httpCode === 200 || $httpCode === 201) {
-                        $rzpData = json_decode($response, true);
-                        if (!empty($rzpData['id'])) {
-                            $orderId = $rzpData['id'];
-                        }
-                    }
-                }
-
-                echo json_encode([
-                    'success' => true,
-                    'keyId' => $keyId,
-                    'key_id' => $keyId,
-                    'orderId' => $orderId,
-                    'order_id' => $orderId,
-                    'amount' => $amountInPaise,
-                    'currency' => $currency,
-                    'receipt' => $receipt
-                ]);
-                exit;
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
             }
-            break;
+            $me = janani_require_user($pdo);
+            $keys = janani_razorpay_keys($pdo);
+            if (!$keys['configured']) {
+                error_log('[janani] online payment unavailable: ' . $keys['reason']);
+                janani_json_exit([
+                    'success' => false,
+                    'onlinePaymentUnavailable' => true,
+                    'message' => 'Online payment is temporarily unavailable. Please choose Cash on Delivery or try again later.'
+                ], 503);
+            }
+            janani_rate_limit_or_exit($pdo, 'rzp-order:' . $me['id'], 20, 3600);
+            $body = getJsonBody();
+            $quote = janani_build_quote($pdo, $me, $body['items'] ?? [], (string)($body['couponCode'] ?? ''));
+            if (!empty($quote['errors'])) {
+                janani_json_exit(['success' => false, 'message' => implode(' ', $quote['errors']), 'errors' => $quote['errors']], 400);
+            }
+            $requestedCoupon = strtoupper(trim((string)($body['couponCode'] ?? '')));
+            if ($requestedCoupon !== '' && $quote['couponCode'] !== $requestedCoupon) {
+                janani_json_exit(['success' => false, 'couponInvalid' => true, 'message' => $quote['couponMessage'] ?: 'This coupon can no longer be applied.', 'quote' => $quote], 409);
+            }
+            if (isset($body['expectedTotal']) && abs((float)$body['expectedTotal'] - $quote['total']) > 1.0) {
+                janani_json_exit([
+                    'success' => false,
+                    'priceChanged' => true,
+                    'quote' => $quote,
+                    'message' => 'Prices in your cart have been updated. The correct total is ₹' . number_format($quote['total'], 2) . '. Please review your cart and try again.'
+                ], 409);
+            }
+            if ($quote['total'] < 1) {
+                janani_json_exit(['success' => false, 'message' => 'This order total cannot be paid online. Please choose Cash on Delivery.'], 400);
+            }
+            $address = janani_clean_address($body['address'] ?? []);
+            if (empty($address['pincode']) || empty($address['city'])) {
+                janani_json_exit(['success' => false, 'message' => 'Please select a complete delivery address.'], 400);
+            }
+            $amountPaise = (int)round($quote['total'] * 100);
+            $rzp = janani_razorpay_request($keys, 'POST', '/orders', [
+                'amount' => $amountPaise,
+                'currency' => 'INR',
+                'receipt' => 'jap_' . bin2hex(random_bytes(6)),
+                'payment_capture' => 1,
+                'notes' => ['customer_id' => (string)$me['id'], 'customer_email' => (string)$me['email']],
+            ]);
+            if (!$rzp['ok'] || empty($rzp['data']['id'])) {
+                error_log('[janani] Razorpay order creation failed: ' . ($rzp['error'] ?? 'unknown'));
+                janani_json_exit(['success' => false, 'message' => 'We could not start the payment. Please try again in a moment.'], 502);
+            }
+            $rzpOrderId = $rzp['data']['id'];
+            $pdo->prepare("INSERT INTO `payment_intents` (`razorpay_order_id`, `user_id`, `user_email`, `amount_paise`, `payload`, `status`) VALUES (?, ?, ?, ?, ?, 'created')")
+                ->execute([$rzpOrderId, (string)$me['id'], (string)$me['email'], $amountPaise, json_encode([
+                    'quote' => $quote,
+                    'address' => $address,
+                    'extra' => [
+                        'deliverySlot' => (string)($body['deliverySlot'] ?? ''),
+                        'orderNotes' => (string)($body['orderNotes'] ?? ''),
+                    ],
+                ], JSON_UNESCAPED_UNICODE)]);
+            janani_json_exit([
+                'success' => true,
+                'keyId' => $keys['keyId'],
+                'key_id' => $keys['keyId'],
+                'orderId' => $rzpOrderId,
+                'order_id' => $rzpOrderId,
+                'amount' => $amountPaise,
+                'currency' => 'INR',
+                'mode' => $keys['mode'],
+                'quote' => $quote,
+            ]);
 
         case 'verify-razorpay-payment':
-            if ($method === 'POST') {
-                $body = getJsonBody();
-                $paymentId = $body['razorpay_payment_id'] ?? ($body['paymentId'] ?? '');
-                $orderId = $body['razorpay_order_id'] ?? ($body['orderId'] ?? '');
-                $signature = $body['razorpay_signature'] ?? ($body['signature'] ?? '');
-                $keySecret = 'xdW2Ry7T67sUK4zMKb3oOsZh';
-
-                $isValid = true;
-                if ($signature && $orderId && $paymentId) {
-                    $expectedSignature = hash_hmac('sha256', $orderId . '|' . $paymentId, $keySecret);
-                    $isValid = hash_equals($expectedSignature, $signature);
-                }
-
-                echo json_encode([
-                    'success' => true,
-                    'verified' => $isValid,
-                    'paymentId' => $paymentId,
-                    'orderId' => $orderId,
-                    'message' => 'Payment verified successfully with Razorpay.'
-                ]);
-                exit;
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
             }
-            break;
+            $body = getJsonBody();
+            $keys = janani_razorpay_keys($pdo);
+            $valid = janani_razorpay_signature_valid(
+                $keys,
+                (string)($body['razorpay_order_id'] ?? ($body['orderId'] ?? '')),
+                (string)($body['razorpay_payment_id'] ?? ($body['paymentId'] ?? '')),
+                (string)($body['razorpay_signature'] ?? ($body['signature'] ?? ''))
+            );
+            janani_json_exit([
+                'success' => $valid,
+                'verified' => $valid,
+                'message' => $valid ? 'Payment verified.' : 'Payment could not be verified.'
+            ], $valid ? 200 : 400);
+
+        case 'razorpay-webhook':
+            // Configure in Razorpay Dashboard → Webhooks: https://<domain>/api.php?action=razorpay-webhook
+            // Events: payment.captured, order.paid, payment.failed. Secret = RAZORPAY_WEBHOOK_SECRET.
+            if ($method !== 'POST') {
+                janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $rawPayload = (string)file_get_contents('php://input');
+            $keys = janani_razorpay_keys($pdo);
+            $sigHeader = (string)($_SERVER['HTTP_X_RAZORPAY_SIGNATURE'] ?? '');
+            if (empty($keys['webhookSecret']) || $sigHeader === '' || !hash_equals(hash_hmac('sha256', $rawPayload, $keys['webhookSecret']), $sigHeader)) {
+                janani_json_exit(['success' => false, 'message' => 'Invalid webhook signature.'], 400);
+            }
+            $evt = json_decode($rawPayload, true) ?: [];
+            $eventName = (string)($evt['event'] ?? '');
+            $payEntity = $evt['payload']['payment']['entity'] ?? [];
+            $whOrderId = (string)($payEntity['order_id'] ?? ($evt['payload']['order']['entity']['id'] ?? ''));
+            $whPaymentId = (string)($payEntity['id'] ?? '');
+            if ($whOrderId !== '' && in_array($eventName, ['payment.captured', 'order.paid'], true)) {
+                $iSt = $pdo->prepare("SELECT `amount_paise` FROM `payment_intents` WHERE `razorpay_order_id` = ? LIMIT 1");
+                $iSt->execute([$whOrderId]);
+                $intentAmount = $iSt->fetchColumn();
+                if ($intentAmount !== false && (!isset($payEntity['amount']) || (int)$payEntity['amount'] === (int)$intentAmount)) {
+                    $fin = janani_finalize_intent($pdo, $whOrderId, $whPaymentId);
+                    if (empty($fin['success'])) {
+                        error_log('[janani] webhook finalize failed for ' . $whOrderId . ': ' . ($fin['message'] ?? ''));
+                    }
+                } elseif ($intentAmount !== false) {
+                    error_log('[janani] webhook amount mismatch for ' . $whOrderId);
+                }
+            } elseif ($whOrderId !== '' && $eventName === 'payment.failed') {
+                $pdo->prepare("UPDATE `payment_intents` SET `status` = 'failed' WHERE `razorpay_order_id` = ? AND `status` = 'created'")->execute([$whOrderId]);
+            }
+            janani_json_exit(['success' => true]);
 
         case 'upload-video':
         case 'upload-media':
             if ($method === 'POST') {
                 $uploadedFile = $_FILES['video'] ?? ($_FILES['file'] ?? null);
                 if ($uploadedFile && !empty($uploadedFile['tmp_name'])) {
+                    $maxVideoBytes = 100 * 1024 * 1024;
+                    if ((int)($uploadedFile['error'] ?? 0) !== UPLOAD_ERR_OK || (int)($uploadedFile['size'] ?? 0) > $maxVideoBytes || !is_uploaded_file($uploadedFile['tmp_name'])) {
+                        janani_json_exit(['success' => false, 'message' => 'Upload rejected: videos must be under 100 MB.'], 400);
+                    }
+                    if (function_exists('finfo_open')) {
+                        $fi = finfo_open(FILEINFO_MIME_TYPE);
+                        $mime = $fi ? (string)finfo_file($fi, $uploadedFile['tmp_name']) : '';
+                        if ($mime !== '' && strpos($mime, 'video/') !== 0) {
+                            janani_json_exit(['success' => false, 'message' => 'Upload rejected: only video files are allowed.'], 400);
+                        }
+                    }
                     $origName = $uploadedFile['name'] ?? 'video.mp4';
                     $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
                     if (!in_array($ext, ['mp4', 'webm', 'ogg', 'mov', 'm4v'])) {
@@ -3153,7 +1881,7 @@ try {
                 $slug = $_GET['slug'] ?? null;
                 $id = $_GET['id'] ?? null;
                 $status = strtolower(trim($_GET['status'] ?? ''));
-                $isAdmin = isset($_GET['is_admin']) || (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/admin') !== false);
+                $isAdmin = (isset($_GET['is_admin']) || (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/admin') !== false)) && janani_is_staff_user(janani_current_user($pdo)); // inactive / trashed items only for staff
 
                 if (!empty($slug) || !empty($id)) {
                     $target = !empty($slug) ? $slug : $id;
@@ -3793,7 +2521,7 @@ try {
                 $level = $_GET['level'] ?? null;
                 $search = trim($_GET['search'] ?? '');
                 $id = $_GET['id'] ?? ($_GET['slug'] ?? null);
-                $isAdmin = isset($_GET['is_admin']) || (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/admin') !== false);
+                $isAdmin = (isset($_GET['is_admin']) || (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/admin') !== false)) && janani_is_staff_user(janani_current_user($pdo)); // inactive / trashed items only for staff
 
                 // Single category lookup
                 if (!empty($id)) {
@@ -4500,12 +3228,17 @@ try {
             break;
 
         case 'coupons':
+            $couponViewer = janani_current_user($pdo);
+            $couponAdminView = janani_is_admin_user($couponViewer);
             if ($method === 'GET') {
                 $code = $_GET['code'] ?? ($_GET['id'] ?? null);
                 if ($code) {
                     $stmt = $pdo->prepare("SELECT * FROM `coupons` WHERE `id` = ? OR `code` = ? LIMIT 1");
                     $stmt->execute([$code, $code]);
                     $coupon = $stmt->fetch();
+                    if ($coupon && !$couponAdminView && (empty($coupon['active']) || (!empty($coupon['expiry_date']) && substr((string)$coupon['expiry_date'], 0, 10) < date('Y-m-d')))) {
+                        $coupon = null; // customers only see coupons they can actually use
+                    }
                     if ($coupon) {
                         $isFree = (bool)($coupon['is_free_shipping'] ?? 0) || $coupon['type'] === 'free_shipping' || stripos($coupon['code'], 'FREESHIP') !== false || stripos($coupon['code'], 'FREEDEL') !== false;
                         $coupon['type'] = $isFree ? 'free_shipping' : ($coupon['type'] ?? 'percentage');
@@ -4525,11 +3258,13 @@ try {
                     exit;
                 }
 
-                $status = $_GET['status'] ?? null;
+                $status = $couponAdminView ? ($_GET['status'] ?? null) : 'storefront';
                 $search = trim($_GET['search'] ?? '');
                 $query = "SELECT * FROM `coupons` WHERE 1=1";
                 $params = [];
-                if ($status === 'active') {
+                if ($status === 'storefront') {
+                    $query .= " AND `active` = 1 AND (`expiry_date` IS NULL OR `expiry_date` >= CURDATE()) AND (`start_date` IS NULL OR `start_date` <= CURDATE())";
+                } elseif ($status === 'active') {
                     $query .= " AND `active` = 1 AND (`expiry_date` IS NULL OR `expiry_date` >= CURDATE())";
                 } elseif ($status === 'expired') {
                     $query .= " AND `expiry_date` < CURDATE()";
@@ -4582,77 +3317,31 @@ try {
                 $rawId = $_GET['id'] ?? ($body['id'] ?? null);
 
                 if ($rawId === 'validate' || isset($_GET['validate'])) {
-                    $code = strtoupper(trim($body['code'] ?? ''));
-                    $subtotal = (float)($body['subtotal'] ?? 0);
-
-                    if (empty($code)) {
-                        echo json_encode(['success' => false, 'valid' => false, 'message' => 'Please enter a coupon code']);
-                        exit;
+                    // Same rules the checkout uses: status, dates, minimum cart, global and per-customer limits.
+                    janani_rate_limit_or_exit($pdo, 'coupon-validate:' . janani_client_ip(), 60, 600);
+                    $code = strtoupper(trim((string)($body['code'] ?? '')));
+                    $subtotal = max(0, (float)($body['subtotal'] ?? 0));
+                    $shippingForCoupon = ($subtotal >= JANANI_FREE_SHIPPING_THRESHOLD || $subtotal == 0) ? 0.0 : (float)JANANI_STANDARD_SHIPPING_FEE;
+                    $cv = janani_validate_coupon($pdo, $code, $subtotal, $shippingForCoupon, $couponViewer);
+                    if (!$cv['ok']) {
+                        janani_json_exit(['success' => false, 'valid' => false, 'message' => $cv['message']]);
                     }
-
-                    $stmt = $pdo->prepare("SELECT * FROM `coupons` WHERE UPPER(`code`) = ? LIMIT 1");
-                    $stmt->execute([$code]);
-                    $coupon = $stmt->fetch();
-
-                    if (!$coupon) {
-                        echo json_encode(['success' => false, 'valid' => false, 'message' => "Coupon '{$code}' is invalid or does not exist."]);
-                        exit;
-                    }
-
-                    if (empty($coupon['active'])) {
-                        echo json_encode(['success' => false, 'valid' => false, 'message' => "Coupon '{$code}' is currently inactive."]);
-                        exit;
-                    }
-
-                    $todayStr = date('Y-m-d');
-                    if (!empty($coupon['expiry_date']) && $coupon['expiry_date'] < $todayStr) {
-                        echo json_encode(['success' => false, 'valid' => false, 'message' => "Coupon '{$code}' expired on {$coupon['expiry_date']}."]);
-                        exit;
-                    }
-
-                    $minCart = (float)($coupon['min_cart'] ?? 0);
-                    if ($minCart > 0 && $subtotal < $minCart) {
-                        $diff = $minCart - $subtotal;
-                        echo json_encode([
-                            'success' => false,
-                            'valid' => false,
-                            'message' => "{$coupon['code']} requires a minimum cart value of ₹{$minCart}. Add ₹{$diff} more to unlock."
-                        ]);
-                        exit;
-                    }
-
-                    $isFree = (bool)($coupon['is_free_shipping'] ?? 0) || $coupon['type'] === 'free_shipping' || stripos($coupon['code'], 'FREESHIP') !== false || stripos($coupon['code'], 'FREEDEL') !== false;
-                    $discount = 0;
-                    if ($isFree) {
-                        $discount = 60.0;
-                        $coupon['type'] = 'free_shipping';
-                        $coupon['isFreeShipping'] = true;
-                        $coupon['discount'] = 60.0;
-                    } elseif ($coupon['type'] === 'percentage') {
-                        $discount = round(($subtotal * (float)$coupon['discount']) / 100);
-                        $maxDisc = (float)($coupon['max_discount'] ?? 0);
-                        if ($maxDisc > 0) {
-                            $discount = min($discount, $maxDisc);
-                        }
-                    } elseif ($coupon['type'] === 'flat') {
-                        $discount = min((float)$coupon['discount'], $subtotal);
-                    }
-
+                    $coupon = $cv['coupon'];
+                    $isFree = janani_coupon_is_free_shipping($coupon);
+                    $coupon['type'] = $isFree ? 'free_shipping' : $coupon['type'];
                     $coupon['minCart'] = (float)($coupon['min_cart'] ?? 0);
                     $coupon['maxDiscount'] = (float)($coupon['max_discount'] ?? 0);
                     $coupon['discount'] = (float)($coupon['discount'] ?? 0);
                     $coupon['expiryDate'] = $coupon['expiry_date'] ?? null;
                     $coupon['startDate'] = $coupon['start_date'] ?? null;
-                    $coupon['isFreeShipping'] = (bool)($coupon['is_free_shipping'] ?? 0) || $isFree;
-
-                    echo json_encode([
+                    $coupon['isFreeShipping'] = $isFree;
+                    janani_json_exit([
                         'success' => true,
                         'valid' => true,
-                        'discount' => $discount,
+                        'discount' => $cv['discount'],
                         'coupon' => $coupon,
-                        'message' => $isFree ? "Coupon '{$coupon['code']}' applied! Free farm delivery unlocked." : "Coupon '{$coupon['code']}' applied! Saved ₹{$discount}."
+                        'message' => $isFree ? "Coupon '{$coupon['code']}' applied! Free delivery unlocked." : "Coupon '{$coupon['code']}' applied! You save ₹" . number_format($cv['discount'], 2) . '.'
                     ]);
-                    exit;
                 }
 
                 if (empty($rawId)) {
@@ -4782,22 +3471,7 @@ try {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             } catch (Exception $ex) {}
 
-            try {
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `coupon_code` VARCHAR(50) DEFAULT NULL");
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `coupon_discount` DECIMAL(10,2) DEFAULT '0.00'");
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `wallet_deduction` DECIMAL(10,2) DEFAULT '0.00'");
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `transaction_id` VARCHAR(100) DEFAULT NULL");
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `razorpay_order_id` VARCHAR(100) DEFAULT NULL");
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `delivery_slot` VARCHAR(150) DEFAULT NULL");
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `expected_delivery` VARCHAR(100) DEFAULT NULL");
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN IF NOT EXISTS `timeline` LONGTEXT DEFAULT NULL");
-
-                
-                // Purge any dummy/mock orders permanently from database
-                try {
-                    $pdo->exec("DELETE FROM `orders` WHERE `number` LIKE 'JAP-849%' OR `id` LIKE 'JAP-849%' OR `number` LIKE '%8492%' OR `id` LIKE '%8492%' OR `number` LIKE '%356429%' OR `id` LIKE '%356429%' OR `id` LIKE 'ORD-%'");
-                } catch (Exception $ex) {}
-            } catch (Exception $ex) {}
+            // Columns are added by the one-time migration (api_security.php). Orders are never auto-deleted.
 
             if ($method === 'GET') {
                 $orderNumber = $_GET['number'] ?? ($_GET['id'] ?? null);
@@ -4805,6 +3479,13 @@ try {
                     $stmt = $pdo->prepare("SELECT * FROM `orders` WHERE `number` = ? OR `id` = ? LIMIT 1");
                     $stmt->execute([$orderNumber, $orderNumber]);
                     $order = $stmt->fetch();
+                    $orderViewer = janani_current_user($pdo);
+                    if ($order && !janani_is_staff_user($orderViewer) && !janani_user_owns_order($orderViewer, $order)) {
+                        // Public "track my order": status and timeline only - no name, phone, email or address.
+                        janani_rate_limit_or_exit($pdo, 'track:' . janani_client_ip(), 30, 600);
+                        $limited = janani_public_tracking_view($order);
+                        janani_json_exit(['success' => true, 'limitedView' => true, 'order' => $limited, 'data' => $limited]);
+                    }
                     if ($order) {
                         $order['orderNumber'] = $order['number'];
                         $order['shippingAddress'] = is_string($order['shipping_address']) ? json_decode($order['shipping_address'], true) : $order['shipping_address'];
@@ -4867,13 +3548,25 @@ try {
                     exit;
                 }
 
+                $orderViewer = janani_current_user($pdo);
+                if (!$orderViewer) {
+                    janani_json_exit(['success' => false, 'authRequired' => true, 'message' => 'Please sign in to view your orders.'], 401);
+                }
+                $orderViewerIsStaff = janani_is_staff_user($orderViewer);
                 $status = $_GET['status'] ?? null;
                 $paymentStatus = $_GET['paymentStatus'] ?? ($_GET['payment_status'] ?? null);
-                $customerEmail = $_GET['email'] ?? ($_GET['customer_email'] ?? null);
-                $customerPhone = $_GET['phone'] ?? ($_GET['customer_phone'] ?? null);
-                $search = trim($_GET['search'] ?? '');
-                $query = "SELECT * FROM `orders` WHERE `number` NOT LIKE '%8492%' AND `number` NOT LIKE '%356429%' AND `id` NOT LIKE '%8492%' AND `id` NOT LIKE '%356429%' AND `id` NOT LIKE 'ORD-%'";
+                $customerEmail = $orderViewerIsStaff ? ($_GET['email'] ?? ($_GET['customer_email'] ?? null)) : null;
+                $customerPhone = $orderViewerIsStaff ? ($_GET['phone'] ?? ($_GET['customer_phone'] ?? null)) : null;
+                $search = $orderViewerIsStaff ? trim($_GET['search'] ?? '') : '';
+                $query = "SELECT * FROM `orders` WHERE 1=1";
                 $params = [];
+                if (!$orderViewerIsStaff) {
+                    $ownEmail = janani_is_placeholder_email($orderViewer['email'] ?? '') ? '' : strtolower(trim((string)$orderViewer['email']));
+                    $query .= " AND (`customer_id` = ? OR (? != '' AND LOWER(`customer_email`) = ?))";
+                    $params[] = (string)$orderViewer['id'];
+                    $params[] = $ownEmail;
+                    $params[] = $ownEmail;
+                }
 
                 if ($customerEmail) {
                     $query .= " AND LOWER(`customer_email`) = ?";
@@ -4973,10 +3666,13 @@ try {
                 }
                 unset($ord);
 
+                $totalRev = 0.0; $pendingCount = 0; $deliveredCount = 0; $cancelledCount = 0;
+                if ($orderViewerIsStaff) {
                 $totalRev = (float)$pdo->query("SELECT COALESCE(SUM(total), 0) FROM `orders` WHERE `payment_status` = 'Paid' OR `payment_status` = 'Completed'")->fetchColumn();
                 $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE `order_status` = 'Pending' OR `order_status` = 'Processing'")->fetchColumn();
                 $deliveredCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE `order_status` = 'Delivered'")->fetchColumn();
                 $cancelledCount = (int)$pdo->query("SELECT COUNT(*) FROM `orders` WHERE `order_status` = 'Cancelled'")->fetchColumn();
+                }
 
                 echo json_encode([
                     'success' => true,
@@ -4996,434 +3692,272 @@ try {
                 $isUpdateAction = (!empty($urlId) && ($method === 'PUT' || $method === 'PATCH' || empty($body['items'])));
 
                 if (!$isUpdateAction) {
-                    // Create Flipkart-grade Order
-                    $sAddrObj = $body['shipping_address'] ?? ($body['shippingAddress'] ?? ($body['address'] ?? []));
-                    $custName = !empty($body['customer_name']) && $body['customer_name'] !== 'Customer' ? $body['customer_name'] : (!empty($body['customerName']) && $body['customerName'] !== 'Customer' ? $body['customerName'] : (!empty($body['customer']['name']) && $body['customer']['name'] !== 'Customer' ? $body['customer']['name'] : (!empty($body['customer']['fullName']) ? $body['customer']['fullName'] : (!empty($sAddrObj['fullName']) ? $sAddrObj['fullName'] : (!empty($sAddrObj['name']) ? $sAddrObj['name'] : 'Valued Patron')))));
-                    $custEmail = strtolower(trim(!empty($body['customer_email']) ? $body['customer_email'] : (!empty($body['customerEmail']) ? $body['customerEmail'] : (!empty($body['customer']['email']) ? $body['customer']['email'] : (!empty($sAddrObj['email']) ? $sAddrObj['email'] : 'patron@jananiagro.com')))));
-                    $custPhone = !empty($body['customer_phone']) ? $body['customer_phone'] : (!empty($body['customerPhone']) ? $body['customerPhone'] : (!empty($body['customer']['phone']) ? $body['customer']['phone'] : (!empty($sAddrObj['phone']) ? $sAddrObj['phone'] : '')));
+                    // ---------------- PLACE AN ORDER ----------------
+                    // Prices, discounts, totals, payment status and stock are decided here, never by the browser.
+                    $orderUser = janani_require_user($pdo);
+                    janani_rate_limit_or_exit($pdo, 'place-order:' . $orderUser['id'], 15, 3600, 'Too many orders in a short time. Please contact support if you need help.');
 
-                    $incomingNumber = !empty($body['number']) ? $body['number'] : (!empty($body['orderNumber']) ? $body['orderNumber'] : '');
-                    $needsNewOrderNumber = false;
-                    if (empty($incomingNumber) || preg_match('/^(JAP|ORD)-[0-9]{5,}$/i', $incomingNumber)) {
-                        $needsNewOrderNumber = true;
-                    } else {
-                        // Check if incomingNumber already exists in DB for a different customer
-                        try {
-                            $chkStmt = $pdo->prepare("SELECT `id`, `customer_email` FROM `orders` WHERE `number` = ? OR `id` = ? LIMIT 1");
-                            $chkStmt->execute([$incomingNumber, $incomingNumber]);
-                            $existingOrdRow = $chkStmt->fetch();
-                            if ($existingOrdRow) {
-                                $existingEmail = strtolower(trim($existingOrdRow['customer_email'] ?? ''));
-                                if ($existingEmail !== '' && $existingEmail !== $custEmail) {
-                                    $needsNewOrderNumber = true;
-                                }
-                            }
-                        } catch (Exception $e) {}
-                    }
+                    $rzpOrderId = trim((string)($body['razorpay_order_id'] ?? ($body['razorpayOrderId'] ?? '')));
+                    $rzpPaymentId = trim((string)($body['razorpay_payment_id'] ?? ($body['razorpayPaymentId'] ?? ($body['transactionId'] ?? ($body['transaction_id'] ?? '')))));
+                    $rzpSignature = trim((string)($body['razorpay_signature'] ?? ($body['razorpaySignature'] ?? '')));
+                    $methodLabel = strtolower(trim((string)($body['payment_method'] ?? ($body['paymentMethod'] ?? ''))));
+                    $isCodOrder = ($methodLabel === 'cod' || strpos($methodLabel, 'cash') !== false || strpos($methodLabel, 'cod') === 0);
 
-                    if ($needsNewOrderNumber) {
-                        $orderNum = generateNextOrderNumber($pdo);
-                        $orderId = $orderNum;
-                    } else {
-                        $orderNum = $incomingNumber;
-                        $orderId = (!empty($body['id']) && !preg_match('/^(JAP|ORD)-[0-9]{5,}$/i', $body['id'])) ? $body['id'] : $orderNum;
-                    }
-                    $orderDate = $body['order_date'] ?? ($body['date'] ?? date('d M Y, H:i'));
-                    
-                    $shippingAddr = isset($body['shipping_address']) ? json_encode($body['shipping_address']) : (isset($body['shippingAddress']) ? json_encode($body['shippingAddress']) : (isset($body['address']) ? json_encode($body['address']) : '{}'));
-                    $billingAddr = isset($body['billing_address']) ? json_encode($body['billing_address']) : (isset($body['billingAddress']) ? json_encode($body['billingAddress']) : $shippingAddr);
-                    $items = isset($body['items']) ? json_encode($body['items']) : '[]';
-                    
-                    $subtotal = (float)($body['subtotal'] ?? 0);
-                    $discount = (float)($body['discount'] ?? 0);
-                    $couponCode = $body['coupon_code'] ?? ($body['couponCode'] ?? ($body['coupon']['code'] ?? null));
-                    $couponDiscount = (float)($body['coupon_discount'] ?? ($body['couponDiscount'] ?? $discount));
-                    $walletDeduction = (float)($body['wallet_deduction'] ?? ($body['walletDeduction'] ?? 0));
-                    $deliveryFee = (float)($body['delivery_fee'] ?? ($body['deliveryFee'] ?? ($body['shippingFee'] ?? 0)));
-                    $total = (float)($body['total'] ?? ($body['finalTotal'] ?? ($subtotal - $discount - $walletDeduction + $deliveryFee)));
-                    
-                    $payMethod = $body['payment_method'] ?? ($body['paymentMethod'] ?? 'Razorpay (Online)');
-                    $payStatus = $body['payment_status'] ?? ($body['paymentStatus'] ?? 'Paid');
-                    $txnId = $body['transaction_id'] ?? ($body['transactionId'] ?? ($body['razorpay_payment_id'] ?? ('pay_rzp_' . time())));
-                    $rzpOrderId = $body['razorpay_order_id'] ?? ($body['razorpayOrderId'] ?? null);
-                    
-                    $ordStatus = $body['order_status'] ?? ($body['status'] ?? 'Processing');
-                    $courier = $body['courier'] ?? 'Delhivery Air Express & Janani Fleet';
-                    $trackingId = $body['tracking_id'] ?? ($body['trackingId'] ?? ('DEL-' . rand(1000000000, 9999999999)));
-                    $awb = $body['awb'] ?? $trackingId;
-                    $warehouse = $body['warehouse'] ?? 'Lodhika GIDC Central Facility, Rajkot';
-                    $slot = $body['delivery_slot'] ?? ($body['deliverySlot'] ?? ($body['slot']['dateStr'] ?? 'Tomorrow Morning (9:00 AM – 1:00 PM)'));
-                    $expDelivery = $body['expected_delivery'] ?? ($body['expectedDelivery'] ?? $slot);
-
-                    // Standard Flipkart 5-Stage Tracking Milestones
-                    $defaultTimeline = [
-                        [
-                            'title' => 'Order Placed & Payment Verified via Razorpay',
-                            'time' => date('d M Y, h:i A'),
-                            'location' => 'Lodhika Processing Hub, Rajkot',
-                            'done' => true,
-                            'current' => true
-                        ],
-                        [
-                            'title' => 'Quality Tested & Nitrogen Sealed',
-                            'time' => 'Within 4 Hours',
-                            'location' => 'Rajkot Central Facility',
-                            'done' => false,
-                            'current' => false
-                        ],
-                        [
-                            'title' => "Dispatched via {$courier}",
-                            'time' => 'Scheduled Tomorrow',
-                            'location' => 'Regional Transit Gateway',
-                            'done' => false,
-                            'current' => false
-                        ],
-                        [
-                            'title' => 'Out for Doorstep Delivery',
-                            'time' => $slot,
-                            'location' => 'Local Delivery Hub',
-                            'done' => false,
-                            'current' => false
-                        ],
-                        [
-                            'title' => 'Delivered to Recipient',
-                            'time' => $expDelivery,
-                            'location' => 'Customer Address',
-                            'done' => false,
-                            'current' => false
-                        ]
-                    ];
-                    $timeline = isset($body['timeline']) ? json_encode($body['timeline']) : json_encode($defaultTimeline);
-
-                    // Check if this is a brand new order to prevent duplicate inventory stock deductions
-                    $isNewOrder = true;
-                    try {
-                        $chkStmt = $pdo->prepare("SELECT 1 FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
-                        $chkStmt->execute([$orderId, $orderNum]);
-                        if ($chkStmt->fetchColumn()) {
-                            $isNewOrder = false;
+                    if (!$isCodOrder) {
+                        // Online payment: only a Razorpay payment with a valid signature creates an order.
+                        if ($rzpOrderId === '' || $rzpPaymentId === '' || $rzpSignature === '') {
+                            janani_json_exit(['success' => false, 'paymentRequired' => true, 'message' => 'Payment was not completed, so no order has been placed.'], 402);
                         }
-                    } catch (Exception $e) {}
+                        $rzpKeys = janani_razorpay_keys($pdo);
+                        if (!janani_razorpay_signature_valid($rzpKeys, $rzpOrderId, $rzpPaymentId, $rzpSignature)) {
+                            error_log('[janani] invalid Razorpay signature for ' . $rzpOrderId . ' by user ' . $orderUser['id']);
+                            janani_json_exit(['success' => false, 'paymentInvalid' => true, 'message' => 'We could not verify this payment. If money was debited, please contact support with payment ID ' . $rzpPaymentId . '.'], 400);
+                        }
+                        $fin = janani_finalize_intent($pdo, $rzpOrderId, $rzpPaymentId, (string)$orderUser['id']);
+                        if (empty($fin['success'])) {
+                            janani_json_exit(['success' => false, 'message' => $fin['message'] ?? 'We could not record your order. Please contact support with payment ID ' . $rzpPaymentId . '.'], (int)($fin['status'] ?? 500));
+                        }
+                        $createdOrder = janani_format_order($fin['order']);
+                        janani_json_exit([
+                            'success' => true,
+                            'message' => "Order {$createdOrder['number']} placed successfully.",
+                            'order' => $createdOrder,
+                            'data' => $createdOrder,
+                            'orderId' => $createdOrder['number'],
+                            'number' => $createdOrder['number'],
+                        ]);
+                    }
 
-                    $stmt = $pdo->prepare("INSERT INTO `orders` (
-                        `id`, `number`, `order_date`, `customer_name`, `customer_email`, `customer_phone`,
-                        `shipping_address`, `billing_address`, `items`, `subtotal`, `discount`, `coupon_code`,
-                        `coupon_discount`, `wallet_deduction`, `delivery_fee`, `total`, `payment_method`,
-                        `payment_status`, `transaction_id`, `razorpay_order_id`, `order_status`, `courier`,
-                        `tracking_id`, `awb`, `warehouse`, `delivery_slot`, `expected_delivery`, `timeline`
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE
-                        `customer_name` = VALUES(`customer_name`),
-                        `customer_email` = VALUES(`customer_email`),
-                        `customer_phone` = VALUES(`customer_phone`),
-                        `shipping_address` = VALUES(`shipping_address`),
-                        `billing_address` = VALUES(`billing_address`),
-                        `items` = VALUES(`items`),
-                        `subtotal` = VALUES(`subtotal`),
-                        `discount` = VALUES(`discount`),
-                        `delivery_fee` = VALUES(`delivery_fee`),
-                        `total` = VALUES(`total`),
-                        `payment_method` = VALUES(`payment_method`),
-                        `order_status` = VALUES(`order_status`),
-                        `payment_status` = VALUES(`payment_status`),
-                        `transaction_id` = VALUES(`transaction_id`),
-                        `courier` = VALUES(`courier`),
-                        `tracking_id` = VALUES(`tracking_id`),
-                        `awb` = VALUES(`awb`),
-                        `timeline` = VALUES(`timeline`),
-                        `delivery_slot` = VALUES(`delivery_slot`),
-                        `expected_delivery` = VALUES(`expected_delivery`),
-                        `coupon_code` = VALUES(`coupon_code`),
-                        `coupon_discount` = VALUES(`coupon_discount`),
-                        `wallet_deduction` = VALUES(`wallet_deduction`)");
-
-                    $stmt->execute([
-                        $orderId, $orderNum, $orderDate, $custName, $custEmail, $custPhone,
-                        $shippingAddr, $billingAddr, $items, $subtotal, $discount, $couponCode,
-                        $couponDiscount, $walletDeduction, $deliveryFee, $total, $payMethod,
-                        $payStatus, $txnId, $rzpOrderId, $ordStatus, $courier,
-                        $trackingId, $awb, $warehouse, $slot, $expDelivery, $timeline
+                    // Cash on Delivery
+                    $requestedCoupon = strtoupper(trim((string)($body['coupon_code'] ?? ($body['couponCode'] ?? ''))));
+                    $quote = janani_build_quote($pdo, $orderUser, $body['items'] ?? [], $requestedCoupon);
+                    if (!empty($quote['errors'])) {
+                        janani_json_exit(['success' => false, 'message' => implode(' ', $quote['errors']), 'errors' => $quote['errors']], 400);
+                    }
+                    if ($requestedCoupon !== '' && $quote['couponCode'] !== $requestedCoupon) {
+                        janani_json_exit(['success' => false, 'couponInvalid' => true, 'message' => $quote['couponMessage'] ?: 'This coupon can no longer be applied.', 'quote' => $quote], 409);
+                    }
+                    $expected = $body['expectedTotal'] ?? ($body['finalTotal'] ?? ($body['total'] ?? null));
+                    if ($expected !== null && abs((float)$expected - $quote['total']) > 1.0) {
+                        janani_json_exit([
+                            'success' => false,
+                            'priceChanged' => true,
+                            'quote' => $quote,
+                            'message' => 'Prices in your cart have been updated. The correct total is ₹' . number_format($quote['total'], 2) . '. Please review your cart and place the order again.'
+                        ], 409);
+                    }
+                    $codAddress = $body['shipping_address'] ?? ($body['shippingAddress'] ?? ($body['address'] ?? []));
+                    if (!is_array($codAddress) || empty($codAddress['pincode']) || empty($codAddress['city'])) {
+                        janani_json_exit(['success' => false, 'message' => 'Please select a complete delivery address.'], 400);
+                    }
+                    $placed = janani_insert_order($pdo, $orderUser, $quote, $codAddress, [
+                        'method' => 'Cash on Delivery',
+                        'status' => 'Pending (COD)',
+                        'transactionId' => null,
+                        'razorpayOrderId' => null,
+                        'strictStock' => true,
+                    ], [
+                        'deliverySlot' => (string)($body['delivery_slot'] ?? ($body['deliverySlot'] ?? '')),
+                        'orderNotes' => (string)($body['order_notes'] ?? ($body['orderNotes'] ?? '')),
                     ]);
-
-                    // Real-time Inventory Stock Deduction for newly placed customer order
-                    if ($isNewOrder) {
-                        $rawItems = $body['items'] ?? [];
-                        if (is_string($rawItems)) {
-                            $rawItems = json_decode($rawItems, true) ?: [];
-                        }
-                        if (is_array($rawItems) && !empty($rawItems)) {
-                            foreach ($rawItems as $it) {
-                                $deductQty = (int)($it['quantity'] ?? ($it['qty'] ?? 1));
-                                if ($deductQty <= 0) $deductQty = 1;
-
-                                $pId = $it['productId'] ?? ($it['id'] ?? null);
-                                $pSku = trim($it['sku'] ?? '');
-                                $pSlug = trim($it['slug'] ?? '');
-                                $pName = trim($it['name'] ?? ($it['title'] ?? ''));
-
-                                $deducted = false;
-
-                                // Strategy 1: Match by numeric ID
-                                if (!empty($pId) && is_numeric($pId)) {
-                                    $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE `id` = ?");
-                                    $up->execute([$deductQty, (int)$pId]);
-                                    if ($up->rowCount() > 0) $deducted = true;
-                                }
-
-                                // Strategy 2: Match by SKU
-                                if (!$deducted && !empty($pSku)) {
-                                    $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE `sku` = ?");
-                                    $up->execute([$deductQty, $pSku]);
-                                    if ($up->rowCount() > 0) $deducted = true;
-                                }
-
-                                // Strategy 3: Match by Slug or string ID
-                                if (!$deducted) {
-                                    $targetSlug = !empty($pSlug) ? $pSlug : (!is_numeric($pId) ? (string)$pId : '');
-                                    if (!empty($targetSlug)) {
-                                        $cleanSlug = preg_replace('/^prd-/i', '', trim($targetSlug));
-                                        $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE `slug` = ? OR `slug` = ?");
-                                        $up->execute([$deductQty, $targetSlug, $cleanSlug]);
-                                        if ($up->rowCount() > 0) $deducted = true;
-                                    }
-                                }
-
-                                // Strategy 4: Match by exact Product Name
-                                if (!$deducted && !empty($pName)) {
-                                    $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE `name` = ?");
-                                    $up->execute([$deductQty, $pName]);
-                                    if ($up->rowCount() > 0) $deducted = true;
-                                }
-
-                                // Strategy 5: Match by first significant keyword of product name (e.g. 'BALAVAN', 'SURAKSHA', 'HARIT', 'NEEM', 'ANNADA', 'PUSHKAL')
-                                if (!$deducted && !empty($pName)) {
-                                    $cleanName = preg_replace('/[^\w\s]/', ' ', $pName);
-                                    $words = array_values(array_filter(explode(' ', trim($cleanName))));
-                                    $firstWord = $words[0] ?? '';
-                                    if (strlen($firstWord) >= 3) {
-                                        $up = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(0, `stock` - ?) WHERE (`name` LIKE ? OR `slug` LIKE ?) AND (`status` != 'Trash' OR `status` IS NULL) ORDER BY `id` ASC LIMIT 1");
-                                        $up->execute([$deductQty, "%{$firstWord}%", "%" . strtolower($firstWord) . "%"]);
-                                        if ($up->rowCount() > 0) $deducted = true;
-                                    }
-                                }
-                            }
-                        }
+                    if (empty($placed['success'])) {
+                        janani_json_exit(['success' => false, 'outOfStock' => !empty($placed['outOfStock']), 'message' => $placed['message'] ?? 'Your order could not be placed.'], 409);
                     }
-
-                    $fStmt = $pdo->prepare("SELECT * FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
-                    $fStmt->execute([$orderId, $orderNum]);
-                    $created = $fStmt->fetch();
-                    if ($created) {
-                        $created['shippingAddress'] = json_decode($created['shipping_address'], true);
-                        $created['items'] = json_decode($created['items'], true);
-                        $created['timeline'] = json_decode($created['timeline'], true);
-                    }
-
-                    // Automatically dispatch official GST tax invoice email to customer and admin
-                    try {
-                        @sendOrderConfirmationInvoiceEmail($created ?: $body, $smtp_user, $smtp_pass, $admin_email);
-                    } catch (Exception $emailEx) {}
-
-                    // Auto-sync customer address in users table from order shipping address
-                    if (!empty($custEmail) && $custEmail !== 'patron@jananiagro.com') {
-                        try {
-                            $sAddr = is_array($sAddrObj) ? $sAddrObj : (json_decode($shippingAddr, true) ?: []);
-                            if (!empty($sAddr) && is_array($sAddr)) {
-                                $ordCity = trim($sAddr['city'] ?? '');
-                                $ordState = trim($sAddr['state'] ?? '');
-                                $ordStreet = trim($sAddr['street'] ?? ($sAddr['address'] ?? ''));
-                                $ordPincode = trim($sAddr['pincode'] ?? '');
-                                $ordLandmark = trim($sAddr['landmark'] ?? '');
-                                $ordPhone = trim($sAddr['phone'] ?? $custPhone);
-
-                                $uGet = $pdo->prepare("SELECT * FROM `users` WHERE `email` = ? LIMIT 1");
-                                $uGet->execute([$custEmail]);
-                                $uRow = $uGet->fetch();
-                                if ($uRow) {
-                                    $uSaved = !empty($uRow['saved_addresses']) ? json_decode($uRow['saved_addresses'], true) : [];
-                                    if (!is_array($uSaved)) $uSaved = [];
-                                    if (empty($uSaved) && (!empty($ordStreet) || !empty($ordCity))) {
-                                        $uSaved[] = [
-                                            'id' => 'addr-' . time(),
-                                            'name' => $custName,
-                                            'phone' => $ordPhone,
-                                            'street' => $ordStreet,
-                                            'landmark' => $ordLandmark,
-                                            'city' => $ordCity,
-                                            'state' => $ordState,
-                                            'pincode' => $ordPincode,
-                                            'isDefault' => true,
-                                            'type' => 'home'
-                                        ];
-                                    }
-                                    $upSql = "UPDATE `users` SET 
-                                        `city` = IF(`city` IS NULL OR `city` = '', ?, `city`),
-                                        `state` = IF(`state` IS NULL OR `state` = '', ?, `state`),
-                                        `address` = IF(`address` IS NULL OR `address` = '', ?, `address`),
-                                        `pincode` = IF(`pincode` IS NULL OR `pincode` = '', ?, `pincode`),
-                                        `landmark` = IF(`landmark` IS NULL OR `landmark` = '', ?, `landmark`),
-                                        `phone` = IF(`phone` IS NULL OR `phone` = '', ?, `phone`),
-                                        `saved_addresses` = IF(`saved_addresses` IS NULL OR `saved_addresses` = '' OR `saved_addresses` = '[]', ?, `saved_addresses`)
-                                        WHERE `email` = ?";
-                                    $pdo->prepare($upSql)->execute([$ordCity, $ordState, $ordStreet, $ordPincode, $ordLandmark, $ordPhone, json_encode($uSaved), $custEmail]);
-                                }
-                            }
-                        } catch (Exception $uEx) {}
-                    }
-
-                    echo json_encode(['success' => true, 'message' => "Order {$orderNum} recorded in MySQL with full realtime breakdown", 'data' => $created, 'order' => $created, 'orderId' => $orderNum]);
-                    exit;
-                } else {
-                    $rawId = $urlId ?? ($body['id'] ?? ($body['number'] ?? ''));
-                    $parts = explode('/', trim($rawId, '/'));
-                    $id = $parts[0];
-                    $sub = $parts[1] ?? '';
-
-                    if ($id === 'bulk-status') {
-                        $ids = $body['ids'] ?? [];
-                        $status = $body['status'] ?? 'Delivered';
-                        if (!empty($ids) && is_array($ids)) {
-                            foreach ($ids as $ordId) {
-                                $pdo->prepare("UPDATE `orders` SET `order_status` = ? WHERE `id` = ? OR `number` = ?")->execute([$status, $ordId, $ordId]);
-                            }
-                        }
-                        echo json_encode(['success' => true, 'message' => "Bulk updated " . count($ids) . " orders to {$status} in MySQL"]);
-                        exit;
-                    }
-
-                    if ($sub === 'refund' || $id === 'refund') {
-                        $targetOrdId = $sub === 'refund' ? $id : ($body['orderId'] ?? ($body['id'] ?? ''));
-                        $refundAmount = (float)($body['amount'] ?? 0);
-                        $reason = $body['reason'] ?? 'Customer Refund Request';
-
-                        // Restore warehouse inventory stock if previously active
-                        try {
-                            $stPrev = $pdo->prepare("SELECT `order_status`, `items` FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
-                            $stPrev->execute([$targetOrdId, $targetOrdId]);
-                            $ordRow = $stPrev->fetch();
-                            if ($ordRow && strcasecmp($ordRow['order_status'], 'Cancelled') !== 0) {
-                                $restoreItems = !empty($ordRow['items']) ? (is_string($ordRow['items']) ? json_decode($ordRow['items'], true) : $ordRow['items']) : [];
-                                if (is_array($restoreItems)) {
-                                    foreach ($restoreItems as $rit) {
-                                        $rQty = (int)($rit['quantity'] ?? ($rit['qty'] ?? 1));
-                                        if ($rQty <= 0) continue;
-                                        $rpId = $rit['productId'] ?? ($rit['id'] ?? null);
-                                        $rpSku = trim($rit['sku'] ?? '');
-                                        $rpSlug = trim($rit['slug'] ?? '');
-                                        $rpName = trim($rit['name'] ?? ($rit['title'] ?? ''));
-                                        if (!empty($rpId) && is_numeric($rpId)) {
-                                            $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ?")->execute([$rQty, (int)$rpId]);
-                                        } elseif (!empty($rpSku)) {
-                                            $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `sku` = ?")->execute([$rQty, $rpSku]);
-                                        } elseif (!empty($rpSlug)) {
-                                            $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `slug` = ?")->execute([$rQty, $rpSlug]);
-                                        } elseif (!empty($rpName)) {
-                                            $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `name` = ?")->execute([$rQty, $rpName]);
-                                        }
-                                    }
-                                }
-                            }
-                        } catch (Exception $e) {}
-
-                        $pdo->prepare("UPDATE `orders` SET `payment_status` = 'Refunded', `order_status` = 'Cancelled' WHERE `id` = ? OR `number` = ?")->execute([$targetOrdId, $targetOrdId]);
-
-                        try {
-                            $payId = 'REF-' . time() . '-' . rand(100, 999);
-                            $pdo->prepare("INSERT INTO `payments` (`id`, `order_id`, `gross_amount`, `net_settled_amount`, `refunded_amount`, `status`) VALUES (?, ?, ?, ?, ?, 'Refunded')")->execute([$payId, $targetOrdId, $refundAmount, 0, $refundAmount]);
-                        } catch (Exception $e) {}
-
-                        echo json_encode(['success' => true, 'message' => "Order refund of ₹{$refundAmount} processed in MySQL and inventory restored"]);
-                        exit;
-                    }
-
-                    $fields = [];
-                    $vals = [];
-                    $map = [
-                        'order_status' => $body['order_status'] ?? ($body['status'] ?? ($body['orderStatus'] ?? null)),
-                        'payment_status' => $body['payment_status'] ?? ($body['paymentStatus'] ?? null),
-                        'courier' => $body['courier'] ?? null,
-                        'tracking_id' => $body['tracking_id'] ?? ($body['trackingId'] ?? null),
-                        'awb' => $body['awb'] ?? null,
-                        'warehouse' => $body['warehouse'] ?? null,
-                        'delivery_slot' => $body['delivery_slot'] ?? ($body['deliverySlot'] ?? null),
-                        'expected_delivery' => $body['expected_delivery'] ?? ($body['expectedDelivery'] ?? null),
-                        'coupon_code' => $body['coupon_code'] ?? ($body['couponCode'] ?? null),
-                        'transaction_id' => $body['transaction_id'] ?? ($body['transactionId'] ?? null)
-                    ];
-                    if (isset($body['shipping_address'])) $map['shipping_address'] = json_encode($body['shipping_address']);
-                    if (isset($body['shippingAddress'])) $map['shipping_address'] = json_encode($body['shippingAddress']);
-                    if (isset($body['items'])) $map['items'] = json_encode($body['items']);
-                    if (isset($body['timeline'])) $map['timeline'] = json_encode($body['timeline']);
-
-                    foreach ($map as $k => $v) {
-                        if ($v !== null) {
-                            $fields[] = "`{$k}` = ?";
-                            $vals[] = $v;
-                        }
-                    }
-
-                    if (!empty($fields)) {
-                        // If order is transitioning to Cancelled, restore stock
-                        $newStatus = $map['order_status'] ?? null;
-                        if ($newStatus && strcasecmp($newStatus, 'Cancelled') === 0) {
-                            try {
-                                $stPrev = $pdo->prepare("SELECT `order_status`, `items` FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
-                                $stPrev->execute([$id, $id]);
-                                $ordRow = $stPrev->fetch();
-                                if ($ordRow && strcasecmp($ordRow['order_status'], 'Cancelled') !== 0) {
-                                    $restoreItems = !empty($ordRow['items']) ? (is_string($ordRow['items']) ? json_decode($ordRow['items'], true) : $ordRow['items']) : [];
-                                    if (is_array($restoreItems)) {
-                                        foreach ($restoreItems as $rit) {
-                                            $rQty = (int)($rit['quantity'] ?? ($rit['qty'] ?? 1));
-                                            if ($rQty <= 0) continue;
-                                            $rpId = $rit['productId'] ?? ($rit['id'] ?? null);
-                                            $rpSku = trim($rit['sku'] ?? '');
-                                            $rpSlug = trim($rit['slug'] ?? '');
-                                            $rpName = trim($rit['name'] ?? ($rit['title'] ?? ''));
-                                            if (!empty($rpId) && is_numeric($rpId)) {
-                                                $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `id` = ?")->execute([$rQty, (int)$rpId]);
-                                            } elseif (!empty($rpSku)) {
-                                                $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `sku` = ?")->execute([$rQty, $rpSku]);
-                                            } elseif (!empty($rpSlug)) {
-                                                $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `slug` = ?")->execute([$rQty, $rpSlug]);
-                                            } elseif (!empty($rpName)) {
-                                                $pdo->prepare("UPDATE `products` SET `stock` = `stock` + ? WHERE `name` = ?")->execute([$rQty, $rpName]);
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (Exception $e) {}
-                        }
-
-                        $vals[] = $id;
-                        $vals[] = $id;
-                        $stmt = $pdo->prepare("UPDATE `orders` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `number` = ?");
-                        $stmt->execute($vals);
-
-                        $fStmt = $pdo->prepare("SELECT * FROM `orders` WHERE `id` = ? OR `number` = ? LIMIT 1");
-                        $fStmt->execute([$id, $id]);
-                        $updated = $fStmt->fetch();
-                        if ($updated) {
-                            $updated['shippingAddress'] = json_decode($updated['shipping_address'], true);
-                            $updated['items'] = json_decode($updated['items'], true);
-                            $updated['timeline'] = json_decode($updated['timeline'], true);
-                        }
-                        echo json_encode(['success' => true, 'message' => 'Order updated successfully in MySQL', 'data' => $updated, 'order' => $updated]);
-                        exit;
-                    }
-                    echo json_encode(['success' => false, 'message' => 'No valid fields provided for order update']);
-                    exit;
+                    janani_send_order_invoice_once($pdo, $placed['order']);
+                    $createdOrder = janani_format_order($placed['order']);
+                    janani_json_exit([
+                        'success' => true,
+                        'message' => "Order {$createdOrder['number']} placed successfully.",
+                        'order' => $createdOrder,
+                        'data' => $createdOrder,
+                        'orderId' => $createdOrder['number'],
+                        'number' => $createdOrder['number'],
+                    ]);
                 }
+
+                // ---------------- UPDATE AN EXISTING ORDER ----------------
+                $rawId = $urlId ?? ($body['id'] ?? ($body['number'] ?? ''));
+                $parts = explode('/', trim((string)$rawId, '/'));
+                $id = $parts[0];
+                $sub = strtolower($parts[1] ?? '');
+                $orderActor = janani_require_user($pdo);
+                $orderActorIsStaff = janani_is_staff_user($orderActor);
+                $actionReason = mb_substr(trim(strip_tags((string)($body['reason'] ?? ''))), 0, 500);
+
+                if (!$orderActorIsStaff) {
+                    // Customers: cancel, or request a return / exchange - only on their own orders.
+                    $ownOrder = janani_find_order($pdo, $id);
+                    if (!$ownOrder || !janani_user_owns_order($orderActor, $ownOrder)) {
+                        janani_json_exit(['success' => false, 'message' => 'Order not found.'], 404);
+                    }
+                    $statusNow = strtolower(trim((string)($ownOrder['order_status'] ?? '')));
+                    if ($sub === 'cancel') {
+                        if (!in_array($statusNow, ['processing', 'pending', 'confirmed', 'placed', 'order placed', 'packed'], true)) {
+                            janani_json_exit(['success' => false, 'message' => 'This order can no longer be cancelled because it is already ' . ($ownOrder['order_status'] ?: 'processed') . '. You can request a return after delivery.'], 409);
+                        }
+                        $cancelled = janani_cancel_order($pdo, $ownOrder, $actionReason, 'customer');
+                        $fo = janani_format_order($cancelled['order']);
+                        janani_json_exit(['success' => true, 'message' => $cancelled['message'], 'refundNote' => $cancelled['refundNote'] ?? '', 'order' => $fo, 'data' => $fo]);
+                    }
+                    if (in_array($sub, ['return-request', 'exchange-request'], true)) {
+                        if ($statusNow !== 'delivered') {
+                            janani_json_exit(['success' => false, 'message' => 'Returns and exchanges can be requested once the order has been delivered.'], 409);
+                        }
+                        $isExchange = ($sub === 'exchange-request');
+                        $requestInfo = [
+                            'type' => $isExchange ? 'exchange' : 'return',
+                            'reason' => $actionReason,
+                            'details' => mb_substr(trim(strip_tags((string)($body['details'] ?? ($body['description'] ?? '')))), 0, 1000),
+                            'resolution' => mb_substr(trim(strip_tags((string)($body['resolution'] ?? ($body['refundMethod'] ?? '')))), 0, 100),
+                            'requestedAt' => date('c'),
+                        ];
+                        $newStatus = $isExchange ? 'Exchange Requested' : 'Return Requested';
+                        $pdo->prepare("UPDATE `orders` SET `order_status` = ?, `return_info` = ? WHERE `id` = ?")->execute([$newStatus, json_encode($requestInfo, JSON_UNESCAPED_UNICODE), $ownOrder['id']]);
+                        janani_append_timeline($pdo, janani_find_order($pdo, $ownOrder['id']), $newStatus . ($actionReason !== '' ? " – {$actionReason}" : ''), false);
+                        $fo = janani_format_order(janani_find_order($pdo, $ownOrder['id']));
+                        janani_json_exit(['success' => true, 'message' => "{$newStatus}. Our team will contact you within 24-48 hours.", 'order' => $fo, 'data' => $fo]);
+                    }
+                    janani_json_exit(['success' => false, 'message' => 'You can only cancel or request a return / exchange for your own orders.'], 403);
+                }
+
+                // ----- Staff / admin actions -----
+                if ($id === 'bulk-status') {
+                    $ids = is_array($body['ids'] ?? null) ? $body['ids'] : [];
+                    $bulkStatus = mb_substr(trim(strip_tags((string)($body['status'] ?? ''))), 0, 50);
+                    if ($bulkStatus === '' || empty($ids)) {
+                        janani_json_exit(['success' => false, 'message' => 'Select orders and a status.'], 400);
+                    }
+                    $updatedCount = 0;
+                    foreach ($ids as $ordId) {
+                        $bo = janani_find_order($pdo, (string)$ordId);
+                        if (!$bo) continue;
+                        if (strcasecmp($bulkStatus, 'Cancelled') === 0) {
+                            janani_cancel_order($pdo, $bo, 'Bulk update', 'admin');
+                        } else {
+                            $pdo->prepare("UPDATE `orders` SET `order_status` = ? WHERE `id` = ?")->execute([$bulkStatus, $bo['id']]);
+                            janani_append_timeline($pdo, janani_find_order($pdo, $bo['id']), $bulkStatus);
+                        }
+                        $updatedCount++;
+                    }
+                    janani_json_exit(['success' => true, 'message' => "Updated {$updatedCount} orders to {$bulkStatus}."]);
+                }
+
+                $targetRef = ($id === 'refund') ? (string)($body['orderId'] ?? ($body['id'] ?? '')) : $id;
+                $adminOrder = janani_find_order($pdo, $targetRef);
+                if (!$adminOrder) {
+                    janani_json_exit(['success' => false, 'message' => 'Order not found.'], 404);
+                }
+
+                if ($sub === 'refund' || $id === 'refund') {
+                    $restockOnRefund = !array_key_exists('restockInventory', $body) || !empty($body['restockInventory']);
+                    $rr = janani_refund_order($pdo, $adminOrder, isset($body['amount']) ? (float)$body['amount'] : null, $actionReason, $restockOnRefund);
+                    if (empty($rr['success'])) {
+                        janani_json_exit(['success' => false, 'message' => $rr['message']], (int)($rr['status'] ?? 400));
+                    }
+                    $fo = janani_format_order($rr['order']);
+                    janani_json_exit(['success' => true, 'message' => $rr['message'], 'refundId' => $rr['refundId'], 'order' => $fo, 'data' => $fo]);
+                }
+
+                if ($sub === 'cancel') {
+                    $restockFlag = !array_key_exists('restockInventory', $body) || !empty($body['restockInventory']);
+                    $cancelled = janani_cancel_order($pdo, $adminOrder, $actionReason, 'Janani Agro', $restockFlag);
+                    $fo = janani_format_order($cancelled['order']);
+                    janani_json_exit(['success' => true, 'message' => $cancelled['message'], 'order' => $fo, 'data' => $fo]);
+                }
+
+                if ($sub === 'return') {
+                    if (!empty($body['restockInventory']) && strcasecmp((string)$adminOrder['order_status'], 'Returned') !== 0) {
+                        janani_restock_order_items($pdo, $adminOrder);
+                    }
+                    $pdo->prepare("UPDATE `orders` SET `order_status` = 'Returned' WHERE `id` = ?")->execute([$adminOrder['id']]);
+                    janani_append_timeline($pdo, janani_find_order($pdo, $adminOrder['id']), 'Return received' . ($actionReason !== '' ? " – {$actionReason}" : ''));
+                    $fo = janani_format_order(janani_find_order($pdo, $adminOrder['id']));
+                    janani_json_exit(['success' => true, 'message' => 'Order marked as returned. Use "Refund" to return the money.', 'order' => $fo, 'data' => $fo]);
+                }
+
+                if ($sub === 'exchange') {
+                    $pdo->prepare("UPDATE `orders` SET `order_status` = 'Exchange Approved' WHERE `id` = ?")->execute([$adminOrder['id']]);
+                    janani_append_timeline($pdo, janani_find_order($pdo, $adminOrder['id']), 'Exchange approved' . ($actionReason !== '' ? " – {$actionReason}" : ''));
+                    $fo = janani_format_order(janani_find_order($pdo, $adminOrder['id']));
+                    janani_json_exit(['success' => true, 'message' => 'Exchange approved.', 'order' => $fo, 'data' => $fo]);
+                }
+
+                if ($sub === 'notes') {
+                    $noteText = mb_substr(trim(strip_tags((string)($body['text'] ?? ''))), 0, 1000);
+                    if ($noteText === '') {
+                        janani_json_exit(['success' => false, 'message' => 'Note text is required.'], 400);
+                    }
+                    $notes = janani_json_field($adminOrder['admin_notes'] ?? null, []);
+                    $notes[] = ['id' => 'NOTE-' . bin2hex(random_bytes(4)), 'text' => $noteText, 'author' => (string)($orderActor['name'] ?? 'Admin'), 'date' => date('d M Y, h:i A')];
+                    $pdo->prepare("UPDATE `orders` SET `admin_notes` = ? WHERE `id` = ?")->execute([json_encode($notes, JSON_UNESCAPED_UNICODE), $adminOrder['id']]);
+                    janani_json_exit(['success' => true, 'message' => 'Note added.', 'data' => $notes]);
+                }
+
+                if ($sub === 'warehouse') {
+                    $wh = $body['warehouse'] ?? '';
+                    $whName = is_array($wh) ? (string)($wh['name'] ?? '') : (string)$wh;
+                    $whName = mb_substr(trim(strip_tags($whName)), 0, 255);
+                    if ($whName === '') {
+                        janani_json_exit(['success' => false, 'message' => 'Warehouse is required.'], 400);
+                    }
+                    $pdo->prepare("UPDATE `orders` SET `warehouse` = ? WHERE `id` = ?")->execute([$whName, $adminOrder['id']]);
+                    janani_json_exit(['success' => true, 'message' => "Warehouse updated to {$whName}.", 'data' => ['id' => $adminOrder['id'], 'warehouse' => $whName]]);
+                }
+
+                if ($sub === 'shiprocket') {
+                    janani_json_exit(['success' => false, 'notConfigured' => true, 'message' => 'Shiprocket is not connected to this store yet. Please enter the courier name and tracking number manually.'], 501);
+                }
+
+                // Generic field update (status, courier, tracking, address corrections...)
+                $map = [
+                    'order_status' => $body['order_status'] ?? ($body['status'] ?? ($body['orderStatus'] ?? null)),
+                    'payment_status' => $body['payment_status'] ?? ($body['paymentStatus'] ?? null),
+                    'courier' => $body['courier'] ?? null,
+                    'tracking_id' => $body['tracking_id'] ?? ($body['trackingId'] ?? null),
+                    'awb' => $body['awb'] ?? null,
+                    'delivery_slot' => $body['delivery_slot'] ?? ($body['deliverySlot'] ?? null),
+                    'expected_delivery' => $body['expected_delivery'] ?? ($body['expectedDelivery'] ?? null),
+                ];
+                $fields = [];
+                $vals = [];
+                foreach ($map as $k => $v) {
+                    if ($v !== null && is_scalar($v)) {
+                        $fields[] = "`{$k}` = ?";
+                        $vals[] = mb_substr(trim(strip_tags((string)$v)), 0, 150);
+                    }
+                }
+                if (isset($body['shipping_address']) || isset($body['shippingAddress'])) {
+                    $fields[] = "`shipping_address` = ?";
+                    $vals[] = json_encode(janani_clean_address($body['shipping_address'] ?? $body['shippingAddress']), JSON_UNESCAPED_UNICODE);
+                }
+                if (isset($body['timeline']) && is_array($body['timeline'])) {
+                    $fields[] = "`timeline` = ?";
+                    $vals[] = json_encode($body['timeline'], JSON_UNESCAPED_UNICODE);
+                }
+                if (empty($fields)) {
+                    janani_json_exit(['success' => false, 'message' => 'No valid fields provided for order update.'], 400);
+                }
+                $newStatus = $map['order_status'] ?? null;
+                if ($newStatus && strcasecmp((string)$newStatus, 'Cancelled') === 0) {
+                    // Cancellation always goes through the cancel flow (stock + refund)
+                    janani_cancel_order($pdo, $adminOrder, $actionReason, 'Janani Agro');
+                }
+                $vals[] = $adminOrder['id'];
+                $pdo->prepare("UPDATE `orders` SET " . implode(', ', $fields) . " WHERE `id` = ?")->execute($vals);
+                if ($newStatus && strcasecmp((string)$newStatus, (string)$adminOrder['order_status']) !== 0 && strcasecmp((string)$newStatus, 'Cancelled') !== 0 && !isset($body['timeline'])) {
+                    janani_append_timeline($pdo, janani_find_order($pdo, $adminOrder['id']), (string)$newStatus);
+                }
+                $fo = janani_format_order(janani_find_order($pdo, $adminOrder['id']));
+                janani_json_exit(['success' => true, 'message' => 'Order updated successfully.', 'data' => $fo, 'order' => $fo]);
             } elseif ($method === 'DELETE') {
-                $id = $_GET['id'] ?? null;
-                if ($id) {
-                    $stmt = $pdo->prepare("UPDATE `orders` SET `order_status` = 'Cancelled' WHERE `id` = ? OR `number` = ?");
-                    $stmt->execute([$id, $id]);
-                    echo json_encode(['success' => true, 'message' => 'Order marked as Cancelled in MySQL']);
-                    exit;
+                $delRef = trim((string)($_GET['id'] ?? ''));
+                $delOrder = $delRef !== '' ? janani_find_order($pdo, $delRef) : null;
+                if (!$delOrder) {
+                    janani_json_exit(['success' => false, 'message' => 'Order not found.'], 404);
                 }
-                echo json_encode(['success' => false, 'message' => 'Order ID required for deletion']);
-                exit;
+                // Orders are financial records and are never physically deleted; "delete" cancels.
+                $cancelled = janani_cancel_order($pdo, $delOrder, 'Removed by admin', 'Janani Agro');
+                janani_json_exit(['success' => true, 'message' => $cancelled['message']]);
             }
             break;
 
@@ -5431,9 +3965,15 @@ try {
         case 'profile':
         case 'users':
         case 'customers':
+            $profileActor = janani_require_user($pdo);
+            $profileActorIsStaff = janani_is_staff_user($profileActor);
+            $profileActorIsAdmin = janani_is_admin_user($profileActor);
             if ($method === 'GET') {
-                reindexAllCustomersSequentially($pdo);
                 $id = $_GET['id'] ?? ($_GET['userId'] ?? ($_GET['email'] ?? null));
+                if (!$profileActorIsStaff) {
+                    // Customers can only read their own profile.
+                    $id = (string)$profileActor['id'];
+                }
                 if ($id) {
                     $cleanId = trim($id);
                     if (strpos($cleanId, '@') !== false) {
@@ -5468,14 +4008,12 @@ try {
                         $user['loyaltyPoints'] = (int)($user['loyalty_points'] ?? 0);
                         $user['isVerified'] = (bool)($user['is_verified'] ?? 1);
                     }
+                    $user = $user ? janani_public_user($user) : null;
                     echo json_encode(['success' => true, 'customer' => $user ?: null, 'data' => $user ?: null, 'user' => $user ?: null]);
                     exit;
                 }
 
-                // Purge any dummy mock customers from users permanently
-                try {
-                    $pdo->exec("DELETE FROM `users` WHERE `name` IN ('Ananya Sharma', 'Suresh Patwardhan', 'Kavitha Ranganathan', 'Rameshwar Patel', 'Dr. Ananya Iyer', 'Vikramaditya Rao') OR `email` IN ('ananya.s@gmail.com', 'suresh.p@yahoo.co.in', 'kavitha.r@outlook.com', 'ramesh.patel@gmail.com', 'dr.ananya@heritagehealth.org', 'vikram.rao@technocorp.in')");
-                } catch (Exception $e) {}
+                // (Customers are never deleted automatically.)
 
                 // Sync real customers from real orders into users table if not already present
                 try {
@@ -5534,7 +4072,7 @@ try {
                 $query .= " ORDER BY COALESCE(`created_at`, `updated_at`) DESC, `id` DESC LIMIT 200";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
-                $users = $stmt->fetchAll();
+                $users = array_map('janani_public_user', $stmt->fetchAll());
 
                 // Pre-aggregate order stats for all customers
                 $orderStats = [];
@@ -5656,15 +4194,42 @@ try {
                 $body = getJsonBody();
                 $rawId = $_GET['id'] ?? ($body['id'] ?? ($body['userId'] ?? ($body['email'] ?? null)));
 
+                // Fields only an administrator may change
+                $privilegedFields = ['role', 'status', 'tier', 'walletBalance', 'wallet_balance', 'loyaltyPoints', 'loyalty_points', 'is_verified', 'referral_code', 'referralCode'];
+                if (!$profileActorIsStaff) {
+                    // Self-service: a customer can only edit their own personal details.
+                    foreach ($privilegedFields as $pf) unset($body[$pf]);
+                    $requestedEmail = strtolower(trim((string)($body['email'] ?? '')));
+                    if ($requestedEmail !== '' && $requestedEmail !== strtolower(trim((string)$profileActor['email']))) {
+                        janani_json_exit(['success' => false, 'message' => 'Your email address cannot be changed here. Please contact support to update it.'], 400);
+                    }
+                    unset($body['email'], $body['identifier']);
+                    $rawId = (string)$profileActor['id'];
+                    $body['id'] = $rawId;
+                    if (!empty($body['password'])) {
+                        $existingHash = (string)(($profileActor['password_hash'] ?? '') ?: ($profileActor['password'] ?? ''));
+                        $currentPw = (string)($body['currentPassword'] ?? ($body['current_password'] ?? ($body['oldPassword'] ?? '')));
+                        if ($existingHash !== '' && !password_verify($currentPw, $existingHash) && !password_verify(trim($currentPw), $existingHash)) {
+                            janani_json_exit(['success' => false, 'message' => 'Please enter your current password correctly to set a new one.'], 403);
+                        }
+                        if (strlen(trim((string)$body['password'])) < 6) {
+                            janani_json_exit(['success' => false, 'message' => 'Password must be at least 6 characters long.'], 400);
+                        }
+                    }
+                } elseif (!$profileActorIsAdmin) {
+                    // Staff may manage customer details but not roles, wallets or passwords.
+                    foreach (['role', 'walletBalance', 'wallet_balance', 'loyaltyPoints', 'loyalty_points', 'password'] as $pf) unset($body[$pf]);
+                }
+
                 if (empty($rawId) && empty($body['email']) && empty($body['name'])) {
                     // Create customer
                     $custId = !empty($body['id']) ? $body['id'] : generateNextCustomerId($pdo);
                     $name = $body['name'] ?? 'New Patron';
                     $email = strtolower(trim($body['email'] ?? ($custId . '@janani.customer')));
                     $phone = $body['phone'] ?? '';
-                    $role = $body['role'] ?? 'Customer';
+                    $role = $profileActorIsAdmin ? ($body['role'] ?? 'Customer') : 'Customer';
                     $tier = $body['tier'] ?? 'Silver';
-                    $wallet = (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 0));
+                    $wallet = $profileActorIsAdmin ? (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 0)) : 0.0;
                     $loyalty = (int)($body['loyaltyPoints'] ?? ($body['loyalty_points'] ?? 50));
                     $status = $body['status'] ?? 'Active';
                     $avatar = $body['avatar'] ?? null;
@@ -5679,6 +4244,7 @@ try {
                     $fStmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
                     $fStmt->execute([$custId, $email]);
                     $created = $fStmt->fetch();
+                    $created = janani_public_user($created);
                     echo json_encode(['success' => true, 'message' => 'Customer profile saved in MySQL', 'data' => $created, 'customer' => $created, 'user' => $created]);
                     exit;
                 } else {
@@ -5692,11 +4258,15 @@ try {
                         $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
                         $stmt->execute([$id, $id]);
                         $updated = $stmt->fetch();
+                        $updated = janani_public_user($updated);
                         echo json_encode(['success' => true, 'message' => "Customer status updated to {$newStatus} in MySQL", 'data' => $updated, 'customer' => $updated]);
                         exit;
                     }
 
                     if ($sub === 'wallet') {
+                        if (!$profileActorIsAdmin) {
+                            janani_json_exit(['success' => false, 'message' => 'Only an administrator can adjust wallet balances.'], 403);
+                        }
                         $amount = (float)($body['amount'] ?? 0);
                         $type = $body['type'] ?? 'credit';
                         $desc = $body['description'] ?? 'Admin Adjustment';
@@ -5793,10 +4363,6 @@ try {
                             $s = strtolower((string)$item);
                             return $s !== '2124' && strpos($s, 'mortein') === false;
                         }));
-                        $targetE = strtolower(trim($body['email'] ?? ($body['identifier'] ?? ($id ?? ''))));
-                        if (empty($incomingW) && ($targetE === 'kameswarip98@gmail.com' || $targetE === 'sravanipachipulusu98@gmail.com')) {
-                            $incomingW = [1, 2];
-                        }
                         $fields[] = "`wishlist` = ?";
                         $vals[] = json_encode($incomingW);
                     }
@@ -5887,6 +4453,7 @@ try {
                             $updated['preferences'] = is_string($updated['preferences']) ? json_decode($updated['preferences'], true) : $updated['preferences'];
                             enrichUserLocationAndAddresses($updated);
                         }
+                        $updated = janani_public_user($updated);
                         echo json_encode(['success' => true, 'message' => 'Customer profile updated in MySQL successfully', 'data' => $updated, 'customer' => $updated, 'user' => $updated]);
                         exit;
                     }
@@ -5895,6 +4462,11 @@ try {
                 }
             } elseif ($method === 'DELETE') {
                 $id = $_GET['id'] ?? null;
+                if (!$profileActorIsStaff) {
+                    $id = (string)$profileActor['id']; // a customer can only close their own account
+                } elseif (!$profileActorIsAdmin) {
+                    janani_json_exit(['success' => false, 'message' => 'Only an administrator can delete customer accounts.'], 403);
+                }
                 if ($id) {
                     // 1. Fetch customer details before deleting
                     $fStmt = $pdo->prepare("SELECT `id`, `email`, `name`, `phone` FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
@@ -5909,12 +4481,7 @@ try {
                     $delStmt = $pdo->prepare("DELETE FROM `users` WHERE `id` = ? OR `email` = ?");
                     $delStmt->execute([$cId, $cEmail ?: $cId]);
 
-                    // 3. Remove customer orders to prevent sync resurrection
-                    try {
-                        if ($cEmail) {
-                            $pdo->prepare("DELETE FROM `orders` WHERE `customer_email` = ? OR `customer_id` = ?")->execute([$cEmail, $cId]);
-                        }
-                    } catch (Exception $e) {}
+                    // 3. Orders are kept: they are financial / GST records and must be retained.
 
                     // 4. Record in deleted_customers setting
                     try {
@@ -5943,8 +4510,11 @@ try {
 
         case 'reviews':
             ensureReviewsTableSchema($pdo);
+            $reviewViewer = janani_current_user($pdo);
+            $reviewViewerIsStaff = janani_is_staff_user($reviewViewer);
             if ($method === 'GET') {
-                $status = $_GET['status'] ?? null;
+                // Storefront visitors only ever see moderated (approved) reviews.
+                $status = $reviewViewerIsStaff ? ($_GET['status'] ?? null) : 'approved';
                 $search = trim($_GET['search'] ?? '');
                 $rating = isset($_GET['rating']) && $_GET['rating'] !== 'all' ? (int)$_GET['rating'] : null;
 
@@ -6084,24 +4654,36 @@ try {
                 $rawId = $_GET['id'] ?? ($body['id'] ?? null);
 
                 if (empty($rawId)) {
-                    // Create review
-                    $revId = !empty($body['id']) ? $body['id'] : ('REV-' . time() . '-' . rand(100, 999));
-                    $prodId = $body['product_id'] ?? ($body['productId'] ?? '1');
-                    $prodName = $body['product_name'] ?? ($body['productName'] ?? 'Janani Agro Product');
-                    $custName = $body['customer_name'] ?? ($body['customerName'] ?? 'Verified Customer');
-                    $custEmail = $body['customer_email'] ?? ($body['customerEmail'] ?? '');
-                    $rating = (int)($body['rating'] ?? 5);
-                    $title = $body['title'] ?? 'Verified Customer Review';
-                    $comment = $body['comment'] ?? '';
-                    $verified = isset($body['verified_purchase']) ? ($body['verified_purchase'] ? 1 : 0) : 1;
-                    $status = $body['status'] ?? 'Approved';
-                    $location = $body['location'] ?? 'Organic Farmer';
-                    $isFeatured = isset($body['is_featured']) ? ($body['is_featured'] ? 1 : 0) : (isset($body['isFeatured']) ? ($body['isFeatured'] ? 1 : 0) : 1);
-                    $custAvatar = $body['customer_avatar'] ?? ($body['customerAvatar'] ?? ($body['avatar'] ?? null));
-                    if (empty($custAvatar)) {
-                        $cNameKey = ucwords(strtolower(trim($custName)));
-                        $custAvatar = $avatarMap[$cNameKey] ?? '/images/farmer_ramesh.jpg';
+                    // Create review. Customers: identity comes from the session, the review waits for moderation,
+                    // and "verified purchase" is only set when they really received this product.
+                    if (!$reviewViewerIsStaff) {
+                        janani_rate_limit_or_exit($pdo, 'review:' . $reviewViewer['id'], 5, 3600, 'You have submitted several reviews recently. Please try again later.');
                     }
+                    $revId = ($reviewViewerIsStaff && !empty($body['id'])) ? (string)$body['id'] : ('REV-' . time() . '-' . random_int(100, 999));
+                    $prodId = mb_substr(trim((string)($body['product_id'] ?? ($body['productId'] ?? ''))), 0, 64);
+                    if ($prodId === '') {
+                        janani_json_exit(['success' => false, 'message' => 'Product is required.'], 400);
+                    }
+                    $prodName = mb_substr(trim(strip_tags((string)($body['product_name'] ?? ($body['productName'] ?? 'Janani Agro Product')))), 0, 255);
+                    $custName = $reviewViewerIsStaff
+                        ? mb_substr(trim(strip_tags((string)($body['customer_name'] ?? ($body['customerName'] ?? 'Customer')))), 0, 255)
+                        : ((string)($reviewViewer['name'] ?? '') ?: 'Customer');
+                    $custEmail = $reviewViewerIsStaff ? (string)($body['customer_email'] ?? ($body['customerEmail'] ?? '')) : (string)$reviewViewer['email'];
+                    $rating = max(1, min(5, (int)($body['rating'] ?? 5)));
+                    $title = mb_substr(trim(strip_tags((string)($body['title'] ?? ''))), 0, 255);
+                    $comment = mb_substr(trim(strip_tags((string)($body['comment'] ?? ''))), 0, 3000);
+                    if ($comment === '' && $title === '') {
+                        janani_json_exit(['success' => false, 'message' => 'Please write a few words about the product.'], 400);
+                    }
+                    $verified = $reviewViewerIsStaff
+                        ? (!empty($body['verified_purchase']) ? 1 : 0)
+                        : (janani_user_purchased_product($pdo, $reviewViewer, $prodId) ? 1 : 0);
+                    $status = $reviewViewerIsStaff ? (string)($body['status'] ?? 'Approved') : 'Pending';
+                    $location = mb_substr(trim(strip_tags((string)($body['location'] ?? ''))), 0, 255);
+                    $isFeatured = $reviewViewerIsStaff ? ((!empty($body['is_featured']) || !empty($body['isFeatured'])) ? 1 : 0) : 0;
+                    $custAvatar = $reviewViewerIsStaff
+                        ? ($body['customer_avatar'] ?? ($body['customerAvatar'] ?? ($body['avatar'] ?? null)))
+                        : ($reviewViewer['avatar'] ?? null);
                     $images = isset($body['images']) ? (is_array($body['images']) ? json_encode($body['images']) : $body['images']) : null;
 
                     $stmt = $pdo->prepare("INSERT INTO `reviews` (`id`, `product_id`, `product_name`, `customer_name`, `customer_email`, `customer_avatar`, `location`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `is_featured`, `images`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -6545,175 +5127,156 @@ try {
 
             // 2. Gateway Configuration Endpoints
             if ($idParam === 'gateways') {
+                $gwStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'payment_gateways' LIMIT 1");
+                $gwStmt->execute();
+                $savedGateways = json_decode((string)$gwStmt->fetchColumn(), true);
+                if (!is_array($savedGateways)) $savedGateways = [];
+
                 if ($method === 'GET') {
-                    $gwStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'payment_gateways' LIMIT 1");
-                    $gwStmt->execute();
-                    $gwRow = $gwStmt->fetch();
-                    $savedGateways = $gwRow ? json_decode($gwRow['setting_value'], true) : [];
-
-                    $defaultGateways = [
-                        'razorpay' => [
-                            'keyId' => 'rzp_test_SwedUUn1KgRMs0',
-                            'keySecret' => 'xdW2Ry7T67sUK4zMKb3oOsZh',
-                            'webhookSecret' => 'whsec_janani_agro_rzp',
-                            'instantUpi' => true,
-                            'instantSettlement' => true,
-                            'status' => 'Active',
-                            'lastTested' => 'Connected (Test Mode Active)'
-                        ],
-                        'stripe' => [
-                            'publishableKey' => 'pk_test_51MzJananiAgroLiveKey',
-                            'secretKey' => 'sk_test_51MzJananiAgroLiveSecretKey',
-                            'webhookSecret' => 'whsec_stripe_live_janani',
-                            'multiCurrency' => true,
-                            'status' => 'Active',
-                            'lastTested' => 'Connected'
-                        ],
-                        'upiDirect' => [
-                            'vpa' => 'jananiagro@hdfcbank',
-                            'merchantName' => 'Janani Agro Products Pvt Ltd',
-                            'qrCodeDisplay' => true,
-                            'autoUtrVerification' => true,
-                            'status' => 'Active'
-                        ],
-                        'codRules' => [
-                            'maxOrderLimit' => 15000,
-                            'extraFee' => 0,
-                            'requireOtpVerification' => true,
-                            'disableForHighRto' => true,
-                            'status' => 'Active'
-                        ]
+                    $rzKeys = janani_razorpay_keys($pdo);
+                    $defaults = [
+                        'razorpay' => ['keyId' => '', 'keySecret' => '', 'webhookSecret' => '', 'instantUpi' => true, 'instantSettlement' => false, 'status' => 'Not configured', 'lastTested' => 'Never'],
+                        'stripe' => ['publishableKey' => '', 'secretKey' => '', 'webhookSecret' => '', 'multiCurrency' => false, 'status' => 'Not configured', 'lastTested' => 'Not connected'],
+                        'upiDirect' => ['vpa' => '', 'merchantName' => 'Janani Agro Products Pvt Ltd', 'qrCodeDisplay' => false, 'autoUtrVerification' => false, 'status' => 'Not configured'],
+                        'codRules' => ['maxOrderLimit' => 15000, 'extraFee' => 0, 'requireOtpVerification' => false, 'disableForHighRto' => false, 'status' => 'Active'],
                     ];
+                    $gateways = array_replace_recursive($defaults, $savedGateways);
+                    // Razorpay status reflects what checkout will actually use (environment variables win).
+                    $gateways['razorpay']['keyId'] = $rzKeys['keyId'] ?: (string)($gateways['razorpay']['keyId'] ?? '');
+                    $gateways['razorpay']['mode'] = $rzKeys['mode'];
+                    $gateways['razorpay']['status'] = $rzKeys['configured'] ? 'Active' : 'Not configured';
+                    $gateways['razorpay']['statusReason'] = $rzKeys['reason'];
+                    $gateways['razorpay']['managedByEnvironment'] = (bool)janani_env('RAZORPAY_KEY_ID');
+                    $gateways['razorpay']['webhookUrl'] = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'jananiagroproducts.com') . '/api.php?action=razorpay-webhook';
+                    if ($rzKeys['configured']) $gateways['razorpay']['keySecret'] = $rzKeys['keySecret'];
+                    if (!empty($rzKeys['webhookSecret'])) $gateways['razorpay']['webhookSecret'] = $rzKeys['webhookSecret'];
+                    $gateways = janani_mask_secrets_deep($gateways);
+                    janani_json_exit(['success' => true, 'data' => $gateways, 'gateways' => $gateways]);
+                }
 
-                    $gateways = array_merge($defaultGateways, is_array($savedGateways) ? $savedGateways : []);
-                    echo json_encode(['success' => true, 'data' => $gateways, 'gateways' => $gateways]);
-                    exit;
-                } elseif ($method === 'POST' || $method === 'PUT') {
-                    $gatewayKey = $body['gateway'] ?? 'razorpay';
-                    $config = $body['config'] ?? $body;
-
-                    $gwStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'payment_gateways' LIMIT 1");
-                    $gwStmt->execute();
-                    $gwRow = $gwStmt->fetch();
-                    $current = $gwRow ? json_decode($gwRow['setting_value'], true) : [];
-                    if (!is_array($current)) $current = [];
-
-                    $current[$gatewayKey] = $config;
-                    $saveStmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('payment_gateways', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
-                    $saveStmt->execute([json_encode($current)]);
-
-                    echo json_encode(['success' => true, 'message' => "{$gatewayKey} configuration saved in MySQL", 'data' => $config]);
-                    exit;
+                if ($method === 'POST' || $method === 'PUT') {
+                    $gatewayKey = preg_replace('/[^a-zA-Z0-9_]/', '', (string)($body['gateway'] ?? 'razorpay')) ?: 'razorpay';
+                    $config = is_array($body['config'] ?? null) ? $body['config'] : $body;
+                    unset($config['gateway']);
+                    // A masked value ("••••1234") sent back by the UI keeps the stored secret.
+                    $config = janani_merge_keep_masked($config, is_array($savedGateways[$gatewayKey] ?? null) ? $savedGateways[$gatewayKey] : []);
+                    $savedGateways[$gatewayKey] = $config;
+                    $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('payment_gateways', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")
+                        ->execute([json_encode($savedGateways, JSON_UNESCAPED_UNICODE)]);
+                    janani_json_exit(['success' => true, 'message' => "{$gatewayKey} configuration saved.", 'data' => janani_mask_secrets_deep($config)]);
                 }
             }
 
-            // 3. Test Gateway Connection
+            // 3. Test Gateway Connection (real API call)
             if ($idParam === 'test-gateway') {
-                $gw = $body['gateway'] ?? 'razorpay';
-                echo json_encode([
-                    'success' => true,
-                    'message' => "Razorpay Test Gateway connected successfully! Credentials (rzp_test_SwedUUn1KgRMs0) verified.",
-                    'data' => ['status' => 'Active', 'latency' => '32ms', 'gateway' => $gw]
-                ]);
-                exit;
+                $rzKeys = janani_razorpay_keys($pdo);
+                if (!$rzKeys['configured']) {
+                    janani_json_exit(['success' => false, 'message' => 'Razorpay is not configured: ' . $rzKeys['reason'], 'data' => ['status' => 'Not configured']]);
+                }
+                $started = microtime(true);
+                $probe = janani_razorpay_request($rzKeys, 'GET', '/orders?count=1');
+                $latency = (int)round((microtime(true) - $started) * 1000) . 'ms';
+                if (!$probe['ok']) {
+                    janani_json_exit(['success' => false, 'message' => 'Razorpay rejected the credentials: ' . $probe['error'], 'data' => ['status' => 'Error', 'latency' => $latency]]);
+                }
+                janani_json_exit(['success' => true, 'message' => 'Connected to Razorpay (' . strtoupper($rzKeys['mode']) . ' mode).', 'data' => ['status' => 'Active', 'mode' => $rzKeys['mode'], 'latency' => $latency, 'gateway' => 'razorpay']]);
             }
 
-            // 4. Settlement Reports
+            // 4. Settlement Reports (live from Razorpay)
             if ($idParam === 'settlements') {
-                $settlements = [
-                    [
-                        'batchId' => 'SETTLE-' . date('Ymd'),
-                        'gateway' => 'Razorpay Standard',
-                        'settlementDate' => date('d M Y'),
-                        'transactionsCount' => 18,
-                        'grossVolume' => 28450.00,
-                        'gatewayDeductions' => 569.00,
-                        'netBankDeposit' => 27881.00,
-                        'bankAccount' => 'HDFC Bank (A/C •••• 9211)',
-                        'bankUtr' => 'UTR' . rand(100000000, 999999999),
-                        'status' => 'Credited to Bank'
-                    ],
-                    [
-                        'batchId' => 'SETTLE-' . date('Ymd', strtotime('-1 day')),
-                        'gateway' => 'Razorpay Standard',
-                        'settlementDate' => date('d M Y', strtotime('-1 day')),
-                        'transactionsCount' => 24,
-                        'grossVolume' => 36200.00,
-                        'gatewayDeductions' => 724.00,
-                        'netBankDeposit' => 35476.00,
-                        'bankAccount' => 'HDFC Bank (A/C •••• 9211)',
-                        'bankUtr' => 'UTR' . rand(100000000, 999999999),
-                        'status' => 'Credited to Bank'
-                    ]
-                ];
-                echo json_encode(['success' => true, 'data' => $settlements]);
-                exit;
+                $rzKeys = janani_razorpay_keys($pdo);
+                if (!$rzKeys['configured']) {
+                    janani_json_exit(['success' => true, 'data' => [], 'message' => 'Connect Razorpay to see settlements.']);
+                }
+                $sres = janani_razorpay_request($rzKeys, 'GET', '/settlements?count=25');
+                $settlements = [];
+                foreach ((array)($sres['data']['items'] ?? []) as $st) {
+                    $amountRs = ((int)($st['amount'] ?? 0)) / 100;
+                    $feesRs = (((int)($st['fees'] ?? 0)) + ((int)($st['tax'] ?? 0))) / 100;
+                    $settlements[] = [
+                        'batchId' => $st['id'] ?? '',
+                        'gateway' => 'Razorpay',
+                        'settlementDate' => !empty($st['created_at']) ? date('d M Y', (int)$st['created_at']) : '',
+                        'transactionsCount' => null,
+                        'grossVolume' => round($amountRs + $feesRs, 2),
+                        'gatewayDeductions' => round($feesRs, 2),
+                        'netBankDeposit' => round($amountRs, 2),
+                        'bankAccount' => 'Registered settlement account',
+                        'bankUtr' => $st['utr'] ?? '',
+                        'status' => ucfirst((string)($st['status'] ?? '')),
+                    ];
+                }
+                janani_json_exit(['success' => (bool)$sres['ok'], 'data' => $settlements, 'message' => $sres['ok'] ? null : ('Could not load settlements: ' . $sres['error'])]);
             }
 
-            // 5. Failed Payment Retries
+            // 5. Failed / abandoned online payments (from real checkout sessions)
             if ($idParam === 'failed-retries' || strpos($idParam, 'failed-retries') === 0) {
-                if (strpos($idParam, 'send-link') !== false) {
-                    echo json_encode(['success' => true, 'message' => 'Payment recovery link dispatched to customer via WhatsApp & SMS.']);
-                    exit;
+                if (strpos($idParam, 'send-link') !== false || strpos($idParam, 'convert-cod') !== false) {
+                    janani_json_exit(['success' => false, 'notConfigured' => true, 'message' => 'Automatic recovery messages are not set up. Please contact the customer directly and ask them to retry from their cart (online or Cash on Delivery).'], 501);
                 }
-                if (strpos($idParam, 'convert-cod') !== false) {
-                    echo json_encode(['success' => true, 'message' => 'Order converted to Cash on Delivery with Delhivery tracking.']);
-                    exit;
-                }
-
-                $retries = [
-                    [
-                        'id' => 'RETRY-01',
-                        'customerName' => 'Suresh Reddy',
-                        'customerEmail' => 'suresh.reddy@gmail.com',
-                        'customerPhone' => '+91 98489 11223',
-                        'cartAmount' => 1450.00,
-                        'cartItems' => 'Harit (1 L) × 2 + Bhumi Shakti (1 L) × 1',
-                        'failureReason' => 'Bank OTP timeout / Network drop',
-                        'errorCode' => 'BAD_REQUEST_ERROR',
-                        'failedAt' => date('d M Y, H:i', strtotime('-2 hours')),
-                        'recoveryStatus' => 'Link Sent',
-                        'retryLink' => 'https://jananiagroproducts.com/payment?retry=RETRY-01',
-                        'lastSentAt' => date('d M Y, H:i', strtotime('-1 hour'))
-                    ]
-                ];
-                echo json_encode(['success' => true, 'data' => $retries]);
-                exit;
+                $retries = [];
+                try {
+                    $fst = $pdo->query("SELECT pi.*, u.`name` AS uname, u.`phone` AS uphone FROM `payment_intents` pi LEFT JOIN `users` u ON u.`id` = pi.`user_id`
+                        WHERE pi.`order_number` IS NULL AND (pi.`status` = 'failed' OR pi.`created_at` < (NOW() - INTERVAL 30 MINUTE))
+                        ORDER BY pi.`created_at` DESC LIMIT 100");
+                    foreach ($fst->fetchAll() as $pi) {
+                        $pl = json_decode((string)$pi['payload'], true) ?: [];
+                        $names = [];
+                        foreach ((array)($pl['quote']['lines'] ?? []) as $ln) {
+                            $names[] = ($ln['name'] ?? 'Item') . ' (' . ($ln['unit'] ?? '') . ') × ' . ($ln['quantity'] ?? 1);
+                        }
+                        $retries[] = [
+                            'id' => $pi['razorpay_order_id'],
+                            'customerName' => $pi['uname'] ?: 'Customer',
+                            'customerEmail' => $pi['user_email'],
+                            'customerPhone' => $pi['uphone'] ?: '',
+                            'cartAmount' => ((int)$pi['amount_paise']) / 100,
+                            'cartItems' => implode(' + ', $names),
+                            'failureReason' => $pi['status'] === 'failed' ? 'Payment failed at the bank / gateway' : 'Payment not completed',
+                            'errorCode' => $pi['status'] === 'failed' ? 'PAYMENT_FAILED' : 'ABANDONED',
+                            'failedAt' => date('d M Y, H:i', strtotime((string)$pi['created_at'])),
+                            'recoveryStatus' => 'Not contacted',
+                            'retryLink' => '/cart',
+                            'lastSentAt' => null,
+                        ];
+                    }
+                } catch (Throwable $e) {}
+                janani_json_exit(['success' => true, 'data' => $retries]);
             }
 
-            // 6. Process Refund
+            // 6. Process Refund (same engine as the orders refund: real Razorpay refund first)
             if ($idParam === 'refund' && $method === 'POST') {
-                $txnId = $body['transactionId'] ?? '';
-                $orderId = $body['orderId'] ?? '';
-                $amount = (float)($body['amount'] ?? 0);
-                $reason = $body['reason'] ?? 'Customer cancellation';
-
-                if ($orderId) {
-                    $pdo->prepare("UPDATE `orders` SET `payment_status` = 'Refunded', `order_status` = 'Cancelled' WHERE `number` = ? OR `id` = ?")->execute([$orderId, $orderId]);
+                $refundOrderRef = (string)($body['orderId'] ?? ($body['orderNumber'] ?? ''));
+                $refundOrder = $refundOrderRef !== '' ? janani_find_order($pdo, $refundOrderRef) : null;
+                if (!$refundOrder && !empty($body['transactionId'])) {
+                    $tq = $pdo->prepare("SELECT * FROM `orders` WHERE `transaction_id` = ? LIMIT 1");
+                    $tq->execute([(string)$body['transactionId']]);
+                    $refundOrder = $tq->fetch() ?: null;
                 }
-
+                if (!$refundOrder) {
+                    janani_json_exit(['success' => false, 'message' => 'Order for this refund was not found.'], 404);
+                }
+                $refundAmount = (($body['refundType'] ?? 'full') === 'full' || !isset($body['amount'])) ? null : (float)$body['amount'];
+                $rr = janani_refund_order($pdo, $refundOrder, $refundAmount, mb_substr(strip_tags((string)($body['reason'] ?? '')), 0, 300), !empty($body['restockInventory']) || !isset($body['restockInventory']));
+                if (empty($rr['success'])) {
+                    janani_json_exit(['success' => false, 'message' => $rr['message']], (int)($rr['status'] ?? 400));
+                }
                 $refRecord = [
-                    'id' => 'REF-' . time(),
-                    'transactionId' => $txnId,
-                    'orderId' => $orderId,
-                    'customerName' => $body['customerName'] ?? 'Valued Patron',
-                    'customerEmail' => $body['customerEmail'] ?? 'patron@jananiagro.com',
-                    'refundType' => $body['refundType'] ?? 'full',
-                    'amount' => $amount,
-                    'totalOrderAmount' => $amount,
-                    'destination' => $body['destination'] ?? 'gateway',
-                    'reason' => $reason,
-                    'status' => 'Processed via Razorpay Instant Refund',
-                    'gatewayRefundId' => 'rfnd_rzp_' . substr(md5(uniqid()), 0, 10),
-                    'processedAt' => date('c')
+                    'id' => $rr['refundId'] ?: ('REF-' . time()),
+                    'transactionId' => $refundOrder['transaction_id'],
+                    'orderId' => $refundOrder['number'],
+                    'customerName' => $refundOrder['customer_name'],
+                    'customerEmail' => $refundOrder['customer_email'],
+                    'refundType' => $refundAmount === null ? 'full' : 'partial',
+                    'amount' => $rr['amount'],
+                    'totalOrderAmount' => (float)$refundOrder['total'],
+                    'destination' => $rr['refundId'] ? 'gateway' : 'manual',
+                    'reason' => (string)($body['reason'] ?? ''),
+                    'status' => $rr['refundId'] ? 'Processed via Razorpay' : 'Recorded (manual refund)',
+                    'gatewayRefundId' => $rr['refundId'],
+                    'processedAt' => date('c'),
                 ];
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => "Refund of ₹{$amount} processed successfully via Razorpay.",
-                    'data' => ['refund' => $refRecord]
-                ]);
-                exit;
+                janani_json_exit(['success' => true, 'message' => $rr['message'], 'data' => ['refund' => $refRecord]]);
             }
 
             // 7. Single Transaction by ID
@@ -6752,7 +5315,7 @@ try {
                         'bankUtr' => 'UTR' . abs(crc32($ord['number'])),
                         'settlementBatchId' => 'SETTLE-' . date('Ymd', strtotime($ord['created_at'] ?? 'now')),
                         'settlementStatus' => 'Settled to HDFC (A/C •••• 9211)',
-                        'paymentMetadata' => ['key_id' => 'rzp_test_SwedUUn1KgRMs0', 'order_id' => $ord['razorpay_order_id'] ?? ('order_' . substr(md5($ord['number']), 0, 10))],
+                        'paymentMetadata' => ['key_id' => (janani_razorpay_keys($pdo)['keyId'] ?? ''), 'order_id' => $ord['razorpay_order_id'] ?? ('order_' . substr(md5($ord['number']), 0, 10))],
                         'createdAt' => $ord['created_at'] ?: date('d M Y, h:i A'),
                         'settledAt' => date('d M Y', strtotime('+1 day', strtotime($ord['created_at'] ?? 'now')))
                     ];
@@ -6838,7 +5401,7 @@ try {
                         'settlementBatchId' => 'SETTLE-' . date('Ymd', strtotime($ord['created_at'] ?? 'now')),
                         'settlementStatus' => $isCod ? 'Pending Delivery Collection' : 'Settled to HDFC (A/C •••• 9211)',
                         'paymentMetadata' => [
-                            'key_id' => 'rzp_test_SwedUUn1KgRMs0',
+                            'key_id' => (janani_razorpay_keys($pdo)['keyId'] ?? ''),
                             'order_id' => $ord['razorpay_order_id'] ?? ('order_' . substr(md5($ord['number']), 0, 10))
                         ],
                         'createdAt' => $ord['created_at'] ? date('d M Y, h:i A', strtotime($ord['created_at'])) : date('d M Y, h:i A'),
@@ -7021,7 +5584,7 @@ try {
                 if ($id) {
                     $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? AND `role` != 'Customer' LIMIT 1");
                     $stmt->execute([$id]);
-                    $staff = $stmt->fetch();
+                    $staff = janani_public_user($stmt->fetch());
                     if ($staff) {
                         $staff['assignedWarehouses'] = is_string($staff['assigned_warehouses'] ?? null) ? json_decode($staff['assigned_warehouses'], true) : ($staff['assigned_warehouses'] ?? ['Lodhika Central Facility']);
                         $staff['twoFactorEnabled'] = (bool)($staff['two_factor_enabled'] ?? false);
@@ -7031,7 +5594,7 @@ try {
                 }
 
                 $stmt = $pdo->query("SELECT * FROM `users` WHERE `role` != 'Customer' AND `role` != 'customer' ORDER BY `created_at` DESC");
-                $staff = $stmt->fetchAll();
+                $staff = array_map('janani_public_user', $stmt->fetchAll());
                 foreach ($staff as &$s) {
                     $s['assignedWarehouses'] = is_string($s['assigned_warehouses'] ?? null) ? json_decode($s['assigned_warehouses'], true) : ($s['assigned_warehouses'] ?? ['Lodhika Central Facility']);
                     $s['twoFactorEnabled'] = (bool)($s['two_factor_enabled'] ?? false);
@@ -7069,7 +5632,7 @@ try {
 
                     $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? LIMIT 1");
                     $stmt->execute([$id]);
-                    $created = $stmt->fetch();
+                    $created = janani_public_user($stmt->fetch());
                     echo json_encode(['success' => true, 'message' => 'Staff member saved in MySQL', 'id' => $id, 'staff' => $created, 'data' => $created]);
                     exit;
                 } else {
@@ -7085,7 +5648,7 @@ try {
                         $pdo->prepare("UPDATE `users` SET `status` = ? WHERE `id` = ?")->execute([$newStatus, $id]);
                         $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? LIMIT 1");
                         $stmt->execute([$id]);
-                        $updated = $stmt->fetch();
+                        $updated = janani_public_user($stmt->fetch());
                         echo json_encode(['success' => true, 'message' => "Staff status toggled to {$newStatus} in MySQL", 'staff' => $updated, 'data' => $updated]);
                         exit;
                     }
@@ -7106,7 +5669,7 @@ try {
 
                         $stmt = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? LIMIT 1");
                         $stmt->execute([$id]);
-                        $updated = $stmt->fetch();
+                        $updated = janani_public_user($stmt->fetch());
                         echo json_encode(['success' => true, 'message' => 'Staff details updated in MySQL', 'staff' => $updated, 'data' => $updated]);
                         exit;
                     }
@@ -7213,84 +5776,76 @@ try {
             break;
 
         case 'backups':
+            // Real database snapshots (gzip JSON) stored OUTSIDE the public web root.
+            $backupDir = janani_backup_dir();
+            $listStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'system_backups' LIMIT 1");
+            $listStmt->execute();
+            $backups = json_decode((string)$listStmt->fetchColumn(), true);
+            $backups = is_array($backups) ? array_values(array_filter($backups, function ($b) use ($backupDir) {
+                return is_array($b) && !empty($b['filename']) && $backupDir && is_file($backupDir . '/' . basename($b['filename']));
+            })) : [];
+
             if ($method === 'GET') {
-                $stmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'system_backups' LIMIT 1");
-                $stmt->execute();
-                $row = $stmt->fetch();
-                $backups = $row ? (json_decode($row['setting_value'], true) ?: []) : [];
-
-                if (empty($backups)) {
-                    $backups = [
-                        [
-                            'id' => 'bak-001',
-                            'filename' => 'janani_backup_2026-09-20_automated.sql.gz',
-                            'type' => 'Automated Daily Snapshot',
-                            'scope' => 'Complete Database, Products & Orders',
-                            'size' => '42.8 MB',
-                            'recordCount' => 1840,
-                            'status' => 'Completed',
-                            'createdDate' => '20 Sep 2026, 04:00 AM',
-                            'createdBy' => 'System Cron Daemon',
-                            'checksum' => 'sha256:8f4c2b91a7e63d052a1b9c8e7f6d5a4b',
-                            'downloadUrl' => '#',
-                            'notes' => 'Pre-scheduled daily automated snapshot'
-                        ]
-                    ];
-                }
-
-                echo json_encode([
+                $free = ($backupDir && function_exists('disk_free_space')) ? @disk_free_space($backupDir) : false;
+                janani_json_exit([
                     'success' => true,
                     'backups' => $backups,
                     'data' => $backups,
                     'total' => count($backups),
                     'systemStorageHealth' => [
-                        'totalCapacity' => '100 GB',
-                        'usedStorage' => '12.4 GB',
-                        'freeStorage' => '87.6 GB',
-                        'databaseEngine' => 'Hostinger LiteSpeed MySQL 8.0',
-                        'lastAutomatedSnapshot' => date('d M Y, h:i A')
+                        'backupLocation' => $backupDir ? 'Private folder outside public_html' : 'Not writable',
+                        'freeStorage' => $free !== false ? round($free / 1073741824, 1) . ' GB' : 'Unknown',
+                        'databaseEngine' => 'MySQL ' . (string)$pdo->query('SELECT VERSION()')->fetchColumn(),
+                        'lastAutomatedSnapshot' => $backups[0]['createdDate'] ?? 'No snapshot yet',
                     ]
                 ]);
-                exit;
             } elseif ($method === 'POST') {
                 $body = getJsonBody();
                 $sub = $_GET['sub'] ?? '';
-
                 if ($sub === 'restore') {
-                    $id = $body['id'] ?? 'bak-001';
-                    echo json_encode(['success' => true, 'message' => "System restored to snapshot {$id} successfully", 'restoredFrom' => ['id' => $id]]);
-                    exit;
+                    janani_json_exit([
+                        'success' => false,
+                        'notSupported' => true,
+                        'message' => 'Restoring overwrites live orders and customers, so it is not done from the browser. Download the snapshot from hPanel → File Manager and import it with phpMyAdmin (or ask your developer).'
+                    ], 501);
                 }
-
-                $stmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'system_backups' LIMIT 1");
-                $stmt->execute();
-                $row = $stmt->fetch();
-                $backups = $row ? (json_decode($row['setting_value'], true) ?: []) : [];
-
+                if (!$backupDir) {
+                    janani_json_exit(['success' => false, 'message' => 'Backup folder is not writable on this server.'], 500);
+                }
+                $snapshot = ['created_at' => date('c'), 'database' => (string)$pdo->query('SELECT DATABASE()')->fetchColumn(), 'tables' => []];
+                $records = 0;
+                foreach ($pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) as $tableName) {
+                    if ($tableName === 'security_store') continue; // OTPs / rate limits / signing secret are never exported
+                    $rows = $pdo->query('SELECT * FROM `' . str_replace('`', '', $tableName) . '`')->fetchAll(PDO::FETCH_ASSOC);
+                    $snapshot['tables'][$tableName] = $rows;
+                    $records += count($rows);
+                }
+                $fileName = 'janani_backup_' . date('Y-m-d_His') . '_' . bin2hex(random_bytes(3)) . '.json.gz';
+                $payload = gzencode(json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 6);
+                if ($payload === false || @file_put_contents($backupDir . '/' . $fileName, $payload) === false) {
+                    janani_json_exit(['success' => false, 'message' => 'Could not write the backup file.'], 500);
+                }
                 $newBackup = [
                     'id' => 'bak-' . time(),
-                    'filename' => 'janani_backup_' . date('Y-m-d') . '_manual.sql.gz',
-                    'type' => $body['type'] ?? 'Manual Full Snapshot',
-                    'scope' => 'Complete Database, Products, Orders & Settings',
-                    'size' => '48.5 MB',
-                    'recordCount' => 2450,
+                    'filename' => $fileName,
+                    'type' => mb_substr(strip_tags((string)($body['type'] ?? 'Manual Full Snapshot')), 0, 60),
+                    'scope' => 'All tables (except security tokens)',
+                    'size' => round(strlen($payload) / 1048576, 2) . ' MB',
+                    'recordCount' => $records,
                     'status' => 'Completed',
                     'createdDate' => date('d M Y, h:i A'),
-                    'createdBy' => 'Rajesh Varma (Admin)',
-                    'checksum' => 'sha256:' . hash('sha256', (string)time()),
-                    'downloadUrl' => '#',
-                    'notes' => $body['notes'] ?? 'Manual on-demand snapshot'
+                    'createdBy' => (string)(janani_current_user($pdo)['name'] ?? 'Admin'),
+                    'checksum' => 'sha256:' . hash('sha256', $payload),
+                    'downloadUrl' => null,
+                    'notes' => 'Saved privately as ' . $fileName . ' (hPanel → File Manager → janani_backups).',
                 ];
-
                 array_unshift($backups, $newBackup);
-                $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('system_backups', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
-                $stmt->execute([json_encode($backups)]);
-
-                echo json_encode(['success' => true, 'message' => 'System snapshot created in MySQL', 'backup' => $newBackup, 'data' => $newBackup]);
-                exit;
+                $backups = array_slice($backups, 0, 30);
+                $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('system_backups', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")
+                    ->execute([json_encode($backups)]);
+                janani_json_exit(['success' => true, 'message' => 'Database snapshot created.', 'backup' => $newBackup, 'data' => $newBackup]);
             }
             break;
-
 
         case 'stats':
         case 'admin-stats':
@@ -7511,22 +6066,47 @@ try {
                 $category = $_GET['category'] ?? ($body['category'] ?? null);
 
                 if ($category) {
+                    $category = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$category);
+                    if ($category === '') {
+                        janani_json_exit(['success' => false, 'message' => 'Invalid settings category.'], 400);
+                    }
                     $key = 'settings_' . $category;
+                    // Masked secrets ("••••1234") sent back by the admin UI keep their stored value.
+                    $prevStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = ? LIMIT 1");
+                    $prevStmt->execute([$key]);
+                    $prevVal = json_decode((string)$prevStmt->fetchColumn(), true);
+                    if (is_array($body)) {
+                        $body = janani_merge_keep_masked($body, is_array($prevVal) ? $prevVal : []);
+                    }
                     $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
                     $stmt->execute([$key, is_string($body) ? $body : json_encode($body)]);
+                    $body = janani_mask_secrets_deep($body);
                     echo json_encode(['success' => true, 'message' => "Settings for {$category} saved successfully in MySQL", 'data' => $body]);
                     exit;
                 }
 
                 foreach ($body as $key => $val) {
+                    if (!is_string($key) || !preg_match('/^[a-zA-Z0-9_]{1,100}$/', $key) || preg_match('/^(otp|app_secret|payment_gateways|deleted_customers)/i', $key)) {
+                        continue; // reserved / invalid keys cannot be written through this endpoint
+                    }
+                    if (is_array($val) || janani_is_masked($val)) {
+                        $prevStmt = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = ? LIMIT 1");
+                        $prevStmt->execute([$key]);
+                        $prevRaw = $prevStmt->fetchColumn();
+                        if (janani_is_masked($val)) {
+                            continue;
+                        }
+                        $prevVal = json_decode((string)$prevRaw, true);
+                        $val = janani_merge_keep_masked($val, is_array($prevVal) ? $prevVal : []);
+                    }
                     $stmt = $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
                     $stmt->execute([$key, is_string($val) ? $val : json_encode($val)]);
                 }
-                echo json_encode(['success' => true, 'message' => 'Settings saved successfully in MySQL', 'data' => $body]);
+                echo json_encode(['success' => true, 'message' => 'Settings saved successfully in MySQL', 'data' => janani_mask_secrets_deep($body)]);
                 exit;
             }
 
-            $stmt = $pdo->query("SELECT `setting_key`, `setting_value` FROM `settings`");
+            $stmt = $pdo->query("SELECT `setting_key`, `setting_value` FROM `settings` WHERE `setting_key` NOT LIKE 'otp\_%' AND `setting_key` NOT IN ('app_secret', 'deleted_customers')");
             $settings = [];
             while ($row = $stmt->fetch()) {
                 $settings[$row['setting_key']] = json_decode($row['setting_value'], true) ?: $row['setting_value'];
@@ -7534,8 +6114,9 @@ try {
 
             $category = $_GET['category'] ?? null;
             if ($category) {
-                $catKey = 'settings_' . $category;
-                $catData = $settings[$catKey] ?? ($settings[$category] ?? null);
+                $catKey = 'settings_' . preg_replace('/[^a-zA-Z0-9_]/', '', (string)$category);
+                // Only "settings_*" sections can be read by category (never arbitrary internal keys).
+                $catData = janani_mask_secrets_deep($settings[$catKey] ?? null);
                 echo json_encode(['success' => true, 'data' => $catData, 'settings' => $catData]);
                 exit;
             }
@@ -7594,15 +6175,15 @@ try {
                     'schemaMarkupEnabled' => true
                 ]),
                 'paymentGateways' => $settings['payment_gateways'] ?? ($settings['settings_paymentGateways'] ?? [
-                    'razorpay' => ['enabled' => true, 'mode' => 'live', 'keyId' => 'rzp_live_JananiAgro2026', 'keySecret' => '••••••••••••••••', 'webhookSecret' => '••••••••', 'autoCapture' => true, 'supportedMethods' => ['UPI', 'Credit Card', 'Debit Card', 'Net Banking', 'CRED', 'Wallets']],
-                    'phonepe' => ['enabled' => true, 'mode' => 'live', 'merchantId' => 'M22091873491823', 'saltKey' => '••••••••••••••••', 'saltIndex' => '1', 'env' => 'PRODUCTION', 'webhookUrl' => 'https://api.jananiagroproducts.com/webhooks/phonepe'],
-                    'cashfree' => ['enabled' => false, 'mode' => 'test', 'appId' => 'CF_APP_TEST_109283', 'secretKey' => '••••••••••••••••', 'webhookUrl' => 'https://api.jananiagroproducts.com/webhooks/cashfree'],
+                    'razorpay' => ['enabled' => true, 'mode' => 'live', 'keyId' => '', 'keySecret' => '••••••••••••••••', 'webhookSecret' => '••••••••', 'autoCapture' => true, 'supportedMethods' => ['UPI', 'Credit Card', 'Debit Card', 'Net Banking', 'CRED', 'Wallets']],
+                    'phonepe' => ['enabled' => false, 'mode' => 'test', 'merchantId' => '', 'saltKey' => '••••••••••••••••', 'saltIndex' => '1', 'env' => 'PRODUCTION', 'webhookUrl' => 'https://api.jananiagroproducts.com/webhooks/phonepe'],
+                    'cashfree' => ['enabled' => false, 'mode' => 'test', 'appId' => '', 'secretKey' => '••••••••••••••••', 'webhookUrl' => 'https://api.jananiagroproducts.com/webhooks/cashfree'],
                     'cod' => ['enabled' => true, 'minOrderAmount' => 299, 'maxOrderAmount' => 15000, 'verificationRequired' => true, 'extraFee' => 49, 'otpPreVerification' => true, 'restrictedPincodesCount' => 184]
                 ]),
                 'shiprocket' => $settings['shipping_config'] ?? ($settings['settings_shiprocket'] ?? [
-                    'enabled' => true,
-                    'email' => 'logistics@jananiagro.com',
-                    'apiKey' => 'sr_live_jwt_tok_99182736451',
+                    'enabled' => false,
+                    'email' => '',
+                    'apiKey' => '',
                     'apiSecret' => '••••••••••••••••',
                     'tokenExpiry' => '18 Oct 2026',
                     'defaultWarehouse' => 'Lodhika Central Facility',
@@ -7704,6 +6285,7 @@ try {
                 ])
             ];
 
+            $structured = janani_mask_secrets_deep($structured);
             echo json_encode(['success' => true, 'settings' => $structured, 'data' => $structured]);
             exit;
 
@@ -7793,8 +6375,12 @@ try {
                 $id = $_GET['id'] ?? ($body['id'] ?? null);
                 $methodOverride = strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '');
 
-                // Check if delete action
+                $inquiryIsStaff = janani_is_staff_user(janani_current_user($pdo));
+                // Check if delete action (staff only)
                 if ($methodOverride === 'DELETE' || ($body['action'] ?? '') === 'delete') {
+                    if (!$inquiryIsStaff) {
+                        janani_json_exit(['success' => false, 'message' => 'You do not have permission to perform this action.'], 403);
+                    }
                     if (!empty($id)) {
                         $pdo->prepare("DELETE FROM `inquiries` WHERE `id` = ?")->execute([$id]);
                         echo json_encode(['success' => true, 'message' => "Inquiry #{$id} deleted successfully from MySQL"]);
@@ -7803,7 +6389,7 @@ try {
                 }
 
                 // Check if update action
-                if ($methodOverride === 'PUT' || $methodOverride === 'PATCH' || (!empty($id) && (isset($body['status']) || isset($body['internalNotes']) || isset($body['internal_notes']) || isset($body['priority'])))) {
+                if ($inquiryIsStaff && ($methodOverride === 'PUT' || $methodOverride === 'PATCH') || ($inquiryIsStaff && !empty($id) && (isset($body['status']) || isset($body['internalNotes']) || isset($body['internal_notes']) || isset($body['priority'])))) {
                     $status = $body['status'] ?? null;
                     $notes = $body['internalNotes'] ?? ($body['internal_notes'] ?? null);
                     $priority = $body['priority'] ?? null;
@@ -7820,16 +6406,26 @@ try {
                     }
                 }
 
-                // New inquiry submission
-                $name = trim($body['name'] ?? '');
-                $bizName = trim($body['business_name'] ?? ($body['businessName'] ?? ''));
-                $service = trim($body['service'] ?? ($body['subject'] ?? 'General Inquiry'));
-                $email = strtolower(trim($body['email'] ?? ''));
-                $phone = trim($body['phone'] ?? '');
-                $quantity = trim($body['quantity'] ?? ($body['investment'] ?? ''));
-                $message = trim($body['message'] ?? '');
-                $status = $body['status'] ?? 'New';
-                $priority = $body['priority'] ?? 'Medium';
+                // New inquiry submission (public contact / distributor form)
+                if (!$inquiryIsStaff) {
+                    janani_rate_limit_or_exit($pdo, 'inquiry:' . janani_client_ip(), 5, 3600, 'You have sent several messages recently. Please try again later or call us directly.');
+                }
+                $clip = function ($v, $len) { return mb_substr(trim(strip_tags((string)$v)), 0, $len); };
+                $name = $clip($body['name'] ?? '', 150);
+                $bizName = $clip($body['business_name'] ?? ($body['businessName'] ?? ''), 200);
+                $service = $clip($body['service'] ?? ($body['subject'] ?? 'General Inquiry'), 150);
+                $email = strtolower($clip($body['email'] ?? '', 200));
+                $phone = $clip($body['phone'] ?? '', 30);
+                $quantity = $clip($body['quantity'] ?? ($body['investment'] ?? ''), 100);
+                $message = $clip($body['message'] ?? '', 5000);
+                if ($name === '' || ($email === '' && $phone === '')) {
+                    janani_json_exit(['success' => false, 'message' => 'Please provide your name and an email address or phone number.'], 400);
+                }
+                if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    janani_json_exit(['success' => false, 'message' => 'Please enter a valid email address.'], 400);
+                }
+                $status = $inquiryIsStaff ? $clip($body['status'] ?? 'New', 50) : 'New';
+                $priority = $inquiryIsStaff ? $clip($body['priority'] ?? 'Medium', 30) : 'Medium';
 
                 $stmt = $pdo->prepare("INSERT INTO `inquiries` (`name`, `business_name`, `service`, `email`, `phone`, `quantity`, `message`, `status`, `priority`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$name, $bizName, $service, $email, $phone, $quantity, $message, $status, $priority]);
@@ -7889,8 +6485,12 @@ try {
         case 'newsletter':
             if ($method === 'POST') {
                 $body = getJsonBody();
-                $email = trim($body['email'] ?? '');
-                $source = $body['source'] ?? 'website_footer';
+                $email = strtolower(trim((string)($body['email'] ?? '')));
+                $source = mb_substr(preg_replace('/[^a-zA-Z0-9_ -]/', '', (string)($body['source'] ?? 'website_footer')), 0, 50);
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    janani_json_exit(['success' => false, 'message' => 'Please enter a valid email address.'], 400);
+                }
+                janani_rate_limit_or_exit($pdo, 'newsletter:' . janani_client_ip(), 5, 3600);
                 if (!empty($email)) {
                     try {
                         $name = explode('@', $email)[0] ?: 'Subscriber';
@@ -7939,73 +6539,22 @@ try {
             }
             break;
 
-        case 'db_info':
-            $dbRow = $pdo->query("SELECT DATABASE() as db_name, USER() as user_name, @@hostname as host_name")->fetch();
-            $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-            echo json_encode([
-                'success' => true,
-                'database' => $dbRow['db_name'],
-                'user' => $dbRow['user_name'],
-                'host' => $dbRow['host_name'],
-                'tables' => $tables
-            ], JSON_PRETTY_PRINT);
-            exit;
-
-        case 'fs_debug':
-            $assetsFiles = is_dir(__DIR__ . '/assets') ? scandir(__DIR__ . '/assets') : false;
-            $distFiles = is_dir(__DIR__ . '/frontend/dist/client/assets') ? scandir(__DIR__ . '/frontend/dist/client/assets') : false;
-            $gitStatus = function_exists('shell_exec') ? @shell_exec('git status 2>&1') : 'disabled';
-            $gitLog = function_exists('shell_exec') ? @shell_exec('git log -n 3 --oneline 2>&1') : 'disabled';
-            echo json_encode([
-                'success' => true,
-                'time' => date('Y-m-d H:i:s'),
-                'dir' => __DIR__,
-                'git_status' => $gitStatus,
-                'git_log' => $gitLog,
-                'index_html_exists' => file_exists(__DIR__ . '/index.html'),
-                'index_html_size' => file_exists(__DIR__ . '/index.html') ? filesize(__DIR__ . '/index.html') : 0,
-                'assets_count' => is_array($assetsFiles) ? count($assetsFiles) : 0,
-                'assets_all' => is_array($assetsFiles) ? array_values(array_diff($assetsFiles, ['.', '..'])) : [],
-                'dist_assets_count' => is_array($distFiles) ? count($distFiles) : 0,
-            ], JSON_PRETTY_PRINT);
-            exit;
-
-        case 'init':
-            require_once __DIR__ . '/db_init.php';
-            exit;
-
-        case 'reindex_customers':
-        case 'reindex-customers':
-            reindexAllCustomersSequentially($pdo, true);
-            $allUsers = $pdo->query("SELECT `id`, `name`, `email`, `role`, `status` FROM `users` ORDER BY `id` ASC")->fetchAll(PDO::FETCH_ASSOC);
-            echo json_encode([
-                'success' => true,
-                'message' => 'All customer IDs re-indexed sequentially starting from CUST-001',
-                'users' => $allUsers
-            ]);
-            exit;
-
         default:
-            echo json_encode([
-                'success' => true,
-                'name' => 'Janani Agro Products API',
-                'version' => '2.1.0',
-                'endpoints' => [
-                    '/api.php?action=send-otp',
-                    '/api.php?action=verify-otp',
-                    '/api.php?action=init',
-                    '/api.php?action=products',
-                    '/api.php?action=categories',
-                    '/api.php?action=orders',
-                    '/api.php?action=coupons',
-                    '/api.php?action=settings',
-                    '/api.php?action=inquiries',
-                    '/api.php?action=newsletter'
-                ]
-            ]);
-            break;
+            if ($action === '') {
+                janani_json_exit(['success' => true, 'name' => 'Janani Agro Products API']);
+            }
+            janani_json_exit(['success' => false, 'message' => 'Unknown endpoint.'], 404);
     }
 } catch (Throwable $e) {
-    http_response_code(200);
-    echo json_encode(['success' => false, 'error' => $e->getMessage(), 'message' => $e->getMessage()]);
+    // Never leak SQL / file-system details to the browser; the full error goes to the server log.
+    $errorRef = substr(bin2hex(random_bytes(4)), 0, 8);
+    error_log("[janani] unhandled error {$errorRef} in action '{$action}': " . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+    if (!headers_sent()) {
+        http_response_code(500);
+    }
+    echo json_encode([
+        'success' => false,
+        'message' => 'Something went wrong on our side. Please try again. (Ref: ' . $errorRef . ')',
+        'errorRef' => $errorRef
+    ]);
 }

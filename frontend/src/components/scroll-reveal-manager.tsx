@@ -12,7 +12,7 @@ import { useRouterState } from "@tanstack/react-router";
  * 100% interactivity, SSR safety, and existing functionalities.
  */
 export function ScrollRevealManager() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useRouterState({ select: (s: { location: { pathname: string } }) => s.location.pathname });
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;

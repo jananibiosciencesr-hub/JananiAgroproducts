@@ -1,87 +1,61 @@
 <?php
 /**
- * JANANI AGRO PRODUCTS - AUTOMATED DATABASE & COLUMN MIGRATION ENGINE
- * Self-healing schema engine:
- * 1. Checks every table: auto-creates if missing.
- * 2. Checks every column in every table: auto-adds missing columns (ALTER TABLE ADD COLUMN)
- *    so any future schema additions for client requirements are applied automatically!
- * 3. Auto-seeds default products, categories, coupons, settings, users, and orders if empty.
- * Runs natively on Hostinger Shared Hosting (Apache/LiteSpeed + MySQL).
+ * JANANI AGRO PRODUCTS - DATABASE SCHEMA SETUP / REPAIR
+ * 1. Creates missing tables.
+ * 2. Adds missing columns (ALTER TABLE ADD COLUMN).
+ * 3. Seeds the default catalogue (categories, products, coupons, settings) only when tables are empty.
+ *
+ * It never deletes or rewrites existing data, never resets passwords and never seeds placeholder people.
+ *
+ * Runs only:
+ *  - through api.php?action=init by a signed-in administrator, or
+ *  - from the command line:  php db_init.php   (reads DB_* from the .env file)
  */
 
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
+$isCli = (PHP_SAPI === 'cli');
+if (!$isCli && !defined('JANANI_DB_INIT_ALLOWED')) {
+    http_response_code(404);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => false, 'message' => 'Not found']);
     exit;
 }
 
-// ---------------------------------------------------------
-// ENVIRONMENT CONFIGURATION (.env reader with safe fallbacks)
-// ---------------------------------------------------------
-$envFile = __DIR__ . '/.env';
-if (!file_exists($envFile)) {
-    $envFile = dirname(__DIR__) . '/.env';
+if (!$isCli) {
+    header('Content-Type: application/json; charset=utf-8');
 }
-if (file_exists($envFile)) {
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        if (strpos($line, '=') !== false) {
-            list($name, $value) = explode('=', $line, 2);
+
+if (!isset($pdo) || !$pdo) {
+    // CLI usage: load .env (outside the web root first) and connect with environment credentials only.
+    foreach ([dirname(__DIR__) . '/.env', __DIR__ . '/.env', __DIR__ . '/backend/.env', dirname(__DIR__) . '/backend/.env'] as $envFile) {
+        if (!is_readable($envFile)) continue;
+        foreach ((array)file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || $trimmed[0] === '#' || strpos($trimmed, '=') === false) continue;
+            [$name, $value] = explode('=', $trimmed, 2);
             $name = trim($name);
-            $value = trim($value, " \t\n\r\0\x0B\"'");
-            putenv("{$name}={$value}");
-            $_ENV[$name] = $value;
+            if ($name === '' || getenv($name) !== false) continue;
+            putenv($name . '=' . trim($value, " \t\n\r\0\x0B\"'"));
         }
+        break;
     }
-}
-
-$raw_host = 'localhost';
-$raw_db   = trim(getenv('DB_NAME') ?: 'u409810820_Jananiagro');
-$raw_user = trim(getenv('DB_USER') ?: 'u409810820_Jananiagropro');
-$raw_pass = trim(getenv('DB_PASSWORD') ?: 'Jananiagro@123');
-
-// On Hostinger Linux/CageFS, MySQL connects immediately via unix domain socket ('localhost').
-$pdo = null;
-$connectedDb = $raw_db;
-$lastError = null;
-
-$attempts = [
-    ['host' => 'localhost', 'db' => $raw_db, 'user' => $raw_user, 'pass' => $raw_pass],
-    ['host' => 'localhost', 'db' => 'u409810820_Jananiagro', 'user' => 'u409810820_Jananiagropro', 'pass' => 'Jananiagro@123'],
-    ['host' => 'localhost', 'db' => 'u409810820_jananiagro', 'user' => 'u409810820_jananiagropro', 'pass' => 'Jananiagro@123'],
-    ['host' => 'localhost', 'db' => 'janani_agro', 'user' => 'root', 'pass' => '']
-];
-
-foreach ($attempts as $att) {
+    $dbName = getenv('DB_NAME');
+    $dbUser = getenv('DB_USER');
+    if (!$dbName || !$dbUser) {
+        echo json_encode(['success' => false, 'message' => 'DB_NAME / DB_USER / DB_PASSWORD are not configured (.env).']) . PHP_EOL;
+        exit(1);
+    }
     try {
-        $pdo = new PDO("mysql:host={$att['host']};dbname={$att['db']};charset=utf8mb4", $att['user'], $att['pass'], [
+        $pdo = new PDO('mysql:host=' . (getenv('DB_HOST') ?: 'localhost') . ';port=' . (getenv('DB_PORT') ?: '3306') . ";dbname={$dbName};charset=utf8mb4", $dbUser, (string)getenv('DB_PASSWORD'), [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
-            PDO::ATTR_TIMEOUT => 2
         ]);
-        $connectedDb = $att['db'];
-        break;
     } catch (Throwable $e) {
-        $lastError = $e;
+        echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]) . PHP_EOL;
+        exit(1);
     }
 }
-
-if (!$pdo) {
-    http_response_code(200);
-    echo json_encode([
-        'success' => false,
-        'db_connected' => false,
-        'error' => 'Database connection failed: ' . ($lastError ? $lastError->getMessage() : 'Unknown error'),
-        'hint' => 'Please verify database name and credentials in Hostinger hPanel.'
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    exit;
-}
+$connectedDb = (string)$pdo->query('SELECT DATABASE()')->fetchColumn();
 
 $response = [
     'success' => false,
@@ -336,12 +310,7 @@ $schema = [
     ]
 ];
 
-// Drop deprecated/unwanted tables requested by user
-try {
-    $pdo->exec("DROP TABLE IF EXISTS `pickup_locations`");
-    $pdo->exec("DROP TABLE IF EXISTS `newsletter_subscribers`");
-    $pdo->exec("DROP TABLE IF EXISTS `order_items`");
-} catch (Throwable $e) {}
+// (Existing tables are never dropped.)
 
 // Ensure registered customer 'tarun' is active and unblocked
 try {
@@ -407,11 +376,6 @@ foreach ($schema as $tableName => $tableMeta) {
 // ---------------------------------------------------------
 
 // 1. Categories - Janani Agro Certified Biologicals (11 Taxonomy Categories)
-$legacyCatSlugs = ['cold-pressed-oils', 'organic-rice', 'pulses', 'spices', 'wheat', 'millets', 'seeds', 'flours', 'dry-fruits', 'organic-fertilizers', 'vedic-ghee'];
-$inCat = "'" . implode("','", $legacyCatSlugs) . "'";
-try {
-    $pdo->exec("DELETE FROM `categories` WHERE `slug` IN ({$inCat}) OR `id` LIKE 'cat-sub-%'");
-} catch (Exception $e) {}
 
 $categories = [
     ['cat-bio-fertilizers', 'Bio Fertilizers', 'bio-fertilizers', 1, null, null, '/products/dharani.jpg', 2, 1, 1, 1, 1, 'Beneficial microbial biofertilizers and potassium mobilizers for enhanced soil fertility and root vigour.'],
@@ -426,9 +390,6 @@ $categories = [
     ['cat-agri-inputs', 'Agri Inputs', 'agri-inputs', 1, null, null, '/products/bhumi-shakti.jpg', 2, 1, 1, 1, 10, 'Essential agricultural soil amendments, organic carbon inputs, and sustainable soil rejuvenation solutions.']
 ];
 
-// Purge any deleted categories (others, termeric, etc.)
-$pdo->exec("DELETE FROM `categories` WHERE `slug` IN ('others', 'termeric', 'turmeric') OR `id` IN ('cat-others', 'cat-termeric', 'cat-turmeric') OR `active` = 0 OR `deleted_at` IS NOT NULL");
-$pdo->exec("UPDATE `products` SET `category_name` = 'Agri Inputs' WHERE `category_name` = 'Others' OR `category_id` = 'cat-others'");
 
 // 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
 $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
@@ -529,99 +490,15 @@ if ($setCount == 0) {
     $response['seeds_inserted'][] = 'settings';
 }
 
-// 5. Users & Root Super Admin
-$rootAdminEmail = getenv('ADMIN_EMAIL') ?: 'jananibiosciences.r@gmail.com';
+// 5. Root administrator row (identity only - no password, no wallet credit; sign-in is by e-mail OTP)
+$rootAdminEmail = strtolower(trim((string)(getenv('ADMIN_EMAIL') ?: 'jananibiosciences.r@gmail.com')));
 try {
-    $adminStmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `referral_code`) 
-        VALUES ('ADMIN-ROOT', 'Janani Admin (Root)', ?, '+91 98480 22338', 'Super Admin', 10000.00, 5000, 'Platinum Root Access', 'Active', 'JANANIROOT') 
-        ON DUPLICATE KEY UPDATE `role` = 'Super Admin', `status` = 'Active', `tier` = 'Platinum Root Access'");
+    $adminStmt = $pdo->prepare("INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `referral_code`)
+        VALUES ('ADMIN-ROOT', 'Janani Admin', ?, '', 'Super Admin', 0.00, 0, 'Admin', 'Active', 'JANANIROOT')
+        ON DUPLICATE KEY UPDATE `role` = 'Super Admin', `status` = 'Active'");
     $adminStmt->execute([$rootAdminEmail]);
-    $response['seeds_inserted'][] = 'root_admin (' . $rootAdminEmail . ')';
+    $response['seeds_inserted'][] = 'root_admin';
 } catch (PDOException $e) {}
-
-$userCount = $pdo->query("SELECT COUNT(*) FROM `users`")->fetchColumn();
-if ($userCount <= 1) {
-    $users = [
-        ['STAFF-001', 'Rajesh Varma', 'admin@jananiagro.com', '+91 98490 55441', 'Super Admin', 250.00, 500, 'Platinum', 'Active', 'JANANI8492'],
-        ['CUST-001', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223', 'Customer', 0.00, 850, 'Gold', 'Active', 'JANANI3821'],
-        ['CUST-002', 'Vikramaditya Rao', 'vikram.rao@technocorp.in', '+91 99800 44556', 'Customer', 0.00, 320, 'Silver', 'Active', 'JANANI9104']
-    ];
-    $stmt = $pdo->prepare("INSERT IGNORE INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `referral_code`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    foreach ($users as $u) {
-        $stmt->execute($u);
-    }
-    $response['seeds_inserted'][] = 'users (3)';
-}
-
-// Auto-repair duplicate customer phone numbers in users table & reset customer wallet balances
-try {
-    $pdo->exec("UPDATE `users` SET `phone` = '' WHERE `phone` = '+91 98480 22338' AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
-    $pdo->exec("UPDATE `users` SET `phone` = '+91 98490 55441' WHERE `id` = 'STAFF-001' AND `phone` = '+91 98480 22338'");
-    $pdo->exec("UPDATE `users` SET `wallet_balance` = 0.00 WHERE `role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%'");
-    // Purge legacy corrupt product 2124 / mortein and restore canonical Janani products
-    $pdo->exec("DELETE FROM `products` WHERE `id` = 2124 OR LOWER(`name`) LIKE '%mortein%' OR LOWER(`slug`) LIKE '%mortein%'");
-    $pdo->exec("UPDATE `users` SET `wishlist` = '[1, 2]' WHERE (`email` = 'kameswarip98@gmail.com' OR `email` = 'sravanipachipulusu98@gmail.com') AND (`wishlist` LIKE '%2124%' OR `wishlist` LIKE '%mortein%' OR `wishlist` IS NULL OR `wishlist` = '[]' OR `wishlist` = '')");
-} catch (Exception $e) {}
-
-// Store bcrypt hashcode in BOTH password and password_hash columns; purge all synthetic defaults
-try {
-    // 1. Purge synthetic default passwords from customers who never set one
-    $pdo->exec("UPDATE `users` SET `password` = NULL, `password_hash` = NULL WHERE (`password` LIKE 'Janani@%' OR `password` = 'Janani@123') AND (`role` = 'Customer' OR `role` IS NULL OR `id` LIKE 'CUST-%')");
-
-    // 2. Explicitly enforce secure bcrypt hash for Super Admin
-    $aHash = password_hash('Jananiagro@123', PASSWORD_DEFAULT);
-    $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = 'ADMIN-ROOT' OR `email` = 'jananibiosciences.r@gmail.com'")->execute([$aHash, $aHash]);
-
-    // 3. Explicitly enforce secure bcrypt hash for Kameswari (Sravs@98) in both columns
-    $kHash = password_hash('Sravs@98', PASSWORD_DEFAULT);
-    $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `email` = 'kameswarip98@gmail.com'")->execute([$kHash, $kHash]);
-
-    // 4. Explicitly enforce secure bcrypt hash for Sai Rama (Rama@123) in both columns
-    $rHash = password_hash('Rama@123', PASSWORD_DEFAULT);
-    $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ?, `name` = 'Sai Rama', `status` = 'Active' WHERE `email` = 'ramaofficial.d@gmail.com'")->execute([$rHash, $rHash]);
-
-    // 5. Convert any remaining unhashed passwords to bcrypt hashcode in both columns
-    $unhashedUsers = $pdo->query("SELECT `id`, `password`, `password_hash` FROM `users` WHERE `password` IS NOT NULL AND `password` != '' AND `password` NOT LIKE '\$2y\$%' AND `password` NOT LIKE '\$2a\$%' AND `password` NOT LIKE '\$2b\$%'")->fetchAll(PDO::FETCH_ASSOC);
-    if (!empty($unhashedUsers)) {
-        $upHashStmt = $pdo->prepare("UPDATE `users` SET `password` = ?, `password_hash` = ? WHERE `id` = ?");
-        foreach ($unhashedUsers as $uRow) {
-            $rawPass = trim($uRow['password']);
-            if ($rawPass !== '') {
-                $computedHash = (!empty($uRow['password_hash']) && preg_match('/^\$2[ayb]\$[0-9]{2}\$/', $uRow['password_hash']))
-                    ? $uRow['password_hash']
-                    : password_hash($rawPass, PASSWORD_DEFAULT);
-                $upHashStmt->execute([$computedHash, $computedHash, $uRow['id']]);
-            }
-        }
-    }
-
-    // 6. Ensure password column matches password_hash
-    $pdo->exec("UPDATE `users` SET `password` = `password_hash` WHERE `password_hash` LIKE '\$2y\$%' AND (`password` IS NULL OR `password` != `password_hash`)");
-} catch (Exception $e) {}
-
-// 6. Purge dummy/mock orders
-try {
-    $pdo->exec("DELETE FROM `orders` WHERE `number` LIKE 'JAP-849%' OR `id` LIKE 'JAP-849%' OR `number` LIKE '%8492%' OR `id` LIKE '%8492%' OR `number` LIKE '%356429%' OR `id` LIKE '%356429%' OR `id` LIKE 'ORD-%'");
-} catch (Exception $e) {}
-
-// 7. Customer & Farmer Reviews Seed Data
-$revCount = $pdo->query("SELECT COUNT(*) FROM `reviews`")->fetchColumn();
-if ($revCount == 0) {
-    $reviews = [
-        ['REV-101', 'prod-bhumi-shakti', 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant', 'CUST-001', 'Ramesh Kumar', 'ramesh.kumar@gmail.com', 5, 'Increased soil health and bumper yield', 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!', 1, 'Approved', 42],
-        ['REV-102', 'prod-harit', 'HARIT — Trichoderma Viride Liquid Biofungicide', 'CUST-002', 'Srinivas Reddy', 'srinivas.reddy@gmail.com', 5, 'Root rot under complete control', 'HARIT helped in controlling root rot and my plants are now much healthier.', 1, 'Approved', 29],
-        ['REV-103', 'prod-suraksha', 'SURAKSHA — Bio Pesticide & Crop Shield', 'CUST-003', 'Mahesh Patel', 'mahesh.patel@gmail.com', 5, 'Excellent cotton crop improvement', 'Good quality products and excellent results. My cotton crop showed great improvement.', 1, 'Approved', 18],
-        ['REV-104', 'prod-pushkal', 'PUSHKAL — Flowering & Fruit Set Biostimulant', 'CUST-004', 'Suresh Patil', 'suresh.patil@gmail.com', 5, 'Thicker stalks and higher sugar recovery', 'Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!', 1, 'Approved', 15],
-        ['REV-105', 'prod-annada', 'ANNADA — Fish Amino Acid Organic Growth Promoter', 'CUST-005', 'Baldev Singh', 'baldev.singh@gmail.com', 5, 'Zero chemical residue and vigorous tillering', 'Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.', 1, 'Approved', 21],
-        ['REV-106', 'prod-neem-oil', 'NEEM OIL — Cold Pressed Azadirachtin Formulation', 'CUST-006', 'Radhika K.', 'radhika.k@gmail.com', 5, 'Authentic aroma and pure traditional extraction!', 'The fragrance and texture of this Neem formulation are completely unmatched compared to commercially refined market brands.', 1, 'Approved', 24],
-        ['REV-107', 'prod-dharani', 'DHARANI — Complete Organic Bio Fertilizer', 'CUST-007', 'Suresh Narayanan', 'suresh.n@gmail.com', 5, 'Clean packing, fast delivery and authentic results', 'Ordered the farm pack. Eco-packaging is top notch, no leakage, and crops show vigorous healthy canopy within 10 days.', 1, 'Approved', 19]
-    ];
-    $stmt = $pdo->prepare("INSERT IGNORE INTO `reviews` (`id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `customer_email`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `helpful_count`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    foreach ($reviews as $r) {
-        $stmt->execute($r);
-    }
-    $response['seeds_inserted'][] = 'reviews (7)';
-}
 
 $response['success'] = count($response['errors']) === 0;
 $response['message'] = $response['success'] 

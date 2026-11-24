@@ -202,7 +202,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {/* Global Structured Data: Organization & WebSite */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrgWebSite) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrgWebSite).replace(/</g, "\\u003c") }}
         />
       </head>
       <body suppressHydrationWarning>

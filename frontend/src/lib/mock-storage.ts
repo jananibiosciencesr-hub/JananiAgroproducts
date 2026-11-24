@@ -410,7 +410,7 @@ export const DEFAULT_SETTINGS = {
   shiprocket: {
     enabled: true,
     email: "logistics@jananiagro.com",
-    apiKey: "sr_live_9920194812",
+    apiKey: "",
     apiSecret: "••••••••••••••••",
     tokenExpiry: "2026-12-31",
     defaultWarehouse: "Lodhika GIDC Gujarat Primary Hub",

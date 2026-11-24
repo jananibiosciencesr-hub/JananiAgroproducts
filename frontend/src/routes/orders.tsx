@@ -30,6 +30,7 @@ import { ExchangeOrderModal } from "@/components/orders/exchange-order-modal";
 import { OrderSupportModal } from "@/components/orders/order-support-modal";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
 import { formatProductName } from "@/lib/catalog";
+import { requestOrderAction } from "@/lib/api";
 
 export const Route = createFileRoute("/orders")({
   head: () => ({
@@ -100,19 +101,7 @@ export function MyOrdersPage() {
           const data = await res.json();
           const ordersListRaw = Array.isArray(data?.orders) ? data.orders : (Array.isArray(data?.data) ? data.data : null);
           if (data?.success && Array.isArray(ordersListRaw)) {
-            const userEmailNorm = (user?.email || "").toLowerCase().trim();
-            const userPhoneDigits = (user?.phone || "").replace(/\D/g, "");
             const serverOrders: CustomerOrder[] = ordersListRaw
-              .filter((o: any) => {
-                if (userEmailNorm) {
-                  return (o?.customer_email || o?.customerEmail || "").toLowerCase().trim() === userEmailNorm;
-                }
-                if (userPhoneDigits.length >= 10) {
-                  const oPhone = (o?.customer_phone || o?.customerPhone || "").replace(/\D/g, "");
-                  return oPhone.length >= 10 && oPhone.endsWith(userPhoneDigits.slice(-10));
-                }
-                return false;
-              })
               .map((o: any) => ({
               id: o.id || `ord-${o.number}`,
               number: o.number || o.orderNumber,
@@ -123,8 +112,8 @@ export function MyOrdersPage() {
               isoDate: o.created_at ? o.created_at.split(" ")[0] : new Date().toISOString().split("T")[0]!,
               status: (o.order_status || o.status || "Processing") as OrderStatus,
               courier: o.courier || "Delhivery Air Express & Janani Fleet",
-              awb: o.awb || o.tracking_id || `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-              expectedDelivery: o.expected_delivery || o.expectedDelivery || "Tomorrow Morning (9:00 AM – 1:00 PM)",
+              awb: o.awb || o.tracking_id || "",
+              expectedDelivery: o.expected_delivery || o.expectedDelivery || "2-3 Business Days",
               deliverySlot: o.delivery_slot || o.deliverySlot,
               subtotal: Number(o.subtotal) || 0,
               discount: Number(o.discount) || 0,
@@ -134,58 +123,26 @@ export function MyOrdersPage() {
               deliveryFee: Number(o.delivery_fee || o.deliveryFee || 0),
               total: Number(o.total || o.finalTotal || 0),
               finalTotal: Number(o.total || o.finalTotal || 0),
-              paymentMethod: o.payment_method || o.paymentMethod || "Razorpay (Online)",
-              paymentStatus: o.payment_status || o.paymentStatus || "Paid",
-              transactionId: o.transaction_id || o.transactionId || "pay_rzp_verified",
+              paymentMethod: o.payment_method || o.paymentMethod || "",
+              paymentStatus: o.payment_status || o.paymentStatus || "",
+              transactionId: o.transaction_id || o.transactionId || "",
               address: {
-                fullName: o.shippingAddress?.fullName || o.shippingAddress?.name || o.customer_name || user?.name || "Valued Patron",
+                fullName: o.shippingAddress?.fullName || o.shippingAddress?.name || o.customer_name || user?.name || "",
                 phone: o.shippingAddress?.phone || o.customer_phone || user?.phone || "",
-                streetAddress: o.shippingAddress?.streetAddress || o.shippingAddress?.street || "Registered Delivery Address",
-                city: o.shippingAddress?.city || "Ahmedabad",
-                state: o.shippingAddress?.state || "Gujarat",
-                pincode: o.shippingAddress?.pincode || "380054",
+                streetAddress: o.shippingAddress?.streetAddress || o.shippingAddress?.street || "",
+                city: o.shippingAddress?.city || "",
+                state: o.shippingAddress?.state || "",
+                pincode: o.shippingAddress?.pincode || "",
               },
               items: Array.isArray(o.items) ? o.items.map((it: any) => ({
                 productId: it.productId || it.id || 1,
-                name: formatProductName(it.title || it.name || "Single-Origin Organic Harvest"),
-                variant: it.variant || "Standard Pack",
+                name: formatProductName(it.title || it.name || "Product"),
+                variant: it.unit || it.variant || "",
                 quantity: it.quantity || it.qty || 1,
-                price: Number(it.price) || 399,
+                price: Number(it.price) || 0,
                 image: it.image || "",
               })) : [],
-              timeline: Array.isArray(o.timeline) ? o.timeline : [
-                {
-                  title: "Order Placed & Payment Verified via Razorpay",
-                  time: o.order_date || "Today",
-                  location: "Lodhika Processing Hub, Rajkot",
-                  done: true,
-                  current: true,
-                },
-                {
-                  title: "Quality Tested & Nitrogen Sealed",
-                  time: "Within 4 Hours",
-                  location: "Rajkot Central Facility",
-                  done: false,
-                },
-                {
-                  title: "Dispatched via Delhivery Air Express",
-                  time: "Scheduled Tomorrow",
-                  location: "Regional Transit Gateway",
-                  done: false,
-                },
-                {
-                  title: "Out for Doorstep Delivery",
-                  time: o.delivery_slot || "Tomorrow Morning",
-                  location: "Local Delivery Hub",
-                  done: false,
-                },
-                {
-                  title: "Delivered to Recipient",
-                  time: o.expected_delivery || "Tomorrow",
-                  location: "Customer Address",
-                  done: false,
-                },
-              ]
+              timeline: Array.isArray(o.timeline) ? o.timeline : [],
             }));
 
             // Authoritative server state directly sets user's order list
@@ -208,7 +165,7 @@ export function MyOrdersPage() {
       active: ordersList.filter((o) => ["Processing", "Shipped", "Out for Delivery"].includes(o.status)).length,
       delivered: ordersList.filter((o) => o.status === "Delivered").length,
       cancelled: ordersList.filter((o) => o.status === "Cancelled").length,
-      returns: ordersList.filter((o) => ["Return Requested", "Exchanged"].includes(o.status)).length,
+      returns: ordersList.filter((o) => ["Return Requested", "Returned", "Exchange Requested", "Exchange Approved", "Exchanged"].includes(o.status)).length,
     };
   }, [ordersList]);
 
@@ -236,110 +193,86 @@ export function MyOrdersPage() {
     } else if (statusFilter === "cancelled") {
       result = result.filter((o) => o.status === "Cancelled");
     } else if (statusFilter === "returns") {
-      result = result.filter((o) => ["Return Requested", "Exchanged"].includes(o.status));
+      result = result.filter((o) => ["Return Requested", "Returned", "Exchange Requested", "Exchange Approved", "Exchanged"].includes(o.status));
     }
 
     return result;
   }, [ordersList, searchQuery, statusFilter]);
 
-  // Handler: Confirm Cancellation
-  const handleConfirmCancel = (orderId: string, reason: string, refundMethod: string) => {
+  // Applies the order state returned by the server to the list shown on screen
+  const applyServerOrderUpdate = (orderId: string, serverOrder: any, patch: Partial<CustomerOrder> & Record<string, any>) => {
     const updated = ordersList.map((o) => {
-      if (o.id === orderId) {
-        return {
-          ...o,
-          status: "Cancelled" as OrderStatus,
-          cancellationReason: reason,
-          cancelledAt: "Today, Just now",
-          refundMethod,
-          refundStatus: "Refund Credited",
-          timeline: [
-            ...o.timeline,
-            {
-              title: "Order Cancelled by Customer",
-              time: "Today, Just now",
-              location: "Janani Care Desk",
-              done: true,
-              current: true,
-            },
-            {
-              title: `Refund Processed (${refundMethod})`,
-              time: "Within 24 Hours",
-              location: "Accounts Treasury",
-              done: true,
-            },
-          ],
-        };
-      }
-      return o;
+      if (o.id !== orderId) return o;
+      return {
+        ...o,
+        ...patch,
+        status: ((serverOrder?.order_status || serverOrder?.status || patch.status || o.status) as OrderStatus),
+        paymentStatus: serverOrder?.payment_status || serverOrder?.paymentStatus || o.paymentStatus,
+        timeline: Array.isArray(serverOrder?.timeline) ? serverOrder.timeline : o.timeline,
+      };
     });
     updateOrdersState(updated);
   };
 
-  // Handler: Confirm Return Request
-  const handleConfirmReturn = (orderId: string, returnData: { reason: string; pickupSlot: string; itemsSummary: string }) => {
-    const updated = ordersList.map((o) => {
-      if (o.id === orderId) {
-        return {
-          ...o,
-          status: "Return Requested" as OrderStatus,
-          returnReason: returnData.reason,
-          returnPickupSlot: returnData.pickupSlot,
-          returnStatus: "Pickup Scheduled",
-          timeline: [
-            ...o.timeline,
-            {
-              title: "Return Request Registered",
-              time: "Today, Just now",
-              location: "Janani Care Desk",
-              done: true,
-            },
-            {
-              title: `Reverse Pickup Scheduled (${returnData.pickupSlot})`,
-              time: "Scheduled",
-              location: "Doorstep Courier Hub",
-              done: false,
-              current: true,
-            },
-          ],
-        };
-      }
-      return o;
+  // Handler: Confirm Cancellation (server cancels, restocks and refunds online payments)
+  const handleConfirmCancel = async (orderId: string, reason: string, refundMethod: string): Promise<boolean> => {
+    const target = ordersList.find((o) => o.id === orderId);
+    const res = await requestOrderAction(target?.number || orderId, "cancel", { reason, refundMethod });
+    if (!res?.success) {
+      toast.error(res?.message || "This order could not be cancelled. Please contact support.");
+      return false;
+    }
+    applyServerOrderUpdate(orderId, res.order, {
+      status: "Cancelled" as OrderStatus,
+      cancellationReason: reason,
+      cancelledAt: "Just now",
+      refundMethod,
+      refundStatus: res.refundNote || "",
     });
-    updateOrdersState(updated);
+    toast.success(res.message || "Order cancelled.", { duration: 7000 });
+    return true;
   };
 
-  // Handler: Confirm Exchange Request
-  const handleConfirmExchange = (orderId: string, exchangeData: { originalItem: string; replacementItem: string; reason: string }) => {
-    const updated = ordersList.map((o) => {
-      if (o.id === orderId) {
-        return {
-          ...o,
-          status: "Exchanged" as OrderStatus,
-          exchangeReason: exchangeData.reason,
-          exchangeReplacementItem: exchangeData.replacementItem,
-          exchangeStatus: "Replacement Dispatched",
-          timeline: [
-            ...o.timeline,
-            {
-              title: "Item Exchange Handover Scheduled",
-              time: "Today, Just now",
-              location: "Janani Logistics Center",
-              done: true,
-              current: true,
-            },
-            {
-              title: `Replacement Handover (${exchangeData.replacementItem})`,
-              time: "Expected in 2 Days",
-              location: "Customer Residence",
-              done: false,
-            },
-          ],
-        };
-      }
-      return o;
+  // Handler: Confirm Return Request (reviewed by the Janani team before pickup / refund)
+  const handleConfirmReturn = async (orderId: string, returnData: { reason: string; pickupSlot: string; itemsSummary: string }): Promise<boolean> => {
+    const target = ordersList.find((o) => o.id === orderId);
+    const res = await requestOrderAction(target?.number || orderId, "return-request", {
+      reason: returnData.reason,
+      details: `Preferred pickup: ${returnData.pickupSlot}. ${returnData.itemsSummary}`,
     });
-    updateOrdersState(updated);
+    if (!res?.success) {
+      toast.error(res?.message || "Your return request could not be submitted. Please contact support.");
+      return false;
+    }
+    applyServerOrderUpdate(orderId, res.order, {
+      status: "Return Requested" as OrderStatus,
+      returnReason: returnData.reason,
+      returnPickupSlot: returnData.pickupSlot,
+      returnStatus: "Requested",
+    });
+    toast.success(res.message || "Return requested.");
+    return true;
+  };
+
+  // Handler: Confirm Exchange Request (reviewed by the Janani team)
+  const handleConfirmExchange = async (orderId: string, exchangeData: { originalItem: string; replacementItem: string; reason: string }): Promise<boolean> => {
+    const target = ordersList.find((o) => o.id === orderId);
+    const res = await requestOrderAction(target?.number || orderId, "exchange-request", {
+      reason: exchangeData.reason,
+      details: `Exchange ${exchangeData.originalItem} for ${exchangeData.replacementItem}`,
+    });
+    if (!res?.success) {
+      toast.error(res?.message || "Your exchange request could not be submitted. Please contact support.");
+      return false;
+    }
+    applyServerOrderUpdate(orderId, res.order, {
+      status: "Exchange Requested" as OrderStatus,
+      exchangeReason: exchangeData.reason,
+      exchangeReplacementItem: exchangeData.replacementItem,
+      exchangeStatus: "Requested",
+    });
+    toast.success(res.message || "Exchange requested.");
+    return true;
   };
 
     if (!isMounted) {

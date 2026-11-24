@@ -1,8 +1,7 @@
 -- =======================================================================
 -- JANANI AGRO PRODUCTS - COMPLETE PRODUCTION DATABASE SCHEMA & SEED DATA
 -- Website: https://jananiagroproducts.com
--- Database: u409810820_Jananiagro
--- Username: u409810820_Jananiagropro
+-- Import into the store database from hPanel → phpMyAdmin (credentials are never stored here)
 -- =======================================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -181,18 +180,7 @@ CREATE TABLE IF NOT EXISTS `reviews` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
--- Dumping data for table `reviews`
--- --------------------------------------------------------
-INSERT INTO `reviews` (`id`, `product_id`, `product_name`, `customer_id`, `customer_name`, `customer_email`, `rating`, `title`, `comment`, `verified_purchase`, `status`, `helpful_count`) VALUES
-('REV-101', 'prod-bhumi-shakti', 'BHUMI SHAKTI — Humic & Fulvic Acid Biostimulant', 'CUST-1001', 'Ramesh Kumar', 'ramesh.kumar@gmail.com', 5, 'Increased soil health and bumper yield', 'Using Janani products improved my soil health and increased my yield significantly. Highly recommended!', 1, 'Approved', 42),
-('REV-102', 'prod-harit', 'HARIT — Trichoderma Viride Liquid Biofungicide', 'CUST-1002', 'Srinivas Reddy', 'srinivas.reddy@gmail.com', 5, 'Root rot under complete control', 'HARIT helped in controlling root rot and my plants are now much healthier.', 1, 'Approved', 29),
-('REV-103', 'prod-suraksha', 'SURAKSHA — Bio Pesticide & Crop Shield', 'CUST-1003', 'Mahesh Patel', 'mahesh.patel@gmail.com', 5, 'Excellent cotton crop improvement', 'Good quality products and excellent results. My cotton crop showed great improvement.', 1, 'Approved', 18),
-('REV-104', 'prod-pushkal', 'PUSHKAL — Flowering & Fruit Set Biostimulant', 'CUST-1004', 'Suresh Patil', 'suresh.patil@gmail.com', 5, 'Thicker stalks and higher sugar recovery', 'Janani bio-stimulants gave my sugarcane thicker stalks and higher sugar recovery. Truly dependable organic results!', 1, 'Approved', 15),
-('REV-105', 'prod-annada', 'ANNADA — Fish Amino Acid Organic Growth Promoter', 'CUST-1005', 'Baldev Singh', 'baldev.singh@gmail.com', 5, 'Zero chemical residue and vigorous tillering', 'Zero chemical residue and vigorous tillering in my paddy fields. The soil moisture retention has also noticeably improved.', 1, 'Approved', 21),
-('REV-106', 'prod-neem-oil', 'NEEM OIL — Cold Pressed Azadirachtin Formulation', 'CUST-1006', 'Radhika K.', 'radhika.k@gmail.com', 5, 'Authentic aroma and pure traditional extraction!', 'The fragrance and texture of this Neem formulation are completely unmatched compared to commercially refined market brands.', 1, 'Approved', 24),
-('REV-107', 'prod-dharani', 'DHARANI — Complete Organic Bio Fertilizer', 'CUST-1007', 'Suresh Narayanan', 'suresh.n@gmail.com', 5, 'Clean packing, fast delivery and authentic results', 'Ordered the farm pack. Eco-packaging is top notch, no leakage, and crops show vigorous healthy canopy within 10 days.', 1, 'Approved', 19)
-ON DUPLICATE KEY UPDATE `status` = VALUES(`status`);
+-- (No placeholder reviews are seeded: the storefront only shows genuine, moderated customer reviews.)
 
 -- --------------------------------------------------------
 -- Table structure for `cms_banners`
@@ -332,12 +320,9 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 ('shipping_rules', '{"defaultWarehouse":"Lodhika GIDC Central Facility","courier":"Delhivery Air Express","freeDeliveryThreshold":799,"standardDeliveryFee":60}')
 ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
--- Users Seed
+-- Root administrator identity (no password: the admin signs in with an e-mail OTP; set ADMIN_EMAIL in .env)
 INSERT IGNORE INTO `users` (`id`, `name`, `email`, `phone`, `role`, `wallet_balance`, `loyalty_points`, `tier`, `status`, `referral_code`) VALUES
-('ADMIN-ROOT', 'Janani Admin (Root)', 'jananibiosciences.r@gmail.com', '+91 98480 22338', 'Super Admin', 10000.00, 5000, 'Platinum Root Access', 'Active', 'JANANIROOT'),
-('STAFF-001', 'Rajesh Varma', 'admin@jananiagro.com', '+91 98490 55441', 'Super Admin', 250.00, 500, 'Platinum', 'Active', 'JANANI8492'),
-('CUST-001', 'Dr. Ananya Iyer', 'dr.ananya@heritagehealth.org', '+91 98450 11223', 'Customer', 420.00, 850, 'Gold', 'Active', 'JANANI3821'),
-('CUST-002', 'Vikramaditya Rao', 'vikram.rao@technocorp.in', '+91 99800 44556', 'Customer', 150.00, 320, 'Silver', 'Active', 'JANANI9104');
+('ADMIN-ROOT', 'Janani Admin', 'jananibiosciences.r@gmail.com', '', 'Super Admin', 0.00, 0, 'Admin', 'Active', 'JANANIROOT');
 
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;

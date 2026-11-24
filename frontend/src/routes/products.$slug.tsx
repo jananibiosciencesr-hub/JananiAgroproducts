@@ -44,7 +44,7 @@ import { toast } from "sonner";
 import { ProductCard } from "@/components/product-card";
 
 export const Route = createFileRoute("/products/$slug")({
-  head: ({ params }) => {
+  head: ({ params }: { params: { slug: string } }) => {
     const p = products.find((x) => x.slug === params.slug || x.aliases?.includes(params.slug) || String(x.id) === params.slug);
     const prodName = p ? formatProductName(p.name) : "Agricultural Formulation";
     const title = p
@@ -313,37 +313,23 @@ function ProductDetailPage() {
         product_id: String(product.id || product.slug),
         product_name: product.name,
         customer_name: reviewName.trim(),
-        customer_email: reviewEmail.trim() || "farmer@jananiagro.com",
+        customer_email: reviewEmail.trim(),
         rating: reviewRating,
         title: reviewTitle.trim() || "Farmer Experience",
         comment: reviewComment.trim(),
-        verified_purchase: 1,
-        status: "Approved"
+        location: reviewLocation.trim(),
       };
+      // The server attaches your account, marks "verified purchase" only for delivered orders,
+      // and publishes the review after moderation.
       const res = await createAdminReview(payload as any);
       if (res?.success) {
-        toast.success("Thank you! Your review has been saved to the database.");
-        const newRev = {
-          id: (res as any)?.reviewId || `REV-${Date.now()}`,
-          productId: String(product.id),
-          productName: product.name,
-          customerName: reviewName.trim(),
-          customerEmail: reviewEmail.trim() || "farmer@jananiagro.com",
-          location: reviewLocation.trim() || "Verified Farmer",
-          rating: reviewRating,
-          title: reviewTitle.trim() || "Farmer Experience",
-          comment: reviewComment.trim(),
-          verifiedPurchase: true,
-          status: "Approved",
-          createdAt: "Just now"
-        };
-        setMatchingReviews((prev) => [newRev, ...prev]);
+        toast.success("Thank you! Your review was submitted and will appear after a quick moderation check.");
         setIsWriteReviewOpen(false);
         setReviewTitle("");
         setReviewComment("");
         setReviewRating(5);
       } else {
-        toast.error("Failed to save review. Please try again.");
+        toast.error(res?.message || "Failed to save review. Please sign in and try again.");
       }
     } catch (err) {
       toast.error("Error submitting review.");
@@ -773,11 +759,11 @@ function ProductDetailPage() {
       {/* Product & Breadcrumb JSON-LD Schemas for Search Engines */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd).replace(/</g, "\\u003c") }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c") }}
       />
       <div className="max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-4 sm:py-8">
         {/* 1. Breadcrumbs Strip */}

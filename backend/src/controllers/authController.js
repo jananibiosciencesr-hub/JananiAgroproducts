@@ -79,8 +79,10 @@ export const loginWithEmail = async (req, res) => {
 
     // Check if logging in as Super Admin
     if (isAdmin) {
-      const validAdminPasswords = ["Jananiagro@123", "demo1234", "admin123", "Janani@Admin", "janani123", "Janani@2026"];
-      if (validAdminPasswords.includes(password)) {
+      // Local development only: the admin password comes from DEV_ADMIN_PASSWORD in backend/.env.
+      // Production sign-in is handled by api.php (e-mail OTP + signed session tokens).
+      const devAdminPassword = process.env.DEV_ADMIN_PASSWORD || "";
+      if (devAdminPassword && password === devAdminPassword) {
         const adminUser = {
           id: "ADMIN-ROOT",
           name: "Janani Admin (Root)",
@@ -148,7 +150,7 @@ export const loginWithEmail = async (req, res) => {
     }
 
     // Verify Password strictly
-    const dbPassword = customer.password || customer.passwordHash || (normalizedEmail === "kameswarip98@gmail.com" ? "Sravs@98" : "");
+    const dbPassword = customer.password || customer.passwordHash || "";
     let isPasswordCorrect = false;
 
     if (!dbPassword) {
@@ -402,7 +404,7 @@ export const verifyOtp = async (req, res) => {
         name: phone ? `Janani Patron (${identifier.slice(-4)})` : identifier.split("@")[0],
         email: email || `${identifier}@janani.customer`,
         phone: formattedPhone || (phone ? identifier : ""),
-        passwordHash: "demo1234",
+        passwordHash: "",
         avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`,
         role: "customer",
         walletBalance: 150, // ₹150 Instant Welcome Bonus

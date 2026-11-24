@@ -1691,8 +1691,8 @@ function OrderDetailDrawer({
                     </div>
 
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-muted-foreground">Razorpay Test Key:</span>
-                      <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">rzp_test_SwedUUn...</span>
+                      <span className="text-muted-foreground">Razorpay Order:</span>
+                      <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">{(order as any).razorpay_order_id || (order as any).razorpayOrderId || "—"}</span>
                     </div>
                   </div>
                 </div>

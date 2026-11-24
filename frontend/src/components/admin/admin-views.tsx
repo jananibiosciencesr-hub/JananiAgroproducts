@@ -375,10 +375,10 @@ export function OrdersView({
           </table>
         </div>
 
-        {filteredInventory.length > 0 && (
+        {filtered.length > 0 && (
           <div className="px-5 sm:px-6 py-3 border-t border-border/70 bg-slate-50/40 dark:bg-slate-900/20 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Showing <strong className="text-foreground">{filteredInventory.length}</strong> warehouse SKU inventory items</span>
-            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Warehouse inventory thresholds synchronized with MySQL</span>
+            <span>Showing <strong className="text-foreground">{filtered.length}</strong> orders</span>
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Live order data from the database</span>
           </div>
         )}
       </div>

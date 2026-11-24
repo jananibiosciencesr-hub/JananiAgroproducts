@@ -37,7 +37,6 @@ const PRESET_AMOUNTS = [
 ];
 
 export function AddMoneyModal({ isOpen, onClose, onSuccess }: AddMoneyModalProps) {
-  const { addWalletBalance } = useStore();
   const [selectedAmount, setSelectedAmount] = useState<number>(1000);
   const [customAmount, setCustomAmount] = useState<string>("1000");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"upi" | "card" | "netbanking">("upi");
@@ -64,36 +63,10 @@ export function AddMoneyModal({ isOpen, onClose, onSuccess }: AddMoneyModalProps
       return;
     }
 
-    setIsProcessing(true);
-
-    // Simulate instant gateway authorization
-    await new Promise((res) => setTimeout(res, 800));
-
-    const totalCredited = finalAmount + activeBonus;
-    addWalletBalance(totalCredited);
-
-    const newTx: WalletTransaction = {
-      id: `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
-      date: new Date().toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-      title: "Wallet Top-up",
-      description: `Loaded via ${selectedPaymentMethod.toUpperCase()} ${
-        activeBonus > 0 ? `(+₹${activeBonus} Agro Bonus)` : ""
-      }`,
-      amount: totalCredited,
-      type: "credit",
-      status: "completed",
-      category: "topup",
-      referenceId: `GATEWAY-${Date.now().toString().slice(-6)}`,
-    };
-
-    onSuccess(newTx);
-    setIsProcessing(false);
-    toast.success(`Successfully added ₹${totalCredited} to your Farm Wallet!`, {
-      description: "Balance updated immediately for zero-friction 1-tap checkout.",
+    // Wallet top-ups need a real payment (Razorpay) and a server-side wallet ledger, which are not
+    // live yet. Nothing is credited without payment; customers pay directly at checkout instead.
+    toast.info("Wallet top-up is not available yet. You can pay securely with UPI, card or Cash on Delivery at checkout.", {
+      duration: 6000,
     });
     onClose();
   };

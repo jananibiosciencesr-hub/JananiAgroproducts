@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------
-# Janani Agro Products - Hostinger Shared/Business Web Hosting Config
-# High-Performance Speed, Instant Live Updates & Caching
+# Janani Agro Products - Hostinger (Apache / LiteSpeed) configuration
+# Source of truth: frontend/public/.htaccess (copied to the site root by the build sync)
 # ----------------------------------------------------------------------
 
 AddDefaultCharset UTF-8
 DirectoryIndex index.html index.php
 
-# Prevent Directory Browsing
+# No directory listings
 Options -Indexes
 
-# Force correct MIME types for Web assets
+# Correct MIME types for web assets
 <IfModule mod_mime.c>
   AddType text/css .css
   AddType application/javascript .js
@@ -18,75 +18,98 @@ Options -Indexes
   AddType image/webp .webp
   AddType font/woff2 .woff2
   AddType font/woff .woff
+  AddType video/mp4 .mp4
+  AddType video/webm .webm
 </IfModule>
+
+# ----------------------------------------------------------------------
+# SECURITY: files and folders that must never be served
+# ----------------------------------------------------------------------
+# Secrets, source, database dumps, docs, build tooling
+<FilesMatch "(^\.|\.(env|sql|sqlite|db|bak|backup|old|orig|log|md|sh|ini|lock|cjs|ts|tsx|map)$|^(package(-lock)?\.json|composer\.(json|lock)|tsconfig.*\.json|components\.json|eslint\.config\.js|vite\.config\.ts|db_init\.php|api_security\.php)$)">
+  Require all denied
+</FilesMatch>
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # 1. Allow direct execution of PHP scripts
-  RewriteRule ^api\.php$ - [L]
-  RewriteRule ^db_init\.php$ - [L]
-  RewriteRule ^api/api\.php$ /api.php [QSA,L]
-  RewriteRule ^api/db_init\.php$ /db_init.php [QSA,L]
+  # Pass the Authorization header through to PHP (stripped by some FastCGI setups)
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-  # 2. Route all /api/admin/* requests directly to api.php REST endpoints
+  # Block repository / server-side folders that live next to the public site
+  RewriteRule ^(\.git|\.vscode|backend|frontend|scratch|scripts|node_modules|dist|janani_backups)(/|$) - [R=404,L,NC]
+
+  # Internal PHP helpers are never reachable directly
+  RewriteRule ^(db_init|api_security)\.php$ - [R=404,L,NC]
+  RewriteRule ^api/(db_init|api_security)\.php$ - [R=404,L,NC]
+
+  # 1. Public PHP API entry point
+  RewriteRule ^api\.php$ - [L]
+  RewriteRule ^api/api\.php$ /api.php [QSA,L]
+
+  # 2. /api/admin/<action>/<id> -> api.php (access control is enforced inside api.php)
   RewriteRule ^api/admin/([a-zA-Z0-9_-]+)(?:/(.*))?$ /api.php?action=$1&id=$2 [QSA,L]
 
-  # 3. Route all /api/* requests directly to api.php REST endpoints
+  # 3. /api/<action>/<id> -> api.php
   RewriteRule ^api/([a-zA-Z0-9_-]+)(?:/(.*))?$ /api.php?action=$1&id=$2 [QSA,L]
 
-  # 4. Allow existing physical static files (e.g. images, css, js, php)
+  # 4. Existing physical static files
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
-  # 5. Fix for /products route: The physical folder /products contains only images,
-  # so any non-file request to /products or /products/ MUST load the SPA index.html
+  # 4b. Old cached pages asking for a previous /assets/styles-*.css get the current stylesheet
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^assets/styles-[a-zA-Z0-9_-]+\.css$ /assets/styles.css [L]
+
+  # 5. /products contains only images, so page routes under /products load the SPA
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^products(?:/.*)?$ /index.html [QSA,L]
 
-  # 6. Allow existing physical directories ONLY if they contain an index.html or index.php file
+  # 6. Physical directories only when they contain an index file
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteCond %{REQUEST_FILENAME}/index.html -f [OR]
   RewriteCond %{REQUEST_FILENAME}/index.php -f
   RewriteRule ^ - [L]
 
-  # 7. SPA Route Fallback: Rewrite all page routes (/about, /cart, /admin, etc.) to index.html
-  # Strictly NEVER rewrite assets, images, banners, or static file requests to index.html
+  # 7. SPA fallback for page routes (never for API or static asset requests)
   RewriteCond %{REQUEST_URI} !^/api
   RewriteCond %{REQUEST_URI} !^/(assets|images|banners|favicon) [NC]
-  RewriteCond %{REQUEST_URI} !\.(css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$ [NC]
+  RewriteCond %{REQUEST_URI} !\.(css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot|mp4|webm)$ [NC]
   RewriteRule ^ /index.html [L]
 </IfModule>
 
-# Security: block access to sensitive files
-<FilesMatch "(^\.env|\.git|package\.json|tsconfig\.json)">
-  Require all denied
-</FilesMatch>
+# ----------------------------------------------------------------------
+# SECURITY HEADERS
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), geolocation=(self), microphone=(self), payment=(self \"https://checkout.razorpay.com\" \"https://api.razorpay.com\")"
+  Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+  Header unset X-Powered-By
+</IfModule>
 
 # ----------------------------------------------------------------------
-# GZIP & DEFLATE COMPRESSION (Maximum Speed for Text & Code)
+# GZIP compression
 # ----------------------------------------------------------------------
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/x-javascript application/json application/xml image/svg+xml font/ttf font/otf font/woff font/woff2
 </IfModule>
 
 # ----------------------------------------------------------------------
-# BROWSER CACHING & INSTANT UPDATE RULES (mod_expires & mod_headers)
+# BROWSER CACHING
 # ----------------------------------------------------------------------
 <IfModule mod_expires.c>
   ExpiresActive On
   ExpiresDefault "access plus 1 month"
-
-  # HTML must re-check server instantly so code updates appear immediately
   ExpiresByType text/html "access plus 0 seconds"
-
-  # Immutable Fingerprinted Vite Bundles (JS & CSS have unique hash in filenames)
+  ExpiresByType application/json "access plus 0 seconds"
   ExpiresByType application/javascript "access plus 1 year"
   ExpiresByType text/javascript "access plus 1 year"
   ExpiresByType text/css "access plus 1 year"
-
-  # Media & Images
   ExpiresByType image/jpg "access plus 1 month"
   ExpiresByType image/jpeg "access plus 1 month"
   ExpiresByType image/png "access plus 1 month"
@@ -94,32 +117,28 @@ Options -Indexes
   ExpiresByType image/webp "access plus 1 month"
   ExpiresByType image/svg+xml "access plus 1 month"
   ExpiresByType image/x-icon "access plus 1 month"
-
-  # Web Fonts
   ExpiresByType font/woff2 "access plus 1 year"
   ExpiresByType font/woff "access plus 1 year"
   ExpiresByType font/ttf "access plus 1 year"
 </IfModule>
 
 <IfModule mod_headers.c>
-  # 1. Instant Live Updates: Never cache HTML files (ensures fresh script hashes load on every visit)
+  # HTML / PHP responses are never cached (fresh asset hashes and API data on every visit)
   <FilesMatch "\.(html|htm|php)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
 
-  # 2. Immutable Caching: Vite JS & CSS with unique hash in name
+  # Fingerprinted Vite bundles
   <FilesMatch "\.(js|css)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 
-  # 3. Optimized Media Caching
   <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
 
-  # 4. Fonts
   <FilesMatch "\.(woff|woff2|ttf|otf|eot)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
     Header set Access-Control-Allow-Origin "*"

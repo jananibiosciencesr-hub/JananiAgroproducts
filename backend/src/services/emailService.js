@@ -12,7 +12,7 @@ const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 465;
 const SMTP_SECURE = process.env.SMTP_SECURE === "true" || SMTP_PORT === 465;
 const SMTP_USER = process.env.SMTP_USER || "jananibiosciences.r@gmail.com";
-const SMTP_PASS = process.env.SMTP_PASS || "gvwxapfllucnayzt";
+const SMTP_PASS = process.env.SMTP_PASS || ""; // set in backend/.env (never hardcode)
 const SMTP_FROM = process.env.SMTP_FROM || `"Janani Agro Products" <${SMTP_USER}>`;
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "jananibiosciences.r@gmail.com";

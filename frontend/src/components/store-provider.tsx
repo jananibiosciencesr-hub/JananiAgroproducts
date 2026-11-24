@@ -95,6 +95,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     let activeUser: AuthUser | null = null;
     try {
+      const storedToken = localStorage.getItem("janani_auth_token") || localStorage.getItem("janani_token");
+      if (!storedToken || !storedToken.startsWith("jat1.")) {
+        // Profiles saved before server-issued sessions existed (or edited by hand) require a fresh sign-in.
+        ["janani_user", "janani_auth_user", "janani_token", "janani_auth_token", "janani_user_auth_time", "janani_auth_time"].forEach((k) => localStorage.removeItem(k));
+      }
       const storedUser = localStorage.getItem("janani_user") || localStorage.getItem("janani_auth_user");
       const userAuthTime = localStorage.getItem("janani_user_auth_time") || localStorage.getItem("janani_auth_time");
       const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
@@ -519,14 +524,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Run immediately on mount
     checkAutoLogout();
 
+    const handleServerSessionExpired = () => {
+      setUser(null);
+      toast.info("Your session has expired. Please sign in again to continue.");
+    };
+
     const intervalId = setInterval(checkAutoLogout, 30 * 1000);
     window.addEventListener("focus", checkAutoLogout);
     document.addEventListener("visibilitychange", checkAutoLogout);
+    window.addEventListener("janani-customer-session-expired", handleServerSessionExpired);
 
     return () => {
       clearInterval(intervalId);
       window.removeEventListener("focus", checkAutoLogout);
       document.removeEventListener("visibilitychange", checkAutoLogout);
+      window.removeEventListener("janani-customer-session-expired", handleServerSessionExpired);
     };
   }, []);
 

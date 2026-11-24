@@ -1,3 +1,10 @@
+/**
+ * Copies the production build into the site root that Hostinger serves (the repository root):
+ *   frontend/dist/client/assets -> assets/   (stale bundles from older builds are removed)
+ *   backend/php/{api.php, api_security.php, db_init.php} -> site root
+ *   frontend/public/.htaccess  -> site root
+ * and pre-renders route HTML. Run via "npm run build" from the repository root.
+ */
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -5,7 +12,7 @@ const { pathToFileURL } = require('url');
 async function syncBuild() {
   console.log('[sync-build] Starting asset synchronization...');
 
-  const rootDir = path.resolve(__dirname, '..');
+  const rootDir = path.resolve(__dirname, '..', '..');
 
   // Regenerate XML sitemaps before copying public assets
   const generateSitemapsScript = path.join(rootDir, 'scratch', 'generate-sitemaps.cjs');
@@ -47,6 +54,19 @@ async function syncBuild() {
   // Copy all client files to root assets/ and dist/assets/
   fs.mkdirSync(rootAssetsDir, { recursive: true });
   fs.cpSync(clientAssetsDir, rootAssetsDir, { recursive: true });
+
+  // Remove bundles from previous builds (they otherwise accumulate forever in assets/).
+  // The CSS fallback aliases below are recreated after this step.
+  const keepAssets = new Set(clientFiles);
+  let removedStale = 0;
+  for (const name of fs.readdirSync(rootAssetsDir)) {
+    const full = path.join(rootAssetsDir, name);
+    if (!keepAssets.has(name) && fs.statSync(full).isFile()) {
+      fs.unlinkSync(full);
+      removedStale++;
+    }
+  }
+  console.log(`[sync-build] Removed ${removedStale} stale asset files from previous builds`);
 
   if (fs.existsSync(path.join(rootDir, 'dist'))) {
     fs.mkdirSync(distAssetsDir, { recursive: true });
@@ -96,18 +116,18 @@ async function syncBuild() {
     fs.cpSync(rootVideosDir, publicVideosDir, { recursive: true });
   }
 
-  // Sync PHP files from backend/php/ (source of truth) to frontend/public/ and rootDir
-  for (const phpFile of ['api.php', 'db_init.php']) {
+  // Sync PHP API from backend/php/ (single source of truth) to the site root only
+  for (const phpFile of ['api.php', 'api_security.php', 'db_init.php']) {
     const backendSrc = path.join(rootDir, 'backend', 'php', phpFile);
-    const publicDest = path.join(rootDir, 'frontend', 'public', phpFile);
-    const rootDest = path.join(rootDir, phpFile);
-    if (fs.existsSync(backendSrc)) {
-      fs.copyFileSync(backendSrc, publicDest);
-      fs.copyFileSync(backendSrc, rootDest);
-    } else if (fs.existsSync(publicDest)) {
-      fs.copyFileSync(publicDest, rootDest);
+    if (!fs.existsSync(backendSrc)) {
+      console.error(`[sync-build] Error: missing backend/php/${phpFile}`);
+      process.exit(1);
     }
+    fs.copyFileSync(backendSrc, path.join(rootDir, phpFile));
   }
+  // Apache rules (security blocks, rewrites, headers)
+  fs.copyFileSync(path.join(rootDir, 'frontend', 'public', '.htaccess'), path.join(rootDir, '.htaccess'));
+  console.log('[sync-build] Synced api.php, api_security.php, db_init.php and .htaccess to the site root');
 
   // Sync robots, sitemaps, google verification
   const publicDir = path.join(rootDir, 'frontend', 'public');
@@ -215,7 +235,7 @@ async function syncBuild() {
   function sweepHtmlFiles(dir, list = []) {
     if (!fs.existsSync(dir)) return list;
     for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (item.name === 'node_modules' || item.name === '.git' || item.name === 'frontend') continue;
+      if (['node_modules', '.git', 'frontend', 'backend', 'scratch'].includes(item.name)) continue;
       const full = path.join(dir, item.name);
       if (item.isDirectory()) {
         sweepHtmlFiles(full, list);

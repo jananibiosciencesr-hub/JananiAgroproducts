@@ -15,7 +15,13 @@ import { Button } from "@/components/ui/button";
 import type { ShippingAddress } from "./address-manager";
 import type { DeliverySlot } from "./delivery-slot-picker";
 import type { CouponRule } from "./coupon-selector-modal";
-import type { AppliedGiftCard } from "./gift-card-card";
+/** Kept for layout compatibility; gift cards are not currently offered. */
+export interface AppliedGiftCard {
+  code: string;
+  appliedAmount: number;
+  totalBalance: number;
+  remainingBalance: number;
+}
 
 interface PaymentSummaryCardProps {
   cartItemsCount: number;

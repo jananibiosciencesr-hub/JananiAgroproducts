@@ -24,12 +24,7 @@ import { useStore } from "@/components/store-provider";
 import { products, pantryImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { createOrder } from "@/lib/api";
-import {
-  openRazorpayCheckout,
-  loadRazorpayScript,
-  RAZORPAY_KEY_ID
-} from "@/lib/razorpay";
-import { PaymentRazorpayModal } from "@/components/payment/payment-razorpay-modal";
+import { openRazorpayCheckout, loadRazorpayScript, createRazorpayOrder } from "@/lib/razorpay";
 import { PaymentSuccessView, PaymentFailureView } from "@/components/payment/payment-status-views";
 import { saveCustomerOrders, loadCustomerOrders } from "@/components/orders/orders-seed";
 
@@ -48,7 +43,7 @@ export const Route = createFileRoute("/payment")({
 
 export function PaymentPage() {
   const navigate = useNavigate();
-  const { cart, subtotal, user, clearCart, deductWalletBalance } = useStore();
+  const { cart, subtotal, user, clearCart } = useStore();
 
   // Redirect to checkout if not logged in
   useEffect(() => {
@@ -79,8 +74,8 @@ export function PaymentPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyingText, setVerifyingText] = useState("Connecting to Razorpay Secure Gateway...");
-  const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
-  const [simulateFailure, setSimulateFailure] = useState(false);
+  const [paymentIssue, setPaymentIssue] = useState<{ paymentId: string; message: string } | null>(null);
+  const [onlinePaymentUnavailable, setOnlinePaymentUnavailable] = useState(false);
 
   // Success / Failure details
   const [transactionDetails, setTransactionDetails] = useState<{
@@ -257,318 +252,200 @@ export function PaymentPage() {
     );
   }
 
-  // Handle Payment Success & Order Settlement
-  const handlePaymentSuccess = async (details: { method: string; transactionId: string; razorpayOrderId?: string }) => {
-    setIsProcessing(true);
-    setIsVerifying(true);
-    setVerifyingText("Payment verified! Confirming your order with Janani Agro...");
-    setTransactionDetails((prev) => ({
-      ...prev,
-      transactionId: details.transactionId,
-      method: details.method || "Razorpay Gateway",
-      amount: effectiveAmount,
-    }));
+  // ---------------------------------------------------------------------------
+  // Order placement. The server prices the cart, verifies the payment and assigns the
+  // order number; this page only shows a confirmation after the server confirms.
+  // ---------------------------------------------------------------------------
+  const streetAddr = checkoutData?.address
+    ? [checkoutData.address.houseFlat, checkoutData.address.street, checkoutData.address.landmark].filter(Boolean).join(", ") || checkoutData.address.streetAddress || ""
+    : "";
 
-    const nowFormatted = new Date().toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const orderItemsPayload = cartItems.map((i: any) => ({
+    productId: i.product?.id ?? i.productId ?? i.id,
+    slug: i.product?.slug ?? i.slug,
+    cartKey: i.cartKey,
+    variantKey: i.variant?.id,
+    variantId: i.variantId,
+    name: i.product?.name || i.name,
+    price: i.price ?? i.product?.price ?? 0,
+    quantity: i.qty || i.quantity || 1,
+    image: i.variant?.image || i.product?.image,
+  }));
 
-    const streetAddr = checkoutData?.address
-      ? [checkoutData.address.houseFlat, checkoutData.address.street, checkoutData.address.landmark].filter(Boolean).join(", ") || checkoutData.address.streetAddress || "Registered Delivery Address"
-      : "Registered Delivery Address";
+  const deliveryAddress = {
+    fullName: customerName,
+    name: customerName,
+    phone: resolvedCustomerPhone,
+    email: resolvedCustomerEmail,
+    houseFlat: checkoutData?.address?.houseFlat || "",
+    street: streetAddr,
+    streetAddress: streetAddr,
+    landmark: checkoutData?.address?.landmark || "",
+    city: checkoutData?.address?.city || "",
+    state: checkoutData?.address?.state || "",
+    pincode: checkoutData?.address?.pincode || "",
+  };
 
+  const appliedCouponCode = checkoutData?.couponDiscount > 0 ? (checkoutData?.coupon?.code || checkoutData?.couponCode || "") : "";
+
+  const buildOrderRequest = (extra: Partial<Parameters<typeof createOrder>[0]>) => ({
+    items: orderItemsPayload,
+    customer: {
+      name: customerName,
+      phone: resolvedCustomerPhone,
+      email: resolvedCustomerEmail,
+      streetAddress: streetAddr,
+      landmark: deliveryAddress.landmark,
+      city: deliveryAddress.city,
+      state: deliveryAddress.state,
+      pincode: deliveryAddress.pincode,
+    },
+    couponCode: appliedCouponCode,
+    finalTotal: effectiveAmount,
+    deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
+    orderNotes: checkoutData?.orderNotes || "",
+    ...extra,
+  });
+
+  const handleOrderRejection = (err: any) => {
+    const message = err?.message || "Your order could not be placed. Please try again.";
+    toast.error(message, { duration: 8000 });
+    if (err?.priceChanged || err?.couponInvalid || err?.outOfStock) {
+      // Cart is out of date (price / coupon / stock changed): send the customer back to review it.
+      localStorage.removeItem("janani_pending_checkout");
+      navigate({ to: "/cart" });
+    }
+  };
+
+  /** Shows the confirmation for an order the server has recorded. */
+  const finishOrder = (created: any, methodLabel: string) => {
+    const number = created?.number || created?.orderNumber || "";
+    const items = Array.isArray(created?.items) ? created.items : [];
     const confirmedOrder = {
-      orderNumber: effectiveOrderNumber,
-      transactionId: details.transactionId,
-      paymentMethod: details.method || (isCod ? "Cash on Delivery" : "Razorpay (All-In-One)"),
-      amount: effectiveAmount,
+      orderNumber: number,
+      transactionId: created?.transaction_id || created?.transactionId || "",
+      paymentMethod: methodLabel,
+      paymentStatus: created?.payment_status || created?.paymentStatus,
+      amount: Number(created?.total ?? effectiveAmount),
       deliveryDate,
       customerName,
       customerPhone: resolvedCustomerPhone,
       customerEmail: resolvedCustomerEmail,
-      customerAddress: checkoutData?.address
-        ? `${streetAddr}, ${checkoutData.address.city}, ${checkoutData.address.state} - ${checkoutData.address.pincode}`
-        : "Registered Delivery Address, Ahmedabad, Gujarat - 380054",
-      items: cartItems.map((item: any) => ({
-        product: {
-          id: item.product.id,
-          name: item.product.name,
-          price: item.product.price,
-          image: item.product.image || pantryImage,
-        },
-        qty: item.qty || 1,
+      customerAddress: [streetAddr, deliveryAddress.city, deliveryAddress.state].filter(Boolean).join(", ") + (deliveryAddress.pincode ? ` - ${deliveryAddress.pincode}` : ""),
+      items: items.map((it: any) => ({
+        product: { id: it.productId, name: `${it.name}${it.unit ? ` (${it.unit})` : ""}`, price: Number(it.price) || 0, image: it.image || pantryImage },
+        qty: it.quantity || 1,
       })),
-      subtotal: checkoutData?.subtotal || subtotal,
-      discount: checkoutData?.couponDiscount || checkoutData?.discount || 0,
-      couponCode: checkoutData?.coupon?.code || checkoutData?.couponCode || "",
-      couponDiscount: checkoutData?.couponDiscount || (checkoutData?.coupon?.code ? checkoutData?.discount : 0) || 0,
-      walletDeduction: checkoutData?.walletDeduction || 0,
-      deliveryFee: checkoutData?.shippingFee || 0,
-      finalTotal: effectiveAmount,
-      total: effectiveAmount,
+      subtotal: Number(created?.subtotal ?? 0),
+      gstAmount: Number(created?.gst_amount ?? created?.gstAmount ?? 0),
+      discount: Number(created?.coupon_discount ?? created?.couponDiscount ?? 0),
+      couponCode: created?.coupon_code || created?.couponCode || "",
+      couponDiscount: Number(created?.coupon_discount ?? created?.couponDiscount ?? 0),
+      walletDeduction: 0,
+      deliveryFee: Number(created?.delivery_fee ?? created?.deliveryFee ?? 0),
+      finalTotal: Number(created?.total ?? effectiveAmount),
+      total: Number(created?.total ?? effectiveAmount),
       slot: checkoutData?.slot || { dateStr: deliveryDate },
       deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
-      address: checkoutData?.address || {
-        fullName: customerName,
-        phone: resolvedCustomerPhone,
-        streetAddress: streetAddr,
-        city,
-        state: "Gujarat",
-        pincode: "380054",
-      },
-      ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
+      address: deliveryAddress,
+      timeline: created?.timeline,
     };
-
-    // Full customer order object for Dashboard & Orders Hub with Flipkart 5-stage tracking
-    const newCustomerOrder = {
-      id: `ord-${Date.now()}`,
-      number: effectiveOrderNumber,
-      orderNumber: effectiveOrderNumber,
-      customerEmail: resolvedCustomerEmail,
-      customerPhone: resolvedCustomerPhone,
-      date: nowFormatted,
-      isoDate: new Date().toISOString().split("T")[0]!,
-      status: "Processing" as const,
-      courier: "Delhivery Air Express & Janani Direct",
-      awb: `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-      expectedDelivery: deliveryDate,
-      deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
-      subtotal: checkoutData?.subtotal || subtotal,
-      discount: checkoutData?.couponDiscount || checkoutData?.discount || 0,
-      couponCode: checkoutData?.coupon?.code || checkoutData?.couponCode || "",
-      couponDiscount: checkoutData?.couponDiscount || (checkoutData?.coupon?.code ? checkoutData?.discount : 0) || 0,
-      walletDeduction: checkoutData?.walletDeduction || 0,
-      deliveryFee: checkoutData?.shippingFee || 0,
-      total: effectiveAmount,
-      finalTotal: effectiveAmount,
-      paymentMethod: details.method || (isCod ? "Cash on Delivery" : "Razorpay (Online)"),
-      paymentStatus: details.method === "Cash on Delivery" || isCod ? "Pending (COD)" : "Paid",
-      transactionId: details.transactionId,
-      ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
-      address: {
-        fullName: customerName,
-        phone: resolvedCustomerPhone,
-        streetAddress: streetAddr,
-        city: checkoutData?.address?.city || city,
-        state: checkoutData?.address?.state || "Gujarat",
-        pincode: checkoutData?.address?.pincode || "380054",
-      },
-      items: cartItems.map((item: any) => ({
-        productId: item.product.id,
-        name: item.product.name,
-        variant: "Standard Pack",
-        quantity: item.qty || 1,
-        qty: item.qty || 1,
-        price: item.product.price,
-        image: item.product.image || pantryImage,
-      })),
-      timeline: [
-        {
-          title: details.method === "Cash on Delivery" || isCod ? "Order Placed (Cash on Delivery)" : "Order Placed & Payment Verified via Razorpay",
-          time: nowFormatted,
-          location: "Regional Processing Hub, Lodhika Rajkot",
-          done: true,
-          current: true,
-        },
-        {
-          title: "Quality Tested & Nitrogen Sealed",
-          time: "Within 4 hours",
-          location: "Rajkot Central Facility",
-          done: false,
-          current: false,
-        },
-        {
-          title: "Dispatched via Delhivery Air Express",
-          time: "Scheduled Tomorrow",
-          location: "Central Transit Gateway",
-          done: false,
-          current: false,
-        },
-        {
-          title: "Out for Doorstep Delivery",
-          time: checkoutData?.slot?.dateStr || deliveryDate,
-          location: "Local Delivery Hub",
-          done: false,
-          current: false,
-        },
-        {
-          title: "Delivered to Recipient",
-          time: deliveryDate,
-          location: "Customer Doorstep",
-          done: false,
-          current: false,
-        },
-      ],
-    };
-
-    // 1. Persist order to MySQL backend database in real time
-    let finalAssignedOrderNumber = effectiveOrderNumber;
-    setVerifyingText("Recording order in database & generating official GST invoice...");
     try {
-      const createdOrder = await Promise.race([
-        createOrder({
-          id: effectiveOrderNumber,
-          number: effectiveOrderNumber,
-          orderNumber: effectiveOrderNumber,
-          items: cartItems.map((i: any) => ({
-            productId: i.product.id,
-            name: i.product.name,
-            price: i.product.price,
-            quantity: i.qty || 1,
-            image: i.product.image || pantryImage,
-          })),
-          customer: {
-            name: customerName,
-            firstName: customerName.split(" ")[0] || "Valued",
-            lastName: customerName.split(" ").slice(1).join(" ") || "Patron",
-            phone: resolvedCustomerPhone,
-            email: resolvedCustomerEmail,
-            address: streetAddr,
-            streetAddress: streetAddr,
-            city: checkoutData?.address?.city || city,
-            state: checkoutData?.address?.state || "Gujarat",
-            pincode: checkoutData?.address?.pincode || "380054",
-          },
-          subtotal: checkoutData?.subtotal || subtotal,
-          gstAmount: checkoutData?.gstAmount ?? Number(((checkoutData?.subtotal || subtotal) * 0.05).toFixed(2)),
-          cgst: checkoutData?.cgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
-          sgst: checkoutData?.sgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
-          discount: checkoutData?.couponDiscount || 0,
-          couponCode: checkoutData?.couponDiscount > 0 ? (checkoutData?.coupon?.code || checkoutData?.couponCode || "") : "",
-          couponDiscount: checkoutData?.couponDiscount || 0,
-          walletDeduction: checkoutData?.walletDeduction || 0,
-          deliveryFee: checkoutData?.shippingFee || 0,
-          shippingFee: checkoutData?.shippingFee || 0,
-          finalTotal: effectiveAmount,
-          total: effectiveAmount,
-          paymentMethod: details.method || (isCod ? "Cash on Delivery" : "Razorpay"),
-          paymentStatus: details.method === "Cash on Delivery" || isCod ? "Pending (COD)" : "Paid",
-          transactionId: details.transactionId,
-          ...(details.razorpayOrderId ? { razorpayOrderId: details.razorpayOrderId } : {}),
-          deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
-          expectedDelivery: deliveryDate,
-          timeline: newCustomerOrder.timeline,
-        }),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Server order creation timeout")), 7000))
-      ]);
-
-      if (createdOrder?.number) {
-        finalAssignedOrderNumber = createdOrder.number;
-      } else if (createdOrder?.orderNumber) {
-        finalAssignedOrderNumber = createdOrder.orderNumber;
-      } else if (createdOrder?.id) {
-        finalAssignedOrderNumber = createdOrder.id;
-      }
-    } catch (apiErr) {
-      console.warn("Backend order creation sync note:", apiErr);
-    }
-
-    confirmedOrder.orderNumber = finalAssignedOrderNumber;
-    newCustomerOrder.number = finalAssignedOrderNumber;
-    newCustomerOrder.orderNumber = finalAssignedOrderNumber;
-    newCustomerOrder.id = `ord-${finalAssignedOrderNumber}`;
-    setTransactionDetails((prev) => ({ ...prev, orderNumber: finalAssignedOrderNumber }));
-
-    // 2. Save latest order & customer orders strictly scoped to current user
-    try {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(`janani_invoice_dispatched_${finalAssignedOrderNumber}`, "true");
-      }
-      localStorage.setItem("janani_latest_order", JSON.stringify({
-        ...confirmedOrder,
-        customerEmail: resolvedCustomerEmail,
-        customerPhone: resolvedCustomerPhone,
-      }));
-
+      localStorage.setItem("janani_latest_order", JSON.stringify(confirmedOrder));
       const userIdentifier = resolvedCustomerEmail || user?.email || resolvedCustomerPhone;
       const existingUserOrders = loadCustomerOrders(userIdentifier);
-      const updatedOrders = [newCustomerOrder, ...existingUserOrders.filter((o: any) => o.number !== finalAssignedOrderNumber && o.id !== newCustomerOrder.id)];
-      saveCustomerOrders(updatedOrders, userIdentifier);
-
-      // Clean un-scoped legacy key to avoid cross-user bleed
+      saveCustomerOrders(
+        [
+          {
+            ...created,
+            id: created?.id || number,
+            number,
+            orderNumber: number,
+            status: created?.order_status || created?.status || "Processing",
+            date: created?.order_date || new Date().toLocaleDateString("en-GB"),
+            isoDate: new Date().toISOString().split("T")[0]!,
+            address: deliveryAddress,
+            items: items.map((it: any) => ({ ...it, qty: it.quantity })),
+          },
+          ...existingUserOrders.filter((o: any) => o.number !== number),
+        ],
+        userIdentifier
+      );
       localStorage.removeItem("janani_customer_orders");
     } catch (e) {
-      console.error("Failed to save order to localStorage", e);
+      console.error("Failed to cache confirmed order", e);
     }
-
-    // 3. Dispatch official GST Tax Invoice email to customer & admin
-    try {
-      fetch("/api.php?action=send-order-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        keepalive: true,
-        body: JSON.stringify({
-          number: finalAssignedOrderNumber,
-          orderNumber: finalAssignedOrderNumber,
-          customer_name: customerName,
-          customerName: customerName,
-          customer_email: resolvedCustomerEmail,
-          customerEmail: resolvedCustomerEmail,
-          customer_phone: resolvedCustomerPhone,
-          customerPhone: resolvedCustomerPhone,
-          shipping_address: {
-            streetAddress: streetAddr,
-            city: checkoutData?.address?.city || city,
-            state: checkoutData?.address?.state || "Gujarat",
-            pincode: checkoutData?.address?.pincode || "380054",
-          },
-          items: cartItems.map((i: any) => ({
-            name: i.product?.name || i.name,
-            price: i.product?.price || i.price,
-            quantity: i.qty || i.quantity || 1,
-          })),
-          subtotal: checkoutData?.subtotal || subtotal,
-          gstAmount: checkoutData?.gstAmount ?? Number(((checkoutData?.subtotal || subtotal) * 0.05).toFixed(2)),
-          cgst: checkoutData?.cgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
-          sgst: checkoutData?.sgst ?? Number(((checkoutData?.subtotal || subtotal) * 0.025).toFixed(2)),
-          delivery_fee: checkoutData?.shippingFee || 0,
-          shippingFee: checkoutData?.shippingFee || 0,
-          discount: checkoutData?.couponDiscount || 0,
-          couponDiscount: checkoutData?.couponDiscount || 0,
-          coupon_code: checkoutData?.couponDiscount > 0 ? (checkoutData?.coupon?.code || checkoutData?.couponCode || "") : "",
-          total: effectiveAmount,
-          finalTotal: effectiveAmount,
-          payment_method: details.method || "Razorpay",
-        }),
-      }).catch(() => { });
-      sessionStorage.setItem(`janani_invoice_dispatched_${finalAssignedOrderNumber}`, "true");
-    } catch (e) { }
 
     clearCart();
-    if (checkoutData?.walletDeduction > 0) {
-      deductWalletBalance(checkoutData.walletDeduction);
-    }
     localStorage.removeItem("janani_pending_checkout");
-
-    setVerifyingText(`Order ${finalAssignedOrderNumber} confirmed! Redirecting to confirmation page...`);
-
-    if (details.method === "Cash on Delivery" || isCod) {
-      toast.success(`Cash on Delivery order ${finalAssignedOrderNumber} placed successfully!`);
-    } else {
-      toast.success(`Payment verified via Razorpay! Order ${finalAssignedOrderNumber} placed successfully.`);
-    }
-
+    setTransactionDetails((prev) => ({ ...prev, orderNumber: number, transactionId: confirmedOrder.transactionId, method: methodLabel, amount: confirmedOrder.total }));
+    setVerifyingText(`Order ${number} confirmed! Redirecting...`);
+    toast.success(`Order ${number} placed successfully!`);
     try {
       navigate({ to: "/order-success" });
     } catch (navErr) {
       console.warn("Router navigate failed:", navErr);
     }
-
-    // High-reliability hard redirect fallback
     if (typeof window !== "undefined") {
       setTimeout(() => {
-        if (window.location.pathname !== "/order-success") {
-          window.location.href = "/order-success";
-        }
-      }, 250);
+        if (window.location.pathname !== "/order-success") window.location.href = "/order-success";
+      }, 300);
     }
   };
 
-  // Handle Payment Failure
+  // Cash on Delivery
+  const placeCodOrder = async () => {
+    if (isProcessing && !isVerifying) return;
+    setPaymentIssue(null);
+    setIsProcessing(true);
+    setIsVerifying(true);
+    setVerifyingText("Confirming your Cash on Delivery order...");
+    try {
+      const created = await createOrder(buildOrderRequest({ paymentMethod: "Cash on Delivery" }));
+      finishOrder(created, "Cash on Delivery");
+    } catch (err: any) {
+      setIsVerifying(false);
+      setIsProcessing(false);
+      handleOrderRejection(err);
+    }
+  };
+
+  // Records a paid online order. Safe to retry: the server creates the order only once per payment.
+  const confirmOnlineOrder = async (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+    setIsProcessing(true);
+    setIsVerifying(true);
+    setVerifyingText("Payment received. Verifying it and confirming your order...");
+    const request = buildOrderRequest({
+      paymentMethod: "Razorpay (Online)",
+      transactionId: resp.razorpay_payment_id,
+      razorpayOrderId: resp.razorpay_order_id,
+      razorpaySignature: resp.razorpay_signature,
+    });
+    let lastError: any = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const created = await createOrder(request);
+        finishOrder(created, "Razorpay (Online)");
+        return;
+      } catch (err: any) {
+        lastError = err;
+        if (!err?.networkError) break;
+        await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+      }
+    }
+    // The payment succeeded but this browser could not get the confirmation. The Razorpay webhook
+    // records the order on the server, so the cart is cleared to avoid paying twice.
+    clearCart();
+    localStorage.removeItem("janani_pending_checkout");
+    setIsVerifying(false);
+    setIsProcessing(false);
+    setPaymentIssue({
+      paymentId: resp.razorpay_payment_id,
+      message: lastError?.message || "We could not confirm your order yet.",
+    });
+  };
+
+  // Handle Payment Failure (no money captured)
   const handlePaymentFailure = (reason: string) => {
     setIsProcessing(false);
     setIsVerifying(false);
@@ -577,79 +454,64 @@ export function PaymentPage() {
       failureReason: reason,
     }));
     setViewState("failure");
-    toast.error("Razorpay payment failed or cancelled. Please try again.");
   };
 
-  // 1-Click Retry Payment
   const handleRetryPayment = () => {
-    setSimulateFailure(false);
     setViewState("payment");
     handleLaunchRazorpay();
   };
 
-  // Launch Razorpay Standard Checkout Popup
+  // Razorpay Standard Checkout: the server creates the Razorpay order with its own amount
   const handleLaunchRazorpay = async () => {
-    if (simulateFailure) {
-      handlePaymentFailure("Simulated Test Mode: Transaction declined by bank.");
+    if (isProcessing) return;
+    setPaymentIssue(null);
+    setIsProcessing(true);
+    setVerifyingText("Connecting to Razorpay Secure Gateway...");
+
+    let activePhone = sqlPhone || resolvedCustomerPhone;
+    try {
+      const res = await fetch(`/api.php?action=get-user-phone`);
+      const d = await res.json().catch(() => null);
+      if (d?.phone) activePhone = String(d.phone).trim() || activePhone;
+    } catch (e) { }
+
+    const rzOrder = await createRazorpayOrder({
+      items: orderItemsPayload,
+      couponCode: appliedCouponCode,
+      address: deliveryAddress,
+      expectedTotal: effectiveAmount,
+      deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
+      orderNotes: checkoutData?.orderNotes || "",
+    });
+    if (!rzOrder.success) {
+      setIsProcessing(false);
+      if (rzOrder.onlinePaymentUnavailable) setOnlinePaymentUnavailable(true);
+      handleOrderRejection(rzOrder);
       return;
     }
 
-    setIsProcessing(true);
-
-    let activePhone = sqlPhone;
-    const targetEmail = resolvedCustomerEmail || user?.email;
-    if (targetEmail && targetEmail !== "patron@jananiagro.com") {
-      try {
-        const res = await fetch(`/api.php?action=get-user-phone&email=${encodeURIComponent(targetEmail)}`);
-        if (res.ok) {
-          const d = await res.json();
-          if (d?.phone !== undefined && d?.phone !== null) {
-            const fresh = String(d.phone).trim();
-            if (fresh) {
-              activePhone = fresh;
-              setSqlPhone(fresh);
-            }
-          }
-        }
-      } catch (e) { }
-    }
-
-    if (!activePhone && resolvedCustomerPhone) {
-      activePhone = resolvedCustomerPhone;
-    }
-
     const opened = await openRazorpayCheckout({
-      amount: effectiveAmount,
-      orderNumber: effectiveOrderNumber,
+      order: rzOrder,
+      orderLabel: "Janani Agro Products order",
       customerName,
       customerEmail: resolvedCustomerEmail,
       customerPhone: activePhone,
       onSuccess: (res) => {
-        setIsProcessing(true);
-        setIsVerifying(true);
-        setVerifyingText("Payment verified via Razorpay! Finalizing your harvest order...");
-        handlePaymentSuccess({
-          method: "Razorpay Standard Checkout",
-          transactionId: res.razorpay_payment_id || `pay_${Date.now()}`
-        });
+        confirmOnlineOrder(res);
       },
       onFailure: (err) => {
-        setIsProcessing(false);
-        setIsVerifying(false);
         handlePaymentFailure(err.description || "Razorpay transaction failed.");
       },
       onDismiss: () => {
         setIsProcessing(false);
         setIsVerifying(false);
-        toast.info("Payment window closed. Click below when ready to complete your order.");
-      }
+        toast.info("Payment window closed. No money was charged. Click Pay when you're ready.");
+      },
     });
 
-    if (!opened) {
-      // If popup blocked or offline, open styled Razorpay component modal
+    if (!opened.opened) {
       setIsProcessing(false);
-      setIsVerifying(false);
-      setIsRazorpayModalOpen(true);
+      handlePaymentFailure(opened.reason);
     }
   };
 
@@ -674,13 +536,8 @@ export function PaymentPage() {
         reason={transactionDetails.failureReason || "Authorization timed out or transaction cancelled."}
         onRetryPayment={handleRetryPayment}
         onSwitchToCod={() => {
-          setIsProcessing(true);
-          setIsVerifying(true);
-          setVerifyingText("Switching to Cash on Delivery and placing order...");
-          handlePaymentSuccess({
-            method: "Cash on Delivery",
-            transactionId: `COD-${Date.now().toString().slice(-6)}`
-          });
+          setViewState("payment");
+          placeCodOrder();
         }}
       />
     );
@@ -749,7 +606,7 @@ export function PaymentPage() {
 
               <div className="flex items-center gap-2 self-start sm:self-auto bg-secondary/80 px-2.5 sm:px-3 py-1.5 rounded-xl border border-border text-[11px] sm:text-xs font-mono font-bold text-foreground max-w-full truncate">
                 <Lock className="size-3.5 text-brand-leaf shrink-0" />
-                <span className="truncate">{isCod ? "Payment Mode: Cash on Delivery" : `Test Mode Key: ${RAZORPAY_KEY_ID.slice(0, 12)}...`}</span>
+                <span className="truncate">{isCod ? "Payment Mode: Cash on Delivery" : "Secured by Razorpay"}</span>
               </div>
             </div>
 
@@ -787,13 +644,7 @@ export function PaymentPage() {
                 type="button"
                 onClick={() => {
                   if (isCod) {
-                    setIsProcessing(true);
-                    setIsVerifying(true);
-                    setVerifyingText("Confirming Cash on Delivery Order...");
-                    handlePaymentSuccess({
-                      method: "Cash on Delivery",
-                      transactionId: `COD-${Date.now().toString().slice(-6)}`,
-                    });
+                    placeCodOrder();
                   } else {
                     handleLaunchRazorpay();
                   }
@@ -826,16 +677,28 @@ export function PaymentPage() {
                   <ShieldCheck className="size-4 text-brand-leaf shrink-0" />
                   <span>{isCod ? "Zero advance fees • Inspect order packaging upon arrival" : "Zero convenience fees • Instant refund guarantee"}</span>
                 </span>
-                {!isCod && (
-                  <button
-                    type="button"
-                    onClick={() => setIsRazorpayModalOpen(true)}
-                    className="text-brand-leaf font-semibold hover:underline self-start sm:self-auto cursor-pointer"
-                  >
-                    Alternate Gateway View
-                  </button>
-                )}
               </div>
+
+              {!isCod && onlinePaymentUnavailable && (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-900 space-y-2">
+                  <p className="font-semibold">Online payment is temporarily unavailable.</p>
+                  <p>You can still place this order with Cash on Delivery and pay when it arrives.</p>
+                  <Button type="button" variant="outline" size="sm" onClick={placeCodOrder} disabled={isProcessing || isVerifying}>
+                    Place order with Cash on Delivery
+                  </Button>
+                </div>
+              )}
+
+              {paymentIssue && (
+                <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-950 space-y-2">
+                  <p className="font-bold text-sm">Payment received — we are confirming your order</p>
+                  <p>
+                    Your payment <span className="font-mono font-semibold">{paymentIssue.paymentId}</span> was successful. Your order is being recorded
+                    automatically and the confirmation email will reach {resolvedCustomerEmail || "your inbox"} shortly. Please do not pay again.
+                  </p>
+                  <p>If it does not appear in <Link to="/orders" className="underline font-semibold">My Orders</Link> within 15 minutes, contact support with the payment ID above.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -943,19 +806,6 @@ export function PaymentPage() {
           </div>
         </div>
       </div>
-
-      {/* Razorpay Interactive Popover Modal (Fallback) */}
-      <PaymentRazorpayModal
-        isOpen={isRazorpayModalOpen}
-        onClose={() => setIsRazorpayModalOpen(false)}
-        amount={effectiveAmount}
-        orderNumber={effectiveOrderNumber}
-        customerName={customerName}
-        customerPhone={resolvedCustomerPhone}
-        onPaymentSuccess={handlePaymentSuccess}
-        onPaymentFailure={handlePaymentFailure}
-        simulateFailure={simulateFailure}
-      />
 
       {/* Full-Screen Payment Processing & Order Verification Overlay */}
       {isVerifying && (

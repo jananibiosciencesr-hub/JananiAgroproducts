@@ -22,7 +22,7 @@ import { PesticideCard } from "@/components/shop/pesticide-card";
 import { WhatsAppIcon } from "@/components/ui/brand-icons";
 
 export const Route = createFileRoute("/diseases/$slug")({
-  head: ({ params }) => {
+  head: ({ params }: { params: { slug: string } }) => {
     const disease = getDiseaseById(params.slug);
     const diseaseName = disease?.name || "Crop Disease & Pest Control";
     const title = disease

@@ -116,7 +116,7 @@ function isProductSuitableForCrop(p: any, cropFilter: string): boolean {
 }
 
 export const Route = createFileRoute("/categories/$slug")({
-  head: ({ params }) => {
+  head: ({ params }: { params: { slug: string } }) => {
     const cat = categories.find((c) => c.slug === params.slug);
     const catName = cat ? cat.name : "Agricultural Inputs";
     const title = `${catName} — Bio Inputs & Crop Protection | JANANI AGRO PRODUCTS`;
@@ -596,7 +596,7 @@ function CategoryDetailPage() {
       {/* Category Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryJsonLd).replace(/</g, "\\u003c") }}
       />
       {/* COMPACT CATEGORY HEADER & DIRECT PRODUCT DISPLAY */}
       <div className="border-b border-border/70 bg-gradient-to-b from-emerald-950/10 via-background to-background pt-4 pb-3 px-4 sm:px-6 lg:px-8">

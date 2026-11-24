@@ -5,6 +5,9 @@ export type OrderStatus =
   | "Delivered"
   | "Cancelled"
   | "Return Requested"
+  | "Returned"
+  | "Exchange Requested"
+  | "Exchange Approved"
   | "Exchanged";
 
 export interface OrderItem {

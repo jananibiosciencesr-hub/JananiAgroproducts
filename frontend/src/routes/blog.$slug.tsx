@@ -5,7 +5,7 @@ import { posts, storyImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/blog/$slug")({
-  head: ({ params }) => {
+  head: ({ params }: { params: { slug: string } }) => {
     const p = posts.find((x) => x.slug === params.slug);
     const postTitle = p ? p.title : "Agronomy Field Guide";
     const title = `${postTitle} | JANANI AGRO PRODUCTS Journal`;
@@ -77,7 +77,7 @@ function BlogPostPage() {
     <div className="mx-auto max-w-4xl px-6 py-12">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd).replace(/</g, "\\u003c") }}
       />
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs text-muted-foreground">

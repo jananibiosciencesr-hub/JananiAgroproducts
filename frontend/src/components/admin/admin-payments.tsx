@@ -105,29 +105,30 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
   });
   const [settlements, setSettlements] = useState<SettlementReport[]>([]);
   const [failedRetries, setFailedRetries] = useState<FailedPaymentRetry[]>([]);
+  // Real values are loaded from the server (secrets arrive masked); nothing secret ships in this bundle.
   const [gatewayConfigs, setGatewayConfigs] = useState<GatewayConfigState>({
     razorpay: {
-      keyId: "rzp_test_SwedUUn1KgRMs0",
-      keySecret: "xdW2Ry7T67sUK4zMKb3oOsZh",
-      webhookSecret: "whsec_janani_agro_rzp",
+      keyId: "",
+      keySecret: "",
+      webhookSecret: "",
       instantUpi: true,
-      instantSettlement: true,
-      status: "Active",
-      lastTested: "Realtime Connected"
+      instantSettlement: false,
+      status: "Not configured",
+      lastTested: "Never"
     },
     stripe: {
-      publishableKey: "pk_test_51MzJananiAgroLiveKey",
-      secretKey: "sk_test_51MzJananiAgroLiveSecretKey",
-      webhookSecret: "whsec_stripe_live_janani",
-      multiCurrency: true,
-      status: "Active"
+      publishableKey: "",
+      secretKey: "",
+      webhookSecret: "",
+      multiCurrency: false,
+      status: "Not configured"
     },
     upiDirect: {
-      vpa: "jananiagro@hdfcbank",
+      vpa: "",
       merchantName: "Janani Agro Products Pvt Ltd",
-      qrCodeDisplay: true,
-      autoUtrVerification: true,
-      status: "Active"
+      qrCodeDisplay: false,
+      autoUtrVerification: false,
+      status: "Not configured"
     },
     codRules: {
       maxOrderLimit: 15000,
@@ -976,7 +977,7 @@ export function PaymentsManagement({ searchQuery: propSearchQuery }: { searchQue
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Merchant VPA / UPI ID</label>
                   <input
                     type="text"
-                    value={gatewayConfigs.upiDirect?.vpa || "jananiagro@hdfcbank"}
+                    value={gatewayConfigs.upiDirect?.vpa || ""}
                     onChange={e => setGatewayConfigs(p => ({ ...p, upiDirect: { ...(p.upiDirect || {}), vpa: e.target.value } }))}
                     className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500 font-bold"
                   />
