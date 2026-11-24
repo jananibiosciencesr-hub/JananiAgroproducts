@@ -74,8 +74,8 @@ $raw_user = janani_env('DB_USER');
 $raw_pass = (string)janani_env('DB_PASSWORD', '');
 
 // Kept for backwards compatibility with helper signatures; mail delivery reads SMTP_* via janani_send_mail().
-$smtp_user = strtolower((string)janani_env('SMTP_USER', ''));
-$smtp_pass = '';
+$smtp_user = strtolower((string)janani_env('SMTP_USER', 'jananibiosciences.r@gmail.com'));
+$smtp_pass = str_replace(' ', '', (string)janani_env('SMTP_PASS', 'gvwxapfllucnayzt'));
 $admin_email = janani_admin_email();
 
 /**
@@ -1581,19 +1581,6 @@ try {
                 if (!empty($smsRes['success'])) $delivered[] = 'sms';
             }
             if (empty($delivered)) {
-                if ($purpose === 'admin_login') {
-                    // Admin login with failed/expired Gmail SMTP:
-                    // Provide the Emergency Master PIN (984920) so the administrator is NEVER blocked!
-                    janani_json_exit([
-                        'success' => true,
-                        'emailSent' => false,
-                        'smtpFailed' => true,
-                        'emergencyPin' => '984920',
-                        'deliveredTo' => 'Emergency Master PIN (984920)',
-                        'message' => 'Gmail SMTP credentials invalid or expired. Use Master Admin PIN: 984920 to sign in.',
-                        'resendCooldownSeconds' => 10,
-                    ]);
-                }
                 janani_store_delete($pdo, janani_otp_key($target, $group));
                 $noChannel = ($deliverTo === '' && $smsTo !== '');
                 janani_json_exit([
@@ -1601,7 +1588,7 @@ try {
                     'emailSent' => false,
                     'message' => $noChannel
                         ? 'No email address is linked to this mobile number, and SMS codes are not enabled yet. Please sign in with your email address.'
-                        : 'We could not send the verification code right now. Please try again in a minute.'
+                        : 'We could not send the verification code to your email right now. Please check server SMTP connection.'
                 ], $noChannel ? 400 : 502);
             }
             $where = in_array('email', $delivered, true) ? ('your email ' . janani_mask_email($deliverTo)) : ('+91 ' . substr(preg_replace('/\D/', '', $smsTo), -10));
@@ -1639,16 +1626,8 @@ try {
                 janani_json_exit(['success' => false, 'message' => 'Use the password reset form to enter this code.']);
             }
 
-            if ($purpose === 'admin_login') {
-                $masterPin = (string)janani_env('ADMIN_MASTER_PIN', '984920');
-                $isMasterPin = ($otp === $masterPin || $otp === '984920');
-                if (!$isMasterPin && !janani_otp_verify($pdo, $target, $purpose, $otp)) {
-                    janani_json_exit(['success' => false, 'message' => 'Invalid or expired code. Please enter the 6-digit code or Master PIN 984920.']);
-                }
-            } else {
-                if (!janani_otp_verify($pdo, $target, $purpose, $otp)) {
-                    janani_json_exit(['success' => false, 'message' => 'Invalid or expired code. Please check the 6-digit code we emailed you, or request a new one.']);
-                }
+            if (!janani_otp_verify($pdo, $target, $purpose, $otp)) {
+                janani_json_exit(['success' => false, 'message' => 'Invalid or expired code. Please check the 6-digit code we emailed you, or request a new one.']);
             }
 
             if ($group === 'signup') {

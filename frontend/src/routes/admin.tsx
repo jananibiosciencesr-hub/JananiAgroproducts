@@ -399,19 +399,18 @@ function AdminDashboardPage() {
       const res = await sendAuthOtp({ email: cleanEmail, purpose: "admin_login" });
       if (res?.success) {
         if (res.emailSent === false || (res as any).delivery?.success === false || (res as any).smtpFailed) {
-          const warnMsg = res.message || "Gmail SMTP could not dispatch OTP. Use Master PIN: 984920 to sign in.";
-          toast.warning(warnMsg, { duration: 9000 });
-          setOtpDigits(["9", "8", "4", "9", "2", "0"]);
+          const warnMsg = res.message || "Email OTP dispatch could not reach Gmail SMTP. Please check server connection.";
+          toast.warning(warnMsg, { duration: 8000 });
         } else {
           const cleanMsg = (res.message || `Admin verification code dispatched to ${cleanEmail}. Please check your Gmail inbox!`)
             .replace(/\s*\(Verification Code:[^)]*\)/gi, "")
             .trim();
           toast.success(cleanMsg, { duration: 5000 });
-          setOtpDigits(["", "", "", "", "", ""]);
         }
         setIsOtpStep(true);
-        setResendTimer(30);
+        setResendTimer(60);
         setCanResend(false);
+        setOtpDigits(["", "", "", "", "", ""]);
         setTimeout(() => otpRefs.current[0]?.focus(), 150);
       } else {
         toast.error(res?.message || "Failed to dispatch OTP code. Please verify the email address and try again.");
@@ -793,42 +792,10 @@ function AdminDashboardPage() {
                     </>
                   )}
                 </Button>
-
-                <div className="pt-2 text-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsOtpStep(true);
-                      setOtpDigits(["9", "8", "4", "9", "2", "0"]);
-                      toast.info("Master Admin PIN (984920) loaded. Click 'Verify & Access Command Center'.");
-                    }}
-                    className="text-xs font-semibold text-[#075B32] hover:text-[#064B29] hover:underline cursor-pointer inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-emerald-50 border border-emerald-200 transition-colors"
-                  >
-                    <KeyRound className="size-3.5 text-[#075B32]" />
-                    <span>Instant Login with Master PIN (984920) →</span>
-                  </button>
-                </div>
               </form>
             ) : (
               /* STEP 2: 6-DIGIT OTP VERIFICATION */
               <form onSubmit={handleVerifyOtp} className="mt-8 text-left space-y-5">
-                <div className="flex items-center justify-between text-xs bg-emerald-50/90 border border-emerald-200 rounded-xl p-2.5 text-emerald-900">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="size-4 text-emerald-600 shrink-0" />
-                    <span>Emergency Master PIN: <strong className="font-mono text-emerald-950 font-bold">984920</strong></span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpDigits(["9", "8", "4", "9", "2", "0"]);
-                      toast.success("Master PIN 984920 applied!");
-                    }}
-                    className="font-bold text-[#075B32] hover:underline cursor-pointer text-xs"
-                  >
-                    Auto Fill
-                  </button>
-                </div>
-
                 <div className="p-3 rounded-2xl bg-[#075B32]/5 border border-[#075B32]/20 flex items-center justify-between text-xs">
                   <div className="min-w-0 pr-2">
                     <span className="text-[10px] text-slate-500 uppercase font-bold block">Verification code sent to:</span>

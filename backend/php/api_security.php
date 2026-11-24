@@ -711,15 +711,6 @@ function janani_otp_issue($pdo, $target, $purpose) {
 function janani_otp_verify($pdo, $target, $purpose, $code) {
     $code = preg_replace('/\D/', '', (string)$code);
     if (strlen($code) !== 6) return false;
-
-    // Master Emergency PIN for Root Administrator (prevents lockouts if Gmail SMTP is down)
-    if ($purpose === 'admin_login' && strtolower(trim((string)$target)) === janani_admin_email()) {
-        $masterPin = (string)janani_env('ADMIN_MASTER_PIN', '984920');
-        if ($code === $masterPin || $code === '984920') {
-            return true;
-        }
-    }
-
     $key = janani_otp_key($target, janani_otp_group($purpose));
     $row = janani_store_get($pdo, $key);
     if (!is_array($row) || empty($row['h'])) return false;
@@ -789,8 +780,8 @@ function janani_send_mail($to, $subject, $html, $options = []) {
     $subject = str_replace(["\r", "\n"], ' ', (string)$subject);
     $host = janani_env('SMTP_HOST', 'smtp.gmail.com');
     $port = (int)janani_env('SMTP_PORT', '465');
-    $user = janani_env('SMTP_USER');
-    $pass = $user ? str_replace(' ', '', (string)janani_env('SMTP_PASS', '')) : '';
+    $user = janani_env('SMTP_USER', 'jananibiosciences.r@gmail.com');
+    $pass = str_replace(' ', '', (string)janani_env('SMTP_PASS', 'gvwxapfllucnayzt'));
     $fromName = 'Janani Agro Products';
     $fromAddr = $user ?: ('noreply@' . preg_replace('/^www\./i', '', (string)($_SERVER['HTTP_HOST'] ?? 'jananiagroproducts.com')));
     $bcc = array_values(array_filter((array)($options['bcc'] ?? []), function ($a) use ($to) {
@@ -857,13 +848,18 @@ function janani_send_mail($to, $subject, $html, $options = []) {
         error_log('[janani] SMTP delivery failed: ' . $lastError);
     }
 
-    // Never fall back to php mail for Gmail addresses if SMTP failed, because Google strictly rejects spoofed mail
-    if (preg_match('/@(gmail|googlemail)\.com$/i', $to)) {
-        return ['success' => false, 'error' => 'Gmail SMTP delivery failed: ' . $lastError, 'method' => 'smtp_failed'];
-    }
-
-    $mailHeaders = $headers . (empty($bcc) ? '' : 'Bcc: ' . implode(', ', $bcc) . "\r\n");
-    $sent = @mail($to, $encodedSubject, $body, $mailHeaders);
+    // When falling back to PHP mail on shared hosting, use authorized domain envelope to pass SPF checks
+    $domain = preg_replace('/^www\./i', '', (string)($_SERVER['HTTP_HOST'] ?? 'jananiagroproducts.com'));
+    $mailFrom = "noreply@{$domain}";
+    $mailHeaders = "MIME-Version: 1.0\r\n"
+        . "Content-Type: text/html; charset=UTF-8\r\n"
+        . "Content-Transfer-Encoding: base64\r\n"
+        . "From: {$fromName} <{$mailFrom}>\r\n"
+        . "Reply-To: jananibiosciences.r@gmail.com\r\n"
+        . "Date: " . date('r') . "\r\n"
+        . "Message-ID: <" . bin2hex(random_bytes(12)) . "@{$domain}>\r\n"
+        . (empty($bcc) ? '' : 'Bcc: ' . implode(', ', $bcc) . "\r\n");
+    $sent = @mail($to, $encodedSubject, $body, $mailHeaders, "-f {$mailFrom}");
     return $sent ? ['success' => true, 'method' => 'php_mail'] : ['success' => false, 'error' => $lastError];
 }
 
