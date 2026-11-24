@@ -120,6 +120,8 @@ export interface AdminProductItem {
   trending: boolean;
   isNewArrival: boolean;
   badge: string;
+  gstRate?: number;
+  gst_rate?: number;
   rating: number;
   reviewsCount: number;
   image: string;
@@ -747,6 +749,9 @@ export function ProductsManagement({ searchQuery, addTrigger }: ProductsManageme
                           <span className="text-[9px] text-muted-foreground font-semibold">
                             ({curUnit})
                           </span>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                            {p.gstRate ?? (p as any).gst_rate ?? 5}% GST
+                          </span>
                         </div>
 
                         {/* Interactive Variant Selection Pills */}
@@ -1222,6 +1227,9 @@ function ProductViewModal({
                       </span>
                     )}
                   </div>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full mt-1.5 inline-block">
+                    GST Rate: {product.gstRate ?? (product as any).gst_rate ?? 5}%
+                  </span>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Available Stock</span>
@@ -1423,6 +1431,7 @@ function ProductFormView({
     sku: "",
     category: defaultCategory,
     brand: "Janani Agro Products",
+    gstRate: "5",
     price: "450",
     originalPrice: "520",
     unit: "1 L",
@@ -1601,6 +1610,7 @@ function ProductFormView({
           ogImage: initialData.seo?.ogImage || ""
         },
         active: initialData.active !== undefined ? Boolean(initialData.active) : true,
+        gstRate: String((initialData as any).gstRate ?? (initialData as any).gst_rate ?? 5),
         featured: Boolean(initialData.featured),
         trending: Boolean(initialData.trending),
         isNewArrival: Boolean(initialData.isNewArrival)
@@ -1612,6 +1622,7 @@ function ProductFormView({
         sku: `JAP-${Math.floor(1000 + Math.random() * 9000)}`,
         category: defaultCategory,
         brand: "Janani Agro Products",
+        gstRate: "5",
         price: "",
         originalPrice: "",
         unit: "1 L",
@@ -1951,6 +1962,8 @@ function ProductFormView({
 
     const payload = {
       ...formData,
+      gstRate: Number(formData.gstRate) >= 0 ? Number(formData.gstRate) : 5,
+      gst_rate: Number(formData.gstRate) >= 0 ? Number(formData.gstRate) : 5,
       image: primaryImage,
       gallery: galleryImages,
       price: primaryPrice,
@@ -2067,7 +2080,7 @@ function ProductFormView({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">Category</label>
                 <select
@@ -2094,6 +2107,47 @@ function ProductFormView({
                     <option key={b} value={b}>{b}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-foreground">GST Rate (%) *</label>
+                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">Default: 5%</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={formData.gstRate}
+                    onChange={(e) => setFormData({ ...formData, gstRate: e.target.value })}
+                    placeholder="5"
+                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 pr-8 text-xs font-bold text-foreground outline-none focus:border-emerald-600"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                  {[
+                    { label: "0% (Exempt)", val: "0" },
+                    { label: "5% (Default)", val: "5" },
+                    { label: "12%", val: "12" },
+                    { label: "18%", val: "18" },
+                    { label: "28%", val: "28" },
+                  ].map((p) => (
+                    <button
+                      key={p.val}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, gstRate: p.val })}
+                      className={`text-[9px] px-1.5 py-0.5 rounded-lg font-bold border transition-all cursor-pointer ${
+                        String(formData.gstRate) === p.val
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+                          : "bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

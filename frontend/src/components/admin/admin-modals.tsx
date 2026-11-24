@@ -63,7 +63,8 @@ export function AddProductModal({
     sku: "",
     badge: "100% Organic",
     description: "",
-    unit: "1 L"
+    unit: "1 L",
+    gstRate: "5"
   });
 
   useEffect(() => {
@@ -87,7 +88,11 @@ export function AddProductModal({
 
         <form onSubmit={(e) => {
           e.preventDefault();
-          onSubmit(formData);
+          onSubmit({
+            ...formData,
+            gstRate: Number(formData.gstRate) || 5,
+            gst_rate: Number(formData.gstRate) || 5
+          });
           onClose();
         }} className="mt-4 space-y-3">
           <div>
@@ -162,14 +167,32 @@ export function AddProductModal({
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-foreground block mb-1">Certification Badge</label>
-            <input
-              value={formData.badge}
-              onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-              placeholder="e.g. 100% Bio-Certified / High CFU Count"
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none font-semibold"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">
+                GST Rate (%) <span className="text-emerald-600 font-semibold">(Default: 5%)</span>
+              </label>
+              <select
+                value={formData.gstRate}
+                onChange={(e) => setFormData({ ...formData, gstRate: e.target.value })}
+                className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs font-semibold outline-none"
+              >
+                <option value="5">5% (Default Organic Staples)</option>
+                <option value="0">0% (GST Exempted)</option>
+                <option value="12">12% (Agro Equipment & Specific Biologicals)</option>
+                <option value="18">18% (Specialty Crop Care)</option>
+                <option value="28">28% (Specialty / Luxury Inputs)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Certification Badge</label>
+              <input
+                value={formData.badge}
+                onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                placeholder="e.g. 100% Bio-Certified"
+                className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none font-semibold"
+              />
+            </div>
           </div>
 
           <div className="pt-3 border-t border-border flex justify-end gap-2">
@@ -218,7 +241,11 @@ export function AddCouponModal({
 
         <form onSubmit={(e) => {
           e.preventDefault();
-          onSubmit(formData);
+          onSubmit({
+            ...formData,
+            gstRate: Number(formData.gstRate) || 5,
+            gst_rate: Number(formData.gstRate) || 5
+          });
           onClose();
         }} className="mt-4 space-y-3">
           <div>
@@ -535,8 +562,8 @@ export function InvoiceModal({
                 <span className="font-mono">₹{order.total}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>GST (5% included):</span>
-                <span className="font-mono">₹{Math.round(order.total * 0.05)}</span>
+                <span>GST Tax (Included):</span>
+                <span className="font-mono">₹{order.gst_amount ?? order.gstAmount ?? Math.round(order.total * 0.05)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Shipping:</span>

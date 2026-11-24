@@ -287,8 +287,8 @@ export function OrderInvoiceModal({
                   <th className="p-3 w-16 text-center">Qty</th>
                   <th className="p-3 text-right">Rate</th>
                   <th className="p-3 text-right">Taxable</th>
-                  <th className="p-3 text-right">CGST (2.5%)</th>
-                  <th className="p-3 text-right">SGST (2.5%)</th>
+                  <th className="p-3 text-right">CGST</th>
+                  <th className="p-3 text-right">SGST</th>
                   <th className="p-3 text-right">Total</th>
                 </tr>
               </thead>
@@ -297,14 +297,22 @@ export function OrderInvoiceModal({
                   const hsn = item.hsn || getHsnCode(item.name);
                   const lineTotal = item.price * item.quantity;
                   const itemTaxable = lineTotal;
-                  const itemCgst = Math.round(lineTotal * 0.025);
-                  const itemSgst = Math.round(lineTotal * 0.025);
+                  const itemRate = Number(item.gstRate ?? (item as any).gst_rate ?? 5);
+                  const itemCgst = Math.round(lineTotal * (itemRate / 200));
+                  const itemSgst = Math.round(lineTotal * (itemRate / 200));
                   const itemTotal = lineTotal + itemCgst + itemSgst;
 
                   return (
                     <tr key={idx} className="hover:bg-slate-50/80">
                       <td className="p-3 text-center text-slate-400">{idx + 1}</td>
-                      <td className="p-3 font-semibold text-slate-800">{item.name}</td>
+                      <td className="p-3 font-semibold text-slate-800">
+                        {item.name}
+                        {itemRate !== 5 && (
+                          <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
+                            {itemRate}% GST
+                          </span>
+                        )}
+                      </td>
                       <td className="p-3 text-center font-mono text-slate-500">{hsn}</td>
                       <td className="p-3 text-center font-bold text-slate-700">{item.quantity}</td>
                       <td className="p-3 text-right font-mono text-slate-700">₹{item.price}</td>
@@ -334,11 +342,11 @@ export function OrderInvoiceModal({
                 <span className="font-mono font-semibold">₹{taxableValue}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Total CGST (2.5%):</span>
+                <span>Total CGST:</span>
                 <span className="font-mono text-emerald-700">+₹{cgst}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Total SGST (2.5%):</span>
+                <span>Total SGST:</span>
                 <span className="font-mono text-emerald-700">+₹{sgst}</span>
               </div>
               {resolvedDiscount > 0 && (

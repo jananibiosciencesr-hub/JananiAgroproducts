@@ -982,7 +982,7 @@ function ProductDetailPage() {
                 )}
               </div>
               <p className="text-xs text-gray-500 font-medium">
-                Inclusive of all taxes • Genuine bio-agricultural formulation
+                Inclusive of all taxes ({product.gstRate ?? (product as any).gst_rate ?? 5}% GST included) • Genuine bio-agricultural formulation
               </p>
             </div>
 

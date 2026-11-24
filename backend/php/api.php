@@ -726,6 +726,9 @@ function formatProductRecordForOutput($prod) {
             }
         }
     }
+    // Default GST rate to 5% if not configured
+    $prod['gst_rate'] = isset($prod['gst_rate']) && $prod['gst_rate'] !== null ? (float)$prod['gst_rate'] : 5.0;
+    $prod['gstRate'] = $prod['gst_rate'];
     return $prod;
 }
 
@@ -963,6 +966,7 @@ function ensureProductsTableSchema($pdo) {
             `active` TINYINT(1) DEFAULT 1,
             `status` VARCHAR(50) DEFAULT 'Active',
             `sku` VARCHAR(100) DEFAULT NULL,
+            `gst_rate` DECIMAL(5,2) DEFAULT '5.00',
             `video_url` MEDIUMTEXT DEFAULT NULL,
             `low_stock_threshold` INT(11) DEFAULT 20,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1001,6 +1005,7 @@ function ensureProductsTableSchema($pdo) {
             'active' => 'TINYINT(1) DEFAULT 1',
             'status' => "VARCHAR(50) DEFAULT 'Active'",
             'sku' => 'VARCHAR(100) NULL',
+            'gst_rate' => "DECIMAL(5,2) DEFAULT '5.00'",
             'low_stock_threshold' => 'INT(11) DEFAULT 20',
             'gallery' => 'LONGTEXT NULL',
             'variants' => 'LONGTEXT NULL',
@@ -1999,8 +2004,9 @@ try {
                     if (!empty($videoUrl) && strpos($videoUrl, 'data:video/') === 0) {
                         $videoUrl = saveBase64VideoFile($videoUrl, 'videos/products', 'prod-video-' . $slug);
                     }
+                    $gstRate = isset($body['gst_rate']) ? (float)$body['gst_rate'] : (isset($body['gstRate']) ? (float)$body['gstRate'] : 5.0);
 
-                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`, `gallery`, `variants`, `subtitle`, `benefits`, `specifications`, `crops`, `recommendedCrops`, `dosage`, `methodOfApplication`, `compatibility`, `storageNotice`, `faqs`, `video_url`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $pdo->prepare("INSERT INTO `products` (`slug`, `name`, `category_name`, `price`, `old_price`, `unit`, `stock`, `badge`, `image`, `description`, `origin`, `certification`, `active`, `status`, `sku`, `gallery`, `variants`, `subtitle`, `benefits`, `specifications`, `crops`, `recommendedCrops`, `dosage`, `methodOfApplication`, `compatibility`, `storageNotice`, `faqs`, `video_url`, `gst_rate`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $slug,
                         $name,
@@ -2029,7 +2035,8 @@ try {
                         $compat,
                         $storageNotice,
                         $faqs,
-                        $videoUrl
+                        $videoUrl,
+                        $gstRate
                     ]);
                     $newId = $pdo->lastInsertId();
                     $fetchStmt = $pdo->prepare("SELECT * FROM `products` WHERE `id` = ? LIMIT 1");
@@ -2269,6 +2276,12 @@ try {
                     if (!empty($body['video_url']) && strpos($body['video_url'], 'data:video/') === 0) {
                         $body['video_url'] = saveBase64VideoFile($body['video_url'], 'videos/products', 'prod-video-' . ($body['slug'] ?? $id));
                     }
+                    if (isset($body['gstRate']) && !isset($body['gst_rate'])) {
+                        $body['gst_rate'] = (float)$body['gstRate'];
+                    }
+                    if (isset($body['gst_rate'])) {
+                        $body['gst_rate'] = (float)$body['gst_rate'];
+                    }
 
                     $jsonFields = ['gallery', 'variants', 'benefits', 'specifications', 'crops', 'faqs'];
                     foreach ($jsonFields as $jf) {
@@ -2285,7 +2298,7 @@ try {
                         'description', 'origin', 'certification', 'active', 'status', 'sku',
                         'gallery', 'variants', 'subtitle', 'benefits', 'specifications',
                         'crops', 'recommendedCrops', 'dosage', 'methodOfApplication',
-                        'compatibility', 'storageNotice', 'faqs', 'video_url'
+                        'compatibility', 'storageNotice', 'faqs', 'video_url', 'gst_rate'
                     ];
 
                     ensureProductsTableSchema($pdo);
@@ -2296,6 +2309,13 @@ try {
                             $existingCols[strtolower($col['Field'])] = true;
                         }
                     } catch (Exception $e) {}
+
+                    if (!isset($existingCols['gst_rate'])) {
+                        try {
+                            $pdo->exec("ALTER TABLE `products` ADD COLUMN `gst_rate` DECIMAL(5,2) DEFAULT '5.00'");
+                            $existingCols['gst_rate'] = true;
+                        } catch (Exception $e) {}
+                    }
 
                     if (!isset($existingCols['variants'])) {
                         try {

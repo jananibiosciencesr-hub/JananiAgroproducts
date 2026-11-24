@@ -235,6 +235,8 @@ export type Product = {
   inStock: boolean;
   stockCount: number;
   badge?: string | undefined;
+  gstRate?: number | undefined;
+  gst_rate?: number | undefined;
   image: string;
   videoUrl?: string | undefined;
   video_url?: string | undefined;

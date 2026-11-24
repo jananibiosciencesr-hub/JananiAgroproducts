@@ -190,11 +190,11 @@ export function PaymentSummaryCard({
           {/* GST Added Breakdown */}
           <div className="pt-2 border-t border-dashed border-border text-[11px] space-y-1 text-muted-foreground/80">
             <div className="flex justify-between">
-              <span>CGST (2.5% on organic staples)</span>
+              <span>CGST (Central Tax)</span>
               <span className="font-semibold text-foreground">+₹{calculatedCgst}</span>
             </div>
             <div className="flex justify-between">
-              <span>SGST (2.5% on organic staples)</span>
+              <span>SGST (State Tax)</span>
               <span className="font-semibold text-foreground">+₹{calculatedSgst}</span>
             </div>
           </div>

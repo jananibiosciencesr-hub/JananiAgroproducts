@@ -758,7 +758,7 @@ export function PaymentPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>GST (5% Organic Staples)</span>
+                <span>Applicable GST Tax</span>
                 <span className="font-semibold text-foreground">
                   +₹{checkoutData?.gstAmount || Math.round((checkoutData?.subtotal || subtotal) * 0.05)}
                 </span>

@@ -203,10 +203,18 @@ export function CheckoutPage() {
     standardShippingFee
   );
 
-  // GST 5% (2.5% CGST + 2.5% SGST) added on top of items subtotal
-  const cgst = Number((subtotal * 0.025).toFixed(2));
-  const sgst = Number((subtotal * 0.025).toFixed(2));
-  const gstAmount = Number((cgst + sgst).toFixed(2));
+  // Dynamic GST calculation based on each item's configured product gstRate (default 5%)
+  const gstAmount = Number(
+    cartItems.reduce((acc: number, item: any) => {
+      const itemPrice = Number(item.price || item.product?.price || 0);
+      const itemQty = Number(item.qty || item.quantity || 1);
+      const rate = Number(item.product?.gstRate ?? item.product?.gst_rate ?? (item as any)?.gstRate ?? 5);
+      const itemGst = (itemPrice * itemQty * rate) / 100;
+      return acc + itemGst;
+    }, 0).toFixed(2)
+  );
+  const cgst = Number((gstAmount / 2).toFixed(2));
+  const sgst = Number((gstAmount - cgst).toFixed(2));
 
   // Net before gift card: Subtotal + GST + Shipping - Discount
   const grossPayable = Number(Math.max(0, subtotal + gstAmount + totalShippingCharges - couponDiscount).toFixed(2));
@@ -303,7 +311,11 @@ export function CheckoutPage() {
             price: i.price || i.product.price,
             quantity: i.qty || 1,
             image: i.variant?.image || i.product.image,
+            gstRate: i.product?.gstRate ?? i.product?.gst_rate ?? 5,
           })),
+          gstAmount,
+          cgst,
+          sgst,
           customer: {
             name: effectiveCustomerName,
             phone: effectiveCustomerPhone,
