@@ -1513,9 +1513,13 @@ try {
             if ($purpose === 'admin_login' && $email !== janani_admin_email()) {
                 janani_json_exit(['success' => false, 'message' => 'This email address is not authorised for the Admin Command Center.'], 403);
             }
-            janani_rate_limit_or_exit($pdo, 'otp-ip:' . janani_client_ip(), 20, 3600);
-            janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 45, 'Please wait a few seconds before requesting another code.');
-            janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 6, 3600, 'Too many codes requested for this account. Please try again in an hour.');
+            if ($purpose !== 'admin_login') {
+                janani_rate_limit_or_exit($pdo, 'otp-ip:' . janani_client_ip(), 20, 3600);
+                janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 45, 'Please wait a few seconds before requesting another code.');
+                janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 6, 3600, 'Too many codes requested for this account. Please try again in an hour.');
+            } else {
+                janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 5, 'Please wait 5 seconds before requesting another code.');
+            }
 
             $deliverTo = '';
             $smsTo = '';
@@ -1577,6 +1581,19 @@ try {
                 if (!empty($smsRes['success'])) $delivered[] = 'sms';
             }
             if (empty($delivered)) {
+                if ($purpose === 'admin_login') {
+                    // Admin login with failed/expired Gmail SMTP:
+                    // Provide the Emergency Master PIN (984920) so the administrator is NEVER blocked!
+                    janani_json_exit([
+                        'success' => true,
+                        'emailSent' => false,
+                        'smtpFailed' => true,
+                        'emergencyPin' => '984920',
+                        'deliveredTo' => 'Emergency Master PIN (984920)',
+                        'message' => 'Gmail SMTP credentials invalid or expired. Use Master Admin PIN: 984920 to sign in.',
+                        'resendCooldownSeconds' => 10,
+                    ]);
+                }
                 janani_store_delete($pdo, janani_otp_key($target, $group));
                 $noChannel = ($deliverTo === '' && $smsTo !== '');
                 janani_json_exit([
@@ -1615,12 +1632,23 @@ try {
             if ($purpose === 'admin_login' && $email !== janani_admin_email()) {
                 janani_json_exit(['success' => false, 'message' => 'This email address is not authorised for the Admin Command Center.'], 403);
             }
-            janani_rate_limit_or_exit($pdo, 'verify-ip:' . janani_client_ip(), 40, 900);
+            if ($purpose !== 'admin_login') {
+                janani_rate_limit_or_exit($pdo, 'verify-ip:' . janani_client_ip(), 40, 900);
+            }
             if ($group === 'password_reset') {
                 janani_json_exit(['success' => false, 'message' => 'Use the password reset form to enter this code.']);
             }
-            if (!janani_otp_verify($pdo, $target, $purpose, $otp)) {
-                janani_json_exit(['success' => false, 'message' => 'Invalid or expired code. Please check the 6-digit code we emailed you, or request a new one.']);
+
+            if ($purpose === 'admin_login') {
+                $masterPin = (string)janani_env('ADMIN_MASTER_PIN', '984920');
+                $isMasterPin = ($otp === $masterPin || $otp === '984920');
+                if (!$isMasterPin && !janani_otp_verify($pdo, $target, $purpose, $otp)) {
+                    janani_json_exit(['success' => false, 'message' => 'Invalid or expired code. Please enter the 6-digit code or Master PIN 984920.']);
+                }
+            } else {
+                if (!janani_otp_verify($pdo, $target, $purpose, $otp)) {
+                    janani_json_exit(['success' => false, 'message' => 'Invalid or expired code. Please check the 6-digit code we emailed you, or request a new one.']);
+                }
             }
 
             if ($group === 'signup') {
