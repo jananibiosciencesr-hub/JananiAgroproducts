@@ -441,13 +441,8 @@ article p,
   text-justify: inter-word !important;
 }
 
-/* Ensure descriptive body paragraphs in main and article sections are justified */
-main p:not(.text-center):not(.text-right):not(.text-left):not([class*="text-center"]):not([class*="text-right"]):not([class*="text-left"]):not(.flex),
-article p:not(.text-center):not(.text-right):not(.text-left):not([class*="text-center"]):not([class*="text-right"]):not([class*="text-left"]):not(.flex),
-section p:not(.text-center):not(.text-right):not(.text-left):not([class*="text-center"]):not([class*="text-right"]):not([class*="text-left"]):not(.flex) {
-  text-align: justify;
-  text-justify: inter-word;
-}
+/* UI paragraphs (cards, dashboards, checkout, hero text) keep their own alignment; only the editorial
+   content classes above are justified, otherwise short lines get large gaps between words. */
 
 /* Prevent unwanted word breaks and auto-hyphenation across UI headers and descriptions */
 p,

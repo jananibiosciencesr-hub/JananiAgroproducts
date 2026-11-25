@@ -2241,7 +2241,35 @@ function janani_wallet_transactions($credits) {
 }
 
 /** Everything the wallet screens and checkout need for one customer. */
+/**
+ * Safety net: if a customer's one and only (non-cancelled) order is recent and earned the first-order credit but no
+ * credit exists yet (for example the reward step failed while the wallet tables were still missing), issue it now.
+ */
+function janani_backfill_first_order_reward($pdo, $user) {
+    try {
+        if (!$user || janani_is_staff_user($user)) return;
+        $email = janani_is_placeholder_email($user['email'] ?? '') ? '' : strtolower(trim((string)$user['email']));
+        $st = $pdo->prepare("SELECT * FROM `orders` WHERE (`customer_id` = ? OR (? != '' AND LOWER(`customer_email`) = ?))
+            AND (`order_status` IS NULL OR `order_status` NOT IN ('Cancelled', 'Payment Failed'))
+            AND (`payment_status` IS NULL OR `payment_status` NOT IN ('Refunded', 'Refund Pending', 'Cancelled', 'Failed'))
+            ORDER BY `created_at` ASC LIMIT 2");
+        $st->execute([(string)$user['id'], $email, $email]);
+        $orders = $st->fetchAll(PDO::FETCH_ASSOC);
+        if (count($orders) !== 1) return;
+        $order = $orders[0];
+        $placedTs = strtotime((string)($order['order_date'] ?? ''));
+        if ($placedTs && $placedTs < time() - JANANI_CREDIT_VALIDITY_DAYS * 86400) return;
+        $productsValue = round((float)$order['subtotal'] - (float)($order['coupon_discount'] ?? 0), 2);
+        if ($productsValue < JANANI_CREDIT_MIN_ORDER_VALUE) return;
+        if (!janani_first_order_reward_eligible($pdo, $user, $order['number'])) return;
+        janani_grant_first_order_reward($pdo, $user, $order);
+    } catch (Throwable $e) {
+        error_log('[janani] first-order reward backfill: ' . $e->getMessage());
+    }
+}
+
 function janani_wallet_summary($pdo, $user) {
+    janani_backfill_first_order_reward($pdo, $user);
     janani_expire_wallet_credits($pdo, (string)$user['id']);
     $st = $pdo->prepare("SELECT * FROM `wallet_credits` WHERE `user_id` = ? ORDER BY `issued_at` DESC LIMIT 200");
     $st->execute([(string)$user['id']]);
@@ -2321,9 +2349,13 @@ function janani_wallet_redemption($pdo, $user, $productsValue) {
 function janani_reward_skip_note($pdo, $order, $reason) {
     try {
         $notes = janani_json_field($order['admin_notes'] ?? null, []);
+        $text = 'First-order reward not issued: ' . $reason . '.';
+        foreach ($notes as $existingNote) {
+            if (is_array($existingNote) && ($existingNote['text'] ?? '') === $text) return;
+        }
         $notes[] = [
             'id' => 'NOTE-' . bin2hex(random_bytes(4)),
-            'text' => 'First-order reward not issued: ' . $reason . '.',
+            'text' => $text,
             'author' => 'System',
             'date' => date('d M Y, h:i A'),
         ];

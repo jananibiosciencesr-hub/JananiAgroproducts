@@ -362,18 +362,18 @@ export function OrderSuccessPage() {
           <h1 className="font-display text-xl sm:text-3xl font-extrabold text-foreground tracking-tight">
             Thank You, <span className="text-brand-leaf">{customerName}</span>!
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed text-center">
             Your payment was successful and your order is confirmed. Our team will start preparing your farm products shortly, and you can follow every update from your dashboard.
           </p>
         </div>
 
         {/* Quick Order Meta Bar - Fully Responsive, Never Breaks on Mobile */}
         <div className="w-full max-w-2xl mx-auto rounded-none bg-secondary/80 border border-border p-3 sm:p-4 text-left sm:text-center">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border">
             {/* Order Reference */}
-            <div className="flex sm:flex-col items-center justify-between sm:justify-center gap-1 px-1 sm:px-2 py-0.5 sm:py-0">
+            <div className="flex sm:flex-col items-center justify-between sm:justify-start gap-2 px-3 sm:px-4 py-3 sm:py-1">
               <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">Order Reference</span>
-              <div className="flex items-center gap-1.5 bg-background/90 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-border">
+              <div className="flex items-center gap-1.5 bg-background/90 px-3 h-9 rounded-none border border-border">
                 <strong className="font-mono text-xs sm:text-sm font-bold text-brand-leaf tracking-wider whitespace-nowrap">{orderNumber}</strong>
                 <button
                   type="button"
@@ -387,18 +387,18 @@ export function OrderSuccessPage() {
             </div>
 
             {/* Estimated Delivery */}
-            <div className="flex sm:flex-col items-center justify-between sm:justify-center gap-1 px-1 sm:px-2 pt-2 sm:pt-0 py-0.5 sm:py-0">
+            <div className="flex sm:flex-col items-center justify-between sm:justify-start gap-2 px-3 sm:px-4 py-3 sm:py-1">
               <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">Order Date</span>
-              <div className="flex items-center gap-1.5 text-foreground text-xs sm:text-sm font-bold">
+              <div className="flex items-center gap-1.5 text-foreground text-xs sm:text-sm font-bold h-9">
                 <Calendar className="size-3.5 sm:size-4 text-brand-gold shrink-0" />
                 <span className="whitespace-nowrap">{formattedDate}</span>
               </div>
             </div>
 
             {/* Payment Method */}
-            <div className="flex sm:flex-col items-center justify-between sm:justify-center gap-1 px-1 sm:px-2 pt-2 sm:pt-0 py-0.5 sm:py-0">
+            <div className="flex sm:flex-col items-center justify-between sm:justify-start gap-2 px-3 sm:px-4 py-3 sm:py-1">
               <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">Payment Mode</span>
-              <div className="flex items-center gap-1.5 text-foreground text-xs sm:text-sm font-bold">
+              <div className="flex items-center gap-1.5 text-foreground text-xs sm:text-sm font-bold h-9">
                 <BadgeCheck className="size-3.5 sm:size-4 text-brand-leaf shrink-0" />
                 <span className="whitespace-nowrap truncate max-w-[140px] sm:max-w-none">{paymentMethod}</span>
               </div>
