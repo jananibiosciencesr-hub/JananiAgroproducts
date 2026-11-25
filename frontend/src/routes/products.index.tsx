@@ -461,7 +461,7 @@ function ProductsPage() {
           <button
             type="button"
             onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer border shadow-2xs ${
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-semibold transition cursor-pointer border shadow-2xs ${
               isCategoryDropdownOpen
                 ? "bg-white border-[#075B32] ring-2 ring-[#075B32]/15 text-gray-900"
                 : selectedCategories.length > 0
@@ -514,7 +514,7 @@ function ProductsPage() {
 
           {/* Dropdown Options List with Checkboxes */}
           {isCategoryDropdownOpen && (
-            <div className="absolute z-40 left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl p-1.5 max-h-72 overflow-y-auto space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute z-40 left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-none shadow-xl p-1.5 max-h-72 overflow-y-auto space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
               {/* All Products Checkbox Option */}
               <label
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer select-none ${
@@ -680,7 +680,7 @@ function ProductsPage() {
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 xl:gap-10 items-start">
           {/* Left Sidebar (Desktop) - Sticky Filter Rail */}
           <aside className="hidden lg:block w-64 xl:w-72 2xl:w-80 shrink-0 lg:sticky lg:top-20 self-start z-10">
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
+            <div className="bg-white p-5 rounded-none border border-[#075B32]/20 shadow-none max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
               {filterSidebarContent}
             </div>
           </aside>
@@ -693,7 +693,7 @@ function ProductsPage() {
                 <button
                   type="button"
                   onClick={() => setIsMobileFilterOpen(true)}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition cursor-pointer bg-white shadow-2xs shrink-0"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-none border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#075B32] hover:border-[#075B32] transition cursor-pointer bg-white shadow-2xs shrink-0"
                 >
                   <Filter className="size-3.5 text-[#075B32]" />
                   <span>Filters</span>
@@ -756,7 +756,7 @@ function ProductsPage() {
             {/* Active Filters Pills */}
             {(selectedCategories.length > 0 || selectedCrops.length > 0 || appliedMaxPrice < 6000 || searchQuery) && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-gray-400 tracking-wide">
                   Filters:
                 </span>
                 {selectedCategories.map((cat) => (
@@ -813,7 +813,7 @@ function ProductsPage() {
               </div>
             ) : (
               /* Empty State */
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center space-y-3">
+              <div className="rounded-none border border-dashed border-gray-200 bg-gray-50 p-12 text-center space-y-3">
                 <PackageX className="size-10 text-gray-400 mx-auto" />
                 <h3 className="text-lg font-bold text-gray-800">No matching agro products found</h3>
                 <p className="text-xs text-gray-500 max-w-sm mx-auto">
@@ -821,7 +821,7 @@ function ProductsPage() {
                 </p>
                 <button
                   onClick={handleClearFilters}
-                  className="bg-[#075B32] text-white text-xs font-bold px-4 py-2 rounded-xl"
+                  className="bg-[#075B32] text-white text-xs font-bold px-4 py-2 rounded-none"
                 >
                   Reset All Filters
                 </button>
@@ -844,14 +844,14 @@ function ProductsPage() {
                 {/* Right / Center: Premium Rounded Dock */}
                 <nav
                   aria-label="Products pagination"
-                  className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-white border border-gray-200/90 shadow-sm"
+                  className="inline-flex items-center gap-1.5 p-1.5 rounded-none bg-white border border-gray-200/90 shadow-sm"
                 >
                   {/* Previous Button */}
                   <button
                     type="button"
                     onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/70 border border-transparent hover:border-emerald-200/60 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 cursor-pointer select-none active:scale-95"
+                    className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-none text-xs font-bold text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/70 border border-transparent hover:border-emerald-200/60 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 cursor-pointer select-none active:scale-95"
                     aria-label="Previous Page"
                   >
                     <ChevronLeft className="size-4 shrink-0 transition-transform group- text-gray-500 group-hover:text-[#075B32]" />
@@ -868,7 +868,7 @@ function ProductsPage() {
                           key={pNum}
                           type="button"
                           onClick={() => handlePageChange(pNum)}
-                          className={`size-9 sm:size-10 rounded-xl font-bold font-mono text-xs flex items-center justify-center transition-all duration-200 cursor-pointer select-none active:scale-95 ${
+                          className={`size-9 sm:size-10 rounded-none font-bold font-mono text-xs flex items-center justify-center transition-all duration-200 cursor-pointer select-none active:scale-95 ${
                             isActive
                               ? "bg-gradient-to-br from-[#075B32] via-[#064e2b] to-[#043d21] text-white shadow-md shadow-[#075B32]/30 ring-2 ring-[#075B32]/30 scale-105 font-black"
                               : "bg-white text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/80 border border-gray-200 hover:border-[#075B32]/40 shadow-2xs"
@@ -887,7 +887,7 @@ function ProductsPage() {
                     type="button"
                     onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/70 border border-transparent hover:border-emerald-200/60 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 cursor-pointer select-none active:scale-95"
+                    className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-none text-xs font-bold text-gray-700 hover:text-[#075B32] hover:bg-emerald-50/70 border border-transparent hover:border-emerald-200/60 disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 cursor-pointer select-none active:scale-95"
                     aria-label="Next Page"
                   >
                     <span className="hidden sm:inline font-semibold">Next</span>
@@ -900,7 +900,7 @@ function ProductsPage() {
         </div>
 
         {/* 4 Bottom Trust Badges (Horizontal Card matching mockup) */}
-        <section className="mt-14 mb-8 bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+        <section className="mt-14 mb-8 bg-white border border-gray-200 rounded-none p-6 sm:p-8 shadow-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {/* 1. Free Shipping */}
             <div className="flex items-center gap-3.5">
@@ -1005,7 +1005,7 @@ function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setIsMobileFilterOpen(false)}
-                className="w-full bg-[#075B32] hover:bg-[#064A29] active:scale-[0.99] text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full bg-[#075B32] hover:bg-[#064A29] active:scale-[0.99] text-white text-xs font-bold py-3 rounded-none shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>Show {sortedProducts.length} Results</span>
                 <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">

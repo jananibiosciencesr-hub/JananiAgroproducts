@@ -175,7 +175,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
   return (
     <article
       data-card="product"
-      className={`group relative overflow-hidden rounded-none border-0 bg-white shadow-none transition duration-300 hover:shadow-md flex flex-col justify-between ${
+      className={`group relative overflow-hidden rounded-none border border-[#075B32]/25 bg-white shadow-none transition duration-300 hover:border-[#075B32]/50 hover:shadow-md hover:shadow-[#075B32]/10 flex flex-col justify-between ${
         list ? "sm:grid sm:grid-cols-[220px_1fr]" : ""
       }`}
     >
@@ -227,8 +227,8 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
 
         {/* Top-Left Red Discount Badge - Sharp rectangular corners (rounded-none) */}
         <div className="absolute top-2 left-2 z-10">
-          <span className="bg-[#E53E3E] text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-none uppercase tracking-wider shadow-xs">
-            SAVE {discountVal}%
+          <span className="bg-[#E53E3E] text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-none tracking-wide shadow-xs">
+            Save {discountVal}%
           </span>
         </div>
 
@@ -264,16 +264,16 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
 
         {/* Bottom Center Pill on Image - 🔥 BESTSELLER */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap pointer-events-none">
-          <span className="inline-flex items-center gap-1 bg-[#064A29]/95 text-white text-[8px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-xs uppercase tracking-wider backdrop-blur-xs">
+          <span className="inline-flex items-center gap-1 bg-[#064A29]/95 text-white text-[8px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-xs tracking-wide backdrop-blur-xs">
             <span>🔥</span>
-            <span>{product.badge || "BESTSELLER"}</span>
+            <span>{product.badge || "Bestseller"}</span>
           </span>
         </div>
 
         {/* Out of stock overlay */}
         {!product.inStock && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3 text-center z-20">
-            <span className="bg-red-600 text-white px-2.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase rounded-none tracking-wider shadow-xs">
+            <span className="bg-red-600 text-white px-2.5 py-0.5 text-[10px] sm:text-xs font-bold rounded-none tracking-wide shadow-xs">
               Out of Stock
             </span>
           </div>
@@ -285,7 +285,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
         <div>
           {/* Category */}
           <div className="flex items-center justify-between gap-1">
-            <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#0B6B35] truncate">
+            <p className="text-[9px] sm:text-[10px] font-bold tracking-wide text-[#0B6B35] truncate">
               {product.category}
             </p>
             {product.origin && (
@@ -332,7 +332,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
 
           {/* Pack Size Selection Suggestions (1 L / 5 L) */}
           <div className="mt-2 pt-1.5 border-t border-gray-100">
-            <div className="flex items-center justify-between text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">
+            <div className="flex items-center justify-between text-[10px] text-gray-500 font-bold tracking-wide mb-1">
               <span>Pack Size</span>
               <span className="text-[#075B32] font-extrabold">{selectedVariant.label || selectedVariant.unit}</span>
             </div>
@@ -351,7 +351,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
                       e.stopPropagation();
                       setSelectedVariantId(v.id);
                     }}
-                    className={`py-1 px-1.5 rounded-sm border text-center transition cursor-pointer flex items-center justify-center gap-1 ${
+                    className={`py-1 px-1.5 rounded-none border text-center transition cursor-pointer flex items-center justify-center gap-1 ${
                       isSelected
                         ? "bg-[#075B32] text-white border-[#075B32] shadow-xs font-bold"
                         : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border-gray-200 font-medium"
@@ -372,7 +372,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
               <button
                 type="button"
                 onClick={handleDecrement}
-                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-md transition active:scale-90 cursor-pointer"
+                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-none transition active:scale-90 cursor-pointer"
                 aria-label="Decrease quantity"
               >
                 <Minus className="size-3.5" />
@@ -383,7 +383,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
               <button
                 type="button"
                 onClick={handleIncrement}
-                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-md transition active:scale-90 cursor-pointer"
+                className="size-7 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-none transition active:scale-90 cursor-pointer"
                 aria-label="Increase quantity"
               >
                 <Plus className="size-3.5" />
@@ -393,10 +393,10 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
             <button
               onClick={handleAddToCart}
               disabled={!product.inStock}
-              className="w-full bg-[#075B32] hover:bg-[#064A29] disabled:bg-gray-300 text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+              className="w-full bg-[#075B32] hover:bg-[#064A29] disabled:bg-gray-300 text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none tracking-wide transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
             >
               <ShoppingBag className="size-3.5 sm:size-4" />
-              <span>{product.inStock ? "ADD TO CART" : "OUT OF STOCK"}</span>
+              <span>{product.inStock ? "Add to Cart" : "Out of Stock"}</span>
             </button>
           )}
         </div>

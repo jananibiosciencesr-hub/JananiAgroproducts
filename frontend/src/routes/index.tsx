@@ -557,7 +557,7 @@ export function HomePage() {
                 return (
                   <div
                     key={prod.id}
-                    className="snap-start flex-none w-[calc(50%-5px)] max-w-[calc(50%-5px)] sm:w-[245px] sm:max-w-none flex flex-col justify-between rounded-2xl bg-[#f4f7f2] border border-[#075B32]/20 shadow-xs hover:border-[#075B32]/50 hover:shadow-lg hover:shadow-[#075B32]/10 transition-all duration-300 group overflow-hidden"
+                    className="snap-start flex-none w-[calc(50%-5px)] max-w-[calc(50%-5px)] sm:w-[245px] sm:max-w-none flex flex-col justify-between rounded-none bg-white border border-[#075B32]/25 shadow-none hover:border-[#075B32]/50 hover:shadow-md hover:shadow-[#075B32]/10 transition-all duration-300 group overflow-hidden"
                   >
                     {/* Bottle Image with natural backdrop */}
                     <div className="relative aspect-square w-full bg-white p-2 sm:p-2.5 overflow-hidden flex items-center justify-center">
