@@ -710,6 +710,13 @@ function janani_rate_limit($pdo, $bucket, $max, $windowSeconds) {
     }
 }
 
+/** Gives back a rate-limit slot (for example the resend cooldown when no code could be sent). */
+function janani_rate_limit_release($pdo, $bucket) {
+    try {
+        janani_store_delete($pdo, 'rl:' . hash('sha256', $bucket));
+    } catch (Throwable $e) {}
+}
+
 function janani_rate_limit_or_exit($pdo, $bucket, $max, $windowSeconds, $message = 'Too many attempts. Please wait a few minutes and try again.') {
     if (!janani_rate_limit($pdo, $bucket, $max, $windowSeconds)) {
         janani_json_exit(['success' => false, 'rateLimited' => true, 'message' => $message], 429);

@@ -1641,15 +1641,14 @@ try {
             if ($purpose === 'admin_login' && !janani_admin_login_allowed($pdo, $email)) {
                 janani_json_exit(['success' => false, 'message' => 'This email address does not have access to the Admin Command Center.'], 403);
             }
+            // The per-address cooldown / hourly limits are applied only once the request is valid (further below),
+            // so a rejected request (already registered, wrong details, mail failure) never blocks the next try.
             if ($purpose !== 'admin_login') {
                 janani_rate_limit_or_exit($pdo, 'otp-ip:' . janani_client_ip(), 20, 3600);
-                janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 45, 'Please wait a few seconds before requesting another code.');
-                janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 6, 3600, 'Too many codes requested for this account. Please try again in an hour.');
             } else {
                 janani_rate_limit_or_exit($pdo, 'admin-otp-ip:' . janani_client_ip(), 20, 3600);
-                janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 30, 'Please wait 30 seconds before requesting another code.');
-                janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 10, 3600, 'Too many codes requested. Please try again in an hour.');
             }
+            $cooldownBucket = 'otp-cooldown:' . $group . ':' . janani_normalize_target($target);
 
             $deliverTo = '';
             $smsTo = '';
@@ -1700,6 +1699,14 @@ try {
                 }
             }
 
+            if ($purpose !== 'admin_login') {
+                janani_rate_limit_or_exit($pdo, $cooldownBucket, 1, 45, 'Please wait a few seconds before requesting another code.');
+                janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 6, 3600, 'Too many codes requested for this account. Please try again in an hour.');
+            } else {
+                janani_rate_limit_or_exit($pdo, $cooldownBucket, 1, 30, 'Please wait 30 seconds before requesting another code.');
+                janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 10, 3600, 'Too many codes requested. Please try again in an hour.');
+            }
+
             $code = janani_otp_issue($pdo, $target, $purpose);
             $delivered = [];
             if ($deliverTo !== '') {
@@ -1712,6 +1719,7 @@ try {
             }
             if (empty($delivered)) {
                 janani_store_delete($pdo, janani_otp_key($target, $group));
+                janani_rate_limit_release($pdo, $cooldownBucket); // nothing was sent, so let the customer retry right away
                 $noChannel = ($deliverTo === '' && $smsTo !== '');
                 janani_json_exit([
                     'success' => false,
