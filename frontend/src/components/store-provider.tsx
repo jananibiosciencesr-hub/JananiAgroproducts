@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
-import { products, products as initialProducts, categories as initialCategories, isGroceryCategory, type Product, parseCartItems } from "@/lib/catalog";
+import { products, products as initialProducts, categories as initialCategories, isGroceryCategory, type Product, parseCartItems, normalizeVariantKey } from "@/lib/catalog";
 import { type AuthUser, type UserPreferences, saveOnboardingPreferences, getProducts, getCategories, updateUserProfileApi, getUserAddressKey } from "@/lib/api";
 
 type StoreContextValue = {
@@ -809,7 +809,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         if (!prod || quantity <= 0) return;
 
-        const normalizedVariantId = vId.toLowerCase().includes("5") ? "5l" : "1l";
+        const normalizedVariantId = normalizeVariantKey(vId);
         // Preserve baseId so cards bound to static product.id (e.g. 3) or slug match instantly
         const cartKey = `${baseId}__${normalizedVariantId}`;
 
@@ -837,7 +837,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             baseId = parts[0]!;
             vId = parts[1] || "1l";
           }
-          const canonicalVariantId = vId.toLowerCase().includes("5") ? "5l" : "1l";
+          const canonicalVariantId = normalizeVariantKey(vId);
           const canonicalKey = `${baseId}__${canonicalVariantId}`;
 
           delete next[keyStr];
@@ -862,7 +862,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             baseId = parts[0]!;
             vId = parts[1] || "1l";
           }
-          const canonicalKey = `${baseId}__${vId.toLowerCase().includes("5") ? "5l" : "1l"}`;
+          const canonicalKey = `${baseId}__${normalizeVariantKey(vId)}`;
 
           delete next[keyStr];
           delete next[canonicalKey];
@@ -956,7 +956,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           products.find((p) => String(p.id) === baseId || (!isNaN(baseNum) && Number(p.id) === baseNum) || p.slug === baseId);
 
         const canonicalProdId = prod ? String(prod.id) : baseId;
-        const normalizedVariantId = vId.toLowerCase().includes("5") ? "5l" : "1l";
+        const normalizedVariantId = normalizeVariantKey(vId);
         const cartKey = `${baseId}__${normalizedVariantId}`;
 
         setCart((current) => ({ ...current, [cartKey]: (current[cartKey] ?? 0) + quantity }));

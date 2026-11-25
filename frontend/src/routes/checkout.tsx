@@ -27,6 +27,7 @@ import {
 import { OrderNotesCard } from "@/components/checkout/order-notes-card";
 import { PaymentSummaryCard } from "@/components/checkout/payment-summary-card";
 import { MobileCheckoutBar } from "@/components/checkout/mobile-checkout-bar";
+import { saveDeliveryPincode, useDeliveryQuote } from "@/lib/delivery";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -204,7 +205,31 @@ export function CheckoutPage() {
   }, [cartItems]);
 
   // Financial Calculations
-  const standardShippingFee = subtotal >= 799 || subtotal === 0 ? 0 : 60;
+  // Delivery charge: the server prices the delivery address pincode x cart weight (admin delivery rules)
+  const {
+    quote: deliveryQuote,
+    loading: deliveryLoading,
+    error: deliveryError,
+  } = useDeliveryQuote(selectedAddress?.pincode || "", cartItems);
+  const deliveryReady = !!selectedAddress && !deliveryLoading && !deliveryError && !!deliveryQuote && deliveryQuote.ok && deliveryQuote.known;
+  const deliveryStatus: "ready" | "loading" | "blocked" | "missing" = !selectedAddress
+    ? "missing"
+    : deliveryLoading
+    ? "loading"
+    : deliveryError || (deliveryQuote && !deliveryQuote.ok)
+    ? "blocked"
+    : deliveryReady
+    ? "ready"
+    : "loading";
+  const deliveryMessage = deliveryError
+    ? "We could not calculate the delivery charge right now. Please try again."
+    : deliveryQuote && !deliveryQuote.ok
+    ? deliveryQuote.message || "Delivery is not available for this pincode."
+    : "";
+  const standardShippingFee = deliveryReady && deliveryQuote ? deliveryQuote.charge : 0;
+  useEffect(() => {
+    if (selectedAddress?.pincode) saveDeliveryPincode(selectedAddress.pincode);
+  }, [selectedAddress?.pincode]);
   const slotFee = 0;
   const totalShippingCharges = standardShippingFee;
 
@@ -252,11 +277,15 @@ export function CheckoutPage() {
     couponDiscount +
     walletDeduction +
     giftCardDeduction +
-    (subtotal >= 799 ? 60 : 0);
+    (deliveryReady && deliveryQuote?.free ? deliveryQuote.baseCharge : 0);
 
   // Handle Order Placement
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedAddress && !deliveryReady) {
+      toast.error(deliveryMessage || "Please wait while we calculate your delivery charge.");
+      return;
+    }
     if (!user) {
       toast.error("Please sign in to complete your order.");
       navigate({ to: "/login", search: { redirect: "/checkout" } as any });
@@ -781,6 +810,9 @@ export function CheckoutPage() {
             sgst={sgst}
             finalTotal={finalTotal}
             totalSavings={totalSavings}
+            deliveryStatus={deliveryStatus}
+            deliveryMessage={deliveryMessage}
+            deliveryFreeAbove={deliveryQuote?.freeAbove || 0}
             selectedAddress={selectedAddress}
             isSubmitting={isSubmitting}
             paymentMethod={paymentMethod}
@@ -802,7 +834,7 @@ export function CheckoutPage() {
         isSubmitting={isSubmitting}
         paymentMethod={paymentMethod}
         onPlaceOrder={handlePlaceOrder}
-        disabled={!selectedAddress || cartItems.length === 0}
+        disabled={!selectedAddress || cartItems.length === 0 || !deliveryReady}
       />
     </div>
   );

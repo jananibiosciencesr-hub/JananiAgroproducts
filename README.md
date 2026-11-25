@@ -91,3 +91,13 @@ result; Hostinger deploys the repository root.
 
 Never edit the root copies of `api.php`, `api_security.php`, `db_init.php` or `.htaccess` directly —
 edit `backend/php/` or `frontend/public/.htaccess` and rebuild.
+
+## Delivery charges
+
+Admin → **Delivery Charges** controls what customers pay for delivery:
+
+- A **default rule** for every pincode without its own rule (out of the box: ₹60, free above ₹799 - the previous behaviour).
+- Any number of **pincode rules**: many pincodes per rule, a price for each weight (e.g. 1 kg = ₹100, 2 kg = ₹150), an optional extra ₹ per additional kg beyond the last weight, a **free-delivery amount**, and Active / "We deliver here" switches.
+- Stored in the `settings` table (`delivery_charges`). The charge is always calculated on the server (`api.php?action=delivery-charges&mode=quote`, and inside the order quote), from the delivery address pincode, the cart weight and the products subtotal.
+- Cart weight comes from each product's pack size (`1 L` = 1 kg, `5 L` = 5 kg, `500 ml` = 0.5 kg).
+- The product page, cart and checkout all show the charge for the customer's pincode; checkout and payment use the same server quote, so totals cannot differ.

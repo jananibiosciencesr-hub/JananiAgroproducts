@@ -37,11 +37,13 @@ import {
   Heart,
   MessageSquarePlus
 } from "lucide-react";
-import { products, categories, type Product, type ProductVariant, formatProductName, getProductVariantImage, getVideoEmbedInfo } from "@/lib/catalog";
+import { products, categories, type Product, type ProductVariant, formatProductName, getProductVariantImage, getVideoEmbedInfo, normalizeVariantKey } from "@/lib/catalog";
 import { useStore } from "@/components/store-provider";
 import { getStorefrontReviews, createAdminReview } from "@/lib/api";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/product-card";
+import { DeliveryPincodeBox } from "@/components/delivery/delivery-pincode-box";
+import { DELIVERY_NOTICE, useDeliveryPincode, useDeliveryQuote } from "@/lib/delivery";
 
 export const Route = createFileRoute("/products/$slug")({
   head: ({ params }: { params: { slug: string } }) => {
@@ -129,7 +131,11 @@ function ProductDetailPage() {
       stock: v.stock !== undefined ? Number(v.stock) : (product.stockCount || 50),
       inStock: (v.stock !== undefined ? Number(v.stock) : (product.stockCount || 50)) > 0,
       image: v.image && typeof v.image === "string" && v.image.trim() ? v.image.trim() : undefined,
+      ...(v.exact ? { exact: true } : {}),
     }));
+
+    // Sizes configured in the admin product form are shown exactly as saved
+    if (vars.length > 0 && vars.some((v) => v.exact)) return vars;
 
     const has5L = vars.some((v) => {
       const u = (v.unit || v.label || v.name || "").toLowerCase();
@@ -286,6 +292,13 @@ function ProductDetailPage() {
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(defaultVariant);
   const [qty, setQty] = useState<number>(1);
+  // Delivery charge for the selected pack x quantity at the customer's pincode (server-calculated)
+  const [deliveryPin, setDeliveryPin] = useDeliveryPincode();
+  const pdpDeliveryItems = useMemo(
+    () => [{ product, variant: selectedVariant, variantId: selectedVariant?.id, qty }],
+    [product, selectedVariant, qty]
+  );
+  const { quote: pdpDeliveryQuote, loading: pdpDeliveryLoading, error: pdpDeliveryError } = useDeliveryQuote(deliveryPin, pdpDeliveryItems);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
@@ -403,7 +416,7 @@ function ProductDetailPage() {
     };
 
     // 1. Primary image for currently selected variant (1L bottle, 5L can, or custom uploaded variant photo)
-    const activeVarNormId = selectedVariant?.id?.toLowerCase().includes("5") || selectedVariant?.unit?.includes("5") ? "5l" : "1l";
+    const activeVarNormId = normalizeVariantKey(selectedVariant?.id);
     const activeVarImg = selectedVariant?.image || getProductVariantImage(product, selectedVariant?.id || selectedVariant?.unit || activeVarNormId);
     if (activeVarImg) {
       addImg(activeVarImg, `${product.name} - ${selectedVariant?.label || selectedVariant?.unit || 'Pack'}`);
@@ -453,7 +466,7 @@ function ProductDetailPage() {
     return list;
   }, [product, selectedVariant, resolvedVariants]);
 
-  const variantNormId = selectedVariant?.id?.toLowerCase().includes("5") || selectedVariant?.unit?.includes("5") ? "5l" : "1l";
+  const variantNormId = normalizeVariantKey(selectedVariant?.id);
   const canonicalCartKey = `${product.id}__${variantNormId}`;
   const cartQty =
     (cart[canonicalCartKey] ?? 0) +
@@ -475,7 +488,7 @@ function ProductDetailPage() {
     addToCart(product.id, qty, selectedVariant?.id);
     const variantLabel = selectedVariant?.label || (selectedVariant as any)?.name || product.unit || "Standard Pack";
     toast.success(`Added ${qty}x ${product.name} (${variantLabel}) to cart!`, {
-      description: `₹${(variantPrice * qty).toFixed(2)} • Quick checkout ready`,
+      description: `₹${(variantPrice * qty).toFixed(2)} • ${DELIVERY_NOTICE}`,
     });
   };
 
@@ -1126,6 +1139,17 @@ function ProductDetailPage() {
                   Buy Now
                 </button>
               </div>
+
+              {/* Delivery charge for this item at the customer's pincode */}
+              <DeliveryPincodeBox
+                pincode={deliveryPin}
+                onPincodeChange={setDeliveryPin}
+                quote={pdpDeliveryQuote}
+                loading={pdpDeliveryLoading}
+                error={pdpDeliveryError}
+                compact
+                scope="this item"
+              />
 
               {/* Trust Badges Bar */}
               <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100 text-center">

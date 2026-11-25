@@ -216,6 +216,8 @@ export type ProductVariant = {
   originalPrice?: number;
   stock?: number;
   image?: string;
+  /** set by the admin product form: this exact list of sizes is shown (nothing is added automatically) */
+  exact?: boolean;
 };
 
 export type Product = {
@@ -337,7 +339,10 @@ export function getProductVariantImage(
     }
 
     if (pVars.length > 0) {
-      const match = pVars.find((v: any) => {
+      const exactMatch = pVars.find(
+        (v: any) => v && [v.id, v.unit, v.name, v.label, v.sku].some((x) => String(x || "").toLowerCase().trim() === normKey)
+      );
+      const match = exactMatch || pVars.find((v: any) => {
         if (!v) return false;
         const vid = String(v.id || "").toLowerCase().trim();
         const vunit = String(v.unit || "").toLowerCase().trim();
@@ -411,7 +416,11 @@ export function resolveProductVariants(product: Product): ProductVariant[] {
     stock: v.stock !== undefined ? Number(v.stock) : (product.stockCount || 50),
     inStock: (v.stock !== undefined ? Number(v.stock) : (product.stockCount || 50)) > 0,
     image: v.image && typeof v.image === "string" && v.image.trim() ? v.image.trim() : undefined,
+    ...(v.exact ? { exact: true } : {}),
   }));
+
+  // Sizes configured in the admin product form are used exactly as saved (no automatic 1 L / 5 L packs)
+  if (vars.length > 0 && vars.some((v) => v.exact)) return vars;
 
   const has5L = vars.some((v) => {
     const u = (v.unit || v.label || v.name || "").toLowerCase();
@@ -560,6 +569,17 @@ export type CartParsedItem = {
  * Parses cart keys (composite e.g. "1__5l" or legacy e.g. "1" or "harit") into deduplicated,
  * variant-accurate cart items with accurate 1L/5L pricing and unit labels.
  */
+/** Cart key part for a variant: its own id, lowercased ("1l" / "5l" for the classic packs, "250ml", "25kg", ...). */
+export function normalizeVariantKey(id: string | undefined | null): string {
+  const s = String(id ?? "").trim().toLowerCase();
+  return s || "1l";
+}
+
+function isLitrePack(v: { unit?: string; label?: string; name?: string }, litres: number): boolean {
+  const re = new RegExp(`(^|[^0-9.])${litres}\\s*(l|ltr|litre|liter)s?\\b`, "i");
+  return [v.unit, v.label, v.name].some((x) => re.test(String(x || "")));
+}
+
 export function parseCartItems(
   cart: Record<string | number, number>,
   allProducts: Product[]
@@ -589,17 +609,11 @@ export function parseCartItems(
     if (!prod) continue;
 
     const variants = resolveProductVariants(prod);
+    const vKeyLower = variantId.toLowerCase();
     const matchedVariant =
-      variants.find(
-        (v) =>
-          v.id.toLowerCase() === variantId.toLowerCase() ||
-          (variantId === "5l" && (v.unit.includes("5") || v.label.includes("5") || v.id.includes("5")))
-      ) ||
-      variants.find(
-        (v) =>
-          variantId === "1l" &&
-          (v.unit.includes("1") || v.label.includes("1") || v.id.includes("1"))
-      ) ||
+      variants.find((v) => v.id.toLowerCase() === vKeyLower) ||
+      (vKeyLower === "5l" ? variants.find((v) => isLitrePack(v, 5)) : undefined) ||
+      (vKeyLower === "1l" ? variants.find((v) => isLitrePack(v, 1)) : undefined) ||
       variants[0] || {
         id: variantId,
         label: variantId === "5l" ? "5 L" : "1 L",
@@ -614,7 +628,7 @@ export function parseCartItems(
       matchedVariant.image = getProductVariantImage(prod, variantId);
     }
 
-    const normalizedVariantId = matchedVariant.id.toLowerCase().includes("5") || matchedVariant.unit.includes("5") ? "5l" : "1l";
+    const normalizedVariantId = normalizeVariantKey(matchedVariant.id);
     // Group identical items together by slug and variant so quantities combine smoothly
     const groupKey = `${prod.slug || prod.id}__${normalizedVariantId}`;
     // Retain the caller's key format so key lookups in product-card and cart are guaranteed to match

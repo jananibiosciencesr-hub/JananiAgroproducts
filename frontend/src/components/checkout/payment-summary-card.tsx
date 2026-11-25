@@ -39,6 +39,10 @@ interface PaymentSummaryCardProps {
   finalTotal: number;
   totalSavings: number;
   selectedAddress: ShippingAddress | null;
+  /** state of the server-calculated delivery charge for the selected address */
+  deliveryStatus?: "ready" | "loading" | "blocked" | "missing";
+  deliveryMessage?: string;
+  deliveryFreeAbove?: number;
   selectedSlot?: DeliverySlot | null;
   isSubmitting: boolean;
   paymentMethod?: "upi" | "card" | "cod";
@@ -61,6 +65,9 @@ export function PaymentSummaryCard({
   finalTotal,
   totalSavings,
   selectedAddress,
+  deliveryStatus = "ready",
+  deliveryMessage = "",
+  deliveryFreeAbove = 0,
   selectedSlot,
   isSubmitting,
   paymentMethod,
@@ -134,21 +141,31 @@ export function PaymentSummaryCard({
 
           <div className="flex justify-between">
             <span className="flex items-center gap-1">
-              Standard Delivery
-              {subtotal >= 799 && (
-                <span className="text-[9px] bg-brand-leaf/15 text-brand-leaf px-1.5 py-0.2 rounded font-bold uppercase">
-                  FREE OVER ₹799
+              Delivery Charges
+              {deliveryFreeAbove > 0 && (
+                <span className="text-[9px] bg-brand-leaf/15 text-brand-leaf px-1.5 py-0.2 rounded font-bold">
+                  Free above ₹{deliveryFreeAbove}
                 </span>
               )}
             </span>
             <span className="font-semibold text-foreground">
-              {shippingFee === 0 ? (
+              {deliveryStatus === "missing" ? (
+                <span className="text-amber-700">Select address</span>
+              ) : deliveryStatus === "loading" ? (
+                <span className="text-muted-foreground">Calculating…</span>
+              ) : deliveryStatus === "blocked" ? (
+                <span className="text-red-700">Not available</span>
+              ) : shippingFee === 0 ? (
                 <span className="text-brand-leaf font-bold">FREE</span>
               ) : (
                 `₹${shippingFee}`
               )}
             </span>
           </div>
+
+          {deliveryStatus === "blocked" && deliveryMessage && (
+            <p className="text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 px-2.5 py-2">{deliveryMessage}</p>
+          )}
 
           {slotFee > 0 && (
             <div className="flex justify-between text-brand-gold">
@@ -224,7 +241,7 @@ export function PaymentSummaryCard({
         <Button
           type="button"
           onClick={onPlaceOrder}
-          disabled={isSubmitting || cartItemsCount === 0 || !selectedAddress}
+          disabled={isSubmitting || cartItemsCount === 0 || !selectedAddress || deliveryStatus !== "ready"}
           variant="gold"
           size="lg"
           className="w-full text-sm font-bold shadow-md h-12 rounded-2xl gap-2"

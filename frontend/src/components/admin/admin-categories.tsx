@@ -1243,10 +1243,10 @@ function CategoryFormView({
       </div>
 
       {/* Page Form Body - Unified Continuous Scrolling Container */}
-      <div className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="flex-1 w-full max-w-5xl mx-auto p-3 sm:p-4 lg:p-5 space-y-3">
         {/* SECTION 1: General Info & Hierarchy */}
-        <div id="cat-section-general" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+        <div id="cat-section-general" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-border/70">
             <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
               1
             </div>
@@ -1256,7 +1256,7 @@ function CategoryFormView({
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3">
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-foreground">Category Name *</label>
@@ -1275,7 +1275,7 @@ function CategoryFormView({
                   handleNameChange(e.target.value);
                 }}
                 placeholder="e.g. Bio-Fertilizers & Inoculants"
-                className={`h-10 w-full rounded-2xl border bg-background px-3 text-xs font-bold outline-none transition-colors ${
+                className={`h-9 w-full rounded-xl border bg-background px-3 text-xs font-bold outline-none transition-colors ${
                   nameTouched && formData.name.trim().length > 0 && !nameValidation.isValid
                     ? "border-red-500 focus:border-red-600 ring-1 ring-red-500/20"
                     : "border-border focus:border-emerald-600"
@@ -1296,11 +1296,11 @@ function CategoryFormView({
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                 placeholder="bio-fertilizers"
-                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-semibold text-emerald-600 outline-none"
+                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-mono font-semibold text-emerald-600 outline-none"
               />
             </div>
 
-            {formData.level !== "root" && (
+            {formData.level !== "root" ? (
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">
                   Select Parent Category ({formData.level === "sub" ? "Select Root Parent" : "Select Sub Parent"}) *
@@ -1308,7 +1308,7 @@ function CategoryFormView({
                 <select
                   value={formData.parentId || ""}
                   onChange={(e) => setFormData({ ...formData, parentId: e.target.value || null })}
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-semibold outline-none"
                 >
                   <option value="">-- Choose Parent --</option>
                   {parentCandidates.map((parent) => (
@@ -1318,24 +1318,43 @@ function CategoryFormView({
                   ))}
                 </select>
               </div>
+            ) : (
+              <div>
+                <label className="text-xs font-bold text-foreground block mb-1">Icon (emoji)</label>
+                <input
+                  value={formData.icon || ""}
+                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                  placeholder="🌾"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                />
+              </div>
             )}
 
             <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Sort Order Sequence</label>
+              <input
+                type="number"
+                value={formData.orderIndex}
+                onChange={(e) => setFormData({ ...formData, orderIndex: Number(e.target.value) })}
+                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+              />
+            </div>
+            <div className="sm:col-span-2">
               <label className="text-xs font-bold text-foreground block mb-1">Category Description</label>
               <textarea
-                rows={3}
+                rows={2}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Describe harvest origins, purity certifications, and organic cultivation standards..."
-                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600"
+                className="w-full rounded-xl border border-border bg-background p-2.5 text-xs outline-none focus:border-emerald-600"
               />
             </div>
           </div>
         </div>
 
         {/* SECTION 2: Media & Images */}
-        <div id="cat-section-media" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center justify-between pb-3 border-b border-border/70">
+        <div id="cat-section-media" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border/70">
             <div className="flex items-center gap-2.5">
               <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
                 2
@@ -1359,13 +1378,13 @@ function CategoryFormView({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2">
             {/* Upload from Computer / Device */}
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
                 📁 Option 1: Upload from Device
               </span>
-              <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-border hover:border-emerald-500 bg-muted/20 hover:bg-emerald-500/5 cursor-pointer transition-colors p-2 text-center group">
+              <label className="flex flex-col items-center justify-center h-20 rounded-xl border-2 border-dashed border-border hover:border-emerald-500 bg-muted/20 hover:bg-emerald-500/5 cursor-pointer transition-colors p-2 text-center group">
                 <Upload className="size-5 text-muted-foreground group-hover:text-emerald-600 mb-1 transition-transform group-hover:scale-110" />
                 <span className="text-xs font-bold text-foreground">Click to Browse Thumbnail</span>
                 <span className="text-[10px] text-muted-foreground">PNG, JPG, WEBP, SVG</span>
@@ -1383,7 +1402,7 @@ function CategoryFormView({
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
                 🔗 Option 2: Direct Image URL
               </span>
-              <div className="flex flex-col justify-between h-24">
+              <div className="flex flex-col justify-between h-20">
                 <input
                   value={formData.image}
                   onChange={(e) => {
@@ -1391,7 +1410,7 @@ function CategoryFormView({
                     setFormData((prev) => ({ ...prev, image: val, bannerImage: val }));
                   }}
                   placeholder="e.g. https://... or upload from device"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-mono text-[11px]"
                 />
                 <p className="text-[10px] text-muted-foreground">
                   Supports local paths, HTTPS links, or uploaded Base64 image data.
@@ -1424,8 +1443,8 @@ function CategoryFormView({
         </div>
 
         {/* SECTION 3: SEO Suite */}
-        <div id="cat-section-seo" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+        <div id="cat-section-seo" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-border/70">
             <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
               3
             </div>
@@ -1438,7 +1457,7 @@ function CategoryFormView({
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3">
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-bold text-foreground">SEO Meta Title</label>
@@ -1448,11 +1467,21 @@ function CategoryFormView({
                 value={formData.seo.metaTitle}
                 onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaTitle: e.target.value } })}
                 placeholder="Buy Pure Organic Rice Online | Janani Agro"
-                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
               />
             </div>
 
             <div>
+              <label className="text-xs font-bold text-foreground block mb-1">Meta Keywords</label>
+              <input
+                value={formData.seo.metaKeywords}
+                onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaKeywords: e.target.value } })}
+                placeholder="bio-fertilizer, trichoderma, humic, soil health"
+                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-bold text-foreground">SEO Meta Description</label>
                 <span className="text-[10px] text-muted-foreground">{(formData.seo.metaDescription || '').length}/160 chars</span>
@@ -1462,33 +1491,22 @@ function CategoryFormView({
                 value={formData.seo.metaDescription}
                 onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaDescription: e.target.value } })}
                 placeholder="Certified organic grains grown without chemical pesticides..."
-                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600"
+                className="w-full rounded-xl border border-border bg-background p-2.5 text-xs outline-none focus:border-emerald-600"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Meta Keywords</label>
-                <input
-                  value={formData.seo.metaKeywords}
-                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaKeywords: e.target.value } })}
-                  placeholder="bio-fertilizer, trichoderma, humic, soil health"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-foreground block mb-1">Canonical URL</label>
-                <input
-                  value={formData.seo.canonicalUrl}
-                  onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, canonicalUrl: e.target.value } })}
-                  placeholder="https://jananiagro.com/categories/..."
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono text-[11px] outline-none focus:border-emerald-600"
-                />
-              </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs font-bold text-foreground block mb-1">Canonical URL</label>
+              <input
+                value={formData.seo.canonicalUrl}
+                onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, canonicalUrl: e.target.value } })}
+                placeholder="https://jananiagro.com/categories/..."
+                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-mono text-[11px] outline-none focus:border-emerald-600"
+              />
             </div>
 
             {/* SERP Google Snippet Preview */}
-            <div className="rounded-2xl border border-border bg-muted/30 p-4 shadow-sm">
+            <div className="sm:col-span-2 rounded-xl border border-border bg-muted/30 p-3 shadow-sm">
               <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-1.5 flex items-center gap-1">
                 <Globe className="size-3 text-emerald-600" /> Google Search Result Preview:
               </span>
@@ -1506,8 +1524,8 @@ function CategoryFormView({
         </div>
 
         {/* SECTION 4: Storefront Toggles & Visibility */}
-        <div id="cat-section-settings" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+        <div id="cat-section-settings" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-border/70">
             <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
               4
             </div>
@@ -1517,9 +1535,9 @@ function CategoryFormView({
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-border bg-muted/40 p-4 space-y-4">
-              <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label className="flex items-center justify-between gap-3 cursor-pointer rounded-xl border border-border bg-muted/40 p-3">
                 <div>
                   <span className="text-xs font-bold text-foreground block">Active Visibility</span>
                   <span className="text-[11px] text-muted-foreground">Show category live on public navigation & filter menus</span>
@@ -1532,7 +1550,7 @@ function CategoryFormView({
                 />
               </label>
 
-              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+              <label className="flex items-center justify-between gap-3 cursor-pointer rounded-xl border border-border bg-muted/40 p-3">
                 <div>
                   <span className="text-xs font-bold text-foreground block">Featured on Homepage</span>
                   <span className="text-[11px] text-muted-foreground">Display prominently on the homepage category carousel</span>
@@ -1545,7 +1563,7 @@ function CategoryFormView({
                 />
               </label>
 
-              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+              <label className="flex items-center justify-between gap-3 cursor-pointer rounded-xl border border-border bg-muted/40 p-3">
                 <div>
                   <span className="text-xs font-bold text-foreground block">Trending Tag</span>
                   <span className="text-[11px] text-muted-foreground">Show glowing 'Trending Harvest' badge</span>
@@ -1557,16 +1575,6 @@ function CategoryFormView({
                   className="size-4 rounded text-emerald-600 focus:ring-emerald-500"
                 />
               </label>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-foreground block mb-1">Sort Order Sequence</label>
-              <input
-                type="number"
-                value={formData.orderIndex}
-                onChange={(e) => setFormData({ ...formData, orderIndex: Number(e.target.value) })}
-                className="h-10 w-32 rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
-              />
             </div>
           </div>
         </div>

@@ -216,9 +216,13 @@ export function parseProductVariants(
       oldPrice: origPrice,
       stock,
       inStock: stock > 0,
-      image: img || undefined
+      image: img || undefined,
+      ...(v.exact ? { exact: true } : {}),
     };
   });
+
+  // Sizes saved by the admin product form are used exactly as saved
+  if (mapped.some((v: any) => v.exact)) return mapped;
 
   const has5L = mapped.some((v: any) => {
     const u = (v.unit || v.label || v.name || "").toLowerCase();

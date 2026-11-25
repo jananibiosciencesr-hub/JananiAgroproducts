@@ -605,6 +605,12 @@ function janani_authorize_request($pdo, $action, $method) {
         case 'next-order-number':
             return;
 
+        case 'delivery-charges':
+            if (($_GET['mode'] ?? '') === 'quote') return; // public: the customer's own cart + pincode
+            if ($isRead) { janani_require_staff($pdo); return; }
+            janani_require_admin($pdo);
+            return;
+
         case 'products':
         case 'categories':
         case 'cms':
@@ -992,7 +998,11 @@ function janani_parse_product_variants($rawVariants, $fallbackPrice, $fallbackUn
         $rawVid = $v['id'] ?? null;
         $id = ($rawVid !== null && $rawVid !== '' && $rawVid !== 0 && $rawVid !== false) ? (string)$rawVid : ('VAR-' . ($idx + 1));
         $stock = isset($v['stock']) ? (int)$v['stock'] : (isset($v['stockCount']) ? (int)$v['stockCount'] : (int)$fallbackStock);
-        $mapped[] = ['id' => $id, 'name' => $nameOrLabel, 'label' => $nameOrLabel, 'unit' => $unit, 'price' => $price, 'oldPrice' => $orig, 'stock' => $stock];
+        $mapped[] = ['id' => $id, 'name' => $nameOrLabel, 'label' => $nameOrLabel, 'unit' => $unit, 'price' => $price, 'oldPrice' => $orig, 'stock' => $stock, 'exact' => !empty($v['exact'])];
+    }
+    // Sizes saved by the admin product form are used exactly as saved (no automatic 1 L / 5 L packs)
+    foreach ($mapped as $mv) {
+        if (!empty($mv['exact'])) return $mapped;
     }
 
     $has5L = false;
@@ -1031,7 +1041,11 @@ function janani_resolve_variants($product) {
             'price' => $vp,
             'oldPrice' => janani_num($v['oldPrice'] ?? null) ?: janani_js_round($vp * 1.2),
             'stock' => isset($v['stock']) ? (int)$v['stock'] : ($stock ?: 50),
+            'exact' => !empty($v['exact']),
         ];
+    }
+    foreach ($vars as $ev) {
+        if (!empty($ev['exact'])) return $vars;
     }
 
     $has5L = false;
@@ -1089,11 +1103,11 @@ function janani_match_variant($vars, $variantKey, $variantId) {
     $variantId = strtolower(trim((string)$variantId)) ?: '1l';
     foreach ($vars as $v) {
         if (strtolower($v['id']) === $variantId) return $v;
-        if ($variantId === '5l' && (strpos($v['unit'], '5') !== false || strpos($v['label'], '5') !== false || strpos($v['id'], '5') !== false)) return $v;
     }
-    if ($variantId === '1l') {
+    foreach (['5l' => 5, '1l' => 1] as $classicId => $litres) {
+        if ($variantId !== $classicId) continue;
         foreach ($vars as $v) {
-            if (strpos($v['unit'], '1') !== false || strpos($v['label'], '1') !== false || strpos($v['id'], '1') !== false) return $v;
+            if (preg_match('/(^|[^0-9.])' . $litres . '\s*(l|ltr|litre|liter)s?\b/i', (string)$v['unit'] . ' ' . (string)$v['label'])) return $v;
         }
     }
     return $vars[0] ?? null;
@@ -1262,11 +1276,238 @@ function janani_validate_coupon($pdo, $code, $subtotal, $shippingFee, $user = nu
     return ['ok' => true, 'discount' => round(max(0, $discount), 2), 'coupon' => $c, 'message' => "Coupon '{$c['code']}' applied."];
 }
 
+// ---------------------------------------------------------------------------
+// Delivery charges: admin-configured pincode rules x weight slabs, with a free-delivery threshold.
+// Stored in settings.delivery_charges. Pricing is always computed here (server side).
+// ---------------------------------------------------------------------------
+
+const JANANI_DELIVERY_SETTING_KEY = 'delivery_charges';
+
+function janani_delivery_default_config() {
+    // Same behaviour as before the feature existed: flat charge, free above the threshold.
+    return [
+        'enabled' => true,
+        'default' => [
+            'name' => 'All other pincodes',
+            'slabs' => [['kg' => 1.0, 'charge' => (float)JANANI_STANDARD_SHIPPING_FEE]],
+            'extraPerKg' => 0.0,
+            'freeAbove' => (float)JANANI_FREE_SHIPPING_THRESHOLD,
+            'deliverable' => true,
+        ],
+        'rules' => [],
+    ];
+}
+
+function janani_delivery_money($v) {
+    return round(max(0, (float)$v), 2);
+}
+
+/** Pack size text ("1 L", "500 ml", "2 kg") to shipping weight in kg. Liquids count 1 L = 1 kg. */
+function janani_unit_weight_kg($unit) {
+    $u = strtolower(trim((string)$unit));
+    if (preg_match('/(\d+(?:\.\d+)?)\s*(kgs?|kilograms?|kilos?|gms?|grams?|g|ltrs?|litres?|liters?|l|ml)\b/', $u, $m)) {
+        $n = (float)$m[1];
+        if (in_array($m[2], ['g', 'gm', 'gms', 'gram', 'grams', 'ml'], true)) return $n / 1000;
+        return $n;
+    }
+    return 1.0;
+}
+
+function janani_cart_weight_kg($lines) {
+    $w = 0.0;
+    foreach ((array)$lines as $l) {
+        $w += janani_unit_weight_kg($l['unit'] ?? '') * max(0, (int)($l['quantity'] ?? 0));
+    }
+    return round($w, 3);
+}
+
+function janani_delivery_clean_slabs($slabs, &$errors, $label) {
+    $out = [];
+    $seen = [];
+    foreach ((array)$slabs as $s) {
+        if (!is_array($s)) continue;
+        $kg = round((float)($s['kg'] ?? ($s['weight'] ?? 0)), 2);
+        if ($kg <= 0 || $kg > 1000) {
+            $errors[] = $label . ': weight must be between 0.01 and 1000 kg.';
+            continue;
+        }
+        if (isset($seen[(string)$kg])) {
+            $errors[] = $label . ': ' . $kg . ' kg is listed twice.';
+            continue;
+        }
+        $seen[(string)$kg] = true;
+        $out[] = ['kg' => $kg, 'charge' => janani_delivery_money($s['charge'] ?? ($s['price'] ?? 0))];
+    }
+    usort($out, function ($a, $b) { return $a['kg'] <=> $b['kg']; });
+    if (count($out) > 40) {
+        $errors[] = $label . ': at most 40 weight slabs are allowed.';
+        $out = array_slice($out, 0, 40);
+    }
+    return $out;
+}
+
+function janani_delivery_clean_rule($r, $label, &$errors, $withPincodes) {
+    $r = is_array($r) ? $r : [];
+    $rule = [
+        'name' => mb_substr(trim(strip_tags((string)($r['name'] ?? ''))), 0, 80),
+        'slabs' => janani_delivery_clean_slabs($r['slabs'] ?? [], $errors, $label),
+        'extraPerKg' => janani_delivery_money($r['extraPerKg'] ?? 0),
+        'freeAbove' => janani_delivery_money($r['freeAbove'] ?? 0),
+        'deliverable' => !array_key_exists('deliverable', $r) || !empty($r['deliverable']),
+    ];
+    if ($withPincodes) {
+        $id = (string)($r['id'] ?? '');
+        $rule['id'] = preg_match('/^[A-Za-z0-9_-]{1,40}$/', $id) ? $id : ('DR-' . bin2hex(random_bytes(4)));
+        $rule['city'] = mb_substr(trim(strip_tags((string)($r['city'] ?? ''))), 0, 60);
+        $rule['state'] = mb_substr(trim(strip_tags((string)($r['state'] ?? ''))), 0, 60);
+        $rule['active'] = !array_key_exists('active', $r) || !empty($r['active']);
+        $rawPins = $r['pincodes'] ?? [];
+        if (is_string($rawPins)) $rawPins = preg_split('/[\s,;]+/', trim($rawPins), -1, PREG_SPLIT_NO_EMPTY);
+        $pins = [];
+        foreach ((array)$rawPins as $p) {
+            $p = trim((string)$p);
+            if ($p === '') continue;
+            if (!preg_match('/^\d{6}$/', $p)) {
+                $errors[] = $label . ': "' . mb_substr($p, 0, 12) . '" is not a valid 6-digit pincode.';
+                continue;
+            }
+            $pins[$p] = true;
+        }
+        $rule['pincodes'] = array_keys($pins);
+        if (count($rule['pincodes']) === 0) $errors[] = $label . ': add at least one pincode.';
+        if ($rule['name'] === '') $rule['name'] = $rule['city'] !== '' ? $rule['city'] : 'Delivery rule';
+    } elseif ($rule['name'] === '') {
+        $rule['name'] = 'All other pincodes';
+    }
+    if ($rule['deliverable'] && count($rule['slabs']) === 0) {
+        $errors[] = $label . ': add at least one weight charge (for example 1 kg = ₹60).';
+    }
+    return $rule;
+}
+
+/** Validates and normalises the admin input. Returns the clean config; problems are appended to $errors. */
+function janani_delivery_normalize($input, &$errors) {
+    $errors = [];
+    $in = is_array($input) ? $input : [];
+    $cfg = [
+        'enabled' => !array_key_exists('enabled', $in) || !empty($in['enabled']),
+        'default' => janani_delivery_clean_rule($in['default'] ?? [], 'Default rule', $errors, false),
+        'rules' => [],
+    ];
+    $rules = is_array($in['rules'] ?? null) ? array_values($in['rules']) : [];
+    if (count($rules) > 300) {
+        $errors[] = 'At most 300 pincode rules are allowed.';
+        $rules = array_slice($rules, 0, 300);
+    }
+    $pinOwner = [];
+    $totalPins = 0;
+    foreach ($rules as $i => $r) {
+        $label = 'Rule ' . ($i + 1) . ((is_array($r) && !empty($r['name'])) ? ' (' . mb_substr(strip_tags((string)$r['name']), 0, 40) . ')' : '');
+        $rule = janani_delivery_clean_rule($r, $label, $errors, true);
+        if ($rule['active']) {
+            foreach ($rule['pincodes'] as $p) {
+                if (isset($pinOwner[$p])) {
+                    $errors[] = 'Pincode ' . $p . ' is in both "' . $pinOwner[$p] . '" and "' . $rule['name'] . '". A pincode can only be in one rule.';
+                } else {
+                    $pinOwner[$p] = $rule['name'];
+                }
+            }
+        }
+        $totalPins += count($rule['pincodes']);
+        $cfg['rules'][] = $rule;
+    }
+    if ($totalPins > 20000) $errors[] = 'Too many pincodes in total (maximum 20000).';
+    return $cfg;
+}
+
+function janani_delivery_config($pdo) {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+    $cfg = janani_delivery_default_config();
+    if ($pdo) {
+        try {
+            $st = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = ? LIMIT 1");
+            $st->execute([JANANI_DELIVERY_SETTING_KEY]);
+            $raw = $st->fetchColumn();
+            if ($raw) {
+                $errs = [];
+                $clean = janani_delivery_normalize(json_decode((string)$raw, true), $errs);
+                if (!$errs) $cfg = $clean;
+            }
+        } catch (Throwable $e) {}
+    }
+    return $cache = $cfg;
+}
+
+/**
+ * Delivery charge for a pincode, cart weight (kg) and products subtotal.
+ * Returns ok=false (with message) when the pincode is invalid or not deliverable; known=false when no pincode was given.
+ */
+function janani_delivery_charge($pdo, $pincode, $weightKg, $subtotal) {
+    $cfg = janani_delivery_config($pdo);
+    $pin = preg_replace('/\D/', '', (string)$pincode);
+    $weightKg = round(max(0.0, (float)$weightKg), 3);
+    $subtotal = round(max(0.0, (float)$subtotal), 2);
+    $base = ['ok' => true, 'known' => false, 'charge' => 0.0, 'baseCharge' => 0.0, 'free' => false, 'freeAbove' => 0.0, 'amountToFree' => 0.0,
+        'weightKg' => $weightKg, 'pincode' => $pin, 'city' => '', 'ruleName' => '', 'message' => ''];
+    if (empty($cfg['enabled'])) {
+        return array_merge($base, ['known' => true, 'free' => true, 'ruleName' => 'Delivery charges are switched off']);
+    }
+    if ($pin === '') return $base;
+    if (!preg_match('/^\d{6}$/', $pin)) {
+        return array_merge($base, ['ok' => false, 'message' => 'Please enter a valid 6-digit pincode.']);
+    }
+    $rule = $cfg['default'];
+    $city = '';
+    foreach ($cfg['rules'] as $r) {
+        if (!empty($r['active']) && in_array($pin, $r['pincodes'], true)) {
+            $rule = $r;
+            $city = (string)($r['city'] ?? '');
+            break;
+        }
+    }
+    if (empty($rule['deliverable'])) {
+        return array_merge($base, ['ok' => false, 'city' => $city, 'ruleName' => (string)$rule['name'],
+            'message' => 'Sorry, we do not deliver to pincode ' . $pin . ' yet.']);
+    }
+    if ($subtotal <= 0) {
+        return array_merge($base, ['known' => true, 'city' => $city, 'ruleName' => (string)$rule['name']]);
+    }
+    $w = max($weightKg, 0.01);
+    $slabs = $rule['slabs'];
+    $charge = null;
+    foreach ($slabs as $s) {
+        if ($s['kg'] + 1e-9 >= $w) { $charge = (float)$s['charge']; break; }
+    }
+    if ($charge === null) {
+        $last = end($slabs);
+        $charge = (float)$last['charge'] + ceil($w - (float)$last['kg'] - 1e-9) * (float)($rule['extraPerKg'] ?? 0);
+    }
+    $charge = round($charge, 2);
+    $freeAbove = (float)($rule['freeAbove'] ?? 0);
+    $free = $freeAbove > 0 && $subtotal >= $freeAbove;
+    return array_merge($base, [
+        'known' => true,
+        'charge' => $free ? 0.0 : $charge,
+        'baseCharge' => $charge,
+        'free' => $free,
+        'freeAbove' => $freeAbove,
+        'amountToFree' => ($freeAbove > 0 && !$free) ? round($freeAbove - $subtotal, 2) : 0.0,
+        'city' => $city,
+        'ruleName' => (string)$rule['name'],
+    ]);
+}
+
 /** Full server-side quote: the only source of truth for what a customer pays. */
-function janani_build_quote($pdo, $user, $items, $couponCode = '', $useWallet = false) {
+function janani_build_quote($pdo, $user, $items, $couponCode = '', $useWallet = false, $pincode = '') {
     $priced = janani_price_items($pdo, $items);
     $subtotal = $priced['subtotal'];
-    $shipping = ($subtotal >= JANANI_FREE_SHIPPING_THRESHOLD || $subtotal == 0) ? 0.0 : (float)JANANI_STANDARD_SHIPPING_FEE;
+    $weightKg = janani_cart_weight_kg($priced['lines']);
+    $delivery = janani_delivery_charge($pdo, $pincode, $weightKg, $subtotal);
+    if (empty($delivery['ok']) && $subtotal > 0) {
+        $priced['errors'][] = $delivery['message'];
+    }
+    $shipping = (!empty($delivery['ok']) && $subtotal > 0) ? (float)$delivery['charge'] : 0.0;
     // GST: each product at its own admin-configured rate (default 5%), split equally into CGST + SGST.
     // Must stay identical to the calculation in frontend/src/routes/checkout.tsx.
     $gstRaw = 0.0;
@@ -1307,6 +1548,8 @@ function janani_build_quote($pdo, $user, $items, $couponCode = '', $useWallet = 
         'sgst' => $sgst,
         'gstAmount' => $gst,
         'shippingFee' => $shipping,
+        'weightKg' => $weightKg,
+        'delivery' => $delivery,
         'couponCode' => $appliedCode,
         'couponDiscount' => $discount,
         'couponMessage' => $couponMessage,

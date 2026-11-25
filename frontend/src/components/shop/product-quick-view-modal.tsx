@@ -62,7 +62,7 @@ function QuickViewContent({ product, onClose }: { product: Product; onClose: () 
   const handleAddToCart = () => {
     addToCart(product.id, quantity, selectedVariant.id);
     toast.success(`Added ${quantity}x ${formatProductName(product.name)} (${selectedVariant.label || selectedVariant.unit}) to cart!`, {
-      description: `₹${selectedVariant.price * quantity} • ${selectedVariant.unit || selectedVariant.label}`,
+      description: `₹${selectedVariant.price * quantity} • ${selectedVariant.unit || selectedVariant.label} • Delivery charges applicable`,
     });
   };
 

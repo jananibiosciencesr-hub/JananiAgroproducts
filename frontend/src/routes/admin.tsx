@@ -38,6 +38,7 @@ import { CustomersManagement } from "@/components/admin/admin-customers";
 import { InquiriesManagement } from "@/components/admin/admin-inquiries";
 import { OrdersManagement } from "@/components/admin/admin-orders";
 import { ShippingManagement } from "@/components/admin/admin-shipping";
+import { DeliveryChargesManagement } from "@/components/admin/admin-delivery-charges";
 import { PaymentsManagement } from "@/components/admin/admin-payments";
 import { CouponsManagement } from "@/components/admin/admin-coupons";
 import { ReferralsManagement } from "@/components/admin/admin-referrals";
@@ -1026,6 +1027,7 @@ function AdminDashboardPage() {
           {activeTab === "referrals" && <ReferralsManagement searchQuery={adminSearch} />}
 
           {activeTab === "shipping" && <ShippingManagement searchQuery={adminSearch} />}
+          {activeTab === "delivery" && <DeliveryChargesManagement />}
 
           {activeTab === "reviews" && (
             <ReviewsManagement

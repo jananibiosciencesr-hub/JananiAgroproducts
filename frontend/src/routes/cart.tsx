@@ -31,6 +31,8 @@ import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
 import { getStorefrontCoupons, validateCoupon, normalizeCouponData, type AdminCoupon } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
+import { DeliveryPincodeBox } from "@/components/delivery/delivery-pincode-box";
+import { useDeliveryPincode, useDeliveryQuote } from "@/lib/delivery";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -300,7 +302,6 @@ export function CartPage() {
   }, [subtotal, appliedCouponObj]);
 
   // Shipping Calculation
-  const freeShippingThreshold = 799;
   const isFreeDeliveryCoupon =
     appliedCouponObj?.type === "free_shipping" ||
     Boolean(appliedCouponObj?.isFreeShipping) ||
@@ -309,8 +310,12 @@ export function CartPage() {
     appliedCoupon?.toLowerCase().includes("free shipping") ||
     appliedCoupon?.toUpperCase().includes("FREEDEL") ||
     appliedCoupon?.toUpperCase().includes("FREESHIP");
-  const shippingFee =
-    subtotal >= freeShippingThreshold || subtotal === 0 || isFreeDeliveryCoupon ? 0 : 60;
+  // Delivery charge comes from the server: admin pincode rule x cart weight (free above the admin threshold)
+  const [deliveryPin, setDeliveryPin] = useDeliveryPincode();
+  const { quote: deliveryQuote, loading: deliveryLoading, error: deliveryError } = useDeliveryQuote(deliveryPin, cartItems);
+  const deliveryKnown = !!deliveryQuote && deliveryQuote.ok && deliveryQuote.known;
+  const deliveryBlocked = !!deliveryQuote && !deliveryQuote.ok;
+  const shippingFee = isFreeDeliveryCoupon || !deliveryKnown ? 0 : deliveryQuote!.charge;
 
   const handleApplyCoupon = async (e?: React.FormEvent, directCode?: string) => {
     if (e) e.preventDefault();
@@ -663,6 +668,15 @@ export function CartPage() {
                 Price Summary
               </h2>
 
+              <DeliveryPincodeBox
+                pincode={deliveryPin}
+                onPincodeChange={setDeliveryPin}
+                quote={deliveryQuote}
+                loading={deliveryLoading}
+                error={deliveryError}
+                scope="your basket"
+              />
+
               <div className="space-y-3 text-xs sm:text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Bag Subtotal ({actualCartCount} {actualCartCount === 1 ? "item" : "items"})</span>
@@ -670,14 +684,22 @@ export function CartPage() {
                 </div>
 
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Estimated Delivery Fee</span>
+                  <span>Delivery Charges</span>
                   <span>
-                    {shippingFee === 0 ? (
+                    {!deliveryPin ? (
+                      <span className="text-amber-700 font-semibold">Enter pincode</span>
+                    ) : deliveryLoading ? (
+                      <span className="text-muted-foreground">Calculating…</span>
+                    ) : deliveryBlocked ? (
+                      <span className="text-red-700 font-semibold">Not available</span>
+                    ) : !deliveryKnown ? (
+                      <span className="text-amber-700 font-semibold">Enter pincode</span>
+                    ) : shippingFee === 0 ? (
                       <span className="text-emerald-700 font-bold">
                         {isFreeDeliveryCoupon ? "FREE (Coupon Applied)" : "FREE"}
                       </span>
                     ) : (
-                      <span className="font-mono">₹{shippingFee}</span>
+                      <span className="font-mono">+ ₹{shippingFee}</span>
                     )}
                   </span>
                 </div>
@@ -696,7 +718,7 @@ export function CartPage() {
                 </div>
 
                 <div className="border-t border-border pt-4 flex items-baseline justify-between text-base font-bold text-foreground">
-                  <span>Total Payable</span>
+                  <span>{deliveryKnown ? "Total Payable" : "Total (excl. delivery)"}</span>
                   <span className="text-primary font-display text-3xl font-black font-mono">
                     ₹{finalTotal}
                   </span>
@@ -912,17 +934,29 @@ export function CartPage() {
                 </div>
               </div>
 
+              {!deliveryKnown && !deliveryBlocked && (
+                <p className="text-[11px] text-muted-foreground text-center -mb-2">
+                  Delivery charges will be added to the total once your delivery pincode is confirmed.
+                </p>
+              )}
+
               {/* Checkout Button */}
-              <Button
-                asChild
-                size="lg"
-                variant="gold"
-                className="w-full h-14 rounded-2xl text-sm font-bold shadow-md hover:shadow-lg transition"
-              >
-                <Link to={user ? "/checkout" : "/login"} search={user ? undefined : ({ redirect: "/checkout" } as any)}>
-                  Proceed to Checkout <ArrowRight className="size-4 ml-1.5" />
-                </Link>
-              </Button>
+              {deliveryBlocked ? (
+                <Button size="lg" variant="gold" disabled className="w-full h-14 rounded-2xl text-sm font-bold">
+                  Delivery not available for this pincode
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  size="lg"
+                  variant="gold"
+                  className="w-full h-14 rounded-2xl text-sm font-bold shadow-md hover:shadow-lg transition"
+                >
+                  <Link to={user ? "/checkout" : "/login"} search={user ? undefined : ({ redirect: "/checkout" } as any)}>
+                    Proceed to Checkout <ArrowRight className="size-4 ml-1.5" />
+                  </Link>
+                </Button>
+              )}
 
               <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
                 <ShieldCheck className="size-4 text-brand-leaf" />
@@ -932,7 +966,7 @@ export function CartPage() {
           {/* Mobile Bottom Sticky Checkout Bar (< 768px) */}
           <div className="md:hidden fixed inset-x-0 bottom-14 z-30 bg-white/98 backdrop-blur-xl border-t border-border p-3 px-4 shadow-[0_-4px_25px_rgba(0,0,0,0.12)] flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-200">
             <div className="min-w-0">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground block leading-tight">Total Payable</span>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block leading-tight">{deliveryKnown ? "Total Payable" : "Excl. delivery"}</span>
               <div className="flex items-baseline gap-1.5">
                 <strong className="text-lg font-black font-display font-mono text-primary leading-tight">₹{finalTotal}</strong>
                 {actualCartCount > 0 && (
@@ -940,16 +974,22 @@ export function CartPage() {
                 )}
               </div>
             </div>
-            <Button
-              asChild
-              size="default"
-              variant="gold"
-              className="rounded-full px-5 h-10 text-xs font-bold shadow-md shrink-0 gap-1.5"
-            >
-              <Link to={user ? "/checkout" : "/login"} search={user ? undefined : ({ redirect: "/checkout" } as any)}>
-                Checkout <ArrowRight className="size-3.5" />
-              </Link>
-            </Button>
+            {deliveryBlocked ? (
+              <Button size="default" variant="gold" disabled className="rounded-full px-5 h-10 text-xs font-bold shrink-0">
+                Not deliverable
+              </Button>
+            ) : (
+              <Button
+                asChild
+                size="default"
+                variant="gold"
+                className="rounded-full px-5 h-10 text-xs font-bold shadow-md shrink-0 gap-1.5"
+              >
+                <Link to={user ? "/checkout" : "/login"} search={user ? undefined : ({ redirect: "/checkout" } as any)}>
+                  Checkout <ArrowRight className="size-3.5" />
+                </Link>
+              </Button>
+            )}
           </div>
 
           </div>

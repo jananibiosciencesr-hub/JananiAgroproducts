@@ -3,7 +3,7 @@ import { Heart, ShoppingBag, Eye, MapPin, Sparkles, Minus, Plus } from "lucide-r
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/components/store-provider";
-import { type Product, type ProductVariant, resolveProductVariants, getProductImage, getProductVariantImage, pantryImage, formatProductName } from "@/lib/catalog";
+import { type Product, type ProductVariant, resolveProductVariants, getProductImage, getProductVariantImage, pantryImage, formatProductName, normalizeVariantKey } from "@/lib/catalog";
 import { toast } from "sonner";
 
 interface ProductCardProps {
@@ -43,7 +43,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
     return variants.find((v) => v.id === selectedVariantId) || defaultVariant;
   }, [variants, selectedVariantId, defaultVariant]);
 
-  const variantNormId = selectedVariant.id.toLowerCase().includes("5") || selectedVariant.unit.includes("5") ? "5l" : "1l";
+  const variantNormId = normalizeVariantKey(selectedVariant.id);
   const canonicalKey = `${product.id}__${variantNormId}`;
 
   // Image dynamically switches between 1L bottle and 5L can
@@ -72,7 +72,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
       }
       const parts = k.split("__");
       const kBase = parts[0]!;
-      const kV = (parts[1] || "1l").toLowerCase().includes("5") ? "5l" : "1l";
+      const kV = normalizeVariantKey(parts[1] || "1l");
       if (kV !== variantNormId) continue;
 
       if (product.slug && kBase.toLowerCase() === product.slug.toLowerCase()) {
@@ -117,7 +117,7 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
     }
     addToCart(product.id, 1, variantNormId);
     toast.success(`Added ${formatProductName(product.name)} (${selectedVariant.label || selectedVariant.unit}) to cart!`, {
-      description: `₹${currentPrice} • ${selectedVariant.unit || selectedVariant.label}`,
+      description: `₹${currentPrice} • ${selectedVariant.unit || selectedVariant.label} • Delivery charges applicable`,
     });
   };
 
@@ -336,9 +336,9 @@ export function ProductCard({ product, list = false, onQuickView }: ProductCardP
               <span>Pack Size</span>
               <span className="text-[#075B32] font-extrabold">{selectedVariant.label || selectedVariant.unit}</span>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {variants.slice(0, 2).map((v) => {
-                const vNorm = v.id.toLowerCase().includes("5") || v.unit.includes("5") ? "5l" : "1l";
+            <div className={`grid gap-1.5 ${variants.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}>
+              {variants.map((v) => {
+                const vNorm = normalizeVariantKey(v.id);
                 const isSelected = variantNormId === vNorm;
                 const vLabel = v.label || v.unit || (vNorm === "5l" ? "5 L" : "1 L");
 

@@ -42,6 +42,7 @@ export const SEARCHABLE_NAV_MODULES: Array<{
     { id: "inquiries", title: "Customer Inquiries", desc: "B2B, dealership & contact requests", keywords: ["inquiries", "inquiry", "messages", "dealership", "contact", "support"], icon: MessageSquare },
     { id: "inventory", title: "Inventory & Restock", desc: "Warehouse stock levels & alerts", keywords: ["inventory", "stock", "restock", "warehouse", "threshold", "units"], icon: AlertTriangle },
     { id: "payments", title: "Payments & Settlements", desc: "Razorpay, UPI & transaction records", keywords: ["payments", "transactions", "razorpay", "upi", "settlements", "gateway"], icon: CheckCircle2 },
+    { id: "delivery", title: "Delivery Charges", desc: "Pincode & weight based delivery charges, free delivery amount", keywords: ["delivery", "shipping", "charges", "pincode", "weight", "free delivery"], icon: Package },
     { id: "coupons", title: "Coupons & Discounts", desc: "Promo codes & cart percentage offers", keywords: ["coupons", "discounts", "offers", "promo", "voucher"], icon: Sparkles },
     { id: "reviews", title: "Customer Reviews", desc: "Testimonials & organic harvest ratings", keywords: ["reviews", "review", "ratings", "feedback", "testimonials", "stars"], icon: Sparkles },
     { id: "returns", title: "Returns & Refunds", desc: "Return requests, replacements & refunds", keywords: ["returns", "return", "refunds", "refund", "replacement"], icon: AlertTriangle },

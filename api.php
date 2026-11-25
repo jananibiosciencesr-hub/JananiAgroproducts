@@ -1874,7 +1874,11 @@ try {
             janani_rate_limit_or_exit($pdo, 'rzp-order:' . $me['id'], 20, 3600);
             $body = getJsonBody();
             $wantsWallet = !empty($body['useWalletCredit']);
-            $quote = janani_build_quote($pdo, $me, $body['items'] ?? [], (string)($body['couponCode'] ?? ''), $wantsWallet);
+            $address = janani_clean_address($body['address'] ?? []);
+            if (empty($address['pincode']) || empty($address['city'])) {
+                janani_json_exit(['success' => false, 'message' => 'Please select a complete delivery address.'], 400);
+            }
+            $quote = janani_build_quote($pdo, $me, $body['items'] ?? [], (string)($body['couponCode'] ?? ''), $wantsWallet, (string)$address['pincode']);
             if (!empty($quote['errors'])) {
                 janani_json_exit(['success' => false, 'message' => implode(' ', $quote['errors']), 'errors' => $quote['errors']], 400);
             }
@@ -1895,10 +1899,6 @@ try {
             }
             if ($quote['total'] < 1) {
                 janani_json_exit(['success' => false, 'message' => 'This order total cannot be paid online. Please contact support.'], 400);
-            }
-            $address = janani_clean_address($body['address'] ?? []);
-            if (empty($address['pincode']) || empty($address['city'])) {
-                janani_json_exit(['success' => false, 'message' => 'Please select a complete delivery address.'], 400);
             }
             $amountPaise = (int)round($quote['total'] * 100);
             $rzp = janani_razorpay_request($keys, 'POST', '/orders', [
@@ -1933,6 +1933,33 @@ try {
                 'mode' => $keys['mode'],
                 'quote' => $quote,
             ]);
+
+        case 'delivery-charges':
+            // Public quote for the customer's own cart + pincode (cart page, product page, checkout).
+            if (($_GET['mode'] ?? '') === 'quote') {
+                janani_rate_limit_or_exit($pdo, 'delivery-quote:' . janani_client_ip(), 900, 3600, 'Too many delivery checks. Please try again in a few minutes.');
+                $dqBody = $method === 'POST' ? getJsonBody() : [];
+                $dqPin = preg_replace('/\D/', '', (string)($dqBody['pincode'] ?? ($_GET['pincode'] ?? '')));
+                $dqPriced = janani_price_items($pdo, $dqBody['items'] ?? []);
+                $dqWeight = janani_cart_weight_kg($dqPriced['lines']);
+                $dq = janani_delivery_charge($pdo, $dqPin, $dqWeight, $dqPriced['subtotal']);
+                janani_json_exit(array_merge(['success' => true], $dq, ['subtotal' => $dqPriced['subtotal'], 'itemErrors' => $dqPriced['errors']]));
+            }
+            if ($method === 'GET') {
+                janani_json_exit(['success' => true, 'config' => janani_delivery_config($pdo)]);
+            }
+            if ($method === 'POST' || $method === 'PUT') {
+                $dcBody = getJsonBody();
+                $dcErrors = [];
+                $dcClean = janani_delivery_normalize($dcBody['config'] ?? $dcBody, $dcErrors);
+                if ($dcErrors) {
+                    janani_json_exit(['success' => false, 'message' => implode(' ', array_slice($dcErrors, 0, 4)), 'errors' => $dcErrors], 400);
+                }
+                $pdo->prepare("INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)")
+                    ->execute([JANANI_DELIVERY_SETTING_KEY, json_encode($dcClean, JSON_UNESCAPED_UNICODE)]);
+                janani_json_exit(['success' => true, 'message' => 'Delivery charges saved.', 'config' => $dcClean]);
+            }
+            janani_json_exit(['success' => false, 'message' => 'Method not allowed.'], 405);
 
         case 'verify-razorpay-payment':
             if ($method !== 'POST') {
@@ -2837,7 +2864,9 @@ try {
                 exit;
             } elseif ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
                 $body = getJsonBody();
-                $rawId = $_GET['id'] ?? ($body['id'] ?? null);
+                // An existing category is addressed by ?id= (or targetId / editingId). A create request carries the NEW
+                // category's id in the body, which must not be mistaken for an update of an existing one.
+                $rawId = $_GET['id'] ?? ($body['targetId'] ?? ($body['editingId'] ?? null));
 
                 // CREATE category if no ID provided:
                 if (empty($rawId)) {

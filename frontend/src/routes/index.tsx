@@ -682,7 +682,7 @@ export function HomePage() {
                               e.preventDefault();
                               e.stopPropagation();
                               addToCart(prod.numId, 1);
-                              toast.success(`Added ${prod.name} to cart!`);
+                              toast.success(`Added ${prod.name} to cart!`, { description: "Delivery charges applicable" });
                             }}
                             className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none tracking-wide transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
                           >

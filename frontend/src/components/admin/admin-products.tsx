@@ -79,6 +79,44 @@ export interface ProductVariant {
   oldPrice?: number;
   inStock?: boolean;
   image?: string;
+  /** powder only: the size was typed in ("Other") instead of picked from the list */
+  custom?: boolean;
+  /** set on save: this exact list of sizes is shown in the shop (no automatic packs are added) */
+  exact?: boolean;
+}
+
+/** Pack sizes the admin can pick when adding a product. Powder also allows "Other" (typed size). */
+export const POWDER_SIZES = ["100 g", "200 g", "300 g", "500 g", "1 kg", "5 kg", "20 kg", "25 kg", "50 kg"];
+export const LIQUID_SIZES = ["250 ml", "300 ml", "500 ml", "1 L", "5 L", "20 L"];
+const SIZE_OTHER = "__other__";
+type ProductForm = "liquid" | "powder";
+
+const variantSizeLabel = (v: any): string => String(v?.name || v?.label || v?.unit || "").trim();
+/** "250 ml" -> "250ml", "1 L" -> "1l": a stable id used in cart keys and orders */
+const sizeToId = (label: string): string => label.toLowerCase().replace(/\s+/g, "");
+const customSizeToId = (label: string): string => "custom-" + (sizeToId(label).replace(/[^a-z0-9.]+/g, "-") || "size");
+
+function detectProductForm(variants: any[]): ProductForm {
+  const labels = (variants || []).map(variantSizeLabel);
+  if (labels.some((l) => /(^|[^0-9.])\d+(\.\d+)?\s*(ml|l|ltr|litre|liter)s?\b/i.test(l))) return "liquid";
+  if (labels.some((l) => /(^|[^0-9.])\d+(\.\d+)?\s*(g|gm|gms|gram|grams|kg|kgs)\b/i.test(l))) return "powder";
+  return "liquid";
+}
+
+function makeSizeVariant(label: string, skuBase: string, price = 0): ProductVariant {
+  return {
+    id: sizeToId(label),
+    name: label,
+    label,
+    unit: label,
+    sku: `${skuBase || "JAP"}-${sizeToId(label).toUpperCase()}`,
+    price,
+    originalPrice: 0,
+    oldPrice: 0,
+    stock: 50,
+    inStock: true,
+    image: "",
+  };
 }
 
 export const JANANI_DEFAULT_CATEGORIES = [
@@ -1479,6 +1517,8 @@ function ProductFormView({
   });
 
   const [nameTouched, setNameTouched] = useState(false);
+  // Powder or Liquid decides which pack sizes can be added
+  const [productForm, setProductForm] = useState<ProductForm>("liquid");
   const nameValidation = useMemo(() => validateProductName(formData.name), [formData.name]);
 
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
@@ -1570,6 +1610,7 @@ function ProductFormView({
         ];
       }
 
+      setProductForm(detectProductForm(resolvedVariants));
       setFormData({
         name: initialData.name || "",
         slug: initialData.slug || "",
@@ -1620,6 +1661,7 @@ function ProductFormView({
         isNewArrival: Boolean(initialData.isNewArrival)
       });
     } else {
+      setProductForm("liquid");
       setFormData({
         name: "",
         slug: "",
@@ -1641,7 +1683,7 @@ function ProductFormView({
         image: "",
         videoUrl: "",
         gallery: [],
-        variants: [],
+        variants: [makeSizeVariant("1 L", "")],
         organicCertifications: [],
         subtitle: "",
         benefits: "",
@@ -1785,29 +1827,62 @@ function ProductFormView({
     }));
   };
 
-  // Add/Remove Variant
+  // Add/Remove Variant: sizes come from the Powder / Liquid lists
+  const allowedSizes = productForm === "liquid" ? LIQUID_SIZES : POWDER_SIZES;
+
   const handleAddVariant = () => {
     const curList = Array.isArray(formData.variants) ? formData.variants : [];
-    const count = curList.length + 1;
-    const basePrice = Number(formData.price) || 450;
-    const newVar: ProductVariant = {
-      id: `VAR-${Date.now()}-${count}`,
-      name: `${count * 2} kg Value Pack`,
-      label: `${count * 2} kg Value Pack`,
-      unit: `${count * 2} kg`,
-      sku: `${formData.sku || "JAP"}-${count * 2}KG`,
-      price: Math.round(basePrice * 1.8),
-      originalPrice: Math.round(basePrice * 2.2),
-      oldPrice: Math.round(basePrice * 2.2),
-      stock: 20,
-      inStock: true,
-      image: ""
-    };
+    const used = new Set(curList.map(variantSizeLabel));
+    const next = allowedSizes.find((sz) => !used.has(sz));
+    if (!next) {
+      if (productForm === "powder") {
+        setFormData((prev) => ({
+          ...prev,
+          variants: [
+            ...(Array.isArray(prev.variants) ? prev.variants : []),
+            { ...makeSizeVariant("", formData.sku), id: customSizeToId("new-" + Date.now()), name: "", label: "", unit: "", sku: `${formData.sku || "JAP"}-CUSTOM`, custom: true },
+          ],
+        }));
+        toast.info("All standard sizes are added. Type your own size in the new row.");
+      } else {
+        toast.info("All available liquid sizes are already added.");
+      }
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
-      variants: [...(Array.isArray(prev.variants) ? prev.variants : []), newVar]
+      variants: [...(Array.isArray(prev.variants) ? prev.variants : []), makeSizeVariant(next, formData.sku)],
     }));
-    toast.success("New product variant added!");
+    toast.success(`${next} added - choose the size you want and enter its price.`);
+  };
+
+  const handleSizeChange = (index: number, value: string) => {
+    const list = Array.isArray(formData.variants) ? formData.variants : [];
+    const v = list[index];
+    if (!v) return;
+    const updated = [...list];
+    if (value === SIZE_OTHER) {
+      updated[index] = { ...v, custom: true, name: "", label: "", unit: "", id: customSizeToId("new-" + Date.now()) };
+    } else {
+      const { custom: _drop, ...rest } = v;
+      updated[index] = { ...rest, id: sizeToId(value), name: value, label: value, unit: value, sku: `${formData.sku || "JAP"}-${sizeToId(value).toUpperCase()}` };
+    }
+    setFormData({ ...formData, variants: updated });
+  };
+
+  const handleProductFormChange = (next: ProductForm) => {
+    if (next === productForm) return;
+    const list = Array.isArray(formData.variants) ? formData.variants : [];
+    const nextSizes = next === "liquid" ? LIQUID_SIZES : POWDER_SIZES;
+    const incompatible = list.some((v) => !nextSizes.includes(variantSizeLabel(v)));
+    if (incompatible && list.some((v) => Number(v.price) > 0)) {
+      if (!window.confirm(`Switching to ${next === "liquid" ? "Liquid" : "Powder"} replaces the current pack sizes with the ${next} sizes. Continue?`)) return;
+    }
+    setProductForm(next);
+    if (incompatible) {
+      const first = nextSizes[next === "liquid" ? 3 : 4]!; // 1 L / 1 kg
+      setFormData((prev) => ({ ...prev, variants: [makeSizeVariant(first, prev.sku, Number(list[0]?.price) || 0)] }));
+    }
   };
 
   const handleRemoveVariant = (index: number) => {
@@ -1933,13 +2008,35 @@ function ProductFormView({
       "Compatibility": formData.compatibility || "Compatible with biofertilizers & organic manures",
       "Shelf Life": formData.shelfLife || "18–24 Months",
       "Dosage": formData.dosage || "2–3 ml / Litre",
-      "Formulation": formData.unit?.toLowerCase().includes("l") || formData.unit?.toLowerCase().includes("ml") ? "Liquid Biological Formulation" : "Granular / Water Soluble Inoculant"
+      "Formulation": productForm === "liquid" ? "Liquid Biological Formulation" : "Powder / Granular Formulation"
     };
     formData.customSpecs.forEach((s) => {
       if (s.key.trim() && s.value.trim()) {
         compiledSpecs[s.key.trim()] = s.value.trim();
       }
     });
+
+    {
+      const vList = Array.isArray(formData.variants) ? formData.variants : [];
+      const seen = new Set<string>();
+      let problem = "";
+      if (vList.length === 0) problem = "Add at least one pack size with its price.";
+      for (const v of vList) {
+        if (problem) break;
+        const label = variantSizeLabel(v);
+        if (!label) problem = "Choose a size for every variant (or type one under Other).";
+        else if (!(Number(v.price) > 0)) problem = `Enter a price for the ${label} pack.`;
+        else if (seen.has(label.toLowerCase())) problem = `${label} is added twice. Each size can be added once.`;
+        else if (productForm === "liquid" && !LIQUID_SIZES.includes(label)) problem = `"${label}" is not a liquid size. Pick one of: ${LIQUID_SIZES.join(", ")}.`;
+        else if (productForm === "powder" && !POWDER_SIZES.includes(label) && !v.custom) problem = `"${label}" is not a standard powder size. Pick a size from the list or choose Other.`;
+        seen.add(label.toLowerCase());
+      }
+      if (problem) {
+        toast.error(problem);
+        document.getElementById("prod-section-variants")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+    }
 
     const cleanVariants = (Array.isArray(formData.variants) ? formData.variants : []).map((v: any, idx: number) => {
       const p = Number(v.price) || Number(formData.price) || (initialData?.price ? Number(initialData.price) : 450);
@@ -1959,7 +2056,8 @@ function ProductFormView({
         oldPrice: op,
         stock: st,
         inStock: st > 0,
-        image: img
+        image: img,
+        exact: true
       };
     });
 
@@ -2047,10 +2145,10 @@ function ProductFormView({
       </div>
 
       {/* Page Form Body - Unified Continuous Scrolling Container */}
-      <div className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="flex-1 w-full max-w-6xl mx-auto p-3 sm:p-4 lg:p-5 space-y-3">
         {/* SECTION 1: General Info */}
-        <div id="prod-section-general" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+        <div id="prod-section-general" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-border/70">
             <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
               1
             </div>
@@ -2060,8 +2158,8 @@ function ProductFormView({
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-3 gap-y-3">
+            <div className="sm:col-span-2">
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-foreground">Product Title *</label>
                 {nameTouched && formData.name.trim().length > 0 && nameValidation.isValid && (
@@ -2079,7 +2177,7 @@ function ProductFormView({
                   handleTitleChange(e.target.value);
                 }}
                 placeholder="e.g. Harit Trichoderma Viride (1 L)"
-                className={`h-10 w-full rounded-2xl border bg-background px-3 text-xs font-bold outline-none transition-colors ${
+                className={`h-9 w-full rounded-xl border bg-background px-3 text-xs font-bold outline-none transition-colors ${
                   nameTouched && formData.name.trim().length > 0 && !nameValidation.isValid
                     ? "border-red-500 focus:border-red-600 ring-1 ring-red-500/20"
                     : "border-border focus:border-emerald-600"
@@ -2093,7 +2191,7 @@ function ProductFormView({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">SKU Code *</label>
                 <input
@@ -2101,9 +2199,10 @@ function ProductFormView({
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                   placeholder="JAP-1001"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono font-bold text-emerald-600 outline-none"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-mono font-bold text-emerald-600 outline-none"
                 />
               </div>
+
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">URL Slug *</label>
                 <input
@@ -2111,18 +2210,16 @@ function ProductFormView({
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   placeholder="harit-trichoderma-1l"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono outline-none"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-mono outline-none"
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">Category</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-semibold outline-none"
                 >
                   {formData.category && !activeCategories.includes(formData.category) && (
                     <option value={formData.category}>{formData.category} (Current)</option>
@@ -2132,18 +2229,20 @@ function ProductFormView({
                   ))}
                 </select>
               </div>
+
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">Brand Line</label>
                 <select
                   value={formData.brand}
                   onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-semibold outline-none"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-semibold outline-none"
                 >
                   {JANANI_DEFAULT_BRANDS.map((b) => (
                     <option key={b} value={b}>{b}</option>
                   ))}
                 </select>
               </div>
+
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-bold text-foreground">GST Rate (%) *</label>
@@ -2158,7 +2257,7 @@ function ProductFormView({
                     value={formData.gstRate}
                     onChange={(e) => setFormData({ ...formData, gstRate: e.target.value })}
                     placeholder="5"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 pr-8 text-xs font-bold text-foreground outline-none focus:border-emerald-600"
+                    className="h-9 w-full rounded-xl border border-border bg-background px-3 pr-8 text-xs font-bold text-foreground outline-none focus:border-emerald-600"
                   />
                   <span className="absolute right-3 top-2.5 text-xs font-bold text-muted-foreground">%</span>
                 </div>
@@ -2185,24 +2284,23 @@ function ProductFormView({
                   ))}
                 </div>
               </div>
-            </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label className="text-xs font-bold text-foreground block mb-1">Description</label>
               <textarea
-                rows={3}
+                rows={5}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Pure organic harvest description..."
-                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none"
+                className="w-full rounded-xl border border-border bg-background p-2.5 text-xs outline-none"
               />
             </div>
           </div>
         </div>
 
         {/* SECTION 2: Product Variants */}
-        <div id="prod-section-variants" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center justify-between pb-3 border-b border-border/70">
+        <div id="prod-section-variants" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border/70">
             <div className="flex items-center gap-2.5">
               <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
                 2
@@ -2217,7 +2315,31 @@ function ProductFormView({
             </Button>
           </div>
 
-          <div className="space-y-4">
+          {/* Product type decides the available pack sizes */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-bold text-foreground">Product type</span>
+            <div className="inline-flex border border-border rounded-xl overflow-hidden">
+              {(["liquid", "powder"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => handleProductFormChange(t)}
+                  className={`px-4 h-8 text-xs font-bold cursor-pointer transition-colors ${
+                    productForm === t ? "bg-emerald-700 text-white" : "bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {t === "liquid" ? "Liquid" : "Powder"}
+                </button>
+              ))}
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {productForm === "liquid"
+                ? "Sizes: " + LIQUID_SIZES.join(" · ")
+                : "Sizes: " + POWDER_SIZES.join(" · ") + " · or Other"}
+            </span>
+          </div>
+
+          <div className="space-y-3">
 
             <div className="space-y-3">
               {(Array.isArray(formData.variants) ? formData.variants : []).map((v, i) => (
@@ -2231,18 +2353,53 @@ function ProductFormView({
 
                   <div className="grid grid-cols-4 gap-2">
                     <div>
-                      <label className="text-[10px] font-bold text-muted-foreground block">Name / Size</label>
-                      <input
-                        value={v.name || v.label || ""}
-                        placeholder="e.g. 500 ml Pack"
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
-                          updated[i] = { ...v, name: val, label: val, unit: val };
-                          setFormData({ ...formData, variants: updated });
-                        }}
-                        className="h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-bold outline-none"
-                      />
+                      <label className="text-[10px] font-bold text-muted-foreground block">Size</label>
+                      {(() => {
+                        const label = variantSizeLabel(v);
+                        const known = allowedSizes.includes(label);
+                        const usedElsewhere = new Set(
+                          (Array.isArray(formData.variants) ? formData.variants : []).filter((_, idx) => idx !== i).map(variantSizeLabel)
+                        );
+                        const isOther = productForm === "powder" && (v.custom || (!known && label !== ""));
+                        const selectValue = known ? label : isOther ? SIZE_OTHER : "";
+                        return (
+                          <>
+                            <select
+                              value={selectValue}
+                              onChange={(e) => handleSizeChange(i, e.target.value)}
+                              className={`h-8 w-full rounded-xl border bg-background px-2 text-xs font-bold outline-none ${
+                                !known && !isOther ? "border-rose-400" : "border-border"
+                              }`}
+                            >
+                              {!known && !isOther && (
+                                <option value="" disabled>
+                                  {label ? `${label} (not available)` : "Select size"}
+                                </option>
+                              )}
+                              {allowedSizes.map((sz) => (
+                                <option key={sz} value={sz} disabled={usedElsewhere.has(sz)}>
+                                  {sz}
+                                  {usedElsewhere.has(sz) ? " (added)" : ""}
+                                </option>
+                              ))}
+                              {productForm === "powder" && <option value={SIZE_OTHER}>Other…</option>}
+                            </select>
+                            {isOther && (
+                              <input
+                                value={v.name || ""}
+                                placeholder="e.g. 750 g or 2 kg"
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const updated = [...(Array.isArray(formData.variants) ? formData.variants : [])];
+                                  updated[i] = { ...v, custom: true, name: val, label: val, unit: val, id: customSizeToId(val), sku: `${formData.sku || "JAP"}-${(sizeToId(val) || "CUSTOM").toUpperCase()}` };
+                                  setFormData({ ...formData, variants: updated });
+                                }}
+                                className="mt-1 h-8 w-full rounded-xl border border-border bg-background px-2 text-xs font-bold outline-none"
+                              />
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-muted-foreground block">SKU</label>
@@ -2384,8 +2541,8 @@ function ProductFormView({
         </div>
 
         {/* SECTION 3: Product Video Showcase */}
-        <div id="prod-section-gallery" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center justify-between pb-3 border-b border-border/70">
+        <div id="prod-section-gallery" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border/70">
             <div className="flex items-center gap-2.5">
               <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
                 3
@@ -2523,8 +2680,8 @@ function ProductFormView({
         </div>
 
         {/* SECTION 4: Agro Specifications & Storefront Tabs */}
-        <div id="prod-section-specs" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+        <div id="prod-section-specs" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-border/70">
             <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
               4
             </div>
@@ -2564,7 +2721,7 @@ function ProductFormView({
 
           {/* Subtab 1: Description & Formulation */}
           {specsSubTab === "desc" && (
-            <div className="space-y-3.5 animate-in fade-in">
+            <div className="space-y-3 animate-in fade-in">
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">
                   Product Formulation Subtitle
@@ -2573,7 +2730,7 @@ function ProductFormView({
                   value={formData.subtitle}
                   onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                   placeholder="e.g. Trichoderma Viride Liquid Biofungal Formulation"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-semibold"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-semibold"
                 />
                 <span className="text-[10px] text-muted-foreground mt-0.5 block">
                   Displays directly underneath the product title on the details page.
@@ -2589,7 +2746,7 @@ function ProductFormView({
                     value={formData.activeOrganism}
                     onChange={(e) => setFormData({ ...formData, activeOrganism: e.target.value })}
                     placeholder="e.g. Trichoderma viride 1.5% W.P (2x10^6 CFU/ml)"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                    className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
                   />
                 </div>
                 <div>
@@ -2600,7 +2757,7 @@ function ProductFormView({
                     value={formData.targetDiseases}
                     onChange={(e) => setFormData({ ...formData, targetDiseases: e.target.value })}
                     placeholder="e.g. Root rot, Wilt, Damping-off, Collar rot"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                    className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
                   />
                 </div>
               </div>
@@ -2614,7 +2771,7 @@ function ProductFormView({
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Elaborate on how this biological formula enriches soil health, enhances root systems, and protects crops..."
-                  className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600 leading-relaxed"
+                  className="w-full rounded-xl border border-border bg-background p-2.5 text-xs outline-none focus:border-emerald-600 leading-relaxed"
                 />
               </div>
             </div>
@@ -2622,7 +2779,7 @@ function ProductFormView({
 
           {/* Subtab 2: Key Benefits */}
           {specsSubTab === "benefits" && (
-            <div className="space-y-3.5 animate-in fade-in">
+            <div className="space-y-3 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-xs font-bold text-foreground block">
@@ -2642,7 +2799,7 @@ function ProductFormView({
                 value={formData.benefits}
                 onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
                 placeholder={"Controls and suppresses soil-borne fungal pathogens and root rot\nStimulates vigorous root system and lateral feeder roots growth\nImproves rhizosphere beneficial microbial biodiversity\n100% Residue-free and safe for certified organic farming"}
-                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600 font-sans leading-relaxed"
+                className="w-full rounded-xl border border-border bg-background p-2.5 text-xs outline-none focus:border-emerald-600 font-sans leading-relaxed"
               />
 
               <div>
@@ -2667,7 +2824,7 @@ function ProductFormView({
 
           {/* Subtab 3: How to Use */}
           {specsSubTab === "usage" && (
-            <div className="space-y-3.5 animate-in fade-in">
+            <div className="space-y-3 animate-in fade-in">
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">
                   Recommended General Dosage Guidelines
@@ -2676,7 +2833,7 @@ function ProductFormView({
                   value={formData.dosage}
                   onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
                   placeholder="e.g. Foliar Spray: 2–3 ml/L | Drip Fertigation: 1 L/acre | Seed Treatment: 5–10 ml/kg"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-medium"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-medium"
                 />
               </div>
 
@@ -2688,7 +2845,7 @@ function ProductFormView({
                   value={formData.methodOfApplication}
                   onChange={(e) => setFormData({ ...formData, methodOfApplication: e.target.value })}
                   placeholder="e.g. Soil Application, Drip Fertigation, Seed Treatment, Foliar Spray"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
                 />
               </div>
 
@@ -2700,7 +2857,7 @@ function ProductFormView({
                   value={formData.compatibility}
                   onChange={(e) => setFormData({ ...formData, compatibility: e.target.value })}
                   placeholder="e.g. Compatible with biofertilizers and organic manures; avoid tank-mixing with chemical copper fungicides"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
                 />
               </div>
 
@@ -2712,7 +2869,7 @@ function ProductFormView({
                   value={formData.storageNotice}
                   onChange={(e) => setFormData({ ...formData, storageNotice: e.target.value })}
                   placeholder="e.g. Store in a cool, dry place away from direct sunlight. Shelf life is 18–24 months."
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
                 />
               </div>
             </div>
@@ -2720,7 +2877,7 @@ function ProductFormView({
 
           {/* Subtab 4: Suitable Crops */}
           {specsSubTab === "crops" && (
-            <div className="space-y-3.5 animate-in fade-in">
+            <div className="space-y-3 animate-in fade-in">
               <div>
                 <label className="text-xs font-bold text-foreground block mb-1">
                   Suitable Crops (Comma-separated for badges)
@@ -2729,7 +2886,7 @@ function ProductFormView({
                   value={formData.recommendedCrops}
                   onChange={(e) => setFormData({ ...formData, recommendedCrops: e.target.value })}
                   placeholder="e.g. Paddy / Rice, Cotton, Chilli, Tomato, Brinjal, Sugarcane, Banana, Mango, Groundnut, Pulses"
-                  className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-medium"
+                  className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-medium"
                 />
               </div>
 
@@ -2763,7 +2920,7 @@ function ProductFormView({
 
           {/* Subtab 5: Technical Details */}
           {specsSubTab === "specs" && (
-            <div className="space-y-3.5 animate-in fade-in">
+            <div className="space-y-3 animate-in fade-in">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-foreground block mb-1">
@@ -2773,7 +2930,7 @@ function ProductFormView({
                     value={formData.shelfLife}
                     onChange={(e) => setFormData({ ...formData, shelfLife: e.target.value })}
                     placeholder="e.g. 18–24 Months from manufacturing date"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                    className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
                   />
                 </div>
                 <div className="flex items-end">
@@ -2782,7 +2939,7 @@ function ProductFormView({
                     onClick={handleAddBlankSpec}
                     size="sm"
                     variant="outline"
-                    className="h-10 w-full rounded-2xl border-dashed border-emerald-600 text-emerald-700 dark:text-emerald-400 font-bold text-xs gap-1.5"
+                    className="h-9 w-full rounded-xl border-dashed border-emerald-600 text-emerald-700 dark:text-emerald-400 font-bold text-xs gap-1.5"
                   >
                     <Plus className="size-3.5" /> Add Custom Specification Row
                   </Button>
@@ -2852,7 +3009,7 @@ function ProductFormView({
 
           {/* Subtab 6: Reviews & Rating */}
           {specsSubTab === "reviews" && (
-            <div className="space-y-3.5 animate-in fade-in">
+            <div className="space-y-3 animate-in fade-in">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-foreground block mb-1">
@@ -2866,7 +3023,7 @@ function ProductFormView({
                       max="5"
                       value={formData.rating}
                       onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
-                      className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
                     />
                     <div className="flex text-amber-500 shrink-0">
                       <Star className="size-5 fill-current" />
@@ -2884,7 +3041,7 @@ function ProductFormView({
                     value={formData.reviewsCount}
                     onChange={(e) => setFormData({ ...formData, reviewsCount: e.target.value })}
                     placeholder="53"
-                    className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                    className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
                   />
                 </div>
               </div>
@@ -2903,7 +3060,7 @@ function ProductFormView({
 
           {/* Subtab 7: FAQs Accordion Manager */}
           {specsSubTab === "faqs" && (
-            <div className="space-y-3.5 animate-in fade-in">
+            <div className="space-y-3 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-xs font-bold text-foreground block">
@@ -2979,8 +3136,8 @@ function ProductFormView({
         </div>
 
         {/* SECTION 5: SEO Meta Suite */}
-        <div id="prod-section-seo" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+        <div id="prod-section-seo" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-border/70">
             <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
               5
             </div>
@@ -2993,24 +3150,24 @@ function ProductFormView({
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3">
             <div>
               <label className="text-xs font-bold text-foreground block mb-1">Meta Title</label>
               <input
                 value={formData.seo.metaTitle}
                 onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaTitle: e.target.value } })}
                 placeholder="Buy Harit Trichoderma Viride Online | Janani Agro"
-                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-semibold"
+                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600 font-semibold"
               />
             </div>
-            <div>
+            <div className="sm:col-span-2 sm:order-last">
               <label className="text-xs font-bold text-foreground block mb-1">Meta Description</label>
               <textarea
                 rows={2}
                 value={formData.seo.metaDescription}
                 onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, metaDescription: e.target.value } })}
                 placeholder="High potency bio-fertilizer and fungicide for root rot protection..."
-                className="w-full rounded-2xl border border-border bg-background p-3 text-xs outline-none focus:border-emerald-600"
+                className="w-full rounded-xl border border-border bg-background p-2.5 text-xs outline-none focus:border-emerald-600"
               />
             </div>
             <div>
@@ -3019,7 +3176,7 @@ function ProductFormView({
                 value={formData.seo.canonicalUrl}
                 onChange={(e) => setFormData({ ...formData, seo: { ...formData.seo, canonicalUrl: e.target.value } })}
                 placeholder="https://jananiagro.com/products/..."
-                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-mono text-[11px] outline-none focus:border-emerald-600"
+                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs font-mono text-[11px] outline-none focus:border-emerald-600"
               />
             </div>
 
@@ -3042,8 +3199,8 @@ function ProductFormView({
         </div>
 
         {/* SECTION 6: Storefront Visibility & Badges */}
-        <div id="prod-section-toggles" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-2xs">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+        <div id="prod-section-toggles" className="scroll-mt-28 rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-border/70">
             <div className="size-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">
               6
             </div>
@@ -3053,9 +3210,9 @@ function ProductFormView({
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-border bg-muted/40 p-4 space-y-4">
-              <label className="flex items-center justify-between cursor-pointer">
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <label className="flex items-center justify-between gap-3 cursor-pointer rounded-xl border border-border bg-muted/40 p-3">
                 <div>
                   <span className="text-xs font-bold text-foreground block">Active Visibility</span>
                   <span className="text-[11px] text-muted-foreground">Show product live on storefront for purchase</span>
@@ -3068,7 +3225,7 @@ function ProductFormView({
                 />
               </label>
 
-              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+              <label className="flex items-center justify-between gap-3 cursor-pointer rounded-xl border border-border bg-muted/40 p-3">
                 <div>
                   <span className="text-xs font-bold text-foreground block">Featured Product (⭐)</span>
                   <span className="text-[11px] text-muted-foreground">Display in homepage featured collections</span>
@@ -3081,7 +3238,7 @@ function ProductFormView({
                 />
               </label>
 
-              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+              <label className="flex items-center justify-between gap-3 cursor-pointer rounded-xl border border-border bg-muted/40 p-3">
                 <div>
                   <span className="text-xs font-bold text-foreground block">Trending Harvest (🔥)</span>
                   <span className="text-[11px] text-muted-foreground">Highlight with trending flame badge</span>
@@ -3094,7 +3251,7 @@ function ProductFormView({
                 />
               </label>
 
-              <label className="flex items-center justify-between cursor-pointer pt-3 border-t border-border/60">
+              <label className="flex items-center justify-between gap-3 cursor-pointer rounded-xl border border-border bg-muted/40 p-3">
                 <div>
                   <span className="text-xs font-bold text-foreground block">New Arrival (✨)</span>
                   <span className="text-[11px] text-muted-foreground">Show new harvest crop badge</span>
@@ -3114,7 +3271,7 @@ function ProductFormView({
                 value={formData.badge}
                 onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
                 placeholder="e.g. 100% Certified Organic"
-                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
+                className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-emerald-600"
               />
             </div>
           </div>
