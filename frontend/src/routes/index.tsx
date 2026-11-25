@@ -96,10 +96,27 @@ export function HomePage() {
 
   // Categories Carousel Ref for Smooth Scrolling
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
-  // Cards are centred only when they all fit; an overflowing strip starts at the first card so
-  // every card can be reached with the arrows (centring an overflowing strip hides the left part).
-  const [categoriesOverflow, setCategoriesOverflow] = useState(false);
-  const scrollCategories = (direction: "left" | "right") => scrollCarousel(categoriesScrollRef.current, direction);
+  const scrollCategories = (direction: "left" | "right") => {
+    const el = categoriesScrollRef.current;
+    if (!el) return;
+    const step = Math.max(220, Math.round(el.clientWidth * 0.75));
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 0) return;
+
+    if (direction === "left") {
+      if (el.scrollLeft <= 10) {
+        el.scrollTo({ left: maxScroll, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: -step, behavior: "smooth" });
+      }
+    } else {
+      if (el.scrollLeft >= maxScroll - 10) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: step, behavior: "smooth" });
+      }
+    }
+  };
 
   // Featured Products Carousel Ref for Smooth Scrolling
   const productsScrollRef = useRef<HTMLDivElement>(null);
@@ -166,21 +183,7 @@ export function HomePage() {
     }
   };
 
-  useEffect(() => {
-    const el = categoriesScrollRef.current;
-    if (!el) return;
-    const measure = () => setCategoriesOverflow(el.scrollWidth > el.clientWidth + 1);
-    measure();
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", measure);
-      return () => window.removeEventListener("resize", measure);
-    }
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  });
-
-  // Dynamic Agri Products Categories (only Trending if set, or all valid)
+  // Dynamic Agri Products Categories (all categories with trending first)
   const categoryCards = useMemo(() => {
     const validCats = allCategories.filter((cat: any) => {
       if (isGroceryCategory(cat)) return false;
@@ -202,10 +205,14 @@ export function HomePage() {
       return true;
     });
 
-    const trendingOnly = validCats.filter((cat: any) =>
+    const trendingCats = validCats.filter((cat: any) =>
       Boolean(cat.trending === true || cat.trending === 1 || cat.trending === "1" || cat.trending === "true")
     );
-    const pool = trendingOnly.length > 0 ? trendingOnly : validCats;
+    const otherCats = validCats.filter((cat: any) =>
+      !Boolean(cat.trending === true || cat.trending === 1 || cat.trending === "1" || cat.trending === "true")
+    );
+    // Showcase all agri categories so users can scroll through all categories, with trending prioritized first
+    const pool = [...trendingCats, ...otherCats];
 
     return pool.map((cat: any) => {
       const slug = cat.slug || slugs(cat.name || "");
@@ -363,25 +370,25 @@ export function HomePage() {
               </p>
             </div>
 
-            {/* Top-Right Controls: Mobile Arrows & View All Categories Button */}
+            {/* Top-Right Controls: Header Arrows & View All Categories Button */}
             <div className="flex items-center gap-2 sm:gap-3 self-start sm:self-auto">
-              {/* Mobile Carousel Navigation Arrows */}
-              <div className={`items-center gap-1.5 lg:hidden ${categoriesOverflow ? "flex" : "hidden"}`}>
+              {/* Carousel Navigation Arrows */}
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => scrollCategories("left")}
                   aria-label="Previous Categories"
-                  className="size-8 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+                  className="size-8 sm:size-9 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] hover:text-[#4FAE2A] flex items-center justify-center transition active:scale-95 cursor-pointer shadow-xs border border-emerald-100/60"
                 >
-                  <ChevronLeft className="size-4" />
+                  <ChevronLeft className="size-4 sm:size-5" />
                 </button>
                 <button
                   type="button"
                   onClick={() => scrollCategories("right")}
                   aria-label="Next Categories"
-                  className="size-8 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+                  className="size-8 sm:size-9 rounded-full bg-slate-100 hover:bg-[#ebf3e7] text-[#075B32] hover:text-[#4FAE2A] flex items-center justify-center transition active:scale-95 cursor-pointer shadow-xs border border-emerald-100/60"
                 >
-                  <ChevronRight className="size-4" />
+                  <ChevronRight className="size-4 sm:size-5" />
                 </button>
               </div>
 
@@ -400,23 +407,23 @@ export function HomePage() {
           </div>
 
           {/* Carousel Controls & Cards Strip */}
-          <div className="relative">
-            {/* Side Floating Nav Arrow Left (Desktop helper) */}
+          <div className="relative group/carousel">
+            {/* Side Floating Nav Arrow Left */}
             <button
               type="button"
               onClick={() => scrollCategories("left")}
               aria-label="Previous Categories"
-              className={`hidden ${categoriesOverflow ? "lg:flex" : ""} absolute -left-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100`}
+              className="hidden sm:flex absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-white/95 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100 hover:shadow-lg"
             >
               <ChevronLeft className="size-5" />
             </button>
 
-            {/* Side Floating Nav Arrow Right (Desktop helper) */}
+            {/* Side Floating Nav Arrow Right */}
             <button
               type="button"
               onClick={() => scrollCategories("right")}
               aria-label="Next Categories"
-              className={`hidden ${categoriesOverflow ? "lg:flex" : ""} absolute -right-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100`}
+              className="hidden sm:flex absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 size-9 sm:size-10 rounded-full bg-white/95 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100 hover:shadow-lg"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -424,7 +431,7 @@ export function HomePage() {
             {/* Scrollable Container: exactly 2 cards visible per row on mobile, centered on larger screens */}
             <div
               ref={categoriesScrollRef}
-              className={`flex items-stretch gap-2.5 sm:gap-6 overflow-x-auto pb-4 pt-2 px-1 sm:px-2 scrollbar-none snap-x snap-mandatory ${categoriesOverflow ? "justify-start" : "justify-center"}`}
+              className="flex items-stretch gap-2.5 sm:gap-6 overflow-x-auto pb-4 pt-2 px-1 sm:px-2 scrollbar-none snap-x snap-mandatory justify-start scroll-smooth"
             >
               {categoryCards.map((cat) => (
                 <Link
