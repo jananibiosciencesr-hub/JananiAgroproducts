@@ -2258,31 +2258,42 @@ function janani_wallet_transactions($credits) {
  * credit exists yet (for example the reward step failed while the wallet tables were still missing), issue it now.
  */
 function janani_backfill_first_order_reward($pdo, $user) {
+    // Returns a short human-readable explanation when no first-order credit was issued (null when issued / not applicable).
     try {
-        if (!$user || janani_is_staff_user($user)) return;
+        if (!$user) return null;
+        if (janani_is_staff_user($user)) return 'Staff and admin accounts do not earn the first-order credit.';
         $email = janani_is_placeholder_email($user['email'] ?? '') ? '' : strtolower(trim((string)$user['email']));
         $st = $pdo->prepare("SELECT * FROM `orders` WHERE (`customer_id` = ? OR (? != '' AND LOWER(`customer_email`) = ?))
             AND (`order_status` IS NULL OR `order_status` NOT IN ('Cancelled', 'Payment Failed'))
             AND (`payment_status` IS NULL OR `payment_status` NOT IN ('Refunded', 'Refund Pending', 'Cancelled', 'Failed'))
-            ORDER BY `created_at` ASC LIMIT 2");
+            ORDER BY `created_at` ASC LIMIT 5");
         $st->execute([(string)$user['id'], $email, $email]);
         $orders = $st->fetchAll(PDO::FETCH_ASSOC);
-        if (count($orders) !== 1) return;
+        if (count($orders) === 0) return null;
+        $rewardRows = $pdo->prepare("SELECT COUNT(*) FROM `wallet_credits` WHERE `user_id` = ? AND `type` = 'first_order_reward'");
+        $rewardRows->execute([(string)$user['id']]);
+        if ((int)$rewardRows->fetchColumn() > 0) return null;
+        if (count($orders) > 1) {
+            $nums = implode(', ', array_map(function ($o) { return $o['number']; }, $orders));
+            return 'This account has more than one order (' . $nums . '), so it is not a first order.';
+        }
         $order = $orders[0];
         $placedTs = strtotime((string)($order['order_date'] ?? ''));
-        if ($placedTs && $placedTs < time() - JANANI_CREDIT_VALIDITY_DAYS * 86400) return;
+        if ($placedTs && $placedTs < time() - JANANI_CREDIT_VALIDITY_DAYS * 86400) return 'The first order is older than ' . JANANI_CREDIT_VALIDITY_DAYS . ' days.';
         $productsValue = round((float)$order['subtotal'] - (float)($order['coupon_discount'] ?? 0), 2);
-        if ($productsValue < JANANI_CREDIT_MIN_ORDER_VALUE) return;
-        if (!janani_first_order_reward_eligible($pdo, $user, $order['number'])) return;
-        janani_grant_first_order_reward($pdo, $user, $order);
+        if ($productsValue < JANANI_CREDIT_MIN_ORDER_VALUE) return 'Order ' . $order['number'] . ' products value ₹' . number_format($productsValue, 2) . ' is below the ₹' . JANANI_CREDIT_MIN_ORDER_VALUE . ' minimum.';
+        if (!janani_first_order_reward_eligible($pdo, $user, $order['number'])) return 'Order ' . $order['number'] . ' is not eligible for the first-order credit.';
+        $granted = janani_grant_first_order_reward($pdo, $user, $order);
+        return $granted ? null : 'The credit for order ' . $order['number'] . ' could not be saved. Please contact support.';
     } catch (Throwable $e) {
         error_log('[janani] first-order reward backfill: ' . $e->getMessage());
+        return 'Credit check failed: ' . mb_substr($e->getMessage(), 0, 180);
     }
 }
 
 function janani_wallet_summary($pdo, $user) {
     janani_ensure_wallet_tables($pdo);
-    janani_backfill_first_order_reward($pdo, $user);
+    $rewardCheck = janani_backfill_first_order_reward($pdo, $user);
     janani_expire_wallet_credits($pdo, (string)$user['id']);
     $st = $pdo->prepare("SELECT * FROM `wallet_credits` WHERE `user_id` = ? ORDER BY `issued_at` DESC LIMIT 200");
     $st->execute([(string)$user['id']]);
@@ -2308,6 +2319,7 @@ function janani_wallet_summary($pdo, $user) {
         'credits' => $credits,
         'transactions' => janani_wallet_transactions($credits),
         'firstOrderRewardEligible' => janani_first_order_reward_eligible($pdo, $user),
+        'rewardCheck' => $rewardCheck,
         'rules' => [
             'rewardPercent' => (int)round(JANANI_FIRST_ORDER_CREDIT_RATE * 100),
             'minOrderValue' => JANANI_CREDIT_MIN_ORDER_VALUE,

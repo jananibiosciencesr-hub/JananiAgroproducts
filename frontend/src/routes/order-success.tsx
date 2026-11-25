@@ -261,32 +261,6 @@ export function OrderSuccessPage() {
     }
   };
 
-  const steps = [
-    {
-      title: "Order Confirmed",
-      desc: "Payment verified & inventory allocated",
-      status: "completed",
-      icon: CheckCircle2,
-    },
-    {
-      title: "Quality Checked & Packed",
-      desc: "Inspected for batch quality & secure packing",
-      status: "active",
-      icon: ShieldCheck,
-    },
-    {
-      title: "Dispatched from Hub",
-      desc: "Handed over to express courier logistics",
-      status: "upcoming",
-      icon: Truck,
-    },
-    {
-      title: "Doorstep Delivery",
-      desc: `Dispatched to ${recipientCity}`,
-      status: "upcoming",
-      icon: PackageCheck,
-    },
-  ];
 
   if (!effectiveOrder) {
     return (
@@ -463,78 +437,7 @@ export function OrderSuccessPage() {
       </div>
 
       {/* MAIN 2-COLUMN GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-        {/* Left 2 Cols: Live Dispatch Milestones */}
-        <div className="lg:col-span-2 flex">
-          <div className="w-full flex flex-col rounded-none border border-[#075B32]/25 bg-card p-5 sm:p-7 shadow-none gap-5">
-            <div className="flex items-center justify-between gap-3 pb-4 border-b border-border">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-brand-leaf animate-ping" />
-                  <span className="text-[11px] font-bold text-brand-leaf tracking-wide">
-                    Fulfillment Status
-                  </span>
-                </div>
-                <h3 className="font-display text-base sm:text-xl font-bold text-foreground mt-0.5">
-                  Order Progress
-                </h3>
-              </div>
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                <Button asChild variant="ghost" size="sm" className="h-8 text-xs font-bold text-brand-leaf hover:text-brand-leaf hover:bg-brand-leaf/10 rounded-lg">
-                  <Link to="/dashboard">
-                    My Orders <ArrowRight className="size-3 ml-1" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* Vertical timeline: one row per step, icon column + text column, same alignment for every step */}
-            <ol className="flex-1 flex flex-col justify-between">
-              {steps.map((step, idx) => {
-                const Icon = step.icon;
-                const isCompleted = step.status === "completed";
-                const isActive = step.status === "active";
-                const isLast = idx === steps.length - 1;
-                return (
-                  <li key={step.title} className="relative flex gap-4 pb-6 last:pb-0">
-                    {!isLast && (
-                      <span
-                        aria-hidden
-                        className={`absolute left-[19px] top-10 bottom-0 w-px ${isCompleted ? "bg-brand-leaf/50" : "bg-border"}`}
-                      />
-                    )}
-                    <div
-                      className={`relative z-10 size-10 shrink-0 flex items-center justify-center border ${
-                        isCompleted
-                          ? "bg-brand-leaf text-white border-brand-leaf"
-                          : isActive
-                          ? "bg-brand-gold/15 text-brand-gold border-brand-gold/60"
-                          : "bg-card text-muted-foreground border-border"
-                      }`}
-                    >
-                      <Icon className="size-4" />
-                    </div>
-                    <div className="min-w-0 flex-1 text-left pt-0.5">
-                      <p className={`text-sm font-bold ${isCompleted || isActive ? "text-foreground" : "text-muted-foreground"}`}>{step.title}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed text-left">{step.desc}</p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-
-            {/* Guaranteed Delivery Footer */}
-            <div className="pt-3.5 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <MapPin className="size-4 text-brand-leaf shrink-0" />
-                <span>
-                  Delivering to: <strong className="text-foreground">{recipientCity}</strong>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div className="mx-auto w-full max-w-2xl">
         {/* Right 1 Col: Comprehensive Digital Order Receipt */}
         <div className="rounded-none border border-[#075B32]/25 bg-card p-5 sm:p-7 shadow-none space-y-5">
           <div className="flex items-center justify-between gap-3 pb-4 border-b border-border">

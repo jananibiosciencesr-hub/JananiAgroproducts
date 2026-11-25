@@ -746,6 +746,11 @@ function DashboardPage() {
                   Your wallet could not be loaded: {walletError}
                 </div>
               )}
+              {walletSummary?.rewardCheck && (
+                <div className="rounded-none border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                  First-order credit: {walletSummary.rewardCheck}
+                </div>
+              )}
               <WalletBalanceCard summary={walletSummary} loading={walletLoading} />
 
               {/* Transactions Ledger */}

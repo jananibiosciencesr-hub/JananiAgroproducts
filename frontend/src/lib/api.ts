@@ -957,6 +957,8 @@ export interface WalletCredit {
 export interface WalletSummary {
   success: boolean;
   message?: string;
+  /** Why no first-order credit was issued (null when not applicable). */
+  rewardCheck?: string | null;
   availableBalance: number;
   lockedBalance: number;
   totalBalance: number;
