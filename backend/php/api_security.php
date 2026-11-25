@@ -2105,7 +2105,7 @@ function janani_sync_wallet_balance($pdo, $userId) {
 function janani_sync_all_wallet_balances($pdo) {
     janani_expire_wallet_credits($pdo);
     try {
-        $pdo->exec("UPDATE `users` u SET u.`wallet_balance` = (SELECT COALESCE(SUM(w.`amount`), 0) FROM `wallet_credits` w WHERE w.`user_id` = u.`id` AND w.`status` = 'active' AND w.`expires_at` > NOW())");
+        $pdo->exec("UPDATE `users` u SET u.`wallet_balance` = (SELECT COALESCE(SUM(w.`amount`), 0) FROM `wallet_credits` w WHERE w.`user_id` COLLATE utf8mb4_unicode_ci = u.`id` COLLATE utf8mb4_unicode_ci AND w.`status` = 'active' AND w.`expires_at` > NOW())");
     } catch (Throwable $e) {}
 }
 
@@ -2122,9 +2122,10 @@ function janani_credit_lock_reason($pdo, $credit) {
 
 function janani_customer_active_order_count($pdo, $user, $excludeNumber = null) {
     $email = janani_is_placeholder_email($user['email'] ?? '') ? '' : strtolower(trim((string)$user['email']));
-    $sql = "SELECT COUNT(*) FROM `orders` WHERE (`customer_id` = ? OR (? != '' AND LOWER(`customer_email`) = ?))
+    // (no "? != ''" in SQL: a parameter and a literal can carry different collations and MySQL then rejects the query)
+    $sql = "SELECT COUNT(*) FROM `orders` WHERE (`customer_id` = ? OR LOWER(`customer_email`) = ?)
             AND (`order_status` IS NULL OR `order_status` NOT IN ('Cancelled', 'Payment Failed'))";
-    $params = [(string)$user['id'], $email, $email];
+    $params = [(string)$user['id'], $email !== '' ? $email : '-no-email-'];
     if ($excludeNumber !== null) {
         $sql .= " AND `number` != ?";
         $params[] = (string)$excludeNumber;
@@ -2263,11 +2264,11 @@ function janani_backfill_first_order_reward($pdo, $user) {
         if (!$user) return null;
         if (janani_is_staff_user($user)) return 'Staff and admin accounts do not earn the first-order credit.';
         $email = janani_is_placeholder_email($user['email'] ?? '') ? '' : strtolower(trim((string)$user['email']));
-        $st = $pdo->prepare("SELECT * FROM `orders` WHERE (`customer_id` = ? OR (? != '' AND LOWER(`customer_email`) = ?))
+        $st = $pdo->prepare("SELECT * FROM `orders` WHERE (`customer_id` = ? OR LOWER(`customer_email`) = ?)
             AND (`order_status` IS NULL OR `order_status` NOT IN ('Cancelled', 'Payment Failed'))
             AND (`payment_status` IS NULL OR `payment_status` NOT IN ('Refunded', 'Refund Pending', 'Cancelled', 'Failed'))
             ORDER BY `created_at` ASC LIMIT 5");
-        $st->execute([(string)$user['id'], $email, $email]);
+        $st->execute([(string)$user['id'], $email !== '' ? $email : '-no-email-']);
         $orders = $st->fetchAll(PDO::FETCH_ASSOC);
         if (count($orders) === 0) return null;
         $rewardRows = $pdo->prepare("SELECT COUNT(*) FROM `wallet_credits` WHERE `user_id` = ? AND `type` = 'first_order_reward'");

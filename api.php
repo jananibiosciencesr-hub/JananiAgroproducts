@@ -3757,10 +3757,9 @@ try {
                 $params = [];
                 if (!$orderViewerIsStaff) {
                     $ownEmail = janani_is_placeholder_email($orderViewer['email'] ?? '') ? '' : strtolower(trim((string)$orderViewer['email']));
-                    $query .= " AND (`customer_id` = ? OR (? != '' AND LOWER(`customer_email`) = ?))";
+                    $query .= " AND (`customer_id` = ? OR LOWER(`customer_email`) = ?)";
                     $params[] = (string)$orderViewer['id'];
-                    $params[] = $ownEmail;
-                    $params[] = $ownEmail;
+                    $params[] = $ownEmail !== '' ? $ownEmail : '-no-email-';
                 }
 
                 if ($customerEmail) {
