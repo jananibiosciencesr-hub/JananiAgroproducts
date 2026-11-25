@@ -76,6 +76,7 @@ export function PaymentPage() {
   const [verifyingText, setVerifyingText] = useState("Connecting to Razorpay Secure Gateway...");
   const [paymentIssue, setPaymentIssue] = useState<{ paymentId: string; message: string } | null>(null);
   const [onlinePaymentUnavailable, setOnlinePaymentUnavailable] = useState(false);
+  const [onlinePaymentReason, setOnlinePaymentReason] = useState("");
 
   // Success / Failure details
   const [transactionDetails, setTransactionDetails] = useState<{
@@ -495,7 +496,10 @@ export function PaymentPage() {
     });
     if (!rzOrder.success) {
       setIsProcessing(false);
-      if (rzOrder.onlinePaymentUnavailable) setOnlinePaymentUnavailable(true);
+      if (rzOrder.onlinePaymentUnavailable) {
+        setOnlinePaymentUnavailable(true);
+        setOnlinePaymentReason(String(rzOrder.reason || ""));
+      }
       handleOrderRejection(rzOrder);
       return;
     }
@@ -689,6 +693,7 @@ export function PaymentPage() {
                 <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-900 space-y-2">
                   <p className="font-semibold">Online payment is temporarily unavailable.</p>
                   <p>Please try again in a little while. Your cart is saved.</p>
+                  {onlinePaymentReason && <p className="text-[11px] opacity-80">Reason: {onlinePaymentReason}</p>}
                 </div>
               )}
 

@@ -46,6 +46,7 @@ export interface RazorpayOrderResult {
   priceChanged?: boolean;
   couponInvalid?: boolean;
   onlinePaymentUnavailable?: boolean;
+  reason?: string;
 }
 
 /**
