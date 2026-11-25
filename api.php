@@ -1842,6 +1842,7 @@ try {
                 janani_json_exit([
                     'success' => false,
                     'onlinePaymentUnavailable' => true,
+                    'reason' => $keys['reason'],
                     'message' => 'Online payment is temporarily unavailable. Please try again later.'
                 ], 503);
             }
