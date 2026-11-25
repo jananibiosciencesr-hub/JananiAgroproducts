@@ -79,10 +79,6 @@ export function OrderTimelineModal({ order, isOpen, onClose }: OrderTimelineModa
             </div>
           </div>
 
-          <div className="sm:text-right">
-            <span className="text-muted-foreground">Expected Doorstep ETA:</span>
-            <p className="font-semibold text-brand-leaf mt-0.5">{order.expectedDelivery}</p>
-          </div>
         </div>
 
         {/* Vertical Timeline Stepper */}

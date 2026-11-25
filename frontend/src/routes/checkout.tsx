@@ -34,7 +34,7 @@ export const Route = createFileRoute("/checkout")({
       { title: "Checkout & Dispatch — JANANI AGRO PRODUCTS" },
       {
         name: "description",
-        content: "Secure checkout for farm-fresh organic harvest orders with scheduled delivery.",
+        content: "Secure checkout for farm-fresh organic harvest orders with fast, secure delivery.",
       },
     ],
   }),
@@ -289,12 +289,12 @@ export function CheckoutPage() {
       customerEmail: effectiveCustomerEmail,
       customerPhone: effectiveCustomerPhone,
       address: selectedAddress,
-      deliverySlot: "Standard Delivery (2-3 Business Days)",
+      deliverySlot: "Standard Delivery",
       slot: {
         id: "standard",
         name: "Standard Delivery",
-        dateStr: "2-3 Business Days",
-        timeWindow: "9:00 AM – 7:00 PM",
+        dateStr: "",
+        timeWindow: "",
         fee: 0,
       },
       items: cartItems,
@@ -352,7 +352,7 @@ export function CheckoutPage() {
           couponCode: couponDiscount > 0 ? (appliedCoupon?.code || "") : "",
           finalTotal,
           paymentMethod: "Cash on Delivery",
-          deliverySlot: "Standard Delivery (2-3 Business Days)",
+          deliverySlot: "Standard Delivery",
           orderNotes,
           useWalletCredit: walletDeduction > 0,
         });
@@ -374,7 +374,7 @@ export function CheckoutPage() {
             paymentMethod: "Cash on Delivery",
             paymentStatus: created.payment_status || "Pending (COD)",
             amount: Number(created.total),
-            deliveryDate: "2-3 Business Days",
+            deliveryDate: "",
             customerName: effectiveCustomerName,
             customerPhone: effectiveCustomerPhone,
             customerEmail: effectiveCustomerEmail,
@@ -484,7 +484,7 @@ export function CheckoutPage() {
           </span>
 
           <span className="mt-6 inline-block text-xs font-bold uppercase tracking-widest text-brand-leaf bg-brand-leaf/10 px-3 py-1 rounded-full">
-            Order Confirmed & Scheduled
+            Order Confirmed
           </span>
 
           <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl text-foreground">
@@ -510,15 +510,6 @@ export function CheckoutPage() {
               <span className="font-semibold text-foreground text-right">
                 {placedOrderSummary?.address?.fullName} ({placedOrderSummary?.address?.city},{" "}
                 {placedOrderSummary?.address?.pincode})
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground font-medium">Estimated Delivery:</span>
-              <span className="font-semibold text-brand-leaf text-right">
-                {placedOrderSummary?.slot?.dateStr
-                  ? `${placedOrderSummary?.slot?.dateStr} • ${placedOrderSummary?.slot?.timeWindow}`
-                  : placedOrderSummary?.deliverySlot || "Standard Dispatch (2-3 Days)"}
               </span>
             </div>
 

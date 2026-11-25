@@ -212,7 +212,7 @@ export function PaymentPage() {
     }
     return "";
   }, [checkoutData, sqlPhone, user?.phone, customerPhone]);
-  const deliveryDate = checkoutData?.slot?.dateStr || "Tomorrow Morning (9:00 AM – 1:00 PM)";
+  const deliveryDate = "";
   const city = checkoutData?.address?.city || "Ahmedabad";
 
   // Pre-load Razorpay script on page mount
@@ -640,12 +640,6 @@ export function PaymentPage() {
                   {resolvedCustomerEmail}
                 </span>
               </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 text-muted-foreground">
-                <span className="shrink-0 font-medium">Scheduled Delivery:</span>
-                <span className="text-brand-leaf font-semibold sm:text-right">
-                  {deliveryDate}
-                </span>
-              </div>
             </div>
 
             {/* Action Buttons */}
@@ -732,9 +726,6 @@ export function PaymentPage() {
                 <span className="text-brand-leaf truncate text-right">{customerName}</span>
               </div>
               <p className="line-clamp-1">{checkoutData?.address?.street || "Judges Bungalow Road, Bodakdev"}</p>
-              <p className="font-semibold text-foreground">
-                Slot: <span className="text-brand-leaf">{deliveryDate}</span>
-              </p>
             </div>
 
             {/* Items list */}

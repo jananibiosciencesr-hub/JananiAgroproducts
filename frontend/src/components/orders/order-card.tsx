@@ -265,12 +265,9 @@ export function OrderCard({
 
             <div>
               <span className="text-muted-foreground font-semibold flex items-center gap-1.5">
-                <Truck className="size-3.5 text-brand-leaf" /> Logistics & Schedule
+                <Truck className="size-3.5 text-brand-leaf" /> Logistics
               </span>
               <p className="font-medium text-foreground mt-1">Carrier: {order.courier}</p>
-              <p className="text-muted-foreground mt-0.5">
-                Slot: <strong className="text-foreground">{order.deliverySlot || order.expectedDelivery}</strong>
-              </p>
             </div>
           </div>
 

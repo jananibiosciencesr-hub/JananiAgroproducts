@@ -17,7 +17,7 @@ if (!defined('JANANI_API')) {
     exit('Forbidden');
 }
 
-const JANANI_SCHEMA_VERSION = 2;
+const JANANI_SCHEMA_VERSION = 3;
 const JANANI_CUSTOMER_TOKEN_TTL = 604800;   // 7 days
 const JANANI_ADMIN_TOKEN_TTL = 86400;       // 24 hours (matches admin portal auto-logout)
 const JANANI_OTP_TTL = 600;                 // 10 minutes
@@ -272,6 +272,12 @@ function janani_boot($pdo) {
             janani_migration_v2($pdo);
             janani_store_set($pdo, 'schema_version', '2');
             $version = 2;
+        }
+        if ($version < 3) {
+            // Databases that were already marked v2 before the wallet feature shipped never got the wallet tables.
+            janani_migration_v2($pdo);
+            janani_store_set($pdo, 'schema_version', '3');
+            $version = 3;
         }
     } catch (Throwable $e) {
         error_log('[janani] migration failed: ' . $e->getMessage());
@@ -2311,6 +2317,20 @@ function janani_wallet_redemption($pdo, $user, $productsValue) {
 }
 
 /** Issues the first-order reward for a freshly placed order (no-op when not eligible). */
+/** Records on the order (admin side only) why no first-order wallet credit was issued. */
+function janani_reward_skip_note($pdo, $order, $reason) {
+    try {
+        $notes = janani_json_field($order['admin_notes'] ?? null, []);
+        $notes[] = [
+            'id' => 'NOTE-' . bin2hex(random_bytes(4)),
+            'text' => 'First-order reward not issued: ' . $reason . '.',
+            'author' => 'System',
+            'date' => date('d M Y, h:i A'),
+        ];
+        $pdo->prepare("UPDATE `orders` SET `admin_notes` = ? WHERE `id` = ?")->execute([json_encode($notes, JSON_UNESCAPED_UNICODE), $order['id']]);
+    } catch (Throwable $e) {}
+}
+
 function janani_grant_first_order_reward($pdo, $user, $order) {
     if (!$order || !$user) return null;
     $lockName = 'wallet_' . substr(hash('sha256', (string)$user['id']), 0, 40);
@@ -2318,8 +2338,16 @@ function janani_grant_first_order_reward($pdo, $user, $order) {
     try {
         $locked = (int)$pdo->query("SELECT GET_LOCK(" . $pdo->quote($lockName) . ", 10)")->fetchColumn() === 1;
         $productsValue = round((float)$order['subtotal'] - (float)($order['coupon_discount'] ?? 0), 2);
-        if ($productsValue < JANANI_CREDIT_MIN_ORDER_VALUE) return null;
-        if (!janani_first_order_reward_eligible($pdo, $user, $order['number'])) return null;
+        if ($productsValue < JANANI_CREDIT_MIN_ORDER_VALUE) {
+            janani_reward_skip_note($pdo, $order, 'products value ₹' . number_format($productsValue, 2) . ' is below the ₹' . JANANI_CREDIT_MIN_ORDER_VALUE . ' minimum');
+            return null;
+        }
+        if (!janani_first_order_reward_eligible($pdo, $user, $order['number'])) {
+            $why = janani_is_staff_user($user) ? 'this is a staff/admin account'
+                : (janani_customer_active_order_count($pdo, $user, $order['number']) > 0 ? 'the customer already has an earlier non-cancelled order (same account or email)' : 'a first-order reward was already issued to this account');
+            janani_reward_skip_note($pdo, $order, $why);
+            return null;
+        }
         $amount = round($productsValue * JANANI_FIRST_ORDER_CREDIT_RATE, 2);
         if ($amount <= 0) return null;
         $id = 'WCR-' . strtoupper(bin2hex(random_bytes(5)));
@@ -2350,6 +2378,7 @@ function janani_grant_first_order_reward($pdo, $user, $order) {
         ];
     } catch (Throwable $e) {
         error_log('[janani] first-order reward: ' . $e->getMessage());
+        janani_reward_skip_note($pdo, $order, 'a system error occurred (' . mb_substr($e->getMessage(), 0, 160) . ')');
         return null;
     } finally {
         if ($locked) {

@@ -86,7 +86,6 @@ export function OrderSuccessPage() {
     });
   }, []);
 
-  const deliveryDate = effectiveOrder?.slot?.dateStr || effectiveOrder?.deliverySlot || effectiveOrder?.expectedDelivery || "2-3 Business Days";
   const customerName = effectiveOrder?.customerName || effectiveOrder?.address?.fullName || user?.name || "Valued Patron";
   const customerPhone = effectiveOrder?.customerPhone || effectiveOrder?.address?.phone || user?.phone || "";
   const customerEmail = effectiveOrder?.customerEmail || effectiveOrder?.customer_email || effectiveOrder?.address?.email || user?.email || "";
@@ -142,7 +141,6 @@ export function OrderSuccessPage() {
     : (effectiveOrder?.deliveryFee !== undefined ? effectiveOrder.deliveryFee : (subtotal >= 799 ? 0 : 60));
   const gstAmount = effectiveOrder?.gstAmount !== undefined ? effectiveOrder.gstAmount : Math.round(subtotal * 0.05);
   const finalTotal = effectiveOrder?.finalTotal || effectiveOrder?.total || Math.max(0, subtotal + gstAmount + deliveryFee - discount - walletUsed);
-  const awbNumber = effectiveOrder?.awb || `DEL-${orderNumber.replace(/[^0-9]/g, "") || "892144"}`;
 
   // Recommended catalog items
   const recommendedProducts = useMemo(() => {
@@ -268,28 +266,24 @@ export function OrderSuccessPage() {
       title: "Order Confirmed",
       desc: "Payment verified & inventory allocated",
       status: "completed",
-      time: "Just now",
       icon: CheckCircle2,
     },
     {
       title: "Quality Checked & Packed",
       desc: "Inspected for batch quality & secure packing",
       status: "active",
-      time: "Within 4 hours",
       icon: ShieldCheck,
     },
     {
       title: "Dispatched from Hub",
       desc: "Handed over to express courier logistics",
       status: "upcoming",
-      time: "Tomorrow",
       icon: Truck,
     },
     {
       title: "Doorstep Delivery",
       desc: `Dispatched to ${recipientCity}`,
       status: "upcoming",
-      time: deliveryDate,
       icon: PackageCheck,
     },
   ];
@@ -297,7 +291,7 @@ export function OrderSuccessPage() {
   if (!effectiveOrder) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center space-y-6">
-        <div className="size-20 mx-auto rounded-3xl bg-brand-leaf/10 text-brand-leaf grid place-items-center">
+        <div className="size-20 mx-auto rounded-none bg-brand-leaf/10 text-brand-leaf grid place-items-center">
           <ShoppingBag className="size-10" />
         </div>
         <div className="space-y-2">
@@ -335,7 +329,7 @@ export function OrderSuccessPage() {
 
       {/* First-order reward */}
       {walletReward?.amount ? (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="rounded-none border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <p>
             🎁 <strong>₹{walletReward.amount}</strong> wallet credit has been added for your next order (orders of ₹{walletReward.minOrderValue || 500}+ excluding delivery).
             Valid till <strong>{walletReward.expiresOn}</strong>.{walletReward.lockedReason ? ` ${walletReward.lockedReason}` : ""}
@@ -345,7 +339,7 @@ export function OrderSuccessPage() {
       ) : null}
 
       {/* HERO CELEBRATION CARD */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-brand-leaf/25 bg-gradient-to-b from-brand-leaf/10 via-card to-card p-4 sm:p-8 shadow-luxe text-center space-y-4 sm:space-y-5">
+      <div className="relative overflow-hidden rounded-none border border-brand-leaf/25 bg-gradient-to-b from-brand-leaf/10 via-card to-card p-4 sm:p-8 shadow-luxe text-center space-y-4 sm:space-y-5">
         {/* Glow ambient particle */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 size-56 sm:size-72 rounded-full bg-brand-leaf/15 blur-3xl pointer-events-none" />
 
@@ -358,7 +352,7 @@ export function OrderSuccessPage() {
 
         {/* Tagline */}
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-leaf/30 bg-brand-leaf/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-leaf">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-leaf/30 bg-brand-leaf/15 px-3.5 py-1 text-[11px] font-bold tracking-wide text-brand-leaf">
             <Sparkles className="size-3" /> Order Placed & Confirmed
           </span>
         </div>
@@ -369,16 +363,16 @@ export function OrderSuccessPage() {
             Thank You, <span className="text-brand-leaf">{customerName}</span>!
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Your order has been received and confirmed. Our team has begun preparing your authentic farm products and scheduled them for express courier dispatch.
+            Your payment was successful and your order is confirmed. Our team will start preparing your farm products shortly, and you can follow every update from your dashboard.
           </p>
         </div>
 
         {/* Quick Order Meta Bar - Fully Responsive, Never Breaks on Mobile */}
-        <div className="w-full max-w-2xl mx-auto rounded-2xl bg-secondary/80 border border-border p-3 sm:p-4 text-left sm:text-center">
+        <div className="w-full max-w-2xl mx-auto rounded-none bg-secondary/80 border border-border p-3 sm:p-4 text-left sm:text-center">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
             {/* Order Reference */}
             <div className="flex sm:flex-col items-center justify-between sm:justify-center gap-1 px-1 sm:px-2 py-0.5 sm:py-0">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Order Reference</span>
+              <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">Order Reference</span>
               <div className="flex items-center gap-1.5 bg-background/90 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-border">
                 <strong className="font-mono text-xs sm:text-sm font-bold text-brand-leaf tracking-wider whitespace-nowrap">{orderNumber}</strong>
                 <button
@@ -394,16 +388,16 @@ export function OrderSuccessPage() {
 
             {/* Estimated Delivery */}
             <div className="flex sm:flex-col items-center justify-between sm:justify-center gap-1 px-1 sm:px-2 pt-2 sm:pt-0 py-0.5 sm:py-0">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Expected Delivery</span>
+              <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">Order Date</span>
               <div className="flex items-center gap-1.5 text-foreground text-xs sm:text-sm font-bold">
                 <Calendar className="size-3.5 sm:size-4 text-brand-gold shrink-0" />
-                <span className="whitespace-nowrap">{deliveryDate}</span>
+                <span className="whitespace-nowrap">{formattedDate}</span>
               </div>
             </div>
 
             {/* Payment Method */}
             <div className="flex sm:flex-col items-center justify-between sm:justify-center gap-1 px-1 sm:px-2 pt-2 sm:pt-0 py-0.5 sm:py-0">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Payment Mode</span>
+              <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">Payment Mode</span>
               <div className="flex items-center gap-1.5 text-foreground text-xs sm:text-sm font-bold">
                 <BadgeCheck className="size-3.5 sm:size-4 text-brand-leaf shrink-0" />
                 <span className="whitespace-nowrap truncate max-w-[140px] sm:max-w-none">{paymentMethod}</span>
@@ -435,7 +429,7 @@ export function OrderSuccessPage() {
           <Button
             asChild
             size="default"
-            className="rounded-xl px-5 text-xs font-bold gap-2 bg-[#075B32] hover:bg-[#064e2b] text-white shadow-md transition"
+            className="rounded-none px-5 text-xs font-bold gap-2 bg-[#075B32] hover:bg-[#064e2b] text-white shadow-md transition"
           >
             <Link to="/dashboard">
               <PackageCheck className="size-4" />
@@ -447,7 +441,7 @@ export function OrderSuccessPage() {
             asChild
             variant="outline"
             size="default"
-            className="rounded-xl px-5 text-xs font-semibold gap-2 border-border hover:border-brand-leaf hover:text-brand-leaf transition"
+            className="rounded-none px-5 text-xs font-semibold gap-2 border-border hover:border-brand-leaf hover:text-brand-leaf transition"
           >
             <Link to="/products">
               <ShoppingBag className="size-4 text-brand-leaf" />
@@ -460,7 +454,7 @@ export function OrderSuccessPage() {
             variant="outline"
             size="default"
             onClick={() => setIsInvoiceModalOpen(true)}
-            className="rounded-xl px-4 text-xs font-semibold gap-2 border-border hover:border-brand-leaf hover:text-brand-leaf transition"
+            className="rounded-none px-4 text-xs font-semibold gap-2 border-border hover:border-brand-leaf hover:text-brand-leaf transition"
           >
             <Download className="size-4 text-brand-leaf" />
             <span>Invoice PDF</span>
@@ -472,23 +466,20 @@ export function OrderSuccessPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
         {/* Left 2 Cols: Live Dispatch Milestones */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-2xl sm:rounded-3xl border border-border bg-card p-4 sm:p-7 shadow-soft space-y-5 sm:space-y-6">
+          <div className="rounded-none border border-[#075B32]/25 bg-card p-5 sm:p-8 shadow-none space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="size-2 rounded-full bg-brand-leaf animate-ping" />
-                  <span className="text-[11px] font-bold text-brand-leaf uppercase tracking-wider">
+                  <span className="text-[11px] font-bold text-brand-leaf tracking-wide">
                     Fulfillment Status
                   </span>
                 </div>
                 <h3 className="font-display text-base sm:text-xl font-bold text-foreground mt-0.5">
-                  Live Dispatch Milestones
+                  Order Progress
                 </h3>
               </div>
               <div className="flex items-center gap-2 self-start sm:self-auto">
-                <span className="text-xs text-muted-foreground bg-secondary/80 px-3 py-1 rounded-xl border border-border/80 font-mono">
-                  AWB: <strong className="text-foreground">{awbNumber}</strong>
-                </span>
                 <Button asChild variant="ghost" size="sm" className="h-8 text-xs font-bold text-brand-leaf hover:text-brand-leaf hover:bg-brand-leaf/10 rounded-lg">
                   <Link to="/dashboard">
                     My Orders <ArrowRight className="size-3 ml-1" />
@@ -499,7 +490,7 @@ export function OrderSuccessPage() {
 
             {/* Stepper Timeline */}
             <div className="relative pt-1">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 md:gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 items-stretch">
                 {steps.map((step) => {
                   const Icon = step.icon;
                   const isCompleted = step.status === "completed";
@@ -508,7 +499,7 @@ export function OrderSuccessPage() {
                   return (
                     <div
                       key={step.title}
-                      className={`flex md:flex-col items-start md:items-center md:text-center gap-3 md:gap-2 p-3 rounded-2xl transition border ${
+                      className={`flex md:flex-col items-start text-left gap-3 md:gap-3 p-4 h-full rounded-none transition border ${
                         isActive
                           ? "border-brand-gold/40 bg-brand-gold/5"
                           : isCompleted
@@ -517,7 +508,7 @@ export function OrderSuccessPage() {
                       }`}
                     >
                       <div
-                        className={`size-10 sm:size-11 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                        className={`size-10 sm:size-11 rounded-none flex items-center justify-center shrink-0 transition-all ${
                           isCompleted
                             ? "bg-brand-leaf text-white shadow-xs"
                             : isActive
@@ -528,12 +519,9 @@ export function OrderSuccessPage() {
                         <Icon className="size-4 sm:size-5" />
                       </div>
 
-                      <div className="space-y-0.5 flex-1 min-w-0">
-                        <p className="text-xs font-bold text-foreground">{step.title}</p>
-                        <p className="text-[11px] text-muted-foreground leading-tight">{step.desc}</p>
-                        <span className="inline-block text-[10px] font-semibold text-brand-leaf bg-brand-leaf/10 px-2 py-0.5 rounded-md mt-1">
-                          {step.time}
-                        </span>
+                      <div className="space-y-1 flex-1 min-w-0 text-left">
+                        <p className="text-sm font-bold text-foreground text-left">{step.title}</p>
+                        <p className="text-xs text-muted-foreground leading-snug text-left">{step.desc}</p>
                       </div>
                     </div>
                   );
@@ -546,22 +534,21 @@ export function OrderSuccessPage() {
               <div className="flex items-center gap-2">
                 <MapPin className="size-4 text-brand-leaf shrink-0" />
                 <span>
-                  Delivering to: <strong className="text-foreground">{recipientCity}</strong> ({deliveryDate})
+                  Delivering to: <strong className="text-foreground">{recipientCity}</strong>
                 </span>
               </div>
-              <span className="text-brand-leaf font-bold">100% On-Time Freshness Guarantee</span>
             </div>
           </div>
         </div>
 
         {/* Right 1 Col: Comprehensive Digital Order Receipt */}
-        <div className="rounded-2xl sm:rounded-3xl border border-border bg-card p-4 sm:p-7 shadow-soft space-y-4 sm:space-y-5">
+        <div className="rounded-none border border-[#075B32]/25 bg-card p-5 sm:p-7 shadow-none space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
               <h3 className="font-display text-sm sm:text-base font-bold text-foreground">Order Receipt</h3>
               <p className="text-[11px] text-muted-foreground">{formattedDate}</p>
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-leaf bg-brand-leaf/10 px-2.5 py-1 rounded-full">
+            <span className="text-[10px] font-bold tracking-wide text-brand-leaf bg-brand-leaf/10 px-2.5 py-1 rounded-full">
               Confirmed ✓
             </span>
           </div>
@@ -576,7 +563,7 @@ export function OrderSuccessPage() {
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src = pantryImage;
                   }}
-                  className="size-10 rounded-xl object-cover border border-border shrink-0"
+                  className="size-10 rounded-none object-cover border border-border shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-foreground truncate">{formatProductName(item.name)}</p>
@@ -631,7 +618,7 @@ export function OrderSuccessPage() {
               <MapPin className="size-4 text-brand-leaf shrink-0 mt-0.5" />
               <div className="min-w-0">
                 <p className="font-semibold text-foreground">Delivery Address</p>
-                <p className="text-muted-foreground line-clamp-2 mt-0.5 text-[11px] leading-tight">{customerAddress}</p>
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed text-left">{customerAddress}</p>
               </div>
             </div>
 
@@ -639,7 +626,7 @@ export function OrderSuccessPage() {
               <ShieldCheck className="size-4 text-brand-leaf shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-foreground">Payment Method</p>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-1 text-xs text-left">
                   {paymentMethod}
                 </p>
               </div>
@@ -651,7 +638,7 @@ export function OrderSuccessPage() {
             href={`https://api.whatsapp.com/send?phone=919311416225&text=${encodeURIComponent(`Hi Janani Agro, I have a question regarding my Order #${orderNumber}`)}`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/30 p-3 flex items-center justify-between text-xs transition cursor-pointer group"
+            className="rounded-none bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/30 p-3 flex items-center justify-between text-xs transition cursor-pointer group"
           >
             <div className="flex items-center gap-2.5">
               <div className="size-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
@@ -673,7 +660,7 @@ export function OrderSuccessPage() {
       <div className="pt-6 border-t border-border space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <span className="text-xs font-bold text-brand-leaf uppercase tracking-wider">
+            <span className="text-xs font-bold text-brand-leaf tracking-wide">
               Pair with Your Order
             </span>
             <h3 className="font-display text-lg sm:text-2xl font-bold text-foreground mt-1">
@@ -684,7 +671,7 @@ export function OrderSuccessPage() {
             </p>
           </div>
 
-          <Button asChild variant="outline" size="sm" className="rounded-xl text-xs font-semibold gap-1.5 self-start h-8 sm:h-9">
+          <Button asChild variant="outline" size="sm" className="rounded-none text-xs font-semibold gap-1.5 self-start h-8 sm:h-9">
             <Link to="/products">
               <span>View Full Catalog</span>
               <ArrowRight className="size-3.5" />

@@ -77,11 +77,6 @@ export function PaymentSuccessView({
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Scheduled Dispatch:</span>
-            <span className="font-semibold text-brand-leaf">{deliveryDate}</span>
-          </div>
-
-          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Delivering To:</span>
             <span className="font-semibold text-foreground">
               {recipientName} ({recipientCity})
