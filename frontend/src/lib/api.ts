@@ -1,4 +1,7 @@
-import "./http-auth"; // attaches the signed session token to every API request (must load first)
+import { installAuthFetch } from "./http-auth";
+// Attaches the signed session token to every API request. Called explicitly (not a bare side-effect
+// import) because frontend/package.json declares "sideEffects": false.
+installAuthFetch();
 import { products, categories, type Product, getCategoryImage, getProductImage, formatProductName, SAMPLE_PRODUCT_VIDEO } from "./catalog";
 import { matchesProductSearch } from "./search-helper";
 import {
@@ -7460,6 +7463,7 @@ export interface AuthResponse {
   notRegistered?: boolean;
   not_registered?: boolean;
   hasNoPassword?: boolean;
+  isAdmin?: boolean;
 }
 
 export interface OtpSendResponse {

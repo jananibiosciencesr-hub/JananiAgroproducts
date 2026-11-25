@@ -1,6 +1,6 @@
 <?php
 /**
- * JANANI AGRO PRODUCTS - HOSTINGER PHP REST API (source: backend/php/, copied to the site root by the build)
+ * JANANI AGRO PRODUCTS - HOSTINGER PHP REST API (source: backend/php/, copied to the site root by `npm run build`)
  *
  * Single entry point for the storefront and the admin command center (/api.php?action=... or /api/<action>).
  *
@@ -418,16 +418,24 @@ $pdo = null;
 $lastError = null;
 $connectedDb = $raw_db;
 if ($raw_db && $raw_user) {
-    try {
-        $pdo = new PDO("mysql:host={$raw_host};port={$raw_port};dbname={$raw_db};charset=utf8mb4", $raw_user, $raw_pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-            PDO::ATTR_TIMEOUT => 5
-        ]);
-    } catch (Throwable $e) {
-        $lastError = $e;
-        error_log('[janani] database connection failed: ' . $e->getMessage());
+    // Shared hosting caps simultaneous MySQL connections per user; when a burst of requests hits that cap
+    // the connection is refused for a moment ("Too many connections" / max_user_connections), so retry briefly.
+    for ($dbAttempt = 1; $dbAttempt <= 4 && !$pdo; $dbAttempt++) {
+        try {
+            $pdo = new PDO("mysql:host={$raw_host};port={$raw_port};dbname={$raw_db};charset=utf8mb4", $raw_user, $raw_pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_TIMEOUT => 5
+            ]);
+        } catch (Throwable $e) {
+            $lastError = $e;
+            $dbMsg = $e->getMessage();
+            $transient = (bool)preg_match('/\[(1040|1203|1226|2002|2006|2013)\]|Too many connections|max_user_connections|max_connections_per_hour/i', $dbMsg);
+            error_log('[janani] database connection failed (attempt ' . $dbAttempt . '): ' . $dbMsg);
+            if (!$transient || $dbAttempt === 4) break;
+            usleep(150000 * $dbAttempt + random_int(0, 150000));
+        }
     }
 } else {
     error_log('[janani] DB_NAME / DB_USER / DB_PASSWORD are not configured. Create the .env file described in backend/.env.example.');
@@ -813,6 +821,7 @@ function ensureReviewsTableSchema($pdo) {
     static $reviewsSchemaChecked = false;
     if ($reviewsSchemaChecked || !$pdo) return;
     $reviewsSchemaChecked = true;
+    if (!janani_should_run_periodic($pdo, 'reviews_schema', 600)) return;
     try {
         $pdo->exec("CREATE TABLE IF NOT EXISTS `reviews` (
           `id` VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -1183,6 +1192,13 @@ function ensureJananiCatalogSynced($pdo) {
     static $synced = false;
     if ($synced) return;
     $synced = true;
+    if (!janani_should_run_periodic($pdo, 'catalog_sync', 600)) {
+        // Between full checks only refresh the category product counts (one cheap query)
+        try {
+            $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR p.category_slug = c.slug OR LOWER(p.category_name) = LOWER(c.name)))");
+        } catch (Exception $e) {}
+        return;
+    }
     try {
         ensureCategoriesTableSchema($pdo);
         ensureProductsTableSchema($pdo);
@@ -1536,15 +1552,17 @@ try {
             if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 janani_json_exit(['success' => false, 'message' => 'Please enter a valid email address.']);
             }
-            if ($purpose === 'admin_login' && $email !== janani_admin_email()) {
-                janani_json_exit(['success' => false, 'message' => 'This email address is not authorised for the Admin Command Center.'], 403);
+            if ($purpose === 'admin_login' && !janani_admin_login_allowed($pdo, $email)) {
+                janani_json_exit(['success' => false, 'message' => 'This email address does not have access to the Admin Command Center.'], 403);
             }
             if ($purpose !== 'admin_login') {
                 janani_rate_limit_or_exit($pdo, 'otp-ip:' . janani_client_ip(), 20, 3600);
                 janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 45, 'Please wait a few seconds before requesting another code.');
                 janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 6, 3600, 'Too many codes requested for this account. Please try again in an hour.');
             } else {
-                janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 5, 'Please wait 5 seconds before requesting another code.');
+                janani_rate_limit_or_exit($pdo, 'admin-otp-ip:' . janani_client_ip(), 20, 3600);
+                janani_rate_limit_or_exit($pdo, 'otp-cooldown:' . $group . ':' . janani_normalize_target($target), 1, 30, 'Please wait 30 seconds before requesting another code.');
+                janani_rate_limit_or_exit($pdo, 'otp-hour:' . janani_normalize_target($target), 10, 3600, 'Too many codes requested. Please try again in an hour.');
             }
 
             $deliverTo = '';
@@ -1642,12 +1660,10 @@ try {
             if ($target === '' || $otp === '') {
                 janani_json_exit(['success' => false, 'message' => 'Please enter the 6-digit verification code.']);
             }
-            if ($purpose === 'admin_login' && $email !== janani_admin_email()) {
-                janani_json_exit(['success' => false, 'message' => 'This email address is not authorised for the Admin Command Center.'], 403);
+            if ($purpose === 'admin_login' && !janani_admin_login_allowed($pdo, $email)) {
+                janani_json_exit(['success' => false, 'message' => 'This email address does not have access to the Admin Command Center.'], 403);
             }
-            if ($purpose !== 'admin_login') {
-                janani_rate_limit_or_exit($pdo, 'verify-ip:' . janani_client_ip(), 40, 900);
-            }
+            janani_rate_limit_or_exit($pdo, 'verify-ip:' . janani_client_ip(), 40, 900);
             if ($group === 'password_reset') {
                 janani_json_exit(['success' => false, 'message' => 'Use the password reset form to enter this code.']);
             }
@@ -1678,7 +1694,7 @@ try {
             if (janani_user_is_blocked($userRow)) {
                 janani_json_exit(['success' => false, 'message' => 'This account is not active. Please contact support.'], 403);
             }
-            if ($purpose === 'admin_login' && !janani_is_admin_user($userRow)) {
+            if ($purpose === 'admin_login' && !janani_is_staff_user($userRow)) {
                 janani_json_exit(['success' => false, 'message' => 'You do not have administrator access.'], 403);
             }
             $isAdminLogin = janani_is_admin_user($userRow);

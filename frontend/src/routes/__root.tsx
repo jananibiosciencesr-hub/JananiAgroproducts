@@ -11,6 +11,9 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { SiteShell } from "@/components/site-shell";
+import { installAuthFetch } from "@/lib/http-auth";
+
+installAuthFetch();
 
 import appCss from "../styles.css?url";
 

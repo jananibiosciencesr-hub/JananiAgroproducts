@@ -108,6 +108,50 @@ function handleUnauthorized(): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Shared hosting protection: Hostinger limits simultaneous PHP processes and MySQL connections.
+// Pages like the admin dashboard start ~15-30 API calls at once, which made the server answer 503.
+// API calls are therefore queued (a few at a time) and a 503 "server busy" answer is retried.
+// ---------------------------------------------------------------------------
+const MAX_CONCURRENT_API_REQUESTS = 4;
+const MAX_BUSY_RETRIES = 2;
+let activeApiRequests = 0;
+const waitingApiRequests: Array<() => void> = [];
+
+function acquireApiSlot(): Promise<void> {
+  if (activeApiRequests < MAX_CONCURRENT_API_REQUESTS) {
+    activeApiRequests++;
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve) => {
+    waitingApiRequests.push(() => {
+      activeApiRequests++;
+      resolve();
+    });
+  });
+}
+
+function releaseApiSlot(): void {
+  activeApiRequests = Math.max(0, activeApiRequests - 1);
+  const next = waitingApiRequests.shift();
+  if (next) next();
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** A 503 that means "server busy / database connection refused" - nothing was executed, safe to retry. */
+async function isRetryableBusy(response: Response): Promise<boolean> {
+  if (response.status !== 503) return false;
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) return true; // web-server level 503 (process limit)
+  try {
+    const data = await response.clone().json();
+    return !!data?.serviceUnavailable;
+  } catch {
+    return true;
+  }
+}
+
 let installed = false;
 
 export function installAuthFetch(): void {
@@ -128,7 +172,29 @@ export function installAuthFetch(): void {
       headers.set("X-Janani-Auth", token);
     }
 
-    const response = await nativeFetch(input as RequestInfo, { ...init, headers });
+    let response: Response;
+    await acquireApiSlot();
+    try {
+      let attempt = 0;
+      for (;;) {
+        try {
+          response = await nativeFetch(input as RequestInfo, { ...init, headers });
+        } catch (networkError) {
+          if (attempt >= MAX_BUSY_RETRIES) throw networkError;
+          attempt++;
+          await sleep(700 * attempt + Math.random() * 400);
+          continue;
+        }
+        if (attempt < MAX_BUSY_RETRIES && (await isRetryableBusy(response))) {
+          attempt++;
+          await sleep(700 * attempt + Math.random() * 400);
+          continue;
+        }
+        break;
+      }
+    } finally {
+      releaseApiSlot();
+    }
 
     if (response.status === 401) {
       handleUnauthorized();
@@ -146,4 +212,3 @@ export function installAuthFetch(): void {
   };
 }
 
-installAuthFetch();

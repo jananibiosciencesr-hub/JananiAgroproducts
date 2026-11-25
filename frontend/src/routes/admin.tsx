@@ -222,7 +222,9 @@ function AdminDashboardPage() {
           fetch("/api.php?action=auth-me")
             .then((r) => r.json())
             .then((me) => {
-              if (!me?.success || !(me.isAdmin || me.isStaff)) {
+              // Sign out only when the server says the session is invalid (not on a temporary 503 / network error)
+              const sessionRejected = me?.authRequired === true || (me?.success === true && !(me.isAdmin || me.isStaff));
+              if (sessionRejected) {
                 localStorage.removeItem("janani_admin_session");
                 localStorage.removeItem("janani_admin_token");
                 localStorage.removeItem("janani_admin_user");
@@ -248,7 +250,13 @@ function AdminDashboardPage() {
   }, []);
 
   // Admin Login Portal Form State
-  const [adminEmail] = useState("jananibiosciences.r@gmail.com");
+  const [adminEmail, setAdminEmail] = useState("");
+  useEffect(() => {
+    try {
+      const last = localStorage.getItem("janani_admin_last_email");
+      if (last) setAdminEmail(last);
+    } catch (e) { }
+  }, []);
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -390,8 +398,8 @@ function AdminDashboardPage() {
       toast.error("Please enter your administrator email address.");
       return;
     }
-    if (cleanEmail !== "jananibiosciences.r@gmail.com") {
-      toast.error("Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) can access the Admin Command Center.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
     try {
@@ -430,10 +438,6 @@ function AdminDashboardPage() {
   const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const cleanEmail = adminEmail.trim().toLowerCase();
-    if (cleanEmail !== "jananibiosciences.r@gmail.com") {
-      toast.error("Unauthorized: Only the official administrator (jananibiosciences.r@gmail.com) can access the Admin Command Center.");
-      return;
-    }
     const code = otpDigits.join("").trim();
     if (code.length !== 6) {
       toast.error("Please enter the complete 6-digit verification code.");
@@ -444,12 +448,15 @@ function AdminDashboardPage() {
       const res = await verifyAuthOtp({ email: cleanEmail, otp: code, purpose: "admin_login" });
       if (res?.success && res.user) {
         const user = res.user;
-        const isSuperAdmin = user && (user.role === "Super Admin" || user.role === "Admin" || user.email?.toLowerCase() === "jananibiosciences.r@gmail.com");
+        const isSuperAdmin = user && (res.isAdmin || ["Super Admin", "Admin", "Staff", "Manager"].includes(user.role));
         if (!isSuperAdmin) {
           toast.error("Access Denied: You do not have administrator permissions.");
           return;
         }
         const token = res.token || "";
+        try {
+          localStorage.setItem("janani_admin_last_email", cleanEmail);
+        } catch (e) { }
         if (!token.startsWith("jat1.")) {
           toast.error("Sign-in failed: the server did not issue a session. Please try again.");
           return;
@@ -761,17 +768,17 @@ function AdminDashboardPage() {
                     <Mail className="ml-4 size-5 text-[#075B32] shrink-0" />
                     <input
                       type="email"
-                      readOnly
-                      value="jananibiosciences.r@gmail.com"
-                      className="h-13 w-full rounded-r-2xl bg-transparent px-3.5 text-sm font-bold text-slate-900 outline-none cursor-default selection:bg-transparent"
+                      required
+                      autoComplete="email"
+                      autoFocus
+                      placeholder="Enter your admin email"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      className="h-13 w-full rounded-r-2xl bg-transparent px-3.5 text-sm font-bold text-slate-900 outline-none placeholder:font-medium placeholder:text-slate-400"
                     />
-                    <div className="mr-3 flex items-center gap-1 px-2.5 py-1 bg-[#075B32]/10 text-[#075B32] rounded-full text-[11px] font-bold shrink-0">
-                      <Lock className="size-3" />
-                      <span>Root Admin</span>
-                    </div>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-2">
-                    A 6-digit verification code will be dispatched to the authorized administrator email via Gmail SMTP.
+                    A 6-digit verification code will be sent to this email. Only accounts with administrator access can sign in.
                   </p>
                 </div>
 

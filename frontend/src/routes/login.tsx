@@ -1091,7 +1091,7 @@ export function AuthenticationPage() {
                               setLoginUnregisteredWarn(null);
                             }}
                             onBlur={handleEmailBlur}
-                            placeholder="e.g. jananibiosciences.r@gmail.com"
+                            placeholder="e.g. yourname@gmail.com"
                             className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${formTouched.email && formErrors.email
                                 ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
                                 : isEmailValid
@@ -1214,7 +1214,7 @@ export function AuthenticationPage() {
                             value={email}
                             onChange={(e) => handleEmailChange(e.target.value)}
                             onBlur={handleEmailBlur}
-                            placeholder="e.g. jananibiosciences.r@gmail.com"
+                            placeholder="e.g. yourname@gmail.com"
                             className={`h-11 w-full rounded-2xl border bg-background/90 pl-10 pr-10 text-xs sm:text-sm outline-none transition ${formTouched.email && formErrors.email
                                 ? "border-destructive focus:border-destructive ring-1 ring-destructive/20 text-destructive bg-destructive/5"
                                 : isEmailValid

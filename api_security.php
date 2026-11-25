@@ -165,6 +165,24 @@ function janani_store_delete($pdo, $key) {
     } catch (Throwable $e) {}
 }
 
+/**
+ * True at most once per interval (shared across all PHP processes) - used to keep slow schema
+ * maintenance off the hot path of every request.
+ */
+function janani_should_run_periodic($pdo, $name, $intervalSeconds) {
+    if (!$pdo) return false;
+    try {
+        $st = $pdo->prepare("SELECT `expires_at` FROM `security_store` WHERE `k` = ? LIMIT 1");
+        $st->execute(['periodic:' . $name]);
+        $exp = $st->fetchColumn();
+        if ($exp !== false && (int)$exp > time()) return false;
+        janani_store_set($pdo, 'periodic:' . $name, '1', (int)$intervalSeconds);
+        return true;
+    } catch (Throwable $e) {
+        return true;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Schema bootstrap + one-time migrations
 // ---------------------------------------------------------------------------
@@ -503,6 +521,18 @@ function janani_current_user($pdo) {
     if (in_array($status, ['suspended', 'blocked', 'banned', 'deleted', 'inactive'], true)) return null;
     $user = $row;
     return $user;
+}
+
+/**
+ * Who may request an admin-portal OTP: the ADMIN_EMAIL mailbox, or any active account whose role is
+ * Super Admin / Admin / Staff / Manager (roles are managed from the admin Staff screen).
+ */
+function janani_admin_login_allowed($pdo, $email) {
+    $email = strtolower(trim((string)$email));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) return false;
+    if ($email === janani_admin_email()) return true;
+    $row = janani_find_user_by_identifier($pdo, $email);
+    return $row && !janani_user_is_blocked($row) && janani_is_staff_user($row);
 }
 
 function janani_require_user($pdo) {

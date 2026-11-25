@@ -11,7 +11,9 @@
  * There is no simulated / offline payment path: if Razorpay cannot be loaded or the server cannot
  * create a payment, the customer is told so and can retry or choose Cash on Delivery.
  */
-import "./http-auth";
+import { installAuthFetch } from "./http-auth";
+
+installAuthFetch();
 
 export interface RazorpayCartItem {
   productId: number | string;
