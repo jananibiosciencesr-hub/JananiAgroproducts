@@ -1621,6 +1621,13 @@ function janani_insert_order($pdo, $user, $quote, $address, $payment, $extra = [
 // real money, so it is allowed again for test mode.
 const JANANI_LEAKED_RAZORPAY_KEYS = [];
 
+// TEMPORARY test-mode fallback so checkout can be tested before environment variables are wired up.
+// Paste a Razorpay TEST key pair (rzp_test_...) between the quotes. Only test keys are accepted here (they cannot
+// move real money) and they are used only when no keys come from the environment / admin settings.
+// Before going live: set RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET (rzp_live_...) in the environment and empty these.
+const JANANI_TEST_FALLBACK_KEY_ID = '';
+const JANANI_TEST_FALLBACK_KEY_SECRET = '';
+
 function janani_razorpay_keys($pdo) {
     $keyId = janani_env('RAZORPAY_KEY_ID');
     $secret = janani_env('RAZORPAY_KEY_SECRET');
@@ -1637,9 +1644,15 @@ function janani_razorpay_keys($pdo) {
             if (!$webhook && !empty($rz['webhookSecret']) && !janani_is_masked($rz['webhookSecret'])) $webhook = trim((string)$rz['webhookSecret']);
         } catch (Throwable $e) {}
     }
+    $usingTestFallback = false;
+    if ((!$keyId || !$secret) && JANANI_TEST_FALLBACK_KEY_ID !== '' && JANANI_TEST_FALLBACK_KEY_SECRET !== '' && strpos(JANANI_TEST_FALLBACK_KEY_ID, 'rzp_test_') === 0) {
+        $keyId = JANANI_TEST_FALLBACK_KEY_ID;
+        $secret = JANANI_TEST_FALLBACK_KEY_SECRET;
+        $usingTestFallback = true;
+    }
     $mode = ($keyId && strpos($keyId, 'rzp_live_') === 0) ? 'live' : 'test';
     // Test keys work when explicitly enabled (env flag) or when the admin saved them in Payment settings.
-    $allowTest = janani_is_local_request() || janani_env_bool('RAZORPAY_ALLOW_TEST_MODE', false) || $keysFromAdmin;
+    $allowTest = janani_is_local_request() || janani_env_bool('RAZORPAY_ALLOW_TEST_MODE', false) || $keysFromAdmin || $usingTestFallback;
     $configured = $keyId && $secret && !in_array($keyId, JANANI_LEAKED_RAZORPAY_KEYS, true) && ($mode === 'live' || $allowTest);
     return [
         'configured' => (bool)$configured,
