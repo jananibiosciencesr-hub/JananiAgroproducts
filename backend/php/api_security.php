@@ -2035,6 +2035,18 @@ const JANANI_FIRST_ORDER_CREDIT_RATE = 0.10;
 const JANANI_CREDIT_MIN_ORDER_VALUE = 500;
 const JANANI_CREDIT_VALIDITY_DAYS = 90;
 
+/** Creates the wallet tables on first use, independent of the migration version stored in the database. */
+function janani_ensure_wallet_tables($pdo) {
+    static $done = false;
+    if ($done || !$pdo) return;
+    $done = true;
+    try {
+        janani_create_wallet_tables($pdo);
+    } catch (Throwable $e) {
+        error_log('[janani] could not create wallet tables: ' . $e->getMessage());
+    }
+}
+
 function janani_create_wallet_tables($pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS `wallet_credits` (
         `id` VARCHAR(40) NOT NULL PRIMARY KEY,
@@ -2269,6 +2281,7 @@ function janani_backfill_first_order_reward($pdo, $user) {
 }
 
 function janani_wallet_summary($pdo, $user) {
+    janani_ensure_wallet_tables($pdo);
     janani_backfill_first_order_reward($pdo, $user);
     janani_expire_wallet_credits($pdo, (string)$user['id']);
     $st = $pdo->prepare("SELECT * FROM `wallet_credits` WHERE `user_id` = ? ORDER BY `issued_at` DESC LIMIT 200");
@@ -2309,6 +2322,7 @@ function janani_wallet_summary($pdo, $user) {
  * (subtotal after coupon, excluding delivery and GST).
  */
 function janani_wallet_redemption($pdo, $user, $productsValue) {
+    janani_ensure_wallet_tables($pdo);
     $none = ['amount' => 0.0, 'credits' => [], 'message' => null];
     if (!$user) return $none;
     if ($productsValue < JANANI_CREDIT_MIN_ORDER_VALUE) {
@@ -2365,6 +2379,7 @@ function janani_reward_skip_note($pdo, $order, $reason) {
 
 function janani_grant_first_order_reward($pdo, $user, $order) {
     if (!$order || !$user) return null;
+    janani_ensure_wallet_tables($pdo);
     $lockName = 'wallet_' . substr(hash('sha256', (string)$user['id']), 0, 40);
     $locked = false;
     try {

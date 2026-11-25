@@ -1419,7 +1419,12 @@ try {
                     janani_json_exit(['success' => false, 'message' => 'Customer not found.'], 404);
                 }
             }
-            janani_json_exit(array_merge(['success' => true], janani_wallet_summary($pdo, $walletTarget)));
+            try {
+                janani_json_exit(array_merge(['success' => true], janani_wallet_summary($pdo, $walletTarget)));
+            } catch (Throwable $walletErr) {
+                error_log('[janani] wallet summary failed: ' . $walletErr->getMessage());
+                janani_json_exit(['success' => false, 'message' => 'Wallet could not be loaded.', 'detail' => mb_substr($walletErr->getMessage(), 0, 200)], 500);
+            }
 
         case 'auth-me':
             $me = janani_current_user($pdo);

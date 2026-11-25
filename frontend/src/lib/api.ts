@@ -980,13 +980,18 @@ export interface WalletSummary {
 export const WALLET_RULES_DEFAULT = { rewardPercent: 10, minOrderValue: 500, validityDays: 90, oneTimeUse: true };
 
 /** Signed-in customer's wallet credits (first-order reward), straight from the server ledger. */
+/** Why the last wallet request failed (shown on the wallet page so problems are visible, not silent). */
+export let lastWalletError = "";
+
 export async function getMyWallet(): Promise<WalletSummary | null> {
+  lastWalletError = "";
   try {
     const res = await fetch("/api.php?action=wallet");
     const data = await res.json().catch(() => null);
     if (data?.success) return data as WalletSummary;
+    lastWalletError = [data?.message || `Request failed (${res.status})`, data?.detail, data?.errorRef ? `Ref: ${data.errorRef}` : ""].filter(Boolean).join(" – ");
   } catch {
-    /* offline */
+    lastWalletError = "Could not reach the server.";
   }
   return null;
 }

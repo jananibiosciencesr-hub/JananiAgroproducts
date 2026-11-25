@@ -28,6 +28,7 @@ import { loadCustomerOrders, saveCustomerOrders } from "@/components/orders/orde
 import { CustomerOrder } from "@/components/orders/types";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
 import { loadUserSavedAddresses, getMyWallet, type WalletSummary } from "@/lib/api";
+import * as walletApi from "@/lib/api";
 import { EditProfileTab } from "@/components/profile/edit-profile-tab";
 import { AddressManagerTab } from "@/components/profile/address-manager-tab";
 import { SavedProductsTab } from "@/components/profile/saved-products-tab";
@@ -103,11 +104,15 @@ function DashboardPage() {
   // Wallet: balance, credits and passbook come from the server ledger
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [walletError, setWalletError] = useState("");
   useEffect(() => {
     if (!user) return;
     setWalletLoading(true);
     getMyWallet()
-      .then((w) => setWalletSummary(w))
+      .then((w) => {
+        setWalletSummary(w);
+        setWalletError(w ? "" : walletApi.lastWalletError);
+      })
       .finally(() => setWalletLoading(false));
   }, [user?.id, activeTab]);
   const walletTransactions: WalletTransaction[] = (walletSummary?.transactions || []).map((t) => ({
@@ -736,6 +741,11 @@ function DashboardPage() {
               </div>
 
               {/* Wallet Balance Card with Add Money trigger */}
+              {walletError && (
+                <div className="rounded-none border border-red-300 bg-red-50 p-3 text-xs text-red-800">
+                  Your wallet could not be loaded: {walletError}
+                </div>
+              )}
               <WalletBalanceCard summary={walletSummary} loading={walletLoading} />
 
               {/* Transactions Ledger */}

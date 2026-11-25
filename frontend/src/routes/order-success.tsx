@@ -463,11 +463,11 @@ export function OrderSuccessPage() {
       </div>
 
       {/* MAIN 2-COLUMN GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
         {/* Left 2 Cols: Live Dispatch Milestones */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-none border border-[#075B32]/25 bg-card p-5 sm:p-8 shadow-none space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
+        <div className="lg:col-span-2 flex">
+          <div className="w-full flex flex-col rounded-none border border-[#075B32]/25 bg-card p-5 sm:p-7 shadow-none gap-5">
+            <div className="flex items-center justify-between gap-3 pb-4 border-b border-border">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="size-2 rounded-full bg-brand-leaf animate-ping" />
@@ -488,46 +488,40 @@ export function OrderSuccessPage() {
               </div>
             </div>
 
-            {/* Stepper Timeline */}
-            <div className="relative pt-1">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 items-stretch">
-                {steps.map((step) => {
-                  const Icon = step.icon;
-                  const isCompleted = step.status === "completed";
-                  const isActive = step.status === "active";
-
-                  return (
+            {/* Vertical timeline: one row per step, icon column + text column, same alignment for every step */}
+            <ol className="flex-1 flex flex-col justify-between">
+              {steps.map((step, idx) => {
+                const Icon = step.icon;
+                const isCompleted = step.status === "completed";
+                const isActive = step.status === "active";
+                const isLast = idx === steps.length - 1;
+                return (
+                  <li key={step.title} className="relative flex gap-4 pb-6 last:pb-0">
+                    {!isLast && (
+                      <span
+                        aria-hidden
+                        className={`absolute left-[19px] top-10 bottom-0 w-px ${isCompleted ? "bg-brand-leaf/50" : "bg-border"}`}
+                      />
+                    )}
                     <div
-                      key={step.title}
-                      className={`flex md:flex-col items-start text-left gap-3 md:gap-3 p-4 h-full rounded-none transition border ${
-                        isActive
-                          ? "border-brand-gold/40 bg-brand-gold/5"
-                          : isCompleted
-                          ? "border-brand-leaf/20 bg-brand-leaf/5"
-                          : "border-transparent bg-secondary/30"
+                      className={`relative z-10 size-10 shrink-0 flex items-center justify-center border ${
+                        isCompleted
+                          ? "bg-brand-leaf text-white border-brand-leaf"
+                          : isActive
+                          ? "bg-brand-gold/15 text-brand-gold border-brand-gold/60"
+                          : "bg-card text-muted-foreground border-border"
                       }`}
                     >
-                      <div
-                        className={`size-10 sm:size-11 rounded-none flex items-center justify-center shrink-0 transition-all ${
-                          isCompleted
-                            ? "bg-brand-leaf text-white shadow-xs"
-                            : isActive
-                            ? "bg-brand-gold text-forest shadow-md ring-4 ring-brand-gold/20 animate-pulse font-bold"
-                            : "bg-secondary text-muted-foreground border border-border"
-                        }`}
-                      >
-                        <Icon className="size-4 sm:size-5" />
-                      </div>
-
-                      <div className="space-y-1 flex-1 min-w-0 text-left">
-                        <p className="text-sm font-bold text-foreground text-left">{step.title}</p>
-                        <p className="text-xs text-muted-foreground leading-snug text-left">{step.desc}</p>
-                      </div>
+                      <Icon className="size-4" />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                    <div className="min-w-0 flex-1 text-left pt-0.5">
+                      <p className={`text-sm font-bold ${isCompleted || isActive ? "text-foreground" : "text-muted-foreground"}`}>{step.title}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed text-left">{step.desc}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
 
             {/* Guaranteed Delivery Footer */}
             <div className="pt-3.5 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs text-muted-foreground">
@@ -543,7 +537,7 @@ export function OrderSuccessPage() {
 
         {/* Right 1 Col: Comprehensive Digital Order Receipt */}
         <div className="rounded-none border border-[#075B32]/25 bg-card p-5 sm:p-7 shadow-none space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex items-center justify-between gap-3 pb-4 border-b border-border">
             <div>
               <h3 className="font-display text-sm sm:text-base font-bold text-foreground">Order Receipt</h3>
               <p className="text-[11px] text-muted-foreground">{formattedDate}</p>

@@ -1706,7 +1706,7 @@ function OrderDetailDrawer({
                     <span>Line Items ({order.items?.length || 0})</span>
                   </h3>
                   <span className="text-xs text-muted-foreground font-medium">
-                    HSN & GST Registered Goods
+                    GST Registered Goods
                   </span>
                 </div>
 
@@ -1715,7 +1715,6 @@ function OrderDetailDrawer({
                     <thead>
                       <tr className="border-b border-border bg-muted/40 font-semibold text-muted-foreground uppercase">
                         <th className="py-2.5 px-4">Item Details</th>
-                        <th className="py-2.5 px-3">HSN Code</th>
                         <th className="py-2.5 px-3 text-center">Tax Rate</th>
                         <th className="py-2.5 px-3 text-center">Qty</th>
                         <th className="py-2.5 px-3 text-right">Unit Price</th>
@@ -1742,9 +1741,6 @@ function OrderDetailDrawer({
                                   </p>
                                 </div>
                               </div>
-                            </td>
-                            <td className="py-3 px-3 font-mono text-muted-foreground">
-                              {item.hsnCode || "091099"}
                             </td>
                             <td className="py-3 px-3 text-center">
                               <span className="px-2 py-0.5 rounded bg-muted font-semibold text-muted-foreground">
