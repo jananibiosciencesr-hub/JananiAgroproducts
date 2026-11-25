@@ -145,6 +145,7 @@ export function getOrderFinancials(order: any) {
       gst: 0,
       shippingFee: 0,
       couponDiscount: 0,
+      walletDeduction: 0,
       total: 0,
     };
   }
@@ -173,6 +174,7 @@ export function getOrderFinancials(order: any) {
     gst,
     shippingFee,
     couponDiscount,
+    walletDeduction: Number(order.walletDeduction ?? order.wallet_deduction ?? 0) || 0,
     total,
   };
 }
@@ -392,6 +394,8 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
   const [activeTab, setActiveTab] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  // Shows only orders where the customer used wallet credit / a coupon (the amount that reduced the total)
+  const [adjustFilter, setAdjustFilter] = useState<"all" | "wallet" | "coupon">("all");
   const [warehouseFilter, setWarehouseFilter] = useState("all");
   const [courierFilter, setCourierFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date_desc");
@@ -562,10 +566,15 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
           }
         }
       }
+      if (adjustFilter === "wallet" && !(getOrderFinancials(o).walletDeduction > 0)) return false;
+      if (adjustFilter === "coupon" && !(getOrderFinancials(o).couponDiscount > 0)) return false;
       return true;
     });
     return sortOrdersLIFO(list);
-  }, [orders, startDate, endDate]);
+  }, [orders, startDate, endDate, adjustFilter]);
+
+  const walletOrderCount = useMemo(() => orders.filter((o) => getOrderFinancials(o).walletDeduction > 0).length, [orders]);
+  const couponOrderCount = useMemo(() => orders.filter((o) => getOrderFinancials(o).couponDiscount > 0).length, [orders]);
 
   // Export Genuine Microsoft Excel (.xlsx)
   const handleExportExcel = () => {
@@ -731,6 +740,29 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
           )}
         </div>
 
+        {/* Where did the amount go down? Filter by wallet credit / coupon used */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-bold text-foreground shrink-0">Amount reduced by:</span>
+          {([
+            { id: "all", label: "All orders", count: orders.length },
+            { id: "wallet", label: "Wallet credit used", count: walletOrderCount },
+            { id: "coupon", label: "Coupon used", count: couponOrderCount },
+          ] as const).map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => setAdjustFilter(opt.id)}
+              className={`px-3 py-1.5 rounded-md text-[11px] font-bold border transition-colors cursor-pointer ${
+                adjustFilter === opt.id
+                  ? "bg-emerald-700 text-white border-emerald-700"
+                  : "bg-muted/60 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              {opt.label} ({opt.count})
+            </button>
+          ))}
+        </div>
+
         {/* Bulk Actions Floating Bar */}
         {selectedOrderIds.length > 0 && (
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2.5 sm:p-3 rounded-xl bg-primary/10 border border-primary/20 animate-in fade-in slide-in-from-top-1">
@@ -880,6 +912,9 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                       return (
                         <p className="text-[10px] text-muted-foreground font-mono">
                           ₹{fin.subtotal.toFixed(0)} + ₹{fin.gst.toFixed(1)} GST
+                          {fin.walletDeduction > 0 && (
+                            <span className="block font-bold text-amber-700 dark:text-amber-400">Wallet credit: -₹{fin.walletDeduction.toFixed(2)}</span>
+                          )}
                         </p>
                       );
                     })()}
@@ -1076,6 +1111,12 @@ export function OrdersManagement({ searchQuery: propSearchQuery }: OrdersManagem
                                   <div className="flex justify-between items-center text-emerald-600 font-semibold">
                                     <span>Coupon:</span>
                                     <span>-₹{fin.couponDiscount.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {fin.walletDeduction > 0 && (
+                                  <div className="flex justify-between items-center text-amber-700 dark:text-amber-400 font-bold border-t border-border/50 pt-0.5">
+                                    <span>Wallet credit:</span>
+                                    <span>-₹{fin.walletDeduction.toFixed(2)}</span>
                                   </div>
                                 )}
                               </div>
