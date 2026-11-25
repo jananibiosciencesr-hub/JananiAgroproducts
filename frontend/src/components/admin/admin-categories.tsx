@@ -26,9 +26,11 @@ import {
   Eye,
   Package,
   Download,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { validateCategoryName } from "@/lib/validation";
 import { downloadExcelSheet } from "@/lib/excel-export";
 import {
   getAdminProducts,
@@ -1085,6 +1087,25 @@ function CategoryFormView({
     }
   });
 
+  const [nameTouched, setNameTouched] = useState(false);
+  const nameValidation = useMemo(() => validateCategoryName(formData.name), [formData.name]);
+
+  const handleCategorySubmit = () => {
+    setNameTouched(true);
+    const val = validateCategoryName(formData.name);
+    if (!val.isValid) {
+      toast.error(val.error || "Please enter a valid category name.");
+      const el = document.getElementById("category-name-input");
+      el?.focus();
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    onSave({
+      ...formData,
+      name: val.cleanValue || formData.name.trim()
+    });
+  };
+
   const handleUploadMediaFile = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "bannerImage") => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1212,7 +1233,7 @@ function CategoryFormView({
             Cancel
           </Button>
           <Button
-            onClick={() => onSave(formData)}
+            onClick={handleCategorySubmit}
             disabled={!formData.name}
             className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-sm h-9 px-4 cursor-pointer"
           >
@@ -1237,14 +1258,35 @@ function CategoryFormView({
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-foreground block mb-1">Category Name *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-foreground">Category Name *</label>
+                {nameTouched && formData.name.trim().length > 0 && nameValidation.isValid && (
+                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="size-3" /> Valid category name
+                  </span>
+                )}
+              </div>
               <input
+                id="category-name-input"
                 required
                 value={formData.name}
-                onChange={(e) => handleNameChange(e.target.value)}
+                onChange={(e) => {
+                  setNameTouched(true);
+                  handleNameChange(e.target.value);
+                }}
                 placeholder="e.g. Bio-Fertilizers & Inoculants"
-                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                className={`h-10 w-full rounded-2xl border bg-background px-3 text-xs font-bold outline-none transition-colors ${
+                  nameTouched && formData.name.trim().length > 0 && !nameValidation.isValid
+                    ? "border-red-500 focus:border-red-600 ring-1 ring-red-500/20"
+                    : "border-border focus:border-emerald-600"
+                }`}
               />
+              {nameTouched && formData.name.trim().length > 0 && !nameValidation.isValid && (
+                <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                  <AlertTriangle className="size-3.5 shrink-0" />
+                  <span>{nameValidation.error}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -1536,7 +1578,7 @@ function CategoryFormView({
           Cancel
         </Button>
         <Button
-          onClick={() => onSave(formData)}
+          onClick={handleCategorySubmit}
           disabled={!formData.name}
           className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs gap-1.5 shadow-sm h-9 px-4 cursor-pointer"
         >

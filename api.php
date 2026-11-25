@@ -1188,6 +1188,78 @@ function ensureOrdersTableSchema($pdo) {
     } catch (Exception $e) {}
 }
 
+/**
+ * Validates product name for catalog integrity.
+ * Returns null if valid, or an error string if invalid.
+ */
+function validateJananiProductName($name) {
+    $trimmed = trim((string)$name);
+    if ($trimmed === '') {
+        return 'Product name is required.';
+    }
+    if (mb_strlen($trimmed) < 3) {
+        return 'Product name must be at least 3 characters long.';
+    }
+    if (mb_strlen($trimmed) > 100) {
+        return 'Product name cannot exceed 100 characters.';
+    }
+    if (!preg_match('/^[a-zA-Z0-9]/', $trimmed)) {
+        return 'Product name must start with a letter or number.';
+    }
+    if (!preg_match('/[a-zA-Z]{2,}/', $trimmed)) {
+        return 'Product name must contain descriptive words (at least 2 letters).';
+    }
+    if (preg_match('/[_~^\$<>{}\[\]|\\\\;*!?=@#`"\']/', $trimmed)) {
+        return 'Special symbols like _, +, =, ~, ^, $, <, >, ;, *, ! are not allowed in product name.';
+    }
+    if (preg_match('/[-+()\/:,.%]{2,}/', $trimmed)) {
+        return 'Product name cannot contain consecutive punctuation symbols (e.g. ((-- or ++).';
+    }
+    if (preg_match('/[-+\/:,.%]$/', $trimmed)) {
+        return 'Product name cannot end with a trailing symbol.';
+    }
+    if (!preg_match('/^[a-zA-Z0-9\s\-()\/:,.%+]+$/', $trimmed)) {
+        return 'Product name contains unsupported characters.';
+    }
+    return null;
+}
+
+/**
+ * Validates category name for taxonomy integrity.
+ * Returns null if valid, or an error string if invalid.
+ */
+function validateJananiCategoryName($name) {
+    $trimmed = trim((string)$name);
+    if ($trimmed === '') {
+        return 'Category name is required.';
+    }
+    if (mb_strlen($trimmed) < 2) {
+        return 'Category name must be at least 2 characters long.';
+    }
+    if (mb_strlen($trimmed) > 60) {
+        return 'Category name cannot exceed 60 characters.';
+    }
+    if (!preg_match('/^[a-zA-Z]/', $trimmed)) {
+        return 'Category name must start with a letter.';
+    }
+    if (!preg_match('/[a-zA-Z]{2,}/', $trimmed)) {
+        return 'Category name must contain valid words.';
+    }
+    if (preg_match('/[_~^\$<>{}\[\]|\\\\;*!?=@#`"\'+%():,.]/', $trimmed)) {
+        return 'Special symbols are not allowed in category name.';
+    }
+    if (!preg_match('/^[a-zA-Z0-9\s\-&\/]+$/', $trimmed)) {
+        return 'Category name can only contain letters, numbers, spaces, &, -, /.';
+    }
+    if (preg_match('/[\-&\/]{2,}/', $trimmed)) {
+        return 'Category name cannot contain consecutive symbols.';
+    }
+    if (preg_match('/[\-&\/]$/', $trimmed)) {
+        return 'Category name cannot end with a trailing symbol.';
+    }
+    return null;
+}
+
 function ensureJananiCatalogSynced($pdo) {
     static $synced = false;
     if ($synced) return;
@@ -1195,6 +1267,9 @@ function ensureJananiCatalogSynced($pdo) {
     if (!janani_should_run_periodic($pdo, 'catalog_sync', 600)) {
         // Between full checks only refresh the category product counts (one cheap query)
         try {
+            // Immediately purge test garbage if any exists
+            $pdo->exec("DELETE FROM `products` WHERE `name` LIKE 'testing3333%' OR `slug` LIKE 'testing3333%' OR `name` LIKE '%((--%' OR `name` LIKE '%+_%'");
+            $pdo->exec("DELETE FROM `categories` WHERE `slug` = 'testing' OR (`name` = 'testing' AND `slug` = 'testing')");
             $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR p.category_slug = c.slug OR LOWER(p.category_name) = LOWER(c.name)))");
         } catch (Exception $e) {}
         return;
@@ -1204,6 +1279,12 @@ function ensureJananiCatalogSynced($pdo) {
         ensureProductsTableSchema($pdo);
         ensureUsersTableSchema($pdo);
         ensureOrdersTableSchema($pdo);
+
+        // Purge any test garbage products and categories
+        try {
+            $pdo->exec("DELETE FROM `products` WHERE `name` LIKE 'testing3333%' OR `slug` LIKE 'testing3333%' OR `name` LIKE '%((--%' OR `name` LIKE '%+_%'");
+            $pdo->exec("DELETE FROM `categories` WHERE `slug` = 'testing' OR `id` LIKE '%testing%' OR (`name` = 'testing' AND `slug` = 'testing')");
+        } catch (Exception $e) {}
 
         // Admin-created categories are never deleted automatically.
 
@@ -2025,6 +2106,14 @@ try {
 
                 // If no ID is provided, this is a CREATE (INSERT) operation:
                 if (empty($rawId)) {
+                    $name = trim((string)($body['name'] ?? ''));
+                    $nameErr = validateJananiProductName($name);
+                    if ($nameErr !== null) {
+                        http_response_code(400);
+                        echo json_encode(['success' => false, 'message' => $nameErr, 'error' => $nameErr]);
+                        exit;
+                    }
+
                     // Field Normalization for Admin Form Data
                     $categoryName = $body['category_name'] ?? ($body['category'] ?? 'Bio-Fertilizers');
                     $price = isset($body['price']) ? (float)$body['price'] : 0.0;
@@ -2341,6 +2430,17 @@ try {
                         if (isset($body[$jf]) && is_array($body[$jf])) {
                             $body[$jf] = json_encode($body[$jf], JSON_UNESCAPED_SLASHES);
                         }
+                    }
+
+                    if (isset($body['name'])) {
+                        $name = trim((string)$body['name']);
+                        $nameErr = validateJananiProductName($name);
+                        if ($nameErr !== null) {
+                            http_response_code(400);
+                            echo json_encode(['success' => false, 'message' => $nameErr, 'error' => $nameErr]);
+                            exit;
+                        }
+                        $body['name'] = $name;
                     }
 
                     $fields = [];
@@ -2717,7 +2817,13 @@ try {
                 if (empty($rawId)) {
                     try {
                         ensureCategoriesTableSchema($pdo);
-                        $name = trim($body['name'] ?? 'New Category');
+                        $name = trim((string)($body['name'] ?? ''));
+                        $catErr = validateJananiCategoryName($name);
+                        if ($catErr !== null) {
+                            http_response_code(400);
+                            echo json_encode(['success' => false, 'message' => $catErr, 'error' => $catErr]);
+                            exit;
+                        }
                         $slug = !empty($body['slug']) ? trim($body['slug']) : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
                         if (empty($slug)) $slug = 'cat-' . time();
                         $catId = !empty($body['id']) ? trim($body['id']) : ('cat-' . $slug);
@@ -2972,6 +3078,16 @@ try {
                     }
 
                     // Standard single category UPDATE:
+                    if (isset($body['name'])) {
+                        $name = trim((string)$body['name']);
+                        $catErr = validateJananiCategoryName($name);
+                        if ($catErr !== null) {
+                            http_response_code(400);
+                            echo json_encode(['success' => false, 'message' => $catErr, 'error' => $catErr]);
+                            exit;
+                        }
+                        $body['name'] = $name;
+                    }
                     if (isset($body['parentId']) && !isset($body['parent_id'])) {
                         $body['parent_id'] = $body['parentId'];
                     }

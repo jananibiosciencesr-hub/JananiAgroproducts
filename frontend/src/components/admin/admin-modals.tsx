@@ -10,9 +10,12 @@ import {
   Search,
   ArrowRight,
   Sparkles,
-  Command
+  Command,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { validateProductName } from "@/lib/validation";
 import { type AdminTab } from "./admin-sidebar";
 
 // 1. Add Product Modal
@@ -67,6 +70,9 @@ export function AddProductModal({
     gstRate: "5"
   });
 
+  const [nameTouched, setNameTouched] = useState(false);
+  const nameValidation = validateProductName(formData.name);
+
   useEffect(() => {
     if (activeCategories.length > 0 && !activeCategories.includes(formData.category)) {
       setFormData((prev) => ({ ...prev, category: activeCategories[0] || "Bio Fertilizers" }));
@@ -88,22 +94,49 @@ export function AddProductModal({
 
         <form onSubmit={(e) => {
           e.preventDefault();
+          setNameTouched(true);
+          const val = validateProductName(formData.name);
+          if (!val.isValid) {
+            toast.error(val.error || "Please enter a valid product name (min 3 characters, no illegal symbols).");
+            return;
+          }
           onSubmit({
             ...formData,
+            name: val.cleanValue || formData.name.trim(),
             gstRate: Number(formData.gstRate) || 5,
             gst_rate: Number(formData.gstRate) || 5
           });
           onClose();
         }} className="mt-4 space-y-3">
           <div>
-            <label className="text-xs font-bold text-foreground block mb-1">Product Title</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-foreground">Product Title *</label>
+              {nameTouched && formData.name.trim().length > 0 && nameValidation.isValid && (
+                <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                  <CheckCircle2 className="size-3" /> Valid title
+                </span>
+              )}
+            </div>
             <input
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                setNameTouched(true);
+                setFormData({ ...formData, name: e.target.value });
+              }}
               placeholder="e.g. HARIT Bio-Fungicide (1 L)"
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-emerald-600"
+              className={`h-10 w-full rounded-xl border bg-background px-3 text-xs font-semibold outline-none transition-colors ${
+                nameTouched && formData.name.trim().length > 0 && !nameValidation.isValid
+                  ? "border-red-500 focus:border-red-600 ring-1 ring-red-500/20"
+                  : "border-border focus:border-emerald-600"
+              }`}
             />
+            {nameTouched && formData.name.trim().length > 0 && !nameValidation.isValid && (
+              <p className="mt-1 text-[11px] text-red-500 font-medium flex items-center gap-1">
+                <AlertTriangle className="size-3 shrink-0" />
+                <span>{nameValidation.error}</span>
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

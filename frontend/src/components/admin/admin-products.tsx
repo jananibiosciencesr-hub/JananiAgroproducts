@@ -65,6 +65,7 @@ import {
 } from "@/lib/api";
 import { formatProductName, getVideoEmbedInfo, SAMPLE_PRODUCT_VIDEO } from "@/lib/catalog";
 import { matchesProductSearch } from "@/lib/search-helper";
+import { validateProductName } from "@/lib/validation";
 
 export interface ProductVariant {
   id: string;
@@ -1477,6 +1478,9 @@ function ProductFormView({
     isNewArrival: true
   });
 
+  const [nameTouched, setNameTouched] = useState(false);
+  const nameValidation = useMemo(() => validateProductName(formData.name), [formData.name]);
+
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
   useEffect(() => {
@@ -1912,9 +1916,19 @@ function ProductFormView({
   };
 
   const handleSaveSubmit = () => {
+    setNameTouched(true);
+    const val = validateProductName(formData.name);
+    if (!val.isValid) {
+      toast.error(val.error || "Please enter a valid product title (e.g. Harit Bio-Fungicide).");
+      const el = document.getElementById("product-title-input");
+      el?.focus();
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     // Compile custom specifications dictionary
     const compiledSpecs: Record<string, string> = {
-      "Active Organism": formData.activeOrganism || formData.name,
+      "Active Organism": formData.activeOrganism || val.cleanValue || formData.name,
       "Targeted Diseases / Pests": formData.targetDiseases || "Broad Spectrum Crop Protection",
       "Compatibility": formData.compatibility || "Compatible with biofertilizers & organic manures",
       "Shelf Life": formData.shelfLife || "18–24 Months",
@@ -1962,6 +1976,7 @@ function ProductFormView({
 
     const payload = {
       ...formData,
+      name: val.cleanValue || formData.name.trim(),
       gstRate: Number(formData.gstRate) >= 0 ? Number(formData.gstRate) : 5,
       gst_rate: Number(formData.gstRate) >= 0 ? Number(formData.gstRate) : 5,
       image: primaryImage,
@@ -2047,14 +2062,35 @@ function ProductFormView({
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-foreground block mb-1">Product Title *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-foreground">Product Title *</label>
+                {nameTouched && formData.name.trim().length > 0 && nameValidation.isValid && (
+                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="size-3" /> Valid title
+                  </span>
+                )}
+              </div>
               <input
+                id="product-title-input"
                 required
                 value={formData.name}
-                onChange={(e) => handleTitleChange(e.target.value)}
+                onChange={(e) => {
+                  setNameTouched(true);
+                  handleTitleChange(e.target.value);
+                }}
                 placeholder="e.g. Harit Trichoderma Viride (1 L)"
-                className="h-10 w-full rounded-2xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-emerald-600"
+                className={`h-10 w-full rounded-2xl border bg-background px-3 text-xs font-bold outline-none transition-colors ${
+                  nameTouched && formData.name.trim().length > 0 && !nameValidation.isValid
+                    ? "border-red-500 focus:border-red-600 ring-1 ring-red-500/20"
+                    : "border-border focus:border-emerald-600"
+                }`}
               />
+              {nameTouched && formData.name.trim().length > 0 && !nameValidation.isValid && (
+                <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                  <AlertTriangle className="size-3.5 shrink-0" />
+                  <span>{nameValidation.error}</span>
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

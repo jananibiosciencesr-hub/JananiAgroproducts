@@ -249,3 +249,84 @@ export function validateEmail(email: string): ValidationResult {
 
   return { isValid: true, cleanValue: lower };
 }
+
+/**
+ * Validates agricultural product names for catalog integrity.
+ * Disallows:
+ * - Special symbols: _ ~ ^ $ < > { } [ ] | \ ; * ! ? = @ # ` " '
+ * - Consecutive symbols like ((-- or ++
+ * - Trailing punctuation
+ * - Pure numbers / random strings without legitimate words
+ * - Names less than 3 or more than 100 characters
+ */
+export function validateProductName(name: string): ValidationResult {
+  const trimmed = (name || "").trim();
+  if (!trimmed) {
+    return { isValid: false, error: "Product name is required." };
+  }
+  if (trimmed.length < 3) {
+    return { isValid: false, error: "Product name must be at least 3 characters long." };
+  }
+  if (trimmed.length > 100) {
+    return { isValid: false, error: "Product name cannot exceed 100 characters." };
+  }
+  if (!/^[a-zA-Z0-9]/.test(trimmed)) {
+    return { isValid: false, error: "Product name must start with a letter or number." };
+  }
+  if (!/[a-zA-Z]{2,}/.test(trimmed)) {
+    return { isValid: false, error: "Product name must contain descriptive words (at least 2 letters)." };
+  }
+  if (/[_~^$<>{}[\]|\\;*!?=@#`"']/.test(trimmed)) {
+    return { isValid: false, error: "Special symbols like _, +, =, ~, ^, $, <, >, ;, *, ! are not allowed in product name." };
+  }
+  if (/[-+()/:,.%]{2,}/.test(trimmed)) {
+    return { isValid: false, error: "Product name cannot contain consecutive punctuation symbols (e.g. ((-- or ++)." };
+  }
+  if (/[-+/:,.%]$/.test(trimmed)) {
+    return { isValid: false, error: "Product name cannot end with a trailing symbol." };
+  }
+  if (!/^[a-zA-Z0-9\s\-()/:,.%+]+$/.test(trimmed)) {
+    return { isValid: false, error: "Product name contains unsupported characters." };
+  }
+  return { isValid: true, cleanValue: trimmed };
+}
+
+/**
+ * Validates catalog category names.
+ * Rules:
+ * - Must be between 2 and 60 characters
+ * - Must start with a letter
+ * - Allowed characters: letters, numbers, spaces, &, -, /
+ * - Disallows special symbols and symbol repetition
+ */
+export function validateCategoryName(name: string): ValidationResult {
+  const trimmed = (name || "").trim();
+  if (!trimmed) {
+    return { isValid: false, error: "Category name is required." };
+  }
+  if (trimmed.length < 2) {
+    return { isValid: false, error: "Category name must be at least 2 characters long." };
+  }
+  if (trimmed.length > 60) {
+    return { isValid: false, error: "Category name cannot exceed 60 characters." };
+  }
+  if (!/^[a-zA-Z]/.test(trimmed)) {
+    return { isValid: false, error: "Category name must start with a letter." };
+  }
+  if (!/[a-zA-Z]{2,}/.test(trimmed)) {
+    return { isValid: false, error: "Category name must contain valid words." };
+  }
+  if (/[_~^$<>{}[\]|\\;*!?=@#`"'+%():,.]/.test(trimmed)) {
+    return { isValid: false, error: "Special symbols are not allowed in category name." };
+  }
+  if (!/^[a-zA-Z0-9\s\-&/]+$/.test(trimmed)) {
+    return { isValid: false, error: "Category name can only contain letters, numbers, spaces, &, -, /." };
+  }
+  if (/[\-&/]{2,}/.test(trimmed)) {
+    return { isValid: false, error: "Category name cannot contain consecutive symbols." };
+  }
+  if (/[\-&/]$/.test(trimmed)) {
+    return { isValid: false, error: "Category name cannot end with a trailing symbol." };
+  }
+  return { isValid: true, cleanValue: trimmed };
+}
