@@ -1617,25 +1617,29 @@ function janani_insert_order($pdo, $user, $quote, $address, $payment, $extra = [
 // Razorpay
 // ---------------------------------------------------------------------------
 
-const JANANI_LEAKED_RAZORPAY_KEYS = ['rzp_test_SwedUUn1KgRMs0'];
+// Keys that must never be used (publicly exposed LIVE keys). The old exposed key was a test key, which cannot move
+// real money, so it is allowed again for test mode.
+const JANANI_LEAKED_RAZORPAY_KEYS = [];
 
 function janani_razorpay_keys($pdo) {
     $keyId = janani_env('RAZORPAY_KEY_ID');
     $secret = janani_env('RAZORPAY_KEY_SECRET');
     $webhook = janani_env('RAZORPAY_WEBHOOK_SECRET');
+    $keysFromAdmin = false;
     if ((!$keyId || !$secret) && $pdo) {
         try {
             $st = $pdo->prepare("SELECT `setting_value` FROM `settings` WHERE `setting_key` = 'payment_gateways' LIMIT 1");
             $st->execute();
             $cfg = json_decode((string)$st->fetchColumn(), true);
             $rz = is_array($cfg['razorpay'] ?? null) ? $cfg['razorpay'] : [];
-            if (!$keyId && !empty($rz['keyId'])) $keyId = trim((string)$rz['keyId']);
-            if (!$secret && !empty($rz['keySecret']) && !janani_is_masked($rz['keySecret'])) $secret = trim((string)$rz['keySecret']);
+            if (!$keyId && !empty($rz['keyId'])) { $keyId = trim((string)$rz['keyId']); $keysFromAdmin = true; }
+            if (!$secret && !empty($rz['keySecret']) && !janani_is_masked($rz['keySecret'])) { $secret = trim((string)$rz['keySecret']); $keysFromAdmin = true; }
             if (!$webhook && !empty($rz['webhookSecret']) && !janani_is_masked($rz['webhookSecret'])) $webhook = trim((string)$rz['webhookSecret']);
         } catch (Throwable $e) {}
     }
     $mode = ($keyId && strpos($keyId, 'rzp_live_') === 0) ? 'live' : 'test';
-    $allowTest = janani_is_local_request() || janani_env_bool('RAZORPAY_ALLOW_TEST_MODE', false);
+    // Test keys work when explicitly enabled (env flag) or when the admin saved them in Payment settings.
+    $allowTest = janani_is_local_request() || janani_env_bool('RAZORPAY_ALLOW_TEST_MODE', false) || $keysFromAdmin;
     $configured = $keyId && $secret && !in_array($keyId, JANANI_LEAKED_RAZORPAY_KEYS, true) && ($mode === 'live' || $allowTest);
     return [
         'configured' => (bool)$configured,
