@@ -128,7 +128,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               <span className="inline-flex items-center gap-1.5">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-bold text-[10px]">
                   <Sparkles className="size-3 fill-current" />
-                  PURE SOIL TO SOUL
+                  Pure Soil to Soul
                 </span>
                 <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
               </span>
@@ -142,7 +142,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               <span className="inline-flex items-center gap-1.5">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-bold text-[10px]">
                   <Sparkles className="size-3 fill-current" />
-                  PURE SOIL TO SOUL
+                  Pure Soil to Soul
                 </span>
                 <span className="text-white">"Nurturing Soil Health & Empowering Farmers for Sustainable Agriculture"</span>
               </span>
@@ -157,9 +157,9 @@ function Shell({ children }: { children: React.ReactNode }) {
           {/* Desktop View: Side Aligned Single Line with Utility Links */}
           <div className="hidden md:flex w-full items-center justify-between px-3 sm:px-6 lg:px-6 xl:px-12 2xl:px-16 max-w-7xl 2xl:max-w-[1536px] 3xl:max-w-[1720px] mx-auto text-xs font-medium text-emerald-100 whitespace-nowrap overflow-hidden">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-extrabold text-[10.5px] uppercase tracking-wider shrink-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D99A12]/20 border border-[#F5B726]/40 text-[#F5B726] font-extrabold text-[10.5px] tracking-wide shrink-0">
                 <Sparkles className="size-3 fill-current" />
-                PURE SOIL TO SOUL
+                Pure Soil to Soul
               </span>
               <span className="text-white/95 font-medium truncate hidden xl:inline">
                 "Nurturing Soil Health, Empowering Farmers & Cultivating Sustainable Agriculture"
@@ -731,7 +731,7 @@ function Footer() {
 
           {/* Column 2: Quick Links */}
           <div>
-            <h3 className="text-sm font-bold text-[#E7A91A] uppercase tracking-wider mb-4">
+            <h3 className="text-base font-bold text-[#E7A91A] tracking-wide mb-4">
               Quick Links
             </h3>
             <ul className="space-y-2.5">
@@ -751,7 +751,7 @@ function Footer() {
 
           {/* Column 3: Categories (Dynamic from Admin) */}
           <div>
-            <h3 className="text-sm font-bold text-[#E7A91A] uppercase tracking-wider mb-4">
+            <h3 className="text-base font-bold text-[#E7A91A] tracking-wide mb-4">
               Categories
             </h3>
             <ul className="space-y-2.5">
@@ -780,7 +780,7 @@ function Footer() {
 
           {/* Column 4: Contact Us */}
           <div>
-            <h3 className="text-sm font-bold text-[#E7A91A] uppercase tracking-wider mb-4">
+            <h3 className="text-base font-bold text-[#E7A91A] tracking-wide mb-4">
               Contact Us
             </h3>
             <ul className="space-y-3 text-xs sm:text-[13px] text-emerald-100/90">

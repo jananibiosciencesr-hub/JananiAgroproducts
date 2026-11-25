@@ -406,7 +406,7 @@ export function HeroBannerCarousel() {
                       {slide.badgeText && (
                         <div className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-emerald-600/30 bg-white/95 backdrop-blur-xs px-2 sm:px-3 py-0.5 sm:py-1 mb-0.5 sm:mb-2 shadow-xs">
                           <span className="size-1 sm:size-1.5 rounded-full bg-[#0B6B35] animate-pulse" />
-                          <span className="text-[8.5px] sm:text-xs font-bold uppercase tracking-wider text-[#075B32] truncate">
+                          <span className="text-[8.5px] sm:text-xs font-semibold tracking-wide text-[#075B32] truncate">
                             {slide.badgeText}
                           </span>
                         </div>
@@ -414,7 +414,7 @@ export function HeroBannerCarousel() {
 
                       {/* Eyebrow */}
                       {slide.eyebrow && (
-                        <p className="text-[8.5px] sm:text-xs md:text-xs lg:text-sm font-extrabold uppercase tracking-wider text-[#0B6B35] mb-0.5 font-sans leading-tight">
+                        <p className="text-[8.5px] sm:text-xs md:text-xs lg:text-sm font-bold tracking-wide text-[#0B6B35] mb-0.5 font-sans leading-tight">
                           {slide.eyebrow}
                         </p>
                       )}
@@ -462,7 +462,7 @@ export function HeroBannerCarousel() {
                           <Link
                             to={slide.secondaryCtaUrl || "/contact"}
                             tabIndex={isCurrent ? 0 : -1}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-[#075B32]/40 bg-white/90 hover:bg-[#075B32] hover:text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#075B32] backdrop-blur-xs shadow-xs transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#075B32]/40 bg-white/90 hover:bg-[#075B32] hover:text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold tracking-wide text-[#075B32] backdrop-blur-xs shadow-xs transition-all cursor-pointer"
                           >
                             <span>{slide.secondaryCtaLabel}</span>
                           </Link>

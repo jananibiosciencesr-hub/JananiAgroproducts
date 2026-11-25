@@ -79,25 +79,31 @@ export function HomePage() {
   const allCategories = storeCats && storeCats.length > 0 ? storeCats : categories;
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
+  // Carousel arrows: move about one screen; at the first / last card, wrap around to the other end
+  const scrollCarousel = (el: HTMLDivElement | null, direction: "left" | "right") => {
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 1) return; // everything already visible
+    const step = Math.max(200, Math.round(el.clientWidth * 0.8));
+    const atStart = el.scrollLeft <= 2;
+    const atEnd = el.scrollLeft >= maxScroll - 2;
+    const target =
+      direction === "left"
+        ? (atStart ? maxScroll : Math.max(0, el.scrollLeft - step))
+        : (atEnd ? 0 : Math.min(maxScroll, el.scrollLeft + step));
+    el.scrollTo({ left: target, behavior: "smooth" });
+  };
+
   // Categories Carousel Ref for Smooth Scrolling
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
-  const scrollCategories = (direction: "left" | "right") => {
-    if (categoriesScrollRef.current) {
-      const scrollAmount = categoriesScrollRef.current.clientWidth || 320;
-      const offset = direction === "left" ? -scrollAmount : scrollAmount;
-      categoriesScrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
-    }
-  };
+  // Cards are centred only when they all fit; an overflowing strip starts at the first card so
+  // every card can be reached with the arrows (centring an overflowing strip hides the left part).
+  const [categoriesOverflow, setCategoriesOverflow] = useState(false);
+  const scrollCategories = (direction: "left" | "right") => scrollCarousel(categoriesScrollRef.current, direction);
 
   // Featured Products Carousel Ref for Smooth Scrolling
   const productsScrollRef = useRef<HTMLDivElement>(null);
-  const scrollProducts = (direction: "left" | "right") => {
-    if (productsScrollRef.current) {
-      const scrollAmount = productsScrollRef.current.clientWidth || 320;
-      const offset = direction === "left" ? -scrollAmount : scrollAmount;
-      productsScrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
-    }
-  };
+  const scrollProducts = (direction: "left" | "right") => scrollCarousel(productsScrollRef.current, direction);
 
   // Testimonial Carousel Ref & State
   const testimonialsScrollRef = useRef<HTMLDivElement>(null);
@@ -159,6 +165,20 @@ export function HomePage() {
       }
     }
   };
+
+  useEffect(() => {
+    const el = categoriesScrollRef.current;
+    if (!el) return;
+    const measure = () => setCategoriesOverflow(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
 
   // Dynamic Agri Products Categories (only Trending if set, or all valid)
   const categoryCards = useMemo(() => {
@@ -332,11 +352,11 @@ export function HomePage() {
           {/* Section Header with Left Text & Right Controls */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-3 sm:mb-4 text-left">
             <div>
-              <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
-                AGRI PRODUCTS
+              <p className="text-xs sm:text-sm font-semibold tracking-wide text-[#0B6B35]">
+                Agri Products
               </p>
-              <h2 className="mt-0.5 text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
-                PRODUCT <span className="text-[#D99A12]">CATEGORIES</span>
+              <h2 className="mt-0.5 text-2xl sm:text-3xl font-extrabold text-[#075B32] tracking-tight">
+                Product <span className="text-[#D99A12]">Categories</span>
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-slate-600">
                 Natural, biological, and effective solutions for every stage of crop growth.
@@ -346,7 +366,7 @@ export function HomePage() {
             {/* Top-Right Controls: Mobile Arrows & View All Categories Button */}
             <div className="flex items-center gap-2 sm:gap-3 self-start sm:self-auto">
               {/* Mobile Carousel Navigation Arrows */}
-              <div className="flex items-center gap-1.5 sm:hidden">
+              <div className={`items-center gap-1.5 lg:hidden ${categoriesOverflow ? "flex" : "hidden"}`}>
                 <button
                   type="button"
                   onClick={() => scrollCategories("left")}
@@ -386,7 +406,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollCategories("left")}
               aria-label="Previous Categories"
-              className="hidden lg:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100"
+              className={`hidden ${categoriesOverflow ? "lg:flex" : ""} absolute -left-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100`}
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -396,7 +416,7 @@ export function HomePage() {
               type="button"
               onClick={() => scrollCategories("right")}
               aria-label="Next Categories"
-              className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100"
+              className={`hidden ${categoriesOverflow ? "lg:flex" : ""} absolute -right-4 top-1/2 -translate-y-1/2 z-20 size-9 rounded-full bg-white/90 text-[#075B32] hover:text-[#4FAE2A] hover:bg-[#ebf3e7] items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-emerald-100`}
             >
               <ChevronRight className="size-5" />
             </button>
@@ -404,8 +424,7 @@ export function HomePage() {
             {/* Scrollable Container: exactly 2 cards visible per row on mobile, centered on larger screens */}
             <div
               ref={categoriesScrollRef}
-              className="flex items-stretch gap-2.5 sm:gap-6 overflow-x-auto pb-4 pt-2 px-1 sm:px-2 scrollbar-none snap-x snap-mandatory justify-start xl:justify-center [justify-content:safe_center]"
-              style={{ justifyContent: "safe center" }}
+              className={`flex items-stretch gap-2.5 sm:gap-6 overflow-x-auto pb-4 pt-2 px-1 sm:px-2 scrollbar-none snap-x snap-mandatory ${categoriesOverflow ? "justify-start" : "justify-center"}`}
             >
               {categoryCards.map((cat) => (
                 <Link
@@ -446,8 +465,8 @@ export function HomePage() {
           {/* Header Row */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-3 sm:mb-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
-                FEATURED <span className="text-[#D99A12]">PRODUCTS</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#075B32] tracking-tight">
+                Featured <span className="text-[#D99A12]">Products</span>
               </h2>
               <p className="mt-0.5 text-xs sm:text-sm text-slate-600">
                 Our most trusted and effective products for healthier crops and higher yields.
@@ -549,8 +568,8 @@ export function HomePage() {
 
                       {/* Top-Left Red Discount Badge - Sharp corners */}
                       <div className="absolute top-2 left-2 z-10">
-                        <span className="bg-[#E53E3E] text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-none uppercase tracking-wider shadow-xs">
-                          SAVE {discountVal}%
+                        <span className="bg-[#E53E3E] text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-none tracking-wide shadow-xs">
+                          Save {discountVal}%
                         </span>
                       </div>
 
@@ -575,9 +594,9 @@ export function HomePage() {
 
                       {/* Bottom-Center Pill - 🔥 BESTSELLER */}
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap pointer-events-none">
-                        <span className="inline-flex items-center gap-1 bg-[#064A29]/95 text-white text-[8px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-xs uppercase tracking-wider backdrop-blur-xs">
+                        <span className="inline-flex items-center gap-1 bg-[#064A29]/95 text-white text-[8px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-xs tracking-wide backdrop-blur-xs">
                           <span>🔥</span>
-                          <span>BESTSELLER</span>
+                          <span>Bestseller</span>
                         </span>
                       </div>
                     </div>
@@ -658,10 +677,10 @@ export function HomePage() {
                               addToCart(prod.numId, 1);
                               toast.success(`Added ${prod.name} to cart!`);
                             }}
-                            className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none uppercase tracking-wider transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
+                            className="w-full bg-[#075B32] hover:bg-[#064A29] text-white text-[11px] sm:text-xs font-bold py-2 sm:py-2.5 rounded-none tracking-wide transition text-center shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.99] cursor-pointer"
                           >
                             <ShoppingBag className="size-3.5 sm:size-4" />
-                            <span>ADD TO CART</span>
+                            <span>Add to Cart</span>
                           </button>
                         )}
                       </div>
@@ -687,10 +706,10 @@ export function HomePage() {
 
             {/* Right Column: Content & 4 Features */}
             <div className="lg:col-span-7 space-y-2 sm:space-y-3">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight leading-[1.12]">
-                WHY CHOOSE<br />
-                <span className="text-[#075B32]">JANANI </span>
-                <span className="text-[#D99A12]">AGRO PRODUCTS?</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#075B32] tracking-tight leading-[1.12]">
+                Why Choose<br />
+                <span className="text-[#075B32]">Janani </span>
+                <span className="text-[#D99A12]">Agro Products?</span>
               </h2>
 
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-lg break-normal">
@@ -751,11 +770,11 @@ export function HomePage() {
         <div className="mx-auto max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1536px] 3xl:max-w-[1720px]">
           {/* Header */}
           <div className="mb-3 sm:mb-4 text-left">
-            <p className="text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase text-[#0B6B35]">
-              FARMER STORIES
+            <p className="text-xs sm:text-sm font-semibold tracking-wide text-[#0B6B35]">
+              Farmer Stories
             </p>
-            <h2 className="mt-0.5 text-2xl sm:text-3xl font-black text-[#075B32] tracking-tight">
-              WHAT OUR <span className="text-[#D99A12]">FARMERS SAY</span>
+            <h2 className="mt-0.5 text-2xl sm:text-3xl font-extrabold text-[#075B32] tracking-tight">
+              What Our <span className="text-[#D99A12]">Farmers Say</span>
             </h2>
             <p className="mt-0.5 text-xs sm:text-sm text-slate-600">
               Real experiences from farmers who trust Janani Agro Products.
@@ -889,9 +908,9 @@ export function HomePage() {
                 className="h-16 sm:h-20 w-auto object-contain drop-shadow-xs"
               />
 
-              <h2 className="text-2xl sm:text-4xl lg:text-[2.75rem] font-black tracking-tight leading-[1.15] text-[#075B32]">
-                NATURAL CARE FOR<br />
-                <span className="text-[#D99A12]">HEALTHY HARVESTS</span>
+              <h2 className="text-2xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight leading-[1.15] text-[#075B32]">
+                Natural Care for<br />
+                <span className="text-[#D99A12]">Healthy Harvests</span>
               </h2>
 
               <p className="text-xs sm:text-sm md:text-base text-slate-700 max-w-lg leading-relaxed">
