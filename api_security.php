@@ -1652,7 +1652,9 @@ function janani_razorpay_keys($pdo) {
     }
     $mode = ($keyId && strpos($keyId, 'rzp_live_') === 0) ? 'live' : 'test';
     // Test keys work when explicitly enabled (env flag) or when the admin saved them in Payment settings.
-    $allowTest = janani_is_local_request() || janani_env_bool('RAZORPAY_ALLOW_TEST_MODE', false) || $keysFromAdmin || $usingTestFallback;
+    $allowTest = janani_is_local_request() || janani_env_bool('RAZORPAY_ALLOW_TEST_MODE', false) || $keysFromAdmin || $usingTestFallback
+        // the test key pair deliberately placed in JANANI_TEST_FALLBACK_KEY_ID is always allowed (test mode only)
+        || (JANANI_TEST_FALLBACK_KEY_ID !== '' && $keyId === JANANI_TEST_FALLBACK_KEY_ID);
     $configured = $keyId && $secret && !in_array($keyId, JANANI_LEAKED_RAZORPAY_KEYS, true) && ($mode === 'live' || $allowTest);
     return [
         'configured' => (bool)$configured,
