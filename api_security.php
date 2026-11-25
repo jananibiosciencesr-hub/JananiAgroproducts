@@ -1625,8 +1625,8 @@ const JANANI_LEAKED_RAZORPAY_KEYS = [];
 // Paste a Razorpay TEST key pair (rzp_test_...) between the quotes. Only test keys are accepted here (they cannot
 // move real money) and they are used only when no keys come from the environment / admin settings.
 // Before going live: set RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET (rzp_live_...) in the environment and empty these.
-const JANANI_TEST_FALLBACK_KEY_ID = '';
-const JANANI_TEST_FALLBACK_KEY_SECRET = '';
+const JANANI_TEST_FALLBACK_KEY_ID = 'rzp_test_SwedUUn1KgRMs0';
+const JANANI_TEST_FALLBACK_KEY_SECRET = 'xdW2Ry7T67sUK4zMKb3oOsZh';
 
 function janani_razorpay_keys($pdo) {
     $keyId = janani_env('RAZORPAY_KEY_ID');
