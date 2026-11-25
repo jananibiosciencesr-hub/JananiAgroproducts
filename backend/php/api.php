@@ -1842,7 +1842,7 @@ try {
                 janani_json_exit([
                     'success' => false,
                     'onlinePaymentUnavailable' => true,
-                    'message' => 'Online payment is temporarily unavailable. Please choose Cash on Delivery or try again later.'
+                    'message' => 'Online payment is temporarily unavailable. Please try again later.'
                 ], 503);
             }
             janani_rate_limit_or_exit($pdo, 'rzp-order:' . $me['id'], 20, 3600);
@@ -1868,7 +1868,7 @@ try {
                 ], 409);
             }
             if ($quote['total'] < 1) {
-                janani_json_exit(['success' => false, 'message' => 'This order total cannot be paid online. Please choose Cash on Delivery.'], 400);
+                janani_json_exit(['success' => false, 'message' => 'This order total cannot be paid online. Please contact support.'], 400);
             }
             $address = janani_clean_address($body['address'] ?? []);
             if (empty($address['pincode']) || empty($address['city'])) {
@@ -3892,6 +3892,10 @@ try {
                     $methodLabel = strtolower(trim((string)($body['payment_method'] ?? ($body['paymentMethod'] ?? ''))));
                     $isCodOrder = ($methodLabel === 'cod' || strpos($methodLabel, 'cash') !== false || strpos($methodLabel, 'cod') === 0);
 
+                    if ($isCodOrder) {
+                        // Cash on Delivery is not offered: every order must be paid online.
+                        janani_json_exit(['success' => false, 'message' => 'Cash on Delivery is not available. Please pay online to place your order.'], 400);
+                    }
                     if (!$isCodOrder) {
                         // Online payment: only a Razorpay payment with a valid signature creates an order.
                         if ($rzpOrderId === '' || $rzpPaymentId === '' || $rzpSignature === '') {

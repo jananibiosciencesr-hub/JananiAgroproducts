@@ -133,14 +133,12 @@ interface PaymentFailureViewProps {
   orderNumber: string;
   reason: string;
   onRetryPayment: () => void;
-  onSwitchToCod: () => void;
 }
 
 export function PaymentFailureView({
   orderNumber,
   reason,
   onRetryPayment,
-  onSwitchToCod,
 }: PaymentFailureViewProps) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 text-center animate-in fade-in duration-300">
@@ -189,16 +187,6 @@ export function PaymentFailureView({
             className="rounded-2xl px-6 text-xs font-bold gap-2 shadow-md"
           >
             <RotateCcw className="size-4" /> Retry Payment
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={onSwitchToCod}
-            className="rounded-2xl px-5 text-xs font-semibold gap-2 border-brand-leaf/40 text-brand-leaf hover:bg-brand-leaf/10"
-          >
-            Switch to Cash on Delivery
           </Button>
 
           <Button asChild variant="outline" size="lg" className="rounded-2xl px-5 text-xs font-semibold">

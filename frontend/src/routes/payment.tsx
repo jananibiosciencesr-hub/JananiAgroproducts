@@ -545,10 +545,6 @@ export function PaymentPage() {
         orderNumber={effectiveOrderNumber}
         reason={transactionDetails.failureReason || "Authorization timed out or transaction cancelled."}
         onRetryPayment={handleRetryPayment}
-        onSwitchToCod={() => {
-          setViewState("payment");
-          placeCodOrder();
-        }}
       />
     );
   }
@@ -692,10 +688,7 @@ export function PaymentPage() {
               {!isCod && onlinePaymentUnavailable && (
                 <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-900 space-y-2">
                   <p className="font-semibold">Online payment is temporarily unavailable.</p>
-                  <p>You can still place this order with Cash on Delivery and pay when it arrives.</p>
-                  <Button type="button" variant="outline" size="sm" onClick={placeCodOrder} disabled={isProcessing || isVerifying}>
-                    Place order with Cash on Delivery
-                  </Button>
+                  <p>Please try again in a little while. Your cart is saved.</p>
                 </div>
               )}
 

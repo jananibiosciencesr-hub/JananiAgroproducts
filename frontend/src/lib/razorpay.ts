@@ -9,7 +9,7 @@
  * A Razorpay webhook (payment.captured) also records the order if the browser closes after paying.
  *
  * There is no simulated / offline payment path: if Razorpay cannot be loaded or the server cannot
- * create a payment, the customer is told so and can retry or choose Cash on Delivery.
+ * create a payment, the customer is told so and can retry.
  */
 import { installAuthFetch } from "./http-auth";
 
@@ -146,7 +146,7 @@ export async function openRazorpayCheckout(options: RazorpayCheckoutOptions): Pr
   if (!isLoaded || typeof (window as any).Razorpay === "undefined") {
     return {
       opened: false,
-      reason: "The Razorpay payment window could not be loaded. Please disable any ad-blocker / check your internet connection and try again, or choose Cash on Delivery.",
+      reason: "The Razorpay payment window could not be loaded. Please disable any ad-blocker / check your internet connection and try again.",
     };
   }
 
