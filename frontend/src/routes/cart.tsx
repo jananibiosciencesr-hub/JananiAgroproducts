@@ -446,7 +446,12 @@ export function CartPage() {
     toast.info(productName ? `Removed ${productName} from saved list.` : "Item removed from saved list.");
   };
 
-  const gstAmount = Math.round(subtotal * 0.05);
+  // Same per-product GST as checkout and the server (admin-configured rate, default 5%)
+  const gstAmount = Number(
+    cartItems
+      .reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.qty) * Number(item.product?.gstRate ?? 5)) / 100, 0)
+      .toFixed(2)
+  );
   const finalTotal = Math.max(0, subtotal + gstAmount - discount + shippingFee);
   const totalSavings = cartItems.reduce(
     (sum, item) => sum + (item.oldPrice - item.price) * item.qty,
@@ -686,7 +691,7 @@ export function CartPage() {
                 )}
 
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Estimated GST (5% Organic Staples)</span>
+                  <span>Estimated GST</span>
                   <span className="font-mono font-semibold text-foreground">+ ₹{gstAmount}</span>
                 </div>
 

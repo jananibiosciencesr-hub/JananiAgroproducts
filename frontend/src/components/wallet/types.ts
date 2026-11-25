@@ -5,7 +5,9 @@ export type TransactionCategory =
   | "cashback"
   | "referral"
   | "order_payment"
-  | "refund";
+  | "refund"
+  | "expired"
+  | "reversal";
 
 export interface WalletTransaction {
   id: string;

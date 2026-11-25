@@ -1,6 +1,6 @@
 <?php
 /**
- * JANANI AGRO PRODUCTS - HOSTINGER PHP REST API (source of truth: backend/php/, copied to the site root by the build)
+ * JANANI AGRO PRODUCTS - HOSTINGER PHP REST API (source: backend/php/, copied to the site root by the build)
  *
  * Single entry point for the storefront and the admin command center (/api.php?action=... or /api/<action>).
  *
@@ -195,8 +195,12 @@ function sendOrderConfirmationInvoiceEmail($orderData, ...$unused) {
         if (stripos($name, 'neem') !== false || stripos($name, 'harit') !== false || stripos($name, 'pesticide') !== false || stripos($name, 'fungicide') !== false) $hsn = '3808';
         elseif (stripos($name, 'seed') !== false) $hsn = '1209';
 
-        $cgst = round($lineTotal * 0.025, 2);
-        $sgst = round($lineTotal * 0.025, 2);
+        $lineGstRate = (isset($it['gstRate']) && is_numeric($it['gstRate'])) ? (float)$it['gstRate'] : 5.0;
+        $lineGst = round($lineTotal * $lineGstRate / 100, 2);
+        $cgst = round($lineGst / 2, 2);
+        $sgst = round($lineGst - $cgst, 2);
+        $halfRateLabel = rtrim(rtrim(number_format($lineGstRate / 2, 2), '0'), '.');
+        $rateLabel = rtrim(rtrim(number_format($lineGstRate, 2), '0'), '.');
         $itemTotal = $lineTotal + $cgst + $sgst;
 
         $itemsRowsHtml .= "
@@ -210,12 +214,12 @@ function sendOrderConfirmationInvoiceEmail($orderData, ...$unused) {
                     &nbsp;&bull;&nbsp; Qty: <strong style='color: #1e293b;'>{$qty}</strong> &times; ₹" . number_format($price, 2) . "
                 </div>
                 <div style='margin-top: 3px; font-size: 10.5px; color: #059669; font-weight: 500; line-height: 1.3;'>
-                    Taxable: ₹" . number_format($lineTotal, 2) . " &bull; CGST (2.5%): ₹" . number_format($cgst, 2) . " &bull; SGST (2.5%): ₹" . number_format($sgst, 2) . "
+                    Taxable: ₹" . number_format($lineTotal, 2) . " &bull; CGST ({$halfRateLabel}%): ₹" . number_format($cgst, 2) . " &bull; SGST ({$halfRateLabel}%): ₹" . number_format($sgst, 2) . "
                 </div>
             </td>
             <td style='padding: 12px 10px; text-align: right; vertical-align: top; width: 105px; min-width: 90px; white-space: nowrap;'>
                 <div style='font-size: 14px; font-weight: 800; color: #075B32; font-family: monospace;'>₹" . number_format($itemTotal, 2) . "</div>
-                <div style='font-size: 9.5px; color: #64748b; margin-top: 2px;'>Incl. 5% GST</div>
+                <div style='font-size: 9.5px; color: #64748b; margin-top: 2px;'>Incl. {$rateLabel}% GST</div>
             </td>
         </tr>";
         $idx++;
@@ -230,7 +234,8 @@ function sendOrderConfirmationInvoiceEmail($orderData, ...$unused) {
     $sgstTotal = isset($orderData['sgst']) ? (float)$orderData['sgst'] : ($totalGst - $cgstTotal);
     $deliveryFee = isset($orderData['delivery_fee']) ? (float)$orderData['delivery_fee'] : (isset($orderData['shippingFee']) ? (float)$orderData['shippingFee'] : ($itemsSubtotal >= 799 ? 0 : 60));
     $discount = (float)($orderData['discount'] ?? ($orderData['coupon_discount'] ?? 0));
-    $finalTotal = $itemsSubtotal + $totalGst + $deliveryFee - $discount;
+    $walletUsed = (float)($orderData['wallet_deduction'] ?? ($orderData['walletDeduction'] ?? 0));
+    $finalTotal = $itemsSubtotal + $totalGst + $deliveryFee - $discount - $walletUsed;
 
     $invoiceNumber = "INV-" . str_replace("JAP-", date("Y") . "-", $orderNumber);
     $rawSubject = "🧾 Order Confirmation & GST Tax Invoice #{$orderNumber} - Janani Agro Products";
@@ -351,17 +356,21 @@ function sendOrderConfirmationInvoiceEmail($orderData, ...$unused) {
                             <td style='padding: 4px 0; text-align: right; font-family: monospace; font-weight: 600; color: #1e293b;'>₹" . number_format($itemsSubtotal, 2) . "</td>
                           </tr>
                           <tr>
-                            <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Total CGST (2.5%):</td>
+                            <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Total CGST:</td>
                             <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>+₹" . number_format($cgstTotal, 2) . "</td>
                           </tr>
                           <tr>
-                            <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Total SGST (2.5%):</td>
+                            <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Total SGST:</td>
                             <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>+₹" . number_format($sgstTotal, 2) . "</td>
                           </tr>
                           " . ($discount > 0 ? "
                           <tr>
                             <td style='padding: 4px 0; color: #059669; font-weight: 600;'>Coupon Discount:</td>
                             <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>-₹" . number_format($discount, 2) . "</td>
+                          </tr>" : "") . ($walletUsed > 0 ? "
+                          <tr>
+                            <td style='padding: 4px 0; color: #059669; font-weight: 600;'>Wallet Credit Used:</td>
+                            <td style='padding: 4px 0; text-align: right; font-family: monospace; color: #059669; font-weight: 600;'>-₹" . number_format($walletUsed, 2) . "</td>
                           </tr>" : "") . "
                           <tr>
                             <td style='padding: 4px 0; color: #64748b; font-weight: 500;'>Shipping / Delivery:</td>
@@ -1298,6 +1307,23 @@ try {
             // Display preview only - the real number is allocated atomically when the order is saved.
             janani_json_exit(['success' => true, 'preview' => true, 'nextOrderNumber' => janani_peek_order_number($pdo)]);
 
+        case 'wallet':
+            $walletViewer = janani_require_user($pdo);
+            $walletTarget = $walletViewer;
+            $requestedWalletUser = trim((string)($_GET['userId'] ?? ($_GET['email'] ?? '')));
+            if ($requestedWalletUser !== '' && janani_is_staff_user($walletViewer)) {
+                $walletTarget = janani_find_user_by_identifier($pdo, $requestedWalletUser);
+                if (!$walletTarget) {
+                    $wq = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? LIMIT 1");
+                    $wq->execute([$requestedWalletUser]);
+                    $walletTarget = $wq->fetch() ?: null;
+                }
+                if (!$walletTarget) {
+                    janani_json_exit(['success' => false, 'message' => 'Customer not found.'], 404);
+                }
+            }
+            janani_json_exit(array_merge(['success' => true], janani_wallet_summary($pdo, $walletTarget)));
+
         case 'auth-me':
             $me = janani_current_user($pdo);
             if (!$me) {
@@ -1724,13 +1750,17 @@ try {
             }
             janani_rate_limit_or_exit($pdo, 'rzp-order:' . $me['id'], 20, 3600);
             $body = getJsonBody();
-            $quote = janani_build_quote($pdo, $me, $body['items'] ?? [], (string)($body['couponCode'] ?? ''));
+            $wantsWallet = !empty($body['useWalletCredit']);
+            $quote = janani_build_quote($pdo, $me, $body['items'] ?? [], (string)($body['couponCode'] ?? ''), $wantsWallet);
             if (!empty($quote['errors'])) {
                 janani_json_exit(['success' => false, 'message' => implode(' ', $quote['errors']), 'errors' => $quote['errors']], 400);
             }
             $requestedCoupon = strtoupper(trim((string)($body['couponCode'] ?? '')));
             if ($requestedCoupon !== '' && $quote['couponCode'] !== $requestedCoupon) {
                 janani_json_exit(['success' => false, 'couponInvalid' => true, 'message' => $quote['couponMessage'] ?: 'This coupon can no longer be applied.', 'quote' => $quote], 409);
+            }
+            if ($wantsWallet && $quote['walletDeduction'] <= 0) {
+                janani_json_exit(['success' => false, 'walletInvalid' => true, 'message' => $quote['walletMessage'] ?: 'Your wallet credit cannot be used on this order.', 'quote' => $quote], 409);
             }
             if (isset($body['expectedTotal']) && abs((float)$body['expectedTotal'] - $quote['total']) > 1.0) {
                 janani_json_exit([
@@ -3752,17 +3782,22 @@ try {
                             'data' => $createdOrder,
                             'orderId' => $createdOrder['number'],
                             'number' => $createdOrder['number'],
+                            'walletReward' => $fin['reward'] ?? null,
                         ]);
                     }
 
                     // Cash on Delivery
                     $requestedCoupon = strtoupper(trim((string)($body['coupon_code'] ?? ($body['couponCode'] ?? ''))));
-                    $quote = janani_build_quote($pdo, $orderUser, $body['items'] ?? [], $requestedCoupon);
+                    $codWantsWallet = !empty($body['use_wallet_credit']) || !empty($body['useWalletCredit']);
+                    $quote = janani_build_quote($pdo, $orderUser, $body['items'] ?? [], $requestedCoupon, $codWantsWallet);
                     if (!empty($quote['errors'])) {
                         janani_json_exit(['success' => false, 'message' => implode(' ', $quote['errors']), 'errors' => $quote['errors']], 400);
                     }
                     if ($requestedCoupon !== '' && $quote['couponCode'] !== $requestedCoupon) {
                         janani_json_exit(['success' => false, 'couponInvalid' => true, 'message' => $quote['couponMessage'] ?: 'This coupon can no longer be applied.', 'quote' => $quote], 409);
+                    }
+                    if ($codWantsWallet && $quote['walletDeduction'] <= 0) {
+                        janani_json_exit(['success' => false, 'walletInvalid' => true, 'message' => $quote['walletMessage'] ?: 'Your wallet credit cannot be used on this order.', 'quote' => $quote], 409);
                     }
                     $expected = $body['expectedTotal'] ?? ($body['finalTotal'] ?? ($body['total'] ?? null));
                     if ($expected !== null && abs((float)$expected - $quote['total']) > 1.0) {
@@ -3788,7 +3823,7 @@ try {
                         'orderNotes' => (string)($body['order_notes'] ?? ($body['orderNotes'] ?? '')),
                     ]);
                     if (empty($placed['success'])) {
-                        janani_json_exit(['success' => false, 'outOfStock' => !empty($placed['outOfStock']), 'message' => $placed['message'] ?? 'Your order could not be placed.'], 409);
+                        janani_json_exit(['success' => false, 'outOfStock' => !empty($placed['outOfStock']), 'walletInvalid' => !empty($placed['walletInvalid']), 'message' => $placed['message'] ?? 'Your order could not be placed.'], 409);
                     }
                     janani_send_order_invoice_once($pdo, $placed['order']);
                     $createdOrder = janani_format_order($placed['order']);
@@ -3799,6 +3834,7 @@ try {
                         'data' => $createdOrder,
                         'orderId' => $createdOrder['number'],
                         'number' => $createdOrder['number'],
+                        'walletReward' => $placed['reward'] ?? null,
                     ]);
                 }
 
@@ -4031,6 +4067,13 @@ try {
                             $user['avgOrderValue'] = count($uOrders) > 0 ? round($spentSum / count($uOrders), 2) : 0;
                         } catch (Exception $e) {}
 
+                        try {
+                            $walletSummary = janani_wallet_summary($pdo, $user);
+                            $user['wallet_balance'] = $walletSummary['totalBalance'];
+                            $user['wallet'] = $walletSummary;
+                            $user['walletCredits'] = $walletSummary['credits'];
+                            $user['walletTransactions'] = $walletSummary['transactions'];
+                        } catch (Throwable $e) {}
                         $user['walletBalance'] = (float)($user['wallet_balance'] ?? 0);
                         $user['loyaltyPoints'] = (int)($user['loyalty_points'] ?? 0);
                         $user['isVerified'] = (bool)($user['is_verified'] ?? 1);
@@ -4041,6 +4084,7 @@ try {
                 }
 
                 // (Customers are never deleted automatically.)
+                janani_sync_all_wallet_balances($pdo); // expire old credits and refresh balances shown in the list
 
                 // Sync real customers from real orders into users table if not already present
                 try {
@@ -4256,7 +4300,7 @@ try {
                     $phone = $body['phone'] ?? '';
                     $role = $profileActorIsAdmin ? ($body['role'] ?? 'Customer') : 'Customer';
                     $tier = $body['tier'] ?? 'Silver';
-                    $wallet = $profileActorIsAdmin ? (float)($body['walletBalance'] ?? ($body['wallet_balance'] ?? 0)) : 0.0;
+                    $wallet = 0.0; // wallet credit is added through the wallet ledger ("Adjust Balance"), never set directly
                     $loyalty = (int)($body['loyaltyPoints'] ?? ($body['loyalty_points'] ?? 50));
                     $status = $body['status'] ?? 'Active';
                     $avatar = $body['avatar'] ?? null;
@@ -4294,29 +4338,18 @@ try {
                         if (!$profileActorIsAdmin) {
                             janani_json_exit(['success' => false, 'message' => 'Only an administrator can adjust wallet balances.'], 403);
                         }
-                        $amount = (float)($body['amount'] ?? 0);
-                        $type = $body['type'] ?? 'credit';
-                        $desc = $body['description'] ?? 'Admin Adjustment';
-                        $stmt = $pdo->prepare("SELECT `wallet_balance` FROM `users` WHERE `id` = ? OR `email` = ? LIMIT 1");
-                        $stmt->execute([$id, $id]);
-                        $curBal = (float)$stmt->fetchColumn();
-                        $newBal = $type === 'credit' ? ($curBal + $amount) : max(0, $curBal - $amount);
-
-                        $pdo->prepare("UPDATE `users` SET `wallet_balance` = ? WHERE `id` = ? OR `email` = ?")->execute([$newBal, $id, $id]);
-                        $transaction = [
-                            'id' => 'WTX-' . time() . '-' . rand(10, 99),
-                            'type' => $type,
-                            'amount' => $amount,
-                            'balanceAfter' => $newBal,
-                            'description' => $desc,
-                            'date' => date('c')
-                        ];
-                        echo json_encode([
-                            'success' => true,
-                            'message' => "Wallet balance {$type}ed by ₹{$amount} in MySQL",
-                            'data' => ['walletBalance' => $newBal, 'transaction' => $transaction]
-                        ]);
-                        exit;
+                        $walletCustomer = janani_find_user_by_identifier($pdo, $id);
+                        if (!$walletCustomer) {
+                            $wq = $pdo->prepare("SELECT * FROM `users` WHERE `id` = ? LIMIT 1");
+                            $wq->execute([$id]);
+                            $walletCustomer = $wq->fetch() ?: null;
+                        }
+                        if (!$walletCustomer) {
+                            janani_json_exit(['success' => false, 'message' => 'Customer not found.'], 404);
+                        }
+                        $adjType = (($body['type'] ?? 'credit') === 'debit') ? 'debit' : 'credit';
+                        $adj = janani_admin_wallet_adjust($pdo, $walletCustomer, $adjType, $body['amount'] ?? 0, $body['description'] ?? 'Admin adjustment', $profileActor);
+                        janani_json_exit($adj, empty($adj['success']) ? 400 : 200);
                     }
 
                     $fields = [];
@@ -4342,7 +4375,7 @@ try {
                     if (isset($body['role'])) { $fields[] = "`role` = ?"; $vals[] = $body['role']; }
                     if (isset($body['status'])) { $fields[] = "`status` = ?"; $vals[] = $body['status']; }
                     if (isset($body['avatar'])) { $fields[] = "`avatar` = ?"; $vals[] = $body['avatar']; }
-                    if (isset($body['walletBalance']) || isset($body['wallet_balance'])) { $fields[] = "`wallet_balance` = ?"; $vals[] = (float)($body['walletBalance'] ?? $body['wallet_balance']); }
+                    // wallet_balance is derived from the wallet credits ledger (use the "wallet" adjustment instead)
                     if (isset($body['loyaltyPoints']) || isset($body['loyalty_points'])) { $fields[] = "`loyalty_points` = ?"; $vals[] = (int)($body['loyaltyPoints'] ?? $body['loyalty_points']); }
                     if (!empty($body['password'])) {
                         $pStr = trim($body['password']);

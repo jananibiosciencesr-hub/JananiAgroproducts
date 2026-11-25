@@ -135,11 +135,13 @@ export function OrderSuccessPage() {
 
   const subtotal = effectiveOrder?.subtotal || items.reduce((sum: number, it: any) => sum + it.price * it.quantity, 0);
   const discount = effectiveOrder?.couponDiscount || effectiveOrder?.discount || 0;
+  const walletUsed = Number(effectiveOrder?.walletDeduction || 0);
+  const walletReward = effectiveOrder?.walletReward as { amount: number; expiresOn: string; lockedReason?: string | null; minOrderValue?: number } | null | undefined;
   const deliveryFee = effectiveOrder?.shippingFee !== undefined 
     ? effectiveOrder.shippingFee 
     : (effectiveOrder?.deliveryFee !== undefined ? effectiveOrder.deliveryFee : (subtotal >= 799 ? 0 : 60));
   const gstAmount = effectiveOrder?.gstAmount !== undefined ? effectiveOrder.gstAmount : Math.round(subtotal * 0.05);
-  const finalTotal = effectiveOrder?.finalTotal || effectiveOrder?.total || Math.max(0, subtotal + gstAmount + deliveryFee - discount);
+  const finalTotal = effectiveOrder?.finalTotal || effectiveOrder?.total || Math.max(0, subtotal + gstAmount + deliveryFee - discount - walletUsed);
   const awbNumber = effectiveOrder?.awb || `DEL-${orderNumber.replace(/[^0-9]/g, "") || "892144"}`;
 
   // Recommended catalog items
@@ -330,6 +332,17 @@ export function OrderSuccessPage() {
         <ChevronRight className="size-3 text-muted-foreground/60 hidden sm:inline" />
         <span className="text-brand-leaf font-bold">Order Confirmed</span>
       </nav>
+
+      {/* First-order reward */}
+      {walletReward?.amount ? (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <p>
+            🎁 <strong>₹{walletReward.amount}</strong> wallet credit has been added for your next order (orders of ₹{walletReward.minOrderValue || 500}+ excluding delivery).
+            Valid till <strong>{walletReward.expiresOn}</strong>.{walletReward.lockedReason ? ` ${walletReward.lockedReason}` : ""}
+          </p>
+          <Link to="/dashboard" search={{ tab: "wallet" } as any} className="text-xs font-bold underline shrink-0">View wallet</Link>
+        </div>
+      ) : null}
 
       {/* HERO CELEBRATION CARD */}
       <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-brand-leaf/25 bg-gradient-to-b from-brand-leaf/10 via-card to-card p-4 sm:p-8 shadow-luxe text-center space-y-4 sm:space-y-5">
@@ -585,13 +598,19 @@ export function OrderSuccessPage() {
               <span className="font-semibold text-foreground">₹{subtotal}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>GST (5%)</span>
+              <span>GST</span>
               <span className="font-semibold text-foreground">₹{gstAmount}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-brand-leaf font-semibold">
                 <span>Discount Applied</span>
                 <span>-₹{discount}</span>
+              </div>
+            )}
+            {walletUsed > 0 && (
+              <div className="flex justify-between text-brand-leaf font-semibold">
+                <span>Wallet Credit Used</span>
+                <span>-₹{walletUsed}</span>
               </div>
             )}
             <div className="flex justify-between text-muted-foreground">

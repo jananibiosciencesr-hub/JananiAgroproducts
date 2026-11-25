@@ -30,6 +30,7 @@ export interface RazorpayOrderRequest {
   expectedTotal: number;
   deliverySlot?: string;
   orderNotes?: string;
+  useWalletCredit?: boolean;
 }
 
 export interface RazorpayOrderResult {

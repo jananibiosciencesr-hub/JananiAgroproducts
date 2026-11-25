@@ -350,6 +350,7 @@ export function normalizeProduct(raw: any): Product {
     reviews: Number(raw.reviews_count || raw.reviews) || 45,
     inStock: stock > 0 && raw.active !== 0 && raw.status !== "Trash",
     stockCount: stock,
+    gstRate: raw.gst_rate !== undefined && raw.gst_rate !== null && raw.gst_rate !== "" ? Number(raw.gst_rate) : (raw.gstRate !== undefined ? Number(raw.gstRate) : 5),
     badge: raw.badge || (discount > 15 ? "Special Offer" : undefined),
     image: getProductImage(raw.name || raw.category_name || raw.category, raw.image),
     videoUrl: (raw.video_url && !raw.video_url.includes("k3G_29e6j-w"))
@@ -736,6 +737,8 @@ export interface CreateOrderPayload {
   razorpayOrderId?: string;
   razorpaySignature?: string;
   orderNotes?: string;
+  /** apply the customer's available wallet credit (server decides the amount) */
+  useWalletCredit?: boolean;
   deliverySlot?: string;
   expectedDelivery?: string;
   slot?: any;
@@ -869,6 +872,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     expectedTotal: orderPayload.finalTotal ?? orderPayload.total,
     delivery_slot: orderPayload.deliverySlot || orderPayload.slot?.dateStr || "",
     order_notes: orderPayload.orderNotes || "",
+    use_wallet_credit: !!orderPayload.useWalletCredit,
   };
 
   let data: any = null;
@@ -892,7 +896,7 @@ export async function createOrder(orderPayload: CreateOrderPayload) {
     throw new OrderPlacementError(data.message || "Your order could not be placed. Please try again.", data);
   }
 
-  const createdOrder = data.order || data.data;
+  const createdOrder = { ...(data.order || data.data), walletReward: data.walletReward || null };
   // Keep the admin cache in sync with what the server actually stored
   try {
     const adminOrders = getStored<any[]>(STORAGE_KEYS.ORDERS, []);
@@ -927,6 +931,61 @@ export async function requestOrderAction(
     /* network error */
   }
   return serverUnavailable();
+}
+
+export interface WalletCredit {
+  id: string;
+  type: "first_order_reward" | "admin_credit" | string;
+  title: string;
+  amount: number;
+  status: "active" | "used" | "expired" | "revoked" | string;
+  statusLabel: string;
+  lockedReason: string | null;
+  sourceOrder: string | null;
+  usedOrder: string | null;
+  usedAmount: number;
+  note: string | null;
+  issuedAt: string;
+  expiresAt: string;
+  expiresOn: string;
+  daysLeft: number;
+}
+
+export interface WalletSummary {
+  success: boolean;
+  message?: string;
+  availableBalance: number;
+  lockedBalance: number;
+  totalBalance: number;
+  credits: WalletCredit[];
+  transactions: Array<{
+    id: string;
+    date: string;
+    title: string;
+    description: string;
+    amount: number;
+    type: "credit" | "debit";
+    status: "completed" | "pending" | "failed";
+    category: string;
+    orderId?: string | null;
+    balanceAfter?: number;
+  }>;
+  firstOrderRewardEligible: boolean;
+  rules: { rewardPercent: number; minOrderValue: number; validityDays: number; oneTimeUse: boolean };
+}
+
+export const WALLET_RULES_DEFAULT = { rewardPercent: 10, minOrderValue: 500, validityDays: 90, oneTimeUse: true };
+
+/** Signed-in customer's wallet credits (first-order reward), straight from the server ledger. */
+export async function getMyWallet(): Promise<WalletSummary | null> {
+  try {
+    const res = await fetch("/api.php?action=wallet");
+    const data = await res.json().catch(() => null);
+    if (data?.success) return data as WalletSummary;
+  } catch {
+    /* offline */
+  }
+  return null;
 }
 
 export async function trackOrder(query: string) {

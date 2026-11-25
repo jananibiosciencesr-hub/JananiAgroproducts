@@ -43,7 +43,7 @@ export function WalletToggleCard({
           <div>
             <div className="flex items-center gap-2">
               <h4 className="font-bold text-sm text-foreground">
-                Janani Farm Wallet
+                Janani Wallet Credit
               </h4>
               <span className="rounded-full bg-brand-leaf/15 text-brand-leaf px-2 py-0.5 text-[10px] font-extrabold uppercase">
                 Available: ₹{walletBalance}
@@ -53,10 +53,11 @@ export function WalletToggleCard({
             <p className="text-xs text-muted-foreground mt-0.5">
               {isWalletEnabled ? (
                 <span className="text-brand-leaf font-semibold">
-                  Applying ₹{actualDeduction} credit • ₹{remainingWallet} left in wallet
+                  Applying ₹{actualDeduction} credit
+                  {remainingWallet > 0 ? ` • one-time use, the remaining ₹${remainingWallet} will lapse` : ""}
                 </span>
               ) : (
-                <span>Check to deduct up to ₹{actualDeduction} from total payable</span>
+                <span>Switch on to use ₹{actualDeduction} credit on this order (one-time use)</span>
               )}
             </p>
           </div>

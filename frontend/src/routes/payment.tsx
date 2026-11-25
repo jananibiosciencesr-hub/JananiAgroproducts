@@ -304,6 +304,7 @@ export function PaymentPage() {
     finalTotal: effectiveAmount,
     deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
     orderNotes: checkoutData?.orderNotes || "",
+    useWalletCredit: !!checkoutData?.useWalletCredit,
     ...extra,
   });
 
@@ -314,6 +315,10 @@ export function PaymentPage() {
       // Cart is out of date (price / coupon / stock changed): send the customer back to review it.
       localStorage.removeItem("janani_pending_checkout");
       navigate({ to: "/cart" });
+    } else if (err?.walletInvalid) {
+      // Wallet credit expired / already used: review the total again on checkout
+      localStorage.removeItem("janani_pending_checkout");
+      navigate({ to: "/checkout" });
     }
   };
 
@@ -341,7 +346,8 @@ export function PaymentPage() {
       discount: Number(created?.coupon_discount ?? created?.couponDiscount ?? 0),
       couponCode: created?.coupon_code || created?.couponCode || "",
       couponDiscount: Number(created?.coupon_discount ?? created?.couponDiscount ?? 0),
-      walletDeduction: 0,
+      walletDeduction: Number(created?.wallet_deduction ?? created?.walletDeduction ?? 0),
+      walletReward: created?.walletReward || null,
       deliveryFee: Number(created?.delivery_fee ?? created?.deliveryFee ?? 0),
       finalTotal: Number(created?.total ?? effectiveAmount),
       total: Number(created?.total ?? effectiveAmount),
@@ -381,6 +387,9 @@ export function PaymentPage() {
     setTransactionDetails((prev) => ({ ...prev, orderNumber: number, transactionId: confirmedOrder.transactionId, method: methodLabel, amount: confirmedOrder.total }));
     setVerifyingText(`Order ${number} confirmed! Redirecting...`);
     toast.success(`Order ${number} placed successfully!`);
+    if (created?.walletReward?.amount) {
+      toast.success(`🎁 ₹${created.walletReward.amount} wallet credit added for your next order (valid till ${created.walletReward.expiresOn}).`, { duration: 9000 });
+    }
     try {
       navigate({ to: "/order-success" });
     } catch (navErr) {
@@ -482,6 +491,7 @@ export function PaymentPage() {
       expectedTotal: effectiveAmount,
       deliverySlot: checkoutData?.slot?.dateStr || deliveryDate,
       orderNotes: checkoutData?.orderNotes || "",
+      useWalletCredit: !!checkoutData?.useWalletCredit,
     });
     if (!rzOrder.success) {
       setIsProcessing(false);
@@ -760,7 +770,7 @@ export function PaymentPage() {
               <div className="flex justify-between">
                 <span>Applicable GST Tax</span>
                 <span className="font-semibold text-foreground">
-                  +₹{checkoutData?.gstAmount || Math.round((checkoutData?.subtotal || subtotal) * 0.05)}
+                  +₹{checkoutData?.gstAmount ?? 0}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -777,7 +787,7 @@ export function PaymentPage() {
               )}
               {checkoutData?.walletDeduction > 0 && (
                 <div className="flex justify-between text-brand-leaf font-semibold">
-                  <span>Farm Wallet</span>
+                  <span>Wallet Credit</span>
                   <span>-₹{checkoutData.walletDeduction}</span>
                 </div>
               )}

@@ -58,6 +58,16 @@ Janani Agro/
 - Refunds (customer cancellation, admin refund) go through the Razorpay refund API.
 - Data is never rewritten on normal requests; schema/data fixes run once as versioned migrations.
 
+## 🎁 Wallet credit (first-order reward)
+
+- First order with products worth **₹500+** (after coupon, excluding delivery and GST) earns **10%** as wallet credit.
+- The credit is shown in the customer wallet (Dashboard → Wallet) as soon as the order is placed and **expires after 90 days**.
+- It is used **once**, automatically at checkout, on a later order of **₹500+**; any unused part lapses.
+- Online-paid first order: usable immediately. Cash on Delivery first order: unlocks when that order is marked Delivered.
+- First order cancelled/refunded → credit removed (or deducted from the refund if already used). Order that used the credit cancelled → credit restored until its original expiry.
+- Ledger table: `wallet_credits` (admin: Customers → customer → Wallet & Ledger; manual credit/debit follows the same rules).
+- Rules live in `backend/php/api_security.php` (`JANANI_FIRST_ORDER_CREDIT_RATE`, `JANANI_CREDIT_MIN_ORDER_VALUE`, `JANANI_CREDIT_VALIDITY_DAYS`).
+
 ---
 
 ## 🚀 Local development

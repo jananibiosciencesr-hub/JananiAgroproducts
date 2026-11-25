@@ -1,6 +1,6 @@
 <?php
 /**
- * JANANI AGRO PRODUCTS - API SECURITY & COMMERCE CORE
+ * JANANI AGRO PRODUCTS - API SECURITY, COMMERCE & WALLET CORE
  *
  * Included by api.php (never served directly; direct requests are refused). Provides:
  *  - configuration from environment variables (no secrets in source code)
@@ -17,7 +17,7 @@ if (!defined('JANANI_API')) {
     exit('Forbidden');
 }
 
-const JANANI_SCHEMA_VERSION = 1;
+const JANANI_SCHEMA_VERSION = 2;
 const JANANI_CUSTOMER_TOKEN_TTL = 604800;   // 7 days
 const JANANI_ADMIN_TOKEN_TTL = 86400;       // 24 hours (matches admin portal auto-logout)
 const JANANI_OTP_TTL = 600;                 // 10 minutes
@@ -248,6 +248,12 @@ function janani_boot($pdo) {
         if ($version < 1) {
             janani_migration_v1($pdo);
             janani_store_set($pdo, 'schema_version', '1');
+            $version = 1;
+        }
+        if ($version < 2) {
+            janani_migration_v2($pdo);
+            janani_store_set($pdo, 'schema_version', '2');
+            $version = 2;
         }
     } catch (Throwable $e) {
         error_log('[janani] migration failed: ' . $e->getMessage());
@@ -615,6 +621,7 @@ function janani_authorize_request($pdo, $action, $method) {
         case 'users':
         case 'profile':
         case 'update-profile':
+        case 'wallet':
             janani_require_user($pdo); // self-service limits enforced in handler
             return;
 
@@ -1134,6 +1141,7 @@ function janani_price_items($pdo, $items) {
             'price' => $unitPrice,
             'quantity' => $qty,
             'lineTotal' => round($unitPrice * $qty, 2),
+            'gstRate' => (isset($prod['gst_rate']) && $prod['gst_rate'] !== null && $prod['gst_rate'] !== '' && is_numeric($prod['gst_rate'])) ? (float)$prod['gst_rate'] : 5.0,
             'image' => $it['image'] ?? ($prod['image'] ?? null),
         ];
     }
@@ -1207,13 +1215,19 @@ function janani_validate_coupon($pdo, $code, $subtotal, $shippingFee, $user = nu
 }
 
 /** Full server-side quote: the only source of truth for what a customer pays. */
-function janani_build_quote($pdo, $user, $items, $couponCode = '') {
+function janani_build_quote($pdo, $user, $items, $couponCode = '', $useWallet = false) {
     $priced = janani_price_items($pdo, $items);
     $subtotal = $priced['subtotal'];
     $shipping = ($subtotal >= JANANI_FREE_SHIPPING_THRESHOLD || $subtotal == 0) ? 0.0 : (float)JANANI_STANDARD_SHIPPING_FEE;
-    $cgst = round($subtotal * JANANI_GST_HALF_RATE, 2);
-    $sgst = round($subtotal * JANANI_GST_HALF_RATE, 2);
-    $gst = round($cgst + $sgst, 2);
+    // GST: each product at its own admin-configured rate (default 5%), split equally into CGST + SGST.
+    // Must stay identical to the calculation in frontend/src/routes/checkout.tsx.
+    $gstRaw = 0.0;
+    foreach ($priced['lines'] as $gl) {
+        $gstRaw += ($gl['price'] * $gl['quantity'] * (float)($gl['gstRate'] ?? 5)) / 100;
+    }
+    $gst = round($gstRaw, 2);
+    $cgst = round($gst / 2, 2);
+    $sgst = round($gst - $cgst, 2);
     $discount = 0.0;
     $appliedCode = null;
     $couponMessage = null;
@@ -1225,7 +1239,18 @@ function janani_build_quote($pdo, $user, $items, $couponCode = '') {
             $appliedCode = strtoupper((string)$cv['coupon']['code']);
         }
     }
-    $total = round(max(0, $subtotal + $gst + $shipping - $discount), 2);
+    // Wallet credit (first-order reward): applies to the products value after coupon, never to delivery / GST
+    $productsValue = round(max(0, $subtotal - $discount), 2);
+    $walletDeduction = 0.0;
+    $walletCredits = [];
+    $walletMessage = null;
+    if ($useWallet && empty($priced['errors'])) {
+        $wr = janani_wallet_redemption($pdo, $user, $productsValue);
+        $walletDeduction = $wr['amount'];
+        $walletCredits = $wr['credits'];
+        $walletMessage = $wr['message'];
+    }
+    $total = round(max(0, $subtotal + $gst + $shipping - $discount - $walletDeduction), 2);
     return [
         'lines' => $priced['lines'],
         'errors' => $priced['errors'],
@@ -1237,7 +1262,10 @@ function janani_build_quote($pdo, $user, $items, $couponCode = '') {
         'couponCode' => $appliedCode,
         'couponDiscount' => $discount,
         'couponMessage' => $couponMessage,
-        'walletDeduction' => 0.0,
+        'productsValue' => $productsValue,
+        'walletDeduction' => $walletDeduction,
+        'walletCredits' => $walletCredits,
+        'walletMessage' => $walletMessage,
         'total' => $total,
     ];
 }
@@ -1450,6 +1478,7 @@ function janani_insert_order($pdo, $user, $quote, $address, $payment, $extra = [
     $timeline = janani_default_timeline($isPaidOnline, $courier, $slot);
     $notes = mb_substr(trim(strip_tags((string)($extra['orderNotes'] ?? ''))), 0, 1000);
     $warnings = [];
+    $postWarnings = [];
 
     $pdo->beginTransaction();
     try {
@@ -1477,12 +1506,12 @@ function janani_insert_order($pdo, $user, $quote, $address, $payment, $extra = [
                     `shipping_address`, `billing_address`, `items`, `subtotal`, `discount`, `coupon_code`, `coupon_discount`,
                     `wallet_deduction`, `gst_amount`, `delivery_fee`, `total`, `payment_method`, `payment_status`, `transaction_id`,
                     `razorpay_order_id`, `order_status`, `courier`, `warehouse`, `delivery_slot`, `expected_delivery`, `timeline`, `admin_notes`, `order_notes`
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, 'Processing', ?, ?, ?, ?, ?, ?, ?)");
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Processing', ?, ?, ?, ?, ?, ?, ?)");
                 $st->execute([
                     $candidate, $candidate, date('d M Y, h:i A'), (string)$user['id'], $customerName, $customerEmail, $customerPhone,
                     json_encode($address, JSON_UNESCAPED_UNICODE), json_encode($address, JSON_UNESCAPED_UNICODE),
                     json_encode($quote['lines'], JSON_UNESCAPED_UNICODE), $quote['subtotal'], $quote['couponDiscount'], $quote['couponCode'], $quote['couponDiscount'],
-                    $quote['gstAmount'], $quote['shippingFee'], $quote['total'], $payment['method'], $payment['status'], $payment['transactionId'] ?? null,
+                    round((float)($quote['walletDeduction'] ?? 0), 2), $quote['gstAmount'], $quote['shippingFee'], $quote['total'], $payment['method'], $payment['status'], $payment['transactionId'] ?? null,
                     $payment['razorpayOrderId'] ?? null, $courier, 'Lodhika GIDC Central Facility, Rajkot', $slot, '2-3 Business Days',
                     json_encode($timeline, JSON_UNESCAPED_UNICODE),
                     json_encode(array_map(function ($w) { return ['id' => 'NOTE-' . bin2hex(random_bytes(4)), 'text' => $w, 'author' => 'System', 'date' => date('d M Y, h:i A')]; }, $warnings), JSON_UNESCAPED_UNICODE),
@@ -1496,6 +1525,20 @@ function janani_insert_order($pdo, $user, $quote, $address, $payment, $extra = [
             }
         }
         if (!$number) throw $lastErr ?: new RuntimeException('Could not allocate an order number');
+
+        // Wallet credit is consumed in the same transaction as the order (one-time use)
+        foreach ((array)($quote['walletCredits'] ?? []) as $wc) {
+            $useCredit = $pdo->prepare("UPDATE `wallet_credits` SET `status` = 'used', `used_order` = ?, `used_amount` = ?, `used_at` = NOW(), `closed_at` = NOW()
+                WHERE `id` = ? AND `user_id` = ? AND `status` = 'active' AND `expires_at` > NOW()");
+            $useCredit->execute([$number, $wc['amount'], $wc['id'], (string)$user['id']]);
+            if ($useCredit->rowCount() === 0) {
+                if (!empty($payment['strictStock'])) {
+                    $pdo->rollBack();
+                    return ['success' => false, 'walletInvalid' => true, 'message' => 'Your wallet credit is no longer available (it may have expired or been used). Please review your order and try again.'];
+                }
+                $postWarnings[] = "Wallet credit {$wc['id']} (₹{$wc['amount']}) was already used or expired when this paid order was recorded – please review.";
+            }
+        }
 
         if (!empty($quote['couponCode'])) {
             $pdo->prepare("UPDATE `coupons` SET `uses` = COALESCE(`uses`, 0) + 1 WHERE UPPER(`code`) = ?")->execute([$quote['couponCode']]);
@@ -1518,8 +1561,26 @@ function janani_insert_order($pdo, $user, $quote, $address, $payment, $extra = [
         }
     } catch (Throwable $e) {}
 
+    if (!empty($quote['walletCredits'])) {
+        janani_sync_wallet_balance($pdo, (string)$user['id']);
+    }
     $order = janani_find_order($pdo, $number);
-    return ['success' => true, 'order' => $order, 'warnings' => $warnings];
+    if (!empty($postWarnings) && $order) {
+        try {
+            $adminNotes = janani_json_field($order['admin_notes'] ?? null, []);
+            foreach ($postWarnings as $w) {
+                $adminNotes[] = ['id' => 'NOTE-' . bin2hex(random_bytes(4)), 'text' => $w, 'author' => 'System', 'date' => date('d M Y, h:i A')];
+            }
+            $pdo->prepare("UPDATE `orders` SET `admin_notes` = ? WHERE `id` = ?")->execute([json_encode($adminNotes, JSON_UNESCAPED_UNICODE), $order['id']]);
+            $order = janani_find_order($pdo, $number);
+        } catch (Throwable $e) {}
+    }
+    // First-order reward (10% wallet credit, 90 days) - no-op when the customer is not eligible
+    $reward = janani_grant_first_order_reward($pdo, $user, $order);
+    if ($reward) {
+        $order = janani_find_order($pdo, $number);
+    }
+    return ['success' => true, 'order' => $order, 'warnings' => array_merge($warnings, $postWarnings), 'reward' => $reward];
 }
 
 // ---------------------------------------------------------------------------
@@ -1632,7 +1693,7 @@ function janani_finalize_intent($pdo, $razorpayOrderId, $paymentId, $expectUserI
         $pdo->prepare("UPDATE `payment_intents` SET `status` = 'order_created', `payment_id` = ?, `order_number` = ? WHERE `razorpay_order_id` = ?")
             ->execute([$paymentId, $result['order']['number'], $razorpayOrderId]);
         janani_send_order_invoice_once($pdo, $result['order']);
-        return ['success' => true, 'order' => $result['order']];
+        return ['success' => true, 'order' => $result['order'], 'reward' => $result['reward'] ?? null];
     } finally {
         if ($locked) {
             try { $pdo->query("SELECT RELEASE_LOCK(" . $pdo->quote($lockName) . ")"); } catch (Throwable $e) {}
@@ -1795,14 +1856,19 @@ function janani_cancel_order($pdo, $order, $reason, $actorLabel, $restock = true
         throw $e;
     }
 
+    // Credit earned by this order but already spent elsewhere is kept back from the refund
+    $clawback = janani_wallet_clawback_amount($pdo, $order);
+    janani_wallet_on_order_closed($pdo, $order);
+
     $refundNote = '';
     if (janani_is_paid_online($order)) {
-        $amount = max(0, (float)$order['total'] - (float)($order['refund_amount'] ?? 0));
+        $amount = max(0, (float)$order['total'] - (float)($order['refund_amount'] ?? 0) - $clawback);
         $refund = $amount > 0 ? janani_razorpay_refund($pdo, $order['transaction_id'], $amount, ['order' => (string)$order['number'], 'reason' => 'order cancelled']) : ['ok' => true, 'refundId' => null];
         if ($refund['ok']) {
             $pdo->prepare("UPDATE `orders` SET `payment_status` = 'Refunded', `refund_id` = ?, `refund_amount` = COALESCE(`refund_amount`, 0) + ? WHERE `id` = ?")
                 ->execute([$refund['refundId'], $amount, $order['id']]);
-            $refundNote = 'A refund of ₹' . number_format($amount, 2) . ' has been initiated to your original payment method (usually 5-7 business days).';
+            $refundNote = 'A refund of ₹' . number_format($amount, 2) . ' has been initiated to your original payment method (usually 5-7 business days).'
+                . ($clawback > 0 ? ' ₹' . number_format($clawback, 2) . ' first-order wallet credit already used on another order was deducted.' : '');
         } else {
             error_log('[janani] refund failed for ' . $order['number'] . ': ' . ($refund['error'] ?? ''));
             $pdo->prepare("UPDATE `orders` SET `payment_status` = 'Refund Pending' WHERE `id` = ?")->execute([$order['id']]);
@@ -1844,7 +1910,8 @@ function janani_user_purchased_product($pdo, $user, $productRef) {
  */
 function janani_refund_order($pdo, $order, $amount, $reason, $restock) {
     $alreadyRefunded = (float)($order['refund_amount'] ?? 0);
-    $maxRefundable = round(max(0, (float)$order['total'] - $alreadyRefunded), 2);
+    $clawback = janani_wallet_clawback_amount($pdo, $order);
+    $maxRefundable = round(max(0, (float)$order['total'] - $alreadyRefunded - $clawback), 2);
     $amount = $amount === null ? $maxRefundable : round((float)$amount, 2);
     if ($amount <= 0 || $amount > $maxRefundable + 0.001) {
         return ['success' => false, 'status' => 400, 'message' => 'Refund amount must be between ₹0.01 and ₹' . number_format($maxRefundable, 2) . '.'];
@@ -1861,7 +1928,10 @@ function janani_refund_order($pdo, $order, $amount, $reason, $restock) {
     if ($restock && $statusLower !== 'cancelled' && $statusLower !== 'returned') {
         janani_restock_order_items($pdo, $order);
     }
-    $fully = ($alreadyRefunded + $amount) >= (float)$order['total'] - 0.009;
+    $fully = ($alreadyRefunded + $amount) >= (float)$order['total'] - $clawback - 0.009;
+    if ($fully) {
+        janani_wallet_on_order_closed($pdo, $order);
+    }
     $afterStatus = in_array($statusLower, ['delivered', 'return requested', 'returned', 'exchange requested'], true) ? 'Returned' : 'Cancelled';
     $pdo->prepare("UPDATE `orders` SET `payment_status` = ?, `order_status` = ?, `refund_amount` = COALESCE(`refund_amount`, 0) + ?, `refund_id` = COALESCE(?, `refund_id`) WHERE `id` = ?")
         ->execute([$fully ? 'Refunded' : 'Partially Refunded', $afterStatus, $amount, $refundId, $order['id']]);
@@ -1888,4 +1958,447 @@ function janani_backup_dir() {
     if (!is_file($dir . '/.htaccess')) @file_put_contents($dir . '/.htaccess', "Require all denied\nDeny from all\n");
     if (!is_file($dir . '/index.html')) @file_put_contents($dir . '/index.html', '');
     return $dir;
+}
+
+// ---------------------------------------------------------------------------
+// Wallet credits (first-order reward)
+//
+// Rules (agreed with the store owner):
+//  * A customer's FIRST order whose products value (after coupon, excluding delivery and GST) is
+//    at least ₹500 earns 10% of that value as wallet credit.
+//  * The credit appears in the wallet when the order is placed and expires 90 days later.
+//  * It can be used once, on a later order whose products value is also at least ₹500.
+//    It is applied up to that order's products value; any unused part lapses.
+//  * If the first order is cancelled / fully refunded, the credit is removed (or, if already spent,
+//    deducted from that order's refund). If the order that used the credit is cancelled, the credit
+//    comes back (until its original expiry).
+//  * Credit from a Cash on Delivery first order unlocks once that order is delivered (an online
+//    paid first order unlocks immediately) - this stops "order COD, use credit, cancel" misuse.
+// ---------------------------------------------------------------------------
+
+const JANANI_FIRST_ORDER_CREDIT_RATE = 0.10;
+const JANANI_CREDIT_MIN_ORDER_VALUE = 500;
+const JANANI_CREDIT_VALIDITY_DAYS = 90;
+
+function janani_create_wallet_tables($pdo) {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `wallet_credits` (
+        `id` VARCHAR(40) NOT NULL PRIMARY KEY,
+        `user_id` VARCHAR(64) NOT NULL,
+        `user_email` VARCHAR(255) DEFAULT NULL,
+        `type` VARCHAR(40) NOT NULL DEFAULT 'first_order_reward',
+        `amount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+        `status` VARCHAR(20) NOT NULL DEFAULT 'active',
+        `source_order` VARCHAR(64) DEFAULT NULL,
+        `used_order` VARCHAR(64) DEFAULT NULL,
+        `used_amount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+        `note` VARCHAR(500) DEFAULT NULL,
+        `issued_at` DATETIME NOT NULL,
+        `expires_at` DATETIME NOT NULL,
+        `used_at` DATETIME DEFAULT NULL,
+        `closed_at` DATETIME DEFAULT NULL,
+        `created_by` VARCHAR(64) DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        KEY `idx_user_status` (`user_id`, `status`),
+        KEY `idx_source_order` (`source_order`),
+        KEY `idx_used_order` (`used_order`),
+        KEY `idx_expires` (`status`, `expires_at`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+function janani_migration_v2($pdo) {
+    janani_create_wallet_tables($pdo);
+    // Wallet balance is now derived from the credits ledger (the previous code reset every
+    // customer's balance to 0 on each request, so no real balance is lost).
+    janani_sync_all_wallet_balances($pdo);
+}
+
+function janani_wallet_note_append($existing, $text) {
+    $existing = trim((string)$existing);
+    return mb_substr($existing === '' ? $text : ($existing . ' | ' . $text), 0, 500);
+}
+
+function janani_expire_wallet_credits($pdo, $userId = null) {
+    try {
+        if ($userId === null) {
+            $pdo->exec("UPDATE `wallet_credits` SET `status` = 'expired', `closed_at` = NOW() WHERE `status` = 'active' AND `expires_at` <= NOW()");
+        } else {
+            $pdo->prepare("UPDATE `wallet_credits` SET `status` = 'expired', `closed_at` = NOW() WHERE `status` = 'active' AND `expires_at` <= NOW() AND `user_id` = ?")->execute([(string)$userId]);
+        }
+    } catch (Throwable $e) {}
+}
+
+/** users.wallet_balance mirrors the sum of the customer's active, unexpired credits. */
+function janani_sync_wallet_balance($pdo, $userId) {
+    try {
+        $pdo->prepare("UPDATE `users` SET `wallet_balance` = (SELECT COALESCE(SUM(`amount`), 0) FROM `wallet_credits` WHERE `user_id` = ? AND `status` = 'active' AND `expires_at` > NOW()) WHERE `id` = ?")
+            ->execute([(string)$userId, (string)$userId]);
+    } catch (Throwable $e) {}
+}
+
+function janani_sync_all_wallet_balances($pdo) {
+    janani_expire_wallet_credits($pdo);
+    try {
+        $pdo->exec("UPDATE `users` u SET u.`wallet_balance` = (SELECT COALESCE(SUM(w.`amount`), 0) FROM `wallet_credits` w WHERE w.`user_id` = u.`id` AND w.`status` = 'active' AND w.`expires_at` > NOW())");
+    } catch (Throwable $e) {}
+}
+
+/** Null when the credit can be spent now, otherwise the reason it is still locked. */
+function janani_credit_lock_reason($pdo, $credit) {
+    if (empty($credit['source_order'])) return null;
+    $o = janani_find_order($pdo, $credit['source_order']);
+    if (!$o) return null;
+    $ps = strtolower(trim((string)($o['payment_status'] ?? '')));
+    $os = strtolower(trim((string)($o['order_status'] ?? '')));
+    if (in_array($ps, ['paid', 'completed', 'captured'], true) || $os === 'delivered') return null;
+    return 'Unlocks when your first order ' . $o['number'] . ' is delivered.';
+}
+
+function janani_customer_active_order_count($pdo, $user, $excludeNumber = null) {
+    $email = janani_is_placeholder_email($user['email'] ?? '') ? '' : strtolower(trim((string)$user['email']));
+    $sql = "SELECT COUNT(*) FROM `orders` WHERE (`customer_id` = ? OR (? != '' AND LOWER(`customer_email`) = ?))
+            AND (`order_status` IS NULL OR `order_status` NOT IN ('Cancelled', 'Payment Failed'))";
+    $params = [(string)$user['id'], $email, $email];
+    if ($excludeNumber !== null) {
+        $sql .= " AND `number` != ?";
+        $params[] = (string)$excludeNumber;
+    }
+    $st = $pdo->prepare($sql);
+    $st->execute($params);
+    return (int)$st->fetchColumn();
+}
+
+/** First-order reward is available only to customers with no other (non-cancelled) order and no earlier reward. */
+function janani_first_order_reward_eligible($pdo, $user, $excludeNumber = null) {
+    if (!$user || janani_is_staff_user($user)) return false;
+    try {
+        if (janani_customer_active_order_count($pdo, $user, $excludeNumber) > 0) return false;
+        $st = $pdo->prepare("SELECT COUNT(*) FROM `wallet_credits` WHERE `user_id` = ? AND `type` = 'first_order_reward' AND `status` IN ('active', 'used', 'expired')");
+        $st->execute([(string)$user['id']]);
+        return (int)$st->fetchColumn() === 0;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+function janani_format_wallet_credit($pdo, $c) {
+    $status = (string)$c['status'];
+    $lock = $status === 'active' ? janani_credit_lock_reason($pdo, $c) : null;
+    $expiresTs = strtotime((string)$c['expires_at']);
+    $daysLeft = $status === 'active' ? max(0, (int)ceil(($expiresTs - time()) / 86400)) : 0;
+    $labels = [
+        'active' => $lock ? 'Locked' : 'Available',
+        'used' => 'Used',
+        'expired' => 'Expired',
+        'revoked' => 'Cancelled',
+    ];
+    return [
+        'id' => $c['id'],
+        'type' => $c['type'],
+        'title' => $c['type'] === 'first_order_reward' ? 'First order reward (10%)' : 'Store credit',
+        'amount' => round((float)$c['amount'], 2),
+        'status' => $status,
+        'statusLabel' => $labels[$status] ?? ucfirst($status),
+        'lockedReason' => $lock,
+        'sourceOrder' => $c['source_order'],
+        'usedOrder' => $c['used_order'],
+        'usedAmount' => round((float)$c['used_amount'], 2),
+        'note' => $c['note'],
+        'issuedAt' => date('c', strtotime((string)$c['issued_at'])),
+        'expiresAt' => date('c', $expiresTs),
+        'expiresOn' => date('d M Y', $expiresTs),
+        'usedAt' => $c['used_at'] ? date('c', strtotime((string)$c['used_at'])) : null,
+        'closedAt' => $c['closed_at'] ? date('c', strtotime((string)$c['closed_at'])) : null,
+        'daysLeft' => $daysLeft,
+    ];
+}
+
+/** Passbook entries (credits, uses, expiries, reversals) built from the credits ledger. */
+function janani_wallet_transactions($credits) {
+    $tx = [];
+    foreach ($credits as $c) {
+        $issued = strtotime($c['issuedAt']);
+        $tx[] = [
+            'id' => $c['id'],
+            'ts' => $issued,
+            'date' => date('d M Y', $issued),
+            'title' => $c['title'],
+            'description' => ($c['sourceOrder'] ? "Earned on order {$c['sourceOrder']}" : ($c['note'] ?: 'Added by Janani Agro')) . " • Valid till {$c['expiresOn']}" . ($c['lockedReason'] ? " • {$c['lockedReason']}" : ''),
+            'amount' => $c['amount'],
+            'type' => 'credit',
+            'status' => ($c['status'] === 'active' && $c['lockedReason']) ? 'pending' : 'completed',
+            'category' => $c['type'] === 'first_order_reward' ? 'cashback' : 'topup',
+            'orderId' => $c['sourceOrder'],
+        ];
+        if ($c['status'] === 'used') {
+            $usedTs = $c['usedAt'] ? strtotime($c['usedAt']) : $issued;
+            $tx[] = [
+                'id' => $c['id'] . '-U',
+                'ts' => $usedTs,
+                'date' => date('d M Y', $usedTs),
+                'title' => 'Used on order',
+                'description' => "Applied on order {$c['usedOrder']}",
+                'amount' => $c['usedAmount'],
+                'type' => 'debit',
+                'status' => 'completed',
+                'category' => 'order_payment',
+                'orderId' => $c['usedOrder'],
+            ];
+            $lapsed = round($c['amount'] - $c['usedAmount'], 2);
+            if ($lapsed > 0) {
+                $tx[] = [
+                    'id' => $c['id'] . '-L',
+                    'ts' => $usedTs,
+                    'date' => date('d M Y', $usedTs),
+                    'title' => 'Unused balance lapsed',
+                    'description' => 'Credit is one-time use; the remaining part is not carried forward',
+                    'amount' => $lapsed,
+                    'type' => 'debit',
+                    'status' => 'completed',
+                    'category' => 'expired',
+                    'orderId' => $c['usedOrder'],
+                ];
+            }
+        } elseif ($c['status'] === 'expired' || $c['status'] === 'revoked') {
+            $closedTs = $c['closedAt'] ? strtotime($c['closedAt']) : strtotime($c['expiresAt']);
+            $tx[] = [
+                'id' => $c['id'] . ($c['status'] === 'expired' ? '-E' : '-R'),
+                'ts' => $closedTs,
+                'date' => date('d M Y', $closedTs),
+                'title' => $c['status'] === 'expired' ? 'Credit expired' : 'Credit cancelled',
+                'description' => $c['status'] === 'expired' ? 'Not used within ' . JANANI_CREDIT_VALIDITY_DAYS . ' days' : ($c['note'] ?: 'Order was cancelled'),
+                'amount' => $c['amount'],
+                'type' => 'debit',
+                'status' => 'completed',
+                'category' => $c['status'] === 'expired' ? 'expired' : 'reversal',
+                'orderId' => $c['sourceOrder'],
+            ];
+        }
+    }
+    // Running balance (oldest first), then newest first for display
+    usort($tx, function ($a, $b) { return $a['ts'] <=> $b['ts']; });
+    $bal = 0.0;
+    foreach ($tx as &$t) {
+        $bal = round($bal + ($t['type'] === 'credit' ? $t['amount'] : -$t['amount']), 2);
+        $t['balanceAfter'] = max(0, $bal);
+    }
+    unset($t);
+    return array_reverse($tx);
+}
+
+/** Everything the wallet screens and checkout need for one customer. */
+function janani_wallet_summary($pdo, $user) {
+    janani_expire_wallet_credits($pdo, (string)$user['id']);
+    $st = $pdo->prepare("SELECT * FROM `wallet_credits` WHERE `user_id` = ? ORDER BY `issued_at` DESC LIMIT 200");
+    $st->execute([(string)$user['id']]);
+    $credits = [];
+    $available = 0.0;
+    $locked = 0.0;
+    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $c = janani_format_wallet_credit($pdo, $row);
+        if ($c['status'] === 'active') {
+            if ($c['lockedReason']) {
+                $locked += $c['amount'];
+            } else {
+                $available += $c['amount'];
+            }
+        }
+        $credits[] = $c;
+    }
+    janani_sync_wallet_balance($pdo, (string)$user['id']);
+    return [
+        'availableBalance' => round($available, 2),
+        'lockedBalance' => round($locked, 2),
+        'totalBalance' => round($available + $locked, 2),
+        'credits' => $credits,
+        'transactions' => janani_wallet_transactions($credits),
+        'firstOrderRewardEligible' => janani_first_order_reward_eligible($pdo, $user),
+        'rules' => [
+            'rewardPercent' => (int)round(JANANI_FIRST_ORDER_CREDIT_RATE * 100),
+            'minOrderValue' => JANANI_CREDIT_MIN_ORDER_VALUE,
+            'validityDays' => JANANI_CREDIT_VALIDITY_DAYS,
+            'oneTimeUse' => true,
+        ],
+    ];
+}
+
+/**
+ * Works out how much wallet credit applies to an order with the given products value
+ * (subtotal after coupon, excluding delivery and GST).
+ */
+function janani_wallet_redemption($pdo, $user, $productsValue) {
+    $none = ['amount' => 0.0, 'credits' => [], 'message' => null];
+    if (!$user) return $none;
+    if ($productsValue < JANANI_CREDIT_MIN_ORDER_VALUE) {
+        $none['message'] = 'Wallet credit can be used on orders of ₹' . JANANI_CREDIT_MIN_ORDER_VALUE . ' or more (excluding delivery).';
+        return $none;
+    }
+    janani_expire_wallet_credits($pdo, (string)$user['id']);
+    $st = $pdo->prepare("SELECT * FROM `wallet_credits` WHERE `user_id` = ? AND `status` = 'active' AND `expires_at` > NOW() ORDER BY `expires_at` ASC");
+    $st->execute([(string)$user['id']]);
+    $remaining = round((float)$productsValue, 2);
+    $applied = [];
+    $lockedReason = null;
+    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $lock = janani_credit_lock_reason($pdo, $row);
+        if ($lock) {
+            $lockedReason = $lock;
+            continue;
+        }
+        if ($remaining <= 0) break;
+        $use = round(min((float)$row['amount'], $remaining), 2);
+        if ($use <= 0) continue;
+        $applied[] = ['id' => $row['id'], 'amount' => $use];
+        $remaining = round($remaining - $use, 2);
+    }
+    if (empty($applied)) {
+        $none['message'] = $lockedReason ?: 'You have no wallet credit available.';
+        return $none;
+    }
+    $total = 0.0;
+    foreach ($applied as $a) {
+        $total += $a['amount'];
+    }
+    return ['amount' => round($total, 2), 'credits' => $applied, 'message' => null];
+}
+
+/** Issues the first-order reward for a freshly placed order (no-op when not eligible). */
+function janani_grant_first_order_reward($pdo, $user, $order) {
+    if (!$order || !$user) return null;
+    $lockName = 'wallet_' . substr(hash('sha256', (string)$user['id']), 0, 40);
+    $locked = false;
+    try {
+        $locked = (int)$pdo->query("SELECT GET_LOCK(" . $pdo->quote($lockName) . ", 10)")->fetchColumn() === 1;
+        $productsValue = round((float)$order['subtotal'] - (float)($order['coupon_discount'] ?? 0), 2);
+        if ($productsValue < JANANI_CREDIT_MIN_ORDER_VALUE) return null;
+        if (!janani_first_order_reward_eligible($pdo, $user, $order['number'])) return null;
+        $amount = round($productsValue * JANANI_FIRST_ORDER_CREDIT_RATE, 2);
+        if ($amount <= 0) return null;
+        $id = 'WCR-' . strtoupper(bin2hex(random_bytes(5)));
+        $pdo->prepare("INSERT INTO `wallet_credits` (`id`, `user_id`, `user_email`, `type`, `amount`, `status`, `source_order`, `note`, `issued_at`, `expires_at`, `created_by`)
+            VALUES (?, ?, ?, 'first_order_reward', ?, 'active', ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL " . (int)JANANI_CREDIT_VALIDITY_DAYS . " DAY), 'system')")
+            ->execute([$id, (string)$user['id'], (string)($user['email'] ?? ''), $amount, $order['number'], '10% of ₹' . number_format($productsValue, 2) . ' products value']);
+        janani_sync_wallet_balance($pdo, (string)$user['id']);
+        $expiresOn = date('d M Y', strtotime('+' . JANANI_CREDIT_VALIDITY_DAYS . ' days'));
+        $lock = janani_credit_lock_reason($pdo, ['source_order' => $order['number']]);
+        // Visible to the admin on the order
+        try {
+            $notes = janani_json_field($order['admin_notes'] ?? null, []);
+            $notes[] = [
+                'id' => 'NOTE-' . bin2hex(random_bytes(4)),
+                'text' => 'First-order reward: ₹' . number_format($amount, 2) . " wallet credit issued ({$id}), valid till {$expiresOn}." . ($lock ? ' Unlocks after delivery (COD).' : ''),
+                'author' => 'System',
+                'date' => date('d M Y, h:i A'),
+            ];
+            $pdo->prepare("UPDATE `orders` SET `admin_notes` = ? WHERE `id` = ?")->execute([json_encode($notes, JSON_UNESCAPED_UNICODE), $order['id']]);
+        } catch (Throwable $e) {}
+        return [
+            'id' => $id,
+            'amount' => $amount,
+            'expiresOn' => $expiresOn,
+            'validityDays' => JANANI_CREDIT_VALIDITY_DAYS,
+            'minOrderValue' => JANANI_CREDIT_MIN_ORDER_VALUE,
+            'lockedReason' => $lock,
+        ];
+    } catch (Throwable $e) {
+        error_log('[janani] first-order reward: ' . $e->getMessage());
+        return null;
+    } finally {
+        if ($locked) {
+            try { $pdo->query("SELECT RELEASE_LOCK(" . $pdo->quote($lockName) . ")"); } catch (Throwable $e) {}
+        }
+    }
+}
+
+/** First-order credit earned by this order that has already been spent on another order. */
+function janani_wallet_clawback_amount($pdo, $order) {
+    try {
+        $st = $pdo->prepare("SELECT COALESCE(SUM(`used_amount`), 0) FROM `wallet_credits` WHERE `source_order` = ? AND `type` = 'first_order_reward' AND `status` = 'used'");
+        $st->execute([(string)$order['number']]);
+        return round((float)$st->fetchColumn(), 2);
+    } catch (Throwable $e) {
+        return 0.0;
+    }
+}
+
+/**
+ * Wallet side effects when an order is cancelled or fully refunded:
+ *  - credit spent on this order comes back (until its original expiry)
+ *  - unused credit earned by this order is cancelled
+ */
+function janani_wallet_on_order_closed($pdo, $order) {
+    $number = (string)$order['number'];
+    $users = [];
+    try {
+        $st = $pdo->prepare("SELECT * FROM `wallet_credits` WHERE `used_order` = ? AND `status` = 'used'");
+        $st->execute([$number]);
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $users[$c['user_id']] = true;
+            if (strtotime((string)$c['expires_at']) > time()) {
+                $pdo->prepare("UPDATE `wallet_credits` SET `status` = 'active', `used_order` = NULL, `used_amount` = 0, `used_at` = NULL, `closed_at` = NULL, `note` = ? WHERE `id` = ? AND `status` = 'used'")
+                    ->execute([janani_wallet_note_append($c['note'], "Restored: order {$number} was cancelled"), $c['id']]);
+            } else {
+                $pdo->prepare("UPDATE `wallet_credits` SET `status` = 'expired', `used_order` = NULL, `used_amount` = 0, `closed_at` = NOW(), `note` = ? WHERE `id` = ? AND `status` = 'used'")
+                    ->execute([janani_wallet_note_append($c['note'], "Order {$number} was cancelled after the credit expired"), $c['id']]);
+            }
+        }
+        $st = $pdo->prepare("SELECT * FROM `wallet_credits` WHERE `source_order` = ? AND `type` = 'first_order_reward' AND `status` = 'active'");
+        $st->execute([$number]);
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $users[$c['user_id']] = true;
+            $pdo->prepare("UPDATE `wallet_credits` SET `status` = 'revoked', `closed_at` = NOW(), `note` = ? WHERE `id` = ? AND `status` = 'active'")
+                ->execute([janani_wallet_note_append($c['note'], "First order {$number} was cancelled"), $c['id']]);
+        }
+    } catch (Throwable $e) {
+        error_log('[janani] wallet on order close: ' . $e->getMessage());
+    }
+    foreach (array_keys($users) as $uid) {
+        janani_sync_wallet_balance($pdo, $uid);
+    }
+}
+
+/** Admin adjustment: credit adds a one-time store credit (same validity); debit reduces active credits. */
+function janani_admin_wallet_adjust($pdo, $targetUser, $type, $amount, $description, $adminUser) {
+    $amount = round((float)$amount, 2);
+    if ($amount <= 0) return ['success' => false, 'message' => 'Amount must be greater than zero.'];
+    $description = mb_substr(trim(strip_tags((string)$description)), 0, 200) ?: 'Admin adjustment';
+    $uid = (string)$targetUser['id'];
+    janani_expire_wallet_credits($pdo, $uid);
+    if ($type === 'credit') {
+        $id = 'WCR-' . strtoupper(bin2hex(random_bytes(5)));
+        $pdo->prepare("INSERT INTO `wallet_credits` (`id`, `user_id`, `user_email`, `type`, `amount`, `status`, `note`, `issued_at`, `expires_at`, `created_by`)
+            VALUES (?, ?, ?, 'admin_credit', ?, 'active', ?, NOW(), DATE_ADD(NOW(), INTERVAL " . (int)JANANI_CREDIT_VALIDITY_DAYS . " DAY), ?)")
+            ->execute([$id, $uid, (string)($targetUser['email'] ?? ''), $amount, $description, (string)($adminUser['id'] ?? 'admin')]);
+    } else {
+        $st = $pdo->prepare("SELECT * FROM `wallet_credits` WHERE `user_id` = ? AND `status` = 'active' AND `expires_at` > NOW() ORDER BY `expires_at` ASC");
+        $st->execute([$uid]);
+        $toRemove = $amount;
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            if ($toRemove <= 0) break;
+            $cut = round(min((float)$c['amount'], $toRemove), 2);
+            $left = round((float)$c['amount'] - $cut, 2);
+            $note = janani_wallet_note_append($c['note'], 'Admin debit ₹' . number_format($cut, 2) . ": {$description}");
+            if ($left <= 0) {
+                $pdo->prepare("UPDATE `wallet_credits` SET `status` = 'revoked', `closed_at` = NOW(), `note` = ? WHERE `id` = ?")->execute([$note, $c['id']]);
+            } else {
+                $pdo->prepare("UPDATE `wallet_credits` SET `amount` = ?, `note` = ? WHERE `id` = ?")->execute([$left, $note, $c['id']]);
+            }
+            $toRemove = round($toRemove - $cut, 2);
+        }
+        if ($toRemove >= $amount) {
+            return ['success' => false, 'message' => 'This customer has no active wallet credit to debit.'];
+        }
+    }
+    janani_sync_wallet_balance($pdo, $uid);
+    $summary = janani_wallet_summary($pdo, $targetUser);
+    return [
+        'success' => true,
+        'message' => $type === 'credit'
+            ? '₹' . number_format($amount, 2) . ' wallet credit added (valid ' . JANANI_CREDIT_VALIDITY_DAYS . ' days, one-time use on an order of ₹' . JANANI_CREDIT_MIN_ORDER_VALUE . '+).'
+            : 'Wallet credit reduced.',
+        'data' => [
+            'walletBalance' => $summary['totalBalance'],
+            'transaction' => $summary['transactions'][0] ?? null,
+            'wallet' => $summary,
+        ],
+    ];
 }

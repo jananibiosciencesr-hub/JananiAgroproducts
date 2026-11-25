@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { loadCustomerOrders, saveCustomerOrders } from "@/components/orders/orders-seed";
 import { CustomerOrder } from "@/components/orders/types";
 import { OrderInvoiceModal } from "@/components/order-success/order-invoice-modal";
-import { loadUserSavedAddresses } from "@/lib/api";
+import { loadUserSavedAddresses, getMyWallet, type WalletSummary } from "@/lib/api";
 import { EditProfileTab } from "@/components/profile/edit-profile-tab";
 import { AddressManagerTab } from "@/components/profile/address-manager-tab";
 import { SavedProductsTab } from "@/components/profile/saved-products-tab";
@@ -100,23 +100,28 @@ function DashboardPage() {
     }
   }, [search.tab]);
 
-  // Wallet transaction history state
-  const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([
-    {
-      id: "tx-welcome",
-      date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-      title: "Welcome Patron Reward",
-      description: "Organic farming bonus credited to Janani Wallet",
-      amount: user?.walletBalance ?? 250,
-      type: "credit",
-      status: "completed",
-      category: "cashback"
-    }
-  ]);
-
-  const handleAddWalletTransaction = (tx: WalletTransaction) => {
-    setWalletTransactions((prev) => [tx, ...prev]);
-  };
+  // Wallet: balance, credits and passbook come from the server ledger
+  const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    setWalletLoading(true);
+    getMyWallet()
+      .then((w) => setWalletSummary(w))
+      .finally(() => setWalletLoading(false));
+  }, [user?.id, activeTab]);
+  const walletTransactions: WalletTransaction[] = (walletSummary?.transactions || []).map((t) => ({
+    id: t.id,
+    date: t.date,
+    title: t.title,
+    description: t.description,
+    amount: t.amount,
+    type: t.type,
+    status: t.status,
+    category: t.category as WalletTransaction["category"],
+    ...(t.orderId ? { orderId: t.orderId } : {}),
+  }));
+  const walletBalanceShown = walletSummary ? walletSummary.availableBalance : (user?.walletBalance ?? 0);
 
   // Real-time dynamic customer orders list strictly scoped to current user
   const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
@@ -451,7 +456,7 @@ function DashboardPage() {
           <span>Wallet</span>
           <span className={`rounded-full px-1.5 py-0.2 text-[9.5px] font-mono ${activeTab === "wallet" ? "bg-white/25 text-white" : "bg-emerald-500/15 text-emerald-700"
             }`}>
-            ₹{(user?.walletBalance ?? 0).toLocaleString("en-IN")}
+            ₹{walletBalanceShown.toLocaleString("en-IN")}
           </span>
         </button>
       </div>
@@ -508,7 +513,7 @@ function DashboardPage() {
                 <span className="text-left">
                   <span className="block font-bold">Janani Wallet</span>
                   <span className={`text-[10px] block ${activeTab === "wallet" ? "text-white/80" : "text-muted-foreground"}`}>
-                    Add funds & balance
+                    Credits & passbook
                   </span>
                 </span>
               </span>
@@ -518,7 +523,7 @@ function DashboardPage() {
                     : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                   }`}
               >
-                ₹{(user?.walletBalance ?? 0).toLocaleString("en-IN")}
+                ₹{walletBalanceShown.toLocaleString("en-IN")}
               </span>
             </button>
           </div>
@@ -725,13 +730,13 @@ function DashboardPage() {
                     <span>Janani Farm Wallet & Credits</span>
                   </h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    1-Tap instant checkout, instant recharge bonuses, and automated refunds.
+                    First-order reward credit: 10% back, valid 90 days, used automatically at checkout.
                   </p>
                 </div>
               </div>
 
               {/* Wallet Balance Card with Add Money trigger */}
-              <WalletBalanceCard onTransactionAdded={handleAddWalletTransaction} />
+              <WalletBalanceCard summary={walletSummary} loading={walletLoading} />
 
               {/* Transactions Ledger */}
               <WalletTransactionsLedger transactions={walletTransactions} />

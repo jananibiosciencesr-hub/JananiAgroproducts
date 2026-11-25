@@ -242,9 +242,7 @@ export function AddCouponModal({
         <form onSubmit={(e) => {
           e.preventDefault();
           onSubmit({
-            ...formData,
-            gstRate: Number(formData.gstRate) || 5,
-            gst_rate: Number(formData.gstRate) || 5
+            ...formData
           });
           onClose();
         }} className="mt-4 space-y-3">

@@ -8,6 +8,7 @@ interface InvoiceItem {
   quantity: number;
   price: number;
   hsn?: string;
+  gstRate?: number;
 }
 
 interface OrderInvoiceModalProps {
@@ -117,8 +118,9 @@ export function OrderInvoiceModal({
   const resolvedDeliveryFee = deliveryFee ?? order?.deliveryFee ?? order?.shippingFee ?? (resolvedSubtotal >= 799 ? 0 : 60);
   const resolvedDiscount = discount ?? order?.couponDiscount ?? order?.discount ?? 0;
   
-  // Final total = Subtotal + GST + Shipping - Discount
-  const resolvedFinalTotal = resolvedSubtotal + totalGst + resolvedDeliveryFee - resolvedDiscount;
+  const resolvedWalletUsed = Number(order?.walletDeduction ?? order?.wallet_deduction ?? 0);
+  // Final total = Subtotal + GST + Shipping - Discount - Wallet credit
+  const resolvedFinalTotal = resolvedSubtotal + totalGst + resolvedDeliveryFee - resolvedDiscount - resolvedWalletUsed;
   const invoiceNumber = `INV-${resolvedOrderNumber.replace("JAP-", `${new Date().getFullYear()}-`)}`;
   const resolvedPaymentMethod = paymentMethod || order?.paymentMethod || order?.payment_method || "Prepaid Online / UPI";
 
@@ -353,6 +355,12 @@ export function OrderInvoiceModal({
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Promotional Discount:</span>
                   <span className="font-mono">-₹{resolvedDiscount}</span>
+                </div>
+              )}
+              {resolvedWalletUsed > 0 && (
+                <div className="flex justify-between text-emerald-600 font-semibold">
+                  <span>Wallet Credit Used:</span>
+                  <span className="font-mono">-₹{resolvedWalletUsed}</span>
                 </div>
               )}
               <div className="flex justify-between text-slate-600">

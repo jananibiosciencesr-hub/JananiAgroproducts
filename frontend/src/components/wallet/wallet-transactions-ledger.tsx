@@ -37,10 +37,24 @@ export function WalletTransactionsLedger({ transactions }: WalletTransactionsLed
     return matchesFilter && matchesSearch;
   });
 
+  // Real CSV export of the passbook shown on screen
   const handleDownloadStatement = () => {
-    toast.success("Wallet Statement Generated", {
-      description: "PDF statement for the current financial year has been prepared for download.",
-    });
+    if (transactions.length === 0) {
+      toast.info("No wallet transactions to export yet.");
+      return;
+    }
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rows = [
+      ["Date", "Title", "Description", "Type", "Amount (INR)", "Status", "Order"].map(esc).join(","),
+      ...transactions.map((t) => [t.date, t.title, t.description, t.type, t.amount, t.status, t.orderId || ""].map(esc).join(",")),
+    ];
+    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `janani-wallet-passbook-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const getCategoryIcon = (category: WalletTransaction["category"], type: TransactionType) => {
@@ -54,7 +68,10 @@ export function WalletTransactionsLedger({ transactions }: WalletTransactionsLed
       case "order_payment":
         return <ShoppingBag className="size-4 text-rose-600" />;
       case "refund":
+      case "reversal":
         return <RefreshCw className="size-4 text-blue-600" />;
+      case "expired":
+        return <Clock className="size-4 text-slate-500" />;
       default:
         return type === "credit" ? (
           <ArrowDownLeft className="size-4 text-emerald-600" />
@@ -73,7 +90,7 @@ export function WalletTransactionsLedger({ transactions }: WalletTransactionsLed
             Wallet Transactions & Passbook
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Real-time ledger of top-ups, referral rewards, order deductions, and cashbacks.
+            Credits earned, used on orders, expired or cancelled.
           </p>
         </div>
 

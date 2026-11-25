@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { generateNextOrderNumber, getAuthoritativeNextOrderNumber, createOrder, normalizeCouponData } from "@/lib/api";
+import { generateNextOrderNumber, getAuthoritativeNextOrderNumber, createOrder, normalizeCouponData, getMyWallet, WALLET_RULES_DEFAULT, type WalletSummary } from "@/lib/api";
+import { WalletToggleCard } from "@/components/checkout/wallet-toggle-card";
 import { saveCustomerOrders, loadCustomerOrders } from "@/components/orders/orders-seed";
 import React, { useState, useMemo, useEffect } from "react";
 import {
@@ -92,6 +93,17 @@ export function CheckoutPage() {
 
   // 2. Coupon State
   const [appliedCoupon, setAppliedCoupon] = useState<CouponRule | null>(null);
+
+  // Wallet credit (first-order reward) - balance and rules come from the server ledger
+  const [wallet, setWallet] = useState<WalletSummary | null>(null);
+  const [useWalletCredit, setUseWalletCredit] = useState(true);
+  const refreshWallet = () => {
+    getMyWallet().then((w) => setWallet(w));
+  };
+  useEffect(() => {
+    if (user) refreshWallet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
   // Restore applied coupon post-mount to eliminate React #418 hydration mismatch
   useEffect(() => {
     try {
@@ -218,8 +230,18 @@ export function CheckoutPage() {
 
   // Net before gift card: Subtotal + GST + Shipping - Discount
   const grossPayable = Number(Math.max(0, subtotal + gstAmount + totalShippingCharges - couponDiscount).toFixed(2));
-  const walletDeduction = 0;
-  const payableAfterWallet = grossPayable;
+
+  // Wallet credit: one-time use on products value (after coupon, excl. delivery & GST) of ₹500+
+  const walletRules = wallet?.rules || WALLET_RULES_DEFAULT;
+  const productsValue = Number(Math.max(0, subtotal - couponDiscount).toFixed(2));
+  const walletAvailable = wallet?.availableBalance || 0;
+  const walletOrderEligible = productsValue >= walletRules.minOrderValue;
+  const walletDeduction =
+    useWalletCredit && walletOrderEligible && walletAvailable > 0 ? Number(Math.min(walletAvailable, productsValue).toFixed(2)) : 0;
+  const payableAfterWallet = Number(Math.max(0, grossPayable - walletDeduction).toFixed(2));
+  const firstOrderRewardPreview = wallet?.firstOrderRewardEligible && walletOrderEligible
+    ? Number(((productsValue * walletRules.rewardPercent) / 100).toFixed(2))
+    : 0;
 
   // Gift card deduction
   const giftCardDeduction = 0;
@@ -293,6 +315,7 @@ export function CheckoutPage() {
       totalSavings,
       paymentMethod,
       orderNotes,
+      useWalletCredit: walletDeduction > 0,
     };
 
     if (paymentMethod === "cod") {
@@ -331,6 +354,7 @@ export function CheckoutPage() {
           paymentMethod: "Cash on Delivery",
           deliverySlot: "Standard Delivery (2-3 Business Days)",
           orderNotes,
+          useWalletCredit: walletDeduction > 0,
         });
 
         const orderNumber = created.number || created.orderNumber;
@@ -364,7 +388,8 @@ export function CheckoutPage() {
             discount: Number(created.coupon_discount ?? 0),
             couponCode: created.coupon_code || "",
             couponDiscount: Number(created.coupon_discount ?? 0),
-            walletDeduction: 0,
+            walletDeduction: Number(created.wallet_deduction ?? created.walletDeduction ?? 0),
+            walletReward: created.walletReward || null,
             deliveryFee: Number(created.delivery_fee ?? 0),
             finalTotal: Number(created.total),
             total: Number(created.total),
@@ -397,6 +422,9 @@ export function CheckoutPage() {
 
         clearCart();
         toast.success(`Cash on Delivery order ${orderNumber} placed successfully!`);
+        if (created.walletReward?.amount) {
+          toast.success(`🎁 ₹${created.walletReward.amount} wallet credit added for your next order (valid till ${created.walletReward.expiresOn}).`, { duration: 9000 });
+        }
         navigate({ to: "/order-success" });
       } catch (err: any) {
         console.error("Failed to place Cash on Delivery order:", err);
@@ -404,6 +432,10 @@ export function CheckoutPage() {
         if (err?.couponInvalid) {
           setAppliedCoupon(null);
           if (typeof window !== "undefined") localStorage.removeItem("janani_applied_coupon");
+        }
+        if (err?.walletInvalid) {
+          setUseWalletCredit(false);
+          refreshWallet();
         }
       } finally {
         setIsSubmitting(false);
@@ -703,6 +735,45 @@ export function CheckoutPage() {
             shippingFee={standardShippingFee}
           />
 
+          {/* First-order reward banner */}
+          {wallet?.firstOrderRewardEligible && (
+            <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-950">
+              {firstOrderRewardPreview > 0 ? (
+                <p>
+                  🎁 <strong>First order bonus:</strong> you will get <strong>₹{firstOrderRewardPreview}</strong> ({walletRules.rewardPercent}%) wallet credit
+                  for your next order of ₹{walletRules.minOrderValue}+ — valid for {walletRules.validityDays} days.
+                </p>
+              ) : (
+                <p>
+                  🎁 Add <strong>₹{Number((walletRules.minOrderValue - productsValue).toFixed(2))}</strong> more (excluding delivery) to earn{" "}
+                  {walletRules.rewardPercent}% wallet credit on your first order.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Wallet credit (one-time use) */}
+          {walletAvailable > 0 && (
+            walletOrderEligible ? (
+              <WalletToggleCard
+                walletBalance={walletAvailable}
+                isWalletEnabled={useWalletCredit}
+                onToggleWallet={setUseWalletCredit}
+                maxDeductible={productsValue}
+              />
+            ) : (
+              <div className="rounded-2xl border border-border bg-secondary/40 p-4 text-xs text-muted-foreground">
+                You have <strong className="text-foreground">₹{walletAvailable}</strong> wallet credit. It can be used on orders of ₹{walletRules.minOrderValue}+
+                (excluding delivery) — add ₹{Number((walletRules.minOrderValue - productsValue).toFixed(2))} more to use it.
+              </div>
+            )
+          )}
+          {walletAvailable <= 0 && (wallet?.lockedBalance || 0) > 0 && (
+            <div className="rounded-2xl border border-border bg-secondary/40 p-4 text-xs text-muted-foreground">
+              ₹{wallet?.lockedBalance} wallet credit is waiting for you — it unlocks once your first order is delivered.
+            </div>
+          )}
+
           {/* Payment & Tax Summary Card */}
           <PaymentSummaryCard
             cartItemsCount={actualCartCount}
@@ -711,8 +782,8 @@ export function CheckoutPage() {
             slotFee={slotFee}
             coupon={appliedCoupon}
             couponDiscount={couponDiscount}
-            isWalletEnabled={false}
-            walletDeduction={0}
+            isWalletEnabled={walletDeduction > 0}
+            walletDeduction={walletDeduction}
             appliedGiftCard={null}
             gstAmount={gstAmount}
             cgst={cgst}

@@ -1130,6 +1130,34 @@ function CustomerProfileDrawer({
                 </button>
               </div>
 
+              {/* Credits (first-order reward / store credit) */}
+              {Array.isArray(customer.walletCredits) && customer.walletCredits.length > 0 && (
+                <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+                  <h4 className="text-xs font-bold text-foreground">Wallet Credits</h4>
+                  <div className="divide-y divide-border/60">
+                    {customer.walletCredits.map((c: any) => (
+                      <div key={c.id} className="py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div>
+                          <p className="font-bold text-foreground">
+                            {c.title} • ₹{c.amount}
+                            <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${c.status === "active" ? (c.lockedReason ? "bg-amber-500/10 text-amber-700" : "bg-emerald-500/10 text-emerald-700") : "bg-slate-500/10 text-slate-600"}`}>
+                              {c.statusLabel}
+                            </span>
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {c.sourceOrder ? `Earned on ${c.sourceOrder} • ` : ""}Issued {new Date(c.issuedAt).toLocaleDateString("en-GB")} • Expires {c.expiresOn}
+                            {c.usedOrder ? ` • Used ₹${c.usedAmount} on ${c.usedOrder}` : ""}
+                            {c.lockedReason ? ` • ${c.lockedReason}` : ""}
+                          </p>
+                          {c.note && <p className="text-[10px] text-muted-foreground/80">{c.note}</p>}
+                        </div>
+                        <span className="font-mono text-[10px] text-muted-foreground">{c.id}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Transactions Ledger */}
               <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
                 <h4 className="text-xs font-bold text-foreground">Transaction Audit Ledger</h4>
@@ -1617,6 +1645,11 @@ function WalletAdjustmentModal({
           </button>
         </div>
 
+        <p className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-2.5 text-[11px] text-muted-foreground">
+          Credits follow the wallet rules: valid for 90 days and used once on an order of ₹500+ (excluding delivery); any unused part lapses.
+          A debit reduces the customer's active credits.
+        </p>
+
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Credit vs Debit Toggle */}
           <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-muted/60 border border-border">
@@ -1629,7 +1662,7 @@ function WalletAdjustmentModal({
                 }`}
             >
               <ArrowDownLeft className="size-3.5" />
-              <span>Credit (+ Add Funds)</span>
+              <span>Credit (+ Add credit)</span>
             </button>
             <button
               type="button"
