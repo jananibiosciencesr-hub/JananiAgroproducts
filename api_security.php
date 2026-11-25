@@ -17,7 +17,7 @@ if (!defined('JANANI_API')) {
     exit('Forbidden');
 }
 
-const JANANI_SCHEMA_VERSION = 3;
+const JANANI_SCHEMA_VERSION = 4;
 const JANANI_CUSTOMER_TOKEN_TTL = 604800;   // 7 days
 const JANANI_ADMIN_TOKEN_TTL = 86400;       // 24 hours (matches admin portal auto-logout)
 const JANANI_OTP_TTL = 600;                 // 10 minutes
@@ -278,6 +278,11 @@ function janani_boot($pdo) {
             janani_migration_v2($pdo);
             janani_store_set($pdo, 'schema_version', '3');
             $version = 3;
+        }
+        if ($version < 4) {
+            janani_migration_v4($pdo);
+            janani_store_set($pdo, 'schema_version', '4');
+            $version = 4;
         }
     } catch (Throwable $e) {
         error_log('[janani] migration failed: ' . $e->getMessage());
@@ -2077,6 +2082,31 @@ function janani_create_wallet_tables($pdo) {
         KEY `idx_used_order` (`used_order`),
         KEY `idx_expires` (`status`, `expires_at`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+/**
+ * Customer ids used to be re-issued after an account was deleted, so a new customer could inherit the previous
+ * holder's orders and wallet credits. Anything that was created BEFORE the current holder's account (and, for orders,
+ * belongs to a different e-mail address) is detached by prefixing its owner id with FORMER-.
+ */
+function janani_migration_v4($pdo) {
+    try {
+        $pdo->exec("UPDATE `orders` o JOIN `users` u ON o.`customer_id` COLLATE utf8mb4_unicode_ci = u.`id` COLLATE utf8mb4_unicode_ci
+            SET o.`customer_id` = CONCAT('FORMER-', o.`customer_id`)
+            WHERE o.`created_at` < u.`created_at`
+              AND o.`customer_email` IS NOT NULL AND o.`customer_email` <> ''
+              AND LOWER(o.`customer_email`) COLLATE utf8mb4_unicode_ci <> LOWER(IFNULL(u.`email`, '')) COLLATE utf8mb4_unicode_ci");
+    } catch (Throwable $e) {
+        error_log('[janani] migration v4 (orders): ' . $e->getMessage());
+    }
+    try {
+        janani_create_wallet_tables($pdo);
+        $pdo->exec("UPDATE `wallet_credits` w JOIN `users` u ON w.`user_id` COLLATE utf8mb4_unicode_ci = u.`id` COLLATE utf8mb4_unicode_ci
+            SET w.`user_id` = CONCAT('FORMER-', w.`user_id`), w.`status` = IF(w.`status` = 'active', 'revoked', w.`status`)
+            WHERE w.`issued_at` < u.`created_at`");
+    } catch (Throwable $e) {
+        error_log('[janani] migration v4 (wallet): ' . $e->getMessage());
+    }
 }
 
 function janani_migration_v2($pdo) {

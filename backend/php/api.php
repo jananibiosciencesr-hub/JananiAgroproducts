@@ -445,22 +445,31 @@ function generateNextCustomerId($pdo) {
     if (!$pdo) {
         return 'CUST-001';
     }
+    // Ids are never reused. Orders (and wallet credits) are kept after an account is deleted, so handing a freed id to a
+    // new customer would give them the previous holder's orders. The next id is above every id ever seen in users or
+    // orders, and above a stored high-water mark.
     try {
-        $stmt = $pdo->query("SELECT `id` FROM `users` WHERE `id` REGEXP '^CUST-[0-9]+$'");
-        $used = [];
-        if ($stmt) {
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                if (preg_match('/^CUST-([0-9]+)$/i', $row['id'], $m)) {
-                    $used[(int)$m[1]] = true;
+        $max = 0;
+        foreach ([
+            "SELECT `id` AS v FROM `users` WHERE `id` REGEXP '^CUST-[0-9]+$'",
+            "SELECT DISTINCT `customer_id` AS v FROM `orders` WHERE `customer_id` REGEXP '^CUST-[0-9]+$'",
+        ] as $sql) {
+            try {
+                $stmt = $pdo->query($sql);
+                while ($stmt && ($row = $stmt->fetch(PDO::FETCH_ASSOC))) {
+                    if (preg_match('/^CUST-([0-9]+)$/i', (string)$row['v'], $m)) {
+                        $max = max($max, (int)$m[1]);
+                    }
                 }
-            }
+            } catch (Throwable $e) {}
         }
-        $next = 1;
-        while (isset($used[$next])) {
-            $next++;
-        }
+        try {
+            $hw = $pdo->prepare("SELECT `v` FROM `security_store` WHERE `k` = 'customer_id_seq' LIMIT 1");
+            $hw->execute();
+            $max = max($max, (int)$hw->fetchColumn());
+        } catch (Throwable $e) {}
+        $next = $max + 1;
         $candidate = 'CUST-' . str_pad((string)$next, 3, '0', STR_PAD_LEFT);
-        
         while (true) {
             $chkStmt = $pdo->prepare("SELECT COUNT(*) FROM `users` WHERE `id` = ?");
             $chkStmt->execute([$candidate]);
@@ -470,9 +479,12 @@ function generateNextCustomerId($pdo) {
             $next++;
             $candidate = 'CUST-' . str_pad((string)$next, 3, '0', STR_PAD_LEFT);
         }
+        try {
+            janani_store_set($pdo, 'customer_id_seq', (string)$next, 0);
+        } catch (Throwable $e) {}
         return $candidate;
     } catch (Exception $e) {
-        return 'CUST-001';
+        return 'CUST-' . str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
     }
 }
 
