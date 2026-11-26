@@ -1396,9 +1396,9 @@ function janani_delivery_normalize($input, &$errors) {
         'rules' => [],
     ];
     $rules = is_array($in['rules'] ?? null) ? array_values($in['rules']) : [];
-    if (count($rules) > 300) {
-        $errors[] = 'At most 300 pincode rules are allowed.';
-        $rules = array_slice($rules, 0, 300);
+    if (count($rules) > 2000) {
+        $errors[] = 'At most 2000 pincode rules are allowed.';
+        $rules = array_slice($rules, 0, 2000);
     }
     $pinOwner = [];
     $totalPins = 0;
