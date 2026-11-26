@@ -22,6 +22,10 @@ export interface DeliveryQuote {
   pincode: string;
   city: string;
   ruleName: string;
+  /** which weight rate was applied, e.g. "up to 5 kg" */
+  rate: string;
+  /** weight of every cart line, as the server counted it */
+  lines: Array<{ name: string; unit: string; quantity: number; weightKg: number }>;
   message?: string;
 }
 
@@ -113,6 +117,8 @@ export async function fetchDeliveryQuote(pincode: string, items: any[], signal?:
       pincode: String(data.pincode || clean),
       city: String(data.city || ""),
       ruleName: String(data.ruleName || ""),
+      rate: String(data.rate || ""),
+      lines: Array.isArray(data.lines) ? data.lines : [],
       message: data.message ? String(data.message) : "",
     };
   } catch {

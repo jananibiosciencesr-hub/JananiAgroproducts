@@ -28,11 +28,11 @@ import { toast } from "sonner";
 import { useStore } from "@/components/store-provider";
 import { products, type Product, getProductImage, getProductVariantImage, pantryImage, formatProductName, parseCartItems } from "@/lib/catalog";
 import { ALL_PESTICIDES } from "@/lib/crop-protection-data";
-import { getStorefrontCoupons, validateCoupon, normalizeCouponData, type AdminCoupon } from "@/lib/api";
+import { getStorefrontCoupons, validateCoupon, normalizeCouponData, loadUserSavedAddresses, type AdminCoupon } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 import { DeliveryPincodeBox } from "@/components/delivery/delivery-pincode-box";
-import { useDeliveryPincode, useDeliveryQuote } from "@/lib/delivery";
+import { getSavedPincode, saveDeliveryPincode, useDeliveryPincode, useDeliveryQuote } from "@/lib/delivery";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -313,6 +313,14 @@ export function CartPage() {
   // Delivery charge comes from the server: admin pincode rule x cart weight (free above the admin threshold)
   const [deliveryPin, setDeliveryPin] = useDeliveryPincode();
   const { quote: deliveryQuote, loading: deliveryLoading, error: deliveryError } = useDeliveryQuote(deliveryPin, cartItems);
+  // First visit: use the pincode of the signed-in customer's saved address, so the charge shows without typing
+  useEffect(() => {
+    if (!user || getSavedPincode()) return;
+    const list: any[] = loadUserSavedAddresses(user.email || String(user.id));
+    const preferred = list.find((a) => a?.isDefault) || list[0];
+    const pin = String(preferred?.pincode || "").replace(/\D/g, "");
+    if (pin.length === 6) saveDeliveryPincode(pin);
+  }, [user?.id]);
   const deliveryKnown = !!deliveryQuote && deliveryQuote.ok && deliveryQuote.known;
   const deliveryBlocked = !!deliveryQuote && !deliveryQuote.ok;
   const shippingFee = isFreeDeliveryCoupon || !deliveryKnown ? 0 : deliveryQuote!.charge;

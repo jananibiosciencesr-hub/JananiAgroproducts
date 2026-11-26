@@ -1279,9 +1279,6 @@ function ensureJananiCatalogSynced($pdo) {
     if (!janani_should_run_periodic($pdo, 'catalog_sync', 600)) {
         // Between full checks only refresh the category product counts (one cheap query)
         try {
-            // Immediately purge test garbage if any exists
-            $pdo->exec("DELETE FROM `products` WHERE `name` LIKE 'testing3333%' OR `slug` LIKE 'testing3333%' OR `name` LIKE '%((--%' OR `name` LIKE '%+_%'");
-            $pdo->exec("DELETE FROM `categories` WHERE `slug` = 'testing' OR (`name` = 'testing' AND `slug` = 'testing')");
             $pdo->exec("UPDATE `categories` c SET `product_count` = (SELECT COUNT(*) FROM `products` p WHERE (p.active = 1 OR p.active IS NULL) AND (p.status != 'Trash' OR p.status IS NULL) AND (p.category_name = c.name OR p.category_id = c.id OR p.category_slug = c.slug OR LOWER(p.category_name) = LOWER(c.name)))");
         } catch (Exception $e) {}
         return;
@@ -1292,13 +1289,8 @@ function ensureJananiCatalogSynced($pdo) {
         ensureUsersTableSchema($pdo);
         ensureOrdersTableSchema($pdo);
 
-        // Purge any test garbage products and categories
-        try {
-            $pdo->exec("DELETE FROM `products` WHERE `name` LIKE 'testing3333%' OR `slug` LIKE 'testing3333%' OR `name` LIKE '%((--%' OR `name` LIKE '%+_%'");
-            $pdo->exec("DELETE FROM `categories` WHERE `slug` = 'testing' OR `id` LIKE '%testing%' OR (`name` = 'testing' AND `slug` = 'testing')");
-        } catch (Exception $e) {}
-
-        // Admin-created categories are never deleted automatically.
+        // Nothing is ever deleted automatically: products and categories only disappear when an admin deletes them.
+        // (An old clean-up here removed anything named "testing" and every product whose name contained "+".)
 
         // 10 Core Janani Agro Taxonomy Categories - only seed if table is empty, NEVER overwrite admin edits!
         $catCount = (int)$pdo->query("SELECT COUNT(*) FROM `categories` WHERE `deleted_at` IS NULL")->fetchColumn();
@@ -1943,7 +1935,12 @@ try {
                 $dqPriced = janani_price_items($pdo, $dqBody['items'] ?? []);
                 $dqWeight = janani_cart_weight_kg($dqPriced['lines']);
                 $dq = janani_delivery_charge($pdo, $dqPin, $dqWeight, $dqPriced['subtotal']);
-                janani_json_exit(array_merge(['success' => true], $dq, ['subtotal' => $dqPriced['subtotal'], 'itemErrors' => $dqPriced['errors']]));
+                $dqLines = [];
+                foreach ($dqPriced['lines'] as $dl) {
+                    $dqLines[] = ['name' => $dl['name'], 'unit' => $dl['unit'], 'quantity' => (int)$dl['quantity'],
+                        'weightKg' => round(janani_unit_weight_kg($dl['unit']) * (int)$dl['quantity'], 3)];
+                }
+                janani_json_exit(array_merge(['success' => true], $dq, ['subtotal' => $dqPriced['subtotal'], 'lines' => $dqLines, 'itemErrors' => $dqPriced['errors']]));
             }
             if ($method === 'GET') {
                 janani_json_exit(['success' => true, 'config' => janani_delivery_config($pdo)]);

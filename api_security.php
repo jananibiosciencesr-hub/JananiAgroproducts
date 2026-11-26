@@ -1373,7 +1373,8 @@ function janani_delivery_clean_rule($r, $label, &$errors, $withPincodes) {
             }
             $pins[$p] = true;
         }
-        $rule['pincodes'] = array_keys($pins);
+        // array keys that look like numbers become integers in PHP - keep pincodes as text
+        $rule['pincodes'] = array_map('strval', array_keys($pins));
         if (count($rule['pincodes']) === 0) $errors[] = $label . ': add at least one pincode.';
         if ($rule['name'] === '') $rule['name'] = $rule['city'] !== '' ? $rule['city'] : 'Delivery rule';
     } elseif ($rule['name'] === '') {
@@ -1460,7 +1461,7 @@ function janani_delivery_charge($pdo, $pincode, $weightKg, $subtotal) {
     $rule = $cfg['default'];
     $city = '';
     foreach ($cfg['rules'] as $r) {
-        if (!empty($r['active']) && in_array($pin, $r['pincodes'], true)) {
+        if (!empty($r['active']) && in_array((string)$pin, array_map('strval', (array)$r['pincodes']), true)) {
             $rule = $r;
             $city = (string)($r['city'] ?? '');
             break;
@@ -1476,12 +1477,18 @@ function janani_delivery_charge($pdo, $pincode, $weightKg, $subtotal) {
     $w = max($weightKg, 0.01);
     $slabs = $rule['slabs'];
     $charge = null;
+    $rate = '';
     foreach ($slabs as $s) {
-        if ($s['kg'] + 1e-9 >= $w) { $charge = (float)$s['charge']; break; }
+        if ($s['kg'] + 1e-9 >= $w) { $charge = (float)$s['charge']; $rate = 'up to ' . (float)$s['kg'] . ' kg'; break; }
     }
     if ($charge === null) {
         $last = end($slabs);
-        $charge = (float)$last['charge'] + ceil($w - (float)$last['kg'] - 1e-9) * (float)($rule['extraPerKg'] ?? 0);
+        $extraKg = ceil($w - (float)$last['kg'] - 1e-9);
+        $perKg = (float)($rule['extraPerKg'] ?? 0);
+        $charge = (float)$last['charge'] + $extraKg * $perKg;
+        $rate = $perKg > 0
+            ? ((float)$last['kg'] . ' kg rate + ' . $extraKg . ' extra kg x Rs. ' . $perKg)
+            : ('above ' . (float)$last['kg'] . ' kg (same as ' . (float)$last['kg'] . ' kg rate)');
     }
     $charge = round($charge, 2);
     $freeAbove = (float)($rule['freeAbove'] ?? 0);
@@ -1495,7 +1502,17 @@ function janani_delivery_charge($pdo, $pincode, $weightKg, $subtotal) {
         'amountToFree' => ($freeAbove > 0 && !$free) ? round($freeAbove - $subtotal, 2) : 0.0,
         'city' => $city,
         'ruleName' => (string)$rule['name'],
+        'rate' => $rate,
     ]);
+}
+
+/** One line for the order's admin notes: how the delivery fee was worked out. */
+function janani_delivery_note($quote) {
+    $d = $quote['delivery'] ?? null;
+    if (!is_array($d) || empty($d['known'])) return [];
+    $text = 'Delivery: Rs. ' . number_format((float)($quote['shippingFee'] ?? 0), 2) . ' for pincode ' . ($d['pincode'] ?? '-') . ', weight ' . (float)($quote['weightKg'] ?? 0) . ' kg'
+        . (!empty($d['ruleName']) ? ', rule "' . $d['ruleName'] . '"' : '') . (!empty($d['rate']) ? ' (' . $d['rate'] . ')' : '') . (!empty($d['free']) ? ', free delivery applied' : '') . '.';
+    return [$text];
 }
 
 /** Full server-side quote: the only source of truth for what a customer pays. */
@@ -1805,7 +1822,7 @@ function janani_insert_order($pdo, $user, $quote, $address, $payment, $extra = [
                     round((float)($quote['walletDeduction'] ?? 0), 2), $quote['gstAmount'], $quote['shippingFee'], $quote['total'], $payment['method'], $payment['status'], $payment['transactionId'] ?? null,
                     $payment['razorpayOrderId'] ?? null, $courier, 'Lodhika GIDC Central Facility, Rajkot', $slot, '2-3 Business Days',
                     json_encode($timeline, JSON_UNESCAPED_UNICODE),
-                    json_encode(array_map(function ($w) { return ['id' => 'NOTE-' . bin2hex(random_bytes(4)), 'text' => $w, 'author' => 'System', 'date' => date('d M Y, h:i A')]; }, $warnings), JSON_UNESCAPED_UNICODE),
+                    json_encode(array_map(function ($w) { return ['id' => 'NOTE-' . bin2hex(random_bytes(4)), 'text' => $w, 'author' => 'System', 'date' => date('d M Y, h:i A')]; }, array_merge((array)$warnings, janani_delivery_note($quote))), JSON_UNESCAPED_UNICODE),
                     $notes !== '' ? $notes : null,
                 ]);
                 $number = $candidate;

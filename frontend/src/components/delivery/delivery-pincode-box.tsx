@@ -128,8 +128,21 @@ export function DeliveryPincodeBox({ pincode, onPincodeChange, quote, loading, e
               <CheckCircle2 className="size-4 text-emerald-600" /> Delivery charge: <span className="font-mono">{inr(quote.charge)}</span>
             </p>
           )}
+          {!compact && quote.lines.length > 0 && (
+            <ul className="border-t border-border/60 pt-1.5 space-y-0.5 text-[11px] text-muted-foreground">
+              {quote.lines.map((l, i) => (
+                <li key={i} className="flex justify-between gap-2">
+                  <span className="truncate">
+                    {l.name} · {l.unit} × {l.quantity}
+                  </span>
+                  <span className="font-mono shrink-0">{Number(l.weightKg.toFixed(2))} kg</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="text-xs text-muted-foreground">
             Shipping weight {Number(quote.weightKg.toFixed(2))} kg
+            {quote.rate && !quote.free ? <> · Rate: {quote.rate}</> : null}
             {quote.freeAbove > 0 && !quote.free && quote.amountToFree > 0 && (
               <>
                 {" "}

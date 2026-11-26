@@ -213,6 +213,99 @@ function ExtraFields({
   );
 }
 
+/** Read-only table of everything that is configured: which pincode pays what, for which weight. */
+function Overview({ form, dirty }: { form: ConfigForm; dirty: boolean }) {
+  const rows = [
+    ...form.rules.map((r, i) => ({
+      ...r,
+      key: r.id,
+      name: r.name || r.city || "Rule " + (i + 1),
+      pins: parsePins(r.pincodes),
+      isDefault: false,
+    })),
+    { ...form.default, key: "default", name: "All other pincodes", city: "", pins: [] as string[], active: true, isDefault: true },
+  ];
+  return (
+    <section className="border border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-4 border-b border-border">
+        <div>
+          <h3 className="text-sm font-extrabold text-foreground">Delivery charges at a glance</h3>
+          <p className="text-xs text-muted-foreground">Which pincode pays how much, for which cart weight.</p>
+        </div>
+        <span className={`text-[11px] font-bold px-2 py-1 ${dirty ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+          {dirty ? "Showing unsaved changes - click Save" : "Saved and live"}
+        </span>
+      </div>
+      {!form.enabled && <p className="p-4 text-sm font-semibold text-amber-800">Delivery charges are switched off: delivery is free for everyone.</p>}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs">
+          <thead>
+            <tr className="bg-muted/50 text-muted-foreground font-bold">
+              <th className="py-2 px-3">Area / rule</th>
+              <th className="py-2 px-3">Pincodes</th>
+              <th className="py-2 px-3">Cart weight → delivery charge</th>
+              <th className="py-2 px-3">Free delivery</th>
+              <th className="py-2 px-3">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {rows.map((r) => {
+              const slabs = r.slabs
+                .map((s) => ({ kg: num(s.kg), charge: num(s.charge) }))
+                .filter((s) => s.kg > 0)
+                .sort((a, b) => a.kg - b.kg);
+              const last = slabs[slabs.length - 1];
+              const perKg = num(r.extraPerKg);
+              return (
+                <tr key={r.key} className={`align-top ${r.active ? "" : "opacity-60"}`}>
+                  <td className="py-2.5 px-3">
+                    <span className="block font-bold text-foreground">{r.name}</span>
+                    {r.city && <span className="text-muted-foreground">{r.city}</span>}
+                  </td>
+                  <td className="py-2.5 px-3 font-mono max-w-[220px] break-words">
+                    {r.isDefault ? <span className="font-sans text-muted-foreground">Every pincode not listed above</span> : r.pins.join(", ") || "-"}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {!r.deliverable ? (
+                      <span className="font-semibold text-rose-700">Not delivered</span>
+                    ) : (
+                      <ul className="space-y-0.5">
+                        {slabs.map((s, i) => (
+                          <li key={i}>
+                            {i === 0 ? "Up to" : `Above ${slabs[i - 1]!.kg} kg up to`} <strong>{s.kg} kg</strong> → <strong>{money(s.charge)}</strong>
+                          </li>
+                        ))}
+                        {last && (
+                          <li className={perKg > 0 ? "" : "text-amber-700 font-semibold"}>
+                            Above <strong>{last.kg} kg</strong> →{" "}
+                            {perKg > 0 ? (
+                              <>
+                                {money(last.charge)} + <strong>{money(perKg)}</strong> per extra kg
+                              </>
+                            ) : (
+                              <>{money(last.charge)} only (set "extra ₹ per kg" to charge more for heavy carts)</>
+                            )}
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {!r.deliverable ? "-" : num(r.freeAbove) > 0 ? <>On orders of <strong>{money(num(r.freeAbove))}</strong> or more</> : "Never free"}
+                  </td>
+                  <td className="py-2.5 px-3 font-semibold">
+                    {!r.active ? <span className="text-muted-foreground">Off</span> : r.deliverable ? <span className="text-emerald-700">Active</span> : <span className="text-rose-700">Blocked</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export function DeliveryChargesManagement() {
   const [form, setForm] = useState<ConfigForm | null>(null);
   const [loading, setLoading] = useState(true);
@@ -483,6 +576,8 @@ export function DeliveryChargesManagement() {
           );
         })}
       </section>
+
+      <Overview form={form} dirty={dirty} />
 
       {/* Preview */}
       <section className="border border-border bg-card p-4 sm:p-5 space-y-3">

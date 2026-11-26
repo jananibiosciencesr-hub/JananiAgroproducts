@@ -359,6 +359,11 @@ export function AddressManager({ selectedAddressId, onSelectAddress }: AddressMa
       return;
     }
 
+    if (!/^\d{6}$/.test(formData.pincode.trim())) {
+      toast.error("Please enter a valid 6-digit pincode (it decides your delivery charge).");
+      return;
+    }
+
     const phoneCheck = validatePhone(formData.phone);
     if (!phoneCheck.isValid) {
       toast.error(phoneCheck.error || "Please enter a valid 10-digit Indian mobile number.");
