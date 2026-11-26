@@ -126,6 +126,11 @@ export async function fetchDeliveryQuote(pincode: string, items: any[], signal?:
   }
 }
 
+/** Short-lived memory of recent answers so changing back and forth is instant (the order is still priced by the server). */
+const quoteCache = new Map<string, { at: number; quote: DeliveryQuote }>();
+const QUOTE_CACHE_MS = 60_000;
+const QUOTE_TIMEOUT_MS = 12_000;
+
 /**
  * Prices delivery for the given pincode + cart. Re-runs (debounced) whenever the pincode, the items or the quantities change.
  * `error` is true when the server could not be reached, so callers never show a made-up charge.
@@ -154,17 +159,32 @@ export function useDeliveryQuote(pincode: string, items: any[]) {
       setError(false);
       return;
     }
+    const cached = quoteCache.get(key);
+    if (cached && Date.now() - cached.at < QUOTE_CACHE_MS) {
+      setQuote(cached.quote);
+      setError(false);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const ctrl = new AbortController();
+    let replaced = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const timer = setTimeout(async () => {
+      // never leave the customer on "Calculating..." - give up after a while and say so
+      timeout = setTimeout(() => ctrl.abort(), QUOTE_TIMEOUT_MS);
       const q = await fetchDeliveryQuote(pin, latest.current.items, ctrl.signal);
-      if (ctrl.signal.aborted) return;
+      clearTimeout(timeout);
+      if (replaced) return;
+      if (q) quoteCache.set(key, { at: Date.now(), quote: q });
       setQuote(q);
       setError(!q);
       setLoading(false);
-    }, 250);
+    }, 80);
     return () => {
+      replaced = true;
       clearTimeout(timer);
+      if (timeout) clearTimeout(timeout);
       ctrl.abort();
     };
   }, [key]);

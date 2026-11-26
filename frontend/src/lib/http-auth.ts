@@ -114,20 +114,28 @@ function handleUnauthorized(): void {
 // API calls are therefore queued (a few at a time) and a 503 "server busy" answer is retried.
 // ---------------------------------------------------------------------------
 const MAX_CONCURRENT_API_REQUESTS = 4;
+/** Extra slots reserved for what the user is actively waiting for (save buttons, sign-in, payment, delivery charge). */
+const PRIORITY_EXTRA_SLOTS = 3;
 const MAX_BUSY_RETRIES = 2;
+/** A background read that hangs must not block the queue for ever. */
+const READ_TIMEOUT_MS = 25000;
 let activeApiRequests = 0;
 const waitingApiRequests: Array<() => void> = [];
 
-function acquireApiSlot(): Promise<void> {
-  if (activeApiRequests < MAX_CONCURRENT_API_REQUESTS) {
+function acquireApiSlot(priority: boolean): Promise<void> {
+  const limit = priority ? MAX_CONCURRENT_API_REQUESTS + PRIORITY_EXTRA_SLOTS : MAX_CONCURRENT_API_REQUESTS;
+  if (activeApiRequests < limit) {
     activeApiRequests++;
     return Promise.resolve();
   }
   return new Promise<void>((resolve) => {
-    waitingApiRequests.push(() => {
+    const start = () => {
       activeApiRequests++;
       resolve();
-    });
+    };
+    // user-initiated requests go to the front of the line, background loading waits
+    if (priority) waitingApiRequests.unshift(start);
+    else waitingApiRequests.push(start);
   });
 }
 
@@ -173,17 +181,27 @@ export function installAuthFetch(): void {
     }
 
     let response: Response;
-    await acquireApiSlot();
+    const method = String(init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
+    const isRead = method === "GET" || method === "HEAD";
+    const callerSignal = init?.signal ?? undefined;
+    await acquireApiSlot(!isRead || url.includes("mode=quote"));
     try {
       let attempt = 0;
       for (;;) {
+        // the caller cancelled (for example a newer delivery quote replaced this one): stop at once
+        if (callerSignal?.aborted) throw new DOMException("Request cancelled", "AbortError");
+        const timeout = isRead && !callerSignal ? new AbortController() : null;
+        const timer = timeout ? setTimeout(() => timeout.abort(), READ_TIMEOUT_MS) : null;
         try {
-          response = await nativeFetch(input as RequestInfo, { ...init, headers });
+          response = await nativeFetch(input as RequestInfo, { ...init, headers, ...(timeout ? { signal: timeout.signal } : {}) });
         } catch (networkError) {
-          if (attempt >= MAX_BUSY_RETRIES) throw networkError;
+          // never repeat a cancelled or timed-out request, nor a write that may already have reached the server
+          if (!isRead || callerSignal?.aborted || timeout?.signal.aborted || attempt >= MAX_BUSY_RETRIES) throw networkError;
           attempt++;
           await sleep(700 * attempt + Math.random() * 400);
           continue;
+        } finally {
+          if (timer) clearTimeout(timer);
         }
         if (attempt < MAX_BUSY_RETRIES && (await isRetryableBusy(response))) {
           attempt++;
